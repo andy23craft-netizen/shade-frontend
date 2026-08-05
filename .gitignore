@@ -1,0 +1,32 @@
+# General
+*~
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Python
+dist/
+.venv/
+*.egg-info/
+*.py[cod]
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Env-Specific Application Data
+data/*.db
+
+# JetBrains
+.idea/
+
+# CI/CD
+build/
+htmlcov/
+.coverage
+coverage.xml
+
+# Secrets
+.env
