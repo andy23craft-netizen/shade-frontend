@@ -19,12 +19,9 @@
   * [ ] Complete feature ticket `docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-15_podman-development-and-preview.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-16_versioned-release-artifacts.md`.
-* Build out the CI/CD for this project
-  * Build with Make
-    * Which primarily invokes Yarn commands
-  * Package into a podman container for convenience
-  * Zip website files into a tarball
-  * Use Ansible to deploy onto the remote
-  * Use Ansible to "install" (i.e., unzip & mv) these executable files into the correct directory
-  * Use Ansible to wrap into a `systemd` service that can be easily managed
-
+  * [ ] Confirm that `docs/PLAN.md` is fully implemented.
+* [ ] Build out the CI/CD for this project
+  * [ ] Package into a podman container for convenience
+    * [ ] Follow patterns in `../shade-backend/ci/`
+    * [ ] For prod: Zip website deployable files into a tarball
+    * [ ] For dev: Build.into a Podman container. Another project will run this in Podman Compose with the BE.
