@@ -1,0 +1,11 @@
+---
+description: Prefer grep over rg since ripgrep is not available
+alwaysApply: true
+---
+
+# Search Tooling Rules
+
+- The `rg` (ripgrep) command is NOT installed in this environment
+- Do NOT use `rg` in any commands or examples
+- Always prefer `grep` for text searching instead
+- Use common `grep` flags when appropriate (e.g., `-r` for recursive, `-n` for line numbers, `-i` for case-insensitive)

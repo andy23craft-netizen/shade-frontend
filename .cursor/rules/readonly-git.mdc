@@ -1,0 +1,12 @@
+---
+description: Never make any changes to the state of git
+alwaysApply: true
+---
+
+# Git-Specific Rules
+
+- Read-only commands like `git status` and `git log` are allowed.
+- Do NOT `git add`, `git remove`, or `git rm`.
+- Do NOT `git commit`, `git checkout`, `git push`, or `git pull`
+- Staging changes or unstaging changes with git is not allowed
+- Stashing and unstashing with git requires permission.
