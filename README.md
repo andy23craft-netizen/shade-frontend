@@ -4,7 +4,7 @@ The React frontend for the Shade library application.
 
 ## Prerequisites
 
-- [Node.js 20.19.2](https://nodejs.org/)
+- [Node.js 26.7.0](https://nodejs.org/)
 - [Corepack](https://nodejs.org/api/corepack.html)
 - Yarn 4.1.0 (provided through Corepack)
 - [Make](https://www.gnu.org/software/make/)
@@ -25,7 +25,7 @@ make install
 Start the local Vite development server:
 
 ```sh
-make dev
+make run
 ```
 
 Run the complete lint, type-check, test, and build quality gate:
