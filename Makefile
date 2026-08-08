@@ -1,16 +1,16 @@
-.PHONY: install dev preview lint typecheck test build check
+.PHONY: install preview lint run typecheck test build check
 
 install:
 	yarn install --immutable
-
-dev:
-	yarn dev
 
 preview:
 	yarn preview
 
 lint:
 	yarn lint
+
+run:
+	yarn dev
 
 typecheck:
 	yarn typecheck
