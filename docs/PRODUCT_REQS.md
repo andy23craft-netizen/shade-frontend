@@ -9,6 +9,17 @@ Here's a more structured version of your requirements.
 
 # Library Management Application – Product Requirements
 
+## Application Pages
+
+The application must provide the following primary pages:
+
+* **Dashboard:** Display the library overview, borrowing metrics, and reading metrics.
+* **Check Out Book:** Allow a user to select an available book and record its checkout details.
+* **Check In Book:** Allow a user to select a checked-out book and record its return.
+* **Admin Management UI:** Provide administrative tools for managing the library and its books.
+
+---
+
 ## Core Book Management
 
 ### Add a Book
@@ -135,6 +146,10 @@ Here's a more structured version of your requirements.
 * Users should be able to edit any imported metadata.
 * The application should function even when metadata lookup fails (manual entry).
 * All operations should be reversible where practical (e.g., restore deleted books).
+
+## API Integration Requirements
+
+* Include a bearer token in the `Authorization` header of every request to the backend API.
 
 ---
 
