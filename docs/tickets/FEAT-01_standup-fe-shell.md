@@ -39,11 +39,13 @@ workflows or backend integration are part of this ticket.
 
 ## Technical Decisions
 
-For versions not already specified by the project:
+Use the following pinned toolchain versions:
 
-- Use the current active Node.js LTS release at implementation time and record it in `.nvmrc`.
-- Use the latest stable Yarn release supported by that Node.js version. Pin it with the `packageManager` field in
-  `package.json` so Corepack can reproduce the toolchain.
+- Use Node.js 20.19.2 and record it in `.nvmrc`.
+- Use Yarn 4.1.0 and pin it with the `packageManager` field in `package.json` so Corepack can reproduce the toolchain.
+
+For versions not otherwise specified by the project:
+
 - Use the latest mutually compatible stable releases of React, TypeScript, and Vite.
 - Use Yarn's `node-modules` linker for broad IDE and tooling compatibility.
 - Use strict TypeScript settings and do not allow emitted JavaScript during type-checking.
