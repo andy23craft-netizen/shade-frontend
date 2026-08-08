@@ -30,3 +30,18 @@ coverage.xml
 
 # Secrets
 .env
+.env.local
+.env.*.local
+
+# Node.js / Yarn
+node_modules/
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Frontend build and tooling output
+coverage/
+.vite/
