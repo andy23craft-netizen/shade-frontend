@@ -1,0 +1,17 @@
+---
+description: Limit directory scope
+alwaysApply: true
+---
+
+# Associated Projects
+
+- Backend: `~/Documents/Repos/shade-backend/`
+- Frontend: `~/Documents/Repos/shade-frontend/`
+- Orchestrator: `~/Documents/Repos/shade-orchestrator/`
+
+# Disk Location Limitation
+
+- Only write files that are in `~/Documents/Repos/shade-frontend/`
+- Never write files outside of this directory
+- Only read files that are in `~/Documents/Repos/shade-frontend/` or the Associated Projects
+- Never read or write files outside of those directories
