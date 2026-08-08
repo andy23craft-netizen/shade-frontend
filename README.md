@@ -6,7 +6,7 @@ The React frontend for the Shade library application.
 
 - [Node.js 26.7.0](https://nodejs.org/)
 - [Corepack](https://nodejs.org/api/corepack.html)
-- Yarn 4.1.0 (provided through Corepack)
+- Yarn 4.18.0 (provided through Corepack)
 - [Make](https://www.gnu.org/software/make/)
 
 ## Setup

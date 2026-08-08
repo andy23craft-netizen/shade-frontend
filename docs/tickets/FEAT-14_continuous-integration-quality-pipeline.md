@@ -13,7 +13,7 @@ FEAT-13.
 - Add pull-request and default-branch CI with immutable Yarn installation.
 - Run lint, type-check, unit/integration tests, production build, accessibility checks, and browser journeys.
 - Cache dependencies/build inputs without weakening lockfile semantics.
-- Use the repository-pinned Node 26.7.0 and Yarn 4.1.0 versions.
+- Use the repository-pinned Node 26.7.0 and Yarn 4.18.0 versions.
 - Keep `make check` as the single local quality gate and make CI invoke the same underlying commands.
 - Make the README, Make targets, package scripts, and CI use consistent command names.
 - Record production build size and report material regressions against the budget established in FEAT-03.
