@@ -1,7 +1,14 @@
 # Build the Frontend
 
 * [ ] Download free IDE: WebStorm
-  * [ ] Download plugins: 
+  * [ ] Download plugins: Key Promoter X, Mario Progress Bar (or similar), plantuml4idea, Docker, HTML Tools, Live Edit,
+        Refactor-X, Editorconfig, ESLint, JavaScript and Typescript, JavaScript Debugger, JSHint, Node.js, Prettier,
+        React, Styled Components & Styled JSX, TSLint, Vite, Webpack, JSON, Markdown, Shell Script, YAML, CSS, PostCSS,
+        Tailwind CSS
+  * Note that I don't think any of these are mandatory. And many of these may already be installed.
+* [ ] Read helpful docs:
+  * [ ] Read `README.md`
+  * [ ] Read `docs/MAINTAINERS.md`
 * [ ] Implement the feature docs:
   * [ ] Complete feature ticket `docs/tickets/FEAT-01_application-shell-and-shared-ui.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
