@@ -18,7 +18,11 @@ FEAT-01.
 - Distinguish public `GET /health` reachability from `GET /protected` credential verification.
 - Return the user to connection setup and clear the active token after a confirmed protected-request `403`.
 - Describe `403` as rejected API access rather than inferring whether the token was missing or invalid.
-- Support a local Vite proxy or document direct-origin development without hiding the production CORS/proxy requirement.
+- Support the backend's default local Vite origins or an optional local proxy. Document that cross-origin production
+  requires the frontend's exact scheme, hostname, and port in backend `CORS_ORIGINS`, with no path or trailing slash;
+  a deployment-managed same-origin proxy remains an alternative.
+- Document that cross-origin requests may send `Authorization` and `Content-Type`, cookies/credentialed CORS are not
+  used, and frontend JavaScript may read the exposed `Content-Disposition` backup filename.
 - Display the runtime release identifier in the shell.
 
 ## Security requirements
@@ -39,8 +43,9 @@ FEAT-01.
 - Production-build and source-map inspection finds no test or real token.
 - Tests cover reload/session restoration, malformed config, health failure, rejected access, token replacement, and
   redaction.
-- The production connectivity choice—approved CORS origin or same-origin reverse proxy—is recorded as a release blocker
-  until verified.
+- The production connectivity choice—an exact approved `CORS_ORIGINS` entry or a same-origin reverse proxy—is recorded
+  and remains a release blocker until authenticated requests, browser preflights, and JavaScript access to the backup
+  `Content-Disposition` filename are verified.
 - `make check` passes.
 
 ## Plan coverage

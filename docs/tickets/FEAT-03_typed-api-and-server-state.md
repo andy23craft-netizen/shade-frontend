@@ -13,22 +13,37 @@ FEAT-02.
 - Compare `docs/API-for-FE.md` with a representative running backend OpenAPI document before implementation.
 - Generate TypeScript models from OpenAPI when a stable repository-owned command is practical; otherwise add explicit
   transport types and contract fixtures checked against OpenAPI.
-- Model nullable fields, dates, timestamps, enums, list wrappers, lookup unions, and `204 No Content` exactly.
+- Model nullable fields, temporal strings, enums, list wrappers, lookup unions, the SQL backup attachment, and `204 No
+  Content` exactly.
+- Serialize date-only form values as `YYYY-MM-DD` and timestamps as normalized UTC ISO 8601 strings. Preserve year-only
+  lookup publication dates as strings and never pass arbitrary loan timestamp text through to the API.
+- Serialize only documented request properties because backend request models silently ignore unknown fields. Do not
+  use `BookRead.updated_date` as a concurrency token because generic `PATCH` currently does not update it.
+- Model books and loans as `{ items, total }`, preserve the API's title and lexical `checked_out_at`-descending order,
+  and assume no pagination or loan filtering.
+- Preserve the transport names `created_date`, `last_updated_date`, `times_borrowed`, `last_borrowed_at`, and
+  `average_loan_days`.
 - Preserve unknown response fields and render future enum values through a neutral fallback.
 - Implement all documented routes with configurable timeout and cancellation behavior.
+- Implement authenticated `/backup` as a blob response and safely return parsed UTF-8 `Content-Disposition` filename
+  metadata to the feature layer, with no attempt to parse the SQL body as JSON.
 - Normalize HTTP, FastAPI validation, invalid JSON, timeout, network, and unexpected server failures into a safe UI error.
-- Map `422 detail[].loc` entries to fields while retaining HTTP status, safe detail, and correlation ID when supplied.
+- Map `422 detail[].loc` entries to fields and support string `detail` from invalid ISBN lookup while retaining HTTP
+  status, safe detail, and correlation ID when supplied.
 - Add a query/cache provider, query keys, stale policy, route-entry refresh, explicit refresh, and stale focus/online refetch.
 - Add mutation helpers that update returned books and invalidate affected book lists, detail, loans, and dashboard data.
 - Add reusable API mocks and builders for every route and documented error family.
 
 ## Acceptance criteria
 
-- Tests cover `403`, `404`, `409`, `422`, `502`, `504`, network failure, timeout, invalid JSON, unexpected `5xx`, and
-  `204` without attempting to parse an empty body.
+- Tests cover `403`, `404`, `409`, both `422` detail shapes, backup `500`, `502`, `504`, network failure, timeout, invalid
+  JSON, unexpected `5xx`, a binary backup success, and `204` without attempting to parse an empty body.
+- Backup success is a non-empty `application/sql` blob. Missing or malformed filename headers produce safe metadata for
+  a fallback filename, while a JSON generation `500` is handled as an error and never as binary success.
 - Retry rules never retry validation, authentication, or unsafe mutations automatically.
 - Aborted or stale requests cannot overwrite newer route or form state.
-- Logs and errors contain no request headers, tokens, borrower names, notes, reviews, ISBN drafts, or full bodies.
+- Logs and errors contain no request headers, tokens, borrower names, notes, reviews, ISBN drafts, backup contents, or
+  full bodies.
 - Query invalidation matches the mutation matrix in `docs/PLAN.md` section 7.5.
 - A contract smoke test passes against a representative API, and drift is fixed in the owning system or recorded as an
   explicit blocker.

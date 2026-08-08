@@ -30,6 +30,12 @@ The following decisions remove ambiguities in the source documents:
 - The MVP supports ISBN-10 and ISBN-13 barcodes only. UPC support is deferred.
 - A failed, timed-out, or unsuccessful metadata lookup always permits manual entry.
 - API field `acquisition_source` represents the product requirement's purchase location.
+- The frontend validates ISBN-10 check digits before lookup or creation because the backend currently validates only
+  ISBN-13 check digits after normalization.
+- The frontend sends date-only values as `YYYY-MM-DD` and timestamps as normalized UTC ISO 8601 strings. The API stores
+  temporal fields as unvalidated strings, and malformed loan timestamps can later break borrowing-statistics requests.
+- The UI prevents soft-deleting an on-loan book. The backend permits it but leaves the active loan open and requires the
+  book to be restored before it can be checked in.
 - Search, filtering, and the other future enhancements in `PRODUCT_REQS.md` remain outside the MVP. The active list may
   still be browsed in the title order returned by the API.
 - The browser will be given the shared Bearer token at runtime. The token must never be committed, emitted into logs, or
@@ -80,6 +86,7 @@ Completing this plan must let a user:
 9. Mark an active book as read and later update its completion date, rating, and review.
 10. Soft-delete a book, keep its history, view deleted books, and restore one.
 11. Understand and recover from validation, authentication, conflict, lookup, connectivity, and empty-data states.
+12. Download an authenticated SQL backup containing the complete library and loan history.
 
 ## 6. Target information architecture
 
@@ -94,6 +101,7 @@ Use client-side routing with these user-facing destinations:
 - `/checkin` — select and return an on-loan book.
 - `/loans` — active and returned loan history.
 - `/admin/deleted` — soft-deleted books and restore actions.
+- `/admin/backup` — authenticated full-library SQL backup.
 - `/settings/connection` — runtime API URL and Bearer-token configuration.
 - A not-found route with a path back into the application.
 
@@ -131,7 +139,16 @@ concrete cross-route state requirement emerges.
 - Model nullable fields, dates, timestamps, enums, and no-content responses exactly.
 - Keep API transport models separate from form values when HTML inputs require different representations.
 - Treat the API as the source of truth for ISBN normalization, persistence, lifecycle transitions, loan records, and
-  dashboard calculations.
+  dashboard calculations, while compensating for the documented ISBN-10 and temporal-string validation gaps.
+- Model collection responses as `{ items, total }`. The books API is title-ordered and the loans API is ordered by
+  `checked_out_at` descending; neither endpoint currently supports pagination, and loans do not support filtering.
+- Send date values as `YYYY-MM-DD` and timestamps as normalized UTC ISO 8601 strings. Keep `publication_date` as an API
+  string because lookup may return a year only; use `YYYY-MM-DD` for user-entered purchase dates without coercing
+  year-only lookup metadata into a full date.
+- Represent `BookRead` borrowing statistics (`times_borrowed`, `last_borrowed_at`, and `average_loan_days`) and the
+  exact loan audit names (`created_date` and `last_updated_date`) without renaming them in transport types.
+- Serialize only documented request fields because backend request models silently ignore unknown properties. Do not
+  treat `updated_date` as a concurrency token because generic `PATCH` currently does not update it.
 - Preserve unknown response fields and fail safely if a future enum value is returned. The UI should display a neutral
   fallback rather than crash.
 
@@ -162,14 +179,13 @@ user-authentication or server-side token-injection design supersedes this model.
 
 ### 7.4 Browser connectivity
 
-The backend currently documents no CORS support. Production readiness therefore requires one of the following to be
-supplied outside the frontend bundle:
+The backend permits the default local Vite origins and supports deployed cross-origin frontends through its
+`CORS_ORIGINS` configuration. Production must configure the frontend's exact origin, including scheme, hostname, and
+port, with no path or trailing slash. Cross-origin requests may send `Authorization` and `Content-Type`, and frontend
+JavaScript may read `Content-Disposition`; cookies and credentialed CORS are not part of the contract.
 
-- Backend CORS restricted to the deployed frontend origin, or
-- A deployment-managed same-origin reverse proxy.
-
-The selected arrangement must be tested with the production tarball. The Vite development server may proxy API traffic
-for local convenience, but a development proxy must not conceal an unresolved production connectivity requirement.
+A deployment-managed same-origin reverse proxy remains optional. Whichever arrangement is selected must be tested with
+the production tarball, including preflight behavior and authenticated backup filename access.
 
 ### 7.5 Requests, server state, and refresh
 
@@ -197,30 +213,41 @@ detail:
 - `403` — access rejected; guide the user to connection settings.
 - `404` — resource unavailable; refresh stale lists and offer safe navigation.
 - `409` — state changed or action is invalid; show the server message and refetch the affected resource.
-- `422` — map FastAPI `detail[].loc` entries to fields and provide an error summary.
+- `422` — map FastAPI `detail[].loc` entries to fields and provide an error summary; also support string `detail`, which
+  the ISBN lookup uses for an explicitly rejected ISBN.
+- `500` from backup — explain that backup generation failed and preserve the current page for retry.
 - `502` and `504` during lookup — explain provider failure and offer retry or manual entry.
 - Network, timeout, invalid JSON, and unexpected `5xx` — show a retryable generic error without leaking request headers
   or private form data.
 
 Handle `204 No Content` without parsing JSON. Treat lookup response `found: false` as a normal manual-entry path, not an
-error.
+error. The backup success response is a SQL blob rather than JSON and must use its exposed `Content-Disposition`
+filename when safely parseable.
 
 ### 7.7 Forms and validation
 
 Client validation exists for timely, accessible feedback; backend validation remains authoritative.
 
-- Require title and authors and enforce documented 255-character limits.
+- Require non-blank title and authors and enforce documented 255-character limits even though the API currently accepts
+  empty strings.
 - Validate pages as a positive integer and rating as an integer from 1 through 5.
-- Present category, shelf, and status using API enum controls with `unknown` support.
-- Use date or date-time controls matching each documented API field.
+- Validate ISBN-10 and ISBN-13 check digits for immediate feedback; still send accepted ISBNs to the API for canonical
+  normalization and authoritative persistence validation.
+- Require a non-blank borrower of at most 255 characters even though the API currently accepts whitespace-only values.
+- Present category, shelf, and status using API enum controls with `unknown` support. A metadata status control may
+  expose non-loan states, but it must not use `available` or `on_loan` to simulate check-in or checkout.
+- Use date or date-time controls matching each documented API field and serialize normalized values as specified in
+  section 7.2; do not pass arbitrary temporal strings through to the API.
 - Convert blank optional values to the API's expected `null` or omitted value.
 - Keep tags editable as individual strings and define deterministic whitespace and duplicate handling in the
   implementation ticket.
-- Never expose direct editing of `borrower`, `datetime_loaned_out`, or `on_loan` status in the generic metadata form.
+- Never expose direct editing of `borrower` or `datetime_loaned_out` in the generic metadata form.
 - Preserve unsaved user input when a recoverable request fails.
 
-Before form implementation, verify API behavior for clearing nullable values, publication dates containing only a year,
-purchase-price precision/currency, and date chronology. Any unresolved difference must be captured in that ticket.
+Allow explicit `null` only for documented nullable fields. Never send `null` for `title`, `authors`, `category`, `shelf`,
+`is_read`, or `status`, because the request schema accepts it but the database commit can fail. Before form
+implementation, verify purchase-price precision/currency and duplicate-ISBN behavior; any unresolved difference must be
+captured in that ticket.
 
 ### 7.8 UI, responsiveness, and accessibility
 
@@ -263,6 +290,7 @@ Use only the dedicated endpoint for each state transition:
 - Checkout: `POST /books/{id}/checkout`.
 - Check-in: `POST /books/{id}/checkin`.
 - Mark read: `POST /books/{id}/mark-read`.
+- Full SQL backup: `GET /backup`.
 
 Generic `PATCH` must not simulate checkout, check-in, restore, deletion, or the initial mark-read action. This protects
 the API's loan history and lifecycle invariants.
@@ -310,6 +338,7 @@ surface becomes too large, but its acceptance criteria must not be lost.
 - Public reachability checking through `/health`.
 - Credential verification through `/protected`.
 - Typed client for all documented routes.
+- Authenticated blob-download support for `/backup`, including safe `Content-Disposition` filename parsing.
 - Normalized error model, request timeout policy, and safe retry rules.
 - Query/cache provider, query keys, mutation invalidation helpers, and offline/focus behavior.
 - API mocks and builders for success and every documented error family.
@@ -319,7 +348,8 @@ surface becomes too large, but its acceptance criteria must not be lost.
 
 - No secret appears in the built assets, source maps, test snapshots, URLs, or logs.
 - Protected requests consistently include the runtime token.
-- `403`, `404`, `409`, `422`, `502`, `504`, network failures, and `204` are covered by client tests.
+- `403`, `404`, `409`, `422`, backup `500`, `502`, `504`, network failures, binary success responses, and `204` are
+  covered by client tests.
 - Changing runtime API URL does not require rebuilding the frontend.
 - Health and credential checks produce distinct, actionable connection states.
 - A contract smoke test succeeds against a representative running API.
@@ -370,7 +400,9 @@ surface becomes too large, but its acceptance criteria must not be lost.
 **Acceptance criteria:**
 
 - ISBN-10, ISBN-13, spaces, and hyphens are sent to the API without frontend assumptions about normalization.
-- `found: false`, `502`, and `504` retain the ISBN and open editable manual entry.
+- Invalid ISBN-10 check digits are rejected by the frontend before the API's documented normalization gap can accept
+  them.
+- `found: false`, `502`, `504`, and unexpected lookup failures retain the ISBN and open editable manual entry.
 - Every imported field can be changed before save.
 - No lookup creates a record; only explicit confirmation calls `POST /books`.
 - Backend validation maps to the correct fields while preserving input.
@@ -425,6 +457,8 @@ surface becomes too large, but its acceptance criteria must not be lost.
 
 - On-loan and deleted books cannot be selected.
 - The API default is used when checkout time is omitted.
+- Submitted borrower text is non-blank and at most 255 characters; submitted dates and timestamps use normalized
+  formats.
 - A `409` explains that the state changed, refreshes the book, and does not lose safe form input.
 - Success visibly changes the book to unavailable and records the borrower.
 - Generic book `PATCH` is never used for checkout.
@@ -442,6 +476,8 @@ surface becomes too large, but its acceptance criteria must not be lost.
 - Check-in page restricted to books with active loans.
 - Optional return timestamp with API-default behavior when omitted.
 - Active and returned loan-history presentation.
+- Loan history shown in API order (`checked_out_at` descending), with client-side active/returned views derived from
+  whether `returned_at` is null; the API currently provides no loan filters or pagination.
 - Client-side join from loan `book_id` to book title, with a safe fallback if the book is unavailable.
 - Due/overdue presentation derived from due and return dates.
 - Updated per-book and dashboard borrowing statistics after return.
@@ -453,6 +489,7 @@ surface becomes too large, but its acceptance criteria must not be lost.
 - A successful return displays the book as available and preserves the loan record.
 - Active and returned records are distinguishable without color alone.
 - Timezone/date behavior is tested around local-day boundaries.
+- Custom return timestamps are normalized UTC values so text ordering and borrowing-statistics parsing remain reliable.
 
 **Suggested ticket:** `FEAT-08 — Check-in and loan history`.
 
@@ -474,26 +511,33 @@ surface becomes too large, but its acceptance criteria must not be lost.
 
 - Soft-deleted books cannot be marked read.
 - The initial action uses `/mark-read`, including `{}` when all optional fields are omitted.
-- Later edits do not mutate loan-related fields.
+- Later edits do not mutate loan-related fields and may explicitly clear nullable completion date, rating, or review
+  values.
 - Rating validation is accessible and backend validation preserves input.
 - The UI does not offer "mark unread" because no coherent API operation is documented.
 
 **Suggested ticket:** `FEAT-09 — Reading completion, rating, and review`.
 
-### Workstream 9 — Metadata administration, soft delete, and restore
+### Workstream 9 — Metadata administration, lifecycle recovery, and backup
 
-**Goal:** Maintain the collection without discarding history.
+**Goal:** Maintain and safeguard the collection without discarding history.
 
 **API:** `PATCH /books/{id}`, `DELETE /books/{id}`,
-`GET /books?include_deleted=true`, `POST /books/{id}/restore`.
+`GET /books?include_deleted=true`, `POST /books/{id}/restore`, `GET /backup`.
 
 **Deliverables:**
 
 - Metadata edit form using the safe field boundaries in section 7.7.
 - Delete confirmation that explains soft deletion and historical preservation.
-- Deleted-books page derived from `include_deleted=true`.
+- Deleted-books page derived by requesting `include_deleted=true` and filtering the mixed active/deleted response on a
+  non-null `deletion_date`.
+- Deleted-book details loaded through `GET /books/{id}`, which remains available for soft-deleted records.
 - Restore action and return to active browsing.
 - Disabled lifecycle actions that the API disallows on deleted books.
+- Backup page/action that fetches the authenticated SQL attachment as a blob, uses the server-provided UTF-8 filename
+  when valid, triggers a browser download, and always revokes the temporary object URL.
+- Backup progress, generation-failure, connectivity, and retry states, with a warning that the file contains all active
+  and deleted books plus complete loan history.
 
 **Acceptance criteria:**
 
@@ -503,10 +547,11 @@ surface becomes too large, but its acceptance criteria must not be lost.
 - Deleted records retain reading and borrowing information when viewed.
 - Restore returns the record to the active collection.
 - Repeated/stale delete and restore operations handle `404` or `409` by refreshing.
-- Behavior for deleting an actively loaned book is verified with the backend before release and either prevented in the
-  UI or explicitly supported.
+- On-loan books cannot be deleted through the UI because deletion would strand the active loan until restoration.
+- A successful backup downloads a non-empty SQL attachment with a sensible fallback filename; a `500` does not create a
+  bogus download.
 
-**Suggested ticket:** `FEAT-10 — Book editing, soft deletion, and restoration`.
+**Suggested ticket:** `FEAT-10 — Book administration, restoration, and backup`.
 
 ### Workstream 10 — Read-only dashboard
 
@@ -552,6 +597,7 @@ surface becomes too large, but its acceptance criteria must not be lost.
   - Checkout and check in.
   - Mark read and edit review.
   - Delete and restore.
+  - Download a backup and recover from backup-generation failure.
   - View updated dashboard values.
 - Responsive and keyboard test checklist.
 - Meaningful coverage thresholds that fail CI on regression.
@@ -612,6 +658,7 @@ cleanup:
 - Empty library, no active loans, no returned loans, and no rated books.
 - Null optional metadata and future/unknown enum values.
 - Metadata lookup found nothing, failed, timed out, or returned partial data.
+- Backup generation failed, returned a malformed filename, or was interrupted during blob download.
 - Slow requests, duplicate clicks, cancellation, route changes, and stale responses.
 - Date-only values versus timestamps and local versus UTC display.
 - Camera unsupported, permission denied, stream interrupted, or no barcode found.
@@ -626,14 +673,11 @@ The following are not frontend implementations, but they block release if unreso
 ### Backend contract dependencies
 
 - Confirm exact OpenAPI types and nullability for every `BookRead` field.
-- Confirm nullable-field clearing semantics for `PATCH`.
-- Confirm accepted publication-date formats, especially year-only lookup results.
 - Confirm purchase-price currency, precision, and valid range.
-- Confirm date chronology validation for checkout, due, return, purchase, and completion dates.
-- Confirm behavior when deleting an actively loaned book.
-- Confirm whether repeated mark-read calls and later `PATCH` can clear a rating or review.
 - Confirm duplicate ISBN behavior.
-- Configure approved CORS origins if production does not use a same-origin proxy.
+- Configure the deployed frontend's exact origin in backend `CORS_ORIGINS` when using cross-origin browser access.
+- Track backend hardening for temporal validation, ISBN-10 check-digit validation, required-field null handling, and
+  `updated_date` maintenance; the frontend mitigations in this plan do not repair the backend contract.
 
 ### Deployment repository dependencies
 
@@ -653,6 +697,7 @@ The following are not frontend implementations, but they block release if unreso
 - Never pass the token in a query string.
 - Redact `Authorization` and runtime connection state from logs and errors.
 - Do not log borrower names, notes, reviews, or full request/response bodies by default.
+- Treat downloaded SQL backups as sensitive data; do not inspect, log, cache, or upload their contents.
 - Use HTTPS for production frontend and API traffic.
 - Avoid rendering API-provided text as HTML.
 - Keep dependencies locked and review production dependency changes.
@@ -688,6 +733,7 @@ The product requirements are covered as follows:
 - Check-in, return date, history, and borrowing statistics: Workstream 7.
 - Mark read, completion date, rating, review, and later edits: Workstream 8.
 - Soft deletion, excluded active browsing, history preservation, and restore: Workstream 9.
+- Full authenticated SQL backup: Workstreams 2 and 9.
 - Dashboard collection, borrowing, and reading metrics: Workstream 10.
 - Minimal scanning interaction, fast lookup feedback, editable imports, failure fallback, and reversibility: Workstreams
   4, 5, and 9.
@@ -703,7 +749,7 @@ The product requirements are covered as follows:
 - Multiple libraries or locations.
 - Multiple copies of one title.
 - Reading lists and wish lists.
-- Import/export.
+- Import and export formats other than the API-provided full SQL backup.
 - Catalog search, filters, custom sorting, and backend pagination.
 - Cover image management.
 - Overdue notifications.
@@ -739,8 +785,9 @@ Out-of-scope items may be documented as follow-ups but must not expand MVP ticke
 
 - Running OpenAPI and frontend contract types agree.
 - Protected requests work with runtime credentials.
-- Production CORS or same-origin proxy behavior is verified.
+- Production CORS or same-origin proxy behavior is verified, including exposed backup response headers.
 - All dedicated lifecycle endpoints preserve expected backend state.
+- Authenticated backup downloads a valid SQL attachment and backup failures remain recoverable.
 - Dashboard and caches reflect mutations after refresh/invalidation.
 
 ### Artifact gate
@@ -757,7 +804,8 @@ Out-of-scope items may be documented as follow-ups but must not expand MVP ticke
   rollback requirements.
 - Release/version information is visible for support.
 - Known limitations, browser support, and accepted shared-token risk are documented.
-- A smoke-test checklist covers connection, dashboard, list, create, checkout, check-in, mark-read, delete, and restore.
+- A smoke-test checklist covers connection, dashboard, list, create, checkout, check-in, mark-read, delete, restore, and
+  backup.
 
 ## 17. Definition of done
 

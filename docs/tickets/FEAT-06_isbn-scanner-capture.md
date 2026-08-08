@@ -17,6 +17,8 @@ FEAT-05.
 - Support cancellation, camera switching when available, stream interruption, and reliable media-track cleanup.
 - Add dedicated keyboard-like scanner capture with terminator handling and timing/buffering rules.
 - Suppress repeated frames/scans and hand one captured ISBN to the existing editable lookup flow.
+- Route captured values through FEAT-05 checksum validation so an invalid ISBN-10 is not accepted through the backend's
+  documented check-digit gap.
 - Keep typed/manual entry visible and usable in every scanner state.
 - Explain unsupported browsers, insecure contexts, denied permission, unreadable codes, and timeout accessibly.
 
@@ -24,6 +26,7 @@ FEAT-05.
 
 - Media tracks stop after success, cancellation, navigation, stream failure, and unmount.
 - Scanning can initiate lookup but can never create a book without review and confirmation.
+- Invalid captured ISBN check digits produce an accessible correction/manual-entry path and do not start lookup.
 - Repeated frames or scanner bursts cannot trigger duplicate lookups or creates.
 - Hardware-scanner capture does not intercept ordinary typing in forms or elsewhere in the app.
 - Parser and state-machine unit tests cover duplicate characters, trailing Enter, cancellation, timeouts, and stale results.

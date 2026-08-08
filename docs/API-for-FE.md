@@ -32,67 +32,210 @@ Protected endpoints use these HTTP status codes:
 | `404`  | Resource not found        | Book does not exist; soft-deleted book on operations that exclude deleted books                       |
 | `409`  | State conflict            | Restoring an active book; checking out an already-loaned book; checking in a book with no active loan |
 | `422`  | Validation failure        | Invalid request body, invalid ISBN, invalid rating, invalid pages, missing required fields            |
+| `500`  | Backup generation failure | The database SQL dump could not be generated                                                           |
 | `502`  | Metadata provider failure | ISBN metadata provider returned an error                                                              |
 | `504`  | Metadata provider timeout | ISBN metadata provider timed out                                                                      |
 
 FastAPI validation errors (`422`) use the standard FastAPI shape:
 
 {
-"detail": [
-{
-"type": "string_too_long",
-"loc": ["body", "title"],
-"msg": "String should have at most 255 characters",
-"input": "..."
+  "detail": [
+    {
+      "type": "string_too_long",
+      "loc": ["body", "title"],
+      "msg": "String should have at most 255 characters",
+      "input": "..."
+    }
+  ]
 }
-]
-}
+
+Request models currently ignore unknown JSON properties. Date and timestamp fields are plain strings: the API does
+not validate their format, timezone, ordering, or calendar correctness. Frontend clients should nevertheless send
+dates as `YYYY-MM-DD` and UTC timestamps as ISO 8601 values such as `2026-08-08T10:00:00.000Z`, because borrowing
+statistics parse checkout and return timestamps as datetimes. Malformed or incompatible loan timestamps can be
+stored and then cause an unhandled `500` when the API calculates borrowing statistics.
 
 ### Public routes
 
 * `GET /health`
+* `GET /docs`
+* `GET /docs/oauth2-redirect`
+* `GET /redoc`
+* `GET /openapi.json`
 
 ### Protected routes
 
-All other routes require authentication, including:
+All business routes other than `GET /health` require authentication, including:
 
 * `/books`
 * `/loans`
 * `/dashboard`
 * `/protected`
+* `/backup`
 
-CORS is not currently configured. A browser frontend running on another origin will need a proxy or backend CORS configuration.
+The documentation and OpenAPI routes are FastAPI-generated and are currently public.
+
+## CORS
+
+The backend allows browser requests from these local Vite development origins by default:
+
+* `http://localhost:5173`
+* `http://127.0.0.1:5173`
+
+For a deployed frontend, set `CORS_ORIGINS` to a JSON array containing its exact origin, for example:
+
+```dotenv
+CORS_ORIGINS=["https://library.john-shade.spir.es"]
+```
+
+Origins must match exactly by scheme, hostname, and port. Do not include a path or trailing slash.
+
+CORS is enforced by browsers and does not replace API authentication. Protected requests still require
+`Authorization: Bearer <API_SECRET_KEY>`. The backend middleware handles browser preflight requests; frontend code
+should not send `OPTIONS` manually.
+
+Cross-origin requests may send the `Authorization` and `Content-Type` headers. The backend exposes
+`Content-Disposition` to frontend JavaScript so download filenames can be read. A same-origin reverse proxy remains
+an optional deployment architecture, but is not required for cross-origin browser access.
+
+All HTTP methods are allowed for configured origins. Credentialed CORS requests are disabled, so browser cookies are
+not part of the API authentication contract. A disallowed origin can still reach the server, but browser JavaScript
+cannot read the response because the API omits the CORS allow-origin header.
 
 ---
 
 # API routes
 
-| Method   | Path                        | Auth | Success                    | Purpose                        |
-| -------- | --------------------------- | ---- | -------------------------- | ------------------------------ |
-| `GET`    | `/health`                   | No   | `200`                      | Health/liveness check          |
-| `GET`    | `/protected`                | Yes  | `200`                      | Authentication smoke check     |
-| `GET`    | `/books`                    | Yes  | `200` `BookList`           | List books                     |
-| `GET`    | `/books/lookup?isbn={isbn}` | Yes  | `200` `BookLookupResponse` | Look up external ISBN metadata |
-| `GET`    | `/books/{id}`               | Yes  | `200` `BookRead`           | Get a book                     |
-| `POST`   | `/books`                    | Yes  | `201` `BookRead`           | Create a book                  |
-| `PATCH`  | `/books/{id}`               | Yes  | `200` `BookRead`           | Partially update a book        |
-| `DELETE` | `/books/{id}`               | Yes  | `204`                      | Soft-delete a book             |
-| `POST`   | `/books/{id}/restore`       | Yes  | `200` `BookRead`           | Restore a soft-deleted book    |
-| `POST`   | `/books/{id}/checkout`      | Yes  | `200` `BookRead`           | Check a book out               |
-| `POST`   | `/books/{id}/checkin`       | Yes  | `200` `BookRead`           | Check a book in                |
-| `POST`   | `/books/{id}/mark-read`     | Yes  | `200` `BookRead`           | Mark a book as read            |
-| `GET`    | `/loans`                    | Yes  | `200` `LoanList`           | List loan history              |
-| `GET`    | `/dashboard`                | Yes  | `200` `DashboardSummary`   | Dashboard statistics           |
+| Method   | Path                        | Auth | Success                    | Purpose                           |
+| -------- | --------------------------- | ---- |----------------------------|-----------------------------------|
+| `GET`    | `/health`                   | No   | `200`                      | Health/liveness check             |
+| `GET`    | `/protected`                | Yes  | `200`                      | Authentication smoke check        |
+| `GET`    | `/books`                    | Yes  | `200` `BookList`           | List books                        |
+| `GET`    | `/books/lookup?isbn={isbn}` | Yes  | `200` `BookLookupResponse` | Look up external ISBN metadata    |
+| `GET`    | `/books/{id}`               | Yes  | `200` `BookRead`           | Get a book                        |
+| `POST`   | `/books`                    | Yes  | `201` `BookRead`           | Create a book                     |
+| `PATCH`  | `/books/{id}`               | Yes  | `200` `BookRead`           | Partially update a book           |
+| `DELETE` | `/books/{id}`               | Yes  | `204`                      | Soft-delete a book                |
+| `POST`   | `/books/{id}/restore`       | Yes  | `200` `BookRead`           | Restore a soft-deleted book       |
+| `POST`   | `/books/{id}/checkout`      | Yes  | `200` `BookRead`           | Check a book out                  |
+| `POST`   | `/books/{id}/checkin`       | Yes  | `200` `BookRead`           | Check a book in                   |
+| `POST`   | `/books/{id}/mark-read`     | Yes  | `200` `BookRead`           | Mark a book as read               |
+| `GET`    | `/loans`                    | Yes  | `200` `LoanList`           | List loan history                 |
+| `GET`    | `/dashboard`                | Yes  | `200` `DashboardSummary`   | Dashboard statistics              |
+| `GET`    | `/backup`                   | Yes  | `200` SQL attachment       | Download a full SQLite SQL backup |
+
+FastAPI also serves the public, generated `GET /docs`, `GET /docs/oauth2-redirect`, `GET /redoc`, and
+`GET /openapi.json` routes.
+
+There are no WebSocket, Server-Sent Events (SSE), subscription, or push-notification endpoints. `/books` and `/loans`
+return complete result sets without pagination. The backup download is the only streaming HTTP response, and it is a
+finite SQL attachment rather than a realtime event stream.
+
+## Basic responses
+
+### `GET /health`
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### `GET /protected`
+
+```json
+{
+  "message": "You are authenticated"
+}
+```
 
 ---
 
+# Backup
+
+## `GET /backup`
+
+Downloads a complete SQL dump of the live SQLite database.
+
+The endpoint requires the same Bearer authentication as other protected routes.
+
+The response is a SQL text attachment, not JSON.
+
+The dump includes all database records, including soft-deleted books and historical loans.
+
+### Response
+
+**200 OK**
+
+Headers include:
+
+```http
+Content-Type: application/sql
+Content-Disposition: attachment;
+ filename="Shade Library - 2026-08-08_13-40-00_Z.sql";
+ filename*=UTF-8''Shade%20Library%20-%202026-08-08_13-40-00_Z.sql
+```
+
+The `Content-Disposition` value is wrapped above for readability; the response sends it as one header value.
+
+Backup filenames use `Shade Library - YYYY-mm-dd_HH-MM-SS_Z.sql`. The timestamp is UTC, and the `Z` in the filename
+is literal.
+
+If the dump cannot be generated, the endpoint returns:
+
+```http
+500 Internal Server Error
+```
+
+```json
+{
+  "detail": "Failed to generate database backup"
+}
+```
+
+### Browser download flow
+
+Use an authenticated `fetch`, convert the response with `response.blob()`, create an object URL, and trigger a
+programmatic `<a download>`:
+
+```javascript
+const response = await fetch(`${apiBase}/backup`, {
+  headers: { Authorization: `Bearer ${apiSecretKey}` },
+});
+
+if (!response.ok) {
+  throw new Error(`Backup failed with status ${response.status}`);
+}
+
+const blob = await response.blob();
+const objectUrl = URL.createObjectURL(blob);
+const disposition = response.headers.get("Content-Disposition") ?? "";
+const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/)?.[1];
+const link = document.createElement("a");
+link.href = objectUrl;
+link.download = encodedFilename
+  ? decodeURIComponent(encodedFilename)
+  : "Shade Library backup.sql";
+document.body.appendChild(link);
+link.click();
+link.remove();
+URL.revokeObjectURL(objectUrl);
+```
+
+The example copies the UTF-8 filename from `Content-Disposition` to the anchor's `download` attribute. Direct
+navigation to `/backup` is not supported because a browser address-bar request cannot attach the required Bearer
+token.
+
 # Common error responses
 
-The API uses FastAPI's standard error shape:
+Explicit API errors use `detail` as a string:
 
 {
 "detail": "Human-readable error message"
 }
+
+Framework request-validation errors use the `detail` array shown in the Auth section. The invalid ISBN lookup is a
+special case: it returns `422` with string `detail` because the route raises that error explicitly.
 
 | Status | Meaning                                                                             |
 | ------ | ----------------------------------------------------------------------------------- |
@@ -100,6 +243,7 @@ The API uses FastAPI's standard error shape:
 | `404`  | Requested book does not exist, or operation is not permitted on a soft-deleted book |
 | `409`  | Valid resource but requested state transition is invalid                            |
 | `422`  | Request validation failed                                                           |
+| `500`  | Database backup generation failed                                                   |
 | `502`  | External metadata provider failed                                                   |
 | `504`  | External metadata provider timed out                                                |
 
@@ -157,9 +301,14 @@ Soft-deleted books:
 * are included when `include_deleted=true`
 * remain accessible through `GET /books/{id}`
 * can be restored
-* cannot be checked out
-* cannot be marked as read
+* are rejected by the dedicated checkout, check-in, and mark-read endpoints
 * retain their loan and reading data
+
+Generic `PATCH` is still allowed for a soft-deleted book and can mutate fields such as `status`, `borrower`, and
+`is_read` without creating or updating a loan record.
+
+Deleting an on-loan book leaves its active loan open. The book must be restored before the check-in endpoint will
+complete that loan.
 
 ---
 
@@ -202,6 +351,9 @@ Returns a single book.
 
 The UUID in `{id}` is the book's primary key.
 
+Books created by the API receive UUID strings, but the path parameter itself accepts any string and returns `404` when
+no matching record exists.
+
 Unlike the normal book list, this endpoint can return a soft-deleted book.
 
 Returns **404** if the book does not exist.
@@ -222,6 +374,9 @@ Required:
 * `authors`
 
 All other fields are optional or have defaults.
+
+`title` and `authors` are required strings with a maximum length of 255 characters. They do not currently have a
+minimum-length constraint, so the API accepts empty strings. Unknown request properties are ignored.
 
 ### Example
 
@@ -252,13 +407,20 @@ All fields in `BookUpdate` are optional.
 
 Returns **404** if the book does not exist.
 
+This endpoint currently also permits updates to soft-deleted books.
+
 `PATCH` can modify loan-related fields such as:
 
 * `status`
 * `borrower`
 * `datetime_loaned_out`
 
-However, frontend clients should use the dedicated checkout/check-in endpoints for loan operations so that the corresponding `loans` records remain synchronized.
+However, frontend clients should use the dedicated checkout/check-in endpoints for loan operations so that the
+corresponding `loans` records remain synchronized.
+
+Generic `PATCH` does not update `updated_date`. Although the request schema accepts explicit `null` for every field,
+do not send `null` for database-required fields such as `title`, `authors`, `category`, `shelf`, `is_read`, or
+`status`; doing so can produce an unhandled server error during the database commit.
 
 ---
 
@@ -306,6 +468,10 @@ Looks up external metadata for an ISBN.
 
 This endpoint **does not create or modify a book**.
 
+The current implementation always uses Open Library with a three-second request timeout. Although metadata provider,
+timeout, and API-key settings are declared in backend configuration, they are not currently connected to this route
+and do not change its behavior.
+
 Accepted input:
 
 * ISBN-10
@@ -321,7 +487,7 @@ ISBNs are normalized to ISBN-13 when possible.
 | ---------------------------------- | -------- | ------- |
 | Scan barcode / ISBN with camera    | **Yes**  | No      |
 | Read ISBN from scanner input       | **Yes**  | No      |
-| Normalize/validate ISBN            | No       | **Yes** |
+| Normalize ISBN / validate ISBN-13  | No       | **Yes** |
 | Look up ISBN metadata              | No       | **Yes** |
 | Present/edit lookup draft          | **Yes**  | No      |
 | Create book record                 | No       | **Yes** |
@@ -331,7 +497,9 @@ ISBNs are normalized to ISBN-13 when possible.
 | Calculate borrowing statistics     | No       | **Yes** |
 | Calculate dashboard statistics     | No       | **Yes** |
 
-The frontend is responsible for capturing input and presenting the library UI. The API is the source of truth for validation, persistence, loan state, borrowing statistics, and dashboard calculations.
+The frontend is responsible for capturing input and presenting the library UI. The API is the source of truth for its
+implemented request validation, persistence, loan state, borrowing statistics, and dashboard calculations. The
+temporal-string and ISBN-10 limitations documented below still apply.
 
 For ISBN-based book entry, the intended ownership is:
 
@@ -341,7 +509,7 @@ v
 FE extracts ISBN
 |
 v
-API validates / normalizes ISBN
+API normalizes ISBN and validates ISBN-13
 |
 v
 API performs metadata lookup
@@ -410,11 +578,14 @@ The frontend should allow the user to continue with manual entry.
 
 ## Lookup errors
 
-| Status | Meaning                   |
-| ------ | ------------------------- |
-| `422`  | Invalid ISBN              |
-| `502`  | Metadata provider error   |
-| `504`  | Metadata provider timeout |
+| Status | Meaning                                               |
+| ------ | ----------------------------------------------------- |
+| `422`  | Invalid ISBN                                          |
+| `502`  | Provider transport error or provider `5xx` response |
+| `504`  | Metadata provider timeout                             |
+
+Unexpected non-`404` provider `4xx` responses and malformed provider JSON are not normalized to `502` by the current
+implementation and can result in an unhandled `500`.
 
 ---
 
@@ -439,7 +610,12 @@ The same ISBN normalization rules apply to:
 * Hyphens and spaces are removed.
 * Stored ISBN is normalized to ISBN-13.
 * Invalid ISBNs return **422**.
-* Blank ISBN values are treated as unset and stored as `null`.
+* Blank ISBN values in `POST /books` and `PATCH /books/{id}` are treated as unset and stored as `null`.
+* A blank `isbn` query on `GET /books/lookup` is invalid and returns `422`.
+
+Current limitation: ISBN-13 check digits are validated, but the ISBN-10 check digit is not. A 10-character value with
+nine numeric leading characters is converted using those first nine characters even when its final check digit is
+wrong. Frontend code should not rely on the API to reject an invalid ISBN-10 check digit.
 
 Example:
 
@@ -472,7 +648,11 @@ Checks a book out to a borrower and creates an active `Loan` record.
 
 Only `borrower` is required.
 
+`borrower` must contain between 1 and 255 characters. Whitespace-only values are not currently rejected.
+
 If `checked_out_at` is omitted, the API uses the current UTC timestamp.
+
+`checked_out_at`, `due_at`, and `notes` are nullable strings. Date and timestamp formats are not validated.
 
 ### Success
 
@@ -497,7 +677,7 @@ A corresponding `Loan` is created with `returned_at=null`.
 
 **409**
 
-Book is already checked out.
+The API returns this conflict when either the book's `status` is `on_loan` or an active loan record already exists:
 
 {
 "detail": "Book is already checked out"
@@ -513,7 +693,7 @@ The frontend should disable or hide the checkout action when a book is already o
 
 Returns a book.
 
-The request body is optional.
+The entire request body is optional; no body, `{}`, and `null` are accepted.
 
 ### Optional request body
 
@@ -522,6 +702,8 @@ The request body is optional.
 }
 
 If `returned_at` is omitted, the API uses the current UTC timestamp.
+
+An explicit `null` also uses the current UTC timestamp. The timestamp format is not validated.
 
 ### What happens
 
@@ -545,7 +727,8 @@ Book does not exist or is soft-deleted.
 
 **409**
 
-Book is not currently checked out:
+Check-in is based on the existence of an active loan record, not solely on the book's `status`. If no active loan
+exists, the API returns:
 
 {
 "detail": "Book is not checked out"
@@ -559,7 +742,8 @@ Book is not currently checked out:
 
 Returns all loan records, including active and returned loans.
 
-Loans are ordered by `checked_out_at` descending.
+Loans are ordered by the stored `checked_out_at` text descending. This is chronological only when clients use one
+consistent, normalized timestamp format.
 
 There is currently no pagination or filtering.
 
@@ -588,7 +772,8 @@ An active loan has:
 
 A returned loan has a timestamp in `returned_at`.
 
-There are currently no separate loan create, update, or delete HTTP endpoints. Loan records are managed through book checkout/check-in operations.
+There are currently no separate loan create, update, or delete HTTP endpoints. Loan records are managed through book
+checkout/check-in operations.
 
 ---
 
@@ -617,6 +802,10 @@ The API:
 * otherwise sets `completion_date` to the current UTC date when it is not already set
 * applies `rating` when supplied
 * applies `review` when supplied
+
+Send at least an empty JSON object (`{}`). An omitted body returns `422`. Explicit `null` clears `completion_date`,
+`rating`, or `review`; if `completion_date` is explicitly cleared, it is not replaced with today's date during that
+request.
 
 Returns the updated `BookRead`.
 
@@ -807,7 +996,9 @@ average_loan_days
 
 `times_borrowed` is the number of loan records associated with the book.
 
-`last_borrowed_at` is the most recent `checked_out_at` value, or `null` if the book has never been borrowed.
+`last_borrowed_at` is the lexically greatest stored `checked_out_at` value, or `null` if the book has never been
+borrowed. It represents the chronologically most recent checkout only when timestamps use one consistent, normalized
+format.
 
 `average_loan_days` is calculated from returned loans only. Active loans are not included in the average.
 
@@ -848,7 +1039,7 @@ The frontend is responsible for:
 The API is responsible for:
 
 * authentication
-* ISBN validation and normalization
+* ISBN normalization and ISBN-13 validation
 * external metadata lookup
 * book persistence
 * soft deletion/restoration
@@ -909,7 +1100,8 @@ FRONTEND                         API
 
 This document describes the current MVP API surface.
 
-The frontend should use dedicated endpoints for stateful operations rather than reproducing their database effects with generic `PATCH` requests:
+The frontend should use dedicated endpoints for stateful operations rather than reproducing their database effects
+with generic `PATCH` requests:
 
 * Use `/checkout` to check a book out.
 * Use `/checkin` to return a book.
@@ -917,6 +1109,9 @@ The frontend should use dedicated endpoints for stateful operations rather than 
 * Use `/restore` to restore a deleted book.
 * Use `/lookup` for external ISBN metadata.
 
-The API does not expose direct CRUD endpoints for `Loan`. Loan records are created by checkout and completed by check-in.
+The API does not expose direct CRUD endpoints for `Loan`. Loan records are created by checkout and completed by
+check-in.
 
-OpenAPI at `/docs` is the authoritative interactive representation of the running API. If this document and the running implementation diverge, the discrepancy should be corrected in the owning feature or documented as a follow-up rather than silently introducing new behavior.
+OpenAPI at `/docs` is the authoritative interactive representation of the running API. If this document and the
+running implementation diverge, the discrepancy should be corrected in the owning feature or documented as a
+follow-up rather than silently introducing new behavior.

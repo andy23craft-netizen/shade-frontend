@@ -15,11 +15,13 @@ FEAT-11.
 - Make root-boundary and route-level recovery behavior consistent for startup and post-load API failures.
 - Add a redacted diagnostic hook interface and optional production error reporting configured only at runtime.
 - Include safe correlation/request IDs in user-visible error details and diagnostics when supplied by the backend.
-- Enforce the privacy denylist: tokens, connection state, borrower names, notes, reviews, ISBN drafts, and full bodies.
+- Enforce the privacy denylist: tokens, connection state, borrower names, notes, reviews, ISBN drafts, SQL backup
+  contents, and full bodies. Never inspect, log, cache, upload, or send backup contents to diagnostics/error reporting.
 - Finalize supported browser/device documentation and scanner limitations.
 - Test representative long titles, authors, borrower names, tags, notes, and reviews.
 - Record large-library responsiveness and bundle-size results; fix material regressions or create explicit release blockers.
-- Document no-realtime behavior, accepted browser-token risk, and connectivity/security-header assumptions.
+- Document no-realtime behavior, accepted browser-token risk, exact-origin backend CORS or same-origin proxy
+  requirements, exposed backup filename headers, and security-header assumptions.
 
 ## Acceptance criteria
 
@@ -29,6 +31,8 @@ FEAT-11.
 - All routes are usable with keyboard only and at 320-pixel, tablet, and desktop widths.
 - Current supported evergreen desktop and mobile browsers pass the documented smoke matrix.
 - Long content wraps or truncates accessibly without hiding required actions.
+- Backup downloads leave no retained object URL or application cache entry, and diagnostics never inspect or report SQL
+  contents.
 - Bundle and large-library results are documented against the expectations set in FEAT-03.
 - No unresolved high-severity privacy, browser, performance, or operational issue remains untracked.
 - `make check` passes.
