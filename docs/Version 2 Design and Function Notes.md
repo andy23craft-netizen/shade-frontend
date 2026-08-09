@@ -5,6 +5,47 @@ tickets.
 
 **Status:** Design direction / ticket-planning document
 
+## Response from Senior Engineer
+
+Summarized Notes:
+* For each page, we want to specify how the features/data will be displayed to the user. How will the user interact with
+  the page?
+* I think it may be best to work the current tickets, and then revisit this document
+
+Detailed Notes
+* The first hundred lines are low-value and heavy on LLM fluff language.
+* The home page has 10 features. How do we plan to fit all that on a mobile screen?
+  * This question exists for every page recommended in this frontend
+* Are we tracking how many inches books occupy on each shelf? Tracking physical shelf capacity seems
+  unlikely
+* The library owner appreciates book metaphors, but representing bar charts with illustrations of
+  books seems an odd priority. Ensure this matches the desired aesthetic.
+* Section 6 seems to simply be saying that we want a "Book Details" page in addition to a page for listing all books
+* Section 7 seems to be adding little value over section 7.
+* It seems like the main feature being described here is custom collections. The data model will need to be augmented to
+  facilitate dynamic collections of books.
+  * A new DB table: `collections`.
+    * Columns: `collection_id`, `created_date`, `name`, `description`, `book_ids`, `last_updated_date`
+  * A new DB table: `wishlists`.
+    * Columns: `wishlist_id`, `created_date`, `name`, `description`, `last_updated_date`
+  * A new DB table: `wishlist_books`.
+    * Columns: `wishlist_id`, `created_date`, `book_id`, `priority`, `status`, `notes`, `url`
+* How does a "neglected" book differ from a book that hasn't been read recently? As currently is defined in section 16,
+  most unread books will meet the criteria. Do you want to track `last_discussed_date` for each book?
+* You have one idea where book quotes are shown according to the weather. You have another idea where the weather is
+  used to recommend titles. Keep these features separate
+* The DB will need to be augmented to track a "Library Journal". Is this separate from the git commit history?
+* "On this Day" feature isn't currently tracked in any page. Where should this live?
+* Seasonal themes & time-of-day behaviors are both nice UI-only features
+* Where do these elements appear in the UI? On which page(s)?
+* Section 22 seems to indicate a visual (not data) representation of the library
+* Section 27 has critical information, it's buried too deep in this doc.
+  * "Staff Picks" is just another category, no? Or maybe another "Discover" option?
+  * "Reading->Read" vs "Reading->Reading History". Arent' these the same thing?
+  * "Circulation->Checked Out" & "Circulation->Loan History" seems ripe for consolidating into a single page
+  * You may want more than one Wishlist
+
+
 ---
 
 # 1. V2 Vision
