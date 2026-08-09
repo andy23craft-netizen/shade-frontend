@@ -8,7 +8,8 @@ These should be considered before frontend tickets are finalized.
 
 ### 1.1 Collections
 
-**Purpose:** Support curated groups of books such as Exhibitions, Staff Picks, seasonal collections, or other custom groupings.
+**Purpose:** Support curated groups of books such as Exhibitions, Staff Picks, seasonal collections, or other custom
+groupings.
 
 **New table: `collections`**
 
@@ -20,7 +21,8 @@ These should be considered before frontend tickets are finalized.
 
 **Book membership:**
 
-The initial proposal used `book_ids` directly on the collection. Prefer a normalized join table if the backend conventions support it:
+The initial proposal used `book_ids` directly on the collection. Prefer a normalized join table if the backend
+conventions support it:
 
 `collection_books`
 
@@ -93,7 +95,8 @@ Examples:
 
 ### 1.3 Quotes
 
-If quotes are stored and associated with books, they should be represented in the backend rather than hardcoded into the frontend.
+If quotes are stored and associated with books, they should be represented in the backend rather than hardcoded into the
+frontend.
 
 **New table: `quotes`**
 
@@ -141,7 +144,8 @@ Potential events:
 * Collection created/updated
 * Wishlist item added/acquired
 
-The implementation should determine whether these events can be derived from existing tables or require a dedicated journal/event table.
+The implementation should determine whether these events can be derived from existing tables or require a dedicated
+journal/event table.
 
 **Frontend uses:**
 
@@ -397,7 +401,8 @@ This should be the main V2 replacement for the spreadsheet.
 **Display options:**
 
 * Grid - Covers and titles only
-* List -- Cards (picture Doordash, with the cover on the side, the title across the top, and the rest of the information listed below it, like ingredients)
+* List -- Cards (picture Doordash, with the cover on the side, the title across the top, and the rest of the information
+  listed below it, like ingredients)
 * Potentially compact catalog view -- ???
 
 Each book card should display enough information to identify the book without opening it.
@@ -595,7 +600,8 @@ The book detail page can visually incorporate:
 * Reading history
 * Loan history
 
-A more elaborate digital checkout card/signature treatment is optional and should not block the basic Book Details implementation.
+A more elaborate digital checkout card/signature treatment is optional and should not block the basic Book Details
+implementation.
 
 ---
 
