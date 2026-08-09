@@ -34,6 +34,8 @@ Detailed Notes
   most unread books will meet the criteria. Do you want to track `last_discussed_date` for each book?
 * You have one idea where book quotes are shown according to the weather. You have another idea where the weather is
   used to recommend titles. Keep these features separate
+  * A new DB table: `quotes`.
+    * Columns: `quote_id`, `created_date`, `book_id`, `quote_text`, `weather_options`, `last_displayed_date`
 * The DB will need to be augmented to track a "Library Journal". Is this separate from the git commit history?
 * "On this Day" feature isn't currently tracked in any page. Where should this live?
 * Seasonal themes & time-of-day behaviors are both nice UI-only features
