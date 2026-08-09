@@ -13,7 +13,7 @@ been satisfied.
 
 This plan reconciles:
 
-- `docs/PRODUCT_REQS.md` for user outcomes and MVP scope.
+- `PRODUCT_REQS.V1.md` for user outcomes and MVP scope.
 - `docs/API-for-FE.md` for the documented backend contract.
 - `docs/ToDo.md` for the requested stack, pages, and build artifacts.
 - The current repository for the implemented frontend baseline.
@@ -36,7 +36,7 @@ The following decisions remove ambiguities in the source documents:
   temporal fields as unvalidated strings, and malformed loan timestamps can later break borrowing-statistics requests.
 - The UI prevents soft-deleting an on-loan book. The backend permits it but leaves the active loan open and requires the
   book to be restored before it can be checked in.
-- Search, filtering, and the other future enhancements in `PRODUCT_REQS.md` remain outside the MVP. The active list may
+- Search, filtering, and the other future enhancements in `PRODUCT_REQS.V1.md` remain outside the MVP. The active list may
   still be browsed in the title order returned by the API.
 - The browser will be given the shared Bearer token at runtime. The token must never be committed, emitted into logs, or
   compiled into a Vite bundle.

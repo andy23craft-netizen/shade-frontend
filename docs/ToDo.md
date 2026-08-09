@@ -2,7 +2,7 @@
 
 * [ ] Download free IDE: WebStorm
   * [ ] Download plugins: Key Promoter X, Mario Progress Bar (or similar), plantuml4idea, Docker, HTML Tools, Live Edit,
-        Refactor-X, Editorconfig, ESLint, JavaScript and Typescript, JavaScript Debugger, JSHint, Node.js, Prettier,
+        Refactor-X, Editorconfig, ESLint, JavaScript and TypeScript, JavaScript Debugger, JSHint, Node.js, Prettier,
         React, Styled Components & Styled JSX, TSLint, Vite, Webpack, JSON, Markdown, Shell Script, YAML, CSS, PostCSS,
         Tailwind CSS
   * Note that I don't think any of these are mandatory. And many of these may already be installed.
@@ -30,5 +30,5 @@
 * [ ] Build out the CI/CD for this project
   * [ ] Package into a podman container for convenience
     * [ ] Follow patterns in `../shade-backend/ci/`
-    * [ ] For prod: Zip website deployable files into a tarball
-    * [ ] For dev: Build.into a Podman container. Another project will run this in Podman Compose with the BE.
+    * [ ] For prod: Zip the website's deployable files into a tarball
+    * [ ] For dev: Build a Podman container. Another project will run this in Podman Compose with the BE.
