@@ -1,6 +1,7 @@
 # Library V2 — UI Design & Feature Brief
 
-**Purpose:** Define the desired direction and scope for the V2 user interface so it can be broken into implementation tickets.
+**Purpose:** Define the desired direction and scope for the V2 user interface so it can be broken into implementation
+tickets.
 
 **Status:** Design direction / ticket-planning document
 
@@ -10,13 +11,16 @@
 
 V2 should turn the existing library data into a polished, intuitive, and personal web interface.
 
-The current system already contains the underlying library information: books, shelves, categories, reading status, ratings, notes, acquisitions, and loans. V2 should make that information significantly easier and more enjoyable to browse, understand, and interact with.
+The current system already contains the underlying library information: books, shelves, categories, reading status,
+ratings, notes, acquisitions, and loans. V2 should make that information significantly easier and more enjoyable to
+browse, understand, and interact with.
 
 The core principle is:
 
 > **V2 is the library's digital catalog made beautiful.**
 
-It should feel like a personal library rather than a generic CRUD application, while remaining fundamentally grounded in the existing data model.
+It should feel like a personal library rather than a generic CRUD application, while remaining fundamentally grounded in
+the existing data model.
 
 V2 should prioritize:
 
@@ -808,7 +812,8 @@ If a feature requires substantial new external data infrastructure, it should be
 
 # 29. V2 Ticketing Guidance
 
-The goal of ticket decomposition should be to create independently testable pieces of functionality rather than one giant "build the UI" ticket.
+The goal of ticket decomposition should be to create independently testable pieces of functionality rather than one
+giant "build the UI" ticket.
 
 Likely ticket areas include:
 
@@ -908,7 +913,8 @@ World → Oklahoma → Tulsa → Library → Room → Shelf → Book
 * Changing desk contents
 * Other subtle library "phenomena"
 
-The V2 implementation should not depend on these features, but its data model and component architecture should avoid unnecessarily preventing them later.
+The V2 implementation should not depend on these features, but its data model and component architecture should avoid
+unnecessarily preventing them later.
 
 ---
 
