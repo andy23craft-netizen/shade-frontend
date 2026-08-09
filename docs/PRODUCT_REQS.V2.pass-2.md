@@ -1,5 +1,38 @@
 # Library V2 — UI Design & Feature Priorities
 
+## 0. Response from Senior Engineer
+
+Summarized Notes:
+* For each page, we want to specify how the features/data will be displayed to the user. How will the user interact with
+  the page?
+* I think it may be best to work the current tickets, and then revisit this document
+
+Detailed Notes:
+* You may focus on the UI at this step, and then we can back into the required DB and BE changes to support the UI you 
+  want.
+* Are you writing into the Library journal manually? Or are you expecting a summary of the events made via this tool?
+* I think section 2 is more important than section 1 right meow
+* On the UI, you have:
+  ```
+  Collection
+  ├── All Books
+  ├── Shelves
+  └── Categories
+  ```
+  Does that mean that the Categories and the Shelves are on the same page? Or separate pages? What does it mean **in the
+  UI** for those two concepts to be "children of Collection"?
+* Do you want a special shelf/table for the staff picks? Or is a staff pick represented by a ribbon on that book or
+  something?
+* In the lower sections (e.g., § 4 Home) you list the data you want on that page. But how do you want those data shown 
+  to the user?
+* Maybe start with something concrete, like the weather-driven author quotes. Do you want those at the top of the
+  screen? At the bottom of the screen? In a certain place on the page that the user can scroll to/past? As a pop-up
+  modal/toast?
+* I like the effort that has gone into fleshing out the Collections and a few of the other features. This work will
+  likely come in very handy down the road when we get closer to implementation.
+
+---
+
 ## 1. Backend Work Required
 
 The following V2 features require new database models or meaningful backend changes.
@@ -206,7 +239,7 @@ Dashboard
 Library Journal
 ```
 
-This is a starting point for ticket planning, not a requirement that every item become a separate route.
+This is a starting point for ticket planning, not a requirement that every item becomes a separate route.
 
 ### Consolidations
 
