@@ -35,7 +35,7 @@ fields can be explicitly cleared; an explicitly cleared completion date is not r
 - Non-null completion dates serialize as `YYYY-MM-DD` because the backend does not validate temporal strings.
 - Rating validation and backend errors are accessible and preserve the draft.
 - Later edits send only intentionally changed, contract-supported reading fields.
-- The UI does not offer “mark unread.”
+- The UI does not offer "mark unread."
 - Reading state never changes checkout state.
 - Tests cover `422` for an omitted body or invalid rating, `404` for missing/deleted books, the required empty object,
   omitted optional values, explicit clears, rating bounds, cache invalidation, and retry.

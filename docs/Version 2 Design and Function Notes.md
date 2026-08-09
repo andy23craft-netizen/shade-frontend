@@ -583,7 +583,7 @@ This should primarily be built from existing event/date information.
 
 ---
 
-# 20. “On This Day”
+# 20. "On This Day"
 
 Use historical library dates to surface past activity.
 
@@ -933,11 +933,11 @@ V2 should succeed if a user can:
 
 The final goal is not simply:
 
-> **“A spreadsheet with a nicer interface.”**
+> **"A spreadsheet with a nicer interface."**
 
 It is:
 
-> **“A digital library built from the information that used to live in a spreadsheet.”**
+> **"A digital library built from the information that used to live in a spreadsheet."**
 
 V2 should establish the collection, visual language, and personality.
 

@@ -23,7 +23,7 @@ FEAT-10.
 ## Acceptance criteria
 
 - All business statistics are displayed directly from the API and are not recalculated in the browser.
-- Null `borrowing.average_loan_days` and `reading.average_rating` display “Not enough data,” not zero.
+- Null `borrowing.average_loan_days` and `reading.average_rating` display "Not enough data," not zero.
 - Lifetime loans and reading/borrowing averages retain the backend's exclusion of soft-deleted books; the client does
   not add deleted records into any metric.
 - An all-zero response is valid dashboard data, not a missing-data empty state.
