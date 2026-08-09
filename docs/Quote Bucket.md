@@ -1,6 +1,23 @@
-Absolutely. For the dashboard, I'd structure these as **weather-condition buckets**, rather than simply "good/bad weather." That lets the app select from a pool based on conditions like `sunny`, `partly_cloudy`, `hot`, `cold`, `rain`, `storm`, `snow`, `fog`, `windy`, etc., and gives you enough variety that a week-long heat wave doesn't produce the same line every day.
+# Quote Bucket
 
-I also checked the wording against sources rather than relying on quote-list sites where possible. **I've kept copyrighted excerpts short**; public-domain works can support longer excerpts. A few of the most famous weather passages are particularly good for this purpose.
+## Human-Written Summary
+
+Below this horizontal divider is the copied output of an LLM. This output was in a conversation arounda new feature for
+this library. The new feature displays book quotes based on the current weather.
+
+---
+
+
+For the dashboard, I'd structure these as **weather-condition buckets**, rather than simply "good/bad weather." That
+lets the app select from a pool based on conditions like `sunny`, `partly_cloudy`, `hot`, `cold`, `rain`, `storm`,
+`snow`, `fog`, `windy`, etc., and gives you enough variety that a week-long heat wave doesn't produce the same line
+every day.
+
+I also checked the wording against sources rather than relying on quote-list sites where possible. **I've kept
+copyrighted excerpts short**; public-domain works can support longer excerpts. A few of the most famous weather passages
+are particularly good for this purpose.
+* Note from Mark: You only need to worry about Copyright in finding the quotes. If you pull the quote manually, there
+  are no restrictions on quote length.
 
 ## ☀️ Sunny / Bright
 
@@ -56,7 +73,8 @@ I also checked the wording against sources rather than relying on quote-list sit
 
 ## 🔥 Hot / Oppressive Heat
 
-This is one category I'd particularly expand for your dashboard, because **hot-weather literary descriptions are surprisingly good at conveying misery**.
+This is one category I'd particularly expand for your dashboard, because **hot-weather literary descriptions are
+surprisingly good at conveying misery**.
 
 12. **"The sun ... from its reflection on the tropic sea…"**
     — Ernest Hemingway, *The Old Man and the Sea*
@@ -82,7 +100,8 @@ This is one category I'd particularly expand for your dashboard, because **hot-w
 18. **"The heat was oppressive…"**
     — Herman Melville, *Moby-Dick*
 
-*For the last three, I'd want to verify the exact edition/text before putting them into your production file; I'm including them as candidates rather than pretending a search snippet is sufficient source verification.*
+*For the last three, I'd want to verify the exact edition/text before putting them into your production file; I'm 
+including them as candidates rather than pretending a search snippet is sufficient source verification.*
 
 ---
 
@@ -108,7 +127,8 @@ This is one category I'd particularly expand for your dashboard, because **hot-w
 24. **"The rain had stopped and the world was wet and shining."**
     — Ernest Hemingway, *A Farewell to Arms*
 
-Again, I would verify #21–24 against the actual texts before putting them into your data file. I don't want to turn "internet-famous quotation" into "apparently authentic quotation."
+Again, I would verify #21–24 against the actual texts before putting them into your data file. I don't want to turn
+"internet-famous quotation" into "apparently authentic quotation."
 
 ---
 
@@ -241,7 +261,8 @@ This is another category I'd definitely include in the app.
 
 ## 🌵 Dry / Dusty / Drought
 
-This one could be especially fun if your weather API gives you precipitation/humidity information rather than merely a condition label.
+This one could be especially fun if your weather API gives you precipitation/humidity information rather than merely a
+condition label.
 
 52. **"The dusters. They start it anyways. Blowin' like this year after year."**
     — John Steinbeck, *The Grapes of Wrath*
@@ -275,7 +296,8 @@ This one could be especially fun if your weather API gives you precipitation/hum
 
 # What I'd actually put in your LibraryV2 weather file
 
-Given what you've been building with the dashboard, I **wouldn't make this merely a list of quotes**. I'd make each quote a record with enough metadata for the frontend to make an intelligent selection.
+Given what you've been building with the dashboard, I **wouldn't make this merely a list of quotes**. I'd make each
+quote a record with enough metadata for the frontend to make an intelligent selection.
 
 Something like:
 
@@ -334,7 +356,8 @@ special:
   miserable
 ```
 
-That gives you a much more interesting selection algorithm. A 98°F day with 75% humidity and a thunderstorm could pull from **`hot + oppressive_heat + storm`**, while a 45°F sunny day could pull from **`cold + sunny`**.
+That gives you a much more interesting selection algorithm. A 98°F day with 75% humidity and a thunderstorm could pull
+from **`hot + oppressive_heat + storm`**, while a 45°F sunny day could pull from **`cold + sunny`**.
 
 ### One important change I'd make
 
@@ -342,13 +365,20 @@ I'd also give every quote a **`weight`** and **`last_used`** field.
 
 Then your dashboard can essentially say:
 
-> Find quotes matching today's conditions → eliminate anything used recently → weight toward quotes that haven't appeared in a while → randomly select one.
+> Find quotes matching today's conditions → eliminate anything used recently → weight toward quotes that haven't
+> appeared in a while → randomly select one.
 
-That solves your concern about **long stretches of the same weather** much better than simply having, say, 10 "hot" quotes. If Tulsa gives you 12 straight days of 95–105°F weather, the dashboard can cycle through a large pool without repeating until it's exhausted.
+That solves your concern about **long stretches of the same weather** much better than simply having, say, 10 "hot"
+quotes. If Tulsa gives you 12 straight days of 95–105°F weather, the dashboard can cycle through a large pool without
+repeating until it's exhausted.
 
-And I think **50–100 total quotes is a good V2 target**, with perhaps 8–15 per major weather family. The list above is a starting corpus, but I would **not put all of these directly into production yet**: some of the search results are secondary quote collections, and for the dashboard's actual data file I'd want to do a second verification pass against full-text editions so that every quote is unquestionably authentic and attributed to the correct book/chapter.
+And I think **50–100 total quotes is a good V2 target**, with perhaps 8–15 per major weather family. The list above is a
+starting corpus, but I would **not put all of these directly into production yet**: some of the search results are
+secondary quote collections, and for the dashboard's actual data file I'd want to do a second verification pass against
+full-text editions so that every quote is unquestionably authentic and attributed to the correct book/chapter.
 
-If you want, I can do that next and produce a **clean, production-ready JSON/CSV corpus of ~100 verified literary weather quotes**, with condition tags, author, book, chapter, and source for each one.
+If you want, I can do that next and produce a **clean, production-ready JSON/CSV corpus of ~100 verified literary
+weather quotes**, with condition tags, author, book, chapter, and source for each one.
 
 [1]: https://en.wikisource.org/wiki/The_Sun_Also_Rises "The Sun Also Rises - Wikisource, the free online library"
 [2]: https://en.wikiquote.org/wiki/The_Wind_in_the_Willows "The Wind in the Willows - Wikiquote"
