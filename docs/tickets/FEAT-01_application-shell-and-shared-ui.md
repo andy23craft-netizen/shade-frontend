@@ -17,7 +17,7 @@ store, data-fetching library, or form library in this ticket.
 
 - Add client-side routing for `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`,
   `/checkin`, `/loans`, `/admin/deleted`, `/admin/backup`, `/settings/connection`, and a not-found route.
-- Create `src/app`, `src/components`, and feature route boundaries matching `docs/PLAN.md`.
+- Create `src/app`, `src/components`, and feature route boundaries matching `../product-docs/PLAN.md`.
 - Build a responsive shell with persistent primary navigation and visually separated administration/settings links.
 - Add route titles, a skip link, route-heading focus management, and semantic current-page indication.
 - Establish design tokens for type, spacing, color, focus, status, breakpoints, hit targets, and reduced motion.

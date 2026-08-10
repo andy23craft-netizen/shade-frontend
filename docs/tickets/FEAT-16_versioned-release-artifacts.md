@@ -37,7 +37,7 @@ FEAT-15.
   authenticated backup download.
 - Backup verification covers a non-empty SQL attachment, safe server/fallback filename handling, recoverable generation
   `500`, and no bogus download or retained/inspected SQL contents after failure.
-- The deployment handoff covers every requirement in `docs/PLAN.md` without implementing deployment-owned systems here.
+- The deployment handoff covers every requirement in `../product-docs/PLAN.md` without implementing deployment-owned systems here.
 - No critical/high defect, serious accessibility violation, exposed secret, or release-blocking contract mismatch remains.
 - `make check` passes.
 

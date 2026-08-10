@@ -14,12 +14,12 @@ been satisfied.
 This plan reconciles:
 
 - `PRODUCT_REQS.V1.md` for user outcomes and MVP scope.
-- `docs/API-for-FE.md` for the documented backend contract.
-- `docs/ToDo.md` for the requested stack, pages, and build artifacts.
+- `../technical-reference/API-for-FE.md` for the documented backend contract.
+- `../ToDo.md` for the requested stack, pages, and build artifacts.
 - The current repository for the implemented frontend baseline.
 
 The running backend OpenAPI document is authoritative for request and response schemas. Before implementing an
-API-dependent ticket, compare the relevant portion of `docs/API-for-FE.md` with the OpenAPI schema. Contract drift must
+API-dependent ticket, compare the relevant portion of `../technical-reference/API-for-FE.md` with the OpenAPI schema. Contract drift must
 be corrected in the owning system or recorded as an explicit blocker; the frontend must not silently invent backend
 behavior.
 
@@ -56,7 +56,7 @@ The repository already provides:
 - ESLint, Vitest, React Testing Library, and a jsdom test environment.
 - Make targets wrapping install, run, preview, lint, type-check, test, build, and complete quality checks.
 - A responsive but placeholder `Hello, world!` page.
-- A production build emitted to `dist/`.
+- A production build emitted to `../../dist`.
 
 The repository does not yet provide:
 
@@ -109,7 +109,7 @@ The application shell must provide persistent access to Dashboard, Books, Add Bo
 Administrative deletion/restore and connection settings may be visually separated, but there is no role-based
 authorization in the MVP.
 
-Direct navigation and refreshes on client routes require an SPA fallback to `index.html`. The production tarball
+Direct navigation and refreshes on client routes require an SPA fallback to `../../index.html`. The production tarball
 documentation must state this requirement for the deployment repository.
 
 ## 7. Target frontend architecture
@@ -120,14 +120,14 @@ Organize code by responsibility without creating a global abstraction for every 
 
 - `src/app/` — application bootstrap, router, providers, layouts, and error boundary.
 - `src/api/` — generated or contract-derived types, client, errors, query keys, and API test fixtures.
-- `src/components/` — reusable, product-agnostic UI primitives.
+- `../../src/components` — reusable, product-agnostic UI primitives.
 - `src/features/books/` — catalog, details, create, edit, delete, and restore.
 - `src/features/scanning/` — camera and hardware-scanner input.
 - `src/features/loans/` — checkout, check-in, and loan history.
 - `src/features/reading/` — reading completion, rating, and review.
 - `src/features/dashboard/` — dashboard queries and presentation.
 - `src/config/` — validated runtime configuration.
-- `src/test/` — shared test setup, API mocks, builders, and render helpers.
+- `../../src/test` — shared test setup, API mocks, builders, and render helpers.
 
 Feature code may be split further when a ticket demonstrates a need. Avoid a general client-state store unless a
 concrete cross-route state requirement emerges.
@@ -625,7 +625,7 @@ surface becomes too large, but its acceptance criteria must not be lost.
 - Dependency and build caching that never changes lockfile semantics.
 - A Podman-compatible container definition for local development and production-build previews; it is not the production
   deployment unit.
-- A Make target that creates a deterministic static tarball from `dist/`.
+- A Make target that creates a deterministic static tarball from `../../dist`.
 - Artifact naming with application version or commit identifier.
 - A SHA-256 checksum and a manifest containing version, commit, build time, expected runtime-config shape, and required
   SPA-host behavior.
@@ -683,9 +683,9 @@ The following are not frontend implementations, but they block release if unreso
 
 - Serve the extracted static files over HTTPS.
 - Supply environment-specific non-secret runtime configuration.
-- Preserve `index.html` and runtime config with no-cache/revalidation headers while allowing immutable hashed assets to
+- Preserve `../../index.html` and runtime config with no-cache/revalidation headers while allowing immutable hashed assets to
   be cached long-term.
-- Route unknown client paths to `index.html`.
+- Route unknown client paths to `../../index.html`.
 - Restrict network access because the browser token is a shared secret.
 - Apply a restrictive Content Security Policy and other appropriate browser security headers.
 - Provide atomic install, rollback, process/service supervision, and health checks.

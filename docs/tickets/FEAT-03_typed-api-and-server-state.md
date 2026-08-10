@@ -10,7 +10,7 @@ FEAT-02.
 
 ## Scope
 
-- Compare `docs/API-for-FE.md` with a representative running backend OpenAPI document before implementation.
+- Compare `../technical-reference/API-for-FE.md` with a representative running backend OpenAPI document before implementation.
 - Generate TypeScript models from OpenAPI when a stable repository-owned command is practical; otherwise add explicit
   transport types and contract fixtures checked against OpenAPI.
 - Model nullable fields, temporal strings, enums, list wrappers, lookup unions, the SQL backup attachment, and `204 No
@@ -44,7 +44,7 @@ FEAT-02.
 - Aborted or stale requests cannot overwrite newer route or form state.
 - Logs and errors contain no request headers, tokens, borrower names, notes, reviews, ISBN drafts, backup contents, or
   full bodies.
-- Query invalidation matches the mutation matrix in `docs/PLAN.md` section 7.5.
+- Query invalidation matches the mutation matrix in `../product-docs/PLAN.md` section 7.5.
 - A contract smoke test passes against a representative API, and drift is fixed in the owning system or recorded as an
   explicit blocker.
 - The no-pagination API is exercised with a representative large personal library and a practical limit is recorded.

@@ -58,7 +58,7 @@
   * Run a Python file: `python filename.py` or `uv run puthon filename.py`
   * Run a bash file: `bash filename.sh`
   * Run an executable file: `./filename`
-    * `./` means: "the file named `filename` in the current directory."
+    * `..` means: "the file named `filename` in the current directory."
 * Git
   * Check git status: `git status`
   * Update your machine's understanding of the remote: `git fetch`
@@ -135,7 +135,7 @@
   * In git, renaming files or folders to only change casing (e.g., `foo` to `Foo`) is not recognized.
   * In Python projects, it's conventional to use snake_case for filenames and directories.
   * Avoid special characters in filenames and folder names:
-    * `!`, `"`, `$`, `%`, `*`, `:`, `;`, `<`, `>`, `?` `~`, `\`, and `|`
+    * `!`, `"`, `$`, `%`, `*`, `:`, `;`, `<`, `>`, `?` `~`, `\`, `|`, and the backtick (i.e., '`') itself
 * Casing strategies by name:
   * snake_case: Use lowercase letters and underscores to separate words.
   * kebab-case: Use lowercase letters and hyphens to separate words.

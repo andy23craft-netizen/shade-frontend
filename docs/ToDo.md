@@ -26,7 +26,7 @@
   * [ ] Complete feature ticket `docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-15_podman-development-and-preview.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-16_versioned-release-artifacts.md`.
-  * [ ] Confirm that `docs/PLAN.md` is fully implemented.
+  * [ ] Confirm that `product-docs/PLAN.md` is fully implemented.
 * [ ] Build out the CI/CD for this project
   * [ ] Package into a podman container for convenience
     * [ ] Follow patterns in `../shade-backend/ci/`
