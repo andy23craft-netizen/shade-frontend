@@ -15,16 +15,21 @@ Shade is a frontend for a personal library management application. Planned capab
 - Soft-deleting and restoring books while preserving history.
 - Sending a bearer token with backend API requests.
 
-The implementation is currently an early React shell. It renders a welcome page and includes foundational styles,
-tests, and build tooling. It does not yet contain routing, API integration, shared application state, persistence,
-or feature modules. `react-router-dom` is installed but unused.
+The implementation is an early React application mid-way through the application-shell ticket
+(`docs/tickets/FEAT-01_application-shell-and-shared-ui.md`). React Router is integrated and several placeholder
+routes render. Shared UI primitives and an `AppShell` layout exist as source files, but the shell, notifications
+provider, and most shell behaviors are not yet composed into the live route tree. There is still no API
+integration, typed client, server state, persistence, or feature workflow UI.
+
+Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
+`docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
 
 ## Technology
 
 - React 19
 - TypeScript 6 in strict mode
 - Vite 8
-- React Router 7, installed but not integrated
+- React Router 7 (`react-router-dom`), integrated in `src/main.tsx`
 - Vitest with jsdom
 - Testing Library and jest-dom
 - ESLint flat configuration
@@ -67,7 +72,7 @@ The browser startup and styling flow is:
 ```text
 index.html
   -> src/main.tsx
-       -> src/App.tsx
+       -> RouterProvider(router from src/routes/routes.tsx)
        -> src/index.css
             -> src/styles/tokens.css
             -> src/styles/base.css
@@ -75,8 +80,11 @@ index.html
             -> src/styles/components.css
 ```
 
-`index.html` creates the `#root` mount point and loads `src/main.tsx`. The bootstrap module imports the root
-component and global stylesheet, validates the mount point, and renders React in `StrictMode`.
+`index.html` creates the `#root` mount point and loads `src/main.tsx`. The bootstrap module imports the router and
+global stylesheet, validates the mount point, and renders `RouterProvider` in `StrictMode`.
+
+`src/App.tsx` still exports a welcome page, but it is not mounted by `src/main.tsx`. `src/layout/AppShell.tsx` and
+the shared components under `src/components/` are present but not yet wired into the router tree.
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
 production bundle. The CSS import order is intentional: later layers use tokens and defaults declared by earlier
@@ -91,10 +99,38 @@ normal code changes.
 ### Browser Application
 
 - `index.html`: Vite's HTML entrypoint. It defines page metadata, creates `#root`, and loads `src/main.tsx`.
-- `src/main.tsx`: Browser bootstrap. It imports global CSS and `App`, checks for `#root`, and mounts React in
-  `StrictMode`.
-- `src/App.tsx`: Current root component and visible welcome page. It is the top of the React component tree.
+- `src/main.tsx`: Browser bootstrap. It imports global CSS and the router, checks for `#root`, and mounts
+  `RouterProvider` in `StrictMode`.
+- `src/App.tsx`: Legacy welcome-page component. It is covered by `src/App.test.tsx` but is not used by the current
+  bootstrap path.
 - `src/vite-env.d.ts`: Adds Vite client and asset declarations to TypeScript. It has no runtime behavior.
+
+### Routing and Layout
+
+- `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for the currently registered
+  routes.
+- `src/routes/routes.tsx`: `createBrowserRouter` configuration. Placeholder pages set `document.title` from the
+  route title plus an em dash and ` Shade`. Currently registered paths are `/`, `/books`, `/books/:bookId`,
+  `/books/new`, `/loans`, and `*` (not found). Checkout, check-in, admin, and connection-settings routes from
+  FEAT-01 are not registered yet.
+- `src/layout/AppShell.tsx`: Intended application frame with skip link, header, primary navigation, `Outlet` main
+  region, footer, and heading focus on location change. It is not yet used as a router layout element.
+
+### Shared Components
+
+- `src/components/Alert.tsx`: Status alert with `info`, `success`, `warning`, and `error` variants.
+- `src/components/AppLink.tsx`: React Router `Link` wrapper with optional visual variants.
+- `src/components/Button.tsx`: Button primitive with `primary`, `secondary`, and `danger` variants.
+- `src/components/ConfirmationDialog.tsx`: Modal confirmation dialog built on the native `<dialog>` element.
+- `src/components/EmptyState.tsx`: Empty-content section with optional supporting text and action slot.
+- `src/components/Field.tsx`: Labelled control wrapper that wires `id`, help text, and error associations.
+- `src/components/LoadingState.tsx`: Polite live-region loading indicator.
+- `src/components/Notifications.tsx`: `NotificationsProvider` and `useNotifications` for dismissible toasts.
+- `src/components/index.tsx`: Barrel re-exports for the shared components.
+- `src/components/index.ts`: Empty companion file; the active barrel is `index.tsx`.
+
+These components apply the class names defined in `src/styles/components.css`. They are not yet consumed by the live
+route pages or shell.
 
 ### Styling
 
@@ -104,9 +140,9 @@ normal code changes.
 - `src/styles/base.css`: Element defaults and accessibility foundations, including box sizing, controls, links,
   focus visibility, page typography, skip links, and reduced motion.
 - `src/styles/shell.css`: Application-frame classes for header, navigation, main content, footer, route pages, and
-  responsive layouts. Most are scaffolding for future UI.
+  responsive layouts.
 - `src/styles/components.css`: Shared class-based primitives for buttons, links, forms, alerts, status views,
-  dialogs, and notifications. They use BEM-like naming and are not yet referenced by JSX.
+  dialogs, and notifications. They use BEM-like naming and are referenced by the shared component modules.
 
 Choose the CSS layer based on responsibility:
 
@@ -120,8 +156,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 ### Tests
 
-- `src/App.test.tsx`: Colocated component test for `App`. It renders the component and checks its accessible
-  heading.
+- `src/App.test.tsx`: Colocated component test for the unused `App` welcome page. It does not exercise the router or
+  shell.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 
 Tests use a jsdom browser simulation. Prefer semantic Testing Library queries such as `getByRole()` and test
@@ -160,12 +196,21 @@ yarn test
 
 - `README.md`: Concise human onboarding for prerequisites, setup, development, checks, and production builds.
 - `.gitignore`: Excludes dependencies, generated output, secrets, local data, editor files, and OS metadata.
+- `.gitattributes`: Normalizes text files to LF line endings and marks common binary extensions.
 - `.cursor/rules/documentation-style.mdc`: Markdown punctuation, line-length, and newline rules for Cursor.
 - `.cursor/rules/grep-tool.mdc`: Requires `grep` rather than the `rg` shell command in this environment.
 - `.cursor/rules/readonly-git.mdc`: Prohibits Cursor from changing Git state.
 - `.cursor/rules/scope.mdc`: Defines allowed repository read/write boundaries and related Shade repositories.
 
 The `.cursor` rules control AI-assisted work. They are not loaded by the application or included in builds.
+
+Useful documents under `docs/` (not inventoried file-by-file here):
+
+- `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria.
+- `docs/product-docs/PLAN.md`: Frontend production roadmap.
+- `docs/technical-reference/API-for-FE.md`: Backend contract notes for the frontend.
+- `docs/MAINTAINERS.md`: Human-oriented maintainer guide parallel to this file.
+- `docs/prompt-master-context.md`: Slim context pack for chats without repository access.
 
 ## Development Commands
 
@@ -215,7 +260,8 @@ make build
 - Colocate component tests using `*.test.tsx`.
 - Use extensionless relative TypeScript imports, matching current source style.
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
-- Introduce routing, API, state, or feature patterns only when a concrete requirement needs them.
+- Finish or extend the FEAT-01 shell, routing, and shared-UI work before inventing alternate architecture.
+- Introduce API, server-state, or feature-module patterns only when a concrete ticket requires them.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
 
 ## Change Workflow
