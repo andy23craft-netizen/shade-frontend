@@ -9,6 +9,14 @@ export interface AlertProps {
   className?: string
 }
 
+function alertRole(variant: AlertVariant): 'alert' | 'status' {
+  if (variant === 'error') {
+    return 'alert'
+  }
+
+  return 'status'
+}
+
 export function Alert({
   variant = 'info',
   title,
@@ -20,7 +28,7 @@ export function Alert({
     .join(' ')
 
   return (
-    <div className={classes} role="alert">
+    <div className={classes} role={alertRole(variant)}>
       {title ? <strong>{title}</strong> : null}
       <div>{children}</div>
     </div>
