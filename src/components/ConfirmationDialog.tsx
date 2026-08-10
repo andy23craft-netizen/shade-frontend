@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Button } from './Button'
 
@@ -13,6 +13,16 @@ export interface ConfirmationDialogProps {
   onCancel: () => void
 }
 
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  const candidates = container.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )
+
+  return Array.from(candidates).filter((element) => {
+    return element.getAttribute('aria-hidden') !== 'true'
+  })
+}
+
 export function ConfirmationDialog({
   open,
   title,
@@ -24,6 +34,15 @@ export function ConfirmationDialog({
   onCancel,
 }: ConfirmationDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const cancelButtonRef = useRef<HTMLButtonElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+  const onCancelRef = useRef(onCancel)
+  const titleId = useId()
+  const descriptionId = useId()
+
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -33,12 +52,22 @@ export function ConfirmationDialog({
     }
 
     if (open && !dialog.open) {
+      previousFocusRef.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null
+
       dialog.showModal()
+      cancelButtonRef.current?.focus()
       return
     }
 
     if (!open && dialog.open) {
       dialog.close()
+
+      const previousFocus = previousFocusRef.current
+      previousFocusRef.current = null
+      previousFocus?.focus()
     }
   }, [open])
 
@@ -49,35 +78,73 @@ export function ConfirmationDialog({
       return
     }
 
-    const handleCancel = () => {
-      onCancel()
+    const restoreFocus = () => {
+      const previousFocus = previousFocusRef.current
+      previousFocusRef.current = null
+      previousFocus?.focus()
+    }
+
+    const handleCancel = (event: Event) => {
+      event.preventDefault()
+      onCancelRef.current()
+    }
+
+    const handleClose = () => {
+      restoreFocus()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !dialog.open) {
+        return
+      }
+
+      const focusable = getFocusableElements(dialog)
+
+      if (focusable.length === 0) {
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+        return
+      }
+
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
     dialog.addEventListener('cancel', handleCancel)
+    dialog.addEventListener('close', handleClose)
+    dialog.addEventListener('keydown', handleKeyDown)
 
     return () => {
       dialog.removeEventListener('cancel', handleCancel)
+      dialog.removeEventListener('close', handleClose)
+      dialog.removeEventListener('keydown', handleKeyDown)
     }
-  }, [onCancel])
-
-  const handleClose = () => {
-    onCancel()
-  }
+  }, [])
 
   return (
     <dialog
       ref={dialogRef}
       className="confirmation-dialog"
-      aria-labelledby="confirmation-dialog-title"
-      onClose={handleClose}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
     >
       <div className="confirmation-dialog__content">
-        <h2 id="confirmation-dialog-title">{title}</h2>
+        <h2 id={titleId}>{title}</h2>
 
-        <div>{children}</div>
+        <div id={descriptionId}>{children}</div>
 
         <div className="confirmation-dialog__actions">
           <Button
+            ref={cancelButtonRef}
             variant="secondary"
             type="button"
             onClick={onCancel}

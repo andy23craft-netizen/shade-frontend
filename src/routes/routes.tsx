@@ -1,14 +1,18 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from '../layout/AppShell'
 import { BackupLibraryPage } from '../features/books/routes/BackupLibraryPage'
+import { BookDetailsPage } from '../features/books/routes/BookDetailsPage'
+import { BooksPage } from '../features/books/routes/BooksPage'
 import { DeletedBooksPage } from '../features/books/routes/DeletedBooksPage'
 import { EditBookPage } from '../features/books/routes/EditBookPage'
+import { NewBookPage } from '../features/books/routes/NewBookPage'
 import { CheckoutPage } from '../features/loans/routes/CheckoutPage'
 import { CheckinPage } from '../features/loans/routes/CheckinPage'
+import { LoansPage } from '../features/loans/routes/LoansPage'
+import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
 import { ConnectionPage } from '../features/settings/routes/ConnectionPage'
 import { NotFoundPage } from './NotFoundPage'
 import { routeMetadata } from './routeMetadata'
-import { RoutePlaceholder } from './RoutePlaceholder'
 
 export const routeConfig = [
     {
@@ -19,44 +23,28 @@ export const routeConfig = [
                 handle: {
                     title: routeMetadata.dashboard.title,
                 },
-                element: (
-                    <RoutePlaceholder
-                        heading={routeMetadata.dashboard.heading}
-                    />
-                ),
+                element: <DashboardPage />,
             },
             {
                 path: routeMetadata.books.path,
                 handle: {
                     title: routeMetadata.books.title,
                 },
-                element: (
-                    <RoutePlaceholder
-                        heading={routeMetadata.books.heading}
-                    />
-                ),
+                element: <BooksPage />,
             },
             {
                 path: routeMetadata.newBook.path,
                 handle: {
                     title: routeMetadata.newBook.title,
                 },
-                element: (
-                    <RoutePlaceholder
-                        heading={routeMetadata.newBook.heading}
-                    />
-                ),
+                element: <NewBookPage />,
             },
             {
                 path: routeMetadata.bookDetails.path,
                 handle: {
                     title: routeMetadata.bookDetails.title,
                 },
-                element: (
-                    <RoutePlaceholder
-                        heading={routeMetadata.bookDetails.heading}
-                    />
-                ),
+                element: <BookDetailsPage />,
             },
             {
                 path: routeMetadata.editBook.path,
@@ -84,11 +72,7 @@ export const routeConfig = [
                 handle: {
                     title: routeMetadata.loans.title,
                 },
-                element: (
-                    <RoutePlaceholder
-                        heading={routeMetadata.loans.heading}
-                    />
-                ),
+                element: <LoansPage />,
             },
             {
                 path: routeMetadata.deletedBooks.path,
