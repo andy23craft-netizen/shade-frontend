@@ -18,19 +18,27 @@ Query/cache providers belong to FEAT-03.
 Already in place and should not be rebuilt:
 
 - `AppShell` with a Connection Settings nav link and route title/heading metadata for `/settings/connection`.
-- `src/features/settings/routes/ConnectionPage.tsx` rendering `RoutePlaceholder` only.
-- `AppProviders` wrapping `NotificationsProvider` around the router; no runtime config or connection state yet.
+- `src/features/settings/routes/ConnectionPage.tsx` still rendering `RoutePlaceholder` only.
+- `AppProviders` wrapping `NotificationsProvider` around the router; no connection provider yet.
 - Design tokens and shared primitives (including `Alert`, `Field`, `Button`, `LoadingState`) ready for the settings UI.
+- `public/config.js` defining `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded from `index.html` before the
+  app module.
+- `src/config/runtimeConfig.ts` validating API base URL (HTTP/HTTPS, trailing-slash stripped, no `/api` assumption) and
+  release identifier, with colocated unit tests.
+- `src/config/runtimeConfigState.ts` and `RuntimeConfigScreen` for a recoverable malformed-config UI; neither is wired
+  into `main.tsx` / `AppProviders` yet.
+- Empty placeholders to fill (do not recreate elsewhere): `src/features/connection/*`, `src/api/apiClient.ts`, and
+  `src/api/apiErrors.ts`.
 
-Not started: runtime config loading, connection state, token storage, health/credential checks, `403` recovery, CORS
-documentation, or release-identifier display in the shell.
+Not started: bootstrap wiring for runtime config, connection state, token storage, health/credential checks, `403`
+recovery, CORS documentation, or release-identifier display in the shell.
 
 ## Remaining scope
 
-- Load and validate a public runtime configuration containing the API base URL and application release identifier.
+- Wire runtime config into startup so missing or malformed config shows `RuntimeConfigScreen` instead of the app shell.
 - Ensure API paths are rooted directly at the configured URL and never assume an `/api` prefix.
-- Implement application-wide connection state and replace the `ConnectionPage` placeholder with `/settings/connection`
-  UI.
+- Implement application-wide connection state (fill `src/features/connection/`) and replace the `ConnectionPage`
+  placeholder with `/settings/connection` UI.
 - Store the token only in memory and `sessionStorage`; add an explicit forget-token action.
 - Distinguish public `GET /health` reachability from `GET /protected` credential verification.
 - Return the user to connection setup and clear the active token after a confirmed protected-request `403`.
@@ -44,8 +52,8 @@ documentation, or release-identifier display in the shell.
 
 ## Security requirements
 
-- Never put the token in source, runtime config, build arguments, generated assets, source maps, URLs, logs, diagnostics,
-  snapshots, or error reports.
+- Never put the token in source, runtime config, build arguments, generated assets, source maps, URLs, logs,
+  diagnostics, snapshots, or error reports.
 - Redact authorization and connection state from all errors.
 - Document that `sessionStorage` limits persistence but does not protect a token from browser users or same-origin code.
 
