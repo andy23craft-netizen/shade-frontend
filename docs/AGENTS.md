@@ -15,11 +15,11 @@ Shade is a frontend for a personal library management application. Planned capab
 - Soft-deleting and restoring books while preserving history.
 - Sending a bearer token with backend API requests.
 
-The implementation is an early React application mid-way through the application-shell ticket
-(`docs/tickets/FEAT-01_application-shell-and-shared-ui.md`). React Router is integrated and several placeholder
-routes render. Shared UI primitives and an `AppShell` layout exist as source files, but the shell, notifications
-provider, and most shell behaviors are not yet composed into the live route tree. There is still no API
-integration, typed client, server state, persistence, or feature workflow UI.
+The application-shell ticket (`docs/tickets/FEAT-01_application-shell-and-shared-ui.md`) is complete. React Router
+mounts under `AppShell` with the full early route map, thin feature-owned placeholder pages, shared UI primitives,
+notifications via `AppProviders`, and a root error boundary. There is still no runtime configuration, API client,
+server state, persistence, or feature workflow UI. The next sequenced ticket is
+`docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
 `docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
