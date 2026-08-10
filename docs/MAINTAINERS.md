@@ -6,8 +6,12 @@ and how to check a change before sharing it.
 
 ## Start Here
 
-Shade is a React single-page application built with TypeScript and Vite. The project is currently small: the
-browser renders one root component, while the styles provide a foundation for future pages and reusable UI.
+Shade is a React single-page application built with TypeScript and Vite. The project is still early: React Router
+is mounted and several placeholder routes render, while shared UI primitives and an application shell exist as
+source that is not yet fully composed into the live tree. API integration and product workflows come later.
+
+The implementation sequence starts with `docs/tickets/FEAT-01_application-shell-and-shared-ui.md`. Broader delivery
+planning lives in `docs/product-docs/PLAN.md`.
 
 The most useful commands are:
 
@@ -34,7 +38,7 @@ The browser follows this path when it loads the application:
 ```text
 index.html
   -> src/main.tsx
-       -> src/App.tsx
+       -> RouterProvider(router from src/routes/routes.tsx)
        -> src/index.css
             -> src/styles/tokens.css
             -> src/styles/base.css
@@ -43,14 +47,20 @@ index.html
 ```
 
 `index.html` creates an empty element with the ID `root`. `src/main.tsx` finds that element and asks React to
-render `App` inside it. `App` supplies the visible page content. The CSS entrypoint loads the styling layers in
-order so that shared variables and defaults are available to later rules.
+render the router inside it. Each matched route currently renders a placeholder page that updates
+`document.title`. The CSS entrypoint loads the styling layers in order so that shared variables and defaults are
+available to later rules.
 
 Vite handles the development server and production bundling. TypeScript checks the code but does not create
 JavaScript files itself; Vite performs that transformation during development and builds.
 
-The project does not yet have routing, API calls, shared application state, or feature modules. React Router is
-installed, but no source file currently uses it.
+Current gaps relative to the FEAT-01 target:
+
+- `src/layout/AppShell.tsx` is not yet used as the router layout, so navigation chrome is not visible.
+- Shared components under `src/components/` are implemented but unused by the live pages.
+- Several planned routes (checkout, check-in, admin, connection settings) are not registered yet.
+- `src/App.tsx` remains as a leftover welcome page and is not mounted by `src/main.tsx`.
+- There is still no API client, shared server state, or feature workflow UI.
 
 ## Project Structure
 
@@ -61,12 +71,38 @@ The summaries below cover every project-owned file outside `docs/`. Generated di
 
 - `index.html`: The browser entrypoint. It defines page metadata, creates the `root` element, and loads
   `src/main.tsx`.
-- `src/main.tsx`: The React bootstrap file. It imports `App` and the global CSS entrypoint, verifies that the
-  `root` element exists, and mounts the application in React `StrictMode`.
-- `src/App.tsx`: The root React component and current visible page. As the application grows, it will likely
-  coordinate routing or a top-level application shell rather than contain every feature directly.
+- `src/main.tsx`: The React bootstrap file. It imports the router and the global CSS entrypoint, verifies that the
+  `root` element exists, and mounts `RouterProvider` in React `StrictMode`.
+- `src/App.tsx`: A leftover welcome-page component. Tests still cover it, but the live application no longer
+  renders it.
 - `src/vite-env.d.ts`: Adds Vite's browser and asset types to TypeScript. It contains declarations, not runtime
   behavior.
+
+### Routing and Layout
+
+- `src/routes/routeMetadata.ts`: Central path, title, and heading metadata for registered routes.
+- `src/routes/routes.tsx`: Builds the browser router. Placeholder pages set `document.title` from the route title
+  plus an em dash and ` Shade`. Registered paths today are `/`, `/books`, `/books/:bookId`, `/books/new`,
+  `/loans`, and `*` for unknown URLs.
+- `src/layout/AppShell.tsx`: Intended shell with skip link, brand link, primary navigation, main `Outlet`, footer,
+  and focus movement to the page `h1` after client-side navigations. Wire this in as a parent route layout when
+  completing FEAT-01.
+
+### Shared Components
+
+These modules live under `src/components/` and re-export from `src/components/index.tsx`:
+
+- `Alert`: Status message with info, success, warning, and error variants.
+- `AppLink`: Styled React Router link.
+- `Button`: Primary, secondary, and danger button styles.
+- `ConfirmationDialog`: Native modal dialog for confirm/cancel flows.
+- `EmptyState`: Empty-content section with optional action.
+- `Field`: Label, help text, and error wiring around a single control.
+- `LoadingState`: Accessible loading indicator.
+- `NotificationsProvider` / `useNotifications`: Toast-style notifications with dismiss actions.
+
+`src/components/index.ts` exists but is empty; import from the `.tsx` barrel or individual modules. The components
+use classes from `src/styles/components.css`, but no route currently renders them.
 
 ### Styles
 
@@ -78,10 +114,9 @@ The summaries below cover every project-owned file outside `docs/`. Generated di
 - `src/styles/base.css`: Defines element-level defaults and accessibility foundations, such as box sizing,
   typography, focus visibility, minimum control sizes, and reduced-motion behavior. It depends on tokens.
 - `src/styles/shell.css`: Defines the intended page frame, including header, navigation, content, footer, route
-  layouts, and responsive behavior. Only part of this stylesheet is used by the current `App`.
+  layouts, and responsive behavior. The shell stylesheet is ready for `AppShell` once that layout is mounted.
 - `src/styles/components.css`: Defines reusable class-based styles for buttons, links, form fields, alerts, loading
-  and empty states, dialogs, and notifications. These classes are shared building blocks and are not yet used by
-  the current JSX.
+  and empty states, dialogs, and notifications.
 
 When adding a style, first decide its scope:
 
@@ -95,8 +130,8 @@ Keep the import order in `src/index.css`. Later layers rely on variables and def
 
 ### Tests
 
-- `src/App.test.tsx`: The test for the root component. It renders `App` with Testing Library and checks the main
-  heading through its accessible role and name.
+- `src/App.test.tsx`: The test for the leftover `App` welcome component. It does not cover routing or the shell.
+  Expect this to be replaced or expanded as FEAT-01 finishes.
 - `src/test/setup.ts`: Runs before every test and adds `jest-dom` matchers, such as `toBeInTheDocument()`, to
   Vitest.
 
@@ -167,6 +202,7 @@ make build
   put deeper maintenance guidance in this file.
 - `.gitignore`: Prevents generated output, dependencies, local settings, secrets, databases, and operating-system
   files from being tracked.
+- `.gitattributes`: Keeps text files checked out with LF endings and marks common binary file types.
 - `.cursor/rules/documentation-style.mdc`: Defines writing and formatting rules for documentation created with
   Cursor.
 - `.cursor/rules/grep-tool.mdc`: Records the project's text-search tooling requirement for Cursor.
@@ -175,6 +211,13 @@ make build
 
 The `.cursor` files guide AI-assisted development. They do not become part of the browser application or
 production build.
+
+When you need product or ticket detail, start with:
+
+- `docs/tickets/` for the current feature ticket and acceptance criteria.
+- `docs/product-docs/PLAN.md` for the overall frontend roadmap.
+- `docs/technical-reference/API-for-FE.md` for backend contract notes once API work begins.
+- `docs/AGENTS.md` for the LLM-oriented twin of this guide.
 
 ## Making a Change Safely
 
@@ -213,8 +256,9 @@ before disabling it.
 
 ## When Adding New Architecture
 
-The project is intentionally simple today. New routing, API, state-management, or feature-directory patterns
-should solve a concrete requirement rather than anticipate one. When introducing a new pattern:
+The project is intentionally still assembling its first shell. Prefer completing FEAT-01 routing, layout, and shared
+UI composition before inventing parallel patterns. New API, server-state, or feature-directory patterns should solve
+a concrete ticket rather than anticipate one. When introducing a new pattern:
 
 1. Keep its first use small and understandable.
 2. Choose names that describe product concepts, not vague technical categories.
