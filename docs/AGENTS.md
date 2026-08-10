@@ -33,7 +33,7 @@ Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer t
 - Vitest with jsdom
 - Testing Library and jest-dom
 - ESLint flat configuration
-- Yarn 4 through Corepack
+- Yarn 4 through Corepack (`yarn@4.18.0` in `package.json`)
 - Node.js 26.7.0
 - Make command wrappers
 
@@ -72,7 +72,11 @@ The browser startup and styling flow is:
 ```text
 index.html
   -> src/main.tsx
-       -> RouterProvider(router from src/routes/routes.tsx)
+       -> RootErrorBoundary
+            -> AppProviders (NotificationsProvider)
+                 -> RouterProvider(router from src/routes/routes.tsx)
+                      -> AppShell (layout route)
+                           -> feature route pages via Outlet
        -> src/index.css
             -> src/styles/tokens.css
             -> src/styles/base.css
@@ -81,10 +85,12 @@ index.html
 ```
 
 `index.html` creates the `#root` mount point and loads `src/main.tsx`. The bootstrap module imports the router and
-global stylesheet, validates the mount point, and renders `RouterProvider` in `StrictMode`.
+global stylesheet, validates the mount point, and renders `RouterProvider` inside `RootErrorBoundary` and
+`AppProviders` in `StrictMode`.
 
-`src/App.tsx` still exports a welcome page, but it is not mounted by `src/main.tsx`. `src/layout/AppShell.tsx` and
-the shared components under `src/components/` are present but not yet wired into the router tree.
+`AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and
+admin navigation, the main `Outlet`, footer, and heading focus after client-side navigations. Feature pages under
+`src/features/*/routes/` currently render `RoutePlaceholder` only; product UI arrives in later tickets.
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
 production bundle. The CSS import order is intentional: later layers use tokens and defaults declared by earlier
@@ -100,37 +106,58 @@ normal code changes.
 
 - `index.html`: Vite's HTML entrypoint. It defines page metadata, creates `#root`, and loads `src/main.tsx`.
 - `src/main.tsx`: Browser bootstrap. It imports global CSS and the router, checks for `#root`, and mounts
-  `RouterProvider` in `StrictMode`.
-- `src/App.tsx`: Legacy welcome-page component. It is covered by `src/App.test.tsx` but is not used by the current
-  bootstrap path.
+  `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`.
+- `src/AppProviders.tsx`: Application-wide providers. Today it wraps children in `NotificationsProvider`.
+- `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home).
 - `src/vite-env.d.ts`: Adds Vite client and asset declarations to TypeScript. It has no runtime behavior.
 
 ### Routing and Layout
 
-- `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for the currently registered
-  routes.
-- `src/routes/routes.tsx`: `createBrowserRouter` configuration. Placeholder pages set `document.title` from the
-  route title plus an em dash and ` Shade`. Currently registered paths are `/`, `/books`, `/books/:bookId`,
-  `/books/new`, `/loans`, and `*` (not found). Checkout, check-in, admin, and connection-settings routes from
-  FEAT-01 are not registered yet.
-- `src/layout/AppShell.tsx`: Intended application frame with skip link, header, primary navigation, `Outlet` main
-  region, footer, and heading focus on location change. It is not yet used as a router layout element.
+- `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
+- `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths
+  are `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
+  `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
+- `src/routes/RoutePlaceholder.tsx`: Minimal route body used by unfinished feature pages (`h1` with `tabIndex={-1}`).
+- `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
+- `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
+- `src/layout/AppShell.tsx`: Application frame with skip link, header, primary navigation, admin/settings group,
+  `Outlet` main region, footer, document title, and heading focus on location change.
+
+### Feature Route Modules
+
+Thin wrappers under `src/features/` own routes for later tickets. They currently render `RoutePlaceholder` only:
+
+- `src/features/dashboard/routes/DashboardPage.tsx` (`/`, FEAT-11)
+- `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04)
+- `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05)
+- `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04)
+- `src/features/books/routes/EditBookPage.tsx` (`/books/:bookId/edit`, FEAT-10)
+- `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`, FEAT-10)
+- `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`, FEAT-10)
+- `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07)
+- `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
+- `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
+- `src/features/settings/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02)
 
 ### Shared Components
 
-- `src/components/Alert.tsx`: Status alert with `info`, `success`, `warning`, and `error` variants.
+Import shared UI from `src/components/index.ts` rather than deep paths when writing application or feature code.
+
+- `src/components/Alert.tsx`: Status alert; `error` uses `role="alert"`, other variants use `role="status"`.
 - `src/components/AppLink.tsx`: React Router `Link` wrapper with optional visual variants.
 - `src/components/Button.tsx`: Button primitive with `primary`, `secondary`, and `danger` variants.
-- `src/components/ConfirmationDialog.tsx`: Modal confirmation dialog built on the native `<dialog>` element.
+- `src/components/ConfirmationDialog.tsx`: Modal confirmation dialog on the native `<dialog>` element, with labelled
+  description, focus trap, Escape cancel, and focus restoration.
 - `src/components/EmptyState.tsx`: Empty-content section with optional supporting text and action slot.
 - `src/components/Field.tsx`: Labelled control wrapper that wires `id`, help text, and error associations.
 - `src/components/LoadingState.tsx`: Polite live-region loading indicator.
-- `src/components/Notifications.tsx`: `NotificationsProvider` and `useNotifications` for dismissible toasts.
-- `src/components/index.tsx`: Barrel re-exports for the shared components.
-- `src/components/index.ts`: Empty companion file; the active barrel is `index.tsx`.
+- `src/components/Notifications.tsx`: `NotificationsProvider` and dismissible toast list (per-item live roles).
+- `src/components/NotificationsContext.ts`: Notification types and React context.
+- `src/components/useNotifications.ts`: Hook that reads the notifications context (throws outside the provider).
+- `src/components/index.ts`: Barrel re-exports for the shared components and notifications API.
 
-These components apply the class names defined in `src/styles/components.css`. They are not yet consumed by the live
-route pages or shell.
+These components apply the class names defined in `src/styles/components.css`. Live route pages still use placeholders,
+so most primitives are exercised by tests and ready for feature tickets rather than by product workflows.
 
 ### Styling
 
@@ -150,18 +177,23 @@ Choose the CSS layer based on responsibility:
 - HTML element defaults belong in `base.css`.
 - Application frame and navigation layout belong in `shell.css`.
 - Reusable UI patterns belong in `components.css`.
-- Feature-specific styles may be colocated once feature modules exist.
+- Feature-specific styles may be colocated once feature modules gain real UI.
 
 Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 ### Tests
 
-- `src/App.test.tsx`: Colocated component test for the unused `App` welcome page. It does not exercise the router or
-  shell.
+- `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `createTestRouter`.
+- `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback.
+- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels, current-page state, and not-found recovery.
+- `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
+- `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
+- `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 
 Tests use a jsdom browser simulation. Prefer semantic Testing Library queries such as `getByRole()` and test
-user-visible behavior instead of implementation details.
+user-visible behavior instead of implementation details. Route tests should use `createTestRouter` and must not
+mutate `window.history` across cases.
 
 The test flow is:
 
@@ -170,7 +202,7 @@ yarn test
   -> Vitest reads vite.config.ts
   -> jsdom supplies browser APIs
   -> src/test/setup.ts installs shared matchers
-  -> src/App.test.tsx renders src/App.tsx
+  -> colocated *.test.tsx files render through Testing Library
 ```
 
 ### Dependencies and Commands
@@ -206,8 +238,10 @@ The `.cursor` rules control AI-assisted work. They are not loaded by the applica
 
 Useful documents under `docs/` (not inventoried file-by-file here):
 
-- `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria.
+- `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (FEAT-01 through FEAT-16).
+- `docs/ToDo.md`: Human checklist of ticket completion status.
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
+- `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/technical-reference/API-for-FE.md`: Backend contract notes for the frontend.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide parallel to this file.
 - `docs/prompt-master-context.md`: Slim context pack for chats without repository access.
@@ -257,11 +291,14 @@ make build
 - Reuse design tokens and existing shared CSS classes before adding new values or primitives.
 - Shared CSS follows `.component`, `.component__element`, and `.component--modifier` naming.
 - Import global CSS once through `src/index.css`; do not scatter global imports across components.
+- Import shared components from `src/components/index.ts`.
 - Colocate component tests using `*.test.tsx`.
 - Use extensionless relative TypeScript imports, matching current source style.
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
-- Finish or extend the FEAT-01 shell, routing, and shared-UI work before inventing alternate architecture.
-- Introduce API, server-state, or feature-module patterns only when a concrete ticket requires them.
+- Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns that
+  route rather than inventing a parallel tree.
+- Introduce runtime config, connection state, API, and server-state patterns only when FEAT-02 / FEAT-03 (or a later
+  concrete ticket) requires them.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
 
 ## Change Workflow
