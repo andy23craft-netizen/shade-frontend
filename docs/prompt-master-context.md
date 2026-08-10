@@ -21,7 +21,7 @@ Always:
   - this Master Prompt (slim)
   - the current docs/tickets/FEAT-XX_*.md ticket
 
-If the work touches the API (typically FEAT-03+):
+If the work touches connection setup or the API (FEAT-02+):
   - docs/technical-reference/API-for-FE.md
   - running OpenAPI when available: http://127.0.0.1:8000/openapi.json
 
@@ -143,18 +143,21 @@ jsdom, Make, Corepack.
 
 **Known baseline (as of 2026-08-10 -- verify before editing):**
 
-- Bootstrap mounts `RouterProvider` from `src/routes/routes.tsx` (not the leftover `src/App.tsx` welcome page).
-- Placeholder routes exist for `/`, `/books`, `/books/:bookId`, `/books/new`, `/loans`, and `*`.
-- Shared UI modules exist under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field,
-  LoadingState, Notifications) and re-export from `src/components/index.tsx`.
-- `src/layout/AppShell.tsx` exists but is not yet wired as a router layout.
+- FEAT-01 is complete. The FEAT-01 ticket file was removed; remaining tickets are `FEAT-02` through `FEAT-16`.
+- Bootstrap: `RootErrorBoundary` -> `AppProviders` (`NotificationsProvider`) -> `RouterProvider` from
+  `src/routes/routes.tsx`, with `AppShell` as the parent layout route.
+- Registered routes (feature pages are thin `RoutePlaceholder` wrappers under `src/features/*/routes/`): `/`,
+  `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
+  `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
+- Shared UI under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field, LoadingState,
+  Notifications) re-exports from `src/components/index.ts`.
 - CSS layers remain `tokens` -> `base` -> `shell` -> `components` via `src/index.css`.
-- No API client, typed server state, persistence, or feature workflow UI yet.
-- Work is mid-way through `docs/tickets/FEAT-01_application-shell-and-shared-ui.md`.
+- No runtime config, connection state, API client, typed server state, persistence, or feature workflow UI yet.
+- Next ticket: `docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
 
-Target routes and planned folders such as `src/app|api|features/...` are goals from the plan and ticket, not proof
-of current layout. Never infer implementation from the target architecture alone. Prefer `docs/AGENTS.md` for the
-maintained shell inventory when it is attached.
+Planned modules such as a typed API client or server-state layer are goals from later tickets, not proof of current
+layout. Never infer implementation from the target architecture alone. Prefer `docs/AGENTS.md` for the maintained
+inventory when it is attached.
 
 Typical commands:
 
@@ -239,8 +242,9 @@ loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback orchestration.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
-Tickets live in `docs/tickets/` as `FEAT-01` through `FEAT-16`. The supplied ticket's acceptance criteria are
-authoritative unless they contradict the backend contract or established architecture.
+Tickets live in `docs/tickets/` as `FEAT-02` through `FEAT-16` (FEAT-01 is complete and its ticket file is gone). The
+supplied ticket's acceptance criteria are authoritative unless they contradict the backend contract or established
+architecture.
 
 ---
 
@@ -282,7 +286,7 @@ assumptions.
 | API routes, payloads, errors, enums, CORS, ISBN, loans | `docs/technical-reference/API-for-FE.md` |
 | Architecture / workstreams / release intent | `docs/product-docs/PLAN.md` |
 | Product requirements (source) | `docs/product-docs/PRODUCT_REQS.V1.md`, `docs/product-docs/PRODUCT_REQS.V2.*.md` |
-| Feature tickets | `docs/tickets/FEAT-01_...` through `FEAT-16_...` |
+| Feature tickets | `docs/tickets/FEAT-02_...` through `FEAT-16_...` (FEAT-01 complete) |
 | UI / design decisions | `docs/product-docs/UI_DESIGN_NOTES.MD` |
 | Human maintainers notes | `docs/MAINTAINERS.md` |
 | Build checklist | `docs/ToDo.md` |
