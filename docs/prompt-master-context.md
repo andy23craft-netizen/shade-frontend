@@ -4,9 +4,9 @@ Slim always-on prompt for ChatGPT (or any chat without automatic repository acce
 Source of truth for API detail, product requirements, and plans lives in the docs listed below -- do not
 re-synthesize them here.
 
-Context pack version: 2026-08-10. Refresh this prompt when operating rules or non-negotiables change.
-For Cursor chats with repository access, prefer `docs/full-project-context.md` (or `docs/AGENTS.md`) instead of
-this file's "no repo access" sections.
+Context pack version: 2026-08-10. Refresh this prompt when operating rules, non-negotiables, or the known
+baseline change. For Cursor chats with repository access, prefer `docs/AGENTS.md` instead of this file's
+"no repo access" sections.
 
 The **current feature ticket is supplied separately** after this context.
 
@@ -22,21 +22,21 @@ Always:
   - the current docs/tickets/FEAT-XX_*.md ticket
 
 If the work touches the API (typically FEAT-03+):
-  - docs/API-for-FE.md
+  - docs/technical-reference/API-for-FE.md
   - running OpenAPI when available: http://127.0.0.1:8000/openapi.json
 
 If the model cannot see the repository:
-  - docs/full-project-context.md
+  - docs/AGENTS.md
   - and/or the minimum files/command output requested below
 
 If UI/design is in question:
-  - docs/UI_DESIGN_NOTES.MD
+  - docs/product-docs/UI_DESIGN_NOTES.MD
 
 If CI, Podman, or release artifacts (FEAT-14 through FEAT-16):
   - the current ticket
-  - relevant sections of docs/PLAN.md
+  - relevant sections of docs/product-docs/PLAN.md
 
-Do not paste PRODUCT_REQS.*, the full PLAN, `Master_Prompt.full.md`, or a re-synthesized API dump by default.
+Do not paste PRODUCT_REQS.*, the full PLAN, or a re-synthesized API dump by default.
 ```
 
 ---
@@ -45,8 +45,9 @@ Do not paste PRODUCT_REQS.*, the full PLAN, `Master_Prompt.full.md`, or a re-syn
 
 ChatGPT does not automatically have access to the repository.
 
-This context describes intended architecture and known requirements. It does **not** prove that a particular file,
-component, hook, provider, API client, route, or abstraction currently exists.
+This context describes intended architecture, known requirements, and a dated baseline snapshot. It does **not**
+prove that a particular file, component, hook, provider, API client, route, or abstraction currently exists in the
+exact form described here.
 
 Unless a file or command output is supplied in the current conversation:
 
@@ -84,7 +85,7 @@ When sources disagree, use this order:
 1. Current repository contents supplied in the conversation
 2. Current ticket and its acceptance criteria
 3. Running backend/OpenAPI behavior, when relevant
-4. Attached source docs (`technical-reference/API-for-FE.md`, etc.)
+4. Attached source docs (`docs/technical-reference/API-for-FE.md`, etc.)
 5. This master context
 6. Older or planned architecture in other documentation
 
@@ -123,7 +124,8 @@ Prefer: **what we're doing -> why -> exact code -> what it does -> how we test i
 Do not bury implementation under unnecessary theory. Do not silently make architectural decisions that materially
 affect the project. If multiple approaches are reasonable, explain the tradeoff and recommend one.
 
-At the point where design comes into question, stop and ask for design notes (`product-docs/UI_DESIGN_NOTES.MD`).
+At the point where design comes into question, stop and ask for design notes
+(`docs/product-docs/UI_DESIGN_NOTES.MD`).
 
 ---
 
@@ -133,14 +135,26 @@ At the point where design comes into question, stop and ask for design notes (`p
 
 **Purpose:** Browser UI for the Shade home-library FastAPI backend.
 
-**Stack:** React 19, TypeScript, Vite, Yarn 4, Node.js 26, ESLint, Vitest, Testing Library, jsdom, Make, Corepack.
+**Stack:** React 19, TypeScript 6, Vite 8, React Router 7, Yarn 4, Node.js 26.7.0, ESLint, Vitest, Testing Library,
+jsdom, Make, Corepack.
 
 **Backend:** Separate project. Authoritative for API behavior. Default local base: `http://127.0.0.1:8000`
 (no `/api` prefix). OpenAPI: `/docs` and `/openapi.json`.
 
-**Current vs target:** The repo is built incrementally. Target routes and `src/app|api|features/...` layout are
-goals, not claims about what exists today. Never infer implementation from the target architecture alone.
-See `docs/full-project-context.md` for the current shell inventory.
+**Known baseline (as of 2026-08-10 -- verify before editing):**
+
+- Bootstrap mounts `RouterProvider` from `src/routes/routes.tsx` (not the leftover `src/App.tsx` welcome page).
+- Placeholder routes exist for `/`, `/books`, `/books/:bookId`, `/books/new`, `/loans`, and `*`.
+- Shared UI modules exist under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field,
+  LoadingState, Notifications) and re-export from `src/components/index.tsx`.
+- `src/layout/AppShell.tsx` exists but is not yet wired as a router layout.
+- CSS layers remain `tokens` -> `base` -> `shell` -> `components` via `src/index.css`.
+- No API client, typed server state, persistence, or feature workflow UI yet.
+- Work is mid-way through `docs/tickets/FEAT-01_application-shell-and-shared-ui.md`.
+
+Target routes and planned folders such as `src/app|api|features/...` are goals from the plan and ticket, not proof
+of current layout. Never infer implementation from the target architecture alone. Prefer `docs/AGENTS.md` for the
+maintained shell inventory when it is attached.
 
 Typical commands:
 
@@ -255,7 +269,8 @@ Identify remaining work and blockers.
 ### Do not invent backend behavior
 
 If desired behavior is missing from the API: compensate only when reasonable; never fake lifecycle with PATCH;
-identify a backend blocker when necessary. Prefer `technical-reference/API-for-FE.md` and running OpenAPI over assumptions.
+identify a backend blocker when necessary. Prefer `docs/technical-reference/API-for-FE.md` and running OpenAPI over
+assumptions.
 
 ---
 
@@ -263,16 +278,15 @@ identify a backend blocker when necessary. Prefer `technical-reference/API-for-F
 
 | Need | Document |
 | ---- | -------- |
-| Current repo shell, commands, CSS layers, agent rules | `docs/full-project-context.md` or `docs/AGENTS.md` |
-| API routes, payloads, errors, enums, CORS, ISBN, loans | `technical-reference/API-for-FE.md` |
-| Architecture / workstreams / release intent | `product-docs/PLAN.md` |
-| Product requirements (source) | `product-docs/PRODUCT_REQS.V1.md`, `docs/PRODUCT_REQS.V2.*.md` |
+| Current repo shell, commands, CSS layers, agent rules | `docs/AGENTS.md` |
+| API routes, payloads, errors, enums, CORS, ISBN, loans | `docs/technical-reference/API-for-FE.md` |
+| Architecture / workstreams / release intent | `docs/product-docs/PLAN.md` |
+| Product requirements (source) | `docs/product-docs/PRODUCT_REQS.V1.md`, `docs/product-docs/PRODUCT_REQS.V2.*.md` |
 | Feature tickets | `docs/tickets/FEAT-01_...` through `FEAT-16_...` |
-| UI / design decisions | `product-docs/UI_DESIGN_NOTES.MD` |
+| UI / design decisions | `docs/product-docs/UI_DESIGN_NOTES.MD` |
 | Human maintainers notes | `docs/MAINTAINERS.md` |
 | Build checklist | `docs/ToDo.md` |
 | Environment / setup | `README.md` |
-| Archived full synthesis (do not paste by default) | `docs/Prompts/Master_Prompt.full.md` |
 
 Request a listed document only when its contents are necessary for the current ticket and are not already attached.
 
