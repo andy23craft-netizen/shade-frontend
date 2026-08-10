@@ -33,6 +33,11 @@ Detailed Notes:
 
 ---
 
+* Dashboard is more for the desktop.
+  * Charts
+* Homepage is more for mobile
+  * Open question: How do we scroll around the content? 
+
 ## 1. Backend Work Required
 
 The following V2 features require new database models or meaningful backend changes.
