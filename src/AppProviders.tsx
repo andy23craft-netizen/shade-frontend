@@ -1,3 +1,5 @@
+/* AppProviders.tsx */
+
 import type { ReactNode } from 'react'
 import { NotificationsProvider } from './components/Notifications'
 import { ConnectionProvider } from './features/connection/ConnectionProvider'

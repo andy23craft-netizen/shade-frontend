@@ -1,3 +1,5 @@
+/* connectionInvalidation.ts */
+
 type ConnectionInvalidationListener = () => void
 
 const listeners = new Set<ConnectionInvalidationListener>()

@@ -1,3 +1,5 @@
+/* apiErrors.ts */
+
 export type ApiErrorKind =
     | 'unreachable'
     | 'timeout'

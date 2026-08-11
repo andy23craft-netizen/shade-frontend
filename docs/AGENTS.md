@@ -1,4 +1,4 @@
-# LLM Project Context
+# Agents.md: LLM Project Context
 
 Use this document as baseline context when working on the Shade frontend in a fresh LLM chat. Inspect the current
 repository before making changes because the code may have changed since this document was written. A user's
