@@ -5,6 +5,7 @@ import {
     useState,
 } from 'react'
 import type { ReactNode } from 'react'
+import { createApiClient } from '../../api/apiClient'
 import type { RuntimeConfig } from '../../config/runtimeConfig'
 import {
     checkHealth,
@@ -15,9 +16,12 @@ import {
     loadStoredToken,
     saveStoredToken,
 } from './connectionStorage'
-import type {
-    ConnectionStatus,
-} from './connectionTypes'
+import {
+    clearCurrentToken,
+    getCurrentToken,
+    setCurrentToken,
+} from './connectionToken'
+import type { ConnectionStatus } from './connectionTypes'
 import {
     ConnectionContext,
     type ConnectionContextValue,
@@ -29,14 +33,32 @@ interface ConnectionProviderProps {
 }
 
 export function ConnectionProvider({
-                                       children,
-                                       runtimeConfig,
-                                   }: ConnectionProviderProps) {
+    children,
+    runtimeConfig,
+}: ConnectionProviderProps) {
     const [status, setStatus] =
         useState<ConnectionStatus>('checking')
     const [hasToken, setHasToken] = useState(false)
     const [errorMessage, setErrorMessage] =
         useState<string | null>(null)
+
+    const apiClient = useMemo(
+        () =>
+            createApiClient({
+                apiBaseUrl: runtimeConfig.apiBaseUrl,
+                getToken: getCurrentToken,
+                onUnauthorized: () => {
+                    clearCurrentToken()
+                    clearStoredToken()
+                    setHasToken(false)
+                    setStatus('unauthorized')
+                    setErrorMessage(
+                        'API access was rejected.',
+                    )
+                },
+            }),
+        [runtimeConfig.apiBaseUrl],
+    )
 
     const verifyConnection = useCallback(
         async (token: string | null) => {
@@ -47,6 +69,7 @@ export function ConnectionProvider({
                 await checkHealth(runtimeConfig.apiBaseUrl)
 
                 if (!token) {
+                    clearCurrentToken()
                     setHasToken(false)
                     setStatus('setup_required')
                     return
@@ -57,6 +80,7 @@ export function ConnectionProvider({
                     token,
                 )
 
+                setCurrentToken(token)
                 setHasToken(true)
                 setStatus('connected')
             } catch (error) {
@@ -74,6 +98,7 @@ export function ConnectionProvider({
                     }
 
                     if (apiError.kind === 'unauthorized') {
+                        clearCurrentToken()
                         clearStoredToken()
                         setHasToken(false)
                         setStatus('unauthorized')
@@ -127,6 +152,7 @@ export function ConnectionProvider({
                     trimmedToken,
                 )
 
+                setCurrentToken(trimmedToken)
                 saveStoredToken(trimmedToken)
                 setHasToken(true)
                 setStatus('connected')
@@ -147,6 +173,7 @@ export function ConnectionProvider({
                     }
 
                     if (apiError.kind === 'unauthorized') {
+                        clearCurrentToken()
                         clearStoredToken()
                         setHasToken(false)
                         setStatus('unauthorized')
@@ -176,6 +203,7 @@ export function ConnectionProvider({
     }, [verifyConnection])
 
     const forgetConnection = useCallback(() => {
+        clearCurrentToken()
         clearStoredToken()
         setHasToken(false)
         setStatus('setup_required')
@@ -189,6 +217,7 @@ export function ConnectionProvider({
             release: runtimeConfig.release,
             hasToken,
             errorMessage,
+            apiClient,
             connect,
             retry,
             forgetConnection,
@@ -199,6 +228,7 @@ export function ConnectionProvider({
             runtimeConfig.release,
             hasToken,
             errorMessage,
+            apiClient,
             connect,
             retry,
             forgetConnection,
@@ -211,4 +241,3 @@ export function ConnectionProvider({
         </ConnectionContext.Provider>
     )
 }
-

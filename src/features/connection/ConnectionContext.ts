@@ -1,4 +1,5 @@
 import { createContext } from 'react'
+import type { createApiClient } from '../../api/apiClient'
 
 export interface ConnectionContextValue {
     status:
@@ -11,6 +12,7 @@ export interface ConnectionContextValue {
     release: string
     hasToken: boolean
     errorMessage: string | null
+    apiClient: ReturnType<typeof createApiClient>
     connect: (token: string) => Promise<boolean>
     retry: () => Promise<void>
     forgetConnection: () => void
