@@ -5,8 +5,7 @@ Source of truth for API detail, product requirements, and plans lives in the doc
 re-synthesize them here.
 
 Context pack version: 2026-08-11. Refresh this prompt when operating rules, non-negotiables, or the known
-baseline change. For Cursor chats with repository access, prefer `docs/AGENTS.md` instead of this file's
-"no repo access" sections.
+baseline change.
 
 The **current feature ticket is supplied separately** after this context.
 
@@ -21,14 +20,14 @@ Always:
   - this Master Prompt (slim)
   - the current docs/tickets/FEAT-XX_*.md ticket
 
-If the work touches connection setup or the API (FEAT-02+):
+If the work touches the API or server state (FEAT-03+):
   - docs/technical-reference/openapi.json (schemas: paths, methods, status codes, models, enums)
   - docs/technical-reference/API-for-FE.md (behavior OpenAPI does not fully express)
   - running OpenAPI when available for drift checks: http://127.0.0.1:8000/openapi.json
 
 If the model cannot see the repository:
-  - docs/AGENTS.md
-  - and/or the minimum files/command output requested below
+  - the minimum files/command output requested in section 1
+  - (this master context already carries the known baseline; do not substitute a second overview doc)
 
 If UI/design is in question:
   - docs/product-docs/UI_DESIGN_NOTES.MD
@@ -138,8 +137,10 @@ At the point where design comes into question, stop and ask for design notes
 
 **Purpose:** Browser UI for the Shade home-library FastAPI backend.
 
-**Stack:** React 19, TypeScript 6, Vite 8, React Router 7, Yarn 4, Node.js 26.7.0, ESLint, Vitest, Testing Library,
-jsdom, Make, Corepack.
+**Stack:** React 19, TypeScript 6 (strict), Vite 8, React Router 7 (`react-router-dom`), TanStack React Query 5
+(dependency present; provider wiring is FEAT-03 remaining work), `openapi-typescript` for generated types, Yarn 4
+(`yarn@4.18.0` via Corepack), Node.js 26.7.0, ESLint (flat), Vitest, Testing Library, jsdom, Make. Native ESM
+(`"type": "module"`). No Next.js, Tailwind, component library, or form library.
 
 **Backend:** Separate project. Authoritative for API behavior. Default local base: `http://127.0.0.1:8000`
 (no `/api` prefix). In-repo contract: `docs/technical-reference/openapi.json` (schemas) plus
@@ -147,35 +148,55 @@ jsdom, Make, Corepack.
 
 **Known baseline (as of 2026-08-11 -- verify before editing):**
 
-- FEAT-01 is complete. The FEAT-01 ticket file was removed; remaining tickets are `FEAT-02` through `FEAT-16`.
-- FEAT-02 remaining scope (footer release, token-inspection build test, CORS/proxy and token docs) is implemented;
-  confirm `make check` and the ticket acceptance criteria before marking complete.
+- FEAT-01 and FEAT-02 are complete. Their ticket files were removed; remaining tickets are `FEAT-03` through
+  `FEAT-16`. `docs/ToDo.md` marks FEAT-01 and FEAT-02 done.
+- Active ticket: `docs/tickets/FEAT-03_typed-api-and-server-state.md` (typed API + server state). Product feature
+  workflows belong to FEAT-04+.
 - Runtime config: `public/config.js` sets `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded from
   `index.html` before the app module. `src/config/runtimeConfig.ts` validates it; missing/malformed config shows
   `RuntimeConfigScreen` instead of the app shell (`src/main.tsx` -> `readRuntimeConfig()`).
-- Bootstrap when config is valid: `RootErrorBoundary` -> `AppProviders` (`NotificationsProvider` +
-  `ConnectionProvider`) -> `RouterProvider` from `src/routes/routes.tsx`, with `AppShell` as the parent layout route.
-  The shell footer shows the runtime release identifier.
-- Connection state under `src/features/connection/`: types, context, `sessionStorage` token helpers, `GET /health`
-  and `GET /protected` checks, connect / retry / forget, and `ConnectionScreen` UI. Statuses include `checking`,
-  `unreachable`, `setup_required`, `unauthorized`, and `connected`. `/settings/connection` mounts `ConnectionScreen`.
-- Shared API client and error helpers live in `src/api/apiClient.ts` and `src/api/apiErrors.ts`. Production-build
-  token inspection is in `scripts/productionBuildTokenInspection.test.ts`. Local CORS-or-proxy setup,
-  `sessionStorage` limits, and the production connectivity release blocker are documented in `README.md` and
-  `docs/MAINTAINERS.md`.
-- Registered routes (most feature pages remain thin `RoutePlaceholder` wrappers under `src/features/*/routes/`): `/`,
-  `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
-  `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
+- Bootstrap when config is valid:
+
+```text
+index.html
+  -> /config.js (window.__SHADE_CONFIG__)
+  -> src/main.tsx
+       -> readRuntimeConfig()
+            -> fail: RuntimeConfigScreen
+            -> ok: RootErrorBoundary
+                 -> AppProviders (NotificationsProvider + ConnectionProvider)
+                      -> RouterProvider (src/routes/routes.tsx)
+                           -> AppShell (layout) -> feature pages via Outlet
+       -> src/index.css (tokens -> base -> shell -> components)
+```
+
+- Connection state under `src/features/connection/`: types, context, memory + `sessionStorage` token helpers,
+  ad hoc `GET /health` and `GET /protected` in `connectionApi.ts`, connect / retry / forget, `ConnectionScreen`, and
+  `subscribeToConnectionInvalidation` / `notifyConnectionInvalidated`. Statuses: `checking`, `unreachable`,
+  `setup_required`, `unauthorized`, `connected`. `/settings/connection` mounts `ConnectionScreen`.
+- API layer already present and should be extended, not replaced:
+  - `yarn api:generate` / `yarn api:check` -> `src/api/generated/openapi.ts` (do not hand-edit)
+  - `src/api/apiTypes.ts` schema aliases; `src/api/enumDisplay.ts` (`enumDisplayValue`)
+  - `src/api/apiClient.ts` (`createApiClient`: Bearer, timeouts, AbortSignal, get/request JSON helpers, `403` via
+    `onUnauthorized`)
+  - `src/api/apiErrors.ts` (`ApiError` kinds including validation/`422` field mapping)
+  - `src/api/booksApi.ts`: typed `list()` only (`GET /books`); remaining business routes are FEAT-03 work
+- `AppProviders` does **not** yet wrap React Query. No query keys/mutations/cache invalidation wired yet; nothing
+  subscribes the connection-invalidation seam to a query cache.
+- Registered routes (most still `RoutePlaceholder` under `src/features/*/routes/`): `/`, `/books`, `/books/new`,
+  `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`, `/admin/deleted`, `/admin/backup`,
+  `/settings/connection`, and `*` (not found).
 - Shared UI under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field, LoadingState,
   Notifications) re-exports from `src/components/index.ts`.
-- CSS layers remain `tokens` -> `base` -> `shell` -> `components` via `src/index.css`.
-- No typed server-state / query layer and no feature workflow UI yet (those belong to FEAT-03+).
-- Active ticket: `docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
+- CSS layers: `tokens` -> `base` -> `shell` -> `components` via `src/index.css` (plain CSS; BEM-like component
+  classes). Shell footer shows the runtime release identifier.
+- Local CORS-or-proxy setup, `sessionStorage` token limits, and the production connectivity release blocker are in
+  `README.md`. Optional same-origin proxy: `SHADE_API_PROXY=1 make run`. Production-build token inspection:
+  `scripts/productionBuildTokenInspection.test.ts`.
 
-Planned modules such as a full shared API client or server-state layer are goals from the current or later tickets,
+Planned modules such as a complete typed route client or a wired query layer are goals of FEAT-03 (or later tickets),
 not proof that every piece already exists. Never infer implementation from the target architecture alone. Prefer
-`docs/AGENTS.md` for the maintained inventory when it is attached -- and verify against the repo, because that file
-can lag the working tree.
+files and command output supplied in the conversation over this snapshot when they disagree.
 
 Typical commands:
 
@@ -184,9 +205,13 @@ nvm use && corepack enable && make install
 make run
 make check
 make build
+yarn api:generate
+yarn api:check
 ```
 
 Do not casually replace Yarn, Make, Vitest, or the existing quality gate. Extend `make check` rather than replace it.
+Do not introduce a second state store, component library, CSS framework, or form library unless a ticket explicitly
+requires it.
 
 ---
 
@@ -224,12 +249,13 @@ Do not casually replace Yarn, Make, Vitest, or the existing quality gate. Extend
 - Prevent blank title, authors, and borrower.
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Do not use PATCH for checkout/check-in/restore/mark-read.
-- Render unknown enum values safely.
+- Render unknown enum values safely (`enumDisplayValue` or equivalent).
 
 ### Server state
 
-Use a query/cache layer for books, book detail, loans, and dashboard. Keep forms/scanner/dialogs local. Keep
-runtime connection state application-wide. Invalidate affected queries after mutations. There is no realtime API.
+Use a query/cache layer (TanStack React Query) for books, book detail, loans, and dashboard. Keep forms/scanner/dialogs
+local. Keep runtime connection state application-wide. Invalidate affected queries after mutations. Subscribe cache
+clearing to `subscribeToConnectionInvalidation` when the token is forgotten or rejected. There is no realtime API.
 
 ### Dashboard and statistics
 
@@ -246,6 +272,15 @@ or upload SQL backup contents to telemetry. SQL backups are sensitive.
 Semantic HTML, landmarks, visible focus, labels linked to errors, skip link, focus restoration on dialogs, document
 title + focus to heading on route change, no color-only status, 320px viewport, reduced motion.
 
+### Implementation conventions (short)
+
+- Strict TypeScript; avoid `any` unless an unavoidable boundary is documented.
+- Extensionless relative imports; single quotes; no semicolons; trailing commas where supported.
+- Import shared components from `src/components/index.ts`.
+- Colocate tests as `*.test.tsx` / `*.test.ts`; prefer semantic Testing Library queries and user-visible behavior.
+- Keep feature UI behind `src/features/*/routes/`; replace placeholders when a ticket owns that route.
+- Prefer regenerating `src/api/generated/openapi.ts` over hand-editing it.
+
 ---
 
 ## 5. Scope (short)
@@ -260,13 +295,36 @@ loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback orchestration.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
-Tickets live in `docs/tickets/` as `FEAT-02` through `FEAT-16` (FEAT-01 is complete and its ticket file is gone). The
-supplied ticket's acceptance criteria are authoritative unless they contradict the backend contract or established
-architecture.
+Tickets live in `docs/tickets/` as `FEAT-03` through `FEAT-16` (FEAT-01 and FEAT-02 are complete and their ticket
+files are gone). The supplied ticket's acceptance criteria are authoritative unless they contradict the backend
+contract or established architecture.
 
 ---
 
-## 6. Ticket implementation procedure
+## 6. Condensed inventory (known paths)
+
+Use this when deciding what to ask for or create. Verify against the repo before editing.
+
+| Area | Paths |
+| ---- | ----- |
+| Entry / bootstrap | `index.html`, `public/config.js`, `src/main.tsx`, `src/AppProviders.tsx`, `src/RootErrorBoundary.tsx` |
+| Runtime config | `src/config/runtimeConfig.ts`, `runtimeConfigState.ts`, `RuntimeConfigScreen.tsx` |
+| API | `src/api/generated/openapi.ts`, `apiTypes.ts`, `enumDisplay.ts`, `apiClient.ts`, `apiErrors.ts`, `booksApi.ts` |
+| Connection | `src/features/connection/*` (provider, screen, token, storage, api, invalidation) |
+| Routing / shell | `src/routes/*`, `src/layout/AppShell.tsx` |
+| Feature routes | `src/features/{dashboard,books,loans,connection}/routes/*` |
+| Shared UI | `src/components/*` (import via `index.ts`) |
+| Styles | `src/index.css`, `src/styles/{tokens,base,shell,components}.css` |
+| Tests helpers | `src/test/setup.ts`, `src/test/renderAppTree.tsx` |
+| Tooling | `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json` |
+
+Feature route ownership (most still placeholders): dashboard `/` (FEAT-11); books list/detail (FEAT-04); new book
+(FEAT-05); edit/deleted/backup (FEAT-10); checkout (FEAT-07); check-in/loans (FEAT-08); connection settings (FEAT-02,
+complete).
+
+---
+
+## 7. Ticket implementation procedure
 
 When I provide a feature ticket:
 
@@ -296,26 +354,27 @@ identify a backend blocker when necessary. Prefer `docs/technical-reference/open
 
 ---
 
-## 7. Document index (attach on demand)
+## 8. Document index (attach on demand)
 
 | Need | Document |
 | ---- | -------- |
-| Current repo shell, commands, CSS layers, agent rules | `docs/AGENTS.md` |
 | API paths, methods, status codes, schemas, enums | `docs/technical-reference/openapi.json` |
 | API behavior (auth, CORS, lifecycle, ISBN, backup, FE ownership) | `docs/technical-reference/API-for-FE.md` |
 | Architecture / workstreams / release intent | `docs/product-docs/PLAN.md` |
 | Product requirements (source) | `docs/product-docs/PRODUCT_REQS.V1.md`, `docs/product-docs/PRODUCT_REQS.V2.*.md` |
-| Feature tickets | `docs/tickets/FEAT-02_...` through `FEAT-16_...` (FEAT-01 complete) |
+| Feature tickets | `docs/tickets/FEAT-03_...` through `FEAT-16_...` (FEAT-01/02 complete) |
 | UI / design decisions | `docs/product-docs/UI_DESIGN_NOTES.MD` |
 | Human maintainers notes | `docs/MAINTAINERS.md` |
 | Build checklist | `docs/ToDo.md` |
 | Environment / setup | `README.md` |
 
 Request a listed document only when its contents are necessary for the current ticket and are not already attached.
+This master context is self-contained for operating rules, non-negotiables, and the dated baseline; do not treat other
+overview docs as required reading for the same material.
 
 ---
 
-## 8. Final working principle
+## 9. Final working principle
 
 Build the Shade frontend correctly, incrementally, and in a way I understand.
 
