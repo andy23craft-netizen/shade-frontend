@@ -7,48 +7,52 @@ artifact.
 
 ## Dependencies
 
-FEAT-01 is complete. The live shell, `/settings/connection` placeholder route, shared UI, and `AppProviders` are in
-place. Do not rebuild them.
+FEAT-01 is complete. Do not rebuild the shell, shared UI, or providers already in place.
 
 Do not add a component library, CSS framework, state store, data-fetching library, or form library in this ticket.
-Query/cache providers belong to FEAT-03.
+Query/cache providers belong to FEAT-03. When forgetting or rejecting a token, clear connection state now and leave a
+safe seam for FEAT-03 to invalidate cached protected data.
 
 ## Current baseline
 
 Already in place and should not be rebuilt:
 
-- `AppShell` with a Connection Settings nav link and route title/heading metadata for `/settings/connection`.
-- `src/features/settings/routes/ConnectionPage.tsx` still rendering `RoutePlaceholder` only.
-- `AppProviders` wrapping `NotificationsProvider` around the router; no connection provider yet.
-- Design tokens and shared primitives (including `Alert`, `Field`, `Button`, `LoadingState`) ready for the settings UI.
 - `public/config.js` defining `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded from `index.html` before the
   app module.
 - `src/config/runtimeConfig.ts` validating API base URL (HTTP/HTTPS, trailing-slash stripped, no `/api` assumption) and
   release identifier, with colocated unit tests.
-- `src/config/runtimeConfigState.ts` and `RuntimeConfigScreen` for a recoverable malformed-config UI; neither is wired
-  into `main.tsx` / `AppProviders` yet.
-- Empty placeholders to fill (do not recreate elsewhere): `src/features/connection/*`, `src/api/apiClient.ts`, and
-  `src/api/apiErrors.ts`.
+- `src/config/runtimeConfigState.ts` and `RuntimeConfigScreen`, wired from `src/main.tsx` so missing or malformed
+  config shows the recoverable configuration screen instead of the app shell.
+- `AppProviders` accepting `runtimeConfig` and wrapping `ConnectionProvider` around the router.
+- `src/features/connection/` connection state: types, context, `sessionStorage` token helpers, `GET /health`
+  reachability, `GET /protected` credential verification, connect / retry / forget actions, and `ConnectionScreen` UI.
+- Health and credential failures already map to distinct statuses (`unreachable`, `setup_required`, `unauthorized`,
+  `connected`).
 
-Not started: bootstrap wiring for runtime config, connection state, token storage, health/credential checks, `403`
-recovery, CORS documentation, or release-identifier display in the shell.
+Not finished:
+
+- `src/features/settings/routes/ConnectionPage.tsx` still renders `RoutePlaceholder`; `ConnectionScreen` is unused.
+- `src/api/apiClient.ts` and `src/api/apiErrors.ts` are empty placeholders.
+- App shell footer does not show the runtime release identifier.
+- No connection, API-client, redaction, or production-build token-inspection tests yet.
+- Frontend README / maintainer docs do not yet record local CORS-or-proxy setup, `sessionStorage` token limits, or the
+  production connectivity release blocker.
 
 ## Remaining scope
 
-- Wire runtime config into startup so missing or malformed config shows `RuntimeConfigScreen` instead of the app shell.
-- Ensure API paths are rooted directly at the configured URL and never assume an `/api` prefix.
-- Implement application-wide connection state (fill `src/features/connection/`) and replace the `ConnectionPage`
-  placeholder with `/settings/connection` UI.
-- Store the token only in memory and `sessionStorage`; add an explicit forget-token action.
-- Distinguish public `GET /health` reachability from `GET /protected` credential verification.
-- Return the user to connection setup and clear the active token after a confirmed protected-request `403`.
+- Mount `ConnectionScreen` on `/settings/connection` (replace the `ConnectionPage` placeholder).
+- Implement the shared API client and error helpers so every protected request after verification sends the current
+  runtime Bearer token, paths stay rooted at the configured base URL (no `/api` prefix), and a confirmed protected
+  `403` clears the active token and returns the user to connection setup.
 - Describe `403` as rejected API access rather than inferring whether the token was missing or invalid.
+- Redact authorization and connection secrets from client errors, logs, and diagnostics.
+- Display the runtime release identifier in the shell.
 - Support the backend's default local Vite origins or an optional local proxy. Document that cross-origin production
   requires the frontend's exact scheme, hostname, and port in backend `CORS_ORIGINS`, with no path or trailing slash;
   a deployment-managed same-origin proxy remains an alternative.
 - Document that cross-origin requests may send `Authorization` and `Content-Type`, cookies/credentialed CORS are not
   used, and frontend JavaScript may read the exposed `Content-Disposition` backup filename.
-- Display the runtime release identifier in the shell.
+- Document that `sessionStorage` limits persistence but does not protect a token from browser users or same-origin code.
 
 ## Security requirements
 
@@ -61,10 +65,10 @@ recovery, CORS documentation, or release-identifier display in the shell.
 
 - Changing the API URL or release identifier requires no rebuild.
 - Missing or malformed runtime config produces a recoverable configuration screen.
-- Health and credential checks produce distinct, actionable states for unreachable, reachable-but-unverified, verified,
-  and rejected access.
+- `/settings/connection` exposes the connection UI with distinct, actionable states for unreachable,
+  reachable-but-unverified, verified, and rejected access.
 - Every protected request made after verification receives the current runtime token.
-- Forgetting or rejecting a token clears cached protected data as well as connection state.
+- Forgetting or rejecting a token clears connection state (and any FEAT-03 cache seam) as well as the stored token.
 - Production-build and source-map inspection finds no test or real token.
 - Tests cover reload/session restoration, malformed config, health failure, rejected access, token replacement, and
   redaction.

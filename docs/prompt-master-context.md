@@ -144,20 +144,31 @@ jsdom, Make, Corepack.
 **Known baseline (as of 2026-08-10 -- verify before editing):**
 
 - FEAT-01 is complete. The FEAT-01 ticket file was removed; remaining tickets are `FEAT-02` through `FEAT-16`.
-- Bootstrap: `RootErrorBoundary` -> `AppProviders` (`NotificationsProvider`) -> `RouterProvider` from
-  `src/routes/routes.tsx`, with `AppShell` as the parent layout route.
-- Registered routes (feature pages are thin `RoutePlaceholder` wrappers under `src/features/*/routes/`): `/`,
+- FEAT-02 is in progress (not complete). Prefer the ticket's "Current baseline" / "Remaining scope" over guesses.
+- Runtime config: `public/config.js` sets `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded from
+  `index.html` before the app module. `src/config/runtimeConfig.ts` validates it; missing/malformed config shows
+  `RuntimeConfigScreen` instead of the app shell (`src/main.tsx` -> `readRuntimeConfig()`).
+- Bootstrap when config is valid: `RootErrorBoundary` -> `AppProviders` (`NotificationsProvider` +
+  `ConnectionProvider`) -> `RouterProvider` from `src/routes/routes.tsx`, with `AppShell` as the parent layout route.
+- Connection state under `src/features/connection/`: types, context, `sessionStorage` token helpers, `GET /health`
+  and `GET /protected` checks, connect / retry / forget, and `ConnectionScreen` UI. Statuses include `checking`,
+  `unreachable`, `setup_required`, `unauthorized`, and `connected`.
+- Not finished for FEAT-02: `/settings/connection` still uses `RoutePlaceholder` (`ConnectionScreen` unused);
+  `src/api/apiClient.ts` and `src/api/apiErrors.ts` are empty; shell footer does not show the release identifier;
+  connection / API-client / redaction / production-token-inspection tests and related docs are incomplete.
+- Registered routes (feature pages remain thin `RoutePlaceholder` wrappers under `src/features/*/routes/`): `/`,
   `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
   `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
 - Shared UI under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field, LoadingState,
   Notifications) re-exports from `src/components/index.ts`.
 - CSS layers remain `tokens` -> `base` -> `shell` -> `components` via `src/index.css`.
-- No runtime config, connection state, API client, typed server state, persistence, or feature workflow UI yet.
-- Next ticket: `docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
+- No typed server-state / query layer and no feature workflow UI yet (those belong to FEAT-03+).
+- Active ticket: `docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
 
-Planned modules such as a typed API client or server-state layer are goals from later tickets, not proof of current
-layout. Never infer implementation from the target architecture alone. Prefer `docs/AGENTS.md` for the maintained
-inventory when it is attached.
+Planned modules such as a full shared API client or server-state layer are goals from the current or later tickets,
+not proof that every piece already exists. Never infer implementation from the target architecture alone. Prefer
+`docs/AGENTS.md` for the maintained inventory when it is attached -- and verify against the repo, because that file
+can lag the working tree.
 
 Typical commands:
 
