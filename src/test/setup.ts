@@ -7,6 +7,10 @@ afterEach(() => {
 })
 
 function polyfillDialog() {
+    if (typeof HTMLDialogElement === 'undefined') {
+        return
+    }
+
     const DialogPrototype = HTMLDialogElement.prototype as HTMLDialogElement & {
         showModal?: () => void
         close?: () => void

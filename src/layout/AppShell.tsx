@@ -5,12 +5,14 @@ import {
     useLocation,
     useMatches,
 } from 'react-router-dom'
+import { useConnection } from '../features/connection/useConnection'
 
 interface RouteHandle {
     title?: string
 }
 
 export function AppShell() {
+    const { release } = useConnection()
     const location = useLocation()
     const matches = useMatches()
     const mainRef = useRef<HTMLElement>(null)
@@ -151,7 +153,8 @@ export function AppShell() {
 
             <footer className="app-footer">
                 <div className="app-footer__inner">
-                    Shade Library
+                    <span>Shade Library</span>
+                    <span>Release {release}</span>
                 </div>
             </footer>
         </div>

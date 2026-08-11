@@ -1,10 +1,51 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
+/**
+ * Optional same-origin API proxy for local development.
+ *
+ * Enable with `SHADE_API_PROXY=1`. Point `public/config.js` `apiBaseUrl` at the
+ * Vite origin (for example `http://localhost:5173`) so the browser stays
+ * same-origin while Vite forwards API paths to the backend.
+ *
+ * Default local work does not need the proxy: the backend already allows the
+ * Vite origins `http://localhost:5173` and `http://127.0.0.1:5173`.
+ */
+function createDevServerProxy() {
+    if (process.env.SHADE_API_PROXY !== '1') {
+        return undefined
+    }
+
+    const target =
+        process.env.SHADE_API_PROXY_TARGET ??
+        'http://127.0.0.1:8000'
+
+    return {
+        '^/(health|protected|books|loans|dashboard|backup|docs|redoc|openapi\\.json)':
+            {
+                target,
+                changeOrigin: true,
+            },
+    }
+}
+
+const apiProxy = createDevServerProxy()
+
 export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
-  },
+    plugins: [react()],
+    ...(apiProxy
+        ? {
+              server: {
+                  proxy: apiProxy,
+              },
+          }
+        : {}),
+    test: {
+        environment: 'jsdom',
+        setupFiles: './src/test/setup.ts',
+        include: [
+            'src/**/*.{test,spec}.{ts,tsx}',
+            'scripts/**/*.{test,spec}.ts',
+        ],
+    },
 })

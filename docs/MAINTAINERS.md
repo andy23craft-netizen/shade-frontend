@@ -173,6 +173,35 @@ The available commands are:
 `make check` currently type-checks twice: once directly and once as part of the build command. This is redundant,
 but it is expected behavior rather than a failure.
 
+### Runtime connection, CORS, and token limits
+
+Runtime configuration lives in `public/config.js` as `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). The
+Bearer token is never part of that file. Users enter the token on the connection screen; the app keeps it in memory
+and `sessionStorage` for the tab. `sessionStorage` limits persistence across tabs and restarts, but it does not
+protect the token from a browser user or same-origin script. Never put a token in source, runtime config, build
+arguments, generated assets, source maps, URLs, logs, diagnostics, snapshots, or error reports.
+
+Local API access:
+
+- Default: keep `apiBaseUrl` pointed at the backend (for example `http://127.0.0.1:8000`). The backend allows the
+  Vite origins `http://localhost:5173` and `http://127.0.0.1:5173`.
+- Optional same-origin proxy: set `apiBaseUrl` to the Vite origin and start with `SHADE_API_PROXY=1`
+  (`SHADE_API_PROXY_TARGET` defaults to `http://127.0.0.1:8000`).
+
+Cross-origin production requests may send `Authorization` and `Content-Type`. Cookies and credentialed CORS are not
+used. Frontend JavaScript may read the exposed backup `Content-Disposition` filename.
+
+Production connectivity remains a release blocker until one arrangement is chosen and verified:
+
+- Exact frontend origin (scheme, hostname, port; no path or trailing slash) in backend `CORS_ORIGINS`, or
+- A deployment-managed same-origin reverse proxy.
+
+Verification must cover authenticated requests, browser preflights, and JavaScript access to the backup
+`Content-Disposition` filename. See also `README.md` and `docs/technical-reference/API-for-FE.md`.
+
+`scripts/productionBuildTokenInspection.test.ts` builds with source maps and fails if known test or placeholder
+tokens appear in production assets or maps.
+
 ### Build, TypeScript, and Lint Configuration
 
 - `vite.config.ts`: Configures Vite's React support and Vitest's `jsdom` environment and setup file. Both the

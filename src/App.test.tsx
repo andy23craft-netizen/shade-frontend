@@ -1,27 +1,32 @@
-import { StrictMode } from 'react'
 import {
   fireEvent,
-  render,
   screen,
   waitFor,
 } from '@testing-library/react'
-import { RouterProvider } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
-import { createTestRouter } from './routes/createMemoryRouter'
-
-function renderApp(initialEntries: string[] = ['/']) {
-  const router = createTestRouter(initialEntries)
-
-  render(
-      <StrictMode>
-        <RouterProvider router={router} />
-      </StrictMode>,
-  )
-
-  return router
-}
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+import {
+  mockReachableApi,
+  renderAppTree,
+} from './test/renderAppTree'
 
 describe('application routing effects', () => {
+  beforeEach(() => {
+    mockReachableApi()
+    sessionStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    sessionStorage.clear()
+  })
+
   it('sets the document title on initial load without moving focus', async () => {
     const focusTarget = document.createElement('button')
     focusTarget.type = 'button'
@@ -30,7 +35,7 @@ describe('application routing effects', () => {
     focusTarget.focus()
 
     try {
-      renderApp(['/books'])
+      renderAppTree(['/books'])
 
       await waitFor(() => {
         expect(document.title).toBe('Books — Shade')
@@ -43,7 +48,7 @@ describe('application routing effects', () => {
   })
 
   it('updates the title and focuses the heading after client-side navigation', async () => {
-    renderApp(['/books'])
+    renderAppTree(['/books'])
 
     const loansLink = screen.getByRole('link', {
       name: 'Loans',
@@ -63,7 +68,7 @@ describe('application routing effects', () => {
   })
 
   it('makes route headings programmatically focusable', () => {
-    renderApp(['/books'])
+    renderAppTree(['/books'])
 
     const heading = screen.getByRole('heading', {
       level: 1,

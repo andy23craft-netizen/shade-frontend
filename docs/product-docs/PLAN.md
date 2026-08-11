@@ -14,14 +14,17 @@ been satisfied.
 This plan reconciles:
 
 - `PRODUCT_REQS.V1.md` for user outcomes and MVP scope.
-- `../technical-reference/API-for-FE.md` for the documented backend contract.
+- `../technical-reference/openapi.json` for paths, methods, status codes, request/response schemas, enums, and
+  nullability (OpenAPI 3.1; LibraryV2).
+- `../technical-reference/API-for-FE.md` for behavioral guidance OpenAPI does not fully express (auth, CORS, error
+  meanings, lifecycle rules, ISBN quirks, backup download, FE vs API ownership).
 - `../ToDo.md` for the requested stack, pages, and build artifacts.
 - The current repository for the implemented frontend baseline.
 
-The running backend OpenAPI document is authoritative for request and response schemas. Before implementing an
-API-dependent ticket, compare the relevant portion of `../technical-reference/API-for-FE.md` with the OpenAPI schema. Contract drift must
-be corrected in the owning system or recorded as an explicit blocker; the frontend must not silently invent backend
-behavior.
+Treat the two technical-reference files as complementary, not interchangeable. The checked-in OpenAPI document is the
+in-repo source of truth for schemas. Before implementing an API-dependent ticket, compare that file (and the relevant
+portion of `API-for-FE.md`) with a representative running backend `/openapi.json`. Contract drift must be corrected in
+the owning system or recorded as an explicit blocker; the frontend must not silently invent backend behavior.
 
 ## 3. Confirmed product and delivery decisions
 
@@ -134,12 +137,14 @@ concrete cross-route state requirement emerges.
 
 ### 7.2 API contract and types
 
-- Derive TypeScript models from the running OpenAPI schema when a stable generation path is available. If generation is
-  not yet practical, maintain explicit types checked against OpenAPI contract fixtures.
+- Derive TypeScript models from `../technical-reference/openapi.json` when a stable generation path is available. If
+  generation is not yet practical, maintain explicit types and contract fixtures checked against that file. Re-check
+  against a representative running backend `/openapi.json` before locking transport types.
 - Model nullable fields, dates, timestamps, enums, and no-content responses exactly.
 - Keep API transport models separate from form values when HTML inputs require different representations.
 - Treat the API as the source of truth for ISBN normalization, persistence, lifecycle transitions, loan records, and
-  dashboard calculations, while compensating for the documented ISBN-10 and temporal-string validation gaps.
+  dashboard calculations, while compensating for the documented ISBN-10 and temporal-string validation gaps in
+  `API-for-FE.md`.
 - Model collection responses as `{ items, total }`. The books API is title-ordered and the loans API is ordered by
   `checked_out_at` descending; neither endpoint currently supports pagination, and loans do not support filtering.
 - Send date values as `YYYY-MM-DD` and timestamps as normalized UTC ISO 8601 strings. Keep `publication_date` as an API
@@ -672,9 +677,11 @@ The following are not frontend implementations, but they block release if unreso
 
 ### Backend contract dependencies
 
-- Confirm exact OpenAPI types and nullability for every `BookRead` field.
-- Confirm purchase-price currency, precision, and valid range.
-- Confirm duplicate ISBN behavior.
+- Use `../technical-reference/openapi.json` for exact OpenAPI types and nullability (including every `BookRead`
+  field). Re-verify against a running backend `/openapi.json` when the backend changes; record drift as a blocker.
+- Confirm purchase-price currency, precision, and valid range. OpenAPI currently models `purchase_price` as an
+  unconstrained nullable `number` with no currency or `multipleOf`.
+- Confirm duplicate ISBN behavior. OpenAPI documents no duplicate-ISBN conflict (`409` or otherwise) on `POST /books`.
 - Configure the deployed frontend's exact origin in backend `CORS_ORIGINS` when using cross-origin browser access.
 - Track backend hardening for temporal validation, ISBN-10 check-digit validation, required-field null handling, and
   `updated_date` maintenance; the frontend mitigations in this plan do not repair the backend contract.
@@ -783,7 +790,7 @@ Out-of-scope items may be documented as follow-ups but must not expand MVP ticke
 
 ### Integration gate
 
-- Running OpenAPI and frontend contract types agree.
+- Checked-in `openapi.json`, running backend OpenAPI, and frontend contract types agree.
 - Protected requests work with runtime credentials.
 - Production CORS or same-origin proxy behavior is verified, including exposed backup response headers.
 - All dedicated lifecycle endpoints preserve expected backend state.
