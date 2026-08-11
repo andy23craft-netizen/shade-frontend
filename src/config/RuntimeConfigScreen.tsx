@@ -1,14 +1,11 @@
 import { useState } from 'react'
 import { Button } from '../components/Button'
-import {  RuntimeConfigError } from './runtimeConfig'
 
 interface RuntimeConfigScreenProps {
-    error: RuntimeConfigError
     onRetry: () => void
 }
 
 export function RuntimeConfigScreen({
-                                        error,
                                         onRetry,
                                     }: RuntimeConfigScreenProps) {
     const [isRetrying, setIsRetrying] = useState(false)
