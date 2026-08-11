@@ -10,7 +10,7 @@ import { CheckoutPage } from '../features/loans/routes/CheckoutPage'
 import { CheckinPage } from '../features/loans/routes/CheckinPage'
 import { LoansPage } from '../features/loans/routes/LoansPage'
 import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
-import { ConnectionPage } from '../features/settings/routes/ConnectionPage'
+import { ConnectionPage } from '../features/connection/routes/ConnectionPage'
 import { NotFoundPage } from './NotFoundPage'
 import { routeMetadata } from './routeMetadata'
 

@@ -3,6 +3,9 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ConnectionProvider } from './ConnectionProvider'
 import { useConnection } from './useConnection'
+import {
+    subscribeToConnectionInvalidation,
+} from './connectionInvalidation'
 
 function ConnectionProbe() {
     const {
@@ -28,7 +31,9 @@ function ConnectionProbe() {
 
             <button
                 type="button"
-                onClick={() => void apiClient.get('/books')}
+                onClick={() => {
+                    void apiClient.get('/books').catch(() => undefined)
+                }}
             >
                 Request books
             </button>
@@ -300,4 +305,122 @@ describe('ConnectionProvider', () => {
             ),
         ).toBeNull()
     })
+
+    it('notifies protected-data caches when the connection is forgotten', async () => {
+        sessionStorage.setItem(
+            'shade.apiToken',
+            'initial-token',
+        )
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async (input) => {
+                const url = String(input)
+
+                if (
+                    url.endsWith('/health') ||
+                    url.endsWith('/protected')
+                ) {
+                    return new Response('{}', {
+                        status: 200,
+                    })
+                }
+
+                return new Response('{}', {
+                    status: 200,
+                })
+            },
+        )
+
+        const invalidated = vi.fn()
+
+        const unsubscribe =
+            subscribeToConnectionInvalidation(invalidated)
+
+        renderProvider()
+
+        await waitFor(() => {
+            expect(
+                screen.getByTestId('status'),
+            ).toHaveTextContent('connected')
+        })
+
+        await screen.getByRole('button', {
+            name: 'Forget',
+        }).click()
+
+        expect(invalidated).toHaveBeenCalledOnce()
+
+        unsubscribe()
+    })
+
+    it('notifies protected-data caches when the API rejects the token', async () => {
+        sessionStorage.setItem(
+            'shade.apiToken',
+            'initial-token',
+        )
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async (input) => {
+                const url = String(input)
+
+                if (url.endsWith('/health')) {
+                    return new Response('{}', {
+                        status: 200,
+                    })
+                }
+
+                if (url.endsWith('/protected')) {
+                    return new Response('{}', {
+                        status: 200,
+                    })
+                }
+
+                if (url.endsWith('/books')) {
+                    return new Response('{}', {
+                        status: 403,
+                    })
+                }
+
+                throw new Error(
+                    `Unexpected request: ${url}`,
+                )
+            },
+        )
+
+        const invalidated = vi.fn()
+
+        const unsubscribe =
+            subscribeToConnectionInvalidation(invalidated)
+
+        renderProvider()
+
+        await waitFor(() => {
+            expect(
+                screen.getByTestId('status'),
+            ).toHaveTextContent('connected')
+        })
+
+        await screen.getByRole('button', {
+            name: 'Request books',
+        }).click()
+
+        await waitFor(() => {
+            expect(
+                screen.getByTestId('status'),
+            ).toHaveTextContent('unauthorized')
+        })
+
+        expect(invalidated).toHaveBeenCalledOnce()
+
+        expect(
+            screen.getByTestId('has-token'),
+        ).toHaveTextContent('false')
+
+        expect(
+            sessionStorage.getItem('shade.apiToken'),
+        ).toBeNull()
+
+        unsubscribe()
+    })
 })
+

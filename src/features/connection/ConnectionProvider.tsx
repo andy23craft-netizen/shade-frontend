@@ -26,6 +26,7 @@ import {
     ConnectionContext,
     type ConnectionContextValue,
 } from './ConnectionContext'
+import { notifyConnectionInvalidated } from './connectionInvalidation'
 
 interface ConnectionProviderProps {
     children: ReactNode
@@ -42,22 +43,30 @@ export function ConnectionProvider({
     const [errorMessage, setErrorMessage] =
         useState<string | null>(null)
 
+    const invalidateConnection = useCallback(() => {
+        clearCurrentToken()
+        clearStoredToken()
+        setHasToken(false)
+        notifyConnectionInvalidated()
+    }, [])
+
     const apiClient = useMemo(
         () =>
             createApiClient({
                 apiBaseUrl: runtimeConfig.apiBaseUrl,
                 getToken: getCurrentToken,
                 onUnauthorized: () => {
-                    clearCurrentToken()
-                    clearStoredToken()
-                    setHasToken(false)
+                    invalidateConnection()
                     setStatus('unauthorized')
                     setErrorMessage(
                         'API access was rejected.',
                     )
                 },
             }),
-        [runtimeConfig.apiBaseUrl],
+        [
+            runtimeConfig.apiBaseUrl,
+            invalidateConnection,
+        ],
     )
 
     const verifyConnection = useCallback(
@@ -203,12 +212,10 @@ export function ConnectionProvider({
     }, [verifyConnection])
 
     const forgetConnection = useCallback(() => {
-        clearCurrentToken()
-        clearStoredToken()
-        setHasToken(false)
+        invalidateConnection()
         setStatus('setup_required')
         setErrorMessage(null)
-    }, [])
+    }, [invalidateConnection])
 
     const value = useMemo<ConnectionContextValue>(
         () => ({
