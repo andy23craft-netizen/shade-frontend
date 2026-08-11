@@ -1,11 +1,16 @@
 # Shade Frontend -- Master Implementation Context
 
 Slim always-on prompt for ChatGPT (or any chat without automatic repository access).
-Source of truth for API detail, product requirements, and plans lives in the docs listed below -- do not
-re-synthesize them here.
 
-Context pack version: 2026-08-11. Refresh this prompt when operating rules, non-negotiables, or the known
-baseline change.
+This document is the complete always-on operating context for those chats. It stands on its own for
+operating rules, non-negotiables, and the dated codebase baseline. Do not request or treat
+`docs/AGENTS.md` (or any other overview doc) as required reading for the same material.
+
+Source of truth for API schemas, behavioral API notes, product requirements, and plans lives in the
+docs listed in section 8 -- attach those on demand for ticket work; do not re-synthesize them here.
+
+Context pack version: 2026-08-11. Refresh this prompt when operating rules, non-negotiables, or the
+known baseline change.
 
 The **current feature ticket is supplied separately** after this context.
 
@@ -27,7 +32,8 @@ If the work touches the API or server state (FEAT-03+):
 
 If the model cannot see the repository:
   - the minimum files/command output requested in section 1
-  - (this master context already carries the known baseline; do not substitute a second overview doc)
+  - (this master context already carries the known baseline; do not request docs/AGENTS.md or
+     any second overview doc for the same material)
 
 If UI/design is in question:
   - docs/product-docs/UI_DESIGN_NOTES.MD
@@ -46,9 +52,9 @@ Prefer the checked-in OpenAPI file over paraphrasing schemas into chat.
 
 ChatGPT does not automatically have access to the repository.
 
-This context describes intended architecture, known requirements, and a dated baseline snapshot. It does **not**
-prove that a particular file, component, hook, provider, API client, route, or abstraction currently exists in the
-exact form described here.
+This context describes intended architecture, known requirements, and a dated baseline snapshot. It
+does **not** prove that a particular file, component, hook, provider, API client, route, or
+abstraction currently exists in the exact form described here.
 
 Unless a file or command output is supplied in the current conversation:
 
@@ -56,7 +62,8 @@ Unless a file or command output is supplied in the current conversation:
 - Do not invent its contents.
 - Do not assume a planned file already exists.
 - Do not assume the repository has already reached the target architecture.
-- Do not tell me to modify code you have not seen when its current contents could affect the implementation.
+- Do not tell me to modify code you have not seen when its current contents could affect the
+  implementation.
 
 ### When information is missing
 
@@ -76,8 +83,11 @@ find src -maxdepth 3 -type f | sort
 ```
 
 Do not request the entire repository. Do not request docs already covered by the attached pack.
+Do not request `docs/AGENTS.md` for baseline architecture -- use this master context and the
+supplied ticket (plus section 1 evidence) instead.
 
-If a file does not yet exist and the ticket requires creating it, do not ask for it -- state that we will create it.
+If a file does not yet exist and the ticket requires creating it, do not ask for it -- state that we
+will create it.
 
 ### Authority hierarchy
 
@@ -91,8 +101,8 @@ When sources disagree, use this order:
 6. This master context
 7. Older or planned architecture in other documentation
 
-If the repository differs from the target architecture, explain the discrepancy rather than silently forcing the
-planned structure onto the current codebase.
+If the repository differs from the target architecture, explain the discrepancy rather than silently
+forcing the planned structure onto the current codebase.
 
 ---
 
@@ -123,8 +133,9 @@ For each meaningful step, explain:
 
 Prefer: **what we're doing -> why -> exact code -> what it does -> how we test it.**
 
-Do not bury implementation under unnecessary theory. Do not silently make architectural decisions that materially
-affect the project. If multiple approaches are reasonable, explain the tradeoff and recommend one.
+Do not bury implementation under unnecessary theory. Do not silently make architectural decisions that
+materially affect the project. If multiple approaches are reasonable, explain the tradeoff and
+recommend one.
 
 At the point where design comes into question, stop and ask for design notes
 (`docs/product-docs/UI_DESIGN_NOTES.MD`).
@@ -137,24 +148,28 @@ At the point where design comes into question, stop and ask for design notes
 
 **Purpose:** Browser UI for the Shade home-library FastAPI backend.
 
-**Stack:** React 19, TypeScript 6 (strict), Vite 8, React Router 7 (`react-router-dom`), TanStack React Query 5
-(dependency present; provider wiring is FEAT-03 remaining work), `openapi-typescript` for generated types, Yarn 4
-(`yarn@4.18.0` via Corepack), Node.js 26.7.0, ESLint (flat), Vitest, Testing Library, jsdom, Make. Native ESM
-(`"type": "module"`). No Next.js, Tailwind, component library, or form library.
+**Stack:** React 19, TypeScript 6 (strict), Vite 8, React Router 7 (`react-router-dom`), TanStack
+React Query 5 (dependency present; `QueryClientProvider` is mounted under `AppProviders`; remaining
+FEAT-03 work is client defaults, invalidation wiring, fuller mutations/mocks, and related tests),
+`openapi-typescript` for generated types, Yarn 4 (`yarn@4.18.0` via Corepack), Node.js 26.7.0,
+ESLint (flat), Vitest, Testing Library, jsdom, Make. Native ESM (`"type": "module"`). No Next.js,
+Tailwind, component library, or form library.
 
-**Backend:** Separate project. Authoritative for API behavior. Default local base: `http://127.0.0.1:8000`
-(no `/api` prefix). In-repo contract: `docs/technical-reference/openapi.json` (schemas) plus
-`docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI: `/docs` and `/openapi.json` on the running API.
+**Backend:** Separate project. Authoritative for API behavior. Default local base:
+`http://127.0.0.1:8000` (no `/api` prefix). In-repo contract:
+`docs/technical-reference/openapi.json` (schemas) plus `docs/technical-reference/API-for-FE.md`
+(behavior). Live OpenAPI: `/docs` and `/openapi.json` on the running API.
 
 **Known baseline (as of 2026-08-11 -- verify before editing):**
 
-- FEAT-01 and FEAT-02 are complete. Their ticket files were removed; remaining tickets are `FEAT-03` through
-  `FEAT-16`. `docs/ToDo.md` marks FEAT-01 and FEAT-02 done.
-- Active ticket: `docs/tickets/FEAT-03_typed-api-and-server-state.md` (typed API + server state). Product feature
-  workflows belong to FEAT-04+.
-- Runtime config: `public/config.js` sets `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded from
-  `index.html` before the app module. `src/config/runtimeConfig.ts` validates it; missing/malformed config shows
-  `RuntimeConfigScreen` instead of the app shell (`src/main.tsx` -> `readRuntimeConfig()`).
+- FEAT-01 and FEAT-02 are complete. Their ticket files were removed; remaining tickets are `FEAT-03`
+  through `FEAT-16`. `docs/ToDo.md` marks FEAT-01 and FEAT-02 done.
+- Active ticket: `docs/tickets/FEAT-03_typed-api-and-server-state.md` (typed API + server state).
+  Product feature workflows belong to FEAT-04+.
+- Runtime config: `public/config.js` sets `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded
+  from `index.html` before the app module. `src/config/runtimeConfig.ts` validates it; missing or
+  malformed config shows `RuntimeConfigScreen` instead of the app shell
+  (`src/main.tsx` -> `readRuntimeConfig()`).
 - Bootstrap when config is valid:
 
 ```text
@@ -164,39 +179,59 @@ index.html
        -> readRuntimeConfig()
             -> fail: RuntimeConfigScreen
             -> ok: RootErrorBoundary
-                 -> AppProviders (NotificationsProvider + ConnectionProvider)
-                      -> RouterProvider (src/routes/routes.tsx)
-                           -> AppShell (layout) -> feature pages via Outlet
+                 -> AppProviders
+                      -> NotificationsProvider
+                      -> QueryClientProvider (createQueryClient())
+                      -> ConnectionProvider
+                           -> RouterProvider (src/routes/routes.tsx)
+                                -> AppShell (layout) -> feature pages via Outlet
        -> src/index.css (tokens -> base -> shell -> components)
 ```
 
-- Connection state under `src/features/connection/`: types, context, memory + `sessionStorage` token helpers,
-  ad hoc `GET /health` and `GET /protected` in `connectionApi.ts`, connect / retry / forget, `ConnectionScreen`, and
-  `subscribeToConnectionInvalidation` / `notifyConnectionInvalidated`. Statuses: `checking`, `unreachable`,
-  `setup_required`, `unauthorized`, `connected`. `/settings/connection` mounts `ConnectionScreen`.
+- Connection state under `src/features/connection/`: types, context, memory + `sessionStorage` token
+  helpers, ad hoc `GET /health` and `GET /protected` in `connectionApi.ts`, connect / retry /
+  forget, `ConnectionScreen`, and `subscribeToConnectionInvalidation` /
+  `notifyConnectionInvalidated`. Statuses: `checking`, `setup_required`, `connected`,
+  `unauthorized`, `unreachable`. `/settings/connection` mounts `ConnectionScreen`. Connection still
+  uses ad hoc fetches; prefer typed `healthApi` / `protectedApi` once FEAT-03 finishes that swap.
 - API layer already present and should be extended, not replaced:
   - `yarn api:generate` / `yarn api:check` -> `src/api/generated/openapi.ts` (do not hand-edit)
   - `src/api/apiTypes.ts` schema aliases; `src/api/enumDisplay.ts` (`enumDisplayValue`)
-  - `src/api/apiClient.ts` (`createApiClient`: Bearer, timeouts, AbortSignal, get/request JSON helpers, `403` via
-    `onUnauthorized`)
-  - `src/api/apiErrors.ts` (`ApiError` kinds including validation/`422` field mapping)
-  - `src/api/booksApi.ts`: typed `list()` only (`GET /books`); remaining business routes are FEAT-03 work
-- `AppProviders` does **not** yet wrap React Query. No query keys/mutations/cache invalidation wired yet; nothing
-  subscribes the connection-invalidation seam to a query cache.
-- Registered routes (most still `RoutePlaceholder` under `src/features/*/routes/`): `/`, `/books`, `/books/new`,
-  `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`, `/admin/deleted`, `/admin/backup`,
-  `/settings/connection`, and `*` (not found).
-- Shared UI under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field, LoadingState,
-  Notifications) re-exports from `src/components/index.ts`.
-- CSS layers: `tokens` -> `base` -> `shell` -> `components` via `src/index.css` (plain CSS; BEM-like component
-  classes). Shell footer shows the runtime release identifier.
-- Local CORS-or-proxy setup, `sessionStorage` token limits, and the production connectivity release blocker are in
-  `README.md`. Optional same-origin proxy: `SHADE_API_PROXY=1 make run`. Production-build token inspection:
-  `scripts/productionBuildTokenInspection.test.ts`.
+  - `src/api/apiClient.ts` (`createApiClient`: Bearer, timeouts, AbortSignal, get/request JSON
+    helpers, `403` via `onUnauthorized`)
+  - `src/api/apiErrors.ts` (`ApiError` kinds including validation/`422` field mapping; correlation
+    ID modeled but not yet populated from responses)
+  - `src/api/api.ts` `createApi` aggregates typed helpers: `books`, `loans`, `dashboard`, `health`,
+    `protected`, `backup`, plus the underlying `client`
+  - `booksApi`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`,
+    `restore`, `checkout`, `checkin` (optional body), `markRead`
+  - `loansApi.list`, `dashboardApi.get`, `healthApi.get` (public), `protectedApi.get`
+  - `backupApi.get` returns SQL as text only; blob + safe `Content-Disposition` filename metadata
+    is still FEAT-03 remaining work
+  - Colocated happy-path helper tests exist for those route modules; `apiClient.test.ts` currently
+    duplicates a books `list()` mock and no longer covers Bearer / public / `403` / timeout /
+    invalid JSON / `204` client behavior (restore/extend as part of FEAT-03)
+- React Query is mounted: `createQueryClient()` is a bare `QueryClient` (no stale/retry/focus
+  defaults yet). `subscribeQueryClientToConnectionInvalidation` exists and is unit-tested, but
+  `AppProviders` does not subscribe it yet. Partial hooks in `src/api/booksQueries.ts`: `useBooks`,
+  `useBook`, `useBookLookup`, `useCreateBook` (create only invalidates `['books']`). Remaining
+  mutations and the PLAN.md 7.5 invalidation matrix are unfinished.
+- Registered routes (most still `RoutePlaceholder` under `src/features/*/routes/`): `/`, `/books`,
+  `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
+  `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
+- Shared UI under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field,
+  LoadingState, Notifications) re-exports from `src/components/index.ts`.
+- CSS layers: `tokens` -> `base` -> `shell` -> `components` via `src/index.css` (plain CSS;
+  BEM-like component classes). Shell footer shows the runtime release identifier.
+- Local CORS-or-proxy setup, `sessionStorage` token limits, and the production connectivity release
+  blocker are in `README.md`. Optional same-origin proxy: `SHADE_API_PROXY=1 make run`. Production-
+  build token inspection: `scripts/productionBuildTokenInspection.test.ts`.
 
-Planned modules such as a complete typed route client or a wired query layer are goals of FEAT-03 (or later tickets),
-not proof that every piece already exists. Never infer implementation from the target architecture alone. Prefer
-files and command output supplied in the conversation over this snapshot when they disagree.
+Planned items such as query-client defaults, AppProviders invalidation subscription, backup blob
+download metadata, fuller mutation/invalidation coverage, and restored `apiClient` tests are goals of
+FEAT-03 (or later tickets), not proof that every piece already exists. Never infer implementation from
+the target architecture alone. Prefer files and command output supplied in the conversation over this
+snapshot when they disagree.
 
 Typical commands:
 
@@ -209,9 +244,9 @@ yarn api:generate
 yarn api:check
 ```
 
-Do not casually replace Yarn, Make, Vitest, or the existing quality gate. Extend `make check` rather than replace it.
-Do not introduce a second state store, component library, CSS framework, or form library unless a ticket explicitly
-requires it.
+Do not casually replace Yarn, Make, Vitest, or the existing quality gate. Extend `make check` rather
+than replace it. Do not introduce a second state store, component library, CSS framework, or form
+library unless a ticket explicitly requires it.
 
 ---
 
@@ -222,8 +257,8 @@ requires it.
 - Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
 - No login, logout, user accounts, sessions, or roles
 - Missing/invalid credentials -> `403`; describe generically as "API access was rejected"
-- Token: runtime only; memory + `sessionStorage`; explicit forget action; never commit, bundle, URL, log, or send
-  to analytics
+- Token: runtime only; memory + `sessionStorage`; explicit forget action; never commit, bundle, URL,
+  log, or send to analytics
 - Confirmed `403` clears the active token and returns the user to connection setup
 - Browser-held token is inspectable; accepted risk for a trusted deployment -- not real user auth
 
@@ -253,51 +288,59 @@ requires it.
 
 ### Server state
 
-Use a query/cache layer (TanStack React Query) for books, book detail, loans, and dashboard. Keep forms/scanner/dialogs
-local. Keep runtime connection state application-wide. Invalidate affected queries after mutations. Subscribe cache
-clearing to `subscribeToConnectionInvalidation` when the token is forgotten or rejected. There is no realtime API.
+Use a query/cache layer (TanStack React Query) for books, book detail, loans, and dashboard. Keep
+forms/scanner/dialogs local. Keep runtime connection state application-wide. Invalidate affected
+queries after mutations. Subscribe cache clearing to `subscribeToConnectionInvalidation` (via
+`subscribeQueryClientToConnectionInvalidation` from bootstrap) when the token is forgotten or
+rejected. There is no realtime API.
 
 ### Dashboard and statistics
 
-Display API-provided statistics. Do not recalculate business metrics in the frontend. If an average is `null`,
-show something like "Not enough data" -- do not invent zero.
+Display API-provided statistics. Do not recalculate business metrics in the frontend. If an average
+is `null`, show something like "Not enough data" -- do not invent zero.
 
 ### Security highlights
 
-Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API text as HTML,
-or upload SQL backup contents to telemetry. SQL backups are sensitive.
+Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API
+text as HTML, or upload SQL backup contents to telemetry. SQL backups are sensitive.
 
 ### Accessibility baseline
 
-Semantic HTML, landmarks, visible focus, labels linked to errors, skip link, focus restoration on dialogs, document
-title + focus to heading on route change, no color-only status, 320px viewport, reduced motion.
+Semantic HTML, landmarks, visible focus, labels linked to errors, skip link, focus restoration on
+dialogs, document title + focus to heading on route change, no color-only status, 320px viewport,
+reduced motion.
 
 ### Implementation conventions (short)
 
 - Strict TypeScript; avoid `any` unless an unavoidable boundary is documented.
 - Extensionless relative imports; single quotes; no semicolons; trailing commas where supported.
 - Import shared components from `src/components/index.ts`.
-- Colocate tests as `*.test.tsx` / `*.test.ts`; prefer semantic Testing Library queries and user-visible behavior.
-- Keep feature UI behind `src/features/*/routes/`; replace placeholders when a ticket owns that route.
+- Colocate tests as `*.test.tsx` / `*.test.ts`; prefer semantic Testing Library queries and
+  user-visible behavior.
+- Keep feature UI behind `src/features/*/routes/`; replace placeholders when a ticket owns that
+  route.
 - Prefer regenerating `src/api/generated/openapi.ts` over hand-editing it.
+- Extend the existing API client, generated types, query helpers, and connection-invalidation seam
+  during FEAT-03; do not invent a parallel transport or cache stack.
 
 ---
 
 ## 5. Scope (short)
 
-**In scope for MVP:** dashboard, active books, detail, manual/ISBN/camera/scanner add flows, edit, checkout,
-check-in, loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL backup, runtime API
-config, CI, Podman preview, versioned production artifacts.
+**In scope for MVP:** dashboard, active books, detail, manual/ISBN/camera/scanner add flows, edit,
+checkout, check-in, loan history, reading tracking, soft delete/restore, deleted admin, authenticated
+SQL backup, runtime API config, CI, Podman preview, versioned production artifacts.
 
-**Out of scope unless explicitly requested:** UPC, multi-library/copies, wish lists, catalog search/filter/sort,
-backend pagination, cover images, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime sync,
-loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback orchestration.
+**Out of scope unless explicitly requested:** UPC, multi-library/copies, wish lists, catalog
+search/filter/sort, backend pagination, cover images, overdue notifications, Goodreads/StoryGraph,
+user accounts/roles, realtime sync, loan CRUD, mark-unread, remote
+Ansible/systemd/TLS/rollback orchestration.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
-Tickets live in `docs/tickets/` as `FEAT-03` through `FEAT-16` (FEAT-01 and FEAT-02 are complete and their ticket
-files are gone). The supplied ticket's acceptance criteria are authoritative unless they contradict the backend
-contract or established architecture.
+Tickets live in `docs/tickets/` as `FEAT-03` through `FEAT-16` (FEAT-01 and FEAT-02 are complete and
+their ticket files are gone). The supplied ticket's acceptance criteria are authoritative unless they
+contradict the backend contract or established architecture.
 
 ---
 
@@ -309,7 +352,7 @@ Use this when deciding what to ask for or create. Verify against the repo before
 | ---- | ----- |
 | Entry / bootstrap | `index.html`, `public/config.js`, `src/main.tsx`, `src/AppProviders.tsx`, `src/RootErrorBoundary.tsx` |
 | Runtime config | `src/config/runtimeConfig.ts`, `runtimeConfigState.ts`, `RuntimeConfigScreen.tsx` |
-| API | `src/api/generated/openapi.ts`, `apiTypes.ts`, `enumDisplay.ts`, `apiClient.ts`, `apiErrors.ts`, `booksApi.ts` |
+| API | `src/api/generated/openapi.ts`, `apiTypes.ts`, `enumDisplay.ts`, `apiClient.ts`, `apiErrors.ts`, `api.ts`, `booksApi.ts`, `loansApi.ts`, `dashboardApi.ts`, `healthApi.ts`, `protectedApi.ts`, `backupApi.ts`, `queryClient.ts`, `queryInvalidation.ts`, `booksQueries.ts` |
 | Connection | `src/features/connection/*` (provider, screen, token, storage, api, invalidation) |
 | Routing / shell | `src/routes/*`, `src/layout/AppShell.tsx` |
 | Feature routes | `src/features/{dashboard,books,loans,connection}/routes/*` |
@@ -318,9 +361,9 @@ Use this when deciding what to ask for or create. Verify against the repo before
 | Tests helpers | `src/test/setup.ts`, `src/test/renderAppTree.tsx` |
 | Tooling | `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json` |
 
-Feature route ownership (most still placeholders): dashboard `/` (FEAT-11); books list/detail (FEAT-04); new book
-(FEAT-05); edit/deleted/backup (FEAT-10); checkout (FEAT-07); check-in/loans (FEAT-08); connection settings (FEAT-02,
-complete).
+Feature route ownership (most still placeholders): dashboard `/` (FEAT-11); books list/detail
+(FEAT-04); new book (FEAT-05); edit/deleted/backup (FEAT-10); checkout (FEAT-07); check-in/loans
+(FEAT-08); connection settings (FEAT-02, complete).
 
 ---
 
@@ -328,15 +371,17 @@ complete).
 
 When I provide a feature ticket:
 
-1. **Understand** -- prerequisites, architecture dependencies, API endpoints, tests, acceptance criteria,
-   contradictions or blockers.
+1. **Understand** -- prerequisites, architecture dependencies, API endpoints, tests, acceptance
+   criteria, contradictions or blockers.
 2. **Inspect** -- request only the minimum current files or command output needed (see section 1).
-3. **Plan** -- briefly: what we implement, files involved, why, decisions, anything that must be created first.
-4. **Implement incrementally** -- for each meaningful step: purpose, exact path, full new-file contents or explicit
-   edits, important code explained, how to verify.
-5. **Test** -- unit/component tests, API mocks, accessibility or browser tests as appropriate; prefer
-   user-visible behavior.
-6. **Verify** -- `make check` at milestones; targeted tests while iterating. Compiling is not "done."
+3. **Plan** -- briefly: what we implement, files involved, why, decisions, anything that must be
+   created first.
+4. **Implement incrementally** -- for each meaningful step: purpose, exact path, full new-file
+   contents or explicit edits, important code explained, how to verify.
+5. **Test** -- unit/component tests, API mocks, accessibility or browser tests as appropriate;
+   prefer user-visible behavior.
+6. **Verify** -- `make check` at milestones; targeted tests while iterating. Compiling is not
+   "done."
 7. **Acceptance** -- walk every criterion:
 
 ```text
@@ -348,9 +393,10 @@ Identify remaining work and blockers.
 
 ### Do not invent backend behavior
 
-If desired behavior is missing from the API: compensate only when reasonable; never fake lifecycle with PATCH;
-identify a backend blocker when necessary. Prefer `docs/technical-reference/openapi.json`,
-`docs/technical-reference/API-for-FE.md`, and a running backend `/openapi.json` over assumptions.
+If desired behavior is missing from the API: compensate only when reasonable; never fake lifecycle
+with PATCH; identify a backend blocker when necessary. Prefer
+`docs/technical-reference/openapi.json`, `docs/technical-reference/API-for-FE.md`, and a running
+backend `/openapi.json` over assumptions.
 
 ---
 
@@ -368,9 +414,10 @@ identify a backend blocker when necessary. Prefer `docs/technical-reference/open
 | Build checklist | `docs/ToDo.md` |
 | Environment / setup | `README.md` |
 
-Request a listed document only when its contents are necessary for the current ticket and are not already attached.
-This master context is self-contained for operating rules, non-negotiables, and the dated baseline; do not treat other
-overview docs as required reading for the same material.
+Request a listed document only when its contents are necessary for the current ticket and are not
+already attached. This master context is self-contained for operating rules, non-negotiables, and the
+dated baseline. Do not request `docs/AGENTS.md` or treat other overview docs as required reading for
+the same material.
 
 ---
 
@@ -378,9 +425,9 @@ overview docs as required reading for the same material.
 
 Build the Shade frontend correctly, incrementally, and in a way I understand.
 
-Be explicit, practical, incremental, honest about what you can and cannot see, conservative about architecture,
-respectful of the backend contract, and focused on the current ticket.
+Be explicit, practical, incremental, honest about what you can and cannot see, conservative about
+architecture, respectful of the backend contract, and focused on the current ticket.
 
-Use complete code. Explain the why. Do not invent requirements. Do not implement future tickets early. When
-information is missing, ask for the minimum specific repository evidence needed. When something is ambiguous,
-explain the ambiguity rather than guessing silently.
+Use complete code. Explain the why. Do not invent requirements. Do not implement future tickets early.
+When information is missing, ask for the minimum specific repository evidence needed. When something
+is ambiguous, explain the ambiguity rather than guessing silently.
