@@ -37,24 +37,18 @@ Already in place and should not be rebuilt:
 - Client errors omit authorization secrets; API-client tests assert tokens do not appear in `ApiError` stringification.
 - Tests cover reload/session restoration, malformed config, health failure, rejected access, token replacement,
   forget/clear, invalidation notifications, and error redaction.
-
-Not finished:
-
-- App shell footer does not show the runtime release identifier (release is shown only on the connection screen).
-- No production-build or source-map token-inspection tests yet.
-- Frontend README / maintainer docs do not yet record local CORS-or-proxy setup, `sessionStorage` token limits, or the
-  production connectivity release blocker.
+- App shell footer shows the runtime release identifier from connection/runtime config.
+- Production-build and source-map token inspection
+  (`scripts/productionBuildTokenInspection.test.ts`) fails if known test or placeholder tokens appear in artifacts.
+- Optional local Vite API proxy via `SHADE_API_PROXY=1` (default remains direct cross-origin to the backend's allowed
+  Vite origins).
+- README and maintainer docs record local CORS-or-proxy setup, `sessionStorage` token limits, and the production
+  connectivity release blocker (`CORS_ORIGINS` or same-origin proxy, including preflight and backup
+  `Content-Disposition` verification).
 
 ## Remaining scope
 
-- Display the runtime release identifier in the shell footer.
-- Add production-build and source-map inspection that fails if a test or real token appears in artifacts.
-- Support the backend's default local Vite origins or an optional local proxy. Document that cross-origin production
-  requires the frontend's exact scheme, hostname, and port in backend `CORS_ORIGINS`, with no path or trailing slash;
-  a deployment-managed same-origin proxy remains an alternative.
-- Document that cross-origin requests may send `Authorization` and `Content-Type`, cookies/credentialed CORS are not
-  used, and frontend JavaScript may read the exposed `Content-Disposition` backup filename.
-- Document that `sessionStorage` limits persistence but does not protect a token from browser users or same-origin code.
+- None for this ticket once `make check` passes. Later tickets may extend typed API coverage, packaging, and CI.
 
 ## Security requirements
 

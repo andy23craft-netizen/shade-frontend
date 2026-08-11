@@ -1,29 +1,34 @@
-import { StrictMode } from 'react'
 import {
   fireEvent,
-  render,
   screen,
   within,
 } from '@testing-library/react'
-import { RouterProvider } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
-import { createTestRouter } from '../routes/createMemoryRouter'
-
-function renderShell(initialEntries: string[] = ['/']) {
-  const router = createTestRouter(initialEntries)
-
-  render(
-    <StrictMode>
-      <RouterProvider router={router} />
-    </StrictMode>,
-  )
-
-  return router
-}
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+import {
+  mockReachableApi,
+  renderAppTree,
+} from '../test/renderAppTree'
 
 describe('AppShell layout and navigation', () => {
+  beforeEach(() => {
+    mockReachableApi()
+    sessionStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    sessionStorage.clear()
+  })
+
   it('exposes skip link, landmarks, and primary navigation labels', () => {
-    renderShell(['/'])
+    renderAppTree(['/'])
 
     expect(
       screen.getByRole('link', {
@@ -70,8 +75,17 @@ describe('AppShell layout and navigation', () => {
     }
   })
 
+  it('shows the runtime release identifier in the footer', () => {
+    renderAppTree(['/'])
+
+    const footer = screen.getByRole('contentinfo')
+
+    expect(footer).toHaveTextContent('Shade Library')
+    expect(footer).toHaveTextContent('Release test-release')
+  })
+
   it('marks exactly one primary navigation link as the current page', () => {
-    renderShell(['/loans'])
+    renderAppTree(['/loans'])
 
     const primaryNav = screen.getByRole('navigation', {
       name: 'Primary navigation',
@@ -87,7 +101,7 @@ describe('AppShell layout and navigation', () => {
   })
 
   it('recovers from unknown routes with a home link', () => {
-    renderShell(['/does-not-exist'])
+    renderAppTree(['/does-not-exist'])
 
     expect(
       screen.getByRole('heading', {
@@ -106,7 +120,7 @@ describe('AppShell layout and navigation', () => {
   it('navigates to a feature route without mutating window history', () => {
     const historyLengthBefore = window.history.length
 
-    renderShell(['/books'])
+    renderAppTree(['/books'])
 
     fireEvent.click(
       screen.getByRole('link', {

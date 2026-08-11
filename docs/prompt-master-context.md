@@ -144,19 +144,22 @@ jsdom, Make, Corepack.
 **Known baseline (as of 2026-08-10 -- verify before editing):**
 
 - FEAT-01 is complete. The FEAT-01 ticket file was removed; remaining tickets are `FEAT-02` through `FEAT-16`.
-- FEAT-02 is in progress (not complete). Prefer the ticket's "Current baseline" / "Remaining scope" over guesses.
+- FEAT-02 remaining scope (footer release, token-inspection build test, CORS/proxy and token docs) is implemented;
+  confirm `make check` and the ticket acceptance criteria before marking complete.
 - Runtime config: `public/config.js` sets `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded from
   `index.html` before the app module. `src/config/runtimeConfig.ts` validates it; missing/malformed config shows
   `RuntimeConfigScreen` instead of the app shell (`src/main.tsx` -> `readRuntimeConfig()`).
 - Bootstrap when config is valid: `RootErrorBoundary` -> `AppProviders` (`NotificationsProvider` +
   `ConnectionProvider`) -> `RouterProvider` from `src/routes/routes.tsx`, with `AppShell` as the parent layout route.
+  The shell footer shows the runtime release identifier.
 - Connection state under `src/features/connection/`: types, context, `sessionStorage` token helpers, `GET /health`
   and `GET /protected` checks, connect / retry / forget, and `ConnectionScreen` UI. Statuses include `checking`,
-  `unreachable`, `setup_required`, `unauthorized`, and `connected`.
-- Not finished for FEAT-02: `/settings/connection` still uses `RoutePlaceholder` (`ConnectionScreen` unused);
-  `src/api/apiClient.ts` and `src/api/apiErrors.ts` are empty; shell footer does not show the release identifier;
-  connection / API-client / redaction / production-token-inspection tests and related docs are incomplete.
-- Registered routes (feature pages remain thin `RoutePlaceholder` wrappers under `src/features/*/routes/`): `/`,
+  `unreachable`, `setup_required`, `unauthorized`, and `connected`. `/settings/connection` mounts `ConnectionScreen`.
+- Shared API client and error helpers live in `src/api/apiClient.ts` and `src/api/apiErrors.ts`. Production-build
+  token inspection is in `scripts/productionBuildTokenInspection.test.ts`. Local CORS-or-proxy setup,
+  `sessionStorage` limits, and the production connectivity release blocker are documented in `README.md` and
+  `docs/MAINTAINERS.md`.
+- Registered routes (most feature pages remain thin `RoutePlaceholder` wrappers under `src/features/*/routes/`): `/`,
   `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
   `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
 - Shared UI under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field, LoadingState,

@@ -15,11 +15,10 @@ Shade is a frontend for a personal library management application. Planned capab
 - Soft-deleting and restoring books while preserving history.
 - Sending a bearer token with backend API requests.
 
-The application-shell ticket (`docs/tickets/FEAT-01_application-shell-and-shared-ui.md`) is complete. React Router
-mounts under `AppShell` with the full early route map, thin feature-owned placeholder pages, shared UI primitives,
-notifications via `AppProviders`, and a root error boundary. There is still no runtime configuration, API client,
-server state, persistence, or feature workflow UI. The next sequenced ticket is
-`docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
+The application-shell ticket (`docs/tickets/FEAT-01_application-shell-and-shared-ui.md`) is complete. Runtime
+configuration and connection (FEAT-02) are in place: `public/config.js`, connection settings, shared API client
+basics, shell footer release identifier, production-build token inspection, and local CORS-or-proxy documentation.
+Query/cache providers and typed server-state belong to FEAT-03. Product feature workflows arrive in later tickets.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
 `docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
@@ -107,7 +106,8 @@ normal code changes.
 - `index.html`: Vite's HTML entrypoint. It defines page metadata, creates `#root`, and loads `src/main.tsx`.
 - `src/main.tsx`: Browser bootstrap. It imports global CSS and the router, checks for `#root`, and mounts
   `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`.
-- `src/AppProviders.tsx`: Application-wide providers. Today it wraps children in `NotificationsProvider`.
+- `src/AppProviders.tsx`: Application-wide providers. Wraps `NotificationsProvider` and `ConnectionProvider`
+  (requires validated `runtimeConfig`).
 - `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home).
 - `src/vite-env.d.ts`: Adds Vite client and asset declarations to TypeScript. It has no runtime behavior.
 
@@ -121,7 +121,8 @@ normal code changes.
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
 - `src/layout/AppShell.tsx`: Application frame with skip link, header, primary navigation, admin/settings group,
-  `Outlet` main region, footer, document title, and heading focus on location change.
+  `Outlet` main region, footer (including runtime release identifier), document title, and heading focus on location
+  change.
 
 ### Feature Route Modules
 
@@ -137,7 +138,7 @@ Thin wrappers under `src/features/` own routes for later tickets. They currently
 - `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07)
 - `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
 - `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
-- `src/features/settings/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02)
+- `src/features/connection/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02; mounts `ConnectionScreen`)
 
 ### Shared Components
 
@@ -183,17 +184,21 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 ### Tests
 
-- `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `createTestRouter`.
+- `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback.
-- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels, current-page state, and not-found recovery.
+- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels, footer release identifier, current-page state, and
+  not-found recovery.
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
+- `src/test/renderAppTree.tsx`: Shared helper that mounts the router under `AppProviders` with a mocked reachable API.
+- `scripts/productionBuildTokenInspection.test.ts`: Production build with source maps; fails if known test tokens
+  appear in artifacts.
 
-Tests use a jsdom browser simulation. Prefer semantic Testing Library queries such as `getByRole()` and test
-user-visible behavior instead of implementation details. Route tests should use `createTestRouter` and must not
-mutate `window.history` across cases.
+Tests use a jsdom browser simulation (except the Node-environment production-build inspection). Prefer semantic
+Testing Library queries such as `getByRole()` and test user-visible behavior instead of implementation details.
+Route tests should use `createTestRouter` / `renderAppTree` and must not mutate `window.history` across cases.
 
 The test flow is:
 
@@ -226,7 +231,8 @@ yarn test
 
 ### Repository Guidance
 
-- `README.md`: Concise human onboarding for prerequisites, setup, development, checks, and production builds.
+- `README.md`: Concise human onboarding for prerequisites, setup, development, local CORS-or-proxy options,
+  `sessionStorage` token limits, production connectivity release blocker, checks, and production builds.
 - `.gitignore`: Excludes dependencies, generated output, secrets, local data, editor files, and OS metadata.
 - `.gitattributes`: Normalizes text files to LF line endings and marks common binary extensions.
 - `.cursor/rules/documentation-style.mdc`: Markdown punctuation, line-length, and newline rules for Cursor.
@@ -297,8 +303,8 @@ make build
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns that
   route rather than inventing a parallel tree.
-- Introduce runtime config, connection state, API, and server-state patterns only when FEAT-02 / FEAT-03 (or a later
-  concrete ticket) requires them.
+- Introduce additional server-state or feature-directory patterns only when FEAT-03 (or a later concrete ticket)
+  requires them.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
 
 ## Change Workflow
