@@ -9,6 +9,10 @@ import type {
     BookList,
 } from './apiTypes'
 
+import type {
+    createApiClient,
+} from './apiClient'
+
 import {
     createBooksApi,
 } from './booksApi'
@@ -20,7 +24,7 @@ describe('createBooksApi', () => {
             total: 0,
         }
 
-        const client = {
+        const client: ReturnType<typeof createApiClient> = {
             request: vi.fn(),
             requestJson: vi.fn(),
             get: vi.fn(),

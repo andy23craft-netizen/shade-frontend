@@ -20,7 +20,9 @@ function createConnectionState(
         errorMessage: null,
         apiClient: {
             request: vi.fn(),
+            requestJson: vi.fn(),
             get: vi.fn(),
+            getJson: vi.fn(),
         },
         connect: vi.fn().mockResolvedValue(true),
         retry: vi.fn().mockResolvedValue(undefined),
