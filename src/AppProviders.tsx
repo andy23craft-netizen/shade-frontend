@@ -1,9 +1,19 @@
-/* AppProviders.tsx */
-
 import type { ReactNode } from 'react'
-import { NotificationsProvider } from './components/Notifications'
-import { ConnectionProvider } from './features/connection/ConnectionProvider'
+import {
+    QueryClientProvider,
+} from '@tanstack/react-query'
+import {
+    NotificationsProvider,
+} from './components/Notifications'
+import {
+    ConnectionProvider,
+} from './features/connection/ConnectionProvider'
 import type { RuntimeConfig } from './config/runtimeConfig'
+import {
+    createQueryClient,
+} from './api/queryClient'
+
+const queryClient = createQueryClient()
 
 interface AppProvidersProps {
     children: ReactNode
@@ -11,14 +21,18 @@ interface AppProvidersProps {
 }
 
 export function AppProviders({
-                                 children,
-                                 runtimeConfig,
-                             }: AppProvidersProps) {
+    children,
+    runtimeConfig,
+}: AppProvidersProps) {
     return (
         <NotificationsProvider>
-            <ConnectionProvider runtimeConfig={runtimeConfig}>
-                {children}
-            </ConnectionProvider>
+            <QueryClientProvider client={queryClient}>
+                <ConnectionProvider
+                    runtimeConfig={runtimeConfig}
+                >
+                    {children}
+                </ConnectionProvider>
+            </QueryClientProvider>
         </NotificationsProvider>
     )
 }
