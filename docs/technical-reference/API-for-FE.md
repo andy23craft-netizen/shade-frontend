@@ -1,8 +1,9 @@
 # API for Frontend (supplementary)
 
-Paths, methods, status codes, request/response schemas, and enums live in `docs/openapi.json`
-(regenerate with `make openapi`). Live `/openapi.json` and `/docs` match the running app; a drift test keeps the
-checked-in file equal to what the app generates.
+Paths, methods, status codes, request/response schemas, and enums live in
+`docs/technical-reference/openapi.json` (copied from the backend; regenerate there with `make openapi` and refresh this
+file when the backend contract changes). Live backend `/openapi.json` and `/docs` should match; treat drift between the
+checked-in file and a running app as a blocker.
 
 This document covers behavior and frontend guidance that OpenAPI does not fully express. Do not duplicate schema
 or route tables here.

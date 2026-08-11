@@ -248,7 +248,13 @@ Useful documents under `docs/` (not inventoried file-by-file here):
 - `docs/ToDo.md`: Human checklist of ticket completion status.
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
-- `docs/technical-reference/API-for-FE.md`: Backend contract notes for the frontend.
+- `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2) -- paths, methods,
+  status codes, request/response models, enums, and nullability. Prefer generating or fixture-checking TypeScript
+  models from this file. Compare with a running backend `/openapi.json` before locking transport types; record drift
+  as a blocker.
+- `docs/technical-reference/API-for-FE.md`: Behavioral API guidance OpenAPI does not fully express (auth, CORS, error
+  meanings, lifecycle rules, ISBN quirks, backup download, FE vs API ownership). Complementary to `openapi.json`, not
+  a substitute for schemas.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide parallel to this file.
 - `docs/prompt-master-context.md`: Slim context pack for chats without repository access.
 
@@ -305,6 +311,9 @@ make build
   route rather than inventing a parallel tree.
 - Introduce additional server-state or feature-directory patterns only when FEAT-03 (or a later concrete ticket)
   requires them.
+- For API-dependent work, treat `docs/technical-reference/openapi.json` as the schema source of truth and
+  `docs/technical-reference/API-for-FE.md` as behavioral guidance. Do not invent backend behavior from product docs
+  alone.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
 
 ## Change Workflow

@@ -4,7 +4,7 @@ Slim always-on prompt for ChatGPT (or any chat without automatic repository acce
 Source of truth for API detail, product requirements, and plans lives in the docs listed below -- do not
 re-synthesize them here.
 
-Context pack version: 2026-08-10. Refresh this prompt when operating rules, non-negotiables, or the known
+Context pack version: 2026-08-11. Refresh this prompt when operating rules, non-negotiables, or the known
 baseline change. For Cursor chats with repository access, prefer `docs/AGENTS.md` instead of this file's
 "no repo access" sections.
 
@@ -22,8 +22,9 @@ Always:
   - the current docs/tickets/FEAT-XX_*.md ticket
 
 If the work touches connection setup or the API (FEAT-02+):
-  - docs/technical-reference/API-for-FE.md
-  - running OpenAPI when available: http://127.0.0.1:8000/openapi.json
+  - docs/technical-reference/openapi.json (schemas: paths, methods, status codes, models, enums)
+  - docs/technical-reference/API-for-FE.md (behavior OpenAPI does not fully express)
+  - running OpenAPI when available for drift checks: http://127.0.0.1:8000/openapi.json
 
 If the model cannot see the repository:
   - docs/AGENTS.md
@@ -37,6 +38,7 @@ If CI, Podman, or release artifacts (FEAT-14 through FEAT-16):
   - relevant sections of docs/product-docs/PLAN.md
 
 Do not paste PRODUCT_REQS.*, the full PLAN, or a re-synthesized API dump by default.
+Prefer the checked-in OpenAPI file over paraphrasing schemas into chat.
 ```
 
 ---
@@ -84,10 +86,11 @@ When sources disagree, use this order:
 
 1. Current repository contents supplied in the conversation
 2. Current ticket and its acceptance criteria
-3. Running backend/OpenAPI behavior, when relevant
-4. Attached source docs (`docs/technical-reference/API-for-FE.md`, etc.)
-5. This master context
-6. Older or planned architecture in other documentation
+3. Running backend `/openapi.json` behavior, when relevant (drift vs checked-in contract)
+4. Checked-in `docs/technical-reference/openapi.json` for paths, methods, status codes, and schemas
+5. `docs/technical-reference/API-for-FE.md` for behavioral guidance OpenAPI does not fully express
+6. This master context
+7. Older or planned architecture in other documentation
 
 If the repository differs from the target architecture, explain the discrepancy rather than silently forcing the
 planned structure onto the current codebase.
@@ -139,9 +142,10 @@ At the point where design comes into question, stop and ask for design notes
 jsdom, Make, Corepack.
 
 **Backend:** Separate project. Authoritative for API behavior. Default local base: `http://127.0.0.1:8000`
-(no `/api` prefix). OpenAPI: `/docs` and `/openapi.json`.
+(no `/api` prefix). In-repo contract: `docs/technical-reference/openapi.json` (schemas) plus
+`docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI: `/docs` and `/openapi.json` on the running API.
 
-**Known baseline (as of 2026-08-10 -- verify before editing):**
+**Known baseline (as of 2026-08-11 -- verify before editing):**
 
 - FEAT-01 is complete. The FEAT-01 ticket file was removed; remaining tickets are `FEAT-02` through `FEAT-16`.
 - FEAT-02 remaining scope (footer release, token-inspection build test, CORS/proxy and token docs) is implemented;
@@ -287,8 +291,8 @@ Identify remaining work and blockers.
 ### Do not invent backend behavior
 
 If desired behavior is missing from the API: compensate only when reasonable; never fake lifecycle with PATCH;
-identify a backend blocker when necessary. Prefer `docs/technical-reference/API-for-FE.md` and running OpenAPI over
-assumptions.
+identify a backend blocker when necessary. Prefer `docs/technical-reference/openapi.json`,
+`docs/technical-reference/API-for-FE.md`, and a running backend `/openapi.json` over assumptions.
 
 ---
 
@@ -297,7 +301,8 @@ assumptions.
 | Need | Document |
 | ---- | -------- |
 | Current repo shell, commands, CSS layers, agent rules | `docs/AGENTS.md` |
-| API routes, payloads, errors, enums, CORS, ISBN, loans | `docs/technical-reference/API-for-FE.md` |
+| API paths, methods, status codes, schemas, enums | `docs/technical-reference/openapi.json` |
+| API behavior (auth, CORS, lifecycle, ISBN, backup, FE ownership) | `docs/technical-reference/API-for-FE.md` |
 | Architecture / workstreams / release intent | `docs/product-docs/PLAN.md` |
 | Product requirements (source) | `docs/product-docs/PRODUCT_REQS.V1.md`, `docs/product-docs/PRODUCT_REQS.V2.*.md` |
 | Feature tickets | `docs/tickets/FEAT-02_...` through `FEAT-16_...` (FEAT-01 complete) |
