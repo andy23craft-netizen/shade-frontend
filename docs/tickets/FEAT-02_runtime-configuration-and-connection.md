@@ -25,28 +25,30 @@ Already in place and should not be rebuilt:
   config shows the recoverable configuration screen instead of the app shell.
 - `AppProviders` accepting `runtimeConfig` and wrapping `ConnectionProvider` around the router.
 - `src/features/connection/` connection state: types, context, `sessionStorage` token helpers, `GET /health`
-  reachability, `GET /protected` credential verification, connect / retry / forget actions, and `ConnectionScreen` UI.
-- Health and credential failures already map to distinct statuses (`unreachable`, `setup_required`, `unauthorized`,
+  reachability, `GET /protected` credential verification, connect / retry / forget actions, FEAT-03 invalidation seam,
+  and `ConnectionScreen` UI.
+- Health and credential failures map to distinct statuses (`unreachable`, `setup_required`, `unauthorized`,
   `connected`).
+- `/settings/connection` mounts `ConnectionScreen` via `src/features/connection/routes/ConnectionPage.tsx`.
+- Shared API client and error helpers in `src/api/apiClient.ts` and `src/api/apiErrors.ts`: protected requests send the
+  current runtime Bearer token, paths root at the configured base URL (no `/api` prefix), and a confirmed protected
+  `403` clears the active token, notifies the invalidation seam, and returns the user to connection setup with rejected
+  access messaging (not an inference about missing vs invalid credentials).
+- Client errors omit authorization secrets; API-client tests assert tokens do not appear in `ApiError` stringification.
+- Tests cover reload/session restoration, malformed config, health failure, rejected access, token replacement,
+  forget/clear, invalidation notifications, and error redaction.
 
 Not finished:
 
-- `src/features/settings/routes/ConnectionPage.tsx` still renders `RoutePlaceholder`; `ConnectionScreen` is unused.
-- `src/api/apiClient.ts` and `src/api/apiErrors.ts` are empty placeholders.
-- App shell footer does not show the runtime release identifier.
-- No connection, API-client, redaction, or production-build token-inspection tests yet.
+- App shell footer does not show the runtime release identifier (release is shown only on the connection screen).
+- No production-build or source-map token-inspection tests yet.
 - Frontend README / maintainer docs do not yet record local CORS-or-proxy setup, `sessionStorage` token limits, or the
   production connectivity release blocker.
 
 ## Remaining scope
 
-- Mount `ConnectionScreen` on `/settings/connection` (replace the `ConnectionPage` placeholder).
-- Implement the shared API client and error helpers so every protected request after verification sends the current
-  runtime Bearer token, paths stay rooted at the configured base URL (no `/api` prefix), and a confirmed protected
-  `403` clears the active token and returns the user to connection setup.
-- Describe `403` as rejected API access rather than inferring whether the token was missing or invalid.
-- Redact authorization and connection secrets from client errors, logs, and diagnostics.
-- Display the runtime release identifier in the shell.
+- Display the runtime release identifier in the shell footer.
+- Add production-build and source-map inspection that fails if a test or real token appears in artifacts.
 - Support the backend's default local Vite origins or an optional local proxy. Document that cross-origin production
   requires the frontend's exact scheme, hostname, and port in backend `CORS_ORIGINS`, with no path or trailing slash;
   a deployment-managed same-origin proxy remains an alternative.
@@ -63,18 +65,12 @@ Not finished:
 
 ## Acceptance criteria
 
-- Changing the API URL or release identifier requires no rebuild.
-- Missing or malformed runtime config produces a recoverable configuration screen.
-- `/settings/connection` exposes the connection UI with distinct, actionable states for unreachable,
-  reachable-but-unverified, verified, and rejected access.
-- Every protected request made after verification receives the current runtime token.
-- Forgetting or rejecting a token clears connection state (and any FEAT-03 cache seam) as well as the stored token.
+- The runtime release identifier is visible in the application shell.
 - Production-build and source-map inspection finds no test or real token.
-- Tests cover reload/session restoration, malformed config, health failure, rejected access, token replacement, and
-  redaction.
 - The production connectivity choice--an exact approved `CORS_ORIGINS` entry or a same-origin reverse proxy--is recorded
   and remains a release blocker until authenticated requests, browser preflights, and JavaScript access to the backup
   `Content-Disposition` filename are verified.
+- Local CORS-or-proxy setup and `sessionStorage` token limits are documented for developers.
 - `make check` passes.
 
 ## Plan coverage
