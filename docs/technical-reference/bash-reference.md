@@ -146,6 +146,8 @@
 * Ensure that the current machine always uses Linux line endings:
   * `git config --global core.autocrlf false && git config --global core.eol lf`
   * You also want a `.gitattributes` file in the repo.
+* Pull a file from another branch without switching branches:
+  * `git checkout chore/tidy -- docs/prompt-master-context.md`
 
 ---
 
