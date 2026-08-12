@@ -65,40 +65,42 @@ Already in place and should be extended, not replaced:
 
 - `NewBookPage` (`/books/new`): mounts `BookForm` with `bookFormDefaults`, creates via `useCreateBook`, shows a generic
   create error `Alert`, disables submit/cancel while pending, navigates to `/books/:bookId` on success, and cancels back
-  to `/books`. Manual create works without lookup.
+  to `/books`. Manual create works without lookup. No create-page UI calls lookup yet.
 - `useCreateBook` already writes the returned `BookRead` into the detail cache and invalidates list/detail/dashboard
   (FEAT-03 / PLAN 7.5).
-- `useBookLookup` / `useLookupBook` exist as typed React Query hooks; no create-page UI calls them yet.
-- `BookForm` + `bookFormDefaults`: manual entry for title, authors, ISBN, publisher, publication date, pages, category,
-  shelf, tags, purchase date, purchase price, acquisition source, and notes. Blank text optionals become `null` on edit.
-  Category and shelf are enum selects. Non-blank title/authors are required client-side; title/authors are trimmed on
-  submit. Submit buttons honor `isSubmitting`. The form is still typed directly against `BookCreate` and still renders
-  Status, Read, Completion date, Rating, and Review on create.
+- `useBookLookup` / `useLookupBook` exist as typed React Query hooks; unused by the create page.
+- Create UI no longer exposes status, borrower, loan timestamp, read checkbox, completion date, rating, or review.
+  Those stay at create defaults (`status=available`, `is_read=false`) rather than editable controls.
+- `BookFormValues` is a UI-oriented shape (string controls for pages / purchase price; no status / reading fields).
+  `bookFormDefaults` matches that shape. `bookFormModel.ts` defines `formValuesToBookCreate` (blank optionals to
+  `null`, forces create defaults for `status` / `is_read`), but `BookForm` still converts inline and does not call it.
+- `BookForm` still uses a single top-of-form validation string for empty title/authors; Field `error` wiring and an
+  error summary are not used. Publication date remains `type="date"` (cannot hold year-only lookup values). Tags trim
+  and drop empties on change only. Colocated `BookForm.test.tsx` is out of sync with the gated create fields (still
+  asserts Status / Read and defaults `status` / `is_read`).
 - `src/features/books/utils/isbn.ts`: `isValidIsbn10` / `isValidIsbn13` / `isValidIsbn` strip separators only for
   checksum calculation. Colocated tests cover valid and invalid ISBN-10 (including an `X` check digit), formatted
   values, and ISBN-13. These helpers are not yet called from `BookForm` or lookup.
-- Component tests cover form field rendering, initial values, empty title/authors rejection, submit payload shaping,
-  trim, cancel, submitting disabled state, and new-book create/navigate/cancel paths.
+- Component / route tests cover basic field rendering, empty title/authors rejection, submit shaping, trim, cancel,
+  submitting disabled state, and new-book create/navigate/cancel paths (update them as the remaining form model and
+  lookup work lands).
 
 ## Remaining scope
 
 ### Form model and create-field discipline
 
-- Separate reusable book-form values and conversion logic from `BookCreate` / `BookLookupDraft` transport models so
-  FEAT-10 edit can share the same form shape later.
-- Align the create UI with this ticket: leave `status` / `is_read` at create defaults and do not expose borrower,
-  `datetime_loaned_out`, or reading-completion controls (`completion_date`, `rating`, `review`, and the read checkbox)
-  on create. Never use create/`PATCH` to simulate checkout, check-in, or mark-read.
+- Finish the reusable form path: wire `formValuesToBookCreate` (or equivalent) from `BookForm` submit so FEAT-10 edit
+  can share the same values shape and conversion later; drop the duplicate inline `BookCreate` mapping.
 - Enforce documented 255-character title/authors limits, positive integer pages (`exclusiveMinimum: 0`), and accessible
-  field/summary errors (not only a single top-of-form string).
+  field/summary errors (not only a single top-of-form string). Keep create defaults for `status` / `is_read` in the
+  conversion path; never use create/`PATCH` to simulate checkout, check-in, or mark-read.
 - Wire `isbn.ts` into lookup and create so invalid ISBN-10 / ISBN-13 check digits are rejected before the request.
   Preserve separators in the submitted value and rely on the API for canonical normalization.
 - Define and test deterministic tag trimming, empty-tag removal, duplicate handling, and ordering (UI currently trims
   and drops empties on change only).
-- Convert blank optionals to `null` (or omit when that matches the typed helper) through an explicit form→`BookCreate`
-  conversion path covered by tests. Keep user-entered dates as `YYYY-MM-DD`. Preserve a year-only lookup
-  `publication_date` as an editable API string rather than inventing a month and day (today's `type="date"` control
-  cannot hold year-only values).
+- Cover blank-optional-to-`null` conversion, year-only lookup `publication_date` passthrough as an editable API string
+  (do not invent month/day; replace or supplement today's `type="date"` control), and unconstrained `purchase_price`
+  number/`null` serialization without inventing currency fields. Align `BookForm.test.tsx` with the gated create UI.
 
 ### ISBN lookup on `/books/new`
 
@@ -120,7 +122,6 @@ Already in place and should be extended, not replaced:
   the ISBN and open editable manual entry.
 - Every imported value can be changed before save; lookup never persists a record.
 - Recoverable failures and backend validation preserve user input, focus an error summary, and link field errors.
-- The creation form cannot edit borrower, loan timestamp, on-loan state, or reading-completion fields.
 - Slow requests, cancellation, route changes, and duplicate clicks have deterministic tested behavior.
 - Tests cover blank-optional-to-`null` conversion, year-only `publication_date` passthrough, and unconstrained
   `purchase_price` number/`null` serialization without inventing currency fields.
