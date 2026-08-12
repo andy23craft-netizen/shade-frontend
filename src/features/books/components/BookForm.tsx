@@ -9,6 +9,7 @@ import type {
     BookCreate,
     Category,
     Shelf,
+    Status,
 } from '../../../api/apiTypes'
 
 import {
@@ -68,6 +69,16 @@ const SHELF_VALUES: readonly Shelf[] = [
     'liz_tbr',
 ]
 
+const STATUS_VALUES: readonly Status[] = [
+    'unknown',
+    'available',
+    'on_loan',
+    'missing',
+    'display_only',
+    'reserved',
+    'reading',
+]
+
 export interface BookFormValues {
     title: string
     authors: string
@@ -77,6 +88,8 @@ export interface BookFormValues {
     pages: string
     category: Category
     shelf: Shelf
+    status: Status
+    is_read: boolean
     tags: string[]
     acquisition_source: string
     purchase_date: string
@@ -96,6 +109,12 @@ export interface BookFormProps {
 function stringValue(
     value: string | null | undefined,
 ): string {
+    return value ?? ''
+}
+
+function numberValue(
+    value: string | number | null | undefined,
+): string | number {
     return value ?? ''
 }
 
@@ -181,39 +200,25 @@ export function BookForm({
             authors: values.authors.trim(),
             category: values.category,
             shelf: values.shelf,
-            isbn13:
-                values.isbn13.trim() === ''
-                    ? null
-                    : values.isbn13,
-            publisher:
-                values.publisher.trim() === ''
-                    ? null
-                    : values.publisher,
+            status: values.status,
+            is_read: values.is_read,
+            isbn13: values.isbn13,
+            publisher: values.publisher,
             publication_date:
-                values.publication_date.trim() === ''
-                    ? null
-                    : values.publication_date,
+                values.publication_date,
             pages:
                 values.pages.trim() === ''
-                    ? null
+                    ? ''
                     : Number(values.pages),
             tags: values.tags,
             acquisition_source:
-                values.acquisition_source.trim() === ''
-                    ? null
-                    : values.acquisition_source,
-            purchase_date:
-                values.purchase_date.trim() === ''
-                    ? null
-                    : values.purchase_date,
+                values.acquisition_source,
+            purchase_date: values.purchase_date,
             purchase_price:
                 values.purchase_price.trim() === ''
-                    ? null
+                    ? ''
                     : Number(values.purchase_price),
-            notes:
-                values.notes.trim() === ''
-                    ? null
-                    : values.notes,
+            notes: values.notes,
         }
 
         await onSubmit(submission)
@@ -371,6 +376,43 @@ export function BookForm({
                             ),
                         )}
                     </select>
+                </Field>
+
+                <Field label="Status">
+                    <select
+                        value={values.status}
+                        onChange={(event) =>
+                            updateField(
+                                'status',
+                                event.target
+                                    .value as Status,
+                            )
+                        }
+                    >
+                        {STATUS_VALUES.map(
+                            (status) => (
+                                <option
+                                    key={status}
+                                    value={status}
+                                >
+                                    {status}
+                                </option>
+                            ),
+                        )}
+                    </select>
+                </Field>
+
+                <Field label="Read">
+                    <input
+                        type="checkbox"
+                        checked={values.is_read}
+                        onChange={(event) =>
+                            updateField(
+                                'is_read',
+                                event.target.checked,
+                            )
+                        }
+                    />
                 </Field>
             </section>
 

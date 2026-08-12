@@ -9,6 +9,8 @@ export const bookFormDefaults: BookFormValues = {
     pages: '',
     category: 'unknown',
     shelf: 'unknown',
+    status: 'available',
+    is_read: false,
     tags: [],
     acquisition_source: '',
     purchase_date: '',
