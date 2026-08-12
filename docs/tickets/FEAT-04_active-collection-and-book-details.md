@@ -11,8 +11,9 @@ FEAT-03 is complete. Do not rebuild typed route helpers, React Query hooks, quer
 primitives.
 
 Reuse `useBooks` / `useBook`, `queryKeys`, `enumDisplayValue`, and shared components (`LoadingState`, `EmptyState`,
-`Alert`, `AppLink`). Replace the `RoutePlaceholder` bodies in `src/features/books/routes/BooksPage.tsx` and
-`BookDetailsPage.tsx`. Product feature workflows beyond read-only browse/detail belong to later tickets.
+`Alert`, `AppLink`). Extend the existing read-only UI in `src/features/books/routes/BooksPage.tsx` and
+`BookDetailsPage.tsx`. Product feature workflows beyond read-only browse/detail and contextual navigation belong to
+later tickets.
 
 ## Explicitly out of scope (owned by later tickets)
 
@@ -43,73 +44,64 @@ This ticket is read-only against the API. Do not call checkout, check-in, mark-r
 
 Already in place and should be extended, not replaced:
 
-- `useBooks({ includeDeleted?: boolean })` defaults to active-only (`include_deleted=false`). Soft-deleted books are
-  omitted server-side; do not client-filter on `deletion_date` for normal browsing.
-- `useBook(id)` loads `GET /books/{id}` (path `{id}` is any string; missing rows are `404`; soft-deleted rows remain
-  `200` with non-null `deletion_date`).
-- `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
-- `src/api/dateTime.ts` request serializers (`YYYY-MM-DD` / UTC ISO 8601). Display formatting that avoids timezone
-  day-shift for date-only strings is still this ticket's responsibility.
-- Shared loading, empty, alert, and link primitives from FEAT-01; connection `403` clearing from FEAT-02.
+- `BooksPage` (`/books`): `useBooks()` default active-only list of full `{ items, total }`, row context (title, authors,
+  `status`, `is_read`, category, shelf), per-row links to `/books/:bookId`, plus loading / empty (`total === 0`) /
+  error UI. Soft-deleted books are omitted server-side; do not client-filter on `deletion_date` for normal browsing.
+- `BookDetailsPage` (`/books/:bookId`): `useBook(bookId)` detail with bibliographic, acquisition, lifecycle, reading,
+  borrowing-stat, and audit fields; soft-deleted banner when `deletion_date` is non-null; null optionals, unknown enums
+  via `enumDisplayValue`, malformed temporal strings, and date-only `YYYY-MM-DD` values shown without timezone
+  day-shift; null `average_loan_days` as an explanatory fallback (not zero).
+- Detail contextual navigation already gated for edit, checkout, and check-in:
+  - Check Out when not soft-deleted and `status` is not `on_loan` (`/checkout?bookId=...`).
+  - Check In when not soft-deleted and `status` is `on_loan` (`/checkin?bookId=...`).
+  - Edit when not soft-deleted (`/books/:bookId/edit`).
+- Detail `404` invalidates `queryKeys.books.all`, explains hard not-found, and offers back navigation to `/books`.
+- Component tests under `BooksPage.test.tsx` and `BookDetailsPage.test.tsx` cover collection
+  success/empty/loading/error, detail success, null `average_loan_days`, unknown enums, malformed dates, null
+  optionals, soft-deleted (no lifecycle links), loading, detail `404` (including list invalidation), and generic detail
+  errors.
+- Shared loading, empty, alert, and link primitives from FEAT-01; connection `403` clearing from FEAT-02;
+  `enumDisplayValue` and `src/api/dateTime.ts` request serializers from FEAT-03.
 
 ## Remaining scope
 
-### Collection (`/books`)
+### Contextual actions still missing on detail
 
-- Implement the title-ordered active collection from `BookList` via `useBooks()` (default active-only).
-- Render the full `{ items, total }` result set. There is no pagination; do not invent client paging assumptions.
-- Show enough row context to browse (at least title, authors, `status`, and read/unread via `is_read`) and link each row
-  to `/books/:bookId`.
+Registered routes already cover edit, checkout, and check-in. Finish the gated contextual entry points called for by
+PLAN Workstream 3:
 
-### Detail (`/books/:bookId`)
+- Mark read when valid for the current `BookRead` (not soft-deleted; prefer unread-only so FEAT-09 does not inherit a
+  misleading entry point). There is no dedicated mark-read path yet -- link only to a later-ticket destination that
+  already exists in the router, or leave a clearly gated affordance that FEAT-09 will own without inventing a workflow.
+- Delete when valid (not `on_loan`, not soft-deleted). Same rule: navigation or a gated affordance only; FEAT-10 owns
+  delete confirmation and the API call.
+- Soft-deleted detail may link toward `/admin/deleted` as a later-ticket restore destination; keep active lifecycle
+  actions hidden (already done for edit / checkout / check-in).
 
-- Load with `useBook(bookId)`. Present useful `BookRead` fields without renaming transport properties in the UI layer's
-  data binding:
-  - Bibliographic: `title`, `authors`, `isbn13`, `publisher`, `publication_date`, `pages`, `category`, `shelf`, `tags`
-  - Acquisition: `purchase_date`, `purchase_price`, `acquisition_source`, `notes`
-  - Lifecycle: `status`, `borrower`, `datetime_loaned_out`, `deletion_date`
-  - Reading: `is_read`, `completion_date`, `rating`, `review`
-  - Borrowing stats: `times_borrowed`, `last_borrowed_at`, `average_loan_days`
-  - Audit: `id`, `creation_date`, `updated_date`
-- Distinguish `Status` values textually and semantically: `unknown`, `available`, `on_loan`, `missing`, `display_only`,
-  `reserved`, and `reading`. Treat `is_read` as an independent reading axis (not a `Status` value).
-- Treat non-null `deletion_date` as soft-deleted: explain retained history, hide active lifecycle actions, and offer
-  safe navigation back to the active collection (and toward admin restore only as a later-ticket destination if linked).
-- Show borrow stats with API semantics: `times_borrowed` counts loan rows; `last_borrowed_at` is the stored checkout
-  timestamp the API returns; `average_loan_days` is `null` when no returned loans exist -- never display that as zero.
-- Add contextual links for edit, checkout, check-in, mark read, and delete only when valid for the current `BookRead`:
-  - No checkout when `status` is `on_loan` or the book is soft-deleted.
-  - No delete when `status` is `on_loan` (backend deletion would leave the active loan open until restore) or when
-    already soft-deleted.
-  - No check-in / mark-read entry points when soft-deleted (those routes return `404` for deleted books).
-  - Prefer dedicated later-ticket routes over implying that generic `PATCH` can drive loan or delete state.
+### Resilience gaps
 
-### Resilience and formatting
+- Add an explicit retry affordance on collection and detail failure states (PLAN "stale, and retry states"). Prefer
+  React Query `refetch` over inventing a second client. Offline / unreachable / timeout messages can reuse the existing
+  `Alert` pattern; `403` stays on FEAT-02 unauthorized handling.
+- Keep status and read/unread textual and semantic (not color-only); collection already shows both axes.
 
-- Implement loading, empty (`total === 0`), stale, retry, offline, `403` (via existing unauthorized handling), detail
-  `404`, and soft-deleted-detail states.
-- On detail `404`, refresh stale collection data (invalidate via existing `queryKeys.books` prefixes) and offer safe
-  navigation (the book is gone from the API, not merely soft-deleted).
-- Format safely: null optionals, unknown enum values (via `enumDisplayValue`), long content, malformed temporal strings,
-  date-only values as calendar dates without timezone day-shift (`YYYY-MM-DD`), and timestamps without inventing
-  precision the API did not provide. Temporal fields are plain strings on the wire; the API does not validate format.
+### Tests still required
+
+- On-loan detail: Check Out hidden; Delete (once present) hidden; on-loan status still visible.
+- Date-only fields (`YYYY-MM-DD`) assert calendar display without timezone day-shift.
+- Soft-deleted vs missing detail already covered; keep those green when adding mark-read / delete / retry.
 
 ## Acceptance criteria
 
-- Deleted books never appear in normal collection browsing (`useBooks()` / `GET /books` default).
-- Soft-deleted detail fetched by id renders as deleted (non-null `deletion_date`), not as a hard not-found.
-- On-loan books are visibly unavailable and cannot begin another checkout from contextual actions.
-- On-loan books do not expose a delete action.
-- Null `average_loan_days` shows an explanatory fallback rather than zero.
-- A detail `404` refreshes stale collection data and offers safe navigation.
-- Status and read/unread are conveyed textually and semantically, not by color alone.
-- Detail links and back navigation work at narrow and wide widths.
-- API success and every relevant failure/empty state have component or integration tests.
-- Tests cover nullable borrowing statistics, malformed temporal strings, unknown `Status` / `Category` / `Shelf`
-  fallbacks, and soft-deleted vs missing detail.
-- Date-only values do not shift days because of timezone conversion.
+- On-loan books are visibly unavailable and cannot begin another checkout from contextual actions (covered by tests).
+- On-loan books do not expose a delete action (once the delete entry point exists).
+- Soft-deleted detail does not expose mark-read or delete entry points.
+- Collection and detail failure states offer retry; detail `404` still refreshes stale collection data and offers safe
+  navigation.
+- Date-only values do not shift days because of timezone conversion (asserted in tests).
 - `make check` passes.
-- No FEAT-05 through FEAT-11 product workflows land in this ticket beyond contextual navigation links.
+- No FEAT-05 through FEAT-11 product workflows land in this ticket beyond contextual navigation links / gated
+  affordances.
 
 ## Plan coverage
 
