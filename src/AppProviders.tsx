@@ -1,4 +1,7 @@
-import type { ReactNode } from 'react'
+import {
+    useEffect,
+    type ReactNode,
+} from 'react'
 import {
     QueryClientProvider,
 } from '@tanstack/react-query'
@@ -12,8 +15,15 @@ import type { RuntimeConfig } from './config/runtimeConfig'
 import {
     createQueryClient,
 } from './api/queryClient'
+import {
+    subscribeQueryClientToConnectionInvalidation,
+} from './api/queryInvalidation'
 
 const queryClient = createQueryClient()
+
+subscribeQueryClientToConnectionInvalidation(
+    queryClient,
+)
 
 interface AppProvidersProps {
     children: ReactNode
@@ -24,6 +34,12 @@ export function AppProviders({
     children,
     runtimeConfig,
 }: AppProvidersProps) {
+    useEffect(() => {
+        return subscribeQueryClientToConnectionInvalidation(
+            queryClient,
+        )
+    }, [])
+
     return (
         <NotificationsProvider>
             <QueryClientProvider client={queryClient}>

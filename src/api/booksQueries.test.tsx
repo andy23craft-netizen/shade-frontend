@@ -22,6 +22,10 @@ import type {
     BookList,
     BookLookupResponse,
     BookRead,
+    BookUpdate,
+    CheckinRequest,
+    CheckoutRequest,
+    MarkReadRequest,
 } from './apiTypes'
 
 import {
@@ -29,12 +33,24 @@ import {
     useBookLookup,
     useBooks,
     useCreateBook,
+    useUpdateBook,
+    useDeleteBook,
+    useRestoreBook,
+    useCheckoutBook,
+    useCheckinBook,
+    useMarkBookRead,
 } from './booksQueries'
 
 const mockList = vi.fn()
 const mockGet = vi.fn()
 const mockLookup = vi.fn()
 const mockCreate = vi.fn()
+const mockUpdate = vi.fn()
+const mockRemove = vi.fn()
+const mockRestore = vi.fn()
+const mockCheckout = vi.fn()
+const mockCheckin = vi.fn()
+const mockMarkRead = vi.fn()
 
 vi.mock('./booksApi', () => ({
     createBooksApi: () => ({
@@ -42,9 +58,14 @@ vi.mock('./booksApi', () => ({
         get: mockGet,
         lookup: mockLookup,
         create: mockCreate,
+        update: mockUpdate,
+        remove: mockRemove,
+        restore: mockRestore,
+        checkout: mockCheckout,
+        checkin: mockCheckin,
+        markRead: mockMarkRead,
     }),
 }))
-
 vi.mock(
     '../features/connection/useConnection',
     () => ({
@@ -245,4 +266,425 @@ describe('book queries', () => {
 
         queryClient.clear()
     })
+
+
+it(
+    'updates a book and invalidates book caches',
+    async () => {
+        const bookInput =
+            {} as BookUpdate
+
+        const updatedBook =
+            {} as BookRead
+
+        mockUpdate.mockResolvedValueOnce(
+            updatedBook,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } =
+            renderHook(
+                () => useUpdateBook(),
+                {
+                    wrapper: Wrapper,
+                },
+            )
+
+        await result.current.mutateAsync({
+            id: 'book-123',
+            book: bookInput,
+        })
+
+        expect(
+            mockUpdate,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            bookInput,
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
+        })
+
+        queryClient.clear()
+    },
+)
+
+it(
+    'deletes a book and invalidates book caches',
+    async () => {
+        mockRemove.mockResolvedValueOnce(
+            undefined,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } =
+            renderHook(
+                () => useDeleteBook(),
+                {
+                    wrapper: Wrapper,
+                },
+            )
+
+        await result.current.mutateAsync(
+            'book-123',
+        )
+
+        expect(
+            mockRemove,
+        ).toHaveBeenCalledWith(
+            'book-123',
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
+        })
+
+        queryClient.clear()
+    },
+)
+
+it(
+    'restores a book and invalidates book caches',
+    async () => {
+        const restoredBook =
+            {} as BookRead
+
+        mockRestore.mockResolvedValueOnce(
+            restoredBook,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } =
+            renderHook(
+                () => useRestoreBook(),
+                {
+                    wrapper: Wrapper,
+                },
+            )
+
+        await result.current.mutateAsync(
+            'book-123',
+        )
+
+        expect(
+            mockRestore,
+        ).toHaveBeenCalledWith(
+            'book-123',
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
+        })
+
+        queryClient.clear()
+    },
+)
+
+it(
+    'checks out a book and invalidates loans and dashboard',
+    async () => {
+        const request =
+            {} as CheckoutRequest
+
+        const book =
+            {} as BookRead
+
+        mockCheckout.mockResolvedValueOnce(
+            book,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } =
+            renderHook(
+                () => useCheckoutBook(),
+                {
+                    wrapper: Wrapper,
+                },
+            )
+
+        await result.current.mutateAsync({
+            id: 'book-123',
+            request,
+        })
+
+        expect(
+            mockCheckout,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            request,
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['loans'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
+        })
+
+        queryClient.clear()
+    },
+)
+
+it(
+    'checks in a book and invalidates loans and dashboard',
+    async () => {
+        const request =
+            {} as CheckinRequest
+
+        const book =
+            {} as BookRead
+
+        mockCheckin.mockResolvedValueOnce(
+            book,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } =
+            renderHook(
+                () => useCheckinBook(),
+                {
+                    wrapper: Wrapper,
+                },
+            )
+
+        await result.current.mutateAsync({
+            id: 'book-123',
+            request,
+        })
+
+        expect(
+            mockCheckin,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            request,
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['loans'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
+        })
+
+        queryClient.clear()
+    },
+)
+
+it(
+    'marks a book as read and invalidates book and dashboard caches',
+    async () => {
+        const request =
+            {} as MarkReadRequest
+
+        const book =
+            {} as BookRead
+
+        mockMarkRead.mockResolvedValueOnce(
+            book,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } =
+            renderHook(
+                () => useMarkBookRead(),
+                {
+                    wrapper: Wrapper,
+                },
+            )
+
+        await result.current.mutateAsync({
+            id: 'book-123',
+            request,
+        })
+
+        expect(
+            mockMarkRead,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            request,
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).not.toHaveBeenCalledWith({
+            queryKey: ['loans'],
+        })
+
+        queryClient.clear()
+    },
+)
+
 })
