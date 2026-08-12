@@ -101,6 +101,145 @@ describe('BookDetailsPage', () => {
         ).toBeInTheDocument()
     })
 
+    it('renders no returned-loans message when average loan length is null', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...book,
+                average_loan_days: null,
+            },
+        })
+
+        renderBookDetailsPage()
+
+        expect(
+            screen.getByText(
+                'No returned loans yet',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('renders unknown enum values explicitly', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...book,
+                status: 'archived',
+                category: 'biography',
+                shelf: 'z99',
+            },
+        })
+
+        renderBookDetailsPage()
+
+        expect(
+            screen.getAllByText('archived (unknown)'),
+        ).toHaveLength(2)
+
+        expect(
+            screen.getByText('biography (unknown)'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText('z99 (unknown)'),
+        ).toBeInTheDocument()
+    })
+
+    it('renders malformed dates as unrecognized dates', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...book,
+                publication_date: 'not-a-date',
+            },
+        })
+
+        renderBookDetailsPage()
+
+        expect(
+            screen.getByText(
+                'not-a-date (unrecognized date)',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('renders null optional fields as not provided', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...book,
+                authors: null,
+                isbn13: null,
+                publisher: null,
+                publication_date: null,
+                pages: null,
+                purchase_date: null,
+                purchase_price: null,
+                acquisition_source: null,
+                notes: null,
+                borrower: null,
+                datetime_loaned_out: null,
+                completion_date: null,
+                rating: null,
+                review: null,
+                last_borrowed_at: null,
+            },
+        })
+
+        renderBookDetailsPage()
+
+        expect(
+            screen.getAllByText('Not provided'),
+        ).not.toHaveLength(0)
+    })
+
+    it('renders deleted books without lifecycle actions', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...book,
+                deletion_date: '2026-08-11T12:00:00Z',
+            },
+        })
+
+        renderBookDetailsPage()
+
+        expect(
+            screen.getByRole('status'),
+        ).toHaveTextContent(
+            "This book has been deleted",
+        )
+
+        expect(
+            screen.getByText(
+                "The book's history has been retained, but it is no longer part of the active collection.",
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Check Out',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Check In',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Edit',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
     it('renders a loading state', () => {
         mockUseBook.mockReturnValue({
             isPending: true,
