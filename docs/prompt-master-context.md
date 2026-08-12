@@ -3,11 +3,11 @@
 Slim always-on prompt for ChatGPT (or any chat without automatic repository access).
 
 This document is the complete always-on operating context for those chats. It stands on its own for
-operating rules, non-negotiables, and the dated codebase baseline. Do not request or treat
-`docs/AGENTS.md` (or any other overview doc) as required reading for the same material.
+operating rules, non-negotiables, and the dated codebase baseline. Attach the on-demand docs listed
+in section 8 only when the current ticket needs them; do not re-synthesize those sources here.
 
 Source of truth for API schemas, behavioral API notes, product requirements, and plans lives in the
-docs listed in section 8 -- attach those on demand for ticket work; do not re-synthesize them here.
+docs listed in section 8.
 
 Context pack version: 2026-08-11. Refresh this prompt when operating rules, non-negotiables, or the
 known baseline change.
@@ -32,8 +32,7 @@ If the work touches the API or server state (FEAT-03+):
 
 If the model cannot see the repository:
   - the minimum files/command output requested in section 1
-  - (this master context already carries the known baseline; do not request docs/AGENTS.md or
-     any second overview doc for the same material)
+  - (this master context already carries the known baseline)
 
 If UI/design is in question:
   - docs/product-docs/UI_DESIGN_NOTES.MD
@@ -83,8 +82,7 @@ find src -maxdepth 3 -type f | sort
 ```
 
 Do not request the entire repository. Do not request docs already covered by the attached pack.
-Do not request `docs/AGENTS.md` for baseline architecture -- use this master context and the
-supplied ticket (plus section 1 evidence) instead.
+Use this master context, the supplied ticket, and section 1 evidence for baseline architecture.
 
 If a file does not yet exist and the ticket requires creating it, do not ask for it -- state that we
 will create it.
@@ -149,8 +147,8 @@ At the point where design comes into question, stop and ask for design notes
 **Purpose:** Browser UI for the Shade home-library FastAPI backend.
 
 **Stack:** React 19, TypeScript 6 (strict), Vite 8, React Router 7 (`react-router-dom`), TanStack
-React Query 5 (dependency present; `QueryClientProvider` is mounted under `AppProviders`; remaining
-FEAT-03 work is client defaults, invalidation wiring, fuller mutations/mocks, and related tests),
+React Query 5 (`QueryClientProvider` mounted under `AppProviders` with configured client defaults and
+connection-invalidation subscription; remaining FEAT-03 work is listed in the baseline below),
 `openapi-typescript` for generated types, Yarn 4 (`yarn@4.18.0` via Corepack), Node.js 26.7.0,
 ESLint (flat), Vitest, Testing Library, jsdom, Make. Native ESM (`"type": "module"`). No Next.js,
 Tailwind, component library, or form library.
@@ -206,16 +204,30 @@ index.html
   - `booksApi`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`,
     `restore`, `checkout`, `checkin` (optional body), `markRead`
   - `loansApi.list`, `dashboardApi.get`, `healthApi.get` (public), `protectedApi.get`
-  - `backupApi.get` returns SQL as text only; blob + safe `Content-Disposition` filename metadata
-    is still FEAT-03 remaining work
-  - Colocated happy-path helper tests exist for those route modules; `apiClient.test.ts` currently
-    duplicates a books `list()` mock and no longer covers Bearer / public / `403` / timeout /
-    invalid JSON / `204` client behavior (restore/extend as part of FEAT-03)
-- React Query is mounted: `createQueryClient()` is a bare `QueryClient` (no stale/retry/focus
-  defaults yet). `subscribeQueryClientToConnectionInvalidation` exists and is unit-tested, but
-  `AppProviders` does not subscribe it yet. Partial hooks in `src/api/booksQueries.ts`: `useBooks`,
-  `useBook`, `useBookLookup`, `useCreateBook` (create only invalidates `['books']`). Remaining
-  mutations and the PLAN.md 7.5 invalidation matrix are unfinished.
+  - `backupApi.get` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
+    `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is
+    missing or malformed
+  - Colocated happy-path helper tests exist for those route modules; `apiClient.test.ts` covers
+    Bearer / public / `403` / `404` / `409` / both `422` shapes / `5xx` / network failure / timeout /
+    cancellation / invalid JSON / binary backup / `204`
+- React Query is mounted and wired for connection invalidation:
+  - `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`, query
+    retry that skips validation / auth / cancelled / invalid-response errors, and
+    `mutations.retry: false`
+  - `AppProviders` subscribes `subscribeQueryClientToConnectionInvalidation` so forgotten or
+    rejected tokens clear the query cache
+  - `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations
+    `useCreateBook`, `useUpdateBook`, `useDeleteBook`, `useRestoreBook`, `useCheckoutBook`,
+    `useCheckinBook`, `useMarkBookRead`. Successful mutations invalidate books lists (including
+    `include_deleted` via the shared `['books']` prefix), detail, dashboard, and loans when
+    checkout/check-in succeed. They do not yet write the returned `BookRead` into the detail cache.
+  - No dedicated loans or dashboard query hooks yet
+- Remaining FEAT-03 gaps (see the ticket for full acceptance criteria): request shaping / date
+  serialization, routing connection health/protected through typed helpers, correlation ID population
+  only when the backend supplies a safe value, redaction helpers, returned-`BookRead` detail-cache
+  writes, loans/dashboard query hooks, abort/stale overwrite guards, broader API mocks, and open
+  helper edge-case fixtures (lookup `found: false`, mark-read `{}`, omitted check-in body, `409`
+  bodies)
 - Registered routes (most still `RoutePlaceholder` under `src/features/*/routes/`): `/`, `/books`,
   `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
   `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
@@ -227,11 +239,10 @@ index.html
   blocker are in `README.md`. Optional same-origin proxy: `SHADE_API_PROXY=1 make run`. Production-
   build token inspection: `scripts/productionBuildTokenInspection.test.ts`.
 
-Planned items such as query-client defaults, AppProviders invalidation subscription, backup blob
-download metadata, fuller mutation/invalidation coverage, and restored `apiClient` tests are goals of
-FEAT-03 (or later tickets), not proof that every piece already exists. Never infer implementation from
-the target architecture alone. Prefer files and command output supplied in the conversation over this
-snapshot when they disagree.
+Planned items such as loans/dashboard hooks, returned-book cache writes, connection typed-helper
+swap, request shaping, and redaction are goals of FEAT-03 (or later tickets), not proof that every
+piece already exists. Never infer implementation from the target architecture alone. Prefer files and
+command output supplied in the conversation over this snapshot when they disagree.
 
 Typical commands:
 
@@ -290,9 +301,10 @@ library unless a ticket explicitly requires it.
 
 Use a query/cache layer (TanStack React Query) for books, book detail, loans, and dashboard. Keep
 forms/scanner/dialogs local. Keep runtime connection state application-wide. Invalidate affected
-queries after mutations. Subscribe cache clearing to `subscribeToConnectionInvalidation` (via
-`subscribeQueryClientToConnectionInvalidation` from bootstrap) when the token is forgotten or
-rejected. There is no realtime API.
+queries after mutations. `AppProviders` already subscribes cache clearing to
+`subscribeToConnectionInvalidation` (via `subscribeQueryClientToConnectionInvalidation`) when the
+token is forgotten or rejected. Finish remaining FEAT-03 cache gaps (returned-`BookRead` detail
+writes; loans/dashboard query hooks) per the ticket and PLAN.md 7.5. There is no realtime API.
 
 ### Dashboard and statistics
 
@@ -322,6 +334,8 @@ reduced motion.
 - Prefer regenerating `src/api/generated/openapi.ts` over hand-editing it.
 - Extend the existing API client, generated types, query helpers, and connection-invalidation seam
   during FEAT-03; do not invent a parallel transport or cache stack.
+- Finish remaining FEAT-03 work on the existing mount: request shaping, typed health/protected swap,
+  detail-cache writes, loans/dashboard hooks, redaction, and the ticket's open edge-case fixtures.
 
 ---
 
@@ -416,8 +430,7 @@ backend `/openapi.json` over assumptions.
 
 Request a listed document only when its contents are necessary for the current ticket and are not
 already attached. This master context is self-contained for operating rules, non-negotiables, and the
-dated baseline. Do not request `docs/AGENTS.md` or treat other overview docs as required reading for
-the same material.
+dated baseline.
 
 ---
 

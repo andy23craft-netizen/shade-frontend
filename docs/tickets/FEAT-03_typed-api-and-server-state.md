@@ -6,12 +6,12 @@ Provide one contract-checked, tested API and cache layer for all product feature
 
 ## Dependencies
 
-FEAT-02 is complete. Do not rebuild runtime config, connection setup, the shared Bearer client shell, or the
-connection-invalidation seam already in place.
+FEAT-02 is complete. Do not rebuild runtime config, connection setup, the shared Bearer client shell, the
+connection-invalidation seam, React Query mounting, query-client defaults, or the books query/mutation surface already
+in place.
 
-`@tanstack/react-query` is already a dependency and is mounted under `AppProviders`. Do not add a second state store,
-component library, CSS framework, or form library in this ticket. Product feature workflows belong to later tickets;
-this ticket finishes the typed client and server-state primitives they will use.
+Do not add a second state store, component library, CSS framework, or form library in this ticket. Product feature
+workflows belong to later tickets; this ticket finishes the remaining typed-client and server-state gaps they will use.
 
 ## Contract references
 
@@ -50,25 +50,27 @@ Already in place and should be extended, not replaced:
   responses.
 - Typed route helpers via `createApi` in `src/api/api.ts`:
   - `booksApi`: `list` (optional `includeDeleted` -> `include_deleted`), `create`, `lookup`, `get`, `update`, `remove`,
-    `restore`, `checkout`, `checkin` (optional body), `markRead`
+    `restore`, `checkout`, `checkin` (optional body omitted when undefined), `markRead`
   - `loansApi.list`, `dashboardApi.get`, `healthApi.get` (public), `protectedApi.get`
-  - `backupApi.get` returns SQL as text only; it does not yet return a blob plus safe `Content-Disposition` filename
-    metadata
+  - `backupApi.get` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8 `Content-Disposition`
+    (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed
 - Colocated happy-path tests for those route helpers (`booksApi.test.ts`, `loansApi.test.ts`, `dashboardApi.test.ts`,
-  `healthApi.test.ts`, `protectedApi.test.ts`, `backupApi.test.ts`, `api.test.ts`).
+  `healthApi.test.ts`, `protectedApi.test.ts`, `backupApi.test.ts`, `api.test.ts`), plus restored `apiClient.test.ts`
+  coverage for Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, `5xx` (including
+  `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success, and `204`.
 - Connection layer still uses ad hoc `connectionApi` fetches for `GET /health` and `GET /protected`; prefer routing
   those through the typed helpers.
 - `ConnectionProvider` exposes `apiClient` and clears the token through `onUnauthorized`;
   `subscribeToConnectionInvalidation` / `notifyConnectionInvalidated` remains the seam for clearing cached protected
-  data. `subscribeQueryClientToConnectionInvalidation` exists and is unit-tested, but `AppProviders` does not subscribe
-  it yet.
-- `AppProviders` wraps `NotificationsProvider`, `QueryClientProvider` (`createQueryClient()`), and
-  `ConnectionProvider`. `createQueryClient` is a bare `QueryClient` with no stale, retry, or focus/online defaults.
-- Partial React Query surface in `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, and `useCreateBook`
-  (create only invalidates `['books']`). Other mutations and the PLAN.md 7.5 invalidation matrix are unfinished.
-- `src/api/apiClient.test.ts` currently duplicates the books `list()` mock test and no longer covers client Bearer,
-  public requests, `403`, timeouts, invalid JSON, or `204` behavior. Restore and extend those client tests as part of
-  this ticket.
+  data. `AppProviders` creates a shared `QueryClient` and subscribes
+  `subscribeQueryClientToConnectionInvalidation` so forgotten or rejected tokens clear the cache.
+- `createQueryClient` configures `staleTime` (30s), `refetchOnWindowFocus`, `refetchOnReconnect`, query retry that never
+  retries validation / authentication / cancelled / invalid-response errors, and `mutations.retry: false`.
+- React Query surface in `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations
+  `useCreateBook`, `useUpdateBook`, `useDeleteBook`, `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and
+  `useMarkBookRead`. Successful mutations invalidate books lists (including `include_deleted` via the shared
+  `['books']` prefix), detail, dashboard, and loans when checkout/check-in succeed. They do not yet write the returned
+  `BookRead` into the detail cache. There are no dedicated loans or dashboard query hooks yet.
 
 ## Remaining scope
 
@@ -88,65 +90,47 @@ Transport schema aliases and generation are done. Finish request-side contract s
 
 ### Typed route client completion
 
-Route helpers exist for every documented business path. Finish the remaining transport gaps:
+Route helpers and backup blob metadata exist for every documented business path. Finish the remaining gaps:
 
-- Implement authenticated `/backup` as a blob response and safely return parsed UTF-8 `Content-Disposition` filename
-  metadata (`filename*=UTF-8''...`) to the feature layer, with a documented fallback filename when the header is missing
-  or malformed. Never parse the SQL body as JSON. Dump failure is `500` with string `detail`.
 - Prefer dedicated lifecycle helpers over reproducing those effects with `PATCH` (already the pattern; keep it).
 - Continue modeling books and loans as full `{ items, total }` result sets with no client pagination assumptions.
-- Route connection health/protected checks through the typed helpers once client tests and error normalization are
-  complete enough to replace `connectionApi` without regressing FEAT-02 behavior.
+- Route connection health/protected checks through the typed helpers once that swap can replace `connectionApi` without
+  regressing FEAT-02 behavior.
 - Extend helper/fixture coverage for lookup `found: false`, mark-read with `{}`, check-in with omitted body, and
-  restore/checkout/check-in `409` bodies (happy-path path wiring is already tested).
+  restore/checkout/check-in `409` bodies (happy-path path wiring and DELETE `204` are already tested).
 
 ### Error model completion
 
-The `ApiError` shape and `422` field mapping helpers exist. Finish normalization and safety:
+The `ApiError` shape, `422` field mapping, and client-level status normalization tests exist. Finish safety gaps:
 
-- Populate `correlationId` when the API supplies one.
-- Ensure HTTP, FastAPI validation (both `detail[]` and string `detail`), invalid JSON, timeout, network, and unexpected
-  server failures remain safe UI errors through the client (restore client-level tests; do not invent a parallel type).
-- Map documented statuses with their API meanings in helpers/tests:
-
-  - `403` -- missing or invalid Bearer (`{"detail": "Invalid authentication credentials"}`)
-  - `404` -- missing book, or soft-deleted on checkout / check-in / mark-read / second delete
-  - `409` -- restore of an active book; checkout when already on loan; check-in with no active loan
-  - `422` -- FastAPI `detail[]` validation **or** string `detail` (invalid ISBN lookup is the explicit string case)
-  - `500` -- backup dump failure (and rare unhandled cases); treat as error, never as binary success for `/backup`
-  - `502` / `504` -- ISBN metadata provider failure / timeout on lookup
-
+- Populate `correlationId` when the API supplies one. Neither OpenAPI nor `API-for-FE.md` currently documents a
+  correlation header or body field; do not invent one. Wire population only when a representative backend supplies a
+  safe value (FEAT-12 owns broader diagnostics presentation).
 - Treat lookup `found: false` as a normal manual-entry path, not an error.
 - Add redaction helpers / assertions so logs and errors never contain request headers, tokens, borrower names, notes,
   reviews, ISBN drafts, backup contents, or full bodies.
 
 ### Server state
 
-- Configure `createQueryClient` stale policy, retry rules, route-entry refresh, explicit refresh, and stale
-  focus/online refetch. There is no realtime API. Retry rules must never retry validation, authentication, or unsafe
-  mutations automatically.
-- Subscribe `subscribeQueryClientToConnectionInvalidation` from application bootstrap (for example under
-  `AppProviders`) so forgotten or rejected tokens clear cached protected data.
-- Finish mutation helpers that update returned `BookRead` values and invalidate affected book lists (active and
-  `include_deleted`), detail, loans, and dashboard data per `../product-docs/PLAN.md` section 7.5. Cover create, edit,
-  delete, restore, checkout, check-in, and mark-read / reading-field edits.
+- Write returned `BookRead` values into the detail cache on successful mutations, then invalidate affected aggregates
+  per `../product-docs/PLAN.md` section 7.5 (lists, detail, loans, and dashboard as applicable). Invalidation already
+  matches that matrix; the missing piece is the returned-book cache write.
+- Add loans and dashboard query hooks (or equivalent shared query-key helpers) so feature tickets consume the same
+  cache keys the mutations already invalidate.
+- Ensure aborted or stale requests cannot overwrite newer route or form state.
 - Add reusable API mocks and builders for every route and documented error family above.
 
 ## Acceptance criteria
 
-- Typed helpers and fixtures cover every documented business route, including `include_deleted`, lookup
-  `found: false`, mark-read with `{}`, check-in with omitted body, restore/checkout/check-in `409` bodies, and
-  `DELETE` `204`.
-- Client tests again cover Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, backup
-  `500`, lookup `502` / `504`, network failure, timeout, cancellation, invalid JSON, unexpected `5xx`, a binary backup
-  success, and `204` without attempting to parse an empty body.
-- Backup success is a non-empty `application/sql` blob. Missing or malformed filename headers produce safe metadata for
-  a fallback filename, while a JSON generation `500` is handled as an error and never as binary success.
-- Retry rules never retry validation, authentication, or unsafe mutations automatically.
+- Typed helpers and fixtures cover every documented business route edge case still open above: lookup `found: false`,
+  mark-read with `{}`, check-in with omitted body, and restore/checkout/check-in `409` bodies.
+- Connection health/protected checks go through the typed helpers without regressing FEAT-02 connection behavior.
+- Returned `BookRead` values are written into the detail cache on successful mutations, and invalidation continues to
+  match the mutation matrix in `../product-docs/PLAN.md` section 7.5.
+- Loans and dashboard data are readable through shared React Query helpers that use the same keys mutations invalidate.
 - Aborted or stale requests cannot overwrite newer route or form state.
 - Logs and errors contain no request headers, tokens, borrower names, notes, reviews, ISBN drafts, backup contents, or
   full bodies.
-- Query invalidation matches the mutation matrix in `../product-docs/PLAN.md` section 7.5.
 - A contract smoke test passes against a representative API (or against the checked-in OpenAPI fixtures when live
   comparison is unavailable), and drift is fixed in the owning system or recorded as an explicit blocker. Keep
   `yarn api:check` green for generated types.

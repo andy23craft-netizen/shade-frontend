@@ -1,6 +1,7 @@
 # Agents.md: LLM Project Context
 
-Use this document as baseline context when working on the Shade frontend in a fresh LLM chat. Inspect the current
+Use this document as the self-contained baseline context when working on the Shade frontend in a fresh LLM chat. It
+covers operating rules, the backend contract, architecture, and the current codebase inventory. Inspect the current
 repository before making changes because the code may have changed since this document was written. A user's
 explicit request takes precedence over general guidance here.
 
@@ -21,14 +22,18 @@ marks FEAT-01 and FEAT-02 complete.
 
 **In progress:** FEAT-03 (typed API and server state). Already present: OpenAPI generation, schema aliases, enum
 display helpers, the shared API client shell, error types, `createApi` with typed route helpers for books, loans,
-dashboard, health, protected, and backup (text-only), React Query mounted under `AppProviders`,
-`subscribeQueryClientToConnectionInvalidation`, and partial books query/mutation hooks. Remaining work includes query
-client defaults, wiring invalidation into bootstrap, backup blob + filename metadata, fuller mutations and the PLAN.md
-7.5 invalidation matrix, restoring full `apiClient` tests, request shaping, error/correlation/redaction completion, and
-routing connection health/protected through typed helpers. Product feature workflows belong to FEAT-04+.
+dashboard, health, protected, and backup (`{ blob, filename }`), React Query mounted under `AppProviders` with
+configured client defaults and `subscribeQueryClientToConnectionInvalidation` wired, restored `apiClient` tests, and
+books query/mutation hooks with PLAN.md 7.5-style invalidation (lists, detail, dashboard, and loans on
+checkout/check-in). Remaining work includes request shaping / date serialization, routing connection health/protected
+through typed helpers, correlation ID population only when the backend supplies a safe value, redaction helpers,
+returned-`BookRead` detail-cache writes, loans/dashboard query hooks, abort/stale overwrite guards, broader API mocks,
+and open helper edge-case fixtures (lookup `found: false`, mark-read `{}`, omitted check-in body, `409` bodies).
+Product feature workflows belong to FEAT-04+.
 
-Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
-`docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
+Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket
+(`docs/tickets/FEAT-03_typed-api-and-server-state.md` while FEAT-03 is active), then `docs/product-docs/PLAN.md`, then
+the product requirements docs when deciding what to build next.
 
 ## Technology
 
@@ -36,8 +41,8 @@ Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer t
 - TypeScript 6 in strict mode
 - Vite 8
 - React Router 7 (`react-router-dom`), integrated in `src/main.tsx`
-- TanStack React Query 5 (`QueryClientProvider` mounted under `AppProviders`; client defaults and full invalidation
-  wiring are FEAT-03 remaining work)
+- TanStack React Query 5 (`QueryClientProvider` mounted under `AppProviders` with configured client defaults and
+  connection-invalidation subscription; remaining FEAT-03 cache/helper gaps are listed under Project Summary)
 - `openapi-typescript` for generating `src/api/generated/openapi.ts` from the checked-in OpenAPI document
 - Vitest with jsdom
 - Testing Library and jest-dom
@@ -199,8 +204,8 @@ hand-editing it.
 - `src/main.tsx`: Browser bootstrap. Reads runtime config, either mounts `RuntimeConfigScreen` or
   `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`, and imports global CSS.
 - `src/AppProviders.tsx`: Application-wide providers. Wraps `NotificationsProvider`, `QueryClientProvider`
-  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig`). Does not yet subscribe
-  `subscribeQueryClientToConnectionInvalidation`.
+  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig`). Subscribes
+  `subscribeQueryClientToConnectionInvalidation` so forgotten or rejected tokens clear the query cache.
 - `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home).
 - `src/vite-env.d.ts`: Adds Vite client and asset declarations to TypeScript. It has no runtime behavior.
 
@@ -232,13 +237,18 @@ hand-editing it.
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
 - `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
 - `src/api/protectedApi.ts`: `get()` (`GET /protected`).
-- `src/api/backupApi.ts`: `get()` returns SQL as text only; blob + safe `Content-Disposition` filename metadata is
-  still FEAT-03 remaining work.
-- `src/api/queryClient.ts`: `createQueryClient()` returns a bare `QueryClient` (no stale/retry/focus defaults yet).
+- `src/api/backupApi.ts`: `get()` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
+  `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
+- `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`,
+  `refetchOnReconnect`, query retry that skips validation / auth / cancelled / invalid-response errors, and
+  `mutations.retry: false`.
 - `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when
-  connection invalidation fires; unit-tested but not yet subscribed from `AppProviders`.
-- `src/api/booksQueries.ts`: Partial hooks -- `useBooks`, `useBook`, `useBookLookup`, `useCreateBook` (create only
-  invalidates `['books']`). Remaining mutations and the PLAN.md 7.5 invalidation matrix are unfinished.
+  connection invalidation fires; subscribed from `AppProviders`.
+- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations `useCreateBook`,
+  `useUpdateBook`, `useDeleteBook`, `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, `useMarkBookRead`.
+  Successful mutations invalidate books lists (including `include_deleted` via the shared `['books']` prefix), detail,
+  dashboard, and loans when checkout/check-in succeed. They do not yet write the returned `BookRead` into the detail
+  cache. No dedicated loans or dashboard query hooks yet.
 
 ### Routing and Layout
 
@@ -337,13 +347,16 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
 - `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation and read helpers.
-- `src/api/apiClient.test.ts`: Currently duplicates a books `list()` mock and no longer covers Bearer / public /
-  `403` / timeout / invalid JSON / `204` client behavior (restore/extend as part of FEAT-03).
+- `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes,
+  `5xx` (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup
+  success, and `204`.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts`: Error, schema alias, and `createApi` coverage.
 - `src/api/booksApi.test.ts` / `loansApi.test.ts` / `dashboardApi.test.ts` / `healthApi.test.ts` /
-  `protectedApi.test.ts` / `backupApi.test.ts`: Happy-path typed route helper coverage.
-- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx`: Query client factory,
-  connection-invalidation subscription, and partial books hooks.
+  `protectedApi.test.ts` / `backupApi.test.ts`: Happy-path typed route helper coverage (backup includes filename
+  metadata). Open FEAT-03 edge-case fixtures remain for lookup `found: false`, mark-read `{}`, omitted check-in
+  body, and `409` bodies.
+- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx`: Query client defaults and
+  retry policy, connection-invalidation subscription, and books query/mutation hooks with invalidation coverage.
 - `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` /
   `connectionToken.test.ts`: Connection lifecycle and UI.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
@@ -472,9 +485,11 @@ make build
 - Extend the existing API client, generated types, query helpers, and connection-invalidation seam during FEAT-03; do
   not introduce a second state store, component library, CSS framework, or form library unless a ticket explicitly
   requires it.
-- Finish FEAT-03 server-state work on the existing React Query mount: configure `createQueryClient` defaults, subscribe
-  `subscribeQueryClientToConnectionInvalidation` from bootstrap (for example under `AppProviders`), and complete
-  mutations/invalidation per PLAN.md section 7.5.
+- Finish remaining FEAT-03 work on the existing React Query mount: request shaping, typed health/protected swap for
+  connection checks, returned-`BookRead` detail-cache writes, loans/dashboard query hooks, redaction helpers,
+  correlation ID population only when the backend supplies a safe value, abort/stale overwrite guards, and the
+  ticket's open edge-case fixtures. Invalidation already matches PLAN.md section 7.5; do not rebuild the mount or
+  books mutation surface.
 - For API-dependent work, treat `docs/technical-reference/openapi.json` as the schema source of truth and
   `docs/technical-reference/API-for-FE.md` as behavioral guidance.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
