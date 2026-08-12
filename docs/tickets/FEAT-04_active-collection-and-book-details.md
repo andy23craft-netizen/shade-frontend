@@ -16,14 +16,14 @@ Reuse `useBooks` / `useBook`, `queryKeys`, `enumDisplayValue`, and shared compon
 
 ## Explicitly out of scope (owned by later tickets)
 
-| Later ticket | Owns (do not pull into FEAT-04) |
-| ------------ | ------------------------------- |
-| FEAT-05 | Book form model, create/lookup UI, ISBN checksums, form date serialization |
-| FEAT-07 | Checkout UI and borrower/notes collection |
-| FEAT-08 | Check-in UI and loan-history UI |
-| FEAT-09 | Mark-read / reading-edit UI |
-| FEAT-10 | Edit/delete/restore/backup UI and admin deleted list |
-| FEAT-11 | Dashboard page UI |
+| Later ticket | Owns (do not pull into FEAT-04)                                            |
+|--------------|----------------------------------------------------------------------------|
+| FEAT-05      | Book form model, create/lookup UI, ISBN checksums, form date serialization |
+| FEAT-07      | Checkout UI and borrower/notes collection                                  |
+| FEAT-08      | Check-in UI and loan-history UI                                            |
+| FEAT-09      | Mark-read / reading-edit UI                                                |
+| FEAT-10      | Edit/delete/restore/backup UI and admin deleted list                       |
+| FEAT-11      | Dashboard page UI                                                          |
 
 Contextual links may navigate to those routes when valid for the current `BookRead`; do not implement those workflows
 here.
@@ -32,13 +32,12 @@ here.
 
 Treat these as complementary, not interchangeable:
 
-- `../technical-reference/openapi.json` -- authoritative for `GET /books`, `GET /books/{id}`, `BookList`
-  (`{ items, total }`), `BookRead`, and enums (`Status`, `Category`, `Shelf`).
+- `../technical-reference/openapi.json` -- authoritative for `GET /books`, `GET /books/{id}`, `BookList` (`{ items,
+  total }`), `BookRead`, and enums (`Status`, `Category`, `Shelf`).
 - `../technical-reference/API-for-FE.md` -- behavioral guidance OpenAPI does not fully express (soft-delete visibility,
   independent loan/reading/delete axes, borrow-stat semantics, and temporal-string caveats).
 
-This ticket is read-only against the API. Do not call checkout, check-in, mark-read, `PATCH`, `DELETE`, or restore
-here.
+This ticket is read-only against the API. Do not call checkout, check-in, mark-read, `PATCH`, `DELETE`, or restore here.
 
 ## Current baseline
 
@@ -59,28 +58,26 @@ Already in place and should be extended, not replaced:
 
 - Implement the title-ordered active collection from `BookList` via `useBooks()` (default active-only).
 - Render the full `{ items, total }` result set. There is no pagination; do not invent client paging assumptions.
-- Show enough row context to browse (at least title, authors, `status`, and read/unread via `is_read`) and link each
-  row to `/books/:bookId`.
+- Show enough row context to browse (at least title, authors, `status`, and read/unread via `is_read`) and link each row
+  to `/books/:bookId`.
 
 ### Detail (`/books/:bookId`)
 
-- Load with `useBook(bookId)`. Present useful `BookRead` fields without renaming transport properties in the UI
-  layer's data binding:
+- Load with `useBook(bookId)`. Present useful `BookRead` fields without renaming transport properties in the UI layer's
+  data binding:
   - Bibliographic: `title`, `authors`, `isbn13`, `publisher`, `publication_date`, `pages`, `category`, `shelf`, `tags`
   - Acquisition: `purchase_date`, `purchase_price`, `acquisition_source`, `notes`
   - Lifecycle: `status`, `borrower`, `datetime_loaned_out`, `deletion_date`
   - Reading: `is_read`, `completion_date`, `rating`, `review`
   - Borrowing stats: `times_borrowed`, `last_borrowed_at`, `average_loan_days`
   - Audit: `id`, `creation_date`, `updated_date`
-- Distinguish `Status` values textually and semantically: `unknown`, `available`, `on_loan`, `missing`,
-  `display_only`, `reserved`, and `reading`. Treat `is_read` as an independent reading axis (not a `Status` value).
+- Distinguish `Status` values textually and semantically: `unknown`, `available`, `on_loan`, `missing`, `display_only`,
+  `reserved`, and `reading`. Treat `is_read` as an independent reading axis (not a `Status` value).
 - Treat non-null `deletion_date` as soft-deleted: explain retained history, hide active lifecycle actions, and offer
-  safe navigation back to the active collection (and toward admin restore only as a later-ticket destination if
-  linked).
+  safe navigation back to the active collection (and toward admin restore only as a later-ticket destination if linked).
 - Show borrow stats with API semantics: `times_borrowed` counts loan rows; `last_borrowed_at` is the stored checkout
   timestamp the API returns; `average_loan_days` is `null` when no returned loans exist -- never display that as zero.
-- Add contextual links for edit, checkout, check-in, mark read, and delete only when valid for the current
-  `BookRead`:
+- Add contextual links for edit, checkout, check-in, mark read, and delete only when valid for the current `BookRead`:
   - No checkout when `status` is `on_loan` or the book is soft-deleted.
   - No delete when `status` is `on_loan` (backend deletion would leave the active loan open until restore) or when
     already soft-deleted.
@@ -93,10 +90,9 @@ Already in place and should be extended, not replaced:
   `404`, and soft-deleted-detail states.
 - On detail `404`, refresh stale collection data (invalidate via existing `queryKeys.books` prefixes) and offer safe
   navigation (the book is gone from the API, not merely soft-deleted).
-- Format safely: null optionals, unknown enum values (via `enumDisplayValue`), long content, malformed temporal
-  strings, date-only values as calendar dates without timezone day-shift (`YYYY-MM-DD`), and timestamps without
-  inventing precision the API did not provide. Temporal fields are plain strings on the wire; the API does not
-  validate format.
+- Format safely: null optionals, unknown enum values (via `enumDisplayValue`), long content, malformed temporal strings,
+  date-only values as calendar dates without timezone day-shift (`YYYY-MM-DD`), and timestamps without inventing
+  precision the API did not provide. Temporal fields are plain strings on the wire; the API does not validate format.
 
 ## Acceptance criteria
 

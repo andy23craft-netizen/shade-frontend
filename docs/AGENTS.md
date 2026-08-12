@@ -2,9 +2,9 @@
 
 Use this document as the self-contained baseline context when working on the Shade frontend in a fresh LLM chat. It
 covers operating rules, the backend contract, architecture, and the current codebase inventory. Do not treat other
-prompt packs under `docs/` as required reading for this baseline; this file is meant to stand alone. Inspect the
-current repository before making changes because the code may have changed since this document was written. A
-user's explicit request takes precedence over general guidance here.
+prompt packs under `docs/` as required reading for this baseline; this file is meant to stand alone. Inspect the current
+repository before making changes because the code may have changed since this document was written. A user's explicit
+request takes precedence over general guidance here.
 
 ## Project Summary
 
@@ -17,19 +17,18 @@ Shade is a browser UI for a personal home-library FastAPI backend. Planned capab
 - Soft-deleting and restoring books while preserving history.
 - Sending a shared Bearer token with backend API requests (no user accounts).
 
-**Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), and
-FEAT-03 (typed API and server state). Those ticket files were removed; remaining tickets are `FEAT-04` through
-`FEAT-16` under `docs/tickets/`. `docs/ToDo.md` marks FEAT-01 through FEAT-03 complete.
+**Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), and FEAT-03
+(typed API and server state). Those ticket files were removed; remaining tickets are `FEAT-04` through `FEAT-16` under
+`docs/tickets/`. `docs/ToDo.md` marks FEAT-01 through FEAT-03 complete.
 
-**Next:** FEAT-04 (active collection and book details): read-only browse/detail UI on `/books` and
-`/books/:bookId`, reusing FEAT-03 hooks and shared primitives. FEAT-03 already delivered OpenAPI generation,
-schema aliases, enum display helpers, the shared API client shell, error types with redaction helpers,
-request-field picking and date/time utilities, `createApi` typed route helpers (including backup
-`{ blob, filename }`), connection health/protected via typed helpers, React Query defaults and
-connection-invalidation wiring, books/loans/dashboard query hooks, mutation detail-cache writes plus PLAN.md 7.5
-invalidation, abort/stale overwrite guards, contract smoke coverage, and performance baselines under
-`docs/baselines/FEAT-03_performance.md`. Later product workflows (create, checkout, check-in, edit/delete,
-dashboard metrics UI) belong to FEAT-05+.
+**Next:** FEAT-04 (active collection and book details): read-only browse/detail UI on `/books` and `/books/:bookId`,
+reusing FEAT-03 hooks and shared primitives. FEAT-03 already delivered OpenAPI generation, schema aliases, enum display
+helpers, the shared API client shell, error types with redaction helpers, request-field picking and date/time utilities,
+`createApi` typed route helpers (including backup `{ blob, filename }`), connection health/protected via typed helpers,
+React Query defaults and connection-invalidation wiring, books/loans/dashboard query hooks, mutation detail-cache writes
+plus PLAN.md 7.5 invalidation, abort/stale overwrite guards, contract smoke coverage, and performance baselines under
+`docs/baselines/FEAT-03_performance.md`. Later product workflows (create, checkout, check-in, edit/delete, dashboard
+metrics UI) belong to FEAT-05+.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
 `docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
@@ -55,8 +54,8 @@ library.
 
 ## Backend Contract
 
-The backend is a separate repository. Default local API base is `http://127.0.0.1:8000` with **no** `/api` prefix.
-Treat these as complementary sources of truth:
+The backend is a separate repository. Default local API base is `http://127.0.0.1:8000` with **no** `/api` prefix. Treat
+these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
   (OpenAPI 3.1; LibraryV2). Prefer generating or fixture-checking TypeScript models from this file.
@@ -83,13 +82,13 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 - Token is runtime-only: memory plus `sessionStorage`, with an explicit forget action
 - Never commit, bundle, put in URLs, log, or send the token to analytics
 - Confirmed `403` clears the active token and returns the user to connection setup
-- A browser-held shared token is inspectable by anyone with device access; that is an accepted risk for this
-  trusted personal deployment and is not real multi-user authentication
+- A browser-held shared token is inspectable by anyone with device access; that is an accepted risk for this trusted
+  personal deployment and is not real multi-user authentication
 
 ### Lifecycle endpoints (never simulate with generic PATCH)
 
 | Operation     | Endpoint                        |
-| ------------- | ------------------------------- |
+|---------------|---------------------------------|
 | Create        | `POST /books`                   |
 | Edit metadata | `PATCH /books/{id}`             |
 | Delete        | `DELETE /books/{id}`            |
@@ -117,9 +116,9 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL backup, runtime API config, CI,
 Podman preview, versioned production artifacts.
 
-**Out of scope unless explicitly requested:** UPC, multi-library/copies, wish lists, catalog search/filter/sort,
-backend pagination, cover images, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime sync,
-loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback orchestration.
+**Out of scope unless explicitly requested:** UPC, multi-library/copies, wish lists, catalog search/filter/sort, backend
+pagination, cover images, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD,
+mark-unread, remote Ansible/systemd/TLS/rollback orchestration.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
@@ -127,8 +126,8 @@ Do not expand a ticket into out-of-scope features. Do not implement future ticke
 
 - Work only inside the frontend repository.
 - The related backend and orchestrator repositories may be read when cross-project context is necessary.
-- Do not mutate Git state. Do not stage, unstage, commit, check out, push, pull, add, remove, or delete through
-  Git. Ask before stashing or unstashing.
+- Do not mutate Git state. Do not stage, unstage, commit, check out, push, pull, add, remove, or delete through Git. Ask
+  before stashing or unstashing.
 - Use read-only Git commands only when needed to understand the working tree or history.
 - Do not overwrite or revert unrelated user changes.
 - Use Yarn rather than npm.
@@ -180,30 +179,27 @@ index.html
 valid, the bootstrap module renders `RouterProvider` inside `RootErrorBoundary` and `AppProviders` in `StrictMode`.
 Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
-`AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and
-admin navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side
-navigations. `/settings/connection` mounts `ConnectionScreen`. Other feature pages under `src/features/*/routes/`
-still render `RoutePlaceholder`; product UI arrives in later tickets.
+`AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
+navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side navigations.
+`/settings/connection` mounts `ConnectionScreen`. Other feature pages under `src/features/*/routes/` still render
+`RoutePlaceholder`; product UI arrives in later tickets.
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
-production bundle. The CSS import order is intentional: later layers use tokens and defaults declared by earlier
-layers.
+production bundle. The CSS import order is intentional: later layers use tokens and defaults declared by earlier layers.
 
 ## Project Structure
 
-This inventory covers every project-owned file outside `docs/`. Do not assume generated or dependency directories
-are source code. In particular, omit `node_modules/`, `dist/`, `coverage/`, `.vite/`, `.yarn/`, and `.git/` from
-normal code changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:generate` rather than
-hand-editing it.
+This inventory covers every project-owned file outside `docs/`. Do not assume generated or dependency directories are
+source code. In particular, omit `node_modules/`, `dist/`, `coverage/`, `.vite/`, `.yarn/`, and `.git/` from normal code
+changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:generate` rather than hand-editing it.
 
 ### Browser Application
 
-- `index.html`: Vite's HTML entrypoint. Defines page metadata, creates `#root`, loads `/config.js`, then
-  `src/main.tsx`.
-- `public/config.js`: Runtime config assigned to `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). Not bundled;
-  edit for local or deployed environments.
-- `src/main.tsx`: Browser bootstrap. Reads runtime config, either mounts `RuntimeConfigScreen` or
-  `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`, and imports global CSS.
+- `index.html`: Vite's HTML entrypoint. Defines page metadata, creates `#root`, loads `/config.js`, then `src/main.tsx`.
+- `public/config.js`: Runtime config assigned to `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). Not bundled; edit
+  for local or deployed environments.
+- `src/main.tsx`: Browser bootstrap. Reads runtime config, either mounts `RuntimeConfigScreen` or `RootErrorBoundary` ->
+  `AppProviders` -> `RouterProvider` in `StrictMode`, and imports global CSS.
 - `src/AppProviders.tsx`: Application-wide providers. Wraps `NotificationsProvider`, `QueryClientProvider`
   (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig`). Subscribes
   `subscribeQueryClientToConnectionInvalidation` so forgotten or rejected tokens clear the query cache.
@@ -218,8 +214,7 @@ hand-editing it.
 
 ### API Layer
 
-- `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` /
-  `yarn api:check`.
+- `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
   dashboard, health/protected, validation/error schemas, enums).
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
@@ -247,21 +242,20 @@ hand-editing it.
 - `src/api/protectedApi.ts`: `get()` (`GET /protected`).
 - `src/api/backupApi.ts`: `get()` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
   `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
-- `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`,
-  `refetchOnReconnect`, query retry that skips validation / auth / cancelled / invalid-response errors, and
-  `mutations.retry: false`.
-- `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when
-  connection invalidation fires; subscribed from `AppProviders`.
-- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations that write returned `BookRead`
-  into the detail cache and invalidate per PLAN.md 7.5 (lists, detail, dashboard, and loans on checkout/check-in).
+- `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
+  query retry that skips validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`.
+- `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when connection
+  invalidation fires; subscribed from `AppProviders`.
+- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations that write returned `BookRead` into
+  the detail cache and invalidate per PLAN.md 7.5 (lists, detail, dashboard, and loans on checkout/check-in).
 - `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` and `useDashboard` using the same keys mutations
   invalidate.
 
 ### Routing and Layout
 
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
-- `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths
-  are `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
+- `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
+  `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
   `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route body used by unfinished feature pages (`h1` with `tabIndex={-1}`).
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
@@ -297,8 +291,8 @@ Connection feature (FEAT-02, complete):
 - `src/features/connection/connectionInvalidation.ts`: `subscribeToConnectionInvalidation` /
   `notifyConnectionInvalidated` seam for clearing cached protected data when the token is forgotten or rejected.
 - `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook.
-- `src/features/connection/ConnectionProvider.tsx`: Owns status, token lifecycle, `apiClient`, connect / retry /
-  forget, and unauthorized handling.
+- `src/features/connection/ConnectionProvider.tsx`: Owns status, token lifecycle, `apiClient`, connect / retry / forget,
+  and unauthorized handling.
 - `src/features/connection/ConnectionScreen.tsx`: Connection settings UI.
 
 ### Shared Components
@@ -325,14 +319,13 @@ product workflows.
 ### Styling
 
 - `src/index.css`: Global CSS entrypoint imported by `src/main.tsx`. It imports all style layers in order.
-- `src/styles/tokens.css`: Design tokens for typography, spacing, sizing, colors, borders, focus, shadows, and
-  motion.
-- `src/styles/base.css`: Element defaults and accessibility foundations, including box sizing, controls, links,
-  focus visibility, page typography, skip links, and reduced motion.
+- `src/styles/tokens.css`: Design tokens for typography, spacing, sizing, colors, borders, focus, shadows, and motion.
+- `src/styles/base.css`: Element defaults and accessibility foundations, including box sizing, controls, links, focus
+  visibility, page typography, skip links, and reduced motion.
 - `src/styles/shell.css`: Application-frame classes for header, navigation, main content, footer, route pages, and
   responsive layouts.
-- `src/styles/components.css`: Shared class-based primitives for buttons, links, forms, alerts, status views,
-  dialogs, and notifications. They use BEM-like naming and are referenced by the shared component modules.
+- `src/styles/components.css`: Shared class-based primitives for buttons, links, forms, alerts, status views, dialogs,
+  and notifications. They use BEM-like naming and are referenced by the shared component modules.
 
 Choose the CSS layer based on responsibility:
 
@@ -354,32 +347,32 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
 - `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation and read helpers.
-- `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes,
-  `5xx` (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup
-  success, and `204`.
+- `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, `5xx`
+  (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success, and
+  `204`.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
-- `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` /
-  `loansApi.test.ts` / `dashboardApi.test.ts` / `healthApi.test.ts` / `protectedApi.test.ts` /
-  `backupApi.test.ts`: Typed route helper coverage including lookup `found: false`, mark-read `{}`, omitted
-  check-in body, restore/checkout/check-in `409` bodies, and a 2_000-item list timing guard.
+- `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
+  `dashboardApi.test.ts` / `healthApi.test.ts` / `protectedApi.test.ts` / `backupApi.test.ts`: Typed route helper
+  coverage including lookup `found: false`, mark-read `{}`, omitted check-in body, restore/checkout/check-in `409`
+  bodies, and a 2_000-item list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
-- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx` /
-  `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation
-  subscription, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
+- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx`
+  / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation subscription, books/loans/dashboard
+  hooks, detail-cache writes, and abort/stale overwrite guards.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable.
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
-- `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` /
-  `connectionToken.test.ts`: Connection lifecycle and UI.
+- `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` / `connectionToken.test.ts`:
+  Connection lifecycle and UI.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
   `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API.
-- `scripts/productionBuildTokenInspection.test.ts`: Production build with source maps; fails if known test tokens
-  appear in artifacts.
+- `scripts/productionBuildTokenInspection.test.ts`: Production build with source maps; fails if known test tokens appear
+  in artifacts.
 
-Tests use a jsdom browser simulation (except the Node-environment production-build inspection). Prefer semantic
-Testing Library queries such as `getByRole()` and test user-visible behavior instead of implementation details.
-Route tests should use `createTestRouter` / `renderAppTree` and must not mutate `window.history` across cases.
+Tests use a jsdom browser simulation (except the Node-environment production-build inspection). Prefer semantic Testing
+Library queries such as `getByRole()` and test user-visible behavior instead of implementation details. Route tests
+should use `createTestRouter` / `renderAppTree` and must not mutate `window.history` across cases.
 
 The test flow is:
 
@@ -402,13 +395,13 @@ yarn test
 
 ### Build, Type Checking, and Linting
 
-- `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests, global test setup, and an
-  optional same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`).
-- `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores generated directories
-  and treats warnings as failures through the package script.
+- `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests, global test setup, and an optional
+  same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`).
+- `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores generated directories and
+  treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
-- `tsconfig.app.json`: Strict browser and React type checking for `src/`. It includes Vite, Vitest, and jest-dom
-  types and emits no files.
+- `tsconfig.app.json`: Strict browser and React type checking for `src/`. It includes Vite, Vitest, and jest-dom types
+  and emits no files.
 - `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts`. It emits no files.
 
 ### Repository Guidance
@@ -465,8 +458,8 @@ Common commands:
 
 `make check` currently performs type checking twice because `make build` also type-checks. This is expected.
 
-Local API connectivity: by default `public/config.js` points at `http://127.0.0.1:8000` and the backend allows the
-Vite origins, so no proxy is required. Optional same-origin proxy: set `apiBaseUrl` to the Vite origin and run
+Local API connectivity: by default `public/config.js` points at `http://127.0.0.1:8000` and the backend allows the Vite
+origins, so no proxy is required. Optional same-origin proxy: set `apiBaseUrl` to the Vite origin and run
 `SHADE_API_PROXY=1 make run` (optional `SHADE_API_PROXY_TARGET`).
 
 The build flow is:
@@ -486,9 +479,9 @@ make build
 
 - Keep TypeScript strict and avoid `any` unless an unavoidable boundary is documented.
 - Prefer semantic HTML. Add ARIA only when native semantics cannot express the behavior.
-- Preserve landmarks, visible keyboard focus, labels linked to errors, skip link, dialog focus restoration,
-  document title plus heading focus on route change, no color-only status, usable 320px viewports, 44-pixel
-  control targets, and reduced-motion support.
+- Preserve landmarks, visible keyboard focus, labels linked to errors, skip link, dialog focus restoration, document
+  title plus heading focus on route change, no color-only status, usable 320px viewports, 44-pixel control targets, and
+  reduced-motion support.
 - Reuse design tokens and existing shared CSS classes before adding new values or primitives.
 - Shared CSS follows `.component`, `.component__element`, and `.component--modifier` naming.
 - Import global CSS once through `src/index.css`; do not scatter global imports across components.
@@ -497,8 +490,8 @@ make build
 - Use extensionless relative TypeScript imports, matching current source style.
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns that
-  route rather than inventing a parallel tree. For FEAT-04, replace `BooksPage` and `BookDetailsPage` placeholders
-  and reuse `useBooks` / `useBook`, `queryKeys`, `enumDisplayValue`, and shared loading/empty/alert/link primitives.
+  route rather than inventing a parallel tree. For FEAT-04, replace `BooksPage` and `BookDetailsPage` placeholders and
+  reuse `useBooks` / `useBook`, `queryKeys`, `enumDisplayValue`, and shared loading/empty/alert/link primitives.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
@@ -507,8 +500,8 @@ make build
   `docs/technical-reference/API-for-FE.md` as behavioral guidance. Prefer a running backend `/openapi.json` for drift
   checks when available; do not invent lifecycle behavior with generic `PATCH`.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
-- Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API text as HTML,
-  or upload SQL backup contents to telemetry. SQL backups are sensitive.
+- Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API text as HTML, or
+  upload SQL backup contents to telemetry. SQL backups are sensitive.
 
 ## Change Workflow
 
@@ -520,5 +513,5 @@ make build
 6. Review the final diff for correctness, accidental generated files, secrets, and stale documentation.
 7. Report changed files, verification performed, and any remaining uncertainty.
 
-If a new file, command, dependency, architecture pattern, or runtime flow is introduced, update this context so the
-next fresh chat does not begin with stale assumptions.
+If a new file, command, dependency, architecture pattern, or runtime flow is introduced, update this context so the next
+fresh chat does not begin with stale assumptions.

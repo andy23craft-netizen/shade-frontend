@@ -24,10 +24,10 @@ Reuse FEAT-03 typed helpers and mutation/cache invalidation. Do not invent a sec
 
 Confirm against a representative running backend `/openapi.json` before locking behavior; record drift as a blocker.
 
-- `POST /books` accepts `BookCreate` and returns `201` with `BookRead`. Documented error responses are `403` and
-  `422` (FastAPI `detail[]`). There is no documented duplicate-ISBN conflict (`409` or otherwise); OpenAPI and the API
-  notes do not require uniqueness on `isbn13`. Do not invent frontend rejection of duplicate ISBNs unless a later
-  contract change adds it.
+- `POST /books` accepts `BookCreate` and returns `201` with `BookRead`. Documented error responses are `403` and `422`
+  (FastAPI `detail[]`). There is no documented duplicate-ISBN conflict (`409` or otherwise); OpenAPI and the API notes
+  do not require uniqueness on `isbn13`. Do not invent frontend rejection of duplicate ISBNs unless a later contract
+  change adds it.
 - `purchase_price` is an unconstrained nullable `number` in OpenAPI -- no currency, precision, `multipleOf`, or range.
   Present a sensible client control (e.g., decimal money input) and send a JSON number or `null`; do not invent API
   currency codes or server-side rounding rules.
@@ -35,8 +35,8 @@ Confirm against a representative running backend `/openapi.json` before locking 
   `BookLookupResponse`. Unknown ISBNs are success with `found: false` and `draft: null`, not an error.
 - Lookup also documents string-`detail` `422` (invalid ISBN), `502` (provider transport/`5xx`), and `504` (provider
   timeout). Unexpected non-404 provider `4xx` and malformed provider JSON can surface as unhandled `500`.
-- Lookup currently always uses Open Library with a three-second provider timeout. Client timeout must exceed that
-  window and still offer retry or manual fallback.
+- Lookup currently always uses Open Library with a three-second provider timeout. Client timeout must exceed that window
+  and still offer retry or manual fallback.
 - Accepted ISBN forms include ISBN-10, ISBN-13, spaces, and hyphens. The API normalizes to ISBN-13 when possible.
   ISBN-13 check digits are validated; ISBN-10 check digits are not -- the frontend must reject invalid ISBN-10 check
   digits before lookup or create. Blank `isbn` on lookup is `422`; blank create/update `isbn13` is stored as `null`.
@@ -53,23 +53,23 @@ Confirm against a representative running backend `/openapi.json` before locking 
 
 ### Form model (reusable)
 
-- Build reusable book-form values and conversion logic separately from `BookCreate` / `BookLookupDraft` transport
-  models so FEAT-10 edit can share the same form shape later.
+- Build reusable book-form values and conversion logic separately from `BookCreate` / `BookLookupDraft` transport models
+  so FEAT-10 edit can share the same form shape later.
 - Creation UI fields: title, authors, ISBN (`isbn13`), publisher, publication date, pages, category, shelf, tags,
   purchase date, purchase price, acquisition source, and notes.
-- Require non-blank title and authors; enforce documented 255-character limits, positive integer pages, valid
-  `Category` / `Shelf` enums (with `unknown`), and accessible field/summary errors even though the API currently
-  accepts empty required strings.
+- Require non-blank title and authors; enforce documented 255-character limits, positive integer pages, valid `Category`
+  / `Shelf` enums (with `unknown`), and accessible field/summary errors even though the API currently accepts empty
+  required strings.
 - Validate ISBN-10 and ISBN-13 check digits before lookup or creation. Preserve separators in the submitted value and
   rely on the API for canonical normalization; strip separators internally only for checksum calculation.
 - Define and test deterministic tag trimming, empty-tag removal, duplicate handling, and ordering.
 - Convert blank optionals to `null` (or omit when that matches the typed helper). Do not send `null` for
   title/authors/category/shelf/`is_read`/`status`.
-- Serialize user-entered date values as `YYYY-MM-DD`. Preserve a year-only lookup `publication_date` as an editable
-  API string rather than inventing a month and day.
-- Do not expose borrower, `datetime_loaned_out`, on-loan simulation, or reading-completion controls on this form.
-  Leave `status` / `is_read` at create defaults unless a later product decision adds a non-loan metadata status
-  control; never use create/`PATCH` to simulate checkout, check-in, or mark-read.
+- Serialize user-entered date values as `YYYY-MM-DD`. Preserve a year-only lookup `publication_date` as an editable API
+  string rather than inventing a month and day.
+- Do not expose borrower, `datetime_loaned_out`, on-loan simulation, or reading-completion controls on this form. Leave
+  `status` / `is_read` at create defaults unless a later product decision adds a non-loan metadata status control; never
+  use create/`PATCH` to simulate checkout, check-in, or mark-read.
 
 ### New-book route (`/books/new`)
 
