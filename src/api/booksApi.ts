@@ -105,8 +105,10 @@ export function createBooksApi(
             const params = new URLSearchParams({
                 isbn,
             })
+
             const path =
                 `/books/lookup?${params.toString()}`
+
             const signalOptions = withSignal(
                 options.signal,
             )
@@ -127,6 +129,7 @@ export function createBooksApi(
         ): Promise<BookRead> {
             const path =
                 `/books/${encodeURIComponent(id)}`
+
             const signalOptions = withSignal(
                 options.signal,
             )

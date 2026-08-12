@@ -86,8 +86,8 @@ export function useBooks(
             includeDeleted,
         ),
         queryFn: ({
-            signal,
-        }) =>
+                      signal,
+                  }) =>
             booksApi.list({
                 includeDeleted,
                 signal,
@@ -108,8 +108,8 @@ export function useBook(
     return useQuery({
         queryKey: queryKeys.books.detail(id),
         queryFn: ({
-            signal,
-        }) =>
+                      signal,
+                  }) =>
             booksApi.get(id, {
                 signal,
             }),
@@ -130,14 +130,31 @@ export function useBookLookup(
     return useQuery({
         queryKey: queryKeys.books.lookup(isbn),
         queryFn: ({
-            signal,
-        }) =>
+                      signal,
+                  }) =>
             booksApi.lookup(isbn, {
                 signal,
             }),
         enabled: Boolean(isbn),
     })
 }
+
+export function useLookupBook() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (
+            isbn: string,
+        ) =>
+            booksApi.lookup(isbn),
+    })
+}
+
 
 export function useCreateBook() {
     const {
@@ -161,6 +178,7 @@ export function useCreateBook() {
                 queryClient,
                 book,
             )
+
             await invalidateBookCaches(
                 queryClient,
                 book.id,
