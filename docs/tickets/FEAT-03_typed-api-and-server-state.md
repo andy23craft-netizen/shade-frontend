@@ -13,6 +13,27 @@ in place.
 Do not add a second state store, component library, CSS framework, or form library in this ticket. Product feature
 workflows belong to later tickets; this ticket finishes the remaining typed-client and server-state gaps they will use.
 
+## Explicitly out of scope (owned by later tickets)
+
+Do not implement or expand FEAT-03 into work already scheduled below. Later tickets reuse this ticket's helpers,
+hooks, query keys, and invalidation matrix; they own product UI, forms, journeys, and release hardening.
+
+| Later ticket | Owns (do not pull into FEAT-03) |
+| ------------ | ------------------------------- |
+| FEAT-04 | Active collection and detail UI, loading/empty/`404`/soft-deleted presentation, date display formatting |
+| FEAT-05 | Book form model, create/lookup UI, ISBN checksums, blank-optional conversion, form date serialization, form abort / route-change / duplicate-submit behavior |
+| FEAT-06 | Camera/scanner capture and handoff into FEAT-05 |
+| FEAT-07 | Checkout UI, borrower/notes collection, checkout timestamp/`due_at` form serialization, conflict UX |
+| FEAT-08 | Check-in UI, loan-history UI, return-time form serialization, overdue presentation |
+| FEAT-09 | Mark-read / reading-edit UI, review privacy in that workflow |
+| FEAT-10 | Edit/delete/restore/backup UI, minimal patch generation, backup download UX and CORS verification |
+| FEAT-11 | Dashboard page UI and metric presentation (null averages, distinct `checked_out` vs `active_loans`) |
+| FEAT-12 | Production diagnostics/reporting, browser matrix, a11y audit across routes, recording large-library and bundle regressions against FEAT-03 baselines, correlation ID in user-visible diagnostics |
+| FEAT-13 | Full route/status mock matrix, browser journeys, accessibility suites, coverage thresholds |
+| FEAT-14 | CI pipeline, CI privacy for logs/artifacts, bundle-size regression reporting in CI |
+| FEAT-15 | Podman development/preview images |
+| FEAT-16 | Versioned release tarballs and deployment handoff |
+
 ## Contract references
 
 Treat these as complementary, not interchangeable:
@@ -74,19 +95,19 @@ Already in place and should be extended, not replaced:
 
 ## Remaining scope
 
-### Request shaping
+### Transport request safety
 
-Transport schema aliases and generation are done. Finish request-side contract safety:
+Transport schema aliases and generation are done. Finish shared request-side contract safety for typed helpers (not
+feature forms -- FEAT-05 / FEAT-07 / FEAT-09 / FEAT-10 own form conversion and field UX):
 
-- Serialize only documented request properties because backend request models silently ignore unknown fields. Do not
-  use `BookRead.updated_date` as a concurrency token because generic `PATCH` currently does not update it.
-- Serialize date-only form values as `YYYY-MM-DD` and timestamps as normalized UTC ISO 8601 strings when helpers accept
-  form-adjacent inputs. Preserve year-only lookup `publication_date` as a string. Never pass arbitrary loan timestamp
-  text through to the API; malformed stored timestamps can later surface as an unhandled `500` on statistics.
-- Request builders must not send `null` for DB-required fields such as `title`, `authors`, `category`, `shelf`,
-  `is_read`, or `status` -- the schema may accept it, but commit can fail.
+- Typed helpers and any shared request builders must serialize only documented request properties because backend
+  request models silently ignore unknown fields. Do not use `BookRead.updated_date` as a concurrency token because
+  generic `PATCH` currently does not update it.
 - Keep preserving unknown response fields at runtime (do not strip undeclared JSON keys) and continue rendering future
   enum values through `enumDisplayValue` (or equivalent).
+- Optional shared primitives (e.g., date-only `YYYY-MM-DD` or UTC ISO 8601 normalizers) may land here only as reusable
+  utilities for later tickets. Do not build create/checkout/check-in/mark-read/edit forms or their blank-optional /
+  null-required-field conversion in this ticket.
 
 ### Typed route client completion
 
@@ -96,48 +117,69 @@ Route helpers and backup blob metadata exist for every documented business path.
 - Continue modeling books and loans as full `{ items, total }` result sets with no client pagination assumptions.
 - Route connection health/protected checks through the typed helpers once that swap can replace `connectionApi` without
   regressing FEAT-02 behavior.
-- Extend helper/fixture coverage for lookup `found: false`, mark-read with `{}`, check-in with omitted body, and
-  restore/checkout/check-in `409` bodies (happy-path path wiring and DELETE `204` are already tested).
+- Extend typed-helper / colocated fixture coverage for the open transport edge cases: lookup `found: false` (success,
+  not an `ApiError`), mark-read with `{}`, check-in with omitted body, and restore/checkout/check-in `409` bodies
+  (happy-path path wiring and DELETE `204` are already tested). Do not expand this into FEAT-13's full route/status
+  mock matrix or browser journeys.
 
 ### Error model completion
 
-The `ApiError` shape, `422` field mapping, and client-level status normalization tests exist. Finish safety gaps:
+The `ApiError` shape, `422` field mapping, and client-level status normalization tests exist. Finish safety gaps in the
+API/error layer only:
 
 - Populate `correlationId` when the API supplies one. Neither OpenAPI nor `API-for-FE.md` currently documents a
   correlation header or body field; do not invent one. Wire population only when a representative backend supplies a
-  safe value (FEAT-12 owns broader diagnostics presentation).
-- Treat lookup `found: false` as a normal manual-entry path, not an error.
-- Add redaction helpers / assertions so logs and errors never contain request headers, tokens, borrower names, notes,
-  reviews, ISBN drafts, backup contents, or full bodies.
+  safe value. FEAT-12 owns user-visible diagnostics presentation and optional production reporting that consume this
+  field.
+- Keep lookup `found: false` modeled as a successful `BookLookupResponse` at the transport layer (not an `ApiError`).
+  FEAT-05 owns the manual-entry UI path that consumes it.
+- Add redaction helpers / assertions on the API/error seam so client logging of `ApiError` and related diagnostics never
+  contain request headers, tokens, borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies. FEAT-12
+  owns wiring those helpers into production reporting and the cross-route privacy audit. FEAT-07, FEAT-08, and FEAT-09
+  keep workflow-specific private fields out of their own logs.
 
 ### Server state
 
 - Write returned `BookRead` values into the detail cache on successful mutations, then invalidate affected aggregates
   per `../product-docs/PLAN.md` section 7.5 (lists, detail, loans, and dashboard as applicable). Invalidation already
-  matches that matrix; the missing piece is the returned-book cache write.
-- Add loans and dashboard query hooks (or equivalent shared query-key helpers) so feature tickets consume the same
-  cache keys the mutations already invalidate.
-- Ensure aborted or stale requests cannot overwrite newer route or form state.
-- Add reusable API mocks and builders for every route and documented error family above.
+  matches that matrix; the missing piece is the returned-book cache write. Feature tickets (FEAT-05+) call these
+  mutations and present results; they must not invent a parallel invalidation path.
+- Add loans and dashboard query hooks (or equivalent shared query-key helpers) so FEAT-08 and FEAT-11 consume the same
+  cache keys the mutations already invalidate. Do not implement `/loans` or `/` page UI here.
+- Ensure aborted or stale React Query results cannot overwrite newer cached server state for the same query key. Form
+  draft / route-local overwrite guards remain FEAT-05+; FEAT-13 exercises abort/stale recovery in journeys.
+- Add only the reusable builders/fixtures needed to finish the typed-helper and query-hook tests above. FEAT-13 owns
+  complete API mock coverage for every documented route and status family.
+
+### Baselines for later hardening (not FEAT-12 / FEAT-14 work)
+
+- Exercise the no-pagination list helpers with a representative large personal-library fixture and record a practical
+  responsiveness baseline. FEAT-12 records regressions against that baseline; FEAT-14 reports bundle-size regressions
+  in CI against the budget set here.
+- Establish bundle-size expectations for later regression checks. Do not add CI reporting or production diagnostic
+  plumbing here.
 
 ## Acceptance criteria
 
-- Typed helpers and fixtures cover every documented business route edge case still open above: lookup `found: false`,
-  mark-read with `{}`, check-in with omitted body, and restore/checkout/check-in `409` bodies.
+- Typed helpers and colocated fixtures cover the open transport edge cases above: lookup `found: false`, mark-read with
+  `{}`, check-in with omitted body, and restore/checkout/check-in `409` bodies.
 - Connection health/protected checks go through the typed helpers without regressing FEAT-02 connection behavior.
 - Returned `BookRead` values are written into the detail cache on successful mutations, and invalidation continues to
   match the mutation matrix in `../product-docs/PLAN.md` section 7.5.
 - Loans and dashboard data are readable through shared React Query helpers that use the same keys mutations invalidate.
-- Aborted or stale requests cannot overwrite newer route or form state.
-- Logs and errors contain no request headers, tokens, borrower names, notes, reviews, ISBN drafts, backup contents, or
-  full bodies.
+- Aborted or stale React Query results cannot overwrite newer cached server state for the same query key.
+- API/error-layer logs and redaction helpers never retain request headers, tokens, borrower names, notes, reviews, ISBN
+  drafts, backup contents, or full bodies (FEAT-12 consumes this seam for production diagnostics).
 - A contract smoke test passes against a representative API (or against the checked-in OpenAPI fixtures when live
   comparison is unavailable), and drift is fixed in the owning system or recorded as an explicit blocker. Keep
   `yarn api:check` green for generated types.
-- The no-pagination API is exercised with a representative large personal library and a practical limit is recorded.
-- Bundle-size expectations are established for later regression checks.
+- A large-library responsiveness baseline and bundle-size expectations are recorded for FEAT-12 / FEAT-14 to measure
+  against.
 - `make check` passes.
+- No FEAT-04 through FEAT-16 product UI, form workflow, full mock matrix, CI, Podman, or release-artifact work lands in
+  this ticket.
 
 ## Plan coverage
 
 Sections 7.2, 7.5, 7.6, 7.9, 8, and 13; typed-client portions of Workstream 2 and the integration gate.
+)
