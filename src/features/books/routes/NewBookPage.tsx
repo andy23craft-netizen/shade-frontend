@@ -4,7 +4,7 @@ import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { BookForm } from '../components/BookForm'
 import { useCreateBook } from '../../../api/booksQueries'
-import { bookFormDefaults} from '../components/bookFormDefaults'
+import { bookFormDefaults } from '../components/bookFormDefaults'
 import type { BookCreate } from '../../../api/apiTypes'
 
 export function NewBookPage() {
@@ -31,6 +31,7 @@ export function NewBookPage() {
 
             <header>
                 <h1 tabIndex={-1}>Add Book</h1>
+
                 <p>
                     Add a new book to the library.
                 </p>
