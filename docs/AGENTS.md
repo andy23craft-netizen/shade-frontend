@@ -1,9 +1,10 @@
 # Agents.md: LLM Project Context
 
 Use this document as the self-contained baseline context when working on the Shade frontend in a fresh LLM chat. It
-covers operating rules, the backend contract, architecture, and the current codebase inventory. Inspect the current
-repository before making changes because the code may have changed since this document was written. A user's
-explicit request takes precedence over general guidance here.
+covers operating rules, the backend contract, architecture, and the current codebase inventory. Do not treat other
+prompt packs under `docs/` as required reading for this baseline; this file is meant to stand alone. Inspect the
+current repository before making changes because the code may have changed since this document was written. A
+user's explicit request takes precedence over general guidance here.
 
 ## Project Summary
 
@@ -17,15 +18,18 @@ Shade is a browser UI for a personal home-library FastAPI backend. Planned capab
 - Sending a shared Bearer token with backend API requests (no user accounts).
 
 **Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), and
-FEAT-03 (typed API and server state). FEAT-01 and FEAT-02 ticket files were removed; remaining tickets are
-`FEAT-04` through `FEAT-16` under `docs/tickets/`. `docs/ToDo.md` marks FEAT-01 through FEAT-03 complete.
+FEAT-03 (typed API and server state). Those ticket files were removed; remaining tickets are `FEAT-04` through
+`FEAT-16` under `docs/tickets/`. `docs/ToDo.md` marks FEAT-01 through FEAT-03 complete.
 
-**Next:** FEAT-04 (active collection and book details). FEAT-03 delivered OpenAPI generation, schema aliases, enum
-display helpers, the shared API client shell, error types with redaction helpers, request-field picking and date/time
-utilities, `createApi` typed route helpers (including backup `{ blob, filename }`), connection health/protected via
-typed helpers, React Query defaults and connection-invalidation wiring, books/loans/dashboard query hooks, mutation
-detail-cache writes plus PLAN.md 7.5 invalidation, abort/stale overwrite guards, contract smoke coverage, and
-performance baselines under `docs/baselines/FEAT-03_performance.md`. Product feature workflows belong to FEAT-04+.
+**Next:** FEAT-04 (active collection and book details): read-only browse/detail UI on `/books` and
+`/books/:bookId`, reusing FEAT-03 hooks and shared primitives. FEAT-03 already delivered OpenAPI generation,
+schema aliases, enum display helpers, the shared API client shell, error types with redaction helpers,
+request-field picking and date/time utilities, `createApi` typed route helpers (including backup
+`{ blob, filename }`), connection health/protected via typed helpers, React Query defaults and
+connection-invalidation wiring, books/loans/dashboard query hooks, mutation detail-cache writes plus PLAN.md 7.5
+invalidation, abort/stale overwrite guards, contract smoke coverage, and performance baselines under
+`docs/baselines/FEAT-03_performance.md`. Later product workflows (create, checkout, check-in, edit/delete,
+dashboard metrics UI) belong to FEAT-05+.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
 `docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
@@ -79,6 +83,8 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 - Token is runtime-only: memory plus `sessionStorage`, with an explicit forget action
 - Never commit, bundle, put in URLs, log, or send the token to analytics
 - Confirmed `403` clears the active token and returns the user to connection setup
+- A browser-held shared token is inspectable by anyone with device access; that is an accepted risk for this
+  trusted personal deployment and is not real multi-user authentication
 
 ### Lifecycle endpoints (never simulate with generic PATCH)
 
@@ -217,6 +223,7 @@ hand-editing it.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
   dashboard, health/protected, validation/error schemas, enums).
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
+- `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
   prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
   handling, invalid-JSON errors, and `403` via `onUnauthorized`.
@@ -227,7 +234,7 @@ hand-editing it.
 - `src/api/apiRedaction.ts`: Safe diagnostic projection and assertions so API/error logs never retain headers, tokens,
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
-  `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets.
+  `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets. Colocated unit tests cover both modules.
 - `src/api/queryKeys.ts`: Shared React Query keys for books, loans, and dashboard.
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `protected`,
   `backup`) plus the underlying `client`.
@@ -352,9 +359,11 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   success, and `204`.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
-- `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `loansApi.test.ts` / `dashboardApi.test.ts` /
-  `healthApi.test.ts` / `protectedApi.test.ts` / `backupApi.test.ts`: Typed route helper coverage including lookup
-  `found: false`, mark-read `{}`, omitted check-in body, and restore/checkout/check-in `409` bodies.
+- `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` /
+  `loansApi.test.ts` / `dashboardApi.test.ts` / `healthApi.test.ts` / `protectedApi.test.ts` /
+  `backupApi.test.ts`: Typed route helper coverage including lookup `found: false`, mark-read `{}`, omitted
+  check-in body, restore/checkout/check-in `409` bodies, and a 2_000-item list timing guard.
+- `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx` /
   `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation
   subscription, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
@@ -415,10 +424,11 @@ yarn test
 
 The `.cursor` rules control AI-assisted work. They are not loaded by the application or included in builds.
 
-Useful documents under `docs/` (not inventoried file-by-file here):
+Useful documents under `docs/` when a task needs them (this file remains the baseline; do not require other prompt
+packs):
 
 - `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (`FEAT-04` through `FEAT-16`;
-  FEAT-01 through FEAT-03 are complete).
+  FEAT-01 through FEAT-03 are complete and their ticket files are gone).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines for later hardening tickets.
 - `docs/ToDo.md`: Human checklist of ticket completion status.
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
@@ -476,7 +486,9 @@ make build
 
 - Keep TypeScript strict and avoid `any` unless an unavoidable boundary is documented.
 - Prefer semantic HTML. Add ARIA only when native semantics cannot express the behavior.
-- Preserve visible keyboard focus, 44-pixel control targets, and reduced-motion support.
+- Preserve landmarks, visible keyboard focus, labels linked to errors, skip link, dialog focus restoration,
+  document title plus heading focus on route change, no color-only status, usable 320px viewports, 44-pixel
+  control targets, and reduced-motion support.
 - Reuse design tokens and existing shared CSS classes before adding new values or primitives.
 - Shared CSS follows `.component`, `.component__element`, and `.component--modifier` naming.
 - Import global CSS once through `src/index.css`; do not scatter global imports across components.
@@ -485,14 +497,18 @@ make build
 - Use extensionless relative TypeScript imports, matching current source style.
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns that
-  route rather than inventing a parallel tree.
+  route rather than inventing a parallel tree. For FEAT-04, replace `BooksPage` and `BookDetailsPage` placeholders
+  and reuse `useBooks` / `useBook`, `queryKeys`, `enumDisplayValue`, and shared loading/empty/alert/link primitives.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
+- Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
+  mutations. There is no realtime API.
 - For API-dependent work, treat `docs/technical-reference/openapi.json` as the schema source of truth and
-  `docs/technical-reference/API-for-FE.md` as behavioral guidance.
+  `docs/technical-reference/API-for-FE.md` as behavioral guidance. Prefer a running backend `/openapi.json` for drift
+  checks when available; do not invent lifecycle behavior with generic `PATCH`.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
 - Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API text as HTML,
-  or upload SQL backup contents to telemetry.
+  or upload SQL backup contents to telemetry. SQL backups are sensitive.
 
 ## Change Workflow
 
