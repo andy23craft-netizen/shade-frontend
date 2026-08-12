@@ -7,6 +7,9 @@ import {
 import {
     createBooksApi,
 } from './booksApi'
+import {
+    queryKeys,
+} from './queryKeys'
 
 import {
     useConnection,
@@ -14,6 +17,7 @@ import {
 
 import type {
     BookCreate,
+    BookRead,
     BookUpdate,
     CheckinRequest,
     CheckoutRequest,
@@ -30,24 +34,36 @@ async function invalidateBookCaches(
     } = {},
 ): Promise<void> {
     await queryClient.invalidateQueries({
-        queryKey: ['books'],
+        queryKey: queryKeys.books.all,
     })
 
     if (id !== undefined) {
         await queryClient.invalidateQueries({
-            queryKey: ['books', id],
+            queryKey: queryKeys.books.detail(id),
         })
     }
 
     if (options.loans) {
         await queryClient.invalidateQueries({
-            queryKey: ['loans'],
+            queryKey: queryKeys.loans.all,
         })
     }
 
     await queryClient.invalidateQueries({
-        queryKey: ['dashboard'],
+        queryKey: queryKeys.dashboard.all,
     })
+}
+
+function writeBookDetailCache(
+    queryClient: ReturnType<
+        typeof useQueryClient
+    >,
+    book: BookRead,
+): void {
+    queryClient.setQueryData(
+        queryKeys.books.detail(book.id),
+        book,
+    )
 }
 
 export function useBooks(
@@ -62,17 +78,20 @@ export function useBooks(
     const booksApi =
         createBooksApi(apiClient)
 
+    const includeDeleted =
+        options.includeDeleted ?? false
+
     return useQuery({
-        queryKey: [
-            'books',
-            {
-                includeDeleted:
-                    options.includeDeleted ??
-                    false,
-            },
-        ],
-        queryFn: () =>
-            booksApi.list(options),
+        queryKey: queryKeys.books.list(
+            includeDeleted,
+        ),
+        queryFn: ({
+            signal,
+        }) =>
+            booksApi.list({
+                includeDeleted,
+                signal,
+            }),
     })
 }
 
@@ -87,9 +106,13 @@ export function useBook(
         createBooksApi(apiClient)
 
     return useQuery({
-        queryKey: ['books', id],
-        queryFn: () =>
-            booksApi.get(id),
+        queryKey: queryKeys.books.detail(id),
+        queryFn: ({
+            signal,
+        }) =>
+            booksApi.get(id, {
+                signal,
+            }),
         enabled: Boolean(id),
     })
 }
@@ -105,13 +128,13 @@ export function useBookLookup(
         createBooksApi(apiClient)
 
     return useQuery({
-        queryKey: [
-            'books',
-            'lookup',
-            isbn,
-        ],
-        queryFn: () =>
-            booksApi.lookup(isbn),
+        queryKey: queryKeys.books.lookup(isbn),
+        queryFn: ({
+            signal,
+        }) =>
+            booksApi.lookup(isbn, {
+                signal,
+            }),
         enabled: Boolean(isbn),
     })
 }
@@ -133,9 +156,14 @@ export function useCreateBook() {
         ) =>
             booksApi.create(book),
 
-        onSuccess: async () => {
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
             await invalidateBookCaches(
                 queryClient,
+                book.id,
             )
         },
     })
@@ -165,13 +193,14 @@ export function useUpdateBook() {
                 book,
             ),
 
-        onSuccess: async (
-            _book,
-            variables,
-        ) => {
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
             await invalidateBookCaches(
                 queryClient,
-                variables.id,
+                book.id,
             )
         },
     })
@@ -223,13 +252,14 @@ export function useRestoreBook() {
         ) =>
             booksApi.restore(id),
 
-        onSuccess: async (
-            _book,
-            id,
-        ) => {
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
             await invalidateBookCaches(
                 queryClient,
-                id,
+                book.id,
             )
         },
     })
@@ -259,13 +289,14 @@ export function useCheckoutBook() {
                 request,
             ),
 
-        onSuccess: async (
-            _book,
-            variables,
-        ) => {
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
             await invalidateBookCaches(
                 queryClient,
-                variables.id,
+                book.id,
                 {
                     loans: true,
                 },
@@ -298,13 +329,14 @@ export function useCheckinBook() {
                 request,
             ),
 
-        onSuccess: async (
-            _book,
-            variables,
-        ) => {
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
             await invalidateBookCaches(
                 queryClient,
-                variables.id,
+                book.id,
                 {
                     loans: true,
                 },
@@ -327,23 +359,24 @@ export function useMarkBookRead() {
     return useMutation({
         mutationFn: ({
             id,
-            request,
+            request = {},
         }: {
             id: string
-            request: MarkReadRequest
+            request?: MarkReadRequest
         }) =>
             booksApi.markRead(
                 id,
                 request,
             ),
 
-        onSuccess: async (
-            _book,
-            variables,
-        ) => {
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
             await invalidateBookCaches(
                 queryClient,
-                variables.id,
+                book.id,
             )
         },
     })

@@ -5,7 +5,7 @@
 * [ ] Implement the feature docs:
   * [x] Complete feature ticket `docs/tickets/FEAT-01_application-shell-and-shared-ui.md`.
   * [x] Complete feature ticket `docs/tickets/FEAT-02_runtime-configuration-and-connection.md`.
-  * [ ] Complete feature ticket `docs/tickets/FEAT-03_typed-api-and-server-state.md`.
+  * [x] Complete feature ticket `docs/tickets/FEAT-03_typed-api-and-server-state.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-04_active-collection-and-book-details.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-05_book-form-and-creation.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-06_isbn-scanner-capture.md`.

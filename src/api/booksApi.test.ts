@@ -134,6 +134,64 @@ describe('createBooksApi', () => {
         expect(result).toBe(response)
     })
 
+    it('treats lookup found: false as a successful response', async () => {
+        const response: BookLookupResponse = {
+            found: false,
+            draft: null,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        const result = await api.lookup(
+            '9780000000000',
+        )
+
+        expect(result).toEqual({
+            found: false,
+            draft: null,
+        })
+        expect(result.found).toBe(false)
+    })
+
+    it('strips undocumented fields from create requests', async () => {
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue({} as BookRead)
+
+        const api = createBooksApi(client)
+
+        await api.create({
+            title: 'Title',
+            authors: 'Author',
+            category: 'unknown',
+            shelf: 'unknown',
+            updated_date: '2026-08-01T00:00:00Z',
+        } as BookCreate & {
+            updated_date: string
+        })
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books',
+            {
+                method: 'POST',
+                body: {
+                    title: 'Title',
+                    authors: 'Author',
+                    category: 'unknown',
+                    shelf: 'unknown',
+                },
+            },
+        )
+    })
+
     it('gets a book by id', async () => {
         const response =
             {} as BookRead
@@ -302,6 +360,33 @@ describe('createBooksApi', () => {
         expect(result).toBe(response)
     })
 
+    it('omits the check-in body when the request is undefined', async () => {
+        const response =
+            {} as BookRead
+
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        const result = await api.checkin(
+            'book/123',
+        )
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books/book%2F123/checkin',
+            {
+                method: 'POST',
+            },
+        )
+
+        expect(result).toBe(response)
+    })
+
     it('marks a book as read', async () => {
         const request =
             {} as MarkReadRequest
@@ -331,5 +416,29 @@ describe('createBooksApi', () => {
         )
 
         expect(result).toBe(response)
+    })
+
+    it('marks a book as read with an empty object body', async () => {
+        const response =
+            {} as BookRead
+
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        await api.markRead('book/123', {})
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books/book%2F123/mark-read',
+            {
+                method: 'POST',
+                body: {},
+            },
+        )
     })
 })

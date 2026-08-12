@@ -11,9 +11,30 @@ import type {
 import type {
     createApiClient,
 } from './apiClient'
+import type {
+    ApiCallOptions,
+} from './apiCallOptions'
+import {
+    pickBookCreate,
+    pickBookUpdate,
+    pickCheckinRequest,
+    pickCheckoutRequest,
+    pickMarkReadRequest,
+} from './requestFields'
 
-export interface ListBooksOptions {
+export interface ListBooksOptions
+    extends ApiCallOptions {
     includeDeleted?: boolean
+}
+
+function withSignal(
+    signal: AbortSignal | undefined,
+): ApiCallOptions | undefined {
+    return signal === undefined
+        ? undefined
+        : {
+            signal,
+        }
 }
 
 export function createBooksApi(
@@ -25,107 +46,153 @@ export function createBooksApi(
         ): Promise<BookList> {
             const params = new URLSearchParams()
 
-        if (
-            options.includeDeleted !==
-            undefined
-        ) {
-            params.set(
-                'include_deleted',
-                String(
-                    options.includeDeleted,
-                ),
+            if (
+                options.includeDeleted !==
+                undefined
+            ) {
+                params.set(
+                    'include_deleted',
+                    String(
+                        options.includeDeleted,
+                    ),
+                )
+            }
+
+            const query = params.toString()
+            const signalOptions = withSignal(
+                options.signal,
             )
-        }
 
-        const query = params.toString()
+            if (query) {
+                return signalOptions === undefined
+                    ? client.getJson<BookList>(
+                        `/books?${query}`,
+                    )
+                    : client.getJson<BookList>(
+                        `/books?${query}`,
+                        signalOptions,
+                    )
+            }
 
-        if (query) {
-            return client.getJson<BookList>(
-                `/books?${query}`,
+            return signalOptions === undefined
+                ? client.getJson<BookList>(
+                    '/books',
+                )
+                : client.getJson<BookList>(
+                    '/books',
+                    signalOptions,
+                )
+        },
+
+        async create(
+            book: BookCreate,
+            options: ApiCallOptions = {},
+        ): Promise<BookRead> {
+            return client.requestJson<BookRead>(
+                '/books',
+                {
+                    method: 'POST',
+                    body: pickBookCreate(book),
+                    ...withSignal(options.signal),
+                },
             )
-        }
+        },
 
-        return client.getJson<BookList>(
-            '/books',
-        )
-    },
+        async lookup(
+            isbn: string,
+            options: ApiCallOptions = {},
+        ): Promise<BookLookupResponse> {
+            const params = new URLSearchParams({
+                isbn,
+            })
+            const path =
+                `/books/lookup?${params.toString()}`
+            const signalOptions = withSignal(
+                options.signal,
+            )
 
-    async create(
-        book: BookCreate,
-    ): Promise<BookRead> {
-        return client.requestJson<BookRead>(
-            '/books',
-            {
-                method: 'POST',
-                body: book,
-            },
-        )
-    },
+            return signalOptions === undefined
+                ? client.getJson<BookLookupResponse>(
+                    path,
+                )
+                : client.getJson<BookLookupResponse>(
+                    path,
+                    signalOptions,
+                )
+        },
 
-    async lookup(
-        isbn: string,
-    ): Promise<BookLookupResponse> {
-        const params = new URLSearchParams({
-            isbn,
-        })
+        async get(
+            id: string,
+            options: ApiCallOptions = {},
+        ): Promise<BookRead> {
+            const path =
+                `/books/${encodeURIComponent(id)}`
+            const signalOptions = withSignal(
+                options.signal,
+            )
 
-        return client.getJson<BookLookupResponse>(
-            `/books/lookup?${params.toString()}`,
-        )
-    },
+            return signalOptions === undefined
+                ? client.getJson<BookRead>(path)
+                : client.getJson<BookRead>(
+                    path,
+                    signalOptions,
+                )
+        },
 
-    async get(
-        id: string,
-    ): Promise<BookRead> {
-        return client.getJson<BookRead>(
-            `/books/${encodeURIComponent(id)}`,
-        )
-    },
+        async update(
+            id: string,
+            book: BookUpdate,
+            options: ApiCallOptions = {},
+        ): Promise<BookRead> {
+            return client.requestJson<BookRead>(
+                `/books/${encodeURIComponent(id)}`,
+                {
+                    method: 'PATCH',
+                    body: pickBookUpdate(book),
+                    ...withSignal(options.signal),
+                },
+            )
+        },
 
-    async update(
-        id: string,
-        book: BookUpdate,
-    ): Promise<BookRead> {
-        return client.requestJson<BookRead>(
-            `/books/${encodeURIComponent(id)}`,
-            {
-                method: 'PATCH',
-                body: book,
-            },
-        )
-    },
+        async remove(
+            id: string,
+            options: ApiCallOptions = {},
+        ): Promise<void> {
+            await client.request(
+                `/books/${encodeURIComponent(id)}`,
+                {
+                    method: 'DELETE',
+                    ...withSignal(options.signal),
+                },
+            )
+        },
 
-    async remove(
-        id: string,
-    ): Promise<void> {
-        await client.request(
-            `/books/${encodeURIComponent(id)}`,
-            {
-                method: 'DELETE',
-            },
-        )
-    },
-
-    async restore(
-        id: string,
-    ): Promise<BookRead> {
-        return client.requestJson<BookRead>(
-            `/books/${encodeURIComponent(id)}/restore`,
-            {
-                method: 'POST',
-            },
-        )
+        async restore(
+            id: string,
+            options: ApiCallOptions = {},
+        ): Promise<BookRead> {
+            return client.requestJson<BookRead>(
+                `/books/${encodeURIComponent(id)}/restore`,
+                {
+                    method: 'POST',
+                    ...withSignal(options.signal),
+                },
+            )
         },
 
         async checkout(
             id: string,
             request: CheckoutRequest,
+            options: ApiCallOptions = {},
         ): Promise<BookRead> {
             return client.requestJson<BookRead>(
                 `/books/${encodeURIComponent(id)}/checkout`,
                 {
                     method: 'POST',
-                    body: request,
+                    body: pickCheckoutRequest(
+                        request,
+                    ),
+                    ...withSignal(options.signal),
                 },
             )
         },
@@ -133,38 +200,50 @@ export function createBooksApi(
         async checkin(
             id: string,
             request?: CheckinRequest,
+            options: ApiCallOptions = {},
         ): Promise<BookRead> {
+            const path =
+                `/books/${encodeURIComponent(id)}/checkin`
+
             if (request === undefined) {
                 return client.requestJson<BookRead>(
-                    `/books/${encodeURIComponent(id)}/checkin`,
+                    path,
                     {
                         method: 'POST',
+                        ...withSignal(
+                            options.signal,
+                        ),
                     },
                 )
             }
 
             return client.requestJson<BookRead>(
-                `/books/${encodeURIComponent(id)}/checkin`,
+                path,
                 {
                     method: 'POST',
-                    body: request,
+                    body: pickCheckinRequest(
+                        request,
+                    ),
+                    ...withSignal(options.signal),
                 },
             )
         },
 
         async markRead(
             id: string,
-            request: MarkReadRequest,
+            request: MarkReadRequest = {},
+            options: ApiCallOptions = {},
         ): Promise<BookRead> {
             return client.requestJson<BookRead>(
                 `/books/${encodeURIComponent(id)}/mark-read`,
                 {
                     method: 'POST',
-                    body: request,
+                    body: pickMarkReadRequest(
+                        request,
+                    ),
+                    ...withSignal(options.signal),
                 },
             )
         },
     }
-
-
 }

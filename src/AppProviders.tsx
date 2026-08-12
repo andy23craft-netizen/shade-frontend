@@ -21,10 +21,6 @@ import {
 
 const queryClient = createQueryClient()
 
-subscribeQueryClientToConnectionInvalidation(
-    queryClient,
-)
-
 interface AppProvidersProps {
     children: ReactNode
     runtimeConfig: RuntimeConfig

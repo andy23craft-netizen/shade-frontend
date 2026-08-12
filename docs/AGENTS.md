@@ -16,24 +16,19 @@ Shade is a browser UI for a personal home-library FastAPI backend. Planned capab
 - Soft-deleting and restoring books while preserving history.
 - Sending a shared Bearer token with backend API requests (no user accounts).
 
-**Completed:** FEAT-01 (application shell and shared UI) and FEAT-02 (runtime configuration and connection). Both
-ticket files were removed; remaining tickets are `FEAT-03` through `FEAT-16` under `docs/tickets/`. `docs/ToDo.md`
-marks FEAT-01 and FEAT-02 complete.
+**Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), and
+FEAT-03 (typed API and server state). FEAT-01 and FEAT-02 ticket files were removed; remaining tickets are
+`FEAT-04` through `FEAT-16` under `docs/tickets/`. `docs/ToDo.md` marks FEAT-01 through FEAT-03 complete.
 
-**In progress:** FEAT-03 (typed API and server state). Already present: OpenAPI generation, schema aliases, enum
-display helpers, the shared API client shell, error types, `createApi` with typed route helpers for books, loans,
-dashboard, health, protected, and backup (`{ blob, filename }`), React Query mounted under `AppProviders` with
-configured client defaults and `subscribeQueryClientToConnectionInvalidation` wired, restored `apiClient` tests, and
-books query/mutation hooks with PLAN.md 7.5-style invalidation (lists, detail, dashboard, and loans on
-checkout/check-in). Remaining work includes request shaping / date serialization, routing connection health/protected
-through typed helpers, correlation ID population only when the backend supplies a safe value, redaction helpers,
-returned-`BookRead` detail-cache writes, loans/dashboard query hooks, abort/stale overwrite guards, broader API mocks,
-and open helper edge-case fixtures (lookup `found: false`, mark-read `{}`, omitted check-in body, `409` bodies).
-Product feature workflows belong to FEAT-04+.
+**Next:** FEAT-04 (active collection and book details). FEAT-03 delivered OpenAPI generation, schema aliases, enum
+display helpers, the shared API client shell, error types with redaction helpers, request-field picking and date/time
+utilities, `createApi` typed route helpers (including backup `{ blob, filename }`), connection health/protected via
+typed helpers, React Query defaults and connection-invalidation wiring, books/loans/dashboard query hooks, mutation
+detail-cache writes plus PLAN.md 7.5 invalidation, abort/stale overwrite guards, contract smoke coverage, and
+performance baselines under `docs/baselines/FEAT-03_performance.md`. Product feature workflows belong to FEAT-04+.
 
-Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket
-(`docs/tickets/FEAT-03_typed-api-and-server-state.md` while FEAT-03 is active), then `docs/product-docs/PLAN.md`, then
-the product requirements docs when deciding what to build next.
+Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
+`docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
 
 ## Technology
 
@@ -41,8 +36,8 @@ the product requirements docs when deciding what to build next.
 - TypeScript 6 in strict mode
 - Vite 8
 - React Router 7 (`react-router-dom`), integrated in `src/main.tsx`
-- TanStack React Query 5 (`QueryClientProvider` mounted under `AppProviders` with configured client defaults and
-  connection-invalidation subscription; remaining FEAT-03 cache/helper gaps are listed under Project Summary)
+- TanStack React Query 5 (`QueryClientProvider` mounted under `AppProviders` with configured client defaults,
+  connection-invalidation subscription, books/loans/dashboard hooks, and mutation detail-cache writes)
 - `openapi-typescript` for generating `src/api/generated/openapi.ts` from the checked-in OpenAPI document
 - Vitest with jsdom
 - Testing Library and jest-dom
@@ -227,12 +222,18 @@ hand-editing it.
   handling, invalid-JSON errors, and `403` via `onUnauthorized`.
 - `src/api/apiErrors.ts`: `ApiError` kinds (`unreachable`, `timeout`, `cancelled`, `unauthorized`, `validation`,
   `invalid_response`, `server`, `http`), optional `detail` / `correlationId` / `fieldErrors`, and
-  `mapValidationFieldErrors` for FastAPI `422 detail[]`. Correlation ID is modeled but not yet populated from
-  responses.
+  `mapValidationFieldErrors` for FastAPI `422 detail[]`. `correlationId` stays unset until the backend documents a
+  safe source (do not invent a header or body field).
+- `src/api/apiRedaction.ts`: Safe diagnostic projection and assertions so API/error logs never retain headers, tokens,
+  borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
+- `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
+  `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets.
+- `src/api/queryKeys.ts`: Shared React Query keys for books, loans, and dashboard.
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `protected`,
   `backup`) plus the underlying `client`.
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`, `restore`,
-  `checkout`, `checkin` (optional body), `markRead`.
+  `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and
+  serialize only documented request fields.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`).
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
 - `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
@@ -244,11 +245,10 @@ hand-editing it.
   `mutations.retry: false`.
 - `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when
   connection invalidation fires; subscribed from `AppProviders`.
-- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations `useCreateBook`,
-  `useUpdateBook`, `useDeleteBook`, `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, `useMarkBookRead`.
-  Successful mutations invalidate books lists (including `include_deleted` via the shared `['books']` prefix), detail,
-  dashboard, and loans when checkout/check-in succeed. They do not yet write the returned `BookRead` into the detail
-  cache. No dedicated loans or dashboard query hooks yet.
+- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations that write returned `BookRead`
+  into the detail cache and invalidate per PLAN.md 7.5 (lists, detail, dashboard, and loans on checkout/check-in).
+- `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` and `useDashboard` using the same keys mutations
+  invalidate.
 
 ### Routing and Layout
 
@@ -279,14 +279,14 @@ Thin route wrappers under `src/features/*/routes/` own paths for later tickets. 
 - `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
 - `src/features/connection/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02; mounts `ConnectionScreen`)
 
-Connection feature (FEAT-02, complete; extend carefully during FEAT-03):
+Connection feature (FEAT-02, complete):
 
 - `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `setup_required`, `connected`,
   `unauthorized`, `unreachable`).
 - `src/features/connection/connectionToken.ts`: In-memory current token accessors.
 - `src/features/connection/connectionStorage.ts`: `sessionStorage` load/save/clear helpers.
-- `src/features/connection/connectionApi.ts`: Ad hoc `GET /health` and `GET /protected` fetches (prefer typed
-  `healthApi` / `protectedApi` once FEAT-03 finishes that swap).
+- `src/features/connection/connectionApi.ts`: Routes health/protected checks through typed `healthApi` /
+  `protectedApi` while preserving FEAT-02 connection error mapping.
 - `src/features/connection/connectionInvalidation.ts`: `subscribeToConnectionInvalidation` /
   `notifyConnectionInvalidated` seam for clearing cached protected data when the token is forgotten or rejected.
 - `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook.
@@ -350,13 +350,16 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes,
   `5xx` (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup
   success, and `204`.
-- `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts`: Error, schema alias, and `createApi` coverage.
-- `src/api/booksApi.test.ts` / `loansApi.test.ts` / `dashboardApi.test.ts` / `healthApi.test.ts` /
-  `protectedApi.test.ts` / `backupApi.test.ts`: Happy-path typed route helper coverage (backup includes filename
-  metadata). Open FEAT-03 edge-case fixtures remain for lookup `found: false`, mark-read `{}`, omitted check-in
-  body, and `409` bodies.
-- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx`: Query client defaults and
-  retry policy, connection-invalidation subscription, and books query/mutation hooks with invalidation coverage.
+- `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
+  `createApi`, and redaction coverage.
+- `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `loansApi.test.ts` / `dashboardApi.test.ts` /
+  `healthApi.test.ts` / `protectedApi.test.ts` / `backupApi.test.ts`: Typed route helper coverage including lookup
+  `found: false`, mark-read `{}`, omitted check-in body, and restore/checkout/check-in `409` bodies.
+- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx` /
+  `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation
+  subscription, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
+- `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable.
+- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
 - `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` /
   `connectionToken.test.ts`: Connection lifecycle and UI.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
@@ -414,8 +417,9 @@ The `.cursor` rules control AI-assisted work. They are not loaded by the applica
 
 Useful documents under `docs/` (not inventoried file-by-file here):
 
-- `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (`FEAT-03` through `FEAT-16`;
-  FEAT-01 and FEAT-02 are complete and their ticket files are gone).
+- `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (`FEAT-04` through `FEAT-16`;
+  FEAT-01 through FEAT-03 are complete).
+- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines for later hardening tickets.
 - `docs/ToDo.md`: Human checklist of ticket completion status.
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
@@ -482,14 +486,8 @@ make build
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns that
   route rather than inventing a parallel tree.
-- Extend the existing API client, generated types, query helpers, and connection-invalidation seam during FEAT-03; do
-  not introduce a second state store, component library, CSS framework, or form library unless a ticket explicitly
-  requires it.
-- Finish remaining FEAT-03 work on the existing React Query mount: request shaping, typed health/protected swap for
-  connection checks, returned-`BookRead` detail-cache writes, loans/dashboard query hooks, redaction helpers,
-  correlation ID population only when the backend supplies a safe value, abort/stale overwrite guards, and the
-  ticket's open edge-case fixtures. Invalidation already matches PLAN.md section 7.5; do not rebuild the mount or
-  books mutation surface.
+- Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
+  state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - For API-dependent work, treat `docs/technical-reference/openapi.json` as the schema source of truth and
   `docs/technical-reference/API-for-FE.md` as behavioral guidance.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.

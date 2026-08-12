@@ -1,6 +1,9 @@
 import type {
     createApiClient,
 } from './apiClient'
+import type {
+    ApiCallOptions,
+} from './apiCallOptions'
 
 export interface BackupResult {
     blob: Blob
@@ -63,9 +66,15 @@ export function createBackupApi(
     client: ReturnType<typeof createApiClient>,
 ) {
     return {
-        async get(): Promise<BackupResult> {
+        async get(
+            options: ApiCallOptions = {},
+        ): Promise<BackupResult> {
             const response =
-                await client.get('/backup')
+                options.signal === undefined
+                    ? await client.get('/backup')
+                    : await client.get('/backup', {
+                        signal: options.signal,
+                    })
 
             return {
                 blob:
