@@ -1,46 +1,71 @@
+import {
+    createApiClient,
+} from '../../api/apiClient'
+import {
+    isApiError,
+} from '../../api/apiErrors'
+import {
+    createHealthApi,
+} from '../../api/healthApi'
+import {
+    createProtectedApi,
+} from '../../api/protectedApi'
+import type {
+    ProtectedResponse,
+} from '../../api/apiTypes'
+
 export interface ConnectionApiError {
     kind: 'unreachable' | 'unauthorized' | 'server'
     message: string
 }
 
-interface ProtectedResponse {
-    message: string
-}
+function mapToConnectionError(
+    error: unknown,
+): ConnectionApiError {
+    if (isApiError(error)) {
+        if (error.kind === 'unauthorized') {
+            return {
+                kind: 'unauthorized',
+                message:
+                    'The API token was rejected.',
+            }
+        }
 
-async function request(
-    apiBaseUrl: string,
-    path: string,
-    token?: string,
-): Promise<Response> {
-    const headers: HeadersInit = {}
+        if (
+            error.kind === 'unreachable' ||
+            error.kind === 'timeout' ||
+            error.kind === 'cancelled'
+        ) {
+            return {
+                kind: 'unreachable',
+                message:
+                    'Unable to reach the Shade API.',
+            }
+        }
 
-    if (token) {
-        headers.Authorization = `Bearer ${token}`
+        return {
+            kind: 'server',
+            message: error.message,
+        }
     }
 
-    try {
-        return await fetch(`${apiBaseUrl}${path}`, {
-            method: 'GET',
-            headers,
-        })
-    } catch {
-        throw {
-            kind: 'unreachable',
-            message: 'Unable to reach the Shade API.',
-        } satisfies ConnectionApiError
+    return {
+        kind: 'unreachable',
+        message: 'Unable to reach the Shade API.',
     }
 }
 
 export async function checkHealth(
     apiBaseUrl: string,
 ): Promise<void> {
-    const response = await request(apiBaseUrl, '/health')
+    const client = createApiClient({
+        apiBaseUrl,
+    })
 
-    if (!response.ok) {
-        throw {
-            kind: 'server',
-            message: `Shade API health check failed with status ${response.status}.`,
-        } satisfies ConnectionApiError
+    try {
+        await createHealthApi(client).get()
+    } catch (error) {
+        throw mapToConnectionError(error)
     }
 }
 
@@ -48,21 +73,14 @@ export async function verifyToken(
     apiBaseUrl: string,
     token: string,
 ): Promise<ProtectedResponse> {
-    const response = await request(apiBaseUrl, '/protected', token)
+    const client = createApiClient({
+        apiBaseUrl,
+        getToken: () => token,
+    })
 
-    if (response.status === 403) {
-        throw {
-            kind: 'unauthorized',
-            message: 'The API token was rejected.',
-        } satisfies ConnectionApiError
+    try {
+        return await createProtectedApi(client).get()
+    } catch (error) {
+        throw mapToConnectionError(error)
     }
-
-    if (!response.ok) {
-        throw {
-            kind: 'server',
-            message: `Shade API authentication check failed with status ${response.status}.`,
-        } satisfies ConnectionApiError
-    }
-
-    return response.json() as Promise<ProtectedResponse>
 }

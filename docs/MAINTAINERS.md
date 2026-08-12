@@ -6,12 +6,13 @@ and how to check a change before sharing it.
 
 ## Start Here
 
-Shade is a React single-page application built with TypeScript and Vite. The project is still early: React Router
-is mounted and several placeholder routes render, while shared UI primitives and an application shell exist as
-source that is not yet fully composed into the live tree. API integration and product workflows come later.
+Shade is a React single-page application built with TypeScript and Vite. It is the browser UI for a personal
+home-library FastAPI backend. The shared shell, runtime configuration, connection flow, typed API client, and
+React Query server-state layer are in place (FEAT-01 through FEAT-03). Most feature routes still render
+placeholders; product UI begins with FEAT-04 (active collection and book details).
 
-The implementation sequence starts with `docs/tickets/FEAT-01_application-shell-and-shared-ui.md`. Broader delivery
-planning lives in `docs/product-docs/PLAN.md`.
+Remaining tickets are `FEAT-04` through `FEAT-16` under `docs/tickets/`. Broader delivery planning lives in
+`docs/product-docs/PLAN.md`. Ticket completion status is tracked in `docs/ToDo.md`.
 
 The most useful commands are:
 
@@ -31,14 +32,29 @@ make check
 This command runs linting, type checking, tests, and a production build. Running it locally catches many common
 problems before code review or continuous integration.
 
+Stack highlights: React 19, TypeScript 6 (strict), Vite 8, React Router 7, TanStack React Query 5, Vitest with
+jsdom, Yarn 4.18.0 via Corepack, and Node.js 26.7.0. There is no Next.js, Tailwind, component library, or form
+library.
+
 ## How the Application Works
 
 The browser follows this path when it loads the application:
 
 ```text
 index.html
+  -> /config.js (sets window.__SHADE_CONFIG__)
   -> src/main.tsx
-       -> RouterProvider(router from src/routes/routes.tsx)
+       -> readRuntimeConfig()
+            -> on failure: RuntimeConfigScreen (retry)
+            -> on success:
+                 RootErrorBoundary
+                   -> AppProviders
+                        -> NotificationsProvider
+                        -> QueryClientProvider (createQueryClient())
+                        -> ConnectionProvider (createApiClient, token, health/protected)
+                             -> RouterProvider(router from src/routes/routes.tsx)
+                                  -> AppShell (layout route)
+                                       -> feature route pages via Outlet
        -> src/index.css
             -> src/styles/tokens.css
             -> src/styles/base.css
@@ -46,77 +62,176 @@ index.html
             -> src/styles/components.css
 ```
 
-`index.html` creates an empty element with the ID `root`. `src/main.tsx` finds that element and asks React to
-render the router inside it. Each matched route currently renders a placeholder page that updates
-`document.title`. The CSS entrypoint loads the styling layers in order so that shared variables and defaults are
-available to later rules.
+`index.html` creates the `#root` mount point, loads `/config.js`, then loads `src/main.tsx`. When runtime config is
+valid, the bootstrap module renders `RouterProvider` inside `RootErrorBoundary` and `AppProviders` in `StrictMode`.
+Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
+
+`AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and
+admin navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side
+navigations. `/settings/connection` mounts `ConnectionScreen`. Other feature pages under `src/features/*/routes/`
+still render `RoutePlaceholder`; product UI arrives in later tickets.
 
 Vite handles the development server and production bundling. TypeScript checks the code but does not create
-JavaScript files itself; Vite performs that transformation during development and builds.
+JavaScript files itself; Vite performs that transformation during development and builds. The CSS import order is
+intentional: later layers use tokens and defaults declared by earlier layers.
 
-Current gaps relative to the FEAT-01 target:
+## Backend Contract (Maintainer Notes)
 
-- `src/layout/AppShell.tsx` is not yet used as the router layout, so navigation chrome is not visible.
-- Shared components under `src/components/` are implemented but unused by the live pages.
-- Several planned routes (checkout, check-in, admin, connection settings) are not registered yet.
-- `src/App.tsx` remains as a leftover welcome page and is not mounted by `src/main.tsx`.
-- There is still no API client, shared server state, or feature workflow UI.
+The backend is a separate repository. Default local API base is `http://127.0.0.1:8000` with **no** `/api` prefix.
+Treat these as complementary sources of truth:
+
+- `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
+- `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express
+
+Authentication uses a shared Bearer token (`Authorization: Bearer <API_SECRET_KEY>`). There are no user accounts.
+Missing or invalid credentials return `403` (describe generically as "API access was rejected"). The token is
+runtime-only (memory plus `sessionStorage`) with an explicit forget action. Confirmed `403` clears the active token
+and returns the user to connection setup.
+
+Never simulate lifecycle operations with a generic `PATCH`. Use the dedicated endpoints (create, edit, delete,
+restore, checkout, check-in, mark-read, ISBN lookup, backup). Prefer regenerating `src/api/generated/openapi.ts`
+with `yarn api:generate` rather than hand-editing it.
 
 ## Project Structure
 
 The summaries below cover every project-owned file outside `docs/`. Generated directories such as
-`node_modules/`, `dist/`, and `coverage/` are intentionally omitted because tools recreate them.
+`node_modules/`, `dist/`, `coverage/`, `.vite/`, `.yarn/`, and `.git/` are intentionally omitted because tools
+recreate them.
 
-### Application Files
+### Browser Application
 
-- `index.html`: The browser entrypoint. It defines page metadata, creates the `root` element, and loads
+- `index.html`: Vite's HTML entrypoint. Defines page metadata, creates `#root`, loads `/config.js`, then
   `src/main.tsx`.
-- `src/main.tsx`: The React bootstrap file. It imports the router and the global CSS entrypoint, verifies that the
-  `root` element exists, and mounts `RouterProvider` in React `StrictMode`.
-- `src/App.tsx`: A leftover welcome-page component. Tests still cover it, but the live application no longer
-  renders it.
-- `src/vite-env.d.ts`: Adds Vite's browser and asset types to TypeScript. It contains declarations, not runtime
-  behavior.
+- `public/config.js`: Runtime config assigned to `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). Not bundled;
+  edit for local or deployed environments.
+- `src/main.tsx`: Browser bootstrap. Reads runtime config, either mounts `RuntimeConfigScreen` or
+  `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`, and imports global CSS.
+- `src/AppProviders.tsx`: Application-wide providers. Wraps `NotificationsProvider`, `QueryClientProvider`
+  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig`). Subscribes
+  `subscribeQueryClientToConnectionInvalidation` so forgotten or rejected tokens clear the query cache.
+- `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home).
+- `src/vite-env.d.ts`: Adds Vite client and asset declarations to TypeScript. It has no runtime behavior.
+
+### Runtime Configuration
+
+- `src/config/runtimeConfig.ts`: Validates and normalizes `apiBaseUrl` and `release`; throws `RuntimeConfigError`.
+- `src/config/runtimeConfigState.ts`: `readRuntimeConfig()` returns `{ config, error }` without throwing.
+- `src/config/RuntimeConfigScreen.tsx`: Blocking UI when config is missing or invalid, with retry.
+
+### API Layer
+
+- `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` /
+  `yarn api:check`.
+- `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
+  dashboard, health/protected, validation/error schemas, enums).
+- `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
+- `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
+- `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
+  prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
+  handling, invalid-JSON errors, and `403` via `onUnauthorized`.
+- `src/api/apiErrors.ts`: `ApiError` kinds (`unreachable`, `timeout`, `cancelled`, `unauthorized`, `validation`,
+  `invalid_response`, `server`, `http`), optional `detail` / `correlationId` / `fieldErrors`, and
+  `mapValidationFieldErrors` for FastAPI `422 detail[]`. `correlationId` stays unset until the backend documents a
+  safe source (do not invent a header or body field).
+- `src/api/apiRedaction.ts`: Safe diagnostic projection and assertions so API/error logs never retain headers, tokens,
+  borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
+- `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
+  `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets.
+- `src/api/queryKeys.ts`: Shared React Query keys for books, loans, and dashboard.
+- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `protected`,
+  `backup`) plus the underlying `client`.
+- `src/api/booksApi.ts`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`, `restore`,
+  `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and
+  serialize only documented request fields.
+- `src/api/loansApi.ts`: `list()` (`GET /loans`).
+- `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
+- `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
+- `src/api/protectedApi.ts`: `get()` (`GET /protected`).
+- `src/api/backupApi.ts`: `get()` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
+  `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
+- `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`,
+  `refetchOnReconnect`, query retry that skips validation / auth / cancelled / invalid-response errors, and
+  `mutations.retry: false`.
+- `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when
+  connection invalidation fires; subscribed from `AppProviders`.
+- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations that write returned `BookRead`
+  into the detail cache and invalidate per PLAN.md 7.5 (lists, detail, dashboard, and loans on checkout/check-in).
+- `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` and `useDashboard` using the same keys mutations
+  invalidate.
 
 ### Routing and Layout
 
-- `src/routes/routeMetadata.ts`: Central path, title, and heading metadata for registered routes.
-- `src/routes/routes.tsx`: Builds the browser router. Placeholder pages set `document.title` from the route title
-  plus an em dash and ` Shade`. Registered paths today are `/`, `/books`, `/books/:bookId`, `/books/new`,
-  `/loans`, and `*` for unknown URLs.
-- `src/layout/AppShell.tsx`: Intended shell with skip link, brand link, primary navigation, main `Outlet`, footer,
-  and focus movement to the page `h1` after client-side navigations. Wire this in as a parent route layout when
-  completing FEAT-01.
+- `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
+- `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths
+  are `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
+  `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
+- `src/routes/RoutePlaceholder.tsx`: Minimal route body used by unfinished feature pages (`h1` with `tabIndex={-1}`).
+- `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
+- `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
+- `src/layout/AppShell.tsx`: Application frame with skip link, header, primary navigation, admin/settings group,
+  `Outlet` main region, footer (including runtime release identifier), document title, and heading focus on location
+  change.
+
+### Feature Modules
+
+Thin route wrappers under `src/features/*/routes/` own paths for later tickets. Most still render `RoutePlaceholder`:
+
+- `src/features/dashboard/routes/DashboardPage.tsx` (`/`, FEAT-11)
+- `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04)
+- `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05)
+- `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04)
+- `src/features/books/routes/EditBookPage.tsx` (`/books/:bookId/edit`, FEAT-10)
+- `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`, FEAT-10)
+- `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`, FEAT-10)
+- `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07)
+- `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
+- `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
+- `src/features/connection/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02; mounts `ConnectionScreen`)
+
+Connection feature (FEAT-02, complete):
+
+- `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `setup_required`, `connected`,
+  `unauthorized`, `unreachable`).
+- `src/features/connection/connectionToken.ts`: In-memory current token accessors.
+- `src/features/connection/connectionStorage.ts`: `sessionStorage` load/save/clear helpers.
+- `src/features/connection/connectionApi.ts`: Routes health/protected checks through typed `healthApi` /
+  `protectedApi` while preserving FEAT-02 connection error mapping.
+- `src/features/connection/connectionInvalidation.ts`: `subscribeToConnectionInvalidation` /
+  `notifyConnectionInvalidated` seam for clearing cached protected data when the token is forgotten or rejected.
+- `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook.
+- `src/features/connection/ConnectionProvider.tsx`: Owns status, token lifecycle, `apiClient`, connect / retry /
+  forget, and unauthorized handling.
+- `src/features/connection/ConnectionScreen.tsx`: Connection settings UI.
 
 ### Shared Components
 
-These modules live under `src/components/` and re-export from `src/components/index.tsx`:
+Import shared UI from `src/components/index.ts` rather than deep paths when writing application or feature code.
 
-- `Alert`: Status message with info, success, warning, and error variants.
-- `AppLink`: Styled React Router link.
+- `Alert`: Status alert; `error` uses `role="alert"`, other variants use `role="status"`.
+- `AppLink`: React Router `Link` wrapper with optional visual variants.
 - `Button`: Primary, secondary, and danger button styles.
-- `ConfirmationDialog`: Native modal dialog for confirm/cancel flows.
-- `EmptyState`: Empty-content section with optional action.
-- `Field`: Label, help text, and error wiring around a single control.
-- `LoadingState`: Accessible loading indicator.
+- `ConfirmationDialog`: Modal confirmation dialog on the native `<dialog>` element, with labelled description, focus
+  trap, Escape cancel, and focus restoration.
+- `EmptyState`: Empty-content section with optional supporting text and action slot.
+- `Field`: Labelled control wrapper that wires `id`, help text, and error associations.
+- `LoadingState`: Polite live-region loading indicator.
 - `NotificationsProvider` / `useNotifications`: Toast-style notifications with dismiss actions.
 
-`src/components/index.ts` exists but is empty; import from the `.tsx` barrel or individual modules. The components
-use classes from `src/styles/components.css`, but no route currently renders them.
+These components apply the class names defined in `src/styles/components.css`. Live route pages still use placeholders
+except connection settings, so most primitives are exercised by tests and ready for feature tickets rather than by
+product workflows.
 
 ### Styles
 
-- `src/index.css`: The only global CSS entrypoint imported by JavaScript. It loads the style layers in the required
-  order: tokens, base, shell, then components.
-- `src/styles/tokens.css`: Defines reusable design values as CSS custom properties, including colors, spacing,
-  typography, focus styles, shadows, and motion duration. Put shared visual values here instead of repeating
-  literals.
-- `src/styles/base.css`: Defines element-level defaults and accessibility foundations, such as box sizing,
-  typography, focus visibility, minimum control sizes, and reduced-motion behavior. It depends on tokens.
-- `src/styles/shell.css`: Defines the intended page frame, including header, navigation, content, footer, route
-  layouts, and responsive behavior. The shell stylesheet is ready for `AppShell` once that layout is mounted.
-- `src/styles/components.css`: Defines reusable class-based styles for buttons, links, form fields, alerts, loading
-  and empty states, dialogs, and notifications.
+- `src/index.css`: Global CSS entrypoint imported by `src/main.tsx`. It imports all style layers in order.
+- `src/styles/tokens.css`: Design tokens for typography, spacing, sizing, colors, borders, focus, shadows, and
+  motion.
+- `src/styles/base.css`: Element defaults and accessibility foundations, including box sizing, controls, links,
+  focus visibility, page typography, skip links, and reduced motion.
+- `src/styles/shell.css`: Application-frame classes for header, navigation, main content, footer, route pages, and
+  responsive layouts.
+- `src/styles/components.css`: Shared class-based primitives for buttons, links, forms, alerts, status views,
+  dialogs, and notifications. They use BEM-like naming and are referenced by the shared component modules.
 
 When adding a style, first decide its scope:
 
@@ -124,34 +239,60 @@ When adding a style, first decide its scope:
 - A default for an HTML element belongs in `base.css`.
 - Page-frame or navigation layout belongs in `shell.css`.
 - A reusable UI pattern belongs in `components.css`.
-- A feature-specific style can live near that feature once feature modules are introduced.
+- A feature-specific style can live near that feature once feature modules gain real UI.
 
 Keep the import order in `src/index.css`. Later layers rely on variables and defaults from earlier layers.
 
 ### Tests
 
-- `src/App.test.tsx`: The test for the leftover `App` welcome component. It does not cover routing or the shell.
-  Expect this to be replaced or expanded as FEAT-01 finishes.
-- `src/test/setup.ts`: Runs before every test and adds `jest-dom` matchers, such as `toBeInTheDocument()`, to
-  Vitest.
+- `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `renderAppTree`.
+- `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback.
+- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels, footer release identifier, current-page state, and
+  not-found recovery.
+- `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
+- `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
+- `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
+- `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation and read helpers.
+- `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes,
+  `5xx`, network failure, timeout, cancellation, invalid JSON, binary backup success, and `204`.
+- `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
+  `createApi`, and redaction coverage.
+- `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` /
+  `loansApi.test.ts` / `dashboardApi.test.ts` / `healthApi.test.ts` / `protectedApi.test.ts` /
+  `backupApi.test.ts`: Typed route helper coverage including conflict bodies and a large-list timing guard.
+- `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
+- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx` /
+  `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation
+  subscription, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
+- `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable.
+- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
+- `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` /
+  `connectionToken.test.ts`: Connection lifecycle and UI.
+- `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
+- `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
+  `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API.
+- `scripts/productionBuildTokenInspection.test.ts`: Production build with source maps; fails if known test tokens
+  appear in artifacts.
 
 Vitest discovers files named `*.test.ts` or `*.test.tsx`. Keep a component test near its component when practical.
-Prefer queries that reflect how a user or assistive technology finds an element, such as `getByRole()`.
+Prefer queries that reflect how a user or assistive technology finds an element, such as `getByRole()`. Route tests
+should use `createTestRouter` / `renderAppTree` and must not mutate `window.history` across cases.
 
 The test flow is:
 
 ```text
 yarn test
   -> Vitest reads vite.config.ts
-  -> jsdom provides a browser-like document
+  -> jsdom supplies browser APIs
   -> src/test/setup.ts installs shared matchers
-  -> src/App.test.tsx renders src/App.tsx
+  -> colocated *.test.tsx / *.test.ts files render through Testing Library
 ```
 
 ### Package and Command Files
 
-- `package.json`: Describes the package, required Node and Yarn versions, commands, runtime dependencies, and
-  development dependencies. Add or remove packages with Yarn so this file and the lockfile stay synchronized.
+- `package.json`: Package metadata, Node and Yarn requirements, scripts (including `api:generate` / `api:check`),
+  runtime dependencies, and development dependencies. Add or remove packages with Yarn so this file and the lockfile
+  stay synchronized.
 - `yarn.lock`: Records exact dependency resolutions for repeatable installs. Yarn generates this file; do not edit
   it by hand.
 - `Makefile`: Provides short, consistent wrappers around Yarn commands. For example, `make run` calls `yarn dev`,
@@ -167,8 +308,11 @@ The available commands are:
 - `make lint`: Checks code with ESLint and treats warnings as failures.
 - `make typecheck`: Checks application and tooling TypeScript.
 - `make test`: Runs the test suite once.
+- `yarn test:watch`: Runs Vitest in watch mode during development.
 - `make build`: Type-checks and creates the optimized `dist/` output.
 - `make check`: Runs linting, type checking, tests, and the production build.
+- `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
+- `yarn api:check`: Regenerates types and fails if the generated file differs from git.
 
 `make check` currently type-checks twice: once directly and once as part of the build command. This is redundant,
 but it is expected behavior rather than a failure.
@@ -204,25 +348,26 @@ tokens appear in production assets or maps.
 
 ### Build, TypeScript, and Lint Configuration
 
-- `vite.config.ts`: Configures Vite's React support and Vitest's `jsdom` environment and setup file. Both the
-  development server and test runner read it.
-- `eslint.config.js`: Defines lint rules for TypeScript and React, including React Hooks and Vite fast-refresh
-  rules. It ignores generated output and fails the lint command on warnings.
-- `tsconfig.json`: The top-level TypeScript project file. It points `tsc -b` to the application and tooling
-  configurations instead of checking files itself.
-- `tsconfig.app.json`: Strictly type-checks files under `src/` with DOM, Vite, Vitest, and React support. It emits no
-  files.
-- `tsconfig.node.json`: Strictly type-checks the Node-based Vite configuration separately from browser code. It
-  also emits no files.
+- `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests, global test setup, and an
+  optional same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`).
+- `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores generated directories
+  and treats warnings as failures through the package script.
+- `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
+- `tsconfig.app.json`: Strict browser and React type checking for `src/`. It includes Vite, Vitest, and jest-dom
+  types and emits no files.
+- `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts`. It emits no files.
 
 The production build follows this path:
 
 ```text
 make build
   -> yarn build
-       -> TypeScript checks tsconfig.app.json and tsconfig.node.json
-       -> Vite follows imports from index.html and src/main.tsx
-       -> Vite writes optimized files to dist/
+       -> tsc -b
+            -> tsconfig.app.json
+            -> tsconfig.node.json
+       -> vite build
+            -> follows imports from index.html and src/main.tsx
+            -> writes dist/
 ```
 
 ### Repository and Contributor Files
@@ -243,9 +388,12 @@ production build.
 
 When you need product or ticket detail, start with:
 
-- `docs/tickets/` for the current feature ticket and acceptance criteria.
+- `docs/tickets/` for the current feature ticket and acceptance criteria (`FEAT-04` through `FEAT-16`).
+- `docs/ToDo.md` for ticket completion status.
 - `docs/product-docs/PLAN.md` for the overall frontend roadmap.
-- `docs/technical-reference/API-for-FE.md` for backend contract notes once API work begins.
+- `docs/product-docs/UI_DESIGN_NOTES.MD` when visual design is in question.
+- `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` for the backend contract.
+- `docs/baselines/FEAT-03_performance.md` for large-library and bundle-size baselines.
 - `docs/AGENTS.md` for the LLM-oriented twin of this guide.
 
 ## Making a Change Safely
@@ -274,26 +422,40 @@ before disabling it.
 - Use the Node and Yarn versions declared by the repository.
 - Use Yarn rather than npm, and do not edit `yarn.lock` manually.
 - Keep TypeScript strict. Avoid `any` unless there is a documented, unavoidable reason.
-- Use semantic HTML before adding ARIA attributes.
-- Preserve visible keyboard focus, minimum control sizes, and reduced-motion behavior.
+- Use extensionless relative TypeScript imports. Prefer single quotes, no semicolons, and trailing commas where
+  supported.
+- Prefer semantic HTML before adding ARIA attributes.
+- Preserve landmarks, visible keyboard focus, labels linked to errors, skip link, dialog focus restoration,
+  document title plus heading focus on route change, no color-only status, usable 320px viewports, 44-pixel
+  control targets, and reduced-motion behavior.
 - Write tests around user-visible behavior instead of component implementation details.
 - Use existing design tokens and shared component classes before creating duplicates.
+- Import shared components from `src/components/index.ts`.
 - Use BEM-like names for shared CSS: `.component`, `.component__element`, and `.component--modifier`.
 - Keep global CSS imports in `src/index.css`, which is imported once by `src/main.tsx`.
+- Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns
+  that route rather than inventing a parallel tree.
+- Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
+  state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
+- Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
+  mutations. There is no realtime API.
+- Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API text as HTML,
+  or upload SQL backup contents to telemetry.
 - Do not commit `node_modules/`, `dist/`, `coverage/`, local databases, or secret files.
 - Update this guide when adding, removing, or significantly changing project files or development workflows.
 
 ## When Adding New Architecture
 
-The project is intentionally still assembling its first shell. Prefer completing FEAT-01 routing, layout, and shared
-UI composition before inventing parallel patterns. New API, server-state, or feature-directory patterns should solve
-a concrete ticket rather than anticipate one. When introducing a new pattern:
+Prefer completing the next ticket (currently FEAT-04) on the existing shell, connection, and server-state patterns
+before inventing parallel ones. New feature UI should replace the owned `RoutePlaceholder` pages and reuse
+`useBooks` / `useBook`, `queryKeys`, `enumDisplayValue`, and shared loading/empty/alert/link primitives. When
+introducing a new pattern:
 
 1. Keep its first use small and understandable.
 2. Choose names that describe product concepts, not vague technical categories.
 3. Document how data enters, changes within, and leaves the new module.
 4. Add tests at the level where behavior can be observed reliably.
-5. Update the project structure and interaction diagrams in this guide.
+5. Update the project structure and interaction diagrams in this guide (and `docs/AGENTS.md`).
 
 If a change affects the product's intended behavior, consult the requirements in `docs/` and keep the
 implementation, tests, and documentation consistent.

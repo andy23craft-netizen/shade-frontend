@@ -171,6 +171,11 @@ describe('book queries', () => {
             mockGet,
         ).toHaveBeenCalledWith(
             'book-123',
+            expect.objectContaining({
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
         )
 
         expect(
@@ -213,6 +218,11 @@ describe('book queries', () => {
             mockLookup,
         ).toHaveBeenCalledWith(
             '9781234567890',
+            expect.objectContaining({
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
         )
 
         expect(
@@ -222,12 +232,13 @@ describe('book queries', () => {
         queryClient.clear()
     })
 
-    it('creates a book and invalidates the books cache', async () => {
+    it('creates a book and writes detail cache before invalidation', async () => {
         const bookInput =
             {} as BookCreate
 
-        const createdBook =
-            {} as BookRead
+        const createdBook = {
+            id: 'book-123',
+        } as BookRead
 
         mockCreate.mockResolvedValueOnce(
             createdBook,
@@ -237,6 +248,12 @@ describe('book queries', () => {
             Wrapper,
             queryClient,
         } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
 
         const invalidateQueries =
             vi.spyOn(
@@ -257,11 +274,33 @@ describe('book queries', () => {
             )
 
         expect(resultBook).toEqual(createdBook)
-        
+
+        expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            ['books', 'book-123'],
+            createdBook,
+        )
+
         expect(
             invalidateQueries,
         ).toHaveBeenCalledWith({
             queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
         })
 
         queryClient.clear()
@@ -269,13 +308,15 @@ describe('book queries', () => {
 
 
 it(
-    'updates a book and invalidates book caches',
+    'updates a book and writes the returned BookRead into detail cache',
     async () => {
         const bookInput =
             {} as BookUpdate
 
-        const updatedBook =
-            {} as BookRead
+        const updatedBook = {
+            id: 'book-123',
+            title: 'Updated',
+        } as BookRead
 
         mockUpdate.mockResolvedValueOnce(
             updatedBook,
@@ -285,6 +326,12 @@ it(
             Wrapper,
             queryClient,
         } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
 
         const invalidateQueries =
             vi.spyOn(
@@ -310,6 +357,13 @@ it(
         ).toHaveBeenCalledWith(
             'book-123',
             bookInput,
+        )
+
+        expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            ['books', 'book-123'],
+            updatedBook,
         )
 
         expect(
@@ -399,10 +453,11 @@ it(
 )
 
 it(
-    'restores a book and invalidates book caches',
+    'restores a book and writes the returned BookRead into detail cache',
     async () => {
-        const restoredBook =
-            {} as BookRead
+        const restoredBook = {
+            id: 'book-123',
+        } as BookRead
 
         mockRestore.mockResolvedValueOnce(
             restoredBook,
@@ -412,6 +467,12 @@ it(
             Wrapper,
             queryClient,
         } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
 
         const invalidateQueries =
             vi.spyOn(
@@ -435,6 +496,13 @@ it(
             mockRestore,
         ).toHaveBeenCalledWith(
             'book-123',
+        )
+
+        expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            ['books', 'book-123'],
+            restoredBook,
         )
 
         expect(
@@ -463,13 +531,14 @@ it(
 )
 
 it(
-    'checks out a book and invalidates loans and dashboard',
+    'checks out a book, writes detail cache, and invalidates loans and dashboard',
     async () => {
         const request =
             {} as CheckoutRequest
 
-        const book =
-            {} as BookRead
+        const book = {
+            id: 'book-123',
+        } as BookRead
 
         mockCheckout.mockResolvedValueOnce(
             book,
@@ -479,6 +548,12 @@ it(
             Wrapper,
             queryClient,
         } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
 
         const invalidateQueries =
             vi.spyOn(
@@ -507,6 +582,13 @@ it(
         )
 
         expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            ['books', 'book-123'],
+            book,
+        )
+
+        expect(
             invalidateQueries,
         ).toHaveBeenCalledWith({
             queryKey: ['books'],
@@ -538,13 +620,14 @@ it(
 )
 
 it(
-    'checks in a book and invalidates loans and dashboard',
+    'checks in a book, writes detail cache, and invalidates loans and dashboard',
     async () => {
         const request =
             {} as CheckinRequest
 
-        const book =
-            {} as BookRead
+        const book = {
+            id: 'book-123',
+        } as BookRead
 
         mockCheckin.mockResolvedValueOnce(
             book,
@@ -554,6 +637,12 @@ it(
             Wrapper,
             queryClient,
         } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
 
         const invalidateQueries =
             vi.spyOn(
@@ -582,6 +671,13 @@ it(
         )
 
         expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            ['books', 'book-123'],
+            book,
+        )
+
+        expect(
             invalidateQueries,
         ).toHaveBeenCalledWith({
             queryKey: ['books'],
@@ -613,13 +709,14 @@ it(
 )
 
 it(
-    'marks a book as read and invalidates book and dashboard caches',
+    'marks a book as read, writes detail cache, and invalidates book and dashboard caches',
     async () => {
         const request =
             {} as MarkReadRequest
 
-        const book =
-            {} as BookRead
+        const book = {
+            id: 'book-123',
+        } as BookRead
 
         mockMarkRead.mockResolvedValueOnce(
             book,
@@ -629,6 +726,12 @@ it(
             Wrapper,
             queryClient,
         } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
 
         const invalidateQueries =
             vi.spyOn(
@@ -654,6 +757,13 @@ it(
         ).toHaveBeenCalledWith(
             'book-123',
             request,
+        )
+
+        expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            ['books', 'book-123'],
+            book,
         )
 
         expect(
