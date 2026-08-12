@@ -7,11 +7,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { BookForm } from './BookForm'
 import { bookFormDefaults } from './bookFormDefaults'
-import type { BookCreate } from '../../../api/apiTypes'
-
+import type { BookFormValues } from './BookForm'
 function makeBook(
-    overrides: Partial<BookCreate> = {},
-): BookCreate {
+    overrides: Partial<BookFormValues> = {},
+): BookFormValues {
     return {
         ...bookFormDefaults,
         title: 'The Great Gatsby',

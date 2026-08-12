@@ -10,7 +10,6 @@ import type {
     BookCreate,
     Category,
     Shelf,
-    Status,
 } from '../../../api/apiTypes'
 
 const CATEGORY_VALUES: readonly Category[] = [
@@ -65,18 +64,24 @@ const SHELF_VALUES: readonly Shelf[] = [
     'liz_tbr',
 ]
 
-const STATUS_VALUES: readonly Status[] = [
-    'unknown',
-    'available',
-    'on_loan',
-    'missing',
-    'display_only',
-    'reserved',
-    'reading',
-]
+export interface BookFormValues {
+    title: string
+    authors: string
+    isbn13: string
+    publisher: string
+    publication_date: string
+    pages: string
+    category: Category
+    shelf: Shelf
+    tags: string[]
+    acquisition_source: string
+    purchase_date: string
+    purchase_price: string
+    notes: string
+}
 
 export interface BookFormProps {
-    initialValues: BookCreate
+    initialValues: BookFormValues
     onSubmit: (
         values: BookCreate,
     ) => void | Promise<void>
@@ -90,15 +95,6 @@ function stringValue(
     return value ?? ''
 }
 
-function numberValue(
-    value: number | null | undefined,
-): string {
-    return value === null ||
-        value === undefined
-        ? ''
-        : String(value)
-}
-
 export function BookForm({
     initialValues,
     onSubmit,
@@ -106,16 +102,16 @@ export function BookForm({
     isSubmitting = false,
 }: BookFormProps) {
     const [values, setValues] =
-        useState<BookCreate>(initialValues)
+        useState<BookFormValues>(initialValues)
 
     const [validationError, setValidationError] =
         useState<string | null>(null)
 
     function updateField<
-        K extends keyof BookCreate,
+        K extends keyof BookFormValues,
     >(
         field: K,
-        value: BookCreate[K],
+        value: BookFormValues[K],
     ) {
         setValues((current) => ({
             ...current,
@@ -132,42 +128,27 @@ export function BookForm({
             | 'publication_date'
             | 'acquisition_source'
             | 'purchase_date'
-            | 'completion_date'
-            | 'review'
             | 'notes',
         event: ChangeEvent<
             HTMLInputElement | HTMLTextAreaElement
         >,
     ) {
-        const value = event.target.value
-
         updateField(
             field,
-            value === ''
-                ? null
-                : value,
+            event.target.value,
         )
     }
 
     function handleNumberChange(
         field:
             | 'pages'
-            | 'purchase_price'
-            | 'rating',
+            | 'purchase_price',
         event: ChangeEvent<HTMLInputElement>,
     ) {
-        const value = event.target.value
-
-        if (value === '') {
-            updateField(field, null)
-            return
-        }
-
-        const number = Number(value)
-
-        if (!Number.isNaN(number)) {
-            updateField(field, number)
-        }
+        updateField(
+            field,
+            event.target.value,
+        )
     }
 
     async function handleSubmit(
@@ -191,9 +172,43 @@ export function BookForm({
         }
 
         const submission: BookCreate = {
-            ...values,
             title: values.title.trim(),
             authors: values.authors.trim(),
+            category: values.category,
+            shelf: values.shelf,
+            isbn13:
+                values.isbn13.trim() === ''
+                    ? null
+                    : values.isbn13,
+            publisher:
+                values.publisher.trim() === ''
+                    ? null
+                    : values.publisher,
+            publication_date:
+                values.publication_date.trim() === ''
+                    ? null
+                    : values.publication_date,
+            pages:
+                values.pages.trim() === ''
+                    ? null
+                    : Number(values.pages),
+            tags: values.tags,
+            acquisition_source:
+                values.acquisition_source.trim() === ''
+                    ? null
+                    : values.acquisition_source,
+            purchase_date:
+                values.purchase_date.trim() === ''
+                    ? null
+                    : values.purchase_date,
+            purchase_price:
+                values.purchase_price.trim() === ''
+                    ? null
+                    : Number(values.purchase_price),
+            notes:
+                values.notes.trim() === ''
+                    ? null
+                    : values.notes,
         }
 
         await onSubmit(submission)
@@ -352,30 +367,6 @@ export function BookForm({
                         )}
                     </select>
                 </Field>
-
-                <Field label="Status">
-                    <select
-                        value={values.status}
-                        onChange={(event) =>
-                            updateField(
-                                'status',
-                                event.target
-                                    .value as Status,
-                            )
-                        }
-                    >
-                        {STATUS_VALUES.map(
-                            (status) => (
-                                <option
-                                    key={status}
-                                    value={status}
-                                >
-                                    {status}
-                                </option>
-                            ),
-                        )}
-                    </select>
-                </Field>
             </section>
 
             <section>
@@ -427,71 +418,7 @@ export function BookForm({
                         }
                     />
                 </Field>
-            </section>
 
-            <section>
-                <h2>Reading</h2>
-
-                <Field label="Read">
-                    <input
-                        type="checkbox"
-                        checked={values.is_read}
-                        onChange={(event) =>
-                            updateField(
-                                'is_read',
-                                event.target.checked,
-                            )
-                        }
-                    />
-                </Field>
-
-                <Field label="Completion date">
-                    <input
-                        type="date"
-                        value={stringValue(
-                            values.completion_date,
-                        )}
-                        onChange={(event) =>
-                            handleTextChange(
-                                'completion_date',
-                                event,
-                            )
-                        }
-                    />
-                </Field>
-
-                <Field label="Rating">
-                    <input
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="1"
-                        value={numberValue(
-                            values.rating,
-                        )}
-                        onChange={(event) =>
-                            handleNumberChange(
-                                'rating',
-                                event,
-                            )
-                        }
-                    />
-                </Field>
-
-                <Field label="Review">
-                    <textarea
-                        value={stringValue(
-                            values.review,
-                        )}
-                        onChange={(event) =>
-                            handleTextChange(
-                                'review',
-                                event,
-                            )
-                        }
-                        rows={5}
-                    />
-                </Field>
             </section>
 
             <section>
@@ -500,30 +427,16 @@ export function BookForm({
                 <Field label="Tags">
                     <input
                         type="text"
-                        value={
-                            values.tags?.join(', ') ??
-                            ''
-                        }
+                        value={values.tags.join(', ')}
                         onChange={(event) => {
-                            const raw =
-                                event.target.value
-
-                            const tags =
-                                raw
-                                    .split(',')
-                                    .map(
-                                        (tag) =>
-                                            tag.trim(),
-                                    )
-                                    .filter(
-                                        Boolean,
-                                    )
+                            const tags = event.target.value
+                                .split(',')
+                                .map((tag) => tag.trim())
+                                .filter(Boolean)
 
                             updateField(
                                 'tags',
-                                tags.length > 0
-                                    ? tags
-                                    : null,
+                                tags,
                             )
                         }}
                     />
