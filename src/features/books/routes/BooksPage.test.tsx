@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -11,7 +11,10 @@ vi.mock('../../../api/booksQueries', () => ({
 }))
 
 function renderBooksPage() {
-    return render( <MemoryRouter> <BooksPage /> </MemoryRouter>,
+    return render(
+        <MemoryRouter>
+            <BooksPage />
+        </MemoryRouter>,
     )
 }
 
@@ -45,29 +48,27 @@ describe('BooksPage', () => {
             },
         })
 
+        renderBooksPage()
 
-    renderBooksPage()
+        expect(
+            screen.getByRole('heading', {
+                level: 1,
+                name: 'Books',
+            }),
+        ).toBeInTheDocument()
 
-    expect(
-        screen.getByRole('heading', {
-            level: 1,
-            name: 'Books',
-        }),
-    ).toBeInTheDocument()
+        expect(
+            screen.getByText('2 books in the library.'),
+        ).toBeInTheDocument()
 
-    expect(
-        screen.getByText('2 books in the library.'),
-    ).toBeInTheDocument()
-
-    expect(
-        screen.getByRole('link', {
-            name: 'The Left Hand of Darkness',
-        }),
-    ).toHaveAttribute(
-        'href',
-        '/books/book-1',
-    )
-    screen.debug()
+        expect(
+            screen.getByRole('link', {
+                name: 'The Left Hand of Darkness',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books/book-1',
+        )
 
         expect(
             screen.getByText(
@@ -76,9 +77,9 @@ describe('BooksPage', () => {
             ),
         ).toBeInTheDocument()
 
-    expect(
-        screen.getByText('Invisible Cities'),
-    ).toBeInTheDocument()
+        expect(
+            screen.getByText('Invisible Cities'),
+        ).toBeInTheDocument()
 
         expect(
             screen.getByText(
@@ -94,67 +95,77 @@ describe('BooksPage', () => {
         expect(
             screen.getByText('Status: on_loan'),
         ).toBeInTheDocument()
-})
-
-it('renders an empty state when the collection has no books', () => {
-    mockUseBooks.mockReturnValue({
-        isPending: false,
-        isError: false,
-        data: {
-            total: 0,
-            items: [],
-        },
     })
 
-    renderBooksPage()
+    it('renders an empty state when the collection has no books', () => {
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                total: 0,
+                items: [],
+            },
+        })
 
-    expect(
-        screen.getByRole('heading', {
-            name: 'Your library is empty.',
-        }),
-    ).toBeInTheDocument()
+        renderBooksPage()
 
-    expect(
-        screen.getByRole('link', {
-            name: 'Add Book',
-        }),
-    ).toHaveAttribute(
-        'href',
-        '/books/new',
-    )
-})
+        expect(
+            screen.getByRole('heading', {
+                name: 'Your library is empty.',
+            }),
+        ).toBeInTheDocument()
 
-it('renders a loading state', () => {
-    mockUseBooks.mockReturnValue({
-        isPending: true,
-        isError: false,
+        expect(
+            screen.getByRole('link', {
+                name: 'Add Book',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books/new',
+        )
     })
 
-    renderBooksPage()
+    it('renders a loading state', () => {
+        mockUseBooks.mockReturnValue({
+            isPending: true,
+            isError: false,
+        })
 
-    expect(
-        screen.getByRole('status'),
-    ).toHaveTextContent(
-        'Loading books…',
-    )
-})
+        renderBooksPage()
 
-it('renders an API error', () => {
-    mockUseBooks.mockReturnValue({
-        isPending: false,
-        isError: true,
-        error: new Error(
+        expect(
+            screen.getByRole('status'),
+        ).toHaveTextContent(
+            'Loading books…',
+        )
+    })
+
+    it('renders an API error with retry', () => {
+        const refetch = vi.fn()
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: new Error(
+                'The library API is unavailable.',
+            ),
+            refetch,
+        })
+
+        renderBooksPage()
+
+        expect(
+            screen.getByRole('alert'),
+        ).toHaveTextContent(
             'The library API is unavailable.',
-        ),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(refetch).toHaveBeenCalledOnce()
     })
-
-    renderBooksPage()
-
-    expect(
-        screen.getByRole('alert'),
-    ).toHaveTextContent(
-        'The library API is unavailable.',
-    )
 })
-
-    })

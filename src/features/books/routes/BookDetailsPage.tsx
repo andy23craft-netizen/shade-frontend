@@ -20,6 +20,7 @@ import {
 
 import { AppLink } from '../../../components/AppLink'
 import { Alert } from '../../../components/Alert'
+import { Button } from '../../../components/Button'
 import { LoadingState } from '../../../components/LoadingState'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '../../../api/queryKeys'
@@ -207,9 +208,20 @@ export function BookDetailsPage() {
                             : 'An unexpected error occurred.'}
                 </Alert>
 
-                <AppLink to="/books">
-                    Back to Books
-                </AppLink>
+                <div>
+                    <Button
+                        type="button"
+                        onClick={() => {
+                            void bookQuery.refetch()
+                        }}
+                    >
+                        Retry
+                    </Button>
+
+                    <AppLink to="/books">
+                        Back to Books
+                    </AppLink>
+                </div>
             </section>
         )
     }
@@ -307,11 +319,32 @@ export function BookDetailsPage() {
                         </AppLink>
                     ) : null}
 
+                    {!isDeleted && !book.is_read ? (
+                        <Button type="button">
+                            Mark Read
+                        </Button>
+                    ) : null}
+
                     {!isDeleted ? (
                         <AppLink
                             to={`/books/${encodeURIComponent(book.id)}/edit`}
                         >
                             Edit
+                        </AppLink>
+                    ) : null}
+
+                    {!isDeleted && !isOnLoan ? (
+                        <Button
+                            type="button"
+                            variant="danger"
+                        >
+                            Delete
+                        </Button>
+                    ) : null}
+
+                    {isDeleted ? (
+                        <AppLink to="/admin/deleted">
+                            View deleted books
                         </AppLink>
                     ) : null}
                 </div>

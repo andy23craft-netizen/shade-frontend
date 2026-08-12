@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -17,6 +17,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('../../../api/booksQueries', () => ({
     useBook: (bookId: string) => mockUseBook(bookId),
 }))
+
 function renderBookDetailsPage(
     bookId = 'book-1',
 ) {
@@ -166,6 +167,33 @@ describe('BookDetailsPage', () => {
         ).toBeInTheDocument()
     })
 
+    it('renders date-only fields without timezone day-shift', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...book,
+                publication_date: '1969-03-01',
+                purchase_date: '2026-08-01',
+                completion_date: '2026-08-10',
+            },
+        })
+
+        renderBookDetailsPage()
+
+        expect(
+            screen.getByText('1969-03-01'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText('2026-08-01'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText('2026-08-10'),
+        ).toBeInTheDocument()
+    })
+
     it('renders null optional fields as not provided', () => {
         mockUseBook.mockReturnValue({
             isPending: false,
@@ -197,12 +225,56 @@ describe('BookDetailsPage', () => {
         ).not.toHaveLength(0)
     })
 
+    it('hides checkout and delete actions for on-loan books', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...book,
+                status: 'on_loan',
+                is_read: false,
+                borrower: 'Ada',
+            },
+        })
+
+        renderBookDetailsPage()
+
+        expect(
+            screen.getAllByText('on loan'),
+        ).not.toHaveLength(0)
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Check Out',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Check In',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Delete',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Mark Read',
+            }),
+        ).toBeInTheDocument()
+    })
+
     it('renders deleted books without lifecycle actions', () => {
         mockUseBook.mockReturnValue({
             isPending: false,
             isError: false,
             data: {
                 ...book,
+                is_read: false,
                 deletion_date: '2026-08-11T12:00:00Z',
             },
         })
@@ -212,7 +284,7 @@ describe('BookDetailsPage', () => {
         expect(
             screen.getByRole('status'),
         ).toHaveTextContent(
-            "This book has been deleted",
+            'This book has been deleted',
         )
 
         expect(
@@ -238,6 +310,27 @@ describe('BookDetailsPage', () => {
                 name: 'Edit',
             }),
         ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Mark Read',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Delete',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'View deleted books',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/admin/deleted',
+        )
     })
 
     it('renders a loading state', () => {
@@ -258,6 +351,8 @@ describe('BookDetailsPage', () => {
     })
 
     it('renders a not-found state', () => {
+        const refetch = vi.fn()
+
         mockUseBook.mockReturnValue({
             isPending: false,
             isError: true,
@@ -266,12 +361,13 @@ describe('BookDetailsPage', () => {
                 status: 404,
                 message: 'Book not found',
             }),
+            refetch,
         })
 
         renderBookDetailsPage()
 
         expect(
-            screen.getByText('Book not found')
+            screen.getByText('Book not found'),
         ).toBeInTheDocument()
 
         expect(
@@ -288,26 +384,38 @@ describe('BookDetailsPage', () => {
             'href',
             '/books',
         )
+
         expect(
             mockInvalidateQueries,
         ).toHaveBeenCalledWith({
             queryKey: ['books'],
         })
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(refetch).toHaveBeenCalledOnce()
     })
 
-    it('renders a generic API error', () => {
+    it('renders a generic API error with retry', () => {
+        const refetch = vi.fn()
+
         mockUseBook.mockReturnValue({
             isPending: false,
             isError: true,
             error: new Error(
                 'Unable to reach the API.',
             ),
+            refetch,
         })
 
         renderBookDetailsPage()
 
         expect(
-            screen.getByText('Unable to load book')
+            screen.getByText('Unable to load book'),
         ).toBeInTheDocument()
 
         expect(
@@ -315,5 +423,13 @@ describe('BookDetailsPage', () => {
                 'Unable to reach the API.',
             ),
         ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(refetch).toHaveBeenCalledOnce()
     })
 })

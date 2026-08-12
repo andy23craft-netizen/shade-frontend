@@ -17,18 +17,22 @@ Shade is a browser UI for a personal home-library FastAPI backend. Planned capab
 - Soft-deleting and restoring books while preserving history.
 - Sending a shared Bearer token with backend API requests (no user accounts).
 
-**Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), and FEAT-03
-(typed API and server state). Those ticket files were removed; remaining tickets are `FEAT-04` through `FEAT-16` under
-`docs/tickets/`. `docs/ToDo.md` marks FEAT-01 through FEAT-03 complete.
+**Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), FEAT-03
+(typed API and server state), and FEAT-04 (active collection and book details). Those ticket files were removed;
+remaining tickets are `FEAT-05` through `FEAT-16` under `docs/tickets/`. Prefer ticket presence under `docs/tickets/`
+over `docs/ToDo.md` when judging completion (the checklist can lag).
 
-**Next:** FEAT-04 (active collection and book details): read-only browse/detail UI on `/books` and `/books/:bookId`,
-reusing FEAT-03 hooks and shared primitives. FEAT-03 already delivered OpenAPI generation, schema aliases, enum display
-helpers, the shared API client shell, error types with redaction helpers, request-field picking and date/time utilities,
-`createApi` typed route helpers (including backup `{ blob, filename }`), connection health/protected via typed helpers,
-React Query defaults and connection-invalidation wiring, books/loans/dashboard query hooks, mutation detail-cache writes
-plus PLAN.md 7.5 invalidation, abort/stale overwrite guards, contract smoke coverage, and performance baselines under
-`docs/baselines/FEAT-03_performance.md`. Later product workflows (create, checkout, check-in, edit/delete, dashboard
-metrics UI) belong to FEAT-05+.
+**Next:** FEAT-05 (book form and creation): extend the existing `/books/new` create UI with ISBN lookup, stricter
+validation, and a reusable form model. FEAT-04 already delivered read-only browse/detail on `/books` and
+`/books/:bookId` using `useBooks` / `useBook`, `enumDisplayValue`, and shared loading/empty/alert/link primitives.
+FEAT-03 delivered OpenAPI generation, schema aliases, enum display helpers, the shared API client shell, error types
+with redaction helpers, request-field picking and date/time utilities, `createApi` typed route helpers (including
+backup `{ blob, filename }`), connection health/protected via typed helpers, React Query defaults and
+connection-invalidation wiring, books/loans/dashboard query hooks, mutation detail-cache writes plus PLAN.md 7.5
+invalidation, abort/stale overwrite guards, contract smoke coverage, and performance baselines under
+`docs/baselines/FEAT-03_performance.md`. A baseline create path already exists (`NewBookPage`, `BookForm`,
+`bookFormDefaults`, `useCreateBook`); FEAT-05 extends it rather than replacing it. Later product workflows (scanner,
+checkout, check-in, edit/delete, dashboard metrics UI) belong to FEAT-06+.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
 `docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
@@ -181,8 +185,9 @@ Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
 navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side navigations.
-`/settings/connection` mounts `ConnectionScreen`. Other feature pages under `src/features/*/routes/` still render
-`RoutePlaceholder`; product UI arrives in later tickets.
+Live product UI today: `/settings/connection` (`ConnectionScreen`), `/books` (`BooksPage`), `/books/:bookId`
+(`BookDetailsPage`), and `/books/new` (`NewBookPage` + `BookForm`). Remaining feature pages under
+`src/features/*/routes/` still render `RoutePlaceholder` until their owning tickets land.
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
 production bundle. The CSS import order is intentional: later layers use tokens and defaults declared by earlier layers.
@@ -266,19 +271,30 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 ### Feature Modules
 
-Thin route wrappers under `src/features/*/routes/` own paths for later tickets. Most still render `RoutePlaceholder`:
+Route ownership under `src/features/*/routes/`. Implemented product UI vs placeholders:
+
+Implemented (do not revert to placeholders):
+
+- `src/features/connection/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02; mounts `ConnectionScreen`)
+- `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04): active collection via `useBooks`; loading, error+retry,
+  empty state with link to `/books/new`, and list rows linking to detail with safe enum display
+- `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04): detail via `useBook`; loading,
+  not-found / error recovery, and field presentation with safe enum display
+- `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05 baseline): mounts `BookForm`, creates via
+  `useCreateBook`, shows create errors, disables controls while pending, navigates to the new detail on success
+- `src/features/books/components/BookForm.tsx` / `bookFormDefaults.ts`: shared manual create form (title, authors, ISBN,
+  publisher, dates, pages, category, shelf, tags, purchase fields, notes, plus current status/read/review controls that
+  FEAT-05 must gate or remove from create). Colocated `BookForm.test.tsx` covers field rendering and submit shaping
+
+Still `RoutePlaceholder` (owned by later tickets):
 
 - `src/features/dashboard/routes/DashboardPage.tsx` (`/`, FEAT-11)
-- `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04)
-- `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05)
-- `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04)
 - `src/features/books/routes/EditBookPage.tsx` (`/books/:bookId/edit`, FEAT-10)
 - `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`, FEAT-10)
 - `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`, FEAT-10)
 - `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07)
 - `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
 - `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
-- `src/features/connection/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02; mounts `ConnectionScreen`)
 
 Connection feature (FEAT-02, complete):
 
@@ -312,9 +328,8 @@ Import shared UI from `src/components/index.ts` rather than deep paths when writ
 - `src/components/useNotifications.ts`: Hook that reads the notifications context (throws outside the provider).
 - `src/components/index.ts`: Barrel re-exports for the shared components and notifications API.
 
-These components apply the class names defined in `src/styles/components.css`. Live route pages still use placeholders
-except connection settings, so most primitives are exercised by tests and ready for feature tickets rather than by
-product workflows.
+These components apply the class names defined in `src/styles/components.css`. Connection, books list/detail, and the
+baseline create form already use them in product UI; remaining feature tickets should keep reusing these primitives.
 
 ### Styling
 
@@ -364,6 +379,10 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
 - `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` / `connectionToken.test.ts`:
   Connection lifecycle and UI.
+- `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection,
+  detail, and create-route behavior (loading/error/empty, navigation, create success path).
+- `src/features/books/components/BookForm.test.tsx`: Form field rendering, initial values, empty title/authors
+  rejection, submit payload shaping, trim, cancel, and submitting disabled state.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
   `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API.
@@ -417,13 +436,13 @@ yarn test
 
 The `.cursor` rules control AI-assisted work. They are not loaded by the application or included in builds.
 
-Useful documents under `docs/` when a task needs them (this file remains the baseline; do not require other prompt
-packs):
+Useful documents under `docs/` when a task needs them (this file remains the self-contained baseline; do not require
+other prompt packs under `docs/`):
 
-- `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (`FEAT-04` through `FEAT-16`;
-  FEAT-01 through FEAT-03 are complete and their ticket files are gone).
+- `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (`FEAT-05` through `FEAT-16`;
+  FEAT-01 through FEAT-04 are complete and their ticket files are gone).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines for later hardening tickets.
-- `docs/ToDo.md`: Human checklist of ticket completion status.
+- `docs/ToDo.md`: Human checklist of ticket completion status (may lag ticket-file removal).
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
@@ -490,8 +509,9 @@ make build
 - Use extensionless relative TypeScript imports, matching current source style.
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns that
-  route rather than inventing a parallel tree. For FEAT-04, replace `BooksPage` and `BookDetailsPage` placeholders and
-  reuse `useBooks` / `useBook`, `queryKeys`, `enumDisplayValue`, and shared loading/empty/alert/link primitives.
+  route rather than inventing a parallel tree. For FEAT-05, extend `NewBookPage`, `BookForm`, and `bookFormDefaults`
+  (ISBN lookup, checksum validation, reusable form model, create-field gating) instead of rebuilding create UI. Do not
+  pull scanner capture (FEAT-06), reading completion (FEAT-09), or edit-route wiring (FEAT-10) into FEAT-05.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
