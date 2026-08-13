@@ -6,7 +6,20 @@ Create books through typed ISBN lookup or fully manual entry without depending o
 
 ## Dependencies
 
-FEAT-04.
+FEAT-04 is complete. Reuse FEAT-03 typed helpers (`booksApi.create` / `lookup`, `useCreateBook`, `useBookLookup` /
+`useLookupBook`) and mutation/cache invalidation. Do not invent a second create/lookup client.
+
+Extend the existing create UI in `src/features/books/routes/NewBookPage.tsx` and
+`src/features/books/components/BookForm.tsx` rather than replacing them. Scanner capture belongs to FEAT-06; reading
+completion and mark-read belong to FEAT-09; metadata edit belongs to FEAT-10.
+
+## Explicitly out of scope (owned by later tickets)
+
+| Later ticket | Owns (do not pull into FEAT-05)                                      |
+|--------------|----------------------------------------------------------------------|
+| FEAT-06      | Camera / hardware barcode capture feeding the create form            |
+| FEAT-09      | Mark-read and later reading-field edit UI                            |
+| FEAT-10      | Edit route wiring that reuses this form for `PATCH /books/{id}`      |
 
 ## Contract references
 
@@ -18,16 +31,13 @@ Treat these as complementary, not interchangeable:
   the ISBN-10 check-digit gap, lookup `found: false`, provider `502` / `504` / unexpected `500`, blank-ISBN rules, and
   FE vs API ownership of capture vs persistence).
 
-Reuse FEAT-03 typed helpers and mutation/cache invalidation. Do not invent a second create/lookup client.
-
-### Documented contract facts for this ticket
+### Documented contract facts for remaining work
 
 Confirm against a representative running backend `/openapi.json` before locking behavior; record drift as a blocker.
 
 - `POST /books` accepts `BookCreate` and returns `201` with `BookRead`. Documented error responses are `403` and `422`
-  (FastAPI `detail[]`). There is no documented duplicate-ISBN conflict (`409` or otherwise); OpenAPI and the API notes
-  do not require uniqueness on `isbn13`. Do not invent frontend rejection of duplicate ISBNs unless a later contract
-  change adds it.
+  (FastAPI `detail[]`). There is no documented duplicate-ISBN conflict (`409` or otherwise); do not invent frontend
+  rejection of duplicate ISBNs unless a later contract change adds it.
 - `purchase_price` is an unconstrained nullable `number` in OpenAPI -- no currency, precision, `multipleOf`, or range.
   Present a sensible client control (e.g., decimal money input) and send a JSON number or `null`; do not invent API
   currency codes or server-side rounding rules.
@@ -49,55 +59,73 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - Date and timestamp fields are plain strings; the API does not validate format. Still serialize user-entered dates as
   `YYYY-MM-DD`.
 
-## Scope
+## Current baseline
 
-### Form model (reusable)
+Already in place and should be extended, not replaced:
 
-- Build reusable book-form values and conversion logic separately from `BookCreate` / `BookLookupDraft` transport models
-  so FEAT-10 edit can share the same form shape later.
-- Creation UI fields: title, authors, ISBN (`isbn13`), publisher, publication date, pages, category, shelf, tags,
-  purchase date, purchase price, acquisition source, and notes.
-- Require non-blank title and authors; enforce documented 255-character limits, positive integer pages, valid `Category`
-  / `Shelf` enums (with `unknown`), and accessible field/summary errors even though the API currently accepts empty
-  required strings.
-- Validate ISBN-10 and ISBN-13 check digits before lookup or creation. Preserve separators in the submitted value and
-  rely on the API for canonical normalization; strip separators internally only for checksum calculation.
-- Define and test deterministic tag trimming, empty-tag removal, duplicate handling, and ordering.
-- Convert blank optionals to `null` (or omit when that matches the typed helper). Do not send `null` for
-  title/authors/category/shelf/`is_read`/`status`.
-- Serialize user-entered date values as `YYYY-MM-DD`. Preserve a year-only lookup `publication_date` as an editable API
-  string rather than inventing a month and day.
-- Do not expose borrower, `datetime_loaned_out`, on-loan simulation, or reading-completion controls on this form. Leave
-  `status` / `is_read` at create defaults unless a later product decision adds a non-loan metadata status control; never
-  use create/`PATCH` to simulate checkout, check-in, or mark-read.
+- `NewBookPage` (`/books/new`): mounts `BookForm` with `bookFormDefaults`, creates via `useCreateBook`, shows a generic
+  create error `Alert`, disables submit/cancel while pending, navigates to `/books/:bookId` on success, and cancels back
+  to `/books`. Manual create works without lookup. No create-page UI calls lookup yet.
+- `useCreateBook` already writes the returned `BookRead` into the detail cache and invalidates list/detail/dashboard
+  (FEAT-03 / PLAN 7.5).
+- `useBookLookup` / `useLookupBook` exist as typed React Query hooks; unused by the create page.
+- Create UI no longer exposes status, borrower, loan timestamp, read checkbox, completion date, rating, or review.
+  Those stay at create defaults (`status=available`, `is_read=false`) rather than editable controls.
+- `BookFormValues` is a UI-oriented shape (string controls for pages / purchase price; no status / reading fields).
+  `bookFormDefaults` matches that shape. `bookFormModel.ts` defines `formValuesToBookCreate` (blank optionals to
+  `null`, forces create defaults for `status` / `is_read`), but `BookForm` still converts inline and does not call it.
+- `BookForm` still uses a single top-of-form validation string for empty title/authors; Field `error` wiring and an
+  error summary are not used. Publication date remains `type="date"` (cannot hold year-only lookup values). Tags trim
+  and drop empties on change only. Colocated `BookForm.test.tsx` is out of sync with the gated create fields (still
+  asserts Status / Read and defaults `status` / `is_read`).
+- `src/features/books/utils/isbn.ts`: `isValidIsbn10` / `isValidIsbn13` / `isValidIsbn` strip separators only for
+  checksum calculation. Colocated tests cover valid and invalid ISBN-10 (including an `X` check digit), formatted
+  values, and ISBN-13. These helpers are not yet called from `BookForm` or lookup.
+- Component / route tests cover basic field rendering, empty title/authors rejection, submit shaping, trim, cancel,
+  submitting disabled state, and new-book create/navigate/cancel paths (update them as the remaining form model and
+  lookup work lands).
 
-### New-book route (`/books/new`)
+## Remaining scope
 
-- Implement `/books/new` with manual entry and optional `GET /books/lookup?isbn=...`.
-- Preserve the submitted ISBN exactly for API validation; do not normalize it in the frontend.
+### Form model and create-field discipline
+
+- Finish the reusable form path: wire `formValuesToBookCreate` (or equivalent) from `BookForm` submit so FEAT-10 edit
+  can share the same values shape and conversion later; drop the duplicate inline `BookCreate` mapping.
+- Enforce documented 255-character title/authors limits, positive integer pages (`exclusiveMinimum: 0`), and accessible
+  field/summary errors (not only a single top-of-form string). Keep create defaults for `status` / `is_read` in the
+  conversion path; never use create/`PATCH` to simulate checkout, check-in, or mark-read.
+- Wire `isbn.ts` into lookup and create so invalid ISBN-10 / ISBN-13 check digits are rejected before the request.
+  Preserve separators in the submitted value and rely on the API for canonical normalization.
+- Define and test deterministic tag trimming, empty-tag removal, duplicate handling, and ordering (UI currently trims
+  and drops empties on change only).
+- Cover blank-optional-to-`null` conversion, year-only lookup `publication_date` passthrough as an editable API string
+  (do not invent month/day; replace or supplement today's `type="date"` control), and unconstrained `purchase_price`
+  number/`null` serialization without inventing currency fields. Align `BookForm.test.tsx` with the gated create UI.
+
+### ISBN lookup on `/books/new`
+
+- Add optional `GET /books/lookup?isbn=...` beside manual entry (reuse `useLookupBook` / `useBookLookup`). Preserve the
+  submitted ISBN exactly for API validation; do not normalize it in the frontend.
 - On successful lookup (`found: true`), populate an editable draft from `BookLookupDraft` (and retain the user's
   submitted ISBN string in the form). Support partial metadata.
 - Handle progress, cancel, `found: false`, string-detail `422`, `502`, `504`, unexpected lookup failure (including
   possible `500`), timeout, retry, and manual fallback. Always retain the ISBN and keep the form editable.
-- Create only after explicit confirmation with `POST /books`; prevent duplicate submissions; on `201`, update relevant
-  caches (active list, detail, dashboard per FEAT-03 / PLAN 7.5) and navigate to `/books/:bookId` for the new `id`.
-- Map create `422 detail[].loc` entries to fields; preserve input, focus an error summary, and link field errors.
+- Create only after explicit confirmation with `POST /books`. Map create `422 detail[].loc` entries to fields; preserve
+  input, focus an error summary, and link field errors.
 
 ## Acceptance criteria
 
-- Manual creation works without invoking lookup.
 - ISBN-10, ISBN-13, spaces, and hyphens are sent without frontend normalization assumptions.
-- Invalid ISBN-10 check digits are rejected before the backend's documented validation gap can accept them.
+- Invalid ISBN-10 check digits are rejected before the backend's documented validation gap can accept them (via wired
+  `isbn.ts` helpers).
 - `found: false`, provider failure (`502` / `504`), timeout, unexpected lookup errors, and string-detail `422` retain
   the ISBN and open editable manual entry.
 - Every imported value can be changed before save; lookup never persists a record.
 - Recoverable failures and backend validation preserve user input, focus an error summary, and link field errors.
-- The creation form cannot edit borrower, loan timestamp, or on-loan state.
 - Slow requests, cancellation, route changes, and duplicate clicks have deterministic tested behavior.
-- Checksum tests cover valid and invalid ISBN-10 values, including an `X` check digit, plus valid and invalid ISBN-13.
-- Success (`201` `BookRead`) updates relevant caches and navigates to the new detail page.
 - Tests cover blank-optional-to-`null` conversion, year-only `publication_date` passthrough, and unconstrained
   `purchase_price` number/`null` serialization without inventing currency fields.
+- Existing create success path (cache write + navigate to detail) and ISBN checksum unit tests stay green.
 - `make check` passes.
 
 ## Plan coverage

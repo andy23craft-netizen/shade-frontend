@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MemoryRouter } from 'react-router-dom'
 import { BooksPage } from './BooksPage'
-import type { BookList } from '../../../api/apiTypes'
+import type { BookList, BookRead } from '../../../api/apiTypes'
 import { renderWithProviders } from '../../../test/renderAppTree'
 
 const mockUseBooks = vi.fn()

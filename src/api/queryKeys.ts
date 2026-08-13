@@ -1,8 +1,7 @@
-/* queryKeys.ts */
-
 export const queryKeys = {
     books: {
         all: ['books'] as const,
+
         list: (
             includeDeleted = false,
         ) =>
@@ -12,8 +11,10 @@ export const queryKeys = {
                     includeDeleted,
                 },
             ] as const,
+
         detail: (id: string) =>
             ['books', id] as const,
+
         lookup: (isbn: string) =>
             [
                 'books',
@@ -21,9 +22,11 @@ export const queryKeys = {
                 isbn,
             ] as const,
     },
+
     loans: {
         all: ['loans'] as const,
     },
+
     dashboard: {
         all: ['dashboard'] as const,
     },

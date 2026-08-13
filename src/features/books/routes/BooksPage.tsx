@@ -1,5 +1,6 @@
-import { AppLink } from '../../../components/AppLink'
 import { Alert } from '../../../components/Alert'
+import { AppLink } from '../../../components/AppLink'
+import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { useBooks } from '../../../api/booksQueries'
@@ -83,13 +84,21 @@ export function BooksPage() {
                         ? booksQuery.error.message
                         : 'An unexpected error occurred.'}
                 </Alert>
+                <Button
+                    type="button"
+                    onClick={() => {
+                        void booksQuery.refetch()
+                    }}
+                >
+                    Retry
+                </Button>
             </section>
         )
     }
 
     const books = booksQuery.data.items
 
-    if (books.length === 0) {
+    if (booksQuery.data.total === 0) {
         return (
             <section className="route-page">
                 <h1>Books</h1>
