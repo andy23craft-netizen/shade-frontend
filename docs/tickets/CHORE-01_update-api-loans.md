@@ -16,11 +16,14 @@ The frontend currently only implements `GET /loans` without query parameters, li
 fetch book-specific loan history. Additionally, there is a routing inconsistency where `BookDetailsPage` links to
 `/books/${book.id}/checkin` (an unregistered route) instead of the correct `/checkin?bookId=...` pattern.
 
+Generated OpenAPI types in `src/api/generated/openapi.ts` are also behind the checked-in contract: they do not yet
+include the `book_id` query parameter or the `GET /loans/{id}` operation.
+
 ## Dependencies
 
-This ticket is a prerequisite for implementing FEAT-08 (check-in and loan history) cleanly. FEAT-08 requires
-book-specific loan filtering and individual loan access. Complete this work before or alongside FEAT-08
-implementation.
+This ticket is a prerequisite for FEAT-08 (check-in and loan history). FEAT-08 requires book-specific loan filtering
+and individual loan access. Complete and merge CHORE-01 before starting FEAT-08 implementation. Do not implement the
+two tickets concurrently.
 
 ## Contract References
 
@@ -29,9 +32,29 @@ implementation.
 - `docs/technical-reference/API-for-FE.md`: Lines 128-164 (checkout, check-in, loans behavior)
 - FEAT-08 acceptance criteria expect book-specific loan queries and individual loan access
 
+Confirm against a representative running backend `/openapi.json` when available; record drift as a blocker rather than
+inventing frontend semantics. After updating the checked-in OpenAPI (if needed), regenerate
+`src/api/generated/openapi.ts` with `yarn api:generate` and keep `yarn api:check` green.
+
 ## Current State vs Required Changes
 
-### 1. API Layer (`src/api/loansApi.ts`)
+### 1. Generated OpenAPI Types (`src/api/generated/openapi.ts`)
+
+**Current:**
+
+Generated types describe `GET /loans` with no query parameters and do not include `GET /loans/{id}`.
+
+**Required:**
+
+Regenerate from the checked-in OpenAPI document:
+
+```sh
+yarn api:generate
+```
+
+Do not hand-edit `src/api/generated/openapi.ts`. After regeneration, `yarn api:check` must pass.
+
+### 2. API Layer (`src/api/loansApi.ts`)
 
 **Current:**
 
@@ -59,6 +82,7 @@ export function createLoansApi(client: ReturnType<typeof createApiClient>) {
         async list(options: ListLoansOptions = {}): Promise<LoanList> {
             // Support optional ?book_id=... query parameter
             // Pattern: follow booksApi.list() with includeDeleted parameter
+            // Omit book_id when bookId is undefined; never send book_id=
         },
 
         async get(id: string, options: ApiCallOptions = {}): Promise<LoanRead> {
@@ -73,11 +97,12 @@ export function createLoansApi(client: ReturnType<typeof createApiClient>) {
 
 - Define `ListLoansOptions` interface extending `ApiCallOptions` with optional `bookId?: string`
 - Update `list()` signature to accept `ListLoansOptions`
-- Build query string with `book_id` parameter when `options.bookId` is provided (use `URLSearchParams`)
+- Build query string with `book_id` parameter only when `options.bookId` is a non-empty string
+  (use `URLSearchParams`)
 - Implement `get(id, options)` for fetching individual loans via `GET /loans/{id}`
 - Handle optional `signal` in both methods (follow existing `withSignal` pattern from `booksApi.ts`)
 
-### 2. Query Keys (`src/api/queryKeys.ts`)
+### 3. Query Keys (`src/api/queryKeys.ts`)
 
 **Current:**
 
@@ -110,7 +135,7 @@ loans: {
 - Add `detail(id: string)` factory returning `['loans', id]`
 - Ensure `all: ['loans']` prefix covers both list variants for invalidation purposes
 
-### 3. Query Hooks (`src/api/loansQueries.ts`)
+### 4. Query Hooks (`src/api/loansQueries.ts`)
 
 **Current:**
 
@@ -155,7 +180,7 @@ export function useLoan(id: string) {
 - Create `useLoan(id: string)` hook following the pattern of `useBook(id)`
 - Use `enabled: Boolean(id)` to prevent queries with empty/falsy IDs
 
-### 4. Book Details Page (`src/features/books/routes/BookDetailsPage.tsx`)
+### 5. Book Details Page (`src/features/books/routes/BookDetailsPage.tsx`)
 
 **Current (line 447):**
 
@@ -185,66 +210,68 @@ Fix routing to use the registered `/checkin` route with `bookId` query parameter
 
 - Update Check In link from `/books/${book.id}/checkin` to `/checkin?bookId=${encodeURIComponent(book.id)}`
 - Follow the same pattern used by the Check Out link (line 438)
-- Consider whether to add a link to view loan history for this book (e.g., `/loans?bookId=...`); defer to FEAT-08 for
-  full loan-history UI decisions
+- Do not add a loan-history link here; defer book-filtered history UI to FEAT-08
 
-### 5. Optional: Update FEAT-08 Ticket
+### 6. Update FEAT-08 Ticket
 
-**Consider:**
+After CHORE-01 merges, update `docs/tickets/FEAT-08_checkin-and-loan-history.md` so its baseline reflects completed
+prerequisite work (not concurrent work):
 
-Update `docs/tickets/FEAT-08_checkin-and-loan-history.md` to reference this ticket as a completed prerequisite if
-CHORE-01 is merged before FEAT-08 begins. If implementing concurrently, ensure changes don't conflict.
-
-Specifically:
-
-- Line 72: Update note about `useLoans` to mention it now supports optional `bookId` filtering
-- Line 108-109: Clarify that book-specific loan queries are now available via `useLoans({ bookId })`
+- Dependencies: state that CHORE-01 is complete and required before FEAT-08
+- Current baseline: note that `useLoans` supports optional `bookId` filtering, `loansApi.get` / `useLoan` exist, and
+  the Check In link uses `/checkin?bookId=...`
+- Remaining scope: treat book-specific loan queries as available via `useLoans({ bookId })`
 
 ## Files to Change
 
 ### Must Change
 
-1. **`src/api/loansApi.ts`**
+1. **`src/api/generated/openapi.ts`**
+   - Regenerate via `yarn api:generate` from `docs/technical-reference/openapi.json`
+   - Do not hand-edit; confirm with `yarn api:check`
+
+2. **`src/api/loansApi.ts`**
    - Add `ListLoansOptions` interface with optional `bookId?: string`
-   - Update `list()` to build query string with `book_id` parameter when provided
+   - Update `list()` to build query string with `book_id` only for non-empty `bookId`
    - Add `get(id, options)` method for `GET /loans/{id}`
 
-2. **`src/api/queryKeys.ts`**
+3. **`src/api/queryKeys.ts`**
    - Add `loans.list(bookId?: string)` factory
    - Add `loans.detail(id: string)` factory
 
-3. **`src/api/loansQueries.ts`**
+4. **`src/api/loansQueries.ts`**
    - Update `useLoans()` to accept optional `{ bookId?: string }` and pass through
    - Add `useLoan(id: string)` hook with `enabled: Boolean(id)`
 
-4. **`src/features/books/routes/BookDetailsPage.tsx`**
+5. **`src/features/books/routes/BookDetailsPage.tsx`**
    - Fix Check In link from `/books/${book.id}/checkin` to `/checkin?bookId=${encodeURIComponent(book.id)}`
 
 ### Should Update (Tests)
 
-5. **`src/api/loansApi.test.ts`**
+6. **`src/api/loansApi.test.ts`**
    - Add tests for `list({ bookId })` with query parameter encoding
-   - Add tests for `get(id)` covering success, 400 (malformed ID), 403, 404, and 422
+   - Add tests that omit `book_id` when `bookId` is undefined
+   - Add tests for `get(id)` covering success, 400 (malformed or empty ID), 403, 404, and 422
    - Add abort signal coverage for both methods
 
-6. **`src/api/serverStateQueries.test.tsx`** (or create separate `loansQueries.test.tsx`)
+7. **`src/api/serverStateQueries.test.tsx`** (or create separate `loansQueries.test.tsx`)
    - Add tests for `useLoans()` without bookId (queries all loans)
    - Add tests for `useLoans({ bookId })` (queries filtered loans)
    - Add tests for `useLoan(id)` with enabled/disabled states
 
-7. **`src/features/books/routes/BookDetailsPage.test.tsx`**
+8. **`src/features/books/routes/BookDetailsPage.test.tsx`**
    - Add test verifying Check In link uses `/checkin?bookId=...` format
    - Verify the link appears when `book.status === 'on_loan'` and `book.deletion_date === null`
 
 ### May Update (Documentation)
 
-8. **`docs/AGENTS.md`**
-   - Update line 260 (`loansApi.ts` description) to mention `bookId` parameter and `get(id)` method
-   - Update line 271 (`loansQueries.ts` description) to mention `useLoan` hook
+9. **`docs/AGENTS.md`**
+   - Update the `loansApi.ts` description to mention `bookId` parameter and `get(id)` method
+   - Update the `loansQueries.ts` description to mention `useLoan` hook
 
-9. **`docs/tickets/FEAT-08_checkin-and-loan-history.md`**
-   - Reference CHORE-01 as completed prerequisite (if this ticket merges first)
-   - Adjust "Current baseline" section to reflect updated API capabilities
+10. **`docs/tickets/FEAT-08_checkin-and-loan-history.md`**
+    - Reference CHORE-01 as a completed prerequisite (this ticket merges first)
+    - Adjust "Current baseline" and remaining-scope notes to reflect updated API capabilities
 
 ## Implementation Notes
 
@@ -256,47 +283,54 @@ Follow existing patterns from `booksApi.ts` and `booksQueries.ts`:
 - Use `withSignal` helper or equivalent pattern for optional `AbortSignal` handling
 - Export typed options interfaces (e.g., `ListLoansOptions`)
 - Document request fields with comments referencing OpenAPI paths
+- Prefer regenerating OpenAPI types over hand-editing `src/api/generated/openapi.ts`
 
 ### Error Handling
 
 The API returns specific errors for loan endpoints:
 
-- **400**: Malformed or empty GUID (loan ID or book_id query parameter)
+- **400**: Malformed or empty GUID (loan ID path, or `book_id` query parameter including `book_id=`)
 - **403**: Authentication failure
 - **404**: Unknown loan ID or unknown book_id (well-formed GUID but no matching resource)
 - **422**: Validation error (framework-level)
 
-Ensure error handling matches the patterns in `booksApi.ts` -- the `apiClient` already handles these status codes
-correctly, so no special error mapping is needed.
+The backend treats an empty-string `book_id` (`?book_id=` or `book_id=""`) as **400**, the same as other malformed or
+empty GUID identifiers. Frontend callers must omit the query parameter when there is no book filter; do not send an
+empty string. The `apiClient` already maps these status codes, so no special error mapping is needed in `loansApi`.
 
 ### Query Key Invalidation
 
-When FEAT-08 implements check-in and checkout mutations, those mutations should invalidate:
-
-- `queryKeys.loans.all` (invalidates all loan queries including filtered ones)
-- Consider whether to also invalidate `queryKeys.loans.detail(loanId)` when that loan is modified
-
-This follows the existing pattern where `invalidateBookCaches` invalidates `queryKeys.books.all` (which covers both
-list and detail queries via the prefix).
+Existing checkout/check-in mutations already invalidate `queryKeys.loans.all`. That prefix continues to cover filtered
+list and detail keys added here. FEAT-08 may later decide whether additional detail-key invalidation is useful; do not
+expand invalidation logic in this ticket.
 
 ### Optional bookId Type Safety
 
 The `bookId` parameter should be `string | undefined`, not `string | null`, to match JavaScript conventions and the
-absence of the query parameter. Treat `undefined` as "query all loans" and any non-empty string value as "filter by
-this book_id".
+absence of the query parameter:
+
+- `undefined` -- omit `book_id` and query all loans
+- non-empty string -- send `?book_id=<value>`
+- empty string (`''`) -- do not send; callers must not pass `''` because the backend returns **400** for empty
+  `book_id`
+
+`useLoan` already uses `enabled: Boolean(id)` so empty path IDs do not fire `GET /loans/{id}`.
 
 ## Acceptance Criteria
 
-1. `loansApi.list()` with no options queries `GET /loans` (existing behavior preserved)
-2. `loansApi.list({ bookId: 'some-id' })` queries `GET /loans?book_id=some-id`
-3. `loansApi.get(id)` queries `GET /loans/{id}` and returns `LoanRead`
-4. `useLoans()` with no args uses query key `['loans']` and fetches all loans
-5. `useLoans({ bookId: 'some-id' })` uses query key `['loans', { bookId: 'some-id' }]` and fetches filtered loans
-6. `useLoan(id)` uses query key `['loans', id]` and is disabled when `id` is falsy
-7. Check In link in `BookDetailsPage` navigates to `/checkin?bookId=...` (not `/books/.../checkin`)
-8. All API tests cover success, auth failures, validation errors, and abort signals
-9. Query hook tests verify correct query keys, enabled/disabled states, and signal passing
-10. `make check` passes (lint, typecheck, tests, build)
+1. `yarn api:generate` / `yarn api:check` succeed; generated types include `book_id` on `GET /loans` and
+   `GET /loans/{id}`
+2. `loansApi.list()` with no options queries `GET /loans` (existing behavior preserved)
+3. `loansApi.list({ bookId: 'some-id' })` queries `GET /loans?book_id=some-id`
+4. `loansApi.list()` / `list({ bookId: undefined })` never appends `book_id=` (empty string is a backend **400**)
+5. `loansApi.get(id)` queries `GET /loans/{id}` and returns `LoanRead`
+6. `useLoans()` with no args uses query key `['loans']` and fetches all loans
+7. `useLoans({ bookId: 'some-id' })` uses query key `['loans', { bookId: 'some-id' }]` and fetches filtered loans
+8. `useLoan(id)` uses query key `['loans', id]` and is disabled when `id` is falsy
+9. Check In link in `BookDetailsPage` navigates to `/checkin?bookId=...` (not `/books/.../checkin`)
+10. All API tests cover success, auth failures, validation errors, and abort signals
+11. Query hook tests verify correct query keys, enabled/disabled states, and signal passing
+12. `make check` passes (lint, typecheck, tests, build)
 
 ## Out of Scope
 
@@ -307,7 +341,8 @@ This ticket does **not** implement:
 - Any mutations or cache invalidation logic beyond what already exists
 - Changes to existing checkout or book-detail UI beyond the Check In link fix
 
-Those are covered by FEAT-08. This ticket only updates the API client layer and fixes the routing inconsistency.
+Those are covered by FEAT-08 after this ticket is complete. This ticket only updates the API client layer (including
+generated types) and fixes the routing inconsistency.
 
 ## Risks and Considerations
 
@@ -315,8 +350,10 @@ Those are covered by FEAT-08. This ticket only updates the API client layer and 
   optional and defaults to `{}`, preserving existing behavior.
 - **Query Key Structure**: Using `['loans', { bookId }]` vs `['loans']` ensures React Query treats them as separate
   cache entries. Invalidating `['loans']` (the prefix) will invalidate both.
-- **FEAT-08 Coordination**: If CHORE-01 and FEAT-08 are being worked on concurrently, coordinate to avoid merge
-  conflicts in `loansApi.ts`, `loansQueries.ts`, and query invalidation logic.
+- **Sequencing**: Complete CHORE-01 before FEAT-08 so FEAT-08 can consume filtered `useLoans`, `useLoan`, and the fixed
+  Check In deep-link without parallel edits to the same API files.
+- **Empty book_id**: Sending `book_id=` is a contract **400**. Guard omission in `loansApi.list` and avoid passing `''`
+  from hooks/call sites.
 
 ## Plan Coverage
 
