@@ -6,7 +6,10 @@ Loan one currently available book while preserving API lifecycle and loan-histor
 
 ## Dependencies
 
-FEAT-06.
+FEAT-06 is complete (ticket file removed). Reuse FEAT-03 typed checkout helpers and mutation/cache invalidation
+(`booksApi.checkout`, `pickCheckoutRequest`, `useCheckoutBook`, `src/api/dateTime.ts`). Do not invent a second checkout
+client, and never simulate checkout with generic `PATCH`. Check-in and loan history belong to FEAT-08; mark-read to
+FEAT-09; edit/delete to FEAT-10.
 
 ## Contract references
 
@@ -17,9 +20,6 @@ Treat these as complementary, not interchangeable:
 - `../technical-reference/API-for-FE.md` -- behavioral guidance OpenAPI does not fully express (checkout defaults,
   unvalidated temporal strings, soft-delete `404`, dual `409` causes with one detail string, and FE vs API ownership of
   loan state).
-
-Reuse FEAT-03 typed checkout helpers and mutation/cache invalidation. Do not invent a second checkout client, and never
-simulate checkout with generic `PATCH`.
 
 ### Documented contract facts for this ticket
 
@@ -51,26 +51,42 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - Recommended borrowing flow: FE collects borrower (and optional fields) → `POST .../checkout` → display returned
   `BookRead` state.
 
-## Scope
+## Current baseline
 
-- Implement `/checkout` with selection limited to active books whose `status` is `available` (from `GET /books` default
-  `include_deleted=false`). Soft-deleted and `on_loan` books must not be selectable or submittable through the current
-  UI.
-- Add a detail-page entry point for eligible books, preselecting that book safely (reject deep-links to soft-deleted,
-  missing, or non-available books with an accessible explanation and refresh path).
+Already in place and should be reused (not rebuilt):
+
+- Typed transport: `createBooksApi().checkout`, `CheckoutRequest` / `pickCheckoutRequest`, and `useCheckoutBook` (writes
+  returned `BookRead` into the detail cache and invalidates books list/detail, loans, and dashboard per PLAN 7.5).
+- Date/time helpers in `src/api/dateTime.ts` (`formatDateOnly`, `formatUtcIso8601`, `normalizeUtcIso8601`,
+  `isDateOnlyString`) with colocated unit tests; extend coverage for checkout form boundaries as needed.
+- Redaction already excludes `borrower` and `notes` from diagnostics (`src/api/apiRedaction.ts`).
+- Shell nav links to registered `/checkout` (`routeMetadata.checkout`); `CheckoutPage` is still a `RoutePlaceholder`.
+- Book details (`BookDetailsPage`) hides lifecycle actions for soft-deleted books and omits Check Out when
+  `status === 'on_loan'`. It currently links Check Out to `/books/:bookId/checkout`, which is not a registered route
+  (registered path is `/checkout`), and treats any non-deleted non-`on_loan` status as eligible rather than strictly
+  `status === 'available'`.
+
+## Remaining scope
+
+- Replace `CheckoutPage` placeholder: select from active books whose `status` is `available` (`GET /books` default
+  `include_deleted=false`). Soft-deleted and non-`available` books must not be selectable or submittable through the
+  current UI.
+- Wire the detail Check Out entry to the registered checkout flow with safe preselection (fix the
+  `/books/:bookId/checkout` href drift). Reject deep-links to soft-deleted, missing, or non-`available` books with an
+  accessible explanation and refresh path; tighten detail eligibility to `status === 'available'`.
 - Collect borrower (at most 255 characters), optional checkout timestamp, optional due date, and optional notes with
-  review/confirmation, in-flight duplicate prevention, success feedback, and accessible validation.
+  review/confirmation, in-flight duplicate prevention, success feedback, and accessible validation. Call
+  `useCheckoutBook` for the mutation (do not add a parallel client).
 - Map create-time `422 detail[].loc` entries to fields; preserve input, focus an error summary, and link field errors.
-- On success, update the returned `BookRead` in cache and invalidate collection, detail, loans, and dashboard queries
-  per FEAT-03 / PLAN 7.5.
 - On `404` or `409`, explain stale state, refetch affected book and loan data, and preserve safe form input. Treat both
   documented `409` causes as one user-facing conflict message matching the API detail.
-- Keep borrower names and notes out of logs and diagnostics.
+- Keep borrower names and notes out of feature logs and diagnostics (reuse existing redaction; do not reintroduce
+  private values in UI error text beyond what the API returns for display).
 
 ## Acceptance criteria
 
 - Soft-deleted, missing, and non-`available` books (including `on_loan`) cannot be selected or submitted through the
-  current UI.
+  current UI; detail Check Out is offered only for active `available` books and reaches the working checkout flow.
 - Empty checkout time omits `checked_out_at` so the server default is used rather than a browser-generated timestamp.
 - Submitted checkout timestamps are normalized UTC ISO 8601 values and due dates are `YYYY-MM-DD`; arbitrary strings are
   never sent to the API.
