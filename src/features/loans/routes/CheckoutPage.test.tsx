@@ -10,21 +10,24 @@ import {
     render,
     screen,
     waitFor,
+    within,
 } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
+import { ApiError } from '../../../api/apiErrors'
 import { CheckoutPage } from './CheckoutPage'
 
 const mockNavigate = vi.fn()
 const mockSetSearchParams = vi.fn()
-
 const mockMutate = vi.fn()
+const mockInvalidateQueries = vi.fn()
+const mockRefetchBooks = vi.fn()
 
 let mockBooksResponse: {
     items: Array<{
         id: string
         title: string
-        authors: string[]
+        authors: string
         status: string
         deletion_date: string | null
     }>
@@ -52,11 +55,26 @@ vi.mock('react-router-dom', async () => {
     }
 })
 
+vi.mock('@tanstack/react-query', async () => {
+    const actual =
+        await vi.importActual<
+            typeof import('@tanstack/react-query')
+        >('@tanstack/react-query')
+
+    return {
+        ...actual,
+        useQueryClient: () => ({
+            invalidateQueries: mockInvalidateQueries,
+        }),
+    }
+})
+
 vi.mock('../../../api/booksQueries', () => ({
     useBooks: () => ({
         data: mockBooksResponse,
         isPending: mockBooksPending,
         isError: mockBooksError,
+        refetch: mockRefetchBooks,
     }),
 
     useCheckoutBook: () => ({
@@ -66,7 +84,7 @@ vi.mock('../../../api/booksQueries', () => ({
 }))
 
 function renderPage(
-    initialEntry = '/books/checkout',
+    initialEntry = '/checkout',
 ) {
     window.history.pushState(
         {},
@@ -83,10 +101,28 @@ function renderPage(
     )
 }
 
+async function submitAndConfirmCheckout() {
+    fireEvent.click(
+        screen.getByRole('button', {
+            name: 'Check Out Book',
+        }),
+    )
+
+    const dialog = await screen.findByRole(
+        'dialog',
+    )
+
+    fireEvent.click(
+        within(dialog).getByRole('button', {
+            name: 'Confirm checkout',
+        }),
+    )
+}
+
 const availableBook = {
     id: 'book-1',
     title: 'The Left Hand of Darkness',
-    authors: ['Ursula K. Le Guin'],
+    authors: 'Ursula K. Le Guin',
     status: 'available',
     deletion_date: null,
 }
@@ -94,7 +130,7 @@ const availableBook = {
 const unavailableBook = {
     id: 'book-2',
     title: 'Dune',
-    authors: ['Frank Herbert'],
+    authors: 'Frank Herbert',
     status: 'on_loan',
     deletion_date: null,
 }
@@ -102,7 +138,7 @@ const unavailableBook = {
 const deletedBook = {
     id: 'book-3',
     title: 'Deleted Book',
-    authors: ['Someone'],
+    authors: 'Someone',
     status: 'available',
     deletion_date: '2026-08-01T00:00:00Z',
 }
@@ -112,6 +148,12 @@ describe('CheckoutPage', () => {
         vi.clearAllMocks()
 
         mockCheckoutPending = false
+        mockInvalidateQueries.mockResolvedValue(
+            undefined,
+        )
+        mockRefetchBooks.mockResolvedValue(
+            undefined,
+        )
 
         mockBooksResponse = {
             items: [
@@ -190,7 +232,7 @@ describe('CheckoutPage', () => {
     })
 
     it('clears the selected book from the search params', () => {
-        renderPage('/books/checkout?bookId=book-1')
+        renderPage('/checkout?bookId=book-1')
 
         fireEvent.change(
             screen.getByLabelText('Book'),
@@ -207,7 +249,7 @@ describe('CheckoutPage', () => {
     })
 
     it('requires a borrower before submitting', () => {
-        renderPage('/books/checkout?bookId=book-1')
+        renderPage('/checkout?bookId=book-1')
 
         fireEvent.submit(
             screen.getByRole('button', {
@@ -222,6 +264,9 @@ describe('CheckoutPage', () => {
         ).toBeInTheDocument()
 
         expect(mockMutate).not.toHaveBeenCalled()
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
     })
 
     it('does not submit when no eligible book is selected', () => {
@@ -251,8 +296,8 @@ describe('CheckoutPage', () => {
         ).toBeInTheDocument()
     })
 
-    it('submits the selected book and borrower', () => {
-        renderPage('/books/checkout?bookId=book-1')
+    it('opens confirmation with book and borrower before mutating', async () => {
+        renderPage('/checkout?bookId=book-1')
 
         fireEvent.change(
             screen.getByLabelText('Borrower'),
@@ -268,6 +313,91 @@ describe('CheckoutPage', () => {
                 name: 'Check Out Book',
             }),
         )
+
+        expect(mockMutate).not.toHaveBeenCalled()
+
+        const dialog = await screen.findByRole(
+            'dialog',
+        )
+
+        expect(
+            within(dialog).getByText(
+                /The Left Hand of Darkness/,
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(dialog).getByText(/Pat Smith/),
+        ).toBeInTheDocument()
+    })
+
+    it('cancels confirmation without mutating and keeps form values', async () => {
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Notes'),
+            {
+                target: {
+                    value: 'Handle with care',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Check Out Book',
+            }),
+        )
+
+        const dialog = await screen.findByRole(
+            'dialog',
+        )
+
+        fireEvent.click(
+            within(dialog).getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.queryByRole('dialog'),
+            ).not.toBeInTheDocument()
+        })
+
+        expect(mockMutate).not.toHaveBeenCalled()
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+
+        expect(
+            screen.getByLabelText('Notes'),
+        ).toHaveValue('Handle with care')
+    })
+
+    it('submits the selected book and borrower after confirmation', async () => {
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: '  Pat Smith  ',
+                },
+            },
+        )
+
+        await submitAndConfirmCheckout()
 
         expect(mockMutate).toHaveBeenCalledTimes(1)
 
@@ -285,8 +415,8 @@ describe('CheckoutPage', () => {
         )
     })
 
-    it('includes notes in the checkout request', () => {
-        renderPage('/books/checkout?bookId=book-1')
+    it('includes notes in the checkout request', async () => {
+        renderPage('/checkout?bookId=book-1')
 
         fireEvent.change(
             screen.getByLabelText('Borrower'),
@@ -306,11 +436,7 @@ describe('CheckoutPage', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check Out Book',
-            }),
-        )
+        await submitAndConfirmCheckout()
 
         expect(mockMutate).toHaveBeenCalledWith(
             {
@@ -327,8 +453,8 @@ describe('CheckoutPage', () => {
         )
     })
 
-    it('navigates to the book after successful checkout', () => {
-        renderPage('/books/checkout?bookId=book-1')
+    it('navigates to the book after successful checkout', async () => {
+        renderPage('/checkout?bookId=book-1')
 
         fireEvent.change(
             screen.getByLabelText('Borrower'),
@@ -339,11 +465,7 @@ describe('CheckoutPage', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check Out Book',
-            }),
-        )
+        await submitAndConfirmCheckout()
 
         const options =
             mockMutate.mock.calls[0][1]
@@ -355,8 +477,8 @@ describe('CheckoutPage', () => {
         )
     })
 
-    it('shows the checkout error when the mutation fails', async () => {
-        renderPage('/books/checkout?bookId=book-1')
+    it('maps 422 field errors into the summary and linked fields', async () => {
+        renderPage('/checkout?bookId=book-1')
 
         fireEvent.change(
             screen.getByLabelText('Borrower'),
@@ -367,28 +489,326 @@ describe('CheckoutPage', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check Out Book',
-            }),
-        )
+        await submitAndConfirmCheckout()
 
         const options =
             mockMutate.mock.calls[0][1]
 
         options.onError(
-            new Error(
-                'Book is already checked out.',
-            ),
+            new ApiError({
+                kind: 'validation',
+                status: 422,
+                message: 'Validation failed',
+                fieldErrors: [
+                    {
+                        field: 'borrower',
+                        message:
+                            'String should have at most 255 characters',
+                    },
+                    {
+                        field: 'due_at',
+                        message:
+                            'Invalid due date',
+                    },
+                ],
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('alert'),
+            ).toBeInTheDocument()
+        })
+
+        const summary = screen.getByRole('alert')
+
+        expect(
+            within(summary).getByRole('link', {
+                name: /Borrower:/,
+            }),
+        ).toHaveAttribute(
+            'href',
+            '#checkout-borrower',
+        )
+
+        expect(
+            within(summary).getByRole('link', {
+                name: /Due date:/,
+            }),
+        ).toHaveAttribute(
+            'href',
+            '#checkout-due-at',
+        )
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+    })
+
+    it('explains 409 when the book is already on loan and refetches', async () => {
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Notes'),
+            {
+                target: {
+                    value: 'Keep notes',
+                },
+            },
+        )
+
+        await submitAndConfirmCheckout()
+
+        const options =
+            mockMutate.mock.calls[0][1]
+
+        await options.onError(
+            new ApiError({
+                kind: 'http',
+                status: 409,
+                message:
+                    'Book is already checked out',
+                detail:
+                    'Book is already checked out',
+            }),
         )
 
         await waitFor(() => {
             expect(
                 screen.getByText(
-                    'Book is already checked out.',
+                    /Book is already checked out/,
                 ),
             ).toBeInTheDocument()
         })
+
+        expect(
+            mockInvalidateQueries,
+        ).toHaveBeenCalled()
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+
+        expect(
+            screen.getByLabelText('Notes'),
+        ).toHaveValue('Keep notes')
+
+        expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    it('explains 409 when an active loan already exists and refetches', async () => {
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        await submitAndConfirmCheckout()
+
+        const options =
+            mockMutate.mock.calls[0][1]
+
+        await options.onError(
+            new ApiError({
+                kind: 'http',
+                status: 409,
+                message:
+                    'Book is already checked out',
+                detail:
+                    'Book is already checked out',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByText(
+                    /state changed since this form was opened/,
+                ),
+            ).toBeInTheDocument()
+        })
+
+        expect(
+            mockInvalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            mockInvalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books', 'book-1'],
+        })
+
+        expect(
+            mockInvalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['loans'],
+        })
+    })
+
+    it('handles 404 for missing or soft-deleted targets without success navigation', async () => {
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        await submitAndConfirmCheckout()
+
+        const options =
+            mockMutate.mock.calls[0][1]
+
+        await options.onError(
+            new ApiError({
+                kind: 'http',
+                status: 404,
+                message: 'Book not found',
+                detail: 'Book not found',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByText(
+                    /missing or no longer available for checkout/,
+                ),
+            ).toBeInTheDocument()
+        })
+
+        expect(
+            mockInvalidateQueries,
+        ).toHaveBeenCalled()
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+
+        expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    it('preserves form values on network failure', async () => {
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        await submitAndConfirmCheckout()
+
+        const options =
+            mockMutate.mock.calls[0][1]
+
+        options.onError(
+            new ApiError({
+                kind: 'unreachable',
+                message:
+                    'The API could not be reached.',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByText(
+                    'The API could not be reached.',
+                ),
+            ).toBeInTheDocument()
+        })
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+
+        expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    it('offers retry when books cannot be loaded', () => {
+        mockBooksError = true
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'The available books could not be loaded.',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(
+            mockRefetchBooks,
+        ).toHaveBeenCalledTimes(1)
+    })
+
+    it('offers a refresh path for an unavailable deep-linked book', () => {
+        renderPage(
+            '/checkout?bookId=book-2',
+        )
+
+        expect(
+            screen.getByText(
+                /cannot be checked out because its current status is on_loan/,
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Refresh eligible books',
+            }),
+        )
+
+        expect(
+            mockRefetchBooks,
+        ).toHaveBeenCalledTimes(1)
+    })
+
+    it('offers a refresh path for a missing deep-linked book', () => {
+        renderPage(
+            '/checkout?bookId=missing-book',
+        )
+
+        expect(
+            screen.getByText(
+                'The requested book could not be found. Please select another book or refresh the eligible list.',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Refresh eligible books',
+            }),
+        )
+
+        expect(
+            mockRefetchBooks,
+        ).toHaveBeenCalledTimes(1)
     })
 
     it('shows a loading state while books are loading', () => {
@@ -398,18 +818,6 @@ describe('CheckoutPage', () => {
 
         expect(
             screen.getByText('Loading books…'),
-        ).toBeInTheDocument()
-    })
-
-    it('shows an error when books cannot be loaded', () => {
-        mockBooksError = true
-
-        renderPage()
-
-        expect(
-            screen.getByText(
-                'The available books could not be loaded.',
-            ),
         ).toBeInTheDocument()
     })
 
@@ -426,7 +834,7 @@ describe('CheckoutPage', () => {
     it('disables the checkout button while checkout is pending', () => {
         mockCheckoutPending = true
 
-        renderPage('/books/checkout?bookId=book-1')
+        renderPage('/checkout?bookId=book-1')
 
         expect(
             screen.getByRole('button', {
@@ -436,7 +844,7 @@ describe('CheckoutPage', () => {
     })
 
     it('clears the borrower error when the borrower is entered', () => {
-        renderPage('/books/checkout?bookId=book-1')
+        renderPage('/checkout?bookId=book-1')
 
         fireEvent.submit(
             screen.getByRole('button', {
@@ -464,7 +872,7 @@ describe('CheckoutPage', () => {
 
     it('shows a warning when the requested book is unavailable', () => {
         renderPage(
-            '/books/checkout?bookId=book-2',
+            '/checkout?bookId=book-2',
         )
 
         fireEvent.change(

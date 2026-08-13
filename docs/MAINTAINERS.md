@@ -174,19 +174,19 @@ recreate them.
 
 ### Feature Modules
 
-Thin route wrappers under `src/features/*/routes/` own paths for later tickets. Most still render `RoutePlaceholder`:
+Route ownership under `src/features/*/routes/`. Implemented product UI vs placeholders:
+
+Implemented: connection (`/settings/connection`), books list/detail/create (`/books`, `/books/:bookId`, `/books/new`),
+and checkout (`/checkout` via `CheckoutPage` + `checkoutModel`, FEAT-07).
+
+Still `RoutePlaceholder` (owned by later tickets):
 
 - `src/features/dashboard/routes/DashboardPage.tsx` (`/`, FEAT-11)
-- `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04)
-- `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05)
-- `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04)
 - `src/features/books/routes/EditBookPage.tsx` (`/books/:bookId/edit`, FEAT-10)
 - `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`, FEAT-10)
 - `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`, FEAT-10)
-- `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07)
 - `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
 - `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
-- `src/features/connection/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02; mounts `ConnectionScreen`)
 
 Connection feature (FEAT-02, complete):
 

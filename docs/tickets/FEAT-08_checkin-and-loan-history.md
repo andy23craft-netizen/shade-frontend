@@ -6,7 +6,12 @@ Return active loans and present preserved active and returned borrowing history.
 
 ## Dependencies
 
-FEAT-07.
+FEAT-07 is complete (ticket file removed). Reuse FEAT-03 typed check-in and loan helpers and mutation/cache
+invalidation (`booksApi.checkin`, `pickCheckinRequest`, `useCheckinBook`, `loansApi.list` / `useLoans`,
+`src/api/dateTime.ts`). Reuse FEAT-07 checkout patterns (`ConfirmationDialog`, `?bookId=` deep-link, Field-linked
+`422`, stale `404`/`409` refetch). Do not invent a second check-in client, and never simulate return with generic
+`PATCH`. There are no create/update/delete loan HTTP endpoints; loans are created by checkout and completed by
+check-in. Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard metrics UI is FEAT-11.
 
 ## Contract references
 
@@ -18,10 +23,6 @@ Treat these as complementary, not interchangeable:
 - `../technical-reference/API-for-FE.md` -- behavioral guidance OpenAPI does not fully express (optional check-in body
   and UTC default, conflict based on active loan rather than book `status` alone, soft-delete `404`, lexical loan
   ordering, and FE vs API ownership of loan state).
-
-Reuse FEAT-03 typed check-in and loan helpers and mutation/cache invalidation. Do not invent a second check-in client,
-and never simulate return with generic `PATCH`. There are no create/update/delete loan HTTP endpoints; loans are created
-by checkout and completed by check-in.
 
 ### Documented contract facts for this ticket
 
@@ -46,8 +47,9 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - Soft-delete and loan axes are independent: deleting an on-loan book leaves its active loan open; restore the book
   before check-in can complete that loan. Do not offer check-in for soft-deleted books, and do not use `PATCH` to clear
   `status` / `borrower` / `datetime_loaned_out`.
-- `GET /loans` returns `LoanList` `{ items, total }` -- the full result set with no filtering or pagination. Soft-deleted
-  books' historical (and still-open) loans remain in this list. Auth failure is `403`; there is no loan-specific `404`.
+- `GET /loans` returns `LoanList` `{ items, total }` -- the full result set with no filtering or pagination.
+  Soft-deleted books' historical (and still-open) loans remain in this list. Auth failure is `403`; there is no
+  loan-specific `404`.
 - `LoanRead` required fields: `id`, `book_id`, `borrower`, `checked_out_at`, `created_date`, `last_updated_date`.
   Optional nullable: `due_at`, `notes`, `returned_at`. Active loan ⇒ `returned_at: null`.
 - Loans are ordered by stored `checked_out_at` text descending. That order is chronological only when clients used one
@@ -60,26 +62,49 @@ Confirm against a representative running backend `/openapi.json` before locking 
   `BookRead` state. Temporal fields on the wire are plain strings; the API does not validate format, timezone, or
   ordering. Malformed stored loan timestamps can later surface as unhandled `500` on borrowing statistics.
 
-## Scope
+## Current baseline
+
+Already in place and should be reused (not rebuilt):
+
+- Typed transport: `createBooksApi().checkin` (optional body; omit when `request` is `undefined`), `CheckinRequest` /
+  `pickCheckinRequest`, and `useCheckinBook` (writes returned `BookRead` into the detail cache and invalidates books
+  list/detail, loans, and dashboard per PLAN 7.5 on success).
+- Typed loans list: `createLoansApi().list` / `useLoans` (`GET /loans`, key `queryKeys.loans.all`).
+- Date/time helpers in `src/api/dateTime.ts` with colocated unit tests; checkout form conversion coverage lives in
+  `src/features/loans/checkoutModel.test.ts` (reuse the same UTC ISO / date-only patterns for optional return time).
+- Redaction already excludes `borrower` and `notes` from diagnostics (`src/api/apiRedaction.ts`).
+- Shell nav links to registered `/checkin` and `/loans` (`routeMetadata.checkin` / `routeMetadata.loans`);
+  `CheckinPage` and `LoansPage` are still `RoutePlaceholder`s.
+- Book details (`BookDetailsPage`) hides lifecycle actions for soft-deleted books and shows Check In when
+  `status === 'on_loan'`. It currently links Check In to `/books/:bookId/checkin`, which is not a registered route
+  (registered path is `/checkin`), and treats eligibility from book `status` alone rather than an active loan
+  (`returned_at=null`).
+- FEAT-07 `/checkout` is the pattern to mirror: eligible selection, `?bookId=` deep-link with refresh, confirmation
+  before mutate, Field-linked `422`, and `404`/`409` stale-state refetch with preserved form input.
+
+## Remaining scope
 
 ### Check-in (`/checkin`)
 
-- Implement `/checkin` with selection restricted to non-deleted books that have an active loan (`returned_at=null`),
-  not merely a book `status` of `on_loan`. Soft-deleted and books without an active loan must not be selectable or
-  submittable through the current UI.
-- Add a detail-page entry point for eligible books, preselecting that book safely (reject deep-links to soft-deleted,
-  missing, or non-active-loan books with an accessible explanation and refresh path).
-- Support optional return timestamp with review/confirmation, in-flight duplicate prevention, success feedback, and
-  accessible validation. Serialize blank return time as omitted / `{}` / `null` body so the server default is used.
-- On success, update the returned `BookRead` in cache and invalidate collection, detail, loans, and dashboard queries
-  per FEAT-03 / PLAN 7.5.
+- Replace `CheckinPage` placeholder: selection restricted to non-deleted books that have an active loan
+  (`returned_at=null` from `useLoans`), not merely a book `status` of `on_loan`. Soft-deleted and books without an
+  active loan must not be selectable or submittable through the current UI.
+- Wire the detail Check In entry to the registered check-in flow with safe preselection (fix the
+  `/books/:bookId/checkin` href drift; prefer `/checkin?bookId=`). Reject deep-links to soft-deleted, missing, or
+  non-active-loan books with an accessible explanation and refresh path; tighten detail eligibility to active-loan
+  presence (not `status` alone).
+- Support optional return timestamp with review/confirmation (`ConfirmationDialog`), in-flight duplicate prevention,
+  success feedback, and accessible validation. Serialize blank return time as omitted / `{}` / `null` body so the
+  server default is used. Call `useCheckinBook` for the mutation (do not add a parallel client).
+- Map check-in `422 detail[].loc` entries to fields; preserve input, focus an error summary, and link field errors.
 - On `404` or `409`, explain stale state, refetch affected book and loan data, and avoid unsafe resubmission. Treat the
   documented `409` detail as the user-facing conflict message.
-- Keep loan notes out of logs and diagnostics where they may appear on joined loan context.
+- Keep loan notes out of feature logs and diagnostics (reuse existing redaction).
 
 ### Loan history (`/loans`)
 
-- Implement `/loans` from `GET /loans` plus client-side joins to book metadata.
+- Replace `LoansPage` placeholder: implement from `useLoans` plus client-side joins to book metadata (`useBooks` and a
+  durable fallback for soft-deleted / missing books).
 - Derive active and returned views from `returned_at` nullability; do not invent server-side filter or pagination
   parameters.
 - Preserve the API's lexical `checked_out_at`-descending order when rendering.
@@ -93,10 +118,11 @@ Confirm against a representative running backend `/openapi.json` before locking 
 ## Acceptance criteria
 
 - A non-deleted book with an active loan remains eligible even if its book `status` is inconsistent; a soft-deleted
-  book or a book without an active loan is not eligible.
+  book or a book without an active loan is not eligible. Detail Check In reaches the working `/checkin` flow.
 - Empty return time omits `returned_at` (or sends `{}` / `null` body) so the server default is used rather than a
   browser-generated timestamp.
 - Submitted custom return timestamps are normalized UTC ISO 8601 values; arbitrary strings are never sent to the API.
+- A confirmation step runs before `POST /books/{id}/checkin`; cancel leaves form values intact and does not mutate.
 - A `404` means the selected book is missing or soft-deleted; handle with refetch and safe navigation (not as a
   successful return).
 - A `409` with detail `Book is not checked out` explains that no active checkout exists, refetches state, and avoids
@@ -108,8 +134,8 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - Missing book metadata does not hide or crash a loan-history record.
 - Date-only and timestamp behavior is tested around timezone and local-day boundaries.
 - Duplicate clicks cause one mutation.
-- Component/integration tests cover empty active/returned groups, success (`200` `BookRead`), `404`, `409`, stale
-  joins, network failure, and cache invalidation.
+- Component/integration tests cover empty active/returned groups, success (`200` `BookRead`), field-mapped `422`,
+  `404`, `409`, stale joins, network failure, and cache invalidation.
 - `make check` passes.
 
 ## Plan coverage
