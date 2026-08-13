@@ -30,7 +30,7 @@ export const routeMetadata = {
     heading: 'Check Out',
   },
   checkin: {
-    path: '/checkin',
+    path: '/books/:bookId/checkin',
     title: 'Check In',
     heading: 'Check In',
   },

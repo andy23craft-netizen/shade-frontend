@@ -22,9 +22,9 @@ import {
 
 export function CheckinPage() {
     const navigate = useNavigate()
-    const { id } = useParams()
+    const { bookId } = useParams()
 
-    const bookQuery = useBook(id ?? '')
+    const bookQuery = useBook(bookId ?? '')
     const checkinBook = useCheckinBook()
 
     const [
@@ -44,7 +44,7 @@ export function CheckinPage() {
         setFormError,
     ] = useState<string | null>(null)
 
-    if (!id) {
+    if (!bookId) {
         return (
             <section className="route-page">
                 <Alert
@@ -64,7 +64,7 @@ export function CheckinPage() {
         )
     }
 
-    const bookId = id
+    const checkedInBookId = bookId
 
     if (bookQuery.isPending) {
         return (
@@ -166,8 +166,8 @@ export function CheckinPage() {
 
         checkinBook.mutate(
             {
-                id: bookId,
-                request,
+                id: checkedInBookId,
+                request, checkinFormValuesToRequest(values),
             },
             {
                 onSuccess: () => {

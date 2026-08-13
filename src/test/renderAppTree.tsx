@@ -23,10 +23,27 @@ export function mockReachableApi() {
                             ? input.toString()
                             : input.url
 
+                const pathname = new URL(url).pathname
+
                 if (
-                    new URL(url).pathname ===
-                    '/books'
+                    pathname === '/books'
                 ) {
+                    return new Response(
+                        JSON.stringify({
+                            items: [],
+                            total: 0,
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
+                if (pathname === '/loans') {
                     return new Response(
                         JSON.stringify({
                             items: [],
