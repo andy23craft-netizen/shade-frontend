@@ -21,7 +21,7 @@ const mockMutate = vi.fn()
 const mockRefetch = vi.fn()
 
 const lookupState = {
-    data: null as null | {
+    data: undefined as undefined | {
         found: boolean
         draft: null | {
             isbn13: string
@@ -62,6 +62,35 @@ vi.mock('../../../api/booksQueries', () => ({
     }),
 }))
 
+vi.mock('../../scanning/IsbnCameraScanner', () => ({
+    IsbnCameraScanner: ({
+                            onDetected,
+                            onCancel,
+                        }: {
+        onDetected: (isbn: string) => void
+        onCancel: () => void
+    }) => (
+        <div>
+            <button
+                type="button"
+                onClick={() =>
+                    onDetected('9780441172719')
+                }
+            >
+                Simulate ISBN scan
+            </button>
+
+            <button
+                type="button"
+                onClick={onCancel}
+            >
+                Cancel scanner
+            </button>
+        </div>
+    ),
+}))
+
+
 function renderNewBookPage() {
     return render(
         <MemoryRouter>
@@ -75,7 +104,7 @@ describe('NewBookPage', () => {
         mockNavigate.mockReset()
         mockMutate.mockReset()
         mockRefetch.mockReset()
-        lookupState.data = null
+        lookupState.data = undefined
         lookupState.isPending = false
         lookupState.isFetching = false
         lookupState.isError = false
@@ -234,6 +263,102 @@ describe('NewBookPage', () => {
         expect(
             screen.getByLabelText('ISBN'),
         ).toHaveValue('')
+    })
+
+    it('hands a scanned ISBN into the existing lookup flow', async () => {
+        renderNewBookPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Scan ISBN',
+            }),
+        )
+
+        expect(
+            await screen.findByRole('button', {
+                name: 'Simulate ISBN scan',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Simulate ISBN scan',
+            }),
+        )
+
+        expect(
+            screen.getByLabelText('Lookup ISBN'),
+        ).toHaveValue('9780441172719')
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Simulate ISBN scan',
+            }),
+        ).not.toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Look Up ISBN',
+            }),
+        )
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('9780441172719')
+    })
+
+    it('hands a hardware-scanned ISBN into the existing lookup flow', () => {
+        renderNewBookPage()
+
+        for (const key of '9780441172719') {
+            fireEvent.keyDown(window, { key })
+        }
+
+        fireEvent.keyDown(window, {
+            key: 'Enter',
+        })
+
+        expect(
+            screen.getByLabelText('Lookup ISBN'),
+        ).toHaveValue('9780441172719')
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('9780441172719')
+
+        expect(mockMutate).not.toHaveBeenCalled()
+    })
+
+    it('closes the scanner when scanner cancel is clicked', () => {
+        renderNewBookPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Scan ISBN',
+            }),
+        )
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Simulate ISBN scan',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel scanner',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Simulate ISBN scan',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('Lookup ISBN'),
+        ).toBeInTheDocument()
     })
 
     it('applies lookup metadata without replacing the typed ISBN', () => {

@@ -8,13 +8,13 @@ import {
     BrowserMultiFormatReader,
 } from '@zxing/browser'
 
-import { Button } from '../../../components/Button'
+import { Button } from '../../components/Button'
 export interface IsbnScannerProps {
     onDetected: (isbn: string) => void
     onCancel: () => void
 }
 
-export function IsbnScanner({
+export function IsbnCameraScanner({
                                 onDetected,
                                 onCancel,
                             }: IsbnScannerProps) {
@@ -25,6 +25,9 @@ export function IsbnScanner({
         useRef<{
             stop: () => void
         } | null>(null)
+
+    const mediaTracksRef =
+        useRef<MediaStreamTrack[]>([])
 
     const [
         error,
@@ -45,6 +48,20 @@ export function IsbnScanner({
 
         let cancelled = false
 
+        function handleMediaTrackEnded(): void {
+            for (const track of mediaTracksRef.current) {
+                track.removeEventListener(
+                    'ended',
+                    handleMediaTrackEnded,
+                )
+            }
+
+            mediaTracksRef.current = []
+
+            controlsRef.current?.stop()
+            controlsRef.current = null
+        }
+        
         async function startScanner() {
             if (!videoRef.current) {
                 return
@@ -83,10 +100,34 @@ export function IsbnScanner({
                             }
 
                             hasDetectedRef.current = true
+                            controlsRef.current?.stop()
+                            controlsRef.current = null
                             onDetected(isbn)
                         },
                     )
                 controlsRef.current = controls
+
+                const stream =
+                    videoRef.current?.srcObject
+
+                if (
+                    stream &&
+                    typeof stream === 'object' &&
+                    'getTracks' in stream &&
+                    typeof stream.getTracks === 'function'
+                ) {
+                    const tracks = stream.getTracks()
+
+                    mediaTracksRef.current = tracks
+
+                    for (const track of tracks) {
+                        track.addEventListener(
+                            'ended',
+                            handleMediaTrackEnded,
+                        )
+                    }
+                }
+
                 if (cancelled) {
                     return
                 }
@@ -130,8 +171,7 @@ export function IsbnScanner({
 
         return () => {
             cancelled = true
-            controlsRef.current?.stop()
-            controlsRef.current = null
+            handleMediaTrackEnded()
         }
     }, [onDetected])
 

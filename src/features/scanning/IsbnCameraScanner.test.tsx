@@ -11,12 +11,25 @@ import {
     vi,
 } from 'vitest'
 
-import { IsbnScanner } from './IsbnScanner'
+import { IsbnCameraScanner } from './IsbnCameraScanner'
 
 const mockDecodeFromConstraints =
     vi.fn()
 
 const mockStop = vi.fn()
+
+function createMockMediaStream() {
+    const track = new EventTarget() as MediaStreamTrack
+
+    const stream = {
+        getTracks: vi.fn(() => [track]),
+    } as unknown as MediaStream
+
+    return {
+        stream,
+        track,
+    }
+}
 
 vi.mock('@zxing/browser', () => ({
     BrowserMultiFormatReader:
@@ -43,7 +56,7 @@ describe('IsbnScanner', () => {
         const onCancel = vi.fn()
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={onDetected}
                 onCancel={onCancel}
             />,
@@ -79,7 +92,7 @@ describe('IsbnScanner', () => {
         const onCancel = vi.fn()
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={onDetected}
                 onCancel={onCancel}
             />,
@@ -103,7 +116,7 @@ describe('IsbnScanner', () => {
         )
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={vi.fn()}
                 onCancel={vi.fn()}
             />,
@@ -162,7 +175,7 @@ describe('IsbnScanner', () => {
         const onDetected = vi.fn()
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={onDetected}
                 onCancel={vi.fn()}
             />,
@@ -183,6 +196,8 @@ describe('IsbnScanner', () => {
         expect(onDetected).toHaveBeenCalledWith(
             '978-0-441-17271-9',
         )
+        expect(mockStop).toHaveBeenCalledOnce()
+
     })
 
     it('ignores an empty scan result', async () => {
@@ -209,7 +224,7 @@ describe('IsbnScanner', () => {
         const onDetected = vi.fn()
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={onDetected}
                 onCancel={vi.fn()}
             />,
@@ -254,7 +269,7 @@ describe('IsbnScanner', () => {
         const onDetected = vi.fn()
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={onDetected}
                 onCancel={vi.fn()}
             />,
@@ -291,7 +306,7 @@ describe('IsbnScanner', () => {
         )
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={vi.fn()}
                 onCancel={vi.fn()}
             />,
@@ -313,7 +328,7 @@ describe('IsbnScanner', () => {
         )
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={vi.fn()}
                 onCancel={vi.fn()}
             />,
@@ -332,7 +347,7 @@ describe('IsbnScanner', () => {
         )
 
         render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={vi.fn()}
                 onCancel={vi.fn()}
             />,
@@ -353,7 +368,7 @@ describe('IsbnScanner', () => {
         )
 
         const { unmount } = render(
-            <IsbnScanner
+            <IsbnCameraScanner
                 onDetected={vi.fn()}
                 onCancel={vi.fn()}
             />,
@@ -366,6 +381,47 @@ describe('IsbnScanner', () => {
         })
 
         unmount()
+
+        expect(mockStop).toHaveBeenCalledOnce()
+    })
+
+    it('stops the scanner when the media track ends', async () => {
+        const {
+            stream,
+            track,
+        } = createMockMediaStream()
+
+        mockDecodeFromConstraints.mockImplementation(
+            async (
+                _constraints,
+                videoElement,
+            ) => {
+                ;(
+                    videoElement as HTMLVideoElement
+                ).srcObject = stream
+
+                return {
+                    stop: mockStop,
+                }
+            },
+        )
+
+        render(
+            <IsbnCameraScanner
+                onDetected={vi.fn()}
+                onCancel={vi.fn()}
+            />,
+        )
+
+        await vi.waitFor(() => {
+            expect(
+                mockDecodeFromConstraints,
+            ).toHaveBeenCalledOnce()
+        })
+
+        track.dispatchEvent(
+            new Event('ended'),
+        )
 
         expect(mockStop).toHaveBeenCalledOnce()
     })

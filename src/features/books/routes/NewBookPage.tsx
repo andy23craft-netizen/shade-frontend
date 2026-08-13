@@ -1,4 +1,6 @@
 import {
+    lazy,
+    Suspense,
     useState,
 } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -31,7 +33,7 @@ import type {
     BookFormField,
     BookFormFieldErrors,
 } from '../components/bookFormModel'
-import { IsbnScanner } from '../components/IsbnScanner'
+import { useHardwareIsbnScanner } from '../../scanning/useHardwareIsbnScanner'
 
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
@@ -48,6 +50,15 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'purchase_price',
     'notes',
 ])
+
+const IsbnCameraScanner = lazy(
+    () =>
+        import('../../scanning/IsbnCameraScanner').then(
+            (module) => ({
+                default: module.IsbnCameraScanner,
+            }),
+        ),
+)
 
 function mapCreateFieldErrors(
     fieldErrors: readonly ApiFieldError[],
@@ -151,11 +162,20 @@ export function NewBookPage() {
     ) {
         setIsScannerOpen(false)
         setLookupInput(isbn)
-        setLookupClientError(null)
+        startLookup(isbn)
     }
 
-    function handleLookupSubmit() {
-        const isbn = lookupInput.trim()
+    useHardwareIsbnScanner({
+        enabled:
+            !isScannerOpen &&
+            !lookup.isFetching,
+        onDetected: handleIsbnDetected,
+    })
+
+    function startLookup(
+        isbnInput: string,
+    ) {
+        const isbn = isbnInput.trim()
 
         if (!isbn) {
             setLookupClientError(
@@ -172,6 +192,7 @@ export function NewBookPage() {
         }
 
         setLookupClientError(null)
+
         setValues((current) => ({
             ...current,
             isbn13: isbn,
@@ -183,6 +204,10 @@ export function NewBookPage() {
         }
 
         setActiveLookupIsbn(isbn)
+    }
+
+    function handleLookupSubmit() {
+        startLookup(lookupInput)
     }
 
     function cancelLookup() {
@@ -352,14 +377,18 @@ export function NewBookPage() {
                 </div>
 
                 {isScannerOpen ? (
-                    <IsbnScanner
-                        onDetected={
-                            handleIsbnDetected
+                    <Suspense
+                        fallback={
+                            <LoadingState label="Loading camera scanner…" />
                         }
-                        onCancel={() =>
-                            setIsScannerOpen(false)
-                        }
-                    />
+                    >
+                        <IsbnCameraScanner
+                            onDetected={handleIsbnDetected}
+                            onCancel={() =>
+                                setIsScannerOpen(false)
+                            }
+                        />
+                    </Suspense>
                 ) : null}
                 
                 {lookup.isFetching ? (
