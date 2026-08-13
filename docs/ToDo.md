@@ -3,8 +3,8 @@
 * [ ] Read helpful docs:
   * [ ] Read `docs/technical-reference/basic-concepts.md`
 * [ ] Implement the feature docs:
-  * [ ] Complete feature ticket `docs/tickets/FEAT-04_active-collection-and-book-details.md`.
-  * [ ] Complete feature ticket `docs/tickets/FEAT-05_book-form-and-creation.md`.
+  * [x] Complete feature ticket `docs/tickets/FEAT-04_active-collection-and-book-details.md`.
+  * [x] Complete feature ticket `docs/tickets/FEAT-05_book-form-and-creation.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-06_isbn-scanner-capture.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-07_checkout-workflow.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-08_checkin-and-loan-history.md`.

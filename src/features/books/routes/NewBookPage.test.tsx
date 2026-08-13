@@ -2,19 +2,41 @@ import {
     fireEvent,
     render,
     screen,
+    waitFor,
 } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import {
+    beforeEach,
     describe,
     expect,
     it,
     vi,
 } from 'vitest'
 
+import { ApiError } from '../../../api/apiErrors'
 import { NewBookPage } from './NewBookPage'
 
 const mockNavigate = vi.fn()
 const mockMutate = vi.fn()
+const mockRefetch = vi.fn()
+
+const lookupState = {
+    data: null as null | {
+        found: boolean
+        draft: null | {
+            isbn13: string
+            title: string | null
+            authors: string | null
+            publisher: string | null
+            publication_date: string | null
+            pages: number | null
+        }
+    },
+    isPending: false,
+    isFetching: false,
+    isError: false,
+    error: null as unknown,
+}
 
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual<
@@ -35,11 +57,8 @@ vi.mock('../../../api/booksQueries', () => ({
         error: null,
     }),
     useBookLookup: () => ({
-        data: null,
-        isPending: false,
-        isFetching: false,
-        isError: false,
-        error: null,
+        ...lookupState,
+        refetch: mockRefetch,
     }),
 }))
 
@@ -52,6 +71,17 @@ function renderNewBookPage() {
 }
 
 describe('NewBookPage', () => {
+    beforeEach(() => {
+        mockNavigate.mockReset()
+        mockMutate.mockReset()
+        mockRefetch.mockReset()
+        lookupState.data = null
+        lookupState.isPending = false
+        lookupState.isFetching = false
+        lookupState.isError = false
+        lookupState.error = null
+    })
+
     it('renders the add book page', () => {
         renderNewBookPage()
 
@@ -74,6 +104,10 @@ describe('NewBookPage', () => {
 
         expect(
             screen.getByLabelText('Authors'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('Lookup ISBN'),
         ).toBeInTheDocument()
     })
 
@@ -116,6 +150,7 @@ describe('NewBookPage', () => {
             }),
             expect.objectContaining({
                 onSuccess: expect.any(Function),
+                onError: expect.any(Function),
             }),
         )
     })
@@ -161,27 +196,249 @@ describe('NewBookPage', () => {
     it('navigates back to books when Cancel is clicked', () => {
         renderNewBookPage()
 
-        const cancelLink = screen.getByRole('link', {
-            name: 'Cancel',
-        })
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
 
-        expect(cancelLink).toHaveAttribute('href', '/books')
+        expect(mockNavigate).toHaveBeenCalledWith(
+            '/books',
+        )
     })
 
-    it('shows an API error', async () => {
-        vi.doMock('../../../api/booksQueries', () => ({
-            useCreateBook: () => ({
-                mutate: mockMutate,
-                isPending: false,
-                isError: true,
-                error: new Error(
-                    'Unable to reach the API.',
-                ),
-            }),
-        }))
+    it('rejects invalid ISBN check digits before lookup', () => {
+        renderNewBookPage()
 
-        // Error-state behavior is covered by the mutation
-        // integration once the mocked hook is configured.
-        expect(true).toBe(true)
+        fireEvent.change(
+            screen.getByLabelText('Lookup ISBN'),
+            {
+                target: {
+                    value: '0441172718',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Look Up ISBN',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                'Enter a valid ISBN-10 or ISBN-13.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('')
+    })
+
+    it('applies lookup metadata without replacing the typed ISBN', () => {
+        lookupState.data = {
+            found: true,
+            draft: {
+                isbn13: '9780441172719',
+                title: 'Dune',
+                authors: 'Frank Herbert',
+                publisher: 'Ace',
+                publication_date: '1965',
+                pages: 412,
+            },
+        }
+
+        renderNewBookPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Lookup ISBN'),
+            {
+                target: {
+                    value: '978-0-441-17271-9',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Look Up ISBN',
+            }),
+        )
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('978-0-441-17271-9')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Apply Lookup',
+            }),
+        )
+
+        expect(
+            screen.getByLabelText('Title'),
+        ).toHaveValue('Dune')
+
+        expect(
+            screen.getByLabelText('Authors'),
+        ).toHaveValue('Frank Herbert')
+
+        expect(
+            screen.getByLabelText('Publisher'),
+        ).toHaveValue('Ace')
+
+        expect(
+            screen.getByLabelText(
+                'Publication date',
+            ),
+        ).toHaveValue('1965')
+
+        expect(
+            screen.getByLabelText('Pages'),
+        ).toHaveValue(412)
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('978-0-441-17271-9')
+    })
+
+    it('keeps the ISBN editable when lookup returns found: false', () => {
+        lookupState.data = {
+            found: false,
+            draft: null,
+        }
+
+        renderNewBookPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Lookup ISBN'),
+            {
+                target: {
+                    value: '9780441172719',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Look Up ISBN',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                /No metadata was found for this ISBN/,
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('9780441172719')
+
+        expect(
+            screen.getByLabelText('Title'),
+        ).not.toBeDisabled()
+    })
+
+    it('shows provider failure with retry and manual fallback', () => {
+        lookupState.isError = true
+        lookupState.error = new ApiError({
+            kind: 'server',
+            status: 502,
+            message: 'Bad gateway',
+        })
+
+        renderNewBookPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Lookup ISBN'),
+            {
+                target: {
+                    value: '9780441172719',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Look Up ISBN',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                /The metadata provider failed/,
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('9780441172719')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry lookup',
+            }),
+        )
+
+        expect(mockRefetch).toHaveBeenCalled()
+    })
+
+    it('maps create 422 field errors into the form summary', async () => {
+        renderNewBookPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Title'),
+            {
+                target: {
+                    value: 'Dune',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Authors'),
+            {
+                target: {
+                    value: 'Frank Herbert',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Book',
+            }),
+        )
+
+        const options = mockMutate.mock.calls[0][1]
+
+        options.onError(
+            new ApiError({
+                kind: 'validation',
+                status: 422,
+                message: 'Validation failed',
+                fieldErrors: [
+                    {
+                        field: 'title',
+                        message:
+                            'ensure this value has at most 255 characters',
+                    },
+                ],
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('alert'),
+            ).toHaveTextContent(
+                'ensure this value has at most 255 characters',
+            )
+        })
+
+        expect(
+            screen.getByLabelText('Title'),
+        ).toHaveValue('Dune')
     })
 })

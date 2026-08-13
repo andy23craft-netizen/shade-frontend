@@ -1,6 +1,10 @@
-import type {
-    FormEvent,
-    ChangeEvent,
+import {
+    useEffect,
+    useId,
+    useRef,
+    useState,
+    type ChangeEvent,
+    type FormEvent,
 } from 'react'
 
 import { Button } from '../../../components/Button'
@@ -9,13 +13,15 @@ import type {
     BookCreate,
     Category,
     Shelf,
-    Status,
 } from '../../../api/apiTypes'
 
 import {
-    useState,
-} from 'react'
-
+    formValuesToBookCreate,
+    parseTagsInput,
+    validateBookFormValues,
+    type BookFormField,
+    type BookFormFieldErrors,
+} from './bookFormModel'
 
 const CATEGORY_VALUES: readonly Category[] = [
     'unknown',
@@ -69,16 +75,6 @@ const SHELF_VALUES: readonly Shelf[] = [
     'liz_tbr',
 ]
 
-const STATUS_VALUES: readonly Status[] = [
-    'unknown',
-    'available',
-    'on_loan',
-    'missing',
-    'display_only',
-    'reserved',
-    'reading',
-]
-
 export interface BookFormValues {
     title: string
     authors: string
@@ -88,59 +84,124 @@ export interface BookFormValues {
     pages: string
     category: Category
     shelf: Shelf
-    status: Status
-    is_read: boolean
-    tags: string[]
+    tags: string
     acquisition_source: string
     purchase_date: string
     purchase_price: string
     notes: string
 }
 
+const FIELD_LABELS: Record<
+    BookFormField,
+    string
+> = {
+    title: 'Title',
+    authors: 'Authors',
+    isbn13: 'ISBN',
+    publisher: 'Publisher',
+    publication_date: 'Publication date',
+    pages: 'Pages',
+    category: 'Category',
+    shelf: 'Shelf',
+    tags: 'Tags',
+    acquisition_source: 'Acquisition source',
+    purchase_date: 'Purchase date',
+    purchase_price: 'Purchase price',
+    notes: 'Notes',
+}
+
 export interface BookFormProps {
-    initialValues: BookFormValues
+    values: BookFormValues
+    onChange: (
+        values: BookFormValues,
+    ) => void
     onSubmit: (
         values: BookCreate,
     ) => void | Promise<void>
     onCancel: () => void
     isSubmitting?: boolean
+    serverFieldErrors?: BookFormFieldErrors
+    formError?: string | null
 }
 
-function stringValue(
-    value: string | null | undefined,
-): string {
-    return value ?? ''
-}
-
-function numberValue(
-    value: string | number | null | undefined,
-): string | number {
-    return value ?? ''
+function focusSummary(
+    node: HTMLDivElement | null,
+) {
+    node?.focus()
 }
 
 export function BookForm({
-                             initialValues,
-                             onSubmit,
-                             onCancel,
-                             isSubmitting = false,
-                         }: BookFormProps) {
-    const [values, setValues] =
-        useState<BookFormValues>(initialValues)
+    values,
+    onChange,
+    onSubmit,
+    onCancel,
+    isSubmitting = false,
+    serverFieldErrors = {},
+    formError = null,
+}: BookFormProps) {
+    const idPrefix = useId()
+    const summaryRef =
+        useRef<HTMLDivElement>(null)
+    const [
+        clientErrors,
+        setClientErrors,
+    ] = useState<BookFormFieldErrors>({})
 
-    const [validationError, setValidationError] =
-        useState<string | null>(null)
+    const fieldErrors: BookFormFieldErrors = {
+        ...serverFieldErrors,
+        ...clientErrors,
+    }
 
-    
+    const errorEntries = (
+        Object.entries(fieldErrors) as [
+            BookFormField,
+            string,
+        ][]
+    ).filter(
+        (
+            entry,
+        ): entry is [BookFormField, string] =>
+            Boolean(entry[1]),
+    )
+
+    const hasSummary =
+        errorEntries.length > 0 ||
+        Boolean(formError)
+
+    const hasServerSummary =
+        Boolean(formError) ||
+        Object.keys(serverFieldErrors).length > 0
+
+    function fieldId(
+        field: BookFormField,
+    ): string {
+        return `${idPrefix}-${field}`
+    }
+
     function updateField<
         K extends keyof BookFormValues,
     >(
         field: K,
         value: BookFormValues[K],
     ) {
-        setValues((current) => ({
-            ...current,
+        setClientErrors((current) => {
+            if (!(field in current)) {
+                return current
+            }
+
+            const next = {
+                ...current,
+            }
+
+            delete next[field]
+
+            return next
+        })
+
+        onChange({
+            ...values,
             [field]: value,
-        }))
+        })
     }
 
     function handleTextChange(
@@ -152,7 +213,8 @@ export function BookForm({
             | 'publication_date'
             | 'acquisition_source'
             | 'purchase_date'
-            | 'notes',
+            | 'notes'
+            | 'tags',
         event: ChangeEvent<
             HTMLInputElement | HTMLTextAreaElement
         >,
@@ -163,129 +225,175 @@ export function BookForm({
         )
     }
 
-    function handleNumberChange(
-        field:
-            | 'pages'
-            | 'purchase_price',
-        event: ChangeEvent<HTMLInputElement>,
-    ) {
-        updateField(
-            field,
-            event.target.value,
-        )
+    function normalizeTagsField() {
+        const normalized = parseTagsInput(
+            values.tags,
+        ).join(', ')
+
+        if (normalized === values.tags) {
+            return values
+        }
+
+        const nextValues: BookFormValues = {
+            ...values,
+            tags: normalized,
+        }
+
+        onChange(nextValues)
+
+        return nextValues
     }
 
     async function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ) {
         event.preventDefault()
-        setValidationError(null)
 
-        if (values.title.trim() === '') {
-            setValidationError(
-                'Title is required.',
-            )
+        const nextValues = normalizeTagsField()
+
+        const errors =
+            validateBookFormValues(nextValues)
+
+        setClientErrors(errors)
+
+        if (Object.keys(errors).length > 0) {
+            window.requestAnimationFrame(() => {
+                focusSummary(summaryRef.current)
+            })
+
             return
         }
 
-        if (values.authors.trim() === '') {
-            setValidationError(
-                'Authors are required.',
-            )
-            return
-        }
-
-        const submission: BookCreate = {
-            title: values.title.trim(),
-            authors: values.authors.trim(),
-            category: values.category,
-            shelf: values.shelf,
-            status: values.status,
-            is_read: values.is_read,
-            isbn13: values.isbn13,
-            publisher: values.publisher,
-            publication_date:
-                values.publication_date,
-            pages:
-                values.pages.trim() === ''
-                    ? null
-                    : Number(values.pages),
-            tags: values.tags,
-            acquisition_source:
-                values.acquisition_source,
-            purchase_date: values.purchase_date,
-            purchase_price:
-                values.purchase_price.trim() === ''
-                    ? null
-                    : Number(values.purchase_price),
-            notes: values.notes,
-        }
-
-        await onSubmit(submission)
+        await onSubmit(
+            formValuesToBookCreate(nextValues),
+        )
     }
 
+    useEffect(() => {
+        if (!hasServerSummary) {
+            return
+        }
+
+        focusSummary(summaryRef.current)
+    }, [
+        formError,
+        hasServerSummary,
+        serverFieldErrors,
+    ])
+
     return (
-        <form onSubmit={handleSubmit}>
-            {validationError ? (
+        <form onSubmit={handleSubmit} noValidate>
+            {hasSummary ? (
                 <div
+                    ref={summaryRef}
+                    tabIndex={-1}
                     role="alert"
-                    className="field__error"
+                    className="alert alert--error"
                 >
-                    {validationError}
+                    <strong>
+                        Fix the following
+                        {' '}
+                        {errorEntries.length === 1
+                            ? 'error'
+                            : 'errors'}
+                    </strong>
+                    {formError ? (
+                        <p>{formError}</p>
+                    ) : null}
+                    {errorEntries.length > 0 ? (
+                        <ul>
+                            {errorEntries.map(
+                                ([
+                                    field,
+                                    message,
+                                ]) => (
+                                    <li key={field}>
+                                        <a
+                                            href={`#${fieldId(field)}`}
+                                        >
+                                            {FIELD_LABELS[field]}
+                                            :
+                                            {' '}
+                                            {message}
+                                        </a>
+                                    </li>
+                                ),
+                            )}
+                        </ul>
+                    ) : null}
                 </div>
             ) : null}
 
             <section>
                 <h2>Book Information</h2>
 
-                <Field label="Title">
+                <Field
+                    label="Title"
+                    id={fieldId('title')}
+                    error={fieldErrors.title}
+                >
                     <input
                         type="text"
                         value={values.title}
+                        maxLength={255}
                         onChange={(event) =>
                             updateField(
                                 'title',
                                 event.target.value,
                             )
                         }
+                        autoComplete="off"
                     />
                 </Field>
 
-                <Field label="Authors">
+                <Field
+                    label="Authors"
+                    id={fieldId('authors')}
+                    error={fieldErrors.authors}
+                >
                     <input
                         type="text"
                         value={values.authors}
+                        maxLength={255}
                         onChange={(event) =>
                             updateField(
                                 'authors',
                                 event.target.value,
                             )
                         }
+                        autoComplete="off"
                     />
                 </Field>
 
-                <Field label="ISBN-13">
+                <Field
+                    label="ISBN"
+                    id={fieldId('isbn13')}
+                    helpText="ISBN-10 or ISBN-13; spaces and hyphens are allowed"
+                    error={fieldErrors.isbn13}
+                >
                     <input
                         type="text"
-                        value={stringValue(
-                            values.isbn13,
-                        )}
+                        value={values.isbn13}
                         onChange={(event) =>
                             handleTextChange(
                                 'isbn13',
                                 event,
                             )
                         }
-                        inputMode="numeric"
+                        inputMode="text"
+                        autoComplete="off"
                     />
                 </Field>
 
-                <Field label="Publisher">
+                <Field
+                    label="Publisher"
+                    id={fieldId('publisher')}
+                    error={fieldErrors.publisher}
+                >
                     <input
                         type="text"
-                        value={stringValue(
-                            values.publisher,
-                        )}
+                        value={values.publisher}
+                        maxLength={255}
                         onChange={(event) =>
                             handleTextChange(
                                 'publisher',
@@ -295,32 +403,44 @@ export function BookForm({
                     />
                 </Field>
 
-                <Field label="Publication date">
+                <Field
+                    label="Publication date"
+                    id={fieldId('publication_date')}
+                    helpText="Year-only (YYYY) or full date (YYYY-MM-DD)"
+                    error={
+                        fieldErrors.publication_date
+                    }
+                >
                     <input
-                        type="date"
-                        value={stringValue(
-                            values.publication_date,
-                        )}
+                        type="text"
+                        value={
+                            values.publication_date
+                        }
                         onChange={(event) =>
                             handleTextChange(
                                 'publication_date',
                                 event,
                             )
                         }
+                        autoComplete="off"
                     />
                 </Field>
 
-                <Field label="Pages">
+                <Field
+                    label="Pages"
+                    id={fieldId('pages')}
+                    helpText="Positive whole number"
+                    error={fieldErrors.pages}
+                >
                     <input
                         type="number"
-                        min="0"
-                        value={numberValue(
-                            values.pages,
-                        )}
+                        min="1"
+                        step="1"
+                        value={values.pages}
                         onChange={(event) =>
-                            handleNumberChange(
+                            updateField(
                                 'pages',
-                                event,
+                                event.target.value,
                             )
                         }
                     />
@@ -330,7 +450,11 @@ export function BookForm({
             <section>
                 <h2>Library Placement</h2>
 
-                <Field label="Category">
+                <Field
+                    label="Category"
+                    id={fieldId('category')}
+                    error={fieldErrors.category}
+                >
                     <select
                         value={values.category}
                         onChange={(event) =>
@@ -354,7 +478,11 @@ export function BookForm({
                     </select>
                 </Field>
 
-                <Field label="Shelf">
+                <Field
+                    label="Shelf"
+                    id={fieldId('shelf')}
+                    error={fieldErrors.shelf}
+                >
                     <select
                         value={values.shelf}
                         onChange={(event) =>
@@ -377,54 +505,23 @@ export function BookForm({
                         )}
                     </select>
                 </Field>
-
-                <Field label="Status">
-                    <select
-                        value={values.status}
-                        onChange={(event) =>
-                            updateField(
-                                'status',
-                                event.target
-                                    .value as Status,
-                            )
-                        }
-                    >
-                        {STATUS_VALUES.map(
-                            (status) => (
-                                <option
-                                    key={status}
-                                    value={status}
-                                >
-                                    {status}
-                                </option>
-                            ),
-                        )}
-                    </select>
-                </Field>
-
-                <Field label="Read">
-                    <input
-                        type="checkbox"
-                        checked={values.is_read}
-                        onChange={(event) =>
-                            updateField(
-                                'is_read',
-                                event.target.checked,
-                            )
-                        }
-                    />
-                </Field>
             </section>
 
             <section>
                 <h2>Acquisition</h2>
 
-                <Field label="Acquisition source">
+                <Field
+                    label="Acquisition source"
+                    id={fieldId('acquisition_source')}
+                    error={
+                        fieldErrors.acquisition_source
+                    }
+                >
                     <input
                         type="text"
-                        value={stringValue(
-                            values.acquisition_source,
-                        )}
+                        value={
+                            values.acquisition_source
+                        }
                         onChange={(event) =>
                             handleTextChange(
                                 'acquisition_source',
@@ -434,12 +531,18 @@ export function BookForm({
                     />
                 </Field>
 
-                <Field label="Purchase date">
+                <Field
+                    label="Purchase date"
+                    id={fieldId('purchase_date')}
+                    error={
+                        fieldErrors.purchase_date
+                    }
+                >
                     <input
                         type="date"
-                        value={stringValue(
-                            values.purchase_date,
-                        )}
+                        value={
+                            values.purchase_date
+                        }
                         onChange={(event) =>
                             handleTextChange(
                                 'purchase_date',
@@ -449,51 +552,61 @@ export function BookForm({
                     />
                 </Field>
 
-                <Field label="Purchase price">
+                <Field
+                    label="Purchase price"
+                    id={fieldId('purchase_price')}
+                    helpText="Optional amount; no currency conversion"
+                    error={
+                        fieldErrors.purchase_price
+                    }
+                >
                     <input
                         type="number"
-                        min="0"
                         step="0.01"
-                        value={numberValue(
-                            values.purchase_price,
-                        )}
+                        value={
+                            values.purchase_price
+                        }
                         onChange={(event) =>
-                            handleNumberChange(
+                            updateField(
                                 'purchase_price',
-                                event,
+                                event.target.value,
                             )
                         }
                     />
                 </Field>
-
             </section>
 
             <section>
                 <h2>Notes</h2>
 
-                <Field label="Tags">
+                <Field
+                    label="Tags"
+                    id={fieldId('tags')}
+                    helpText="Comma-separated; duplicates are removed on save"
+                    error={fieldErrors.tags}
+                >
                     <input
                         type="text"
-                        value={values.tags.join(', ')}
-                        onChange={(event) => {
-                            const tags = event.target.value
-                                .split(',')
-                                .map((tag) => tag.trim())
-                                .filter(Boolean)
-
-                            updateField(
+                        value={values.tags}
+                        onChange={(event) =>
+                            handleTextChange(
                                 'tags',
-                                tags,
+                                event,
                             )
+                        }
+                        onBlur={() => {
+                            normalizeTagsField()
                         }}
                     />
                 </Field>
 
-                <Field label="Notes">
+                <Field
+                    label="Notes"
+                    id={fieldId('notes')}
+                    error={fieldErrors.notes}
+                >
                     <textarea
-                        value={stringValue(
-                            values.notes,
-                        )}
+                        value={values.notes}
                         onChange={(event) =>
                             handleTextChange(
                                 'notes',
