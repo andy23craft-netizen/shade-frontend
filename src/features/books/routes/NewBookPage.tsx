@@ -31,6 +31,7 @@ import type {
     BookFormField,
     BookFormFieldErrors,
 } from '../components/bookFormModel'
+import { IsbnScanner } from '../components/IsbnScanner'
 
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
@@ -115,6 +116,11 @@ export function NewBookPage() {
     ] = useState('')
 
     const [
+        isScannerOpen,
+        setIsScannerOpen,
+    ] = useState(false)
+
+    const [
         activeLookupIsbn,
         setActiveLookupIsbn,
     ] = useState('')
@@ -139,6 +145,14 @@ export function NewBookPage() {
     )
 
     const createBook = useCreateBook()
+
+    function handleIsbnDetected(
+        isbn: string,
+    ) {
+        setIsScannerOpen(false)
+        setLookupInput(isbn)
+        setLookupClientError(null)
+    }
 
     function handleLookupSubmit() {
         const isbn = lookupInput.trim()
@@ -312,6 +326,20 @@ export function NewBookPage() {
                             : 'Look Up ISBN'}
                     </Button>
 
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                            setIsScannerOpen(true)
+                        }
+                        disabled={
+                            lookup.isFetching ||
+                            isScannerOpen
+                        }
+                    >
+                        Scan ISBN
+                    </Button>
+
                     {lookup.isFetching ? (
                         <Button
                             type="button"
@@ -323,6 +351,17 @@ export function NewBookPage() {
                     ) : null}
                 </div>
 
+                {isScannerOpen ? (
+                    <IsbnScanner
+                        onDetected={
+                            handleIsbnDetected
+                        }
+                        onCancel={() =>
+                            setIsScannerOpen(false)
+                        }
+                    />
+                ) : null}
+                
                 {lookup.isFetching ? (
                     <LoadingState label="Looking up ISBN metadata…" />
                 ) : null}
