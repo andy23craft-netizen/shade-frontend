@@ -246,7 +246,8 @@ export function BookDetailsPage() {
         !isDeleted
 
     const canCheckout =
-        canShowActiveActions && !isOnLoan
+        canShowActiveActions &&
+        book.status === 'available'
 
     const canCheckin =
         canShowActiveActions && isOnLoan
@@ -434,7 +435,7 @@ export function BookDetailsPage() {
 
                     {canCheckout ? (
                         <AppLink
-                            to={`/books/${book.id}/checkout`}
+                            to={`/checkout?bookId=${encodeURIComponent(book.id)}`}
                             variant="primary"
                         >
                             Check Out

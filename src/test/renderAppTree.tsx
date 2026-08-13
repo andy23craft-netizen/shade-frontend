@@ -14,11 +14,47 @@ export const testRuntimeConfig: RuntimeConfig = {
 export function mockReachableApi() {
     return vi
         .spyOn(globalThis, 'fetch')
-        .mockResolvedValue(
-            new Response(
-                JSON.stringify({ status: 'ok' }),
-                { status: 200 },
-            ),
+        .mockImplementation(
+            async (input) => {
+                const url =
+                    typeof input === 'string'
+                        ? input
+                        : input instanceof URL
+                            ? input.toString()
+                            : input.url
+
+                if (
+                    new URL(url).pathname ===
+                    '/books'
+                ) {
+                    return new Response(
+                        JSON.stringify({
+                            items: [],
+                            total: 0,
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
+                return new Response(
+                    JSON.stringify({
+                        status: 'ok',
+                    }),
+                    {
+                        status: 200,
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+                        },
+                    },
+                )
+            },
         )
 }
 

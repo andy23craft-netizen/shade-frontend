@@ -117,24 +117,53 @@ describe('AppShell layout and navigation', () => {
     ).toHaveAttribute('href', '/')
   })
 
-  it('navigates to a feature route without mutating window history', () => {
-    const historyLengthBefore = window.history.length
+  it('navigates to a feature route without mutating window history', async () => {
+    const router = renderAppTree(['/books'])
 
-    renderAppTree(['/books'])
+    const historyLengthBefore =
+        window.history.length
 
-    fireEvent.click(
-      screen.getByRole('link', {
-        name: 'Check Out',
-      }),
+    const checkoutLink =
+        screen.getByRole('link', {
+          name: 'Check Out',
+        })
+
+    console.log(
+        'CHECKOUT LINK:',
+        checkoutLink.getAttribute('href'),
+    )
+
+    fireEvent.click(checkoutLink)
+
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Check Out Book',
+    })
+
+    console.log(
+        'ROUTER LOCATION:',
+        router.state.location.pathname,
+    )
+
+    console.log(
+        'ROUTER SEARCH:',
+        router.state.location.search,
+    )
+
+    console.log(
+        'ROUTER ERRORS:',
+        router.state.errors,
     )
 
     expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: 'Check Out',
-      }),
+        screen.getByRole('heading', {
+          level: 1,
+          name: 'Check Out Book',
+        }),
     ).toBeInTheDocument()
 
-    expect(window.history.length).toBe(historyLengthBefore)
+    expect(
+        window.history.length,
+    ).toBe(historyLengthBefore)
   })
 })

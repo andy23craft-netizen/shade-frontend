@@ -101,7 +101,7 @@ export function BooksPage() {
     if (booksQuery.data.total === 0) {
         return (
             <section className="route-page">
-                <h1>Books</h1>
+                <h1 tabIndex={-1}>Books</h1>
 
                 <EmptyState title="Your library is empty.">
                     <p>
@@ -123,7 +123,7 @@ export function BooksPage() {
     return (
         <section className="route-page">
             <div>
-                <h1>Books</h1>
+                <h1 tabIndex={-1}>Books</h1>
                 <p>
                     {booksQuery.data.total} books in
                     the library.

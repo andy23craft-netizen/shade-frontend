@@ -415,6 +415,27 @@ describe('BookDetailsPage', () => {
         ).not.toBeInTheDocument()
     })
 
+    it('does not offer checkout for a non-available book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                status: 'reserved',
+                is_read: false,
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Check Out',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
     it('hides lifecycle actions for a soft-deleted book', () => {
         mockedUseBook.mockReturnValue({
             isPending: false,
@@ -472,9 +493,10 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/books/${completeBook.id}/checkout`,
-        )
-
+            `/checkout?bookId=${encodeURIComponent(
+                completeBook.id,
+            )}`,
+            )
         expect(
             screen.getByRole('link', {
                 name: 'Mark Read',
