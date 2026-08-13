@@ -1,13 +1,25 @@
 import {
+    useState,
+} from 'react'
+import {
     fireEvent,
     render,
     screen,
 } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest'
 
-import { BookForm } from './BookForm'
+import {
+    BookForm,
+    type BookFormProps,
+    type BookFormValues,
+} from './BookForm'
 import { bookFormDefaults } from './bookFormDefaults'
-import type { BookFormValues } from './BookForm'
+
 function makeBook(
     overrides: Partial<BookFormValues> = {},
 ): BookFormValues {
@@ -19,13 +31,35 @@ function makeBook(
     }
 }
 
+function ControlledBookForm({
+    initialValues = makeBook(),
+    onSubmit = vi.fn(),
+    onCancel = vi.fn(),
+    ...rest
+}: Partial<BookFormProps> & {
+    initialValues?: BookFormValues
+}) {
+    const [
+        values,
+        setValues,
+    ] = useState(initialValues)
+
+    return (
+        <BookForm
+            values={values}
+            onChange={setValues}
+            onSubmit={onSubmit}
+            onCancel={onCancel}
+            {...rest}
+        />
+    )
+}
+
 describe('BookForm', () => {
-    it('renders the main book fields', () => {
+    it('renders the main book fields without status or read controls', () => {
         render(
-            <BookForm
+            <ControlledBookForm
                 initialValues={bookFormDefaults}
-                onSubmit={vi.fn()}
-                onCancel={vi.fn()}
             />,
         )
 
@@ -38,7 +72,7 @@ describe('BookForm', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('ISBN-13'),
+            screen.getByLabelText('ISBN'),
         ).toBeInTheDocument()
 
         expect(
@@ -49,7 +83,10 @@ describe('BookForm', () => {
             screen.getByLabelText(
                 'Publication date',
             ),
-        ).toBeInTheDocument()
+        ).toHaveAttribute(
+            'type',
+            'text',
+        )
 
         expect(
             screen.getByLabelText('Pages'),
@@ -64,8 +101,16 @@ describe('BookForm', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Status'),
+            screen.getByLabelText('Tags'),
         ).toBeInTheDocument()
+
+        expect(
+            screen.queryByLabelText('Status'),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByLabelText('Read'),
+        ).not.toBeInTheDocument()
 
         expect(
             screen.getByRole('button', {
@@ -74,24 +119,18 @@ describe('BookForm', () => {
         ).toBeInTheDocument()
     })
 
-    it('uses the supplied initial values', () => {
-        const book = makeBook({
-            isbn13: '9780743273565',
-            publisher: 'Scribner',
-            pages: '180',
-            category: 'fiction',
-            shelf: 'a1',
-            status: 'available',
-            is_read: true,
-            notes: 'A classic.',
-            tags: ['classic', 'american'],
-        })
-
+    it('uses the supplied values', () => {
         render(
-            <BookForm
-                initialValues={book}
-                onSubmit={vi.fn()}
-                onCancel={vi.fn()}
+            <ControlledBookForm
+                initialValues={makeBook({
+                    isbn13: '9780743273565',
+                    publisher: 'Scribner',
+                    pages: '180',
+                    category: 'fiction',
+                    shelf: 'a1',
+                    notes: 'A classic.',
+                    tags: 'classic, american',
+                })}
             />,
         )
 
@@ -104,7 +143,7 @@ describe('BookForm', () => {
         ).toHaveValue('F. Scott Fitzgerald')
 
         expect(
-            screen.getByLabelText('ISBN-13'),
+            screen.getByLabelText('ISBN'),
         ).toHaveValue('9780743273565')
 
         expect(
@@ -124,14 +163,6 @@ describe('BookForm', () => {
         ).toHaveValue('a1')
 
         expect(
-            screen.getByLabelText('Status'),
-        ).toHaveValue('available')
-
-        expect(
-            screen.getByLabelText('Read'),
-        ).toBeChecked()
-
-        expect(
             screen.getByLabelText('Notes'),
         ).toHaveValue('A classic.')
 
@@ -142,16 +173,15 @@ describe('BookForm', () => {
         )
     })
 
-    it('rejects an empty title', () => {
+    it('rejects an empty title with a field and summary error', () => {
         const onSubmit = vi.fn()
 
         render(
-            <BookForm
+            <ControlledBookForm
                 initialValues={makeBook({
                     title: '',
                 })}
                 onSubmit={onSubmit}
-                onCancel={vi.fn()}
             />,
         )
 
@@ -174,12 +204,11 @@ describe('BookForm', () => {
         const onSubmit = vi.fn()
 
         render(
-            <BookForm
+            <ControlledBookForm
                 initialValues={makeBook({
                     authors: '',
                 })}
                 onSubmit={onSubmit}
-                onCancel={vi.fn()}
             />,
         )
 
@@ -198,14 +227,40 @@ describe('BookForm', () => {
         expect(onSubmit).not.toHaveBeenCalled()
     })
 
-    it('submits the edited values', async () => {
+    it('rejects invalid ISBN check digits before submit', () => {
         const onSubmit = vi.fn()
 
         render(
-            <BookForm
+            <ControlledBookForm
+                initialValues={makeBook({
+                    isbn13: '0441172718',
+                })}
+                onSubmit={onSubmit}
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Book',
+            }),
+        )
+
+        expect(
+            screen.getByRole('alert'),
+        ).toHaveTextContent(
+            'Enter a valid ISBN-10 or ISBN-13.',
+        )
+
+        expect(onSubmit).not.toHaveBeenCalled()
+    })
+
+    it('submits through formValuesToBookCreate with create defaults', () => {
+        const onSubmit = vi.fn()
+
+        render(
+            <ControlledBookForm
                 initialValues={bookFormDefaults}
                 onSubmit={onSubmit}
-                onCancel={vi.fn()}
             />,
         )
 
@@ -228,10 +283,10 @@ describe('BookForm', () => {
         )
 
         fireEvent.change(
-            screen.getByLabelText('ISBN-13'),
+            screen.getByLabelText('ISBN'),
             {
                 target: {
-                    value: '9780441172719',
+                    value: '978-0-441-17271-9',
                 },
             },
         )
@@ -263,8 +318,26 @@ describe('BookForm', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByLabelText('Read'),
+        fireEvent.change(
+            screen.getByLabelText(
+                'Publication date',
+            ),
+            {
+                target: {
+                    value: '1965',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText(
+                'Purchase price',
+            ),
+            {
+                target: {
+                    value: '12.50',
+                },
+            },
         )
 
         fireEvent.click(
@@ -276,15 +349,21 @@ describe('BookForm', () => {
         expect(onSubmit).toHaveBeenCalledOnce()
 
         expect(onSubmit).toHaveBeenCalledWith({
-            ...bookFormDefaults,
             title: 'Dune',
             authors: 'Frank Herbert',
-            isbn13: '9780441172719',
+            isbn13: '978-0-441-17271-9',
+            publisher: null,
+            publication_date: '1965',
+            pages: 412,
             category: 'fiction',
             shelf: 'a1',
-            pages: 412,
-            purchase_price: null,
-            is_read: true,
+            status: 'available',
+            is_read: false,
+            tags: null,
+            acquisition_source: null,
+            purchase_date: null,
+            purchase_price: 12.5,
+            notes: null,
         })
     })
 
@@ -292,10 +371,9 @@ describe('BookForm', () => {
         const onSubmit = vi.fn()
 
         render(
-            <BookForm
+            <ControlledBookForm
                 initialValues={bookFormDefaults}
                 onSubmit={onSubmit}
-                onCancel={vi.fn()}
             />,
         )
 
@@ -323,22 +401,23 @@ describe('BookForm', () => {
             }),
         )
 
-        expect(onSubmit).toHaveBeenCalledWith({
-            ...bookFormDefaults,
-            title: 'Dune',
-            authors: 'Frank Herbert',
-            pages: null,
-            purchase_price: null,
-        })
+        expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                title: 'Dune',
+                authors: 'Frank Herbert',
+                pages: null,
+                purchase_price: null,
+                status: 'available',
+                is_read: false,
+            }),
+        )
     })
 
     it('calls onCancel when Cancel is clicked', () => {
         const onCancel = vi.fn()
 
         render(
-            <BookForm
-                initialValues={bookFormDefaults}
-                onSubmit={vi.fn()}
+            <ControlledBookForm
                 onCancel={onCancel}
             />,
         )
@@ -354,10 +433,7 @@ describe('BookForm', () => {
 
     it('disables both buttons while submitting', () => {
         render(
-            <BookForm
-                initialValues={bookFormDefaults}
-                onSubmit={vi.fn()}
-                onCancel={vi.fn()}
+            <ControlledBookForm
                 isSubmitting
             />,
         )
@@ -384,9 +460,38 @@ describe('BookForm', () => {
         expect(bookFormDefaults.shelf).toBe(
             'unknown',
         )
-        expect(bookFormDefaults.status).toBe(
-            'available',
+        expect(bookFormDefaults.tags).toBe('')
+    })
+
+    it('shows linked server field errors in the summary', () => {
+        render(
+            <ControlledBookForm
+                serverFieldErrors={{
+                    title:
+                        'Server rejected title.',
+                }}
+                formError="Could not create the book."
+            />,
         )
-        expect(bookFormDefaults.is_read).toBe(false)
+
+        const summary = screen.getByRole(
+            'alert',
+        )
+
+        expect(summary).toHaveTextContent(
+            'Could not create the book.',
+        )
+        expect(summary).toHaveTextContent(
+            'Server rejected title.',
+        )
+
+        expect(
+            screen.getByRole('link', {
+                name: /Title: Server rejected title\./,
+            }),
+        ).toHaveAttribute(
+            'href',
+            expect.stringContaining('-title'),
+        )
     })
 })
