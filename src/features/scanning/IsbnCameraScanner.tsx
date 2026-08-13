@@ -7,17 +7,33 @@ import {
 import {
     BrowserMultiFormatReader,
 } from '@zxing/browser'
+import type {
+    Result,
+} from '@zxing/library'
 
+import { Alert } from '../../components/Alert'
 import { Button } from '../../components/Button'
+import { Field } from '../../components/Field'
+import {
+    buildCameraVideoConstraints,
+    CAMERA_SCAN_TIMEOUT_MS,
+    createIsbnDecodeHints,
+    getCameraCapabilityError,
+    isAcceptableCameraIsbn,
+} from './isbnCameraCapture'
+
 export interface IsbnScannerProps {
     onDetected: (isbn: string) => void
     onCancel: () => void
 }
 
 export function IsbnCameraScanner({
-                                onDetected,
-                                onCancel,
-                            }: IsbnScannerProps) {
+    onDetected,
+    onCancel,
+}: IsbnScannerProps) {
+    const capabilityError =
+        getCameraCapabilityError()
+
     const videoRef =
         useRef<HTMLVideoElement>(null)
 
@@ -29,26 +45,66 @@ export function IsbnCameraScanner({
     const mediaTracksRef =
         useRef<MediaStreamTrack[]>([])
 
+    const hasDetectedRef =
+        useRef(false)
+
+    const scanTimeoutRef =
+        useRef<ReturnType<
+            typeof setTimeout
+        > | null>(null)
+
     const [
-        error,
-        setError,
+        runtimeError,
+        setRuntimeError,
     ] = useState<string | null>(null)
+
+    const [
+        scanTimedOut,
+        setScanTimedOut,
+    ] = useState(false)
 
     const [
         isStarting,
         setIsStarting,
-    ] = useState(true)
+    ] = useState(capabilityError === null)
 
-    const hasDetectedRef =
-        useRef(false)
+    const [
+        selectedDeviceId,
+        setSelectedDeviceId,
+    ] = useState<string | null>(null)
+
+    const [
+        videoDevices,
+        setVideoDevices,
+    ] = useState<MediaDeviceInfo[]>([])
+
+    const error =
+        capabilityError ?? runtimeError
 
     useEffect(() => {
+        if (capabilityError) {
+            return
+        }
+
         const reader =
-            new BrowserMultiFormatReader()
+            new BrowserMultiFormatReader(
+                createIsbnDecodeHints(),
+            )
 
         let cancelled = false
 
-        function handleMediaTrackEnded(): void {
+        function clearScanTimeout(): void {
+            if (scanTimeoutRef.current !== null) {
+                clearTimeout(
+                    scanTimeoutRef.current,
+                )
+                scanTimeoutRef.current = null
+            }
+        }
+
+        function stopScanner(): void {
+            clearScanTimeout()
+
             for (const track of mediaTracksRef.current) {
                 track.removeEventListener(
                     'ended',
@@ -61,28 +117,65 @@ export function IsbnCameraScanner({
             controlsRef.current?.stop()
             controlsRef.current = null
         }
-        
+
+        function handleMediaTrackEnded(): void {
+            stopScanner()
+        }
+
+        function startScanTimeout(): void {
+            clearScanTimeout()
+            setScanTimedOut(false)
+
+            scanTimeoutRef.current = setTimeout(
+                () => {
+                    if (
+                        cancelled ||
+                        hasDetectedRef.current
+                    ) {
+                        return
+                    }
+
+                    setScanTimedOut(true)
+                },
+                CAMERA_SCAN_TIMEOUT_MS,
+            )
+        }
+
+        async function refreshVideoDevices(): Promise<void> {
+            try {
+                const devices =
+                    await BrowserMultiFormatReader.listVideoInputDevices()
+
+                if (!cancelled) {
+                    setVideoDevices(devices)
+                }
+            } catch {
+                if (!cancelled) {
+                    setVideoDevices([])
+                }
+            }
+        }
+
         async function startScanner() {
             if (!videoRef.current) {
                 return
             }
 
             setIsStarting(true)
-            setError(null)
+            setRuntimeError(null)
+            setScanTimedOut(false)
 
             try {
                 const controls =
                     await reader.decodeFromConstraints(
                         {
-                            video: {
-                                facingMode: {
-                                    ideal: 'environment',
-                                },
-                            },
+                            video: buildCameraVideoConstraints(
+                                selectedDeviceId,
+                            ),
                             audio: false,
                         },
                         videoRef.current,
-                        (result) => {
+                        (result?: Result) => {
                             if (
                                 cancelled ||
                                 hasDetectedRef.current ||
@@ -95,16 +188,30 @@ export function IsbnCameraScanner({
                                 .getText()
                                 .trim()
 
-                            if (!isbn) {
+                            if (
+                                !isAcceptableCameraIsbn(
+                                    isbn,
+                                    result.getBarcodeFormat(),
+                                )
+                            ) {
                                 return
                             }
 
-                            hasDetectedRef.current = true
+                            hasDetectedRef.current =
+                                true
+                            clearScanTimeout()
                             controlsRef.current?.stop()
-                            controlsRef.current = null
+                            controlsRef.current =
+                                null
                             onDetected(isbn)
                         },
                     )
+
+                if (cancelled) {
+                    controls.stop()
+                    return
+                }
+
                 controlsRef.current = controls
 
                 const stream =
@@ -114,11 +221,14 @@ export function IsbnCameraScanner({
                     stream &&
                     typeof stream === 'object' &&
                     'getTracks' in stream &&
-                    typeof stream.getTracks === 'function'
+                    typeof stream.getTracks ===
+                        'function'
                 ) {
-                    const tracks = stream.getTracks()
+                    const tracks =
+                        stream.getTracks()
 
-                    mediaTracksRef.current = tracks
+                    mediaTracksRef.current =
+                        tracks
 
                     for (const track of tracks) {
                         track.addEventListener(
@@ -128,13 +238,15 @@ export function IsbnCameraScanner({
                     }
                 }
 
+                setIsStarting(false)
+                startScanTimeout()
+                await refreshVideoDevices()
+            } catch (scannerError) {
+                setIsStarting(false)
+
                 if (cancelled) {
                     return
                 }
-            } catch (scannerError) {
-
-
-                setIsStarting(false)
 
                 if (
                     scannerError instanceof
@@ -144,8 +256,8 @@ export function IsbnCameraScanner({
                         scannerError.name ===
                         'NotAllowedError'
                     ) {
-                        setError(
-                            'Camera access was denied. Allow camera access and try again.',
+                        setRuntimeError(
+                            'Camera access was denied. Allow camera access and try again, or enter the ISBN manually.',
                         )
                         return
                     }
@@ -154,14 +266,14 @@ export function IsbnCameraScanner({
                         scannerError.name ===
                         'NotFoundError'
                     ) {
-                        setError(
-                            'No camera was found on this device.',
+                        setRuntimeError(
+                            'No camera was found on this device. You can enter the ISBN manually instead.',
                         )
                         return
                     }
                 }
 
-                setError(
+                setRuntimeError(
                     'The camera could not be started. You can enter the ISBN manually instead.',
                 )
             }
@@ -171,9 +283,28 @@ export function IsbnCameraScanner({
 
         return () => {
             cancelled = true
-            handleMediaTrackEnded()
+            stopScanner()
         }
-    }, [onDetected])
+    }, [capabilityError, onDetected, selectedDeviceId])
+
+    function handleContinueScanning(): void {
+        setScanTimedOut(false)
+
+        if (scanTimeoutRef.current !== null) {
+            clearTimeout(scanTimeoutRef.current)
+        }
+
+        scanTimeoutRef.current = setTimeout(
+            () => {
+                if (hasDetectedRef.current) {
+                    return
+                }
+
+                setScanTimedOut(true)
+            },
+            CAMERA_SCAN_TIMEOUT_MS,
+        )
+    }
 
     return (
         <section
@@ -186,12 +317,9 @@ export function IsbnCameraScanner({
             </header>
 
             {error ? (
-                <div
-                    role="alert"
-                    className="alert alert--error"
-                >
+                <Alert variant="error">
                     {error}
-                </div>
+                </Alert>
             ) : null}
 
             {!error ? (
@@ -206,7 +334,7 @@ export function IsbnCameraScanner({
                     </div>
 
                     {isStarting ? (
-                        <p>
+                        <p role="status">
                             Starting camera…
                         </p>
                     ) : (
@@ -216,6 +344,81 @@ export function IsbnCameraScanner({
                             of the book.
                         </p>
                     )}
+
+                    {scanTimedOut ? (
+                        <Alert
+                            variant="warning"
+                            title="No ISBN barcode found"
+                        >
+                            No readable ISBN barcode
+                            was detected. Improve
+                            lighting, move closer, or
+                            enter the ISBN manually.
+                            <div>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={
+                                        handleContinueScanning
+                                    }
+                                >
+                                    Keep scanning
+                                </Button>
+                            </div>
+                        </Alert>
+                    ) : null}
+
+                    {videoDevices.length > 1 ? (
+                        <Field
+                            label="Camera"
+                            helpText="Switch cameras if the ISBN is hard to read"
+                        >
+                            <select
+                                name="isbnCameraDevice"
+                                value={
+                                    selectedDeviceId ??
+                                    ''
+                                }
+                                onChange={(
+                                    event,
+                                ) => {
+                                    const nextDeviceId =
+                                        event.target
+                                            .value
+
+                                    setSelectedDeviceId(
+                                        nextDeviceId ||
+                                            null,
+                                    )
+                                }}
+                                disabled={
+                                    isStarting
+                                }
+                            >
+                                <option value="">
+                                    Default camera
+                                </option>
+                                {videoDevices.map(
+                                    (
+                                        device,
+                                        index,
+                                    ) => (
+                                        <option
+                                            key={
+                                                device.deviceId
+                                            }
+                                            value={
+                                                device.deviceId
+                                            }
+                                        >
+                                            {device.label ||
+                                                `Camera ${index + 1}`}
+                                        </option>
+                                    ),
+                                )}
+                            </select>
+                        </Field>
+                    ) : null}
                 </>
             ) : null}
 
