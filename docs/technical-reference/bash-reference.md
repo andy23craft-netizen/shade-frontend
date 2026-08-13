@@ -40,6 +40,21 @@
 
 ---
 
+## Keyboard cheat sheet
+
+
+```text
+[CTRL]+C              stop a running command
+[ESC], [SHIFT]+ZZ     exit interactive text doc (e.g., vim)
+[UP]                  show previous command. Typed letters are the search prefix
+[TAB]                 autocomplete
+[CTRL]+D              exit shell / EOF
+[CTRL]+R              search command history interactively
+[CTRL]+L              clear terminal
+```
+
+---
+
 ## How do paths work?
 
 * `/`                  filesystem root
@@ -58,7 +73,8 @@
 * Detailed listing: `ls -lah` (`-l` = long format, `-a` = all, including hidden files, `-h`
   human-readable)
 * Change directory: `cd directory` (Change Directory)
-  * Note that if the directory path contains a space, then it'll need to be quoted: `cd "~/Saved Prompts/"`
+  * Note that if the directory path contains a space, then it'll need to be quoted: `cd "/foo/Saved Prompts/"`
+  * Also note that things like `~` and `*` don't work **inside** double quotes: `ls "/foo/Saved Prompts/"*`
 * Change to parent directory: `cd ..` (`..` means parent directory)
 * Go home: `cd ~` (`~` means the user's home directory)
 * Return to the previous directory: `cd -` (`-` means previous directory)
@@ -213,15 +229,30 @@
 
 ---
 
-## Keyboard cheat sheet
+## Editing Text in the CLI
 
+* `nano filename`: Simple, beginner-friendly text editor that runs inside the terminal.
+  * Commands are shown at the bottom of the screen; `^` means `[CTRL]`.
+  * Save: `[CTRL]+O`, then `[ENTER]`
+  * Exit: `[CTRL]+X`
+  * Search: `[CTRL]+W`
+  * `[ESC]`, `[SHIFT]+ZZ` does not exit `nano`. Use `[CTRL]+X`.
+* `vim filename`: Powerful text editor with separate modes for navigating and editing.
+  * Start editing: press `i` to enter **Insert mode**.
+  * Stop editing: press `[ESC]` to return to **Normal mode**.
+  * Save and exit: `[ESC]`, then type `:wq` and press `[ENTER]`.
+  * Exit without saving: `[ESC]`, then type `:q!` and press `[ENTER]`.
+  * If you're stuck in Vim, `[ESC]` followed by `:q!` and `[ENTER]` will usually get you out.
+  * `[ESC]`, `[SHIFT]+ZZ` saves (if necessary) and exits `vim`.
+* `less`: A pager used by commands such as `journalctl`, `man`, and sometimes `git` to let you navigate output one
+  screen at a time.
+  * If a command appears to stop on a screen of output, you may be inside `less`.
+  * Exit: `q`
+  * Scroll: arrow keys, `[PAGE UP]`, and `[PAGE DOWN]`
+  * Search forward: `/text`, then `[ENTER]`
+  * Next search result: `n`
+  * Previous search result: `[SHIFT]+N`
+  * Many commands support `--no-pager` to print their output normally instead (e.g., `journalctl --no-pager`).
+  * For commands that don't have a `--no-pager` option, piping through `cat` will often prevent paging: `command | cat`
+  * `[ESC]`, `[SHIFT]+ZZ` is not the normal way to exit `less`, but it will work
 
-```text
-[CTRL]+C              stop a running command
-[ESC], [SHIFT]+ZZ     exit interactive text doc (e.g., vim)
-[UP]                  show previous command. Typed letters are the search prefix
-[TAB]                 autocomplete
-[CTRL]+D              exit shell / EOF
-[CTRL]+R              search command history interactively
-[CTRL]+L              clear terminal
-```
