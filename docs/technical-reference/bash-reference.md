@@ -102,6 +102,20 @@
   * Recursive: `grep -R "Book" src/` (`-R` = recursive)
   * Show line numbers: `grep -n "class Book" src/schemas.py` (`-n` = line number)
   * Case-insensitive: `grep -i "book" filename` (`-i` = ignore case)
+* Edit/transform text with `sed` (Stream EDitor):
+  * Replace the first occurrence on each line: `sed 's/old/new/' filename`
+  * Replace all occurrences: `sed 's/old/new/g' filename` (`g` = global, meaning all matches on each line)
+  * Edit the file in place: `sed -i 's/old/new/g' filename` (`-i` = in-place)
+  * Delete matching lines: `sed '/pattern/d' filename`
+  * Print a range of lines: `sed -n '10,20p' filename` (`-n` = suppress normal output; `p` = print)
+  * `sed` uses regular expressions, so some characters have special meaning. 
+  * Preview a change before modifying the file by leaving off `-i`:
+    ```bash
+    sed 's/old/new/g' filename
+    # If the output looks right:
+    sed -i 's/old/new/g' filename
+    ```
+
 
 ---
 
