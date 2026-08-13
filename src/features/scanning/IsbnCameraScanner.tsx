@@ -61,7 +61,7 @@ export function IsbnCameraScanner({
             controlsRef.current?.stop()
             controlsRef.current = null
         }
-        
+
         async function startScanner() {
             if (!videoRef.current) {
                 return
