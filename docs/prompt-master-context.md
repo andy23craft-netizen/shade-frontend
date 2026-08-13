@@ -3,8 +3,8 @@
 Slim always-on prompt for ChatGPT (or any chat without automatic repository access).
 
 This document is the complete always-on operating context for those chats. It stands on its own for operating rules,
-non-negotiables, and the dated codebase baseline. Attach the on-demand docs listed in section 8 only when the current
-ticket needs them; do not re-synthesize those sources here.
+non-negotiables, and the dated codebase baseline -- no other LLM prompt pack under `docs/` is required reading. Attach
+the on-demand docs listed in section 8 only when the current ticket needs them; do not re-synthesize those sources here.
 
 Source of truth for API schemas, behavioral API notes, product requirements, and plans lives in the docs listed in
 section 8.
@@ -154,13 +154,14 @@ prefix). In-repo contract: `docs/technical-reference/openapi.json` (schemas) plu
 
 **Known baseline (as of 2026-08-12 -- verify before editing):**
 
-- FEAT-01 through FEAT-04 are complete. Their ticket files were removed; remaining tickets are `FEAT-05` through
+- FEAT-01 through FEAT-05 are complete. Their ticket files were removed; remaining tickets are `FEAT-06` through
   `FEAT-16`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can
   lag).
-- Active ticket: `docs/tickets/FEAT-05_book-form-and-creation.md` (ISBN lookup, stricter validation, reusable form
-  model, create-field gating). Extend the existing `/books/new` create UI; do not replace it. Scanner capture is
-  FEAT-06; reading completion is FEAT-09; edit-route wiring is FEAT-10. Later product workflows (checkout, check-in,
-  edit/delete, dashboard metrics UI) belong to FEAT-06+.
+- Active ticket: `docs/tickets/FEAT-06_isbn-scanner-capture.md` (camera and hardware-scanner ISBN capture). Hand a
+  captured ISBN into the existing FEAT-05 lookup and create flow on `/books/new`; do not invent a second create path or
+  call `POST /books` from scanner success. Checkout is FEAT-07; reading completion is FEAT-09; edit-route wiring is
+  FEAT-10. Later product workflows (checkout, check-in, edit/delete, dashboard metrics UI) belong to FEAT-07+.
+  `src/features/scanning/` does not exist yet.
 - Runtime config: `public/config.js` sets `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`), loaded from `index.html`
   before the app module. `src/config/runtimeConfig.ts` validates it; missing or malformed config shows
   `RuntimeConfigScreen` instead of the app shell (`src/main.tsx` -> `readRuntimeConfig()`).
@@ -228,14 +229,19 @@ index.html
     detail with `enumDisplayValue` (FEAT-04)
   - `/books/:bookId` -- `BookDetailsPage` via `useBook`; loading, not-found / error recovery, safe enum display
     (FEAT-04)
-  - `/books/new` -- `NewBookPage` + `BookForm` + `bookFormDefaults`; creates via `useCreateBook`, shows create errors,
-    disables controls while pending, navigates to new detail on success (FEAT-05 baseline to extend)
-- `BookForm` fields today: title, authors, ISBN, publisher, dates, pages, category, shelf, tags, purchase fields,
-  notes, plus current status/read/review controls that FEAT-05 must gate or remove from create. Colocated
-  `BookForm.test.tsx` covers field rendering and submit shaping.
+  - `/books/new` -- `NewBookPage` + shared `BookForm` / `bookFormDefaults` / `bookFormModel`; optional ISBN lookup via
+    `useBookLookup` (checksum-gated; apply draft without overwriting the typed ISBN; progress/cancel/retry and manual
+    fallback); creates via `useCreateBook`; maps create `422` field errors into the form summary; disables controls
+    while pending; navigates to new detail on success (FEAT-05, complete -- extend for scanner handoff)
+- Create form model (`BookForm` / `bookFormDefaults` / `bookFormModel`): title, authors, ISBN, publisher, publication
+  date as text for year-only values, pages, category, shelf, tags, purchase fields, notes. Create UI omits
+  status/read/loan/review; conversion always sends `status=available` and `is_read=false`. Client validation,
+  Field-linked errors, error summary focus, tag normalization, and `formValuesToBookCreate` blank-optional-to-`null`
+  conversion. `src/features/books/utils/isbn.ts` checksum helpers gate lookup and create. Colocated
+  `BookForm.test.tsx` / `bookFormModel.test.ts` / `isbn.test.ts` cover gating, validation, conversion, and checksums.
 - Remaining routes still `RoutePlaceholder` under `src/features/*/routes/`: `/`, `/books/:bookId/edit`, `/checkout`,
   `/checkin`, `/loans`, `/admin/deleted`, `/admin/backup`, and `*` (not found). Registered paths also include those
-  placeholders plus the live routes above.
+  placeholders plus the live routes above. No `src/features/scanning/` module yet (FEAT-06 owns adding it).
 - Shared UI under `src/components/` (Alert, AppLink, Button, ConfirmationDialog, EmptyState, Field, LoadingState,
   Notifications) re-exports from `src/components/index.ts`.
 - CSS layers: `tokens` -> `base` -> `shell` -> `components` via `src/index.css` (plain CSS; BEM-like component classes).
@@ -244,9 +250,9 @@ index.html
   `README.md`. Optional same-origin proxy: `SHADE_API_PROXY=1 make run`. Production-build token inspection:
   `scripts/productionBuildTokenInspection.test.ts`.
 
-FEAT-03 transport/query/redaction and FEAT-04 browse/detail are done. Product UI for create enrichment is FEAT-05; do
-not rebuild the typed client, invent parallel hooks, or replace `NewBookPage` / `BookForm`. Prefer files and command
-output supplied in the conversation over this snapshot when they disagree.
+FEAT-03 transport/query/redaction, FEAT-04 browse/detail, and FEAT-05 create/lookup are done. Product UI for scanner
+capture is FEAT-06; do not rebuild the typed client, invent parallel hooks, or replace `NewBookPage` / `BookForm` /
+`isbn.ts`. Prefer files and command output supplied in the conversation over this snapshot when they disagree.
 
 Typical commands:
 
@@ -332,10 +338,10 @@ title + focus to heading on route change, no color-only status, 320px viewport, 
 - Extensionless relative imports; single quotes; no semicolons; trailing commas where supported.
 - Import shared components from `src/components/index.ts`.
 - Colocate tests as `*.test.tsx` / `*.test.ts`; prefer semantic Testing Library queries and user-visible behavior.
-- Keep feature UI behind `src/features/*/routes/`; replace placeholders when a ticket owns that route. For FEAT-05,
-  extend `NewBookPage`, `BookForm`, and `bookFormDefaults` (ISBN lookup, checksum validation, reusable form model,
-  create-field gating) instead of rebuilding create UI. Do not pull scanner capture (FEAT-06), reading completion
-  (FEAT-09), or edit-route wiring (FEAT-10) into FEAT-05.
+- Keep feature UI behind `src/features/*/routes/`; replace placeholders when a ticket owns that route. For FEAT-06,
+  hand captured ISBNs into the existing FEAT-05 `NewBookPage` / `BookForm` / `isbn.ts` lookup and create flow rather
+  than inventing a second create path. Lazy-load scanner code under a feature module (e.g., `src/features/scanning/`).
+  Do not pull checkout (FEAT-07), reading completion (FEAT-09), or edit-route wiring (FEAT-10) into FEAT-06.
 - Prefer regenerating `src/api/generated/openapi.ts` over hand-editing it.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not invent a parallel
   transport or cache stack.
@@ -354,7 +360,7 @@ mark-unread, remote Ansible/systemd/TLS/rollback orchestration.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
-Tickets live in `docs/tickets/` as `FEAT-05` through `FEAT-16` (FEAT-01 through FEAT-04 are complete and their ticket
+Tickets live in `docs/tickets/` as `FEAT-06` through `FEAT-16` (FEAT-01 through FEAT-05 are complete and their ticket
 files are gone). The supplied ticket's acceptance criteria are authoritative unless they contradict the backend contract
 or established architecture.
 
@@ -371,8 +377,8 @@ Use this when deciding what to ask for or create. Verify against the repo before
 | API               | `src/api/generated/openapi.ts`, `apiTypes.ts`, `enumDisplay.ts`, `apiCallOptions.ts`, `apiClient.ts`, `apiErrors.ts`, `apiRedaction.ts`, `requestFields.ts`, `dateTime.ts`, `queryKeys.ts`, `api.ts`, `booksApi.ts`, `loansApi.ts`, `dashboardApi.ts`, `healthApi.ts`, `protectedApi.ts`, `backupApi.ts`, `queryClient.ts`, `queryInvalidation.ts`, `booksQueries.ts`, `loansQueries.ts`, `dashboardQueries.ts` |
 | Connection        | `src/features/connection/*` (provider, screen, token, storage, api, invalidation)                                                                                                                                                                                                                                                                                                                               |
 | Routing / shell   | `src/routes/*`, `src/layout/AppShell.tsx`                                                                                                                                                                                                                                                                                                                                                                       |
-| Feature routes    | `src/features/{dashboard,books,loans,connection}/routes/*`                                                                                                                                                                                                                                                                                                                                                      |
-| Books UI          | `src/features/books/routes/{BooksPage,BookDetailsPage,NewBookPage}.tsx`, `src/features/books/components/{BookForm,bookFormDefaults}.{tsx,ts}`                                                                                                                                                                                                                                                                   |
+| Feature routes    | `src/features/{dashboard,books,loans,connection}/routes/*` (FEAT-06 adds scanning; module not present yet)                                                                                                                                                                                                                                                                                                       |
+| Books UI          | `src/features/books/routes/{BooksPage,BookDetailsPage,NewBookPage}.tsx`, `src/features/books/components/{BookForm,bookFormDefaults,bookFormModel}.{tsx,ts}`, `src/features/books/utils/isbn.ts`                                                                                                                                                                                                                 |
 | Shared UI         | `src/components/*` (import via `index.ts`)                                                                                                                                                                                                                                                                                                                                                                      |
 | Styles            | `src/index.css`, `src/styles/{tokens,base,shell,components}.css`                                                                                                                                                                                                                                                                                                                                                |
 | Tests helpers     | `src/test/setup.ts`, `src/test/renderAppTree.tsx`                                                                                                                                                                                                                                                                                                                                                               |
@@ -380,8 +386,8 @@ Use this when deciding what to ask for or create. Verify against the repo before
 | Baselines / smoke | `docs/baselines/FEAT-03_performance.md`, `scripts/contractSmoke.test.ts`                                                                                                                                                                                                                                                                                                                                        |
 
 Feature route ownership: connection settings (FEAT-02, complete); books list/detail (FEAT-04, complete); new book
-(FEAT-05, baseline present -- extend); dashboard `/` (FEAT-11); edit/deleted/backup (FEAT-10); checkout (FEAT-07);
-check-in/loans (FEAT-08).
+create/lookup (FEAT-05, complete); ISBN scanner capture (FEAT-06, next); dashboard `/` (FEAT-11); edit/deleted/backup
+(FEAT-10); checkout (FEAT-07); check-in/loans (FEAT-08).
 
 ---
 
@@ -423,7 +429,7 @@ a backend blocker when necessary. Prefer `docs/technical-reference/openapi.json`
 | API behavior (auth, CORS, lifecycle, ISBN, backup, FE ownership) | `docs/technical-reference/API-for-FE.md`                                         |
 | Architecture / workstreams / release intent                      | `docs/product-docs/PLAN.md`                                                      |
 | Product requirements (source)                                    | `docs/product-docs/PRODUCT_REQS.V1.md`, `docs/product-docs/PRODUCT_REQS.V2.*.md` |
-| Feature tickets                                                  | `docs/tickets/FEAT-05_...` through `FEAT-16_...` (FEAT-01 through FEAT-04 complete) |
+| Feature tickets                                                  | `docs/tickets/FEAT-06_...` through `FEAT-16_...` (FEAT-01 through FEAT-05 complete) |
 | Performance baselines (large library / bundle)                   | `docs/baselines/FEAT-03_performance.md`                                          |
 | UI / design decisions                                            | `docs/product-docs/UI_DESIGN_NOTES.MD`                                           |
 | Human maintainers notes                                          | `docs/MAINTAINERS.md`                                                            |

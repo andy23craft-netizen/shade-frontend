@@ -1,10 +1,11 @@
 # Agents.md: LLM Project Context
 
 Use this document as the self-contained baseline context when working on the Shade frontend in a fresh LLM chat. It
-covers operating rules, the backend contract, architecture, and the current codebase inventory. Do not treat other
-prompt packs under `docs/` as required reading for this baseline; this file is meant to stand alone. Inspect the current
-repository before making changes because the code may have changed since this document was written. A user's explicit
-request takes precedence over general guidance here.
+covers operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of
+2026-08-12 -- verify against the repository before editing). This file stands alone: do not treat other LLM prompt
+packs under `docs/` (including `docs/prompt-master-context.md`) as required reading or as a supplement to this baseline.
+Inspect the current repository before making changes because the code may have changed since this document was written.
+A user's explicit request takes precedence over general guidance here.
 
 ## Project Summary
 
@@ -23,18 +24,20 @@ ticket files were removed; remaining tickets are `FEAT-06` through `FEAT-16` und
 presence under `docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can lag).
 
 **Next:** FEAT-06 (ISBN camera and hardware-scanner capture): hand a captured ISBN into the existing FEAT-05 lookup and
-create flow. FEAT-05 delivered `/books/new` via shared `BookForm` / `bookFormDefaults` / `bookFormModel`
-(`formValuesToBookCreate`, tag normalization, client validation), wired `isbn.ts` checksum checks before lookup and
-create, ISBN lookup with progress/cancel/retry/`found: false`/provider-failure handling, create-field gating (no
-status/read/loan/review controls; defaults stay `status=available` and `is_read=false`), Field-linked error summaries
-including create `422` mapping, year-only `publication_date` text input, and blank-optional-to-`null` conversion.
-FEAT-04 already delivered read-only browse/detail on `/books` and `/books/:bookId`. FEAT-03 delivered OpenAPI
-generation, schema aliases, enum display helpers, the shared API client shell, error types with redaction helpers,
-request-field picking and date/time utilities, `createApi` typed route helpers (including backup `{ blob, filename }`),
-connection health/protected via typed helpers, React Query defaults and connection-invalidation wiring,
-books/loans/dashboard query hooks, mutation detail-cache writes plus PLAN.md 7.5 invalidation, abort/stale overwrite
-guards, contract smoke coverage, and performance baselines under `docs/baselines/FEAT-03_performance.md`. Later product
-workflows (checkout, check-in, edit/delete, dashboard metrics UI) belong to FEAT-07+.
+create flow on `/books/new`; do not invent a second create path or call `POST /books` from scanner success.
+`src/features/scanning/` does not exist yet -- FEAT-06 owns adding it and lazy-loading camera/scanner code. FEAT-05
+delivered `/books/new` via shared `BookForm` / `bookFormDefaults` / `bookFormModel` (`formValuesToBookCreate`, tag
+normalization, client validation), wired `isbn.ts` checksum checks before lookup and create, ISBN lookup with
+progress/cancel/retry/`found: false`/provider-failure handling, create-field gating (no status/read/loan/review
+controls; defaults stay `status=available` and `is_read=false`), Field-linked error summaries including create `422`
+mapping, year-only `publication_date` text input, and blank-optional-to-`null` conversion. FEAT-04 already delivered
+read-only browse/detail on `/books` and `/books/:bookId`. FEAT-03 delivered OpenAPI generation, schema aliases, enum
+display helpers, the shared API client shell, error types with redaction helpers, request-field picking and date/time
+utilities, `createApi` typed route helpers (including backup `{ blob, filename }`), connection health/protected via
+typed helpers, React Query defaults and connection-invalidation wiring, books/loans/dashboard query hooks, mutation
+detail-cache writes plus PLAN.md 7.5 invalidation, abort/stale overwrite guards, contract smoke coverage, and
+performance baselines under `docs/baselines/FEAT-03_performance.md`. Later product workflows (checkout, check-in,
+edit/delete, dashboard metrics UI) belong to FEAT-07+.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
 `docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
@@ -188,8 +191,9 @@ Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
 navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side navigations.
 Live product UI today: `/settings/connection` (`ConnectionScreen`), `/books` (`BooksPage`), `/books/:bookId`
-(`BookDetailsPage`), and `/books/new` (`NewBookPage` + `BookForm` with ISBN lookup). Remaining feature pages under
-`src/features/*/routes/` still render `RoutePlaceholder` until their owning tickets land.
+(`BookDetailsPage`), and `/books/new` (`NewBookPage` + `BookForm` / `bookFormModel` with ISBN lookup). Remaining
+feature pages under `src/features/*/routes/` still render `RoutePlaceholder` until their owning tickets land. There is
+no `src/features/scanning/` module yet (FEAT-06).
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
 production bundle. The CSS import order is intentional: later layers use tokens and defaults declared by earlier layers.
@@ -253,8 +257,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   query retry that skips validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`.
 - `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when connection
   invalidation fires; subscribed from `AppProviders`.
-- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations that write returned `BookRead` into
-  the detail cache and invalidate per PLAN.md 7.5 (lists, detail, dashboard, and loans on checkout/check-in).
+- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations (including `useCreateBook`) that
+  write returned `BookRead` into the detail cache and invalidate per PLAN.md 7.5 (lists including `include_deleted` via
+  the `['books']` prefix, detail, dashboard, and loans on checkout/check-in).
 - `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` and `useDashboard` using the same keys mutations
   invalidate.
 
@@ -303,6 +308,10 @@ Still `RoutePlaceholder` (owned by later tickets):
 - `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07)
 - `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
 - `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
+
+Not present yet (FEAT-06 owns creating it): `src/features/scanning/` (camera and hardware-scanner capture; lazy-load
+so ordinary navigation does not pay scanner download or startup cost). Hand captured ISBNs into the existing FEAT-05
+`NewBookPage` / `BookForm` / `isbn.ts` lookup and create flow.
 
 Connection feature (FEAT-02, complete):
 
@@ -448,8 +457,9 @@ yarn test
 
 The `.cursor` rules control AI-assisted work. They are not loaded by the application or included in builds.
 
-Useful documents under `docs/` when a task needs them (this file remains the self-contained baseline; do not require
-other prompt packs under `docs/`):
+Useful documents under `docs/` when a task needs them. This file remains the self-contained LLM baseline; attach the
+items below only when their contents are necessary for the current work. Do not require other LLM prompt packs under
+`docs/` (including `docs/prompt-master-context.md`).
 
 - `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (`FEAT-06` through `FEAT-16`;
   FEAT-01 through FEAT-05 are complete and their ticket files are gone).
@@ -522,8 +532,9 @@ make build
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; replace placeholders when a ticket owns that
   route rather than inventing a parallel tree. For FEAT-06, hand captured ISBNs into the existing FEAT-05
-  `NewBookPage` / `BookForm` lookup and create flow rather than inventing a second create path. Do not pull checkout
-  (FEAT-07), reading completion (FEAT-09), or edit-route wiring (FEAT-10) into FEAT-06.
+  `NewBookPage` / `BookForm` / `isbn.ts` lookup and create flow rather than inventing a second create path. Lazy-load
+  scanner code under a feature module (e.g., `src/features/scanning/`). Do not pull checkout (FEAT-07), reading
+  completion (FEAT-09), or edit-route wiring (FEAT-10) into FEAT-06.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after

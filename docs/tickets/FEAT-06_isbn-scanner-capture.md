@@ -6,7 +6,23 @@ Acquire ISBNs with a camera or dedicated scanner and hand them to the reviewable
 
 ## Dependencies
 
-FEAT-05.
+FEAT-05 is complete. Reuse FEAT-05 checksum validation (`src/features/books/utils/isbn.ts`) and the editable
+lookup/create flow on `/books/new` (`NewBookPage`, shared `BookForm` / `bookFormDefaults` / `bookFormModel`,
+`useBookLookup`, `useCreateBook`). Do not invent a second lookup or create client, and do not call `POST /books` from
+scanner success.
+
+Checkout belongs to FEAT-07; reading completion to FEAT-09; metadata edit to FEAT-10. Do not pull those workflows into
+this ticket.
+
+## Explicitly out of scope (owned by later tickets)
+
+| Later ticket | Owns (do not pull into FEAT-06)                         |
+|--------------|---------------------------------------------------------|
+| FEAT-07      | Checkout workflow                                       |
+| FEAT-09      | Mark-read and reading-field UI                          |
+| FEAT-10      | Edit route wiring that reuses `BookForm` for metadata   |
+
+Also out of scope for the MVP: UPC support, automatic creation after a scan, and any scanner-specific backend endpoints.
 
 ## Contract references
 
@@ -18,9 +34,6 @@ Treat these as complementary, not interchangeable:
 - `../technical-reference/API-for-FE.md` -- FE vs API ownership (barcode/camera/manual capture is frontend; ISBN
   normalize/validate for ISBN-13, metadata lookup, and persistence are API), recommended add-book flow, and the ISBN-10
   check-digit gap.
-
-This ticket owns capture and handoff only. Reuse FEAT-05 checksum validation and the FEAT-05 editable lookup/create
-flow. Do not invent a second lookup or create client, and do not call `POST /books` from scanner success.
 
 ### Documented contract facts for this ticket
 
@@ -39,16 +52,35 @@ Confirm against a representative running backend `/openapi.json` before locking 
   lookup failure presentation remain FEAT-05's responsibility once handoff begins.
 - UPC and other non-ISBN symbologies are out of scope for the MVP contract and product plan.
 
-## Scope
+## Current baseline
+
+Already in place and should be extended, not replaced:
+
+- `NewBookPage` (`/books/new`): mounts shared `BookForm`, optional ISBN lookup via `useBookLookup` (checksum-gated;
+  apply draft without overwriting the typed ISBN; progress/cancel/retry and manual fallback), creates via
+  `useCreateBook`, maps create `422` field errors into the form summary, and navigates to the new detail on success.
+  Manual typed entry and lookup remain available without any scanner UI.
+- `BookForm` / `bookFormDefaults` / `bookFormModel`: create-field gating (`status=available`, `is_read=false`), Field-
+  linked errors, year-only `publication_date` text input, tag normalization, and `formValuesToBookCreate`
+  blank-optional-to-`null` conversion.
+- `src/features/books/utils/isbn.ts`: `isValidIsbn10` / `isValidIsbn13` / `isValidIsbn` already wired into lookup and
+  create submit paths. Colocated unit tests cover valid/invalid ISBN-10 (including `X`), formatted values, and ISBN-13.
+- PLAN.md expects camera and hardware-scanner input under `src/features/scanning/`. That module does not exist yet;
+  there is no camera permission flow, barcode decoder, lazy-loaded scanner bundle, hardware wedge/buffer parser, or
+  documented device/browser matrix in the repo.
+
+## Remaining scope
 
 - Establish and document the supported desktop/mobile browser and device matrix before selecting a scanner library.
-- Lazy-load camera/scanner code so ordinary navigation does not pay its download or startup cost.
+- Add `src/features/scanning/` (or an equivalent feature-owned module) and lazy-load camera/scanner code so ordinary
+  navigation does not pay its download or startup cost.
 - Add camera scanning for supported secure contexts, restricted to ISBN-10 and ISBN-13 barcode formats.
 - Request camera permission only after explicit user action.
 - Support cancellation, camera switching when available, stream interruption, and reliable media-track cleanup.
 - Add dedicated keyboard-like scanner capture with terminator handling and timing/buffering rules.
-- Suppress repeated frames/scans and hand exactly one captured ISBN string to the existing FEAT-05 editable lookup
-  flow (typed entry on `/books/new` or the shared capture entry that flow already accepts).
+- Suppress repeated frames/scans and hand exactly one captured ISBN string into the existing FEAT-05 flow on
+  `/books/new` (fill the lookup/ISBN path that already drives `useBookLookup` and `BookForm`, without a second create
+  path).
 - Route captured values through FEAT-05 checksum validation so an invalid ISBN-10 is not accepted through the backend's
   documented check-digit gap.
 - Keep typed/manual entry visible and usable in every scanner state.
@@ -76,7 +108,3 @@ Confirm against a representative running backend `/openapi.json` before locking 
 ## Plan coverage
 
 Workstream 5; sections 7.8, 10, 12, and 13; scanning outcomes and quality gates.
-
-## Out of scope
-
-UPC support, automatic creation after a scan, and any scanner-specific backend endpoints.
