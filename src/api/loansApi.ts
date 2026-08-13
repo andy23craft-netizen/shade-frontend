@@ -1,5 +1,6 @@
 import type {
     LoanList,
+    LoanRead,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -8,25 +9,73 @@ import type {
     ApiCallOptions,
 } from './apiCallOptions'
 
+export interface ListLoansOptions
+    extends ApiCallOptions {
+    bookId?: string
+}
+
+function withSignal(
+    signal: AbortSignal | undefined,
+): ApiCallOptions | undefined {
+    return signal === undefined
+        ? undefined
+        : {
+            signal,
+        }
+}
+
 export function createLoansApi(
     client: ReturnType<typeof createApiClient>,
 ) {
     return {
         async list(
-            options: ApiCallOptions = {},
+            options: ListLoansOptions = {},
         ): Promise<LoanList> {
-            if (options.signal === undefined) {
-                return client.getJson<LoanList>(
-                    '/loans',
+            const params = new URLSearchParams()
+
+            if (
+                options.bookId !== undefined &&
+                options.bookId !== ''
+            ) {
+                params.set(
+                    'book_id',
+                    options.bookId,
                 )
             }
 
-            return client.getJson<LoanList>(
-                '/loans',
-                {
-                    signal: options.signal,
-                },
+            const query = params.toString()
+            const path = query
+                ? `/loans?${query}`
+                : '/loans'
+            const signalOptions = withSignal(
+                options.signal,
             )
+
+            return signalOptions === undefined
+                ? client.getJson<LoanList>(path)
+                : client.getJson<LoanList>(
+                    path,
+                    signalOptions,
+                )
+        },
+
+        async get(
+            id: string,
+            options: ApiCallOptions = {},
+        ): Promise<LoanRead> {
+            const path =
+                `/loans/${encodeURIComponent(id)}`
+
+            const signalOptions = withSignal(
+                options.signal,
+            )
+
+            return signalOptions === undefined
+                ? client.getJson<LoanRead>(path)
+                : client.getJson<LoanRead>(
+                    path,
+                    signalOptions,
+                )
         },
     }
 }

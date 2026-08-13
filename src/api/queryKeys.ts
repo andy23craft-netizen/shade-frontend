@@ -25,6 +25,16 @@ export const queryKeys = {
 
     loans: {
         all: ['loans'] as const,
+
+        list: (bookId?: string) =>
+            bookId !== undefined
+                ? ['loans', {
+                    bookId,
+                }] as const
+                : ['loans'] as const,
+
+        detail: (id: string) =>
+            ['loans', id] as const,
     },
 
     dashboard: {

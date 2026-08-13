@@ -19,11 +19,13 @@ import {
 import type {
     DashboardSummary,
     LoanList,
+    LoanRead,
 } from './apiTypes'
 import {
     useDashboard,
 } from './dashboardQueries'
 import {
+    useLoan,
     useLoans,
 } from './loansQueries'
 import {
@@ -31,11 +33,13 @@ import {
 } from './queryKeys'
 
 const mockListLoans = vi.fn()
+const mockGetLoan = vi.fn()
 const mockGetDashboard = vi.fn()
 
 vi.mock('./loansApi', () => ({
     createLoansApi: () => ({
         list: mockListLoans,
+        get: mockGetLoan,
     }),
 }))
 
@@ -113,12 +117,146 @@ describe('loans and dashboard queries', () => {
         )
 
         expect(
+            mockListLoans,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                bookId: undefined,
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
+        )
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.loans.list(),
+            ),
+        ).toEqual(loans)
+
+        expect(
             queryClient.getQueryData(
                 queryKeys.loans.all,
             ),
         ).toEqual(loans)
 
         queryClient.clear()
+    })
+
+    it('loads loans filtered by bookId', async () => {
+        const loans: LoanList = {
+            items: [],
+            total: 0,
+        }
+
+        mockListLoans.mockResolvedValueOnce(
+            loans,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useLoans({
+                    bookId: 'book-1',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockListLoans,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                bookId: 'book-1',
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
+        )
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.loans.list('book-1'),
+            ),
+        ).toEqual(loans)
+
+        queryClient.clear()
+    })
+
+    it('loads a loan by id when enabled', async () => {
+        const loan = {} as LoanRead
+
+        mockGetLoan.mockResolvedValueOnce(loan)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () => useLoan('loan-1'),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockGetLoan,
+        ).toHaveBeenCalledWith(
+            'loan-1',
+            expect.objectContaining({
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
+        )
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.loans.detail('loan-1'),
+            ),
+        ).toEqual(loan)
+
+        queryClient.clear()
+    })
+
+    it('does not fetch a loan when id is empty', async () => {
+        mockGetLoan.mockClear()
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () => useLoan(''),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        expect(
+            result.current.fetchStatus,
+        ).toBe('idle')
+
+        expect(
+            mockGetLoan,
+        ).not.toHaveBeenCalled()
     })
 
     it('loads dashboard with the shared dashboard query key', async () => {

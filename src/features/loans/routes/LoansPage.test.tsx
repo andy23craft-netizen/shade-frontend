@@ -42,9 +42,6 @@ function makeBookList(
                 purchase_price: null,
                 acquisition_source: null,
                 notes: null,
-                borrower: 'Jane Reader',
-                datetime_loaned_out:
-                    '2026-08-12T14:00:00Z',
                 deletion_date: null,
                 completion_date: null,
                 rating: null,
@@ -345,7 +342,9 @@ describe('LoansPage', () => {
 
         expect(
             screen.getByText(
-                '8/13/2026, 10:30:00 AM',
+                new Date(
+                    '2026-08-13T15:30:00Z',
+                ).toLocaleString(),
             ),
         ).toBeInTheDocument()
     })

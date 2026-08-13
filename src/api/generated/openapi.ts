@@ -194,6 +194,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/loans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Loan */
+        get: operations["get_loan_loans__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/protected": {
         parameters: {
             query?: never;
@@ -221,14 +238,10 @@ export interface components {
             acquisition_source?: string | null;
             /** Authors */
             authors: string;
-            /** Borrower */
-            borrower?: string | null;
             /** @default unknown */
             category: components["schemas"]["Category"];
             /** Completion Date */
             completion_date?: string | null;
-            /** Datetime Loaned Out */
-            datetime_loaned_out?: string | null;
             /**
              * Is Read
              * @default false
@@ -297,16 +310,12 @@ export interface components {
             authors: string;
             /** Average Loan Days */
             average_loan_days: number | null;
-            /** Borrower */
-            borrower?: string | null;
             /** @default unknown */
             category: components["schemas"]["Category"];
             /** Completion Date */
             completion_date?: string | null;
             /** Creation Date */
             creation_date: string;
-            /** Datetime Loaned Out */
-            datetime_loaned_out?: string | null;
             /** Deletion Date */
             deletion_date: string | null;
             /** Id */
@@ -355,13 +364,9 @@ export interface components {
             acquisition_source?: string | null;
             /** Authors */
             authors?: string | null;
-            /** Borrower */
-            borrower?: string | null;
             category?: components["schemas"]["Category"] | null;
             /** Completion Date */
             completion_date?: string | null;
-            /** Datetime Loaned Out */
-            datetime_loaned_out?: string | null;
             /** Is Read */
             is_read?: boolean | null;
             /** Isbn13 */
@@ -1155,7 +1160,9 @@ export interface operations {
     };
     list_loans_loans_get: {
         parameters: {
-            query?: never;
+            query?: {
+                book_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1171,6 +1178,15 @@ export interface operations {
                     "application/json": components["schemas"]["LoanList"];
                 };
             };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Authentication failure */
             403: {
                 headers: {
@@ -1178,6 +1194,82 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_loan_loans__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

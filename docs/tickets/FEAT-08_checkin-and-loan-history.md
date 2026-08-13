@@ -6,15 +6,14 @@ Return active loans and present preserved active and returned borrowing history.
 
 ## Dependencies
 
-FEAT-07 is complete (ticket file removed). CHORE-01 (update Loans API integration) should be completed before or
-concurrently with this ticket -- it adds support for the `book_id` query parameter on `GET /loans`, the
-`GET /loans/{id}` endpoint, and fixes the Check In routing issue in `BookDetailsPage`. Reuse FEAT-03 typed check-in
-and loan helpers and mutation/cache invalidation (`booksApi.checkin`, `pickCheckinRequest`, `useCheckinBook`,
-`loansApi.list` / `useLoans`, `src/api/dateTime.ts`). Reuse FEAT-07 checkout patterns (`ConfirmationDialog`,
-`?bookId=` deep-link, Field-linked `422`, stale `404`/`409` refetch). Do not invent a second check-in client, and
-never simulate return with generic `PATCH`. There are no create/update/delete loan HTTP endpoints; loans are created
-by checkout and completed by check-in. Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard
-metrics UI is FEAT-11.
+FEAT-07 is complete (ticket file removed). CHORE-01 is complete and required before this ticket -- it added support for
+the `book_id` query parameter on `GET /loans`, the `GET /loans/{id}` endpoint (`loansApi.get` / `useLoan`), and fixed
+the Check In link to `/checkin?bookId=...`. Reuse FEAT-03 typed check-in and loan helpers and mutation/cache
+invalidation (`booksApi.checkin`, `pickCheckinRequest`, `useCheckinBook`, `loansApi.list` / `useLoans({ bookId })`,
+`src/api/dateTime.ts`). Reuse FEAT-07 checkout patterns (`ConfirmationDialog`, `?bookId=` deep-link, Field-linked
+`422`, stale `404`/`409` refetch). Do not invent a second check-in client, and never simulate return with generic
+`PATCH`. There are no create/update/delete loan HTTP endpoints; loans are created by checkout and completed by
+check-in. Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard metrics UI is FEAT-11.
 
 ## Contract references
 
@@ -50,9 +49,10 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - Soft-delete and loan axes are independent: deleting an on-loan book leaves its active loan open; restore the book
   before check-in can complete that loan. Do not offer check-in for soft-deleted books, and do not use `PATCH` to clear
   `status` / `borrower` / `datetime_loaned_out`.
-- `GET /loans` returns `LoanList` `{ items, total }` -- the full result set with no filtering or pagination.
-  Soft-deleted books' historical (and still-open) loans remain in this list. Auth failure is `403`; there is no
-  loan-specific `404`.
+- `GET /loans` returns `LoanList` `{ items, total }` -- the full result set with optional `book_id` filtering (via
+  `useLoans({ bookId })` from CHORE-01) and no pagination. Soft-deleted books' historical (and still-open) loans
+  remain in this list. Auth failure is `403`. Unknown or malformed `book_id` may return `400` / `404`.
+- `GET /loans/{id}` returns a single `LoanRead` (`useLoan(id)`); unknown id is `404`.
 - `LoanRead` required fields: `id`, `book_id`, `borrower`, `checked_out_at`, `created_date`, `last_updated_date`.
   Optional nullable: `due_at`, `notes`, `returned_at`. Active loan ⇒ `returned_at: null`.
 - Loans are ordered by stored `checked_out_at` text descending. That order is chronological only when clients used one

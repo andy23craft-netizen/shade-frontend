@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
     useNavigate,
-    useParams,
+    useSearchParams,
 } from 'react-router-dom'
 
 import { Alert } from '../../../components/Alert'
@@ -13,6 +13,9 @@ import {
     useCheckinBook,
 } from '../../../api/booksQueries'
 import {
+    useLoans,
+} from '../../../api/loansQueries'
+import {
     checkinFormDefaults,
     checkinFormValuesToRequest,
     validateCheckinFormValues,
@@ -22,9 +25,17 @@ import {
 
 export function CheckinPage() {
     const navigate = useNavigate()
-    const { bookId } = useParams()
+    const [searchParams] = useSearchParams()
+    const bookId = searchParams.get('bookId') ?? ''
 
-    const bookQuery = useBook(bookId ?? '')
+    const bookQuery = useBook(bookId)
+    const loansQuery = useLoans(
+        bookId
+            ? {
+                bookId,
+            }
+            : {},
+    )
     const checkinBook = useCheckinBook()
 
     const [
@@ -70,7 +81,7 @@ export function CheckinPage() {
         return (
             <section className="route-page">
                 <h1>Check In Book</h1>
-                <p>Loading book…</p>
+                <p>Loading book...</p>
             </section>
         )
     }
@@ -123,6 +134,11 @@ export function CheckinPage() {
         )
     }
 
+    const activeLoan =
+        loansQuery.data?.items.find(
+            (loan) => loan.returned_at === null,
+        )
+
     function updateReturnedAt(
         value: string,
     ) {
@@ -167,7 +183,7 @@ export function CheckinPage() {
         checkinBook.mutate(
             {
                 id: checkedInBookId,
-                request, checkinFormValuesToRequest(values),
+                request,
             },
             {
                 onSuccess: () => {
@@ -208,13 +224,13 @@ export function CheckinPage() {
                 <dl>
                     <dt>Borrower</dt>
                     <dd>
-                        {book.borrower ??
+                        {activeLoan?.borrower ??
                             'Not provided'}
                     </dd>
 
                     <dt>Checked Out</dt>
                     <dd>
-                        {book.datetime_loaned_out ??
+                        {activeLoan?.checked_out_at ??
                             'Not provided'}
                     </dd>
                 </dl>
@@ -261,7 +277,7 @@ export function CheckinPage() {
                         }
                     >
                         {checkinBook.isPending
-                            ? 'Checking In…'
+                            ? 'Checking In...'
                             : 'Check In Book'}
                     </Button>
 
