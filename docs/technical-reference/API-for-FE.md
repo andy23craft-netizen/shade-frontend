@@ -1,9 +1,8 @@
 # API for Frontend (supplementary)
 
-Paths, methods, status codes, request/response schemas, and enums live in
-`docs/technical-reference/openapi.json` (copied from the backend; regenerate there with `make openapi` and refresh this
-file when the backend contract changes). Live backend `/openapi.json` and `/docs` should match; treat drift between the
-checked-in file and a running app as a blocker.
+Paths, methods, status codes, request/response schemas, and enums live in `docs/openapi.json`
+(regenerate with `make openapi`). Live `/openapi.json` and `/docs` match the running app; a drift test keeps the
+checked-in file equal to what the app generates.
 
 This document covers behavior and frontend guidance that OpenAPI does not fully express. Do not duplicate schema
 or route tables here.
@@ -49,9 +48,11 @@ can still reach the server, but browser JS cannot read the response.
 
 | Status | Meaning beyond the OpenAPI label |
 | ------ | -------------------------------- |
+| `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query) |
 | `403`  | Missing or invalid Bearer token |
-| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / second delete |
-| `409`  | Invalid an active book; checkout when already on loan; check-in with no active loan |
+| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / second delete; |
+|        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}` |
+| `409`  | Restore an active book; checkout when already on loan; check-in with no active loan |
 | `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
@@ -86,7 +87,7 @@ Soft-deleted books:
 * remain readable via `GET /books/{id}`
 * are rejected by checkout, check-in, and mark-read (**404**)
 * keep loan and reading data
-* still accept generic `PATCH` (including `status` / `borrower` / `is_read`) without creating or updating loans
+* still accept generic `PATCH` (including `status` / `is_read`) without creating or updating loans
 
 Deleting an on-loan book leaves its active loan open; restore the book before check-in will complete that loan.
 
@@ -128,16 +129,25 @@ Recommended add-book flow: FE captures ISBN → `GET /books/lookup` → editable
 
 **Checkout:** only `borrower` is required (1-255 chars; whitespace-only is not rejected). Omitted `checked_out_at`
 defaults to current UTC. Formats for `checked_out_at` / `due_at` / `notes` are not validated. Success sets book
-`status=on_loan`, copies borrower and loan timestamp, and creates a `Loan` with `returned_at=null`. Conflict when
-book `status` is `on_loan` or an active loan already exists: `{"detail": "Book is already checked out"}`.
+`status=on_loan` and creates a `Loan` with `returned_at=null`. Borrower and checkout timestamps live only on the
+loan row. Conflict when book `status` is `on_loan` or an active loan already exists:
+`{"detail": "Book is already checked out"}`.
 
 **Check-in:** body optional (`{}`, omit, or `null`). Omitted or explicit-null `returned_at` uses current UTC.
-Completes the active loan and clears book loan fields. Conflict is based on active loan existence, not only book
-`status`: `{"detail": "Book is not checked out"}`. Soft-deleted or missing book → **404**.
+Completes the active loan and sets book `status=available`. Conflict is based on active loan existence, not only
+book `status`: `{"detail": "Book is not checked out"}`. Soft-deleted or missing book → **404**.
 
 **Loans:** `GET /loans` returns all loans (active and returned), ordered by stored `checked_out_at` text descending
-(chronological only when clients use one consistent timestamp format). No create/update/delete loan HTTP endpoints;
-loans are created by checkout and completed by check-in. Active loan ⇒ `returned_at: null`.
+(chronological only when clients use one consistent timestamp format). Optional `book_id` filters to that book's
+loans (including an empty list when the book exists but has no loans). `GET /loans/{id}` returns a single loan.
+For both the path `{id}` and the `book_id` query param: **400** when the value is empty or not a valid GUID;
+**404** when the GUID is well-formed but unknown (book for `book_id`, loan for `{id}`). No create/update/delete
+loan HTTP endpoints; loans are created by checkout and completed by check-in. Active loan ⇒ `returned_at: null`.
+
+Prefer loan reads over book fields for borrower and checkout timing:
+
+* `GET /loans?book_id={id}` for a book's loans
+* `GET /loans/{id}` when a specific loan id is known
 
 **Mark-read:** body required but all fields optional -- send at least `{}` (omitted body → **422**). Sets
 `is_read=true`; uses supplied `completion_date` or today's UTC date when unset; applies `rating` / `review` when
@@ -198,4 +208,5 @@ URL.revokeObjectURL(objectUrl);
 | Borrowing and dashboard statistics | API |
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/book) → `POST .../checkout` or
-`POST .../checkin` → display returned `BookRead` state. Do not drive loan state through generic `PATCH`.
+`POST .../checkin` → refresh loan state via `GET /loans?book_id=...` (or `GET /loans/{id}`) and display returned
+`BookRead` status. Do not drive loan state through generic `PATCH`.

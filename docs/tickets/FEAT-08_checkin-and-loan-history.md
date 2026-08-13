@@ -6,12 +6,15 @@ Return active loans and present preserved active and returned borrowing history.
 
 ## Dependencies
 
-FEAT-07 is complete (ticket file removed). Reuse FEAT-03 typed check-in and loan helpers and mutation/cache
-invalidation (`booksApi.checkin`, `pickCheckinRequest`, `useCheckinBook`, `loansApi.list` / `useLoans`,
-`src/api/dateTime.ts`). Reuse FEAT-07 checkout patterns (`ConfirmationDialog`, `?bookId=` deep-link, Field-linked
-`422`, stale `404`/`409` refetch). Do not invent a second check-in client, and never simulate return with generic
-`PATCH`. There are no create/update/delete loan HTTP endpoints; loans are created by checkout and completed by
-check-in. Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard metrics UI is FEAT-11.
+FEAT-07 is complete (ticket file removed). CHORE-01 (update Loans API integration) should be completed before or
+concurrently with this ticket -- it adds support for the `book_id` query parameter on `GET /loans`, the
+`GET /loans/{id}` endpoint, and fixes the Check In routing issue in `BookDetailsPage`. Reuse FEAT-03 typed check-in
+and loan helpers and mutation/cache invalidation (`booksApi.checkin`, `pickCheckinRequest`, `useCheckinBook`,
+`loansApi.list` / `useLoans`, `src/api/dateTime.ts`). Reuse FEAT-07 checkout patterns (`ConfirmationDialog`,
+`?bookId=` deep-link, Field-linked `422`, stale `404`/`409` refetch). Do not invent a second check-in client, and
+never simulate return with generic `PATCH`. There are no create/update/delete loan HTTP endpoints; loans are created
+by checkout and completed by check-in. Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard
+metrics UI is FEAT-11.
 
 ## Contract references
 
@@ -69,16 +72,18 @@ Already in place and should be reused (not rebuilt):
 - Typed transport: `createBooksApi().checkin` (optional body; omit when `request` is `undefined`), `CheckinRequest` /
   `pickCheckinRequest`, and `useCheckinBook` (writes returned `BookRead` into the detail cache and invalidates books
   list/detail, loans, and dashboard per PLAN 7.5 on success).
-- Typed loans list: `createLoansApi().list` / `useLoans` (`GET /loans`, key `queryKeys.loans.all`).
+- Typed loans API: `createLoansApi().list` / `useLoans` (`GET /loans` with optional `bookId` filter), `loansApi.get` /
+  `useLoan` (`GET /loans/{id}`), query keys `queryKeys.loans.all`, `queryKeys.loans.list(bookId)`, and
+  `queryKeys.loans.detail(id)`. These were added/updated in CHORE-01.
 - Date/time helpers in `src/api/dateTime.ts` with colocated unit tests; checkout form conversion coverage lives in
   `src/features/loans/checkoutModel.test.ts` (reuse the same UTC ISO / date-only patterns for optional return time).
 - Redaction already excludes `borrower` and `notes` from diagnostics (`src/api/apiRedaction.ts`).
 - Shell nav links to registered `/checkin` and `/loans` (`routeMetadata.checkin` / `routeMetadata.loans`);
   `CheckinPage` and `LoansPage` are still `RoutePlaceholder`s.
 - Book details (`BookDetailsPage`) hides lifecycle actions for soft-deleted books and shows Check In when
-  `status === 'on_loan'`. It currently links Check In to `/books/:bookId/checkin`, which is not a registered route
-  (registered path is `/checkin`), and treats eligibility from book `status` alone rather than an active loan
-  (`returned_at=null`).
+  `status === 'on_loan'`. CHORE-01 fixed the Check In link to use `/checkin?bookId=...` (the registered route) instead
+  of the incorrect `/books/:bookId/checkin`. Eligibility should be tightened to require an active loan
+  (`returned_at=null` from loan data) rather than relying solely on book `status`.
 - FEAT-07 `/checkout` is the pattern to mirror: eligible selection, `?bookId=` deep-link with refresh, confirmation
   before mutate, Field-linked `422`, and `404`/`409` stale-state refetch with preserved form input.
 
@@ -87,12 +92,11 @@ Already in place and should be reused (not rebuilt):
 ### Check-in (`/checkin`)
 
 - Replace `CheckinPage` placeholder: selection restricted to non-deleted books that have an active loan
-  (`returned_at=null` from `useLoans`), not merely a book `status` of `on_loan`. Soft-deleted and books without an
+  (`returned_at=null` from `useLoans()`), not merely a book `status` of `on_loan`. Soft-deleted and books without an
   active loan must not be selectable or submittable through the current UI.
-- Wire the detail Check In entry to the registered check-in flow with safe preselection (fix the
-  `/books/:bookId/checkin` href drift; prefer `/checkin?bookId=`). Reject deep-links to soft-deleted, missing, or
-  non-active-loan books with an accessible explanation and refresh path; tighten detail eligibility to active-loan
-  presence (not `status` alone).
+- The detail Check In link routing was fixed in CHORE-01 (now uses `/checkin?bookId=...`). Validate deep-links to
+  soft-deleted, missing, or non-active-loan books with an accessible explanation and refresh path; tighten detail
+  eligibility display logic to require active-loan presence (not `status` alone).
 - Support optional return timestamp with review/confirmation (`ConfirmationDialog`), in-flight duplicate prevention,
   success feedback, and accessible validation. Serialize blank return time as omitted / `{}` / `null` body so the
   server default is used. Call `useCheckinBook` for the mutation (do not add a parallel client).
@@ -103,10 +107,11 @@ Already in place and should be reused (not rebuilt):
 
 ### Loan history (`/loans`)
 
-- Replace `LoansPage` placeholder: implement from `useLoans` plus client-side joins to book metadata (`useBooks` and a
-  durable fallback for soft-deleted / missing books).
-- Derive active and returned views from `returned_at` nullability; do not invent server-side filter or pagination
-  parameters.
+- Replace `LoansPage` placeholder: implement from `useLoans()` (all loans) plus client-side joins to book metadata
+  (`useBooks` and a durable fallback for soft-deleted / missing books). Optionally use `useLoans({ bookId })` for
+  book-specific views if that UI is added.
+- Derive active and returned views from `returned_at` nullability. The API supports an optional `book_id` query
+  parameter (now available via CHORE-01), but full loan-history pagination is not supported by the backend.
 - Preserve the API's lexical `checked_out_at`-descending order when rendering.
 - Distinguish active and returned loans and derive due/overdue presentation from `due_at` and return dates without
   color alone.
@@ -118,7 +123,8 @@ Already in place and should be reused (not rebuilt):
 ## Acceptance criteria
 
 - A non-deleted book with an active loan remains eligible even if its book `status` is inconsistent; a soft-deleted
-  book or a book without an active loan is not eligible. Detail Check In reaches the working `/checkin` flow.
+  book or a book without an active loan is not eligible. Detail Check In link uses `/checkin?bookId=...` (fixed in
+  CHORE-01) and reaches the working check-in flow.
 - Empty return time omits `returned_at` (or sends `{}` / `null` body) so the server default is used rather than a
   browser-generated timestamp.
 - Submitted custom return timestamps are normalized UTC ISO 8601 values; arbitrary strings are never sent to the API.
