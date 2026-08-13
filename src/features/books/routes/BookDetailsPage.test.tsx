@@ -33,8 +33,6 @@ const completeBook: BookRead = {
     review: 'A marvelous book.',
     notes: 'Check the foreword again.',
     tags: ['Nabokov', 'fiction'],
-    borrower: null,
-    datetime_loaned_out: null,
     last_borrowed_at: '2026-07-01T12:00:00.000Z',
     times_borrowed: 3,
     average_loan_days: 14.5,
@@ -215,8 +213,6 @@ describe('BookDetailsPage', () => {
             review: null,
             notes: null,
             tags: null,
-            borrower: null,
-            datetime_loaned_out: null,
             last_borrowed_at: null,
             average_loan_days: null,
             deletion_date: null,
@@ -399,7 +395,9 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/books/${completeBook.id}/checkin`,
+            `/checkin?bookId=${encodeURIComponent(
+                completeBook.id,
+            )}`,
         )
 
         expect(

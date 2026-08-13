@@ -25,10 +25,10 @@ tickets are `FEAT-08` through `FEAT-16` under `docs/tickets/`. Prefer ticket pre
 `docs/ToDo.md` when judging completion (the checklist can lag).
 
 **Next:** FEAT-08 (check-in and loan history): return loans via `POST /books/{id}/checkin` and show loan history via
-`GET /loans`. Reuse FEAT-03 typed helpers (`booksApi.checkin`, `useCheckinBook`, `useLoans`); never simulate check-in
-with generic `PATCH`. Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard metrics UI is FEAT-11.
-Do not pull those into FEAT-08. `CheckinPage` and `LoansPage` are still `RoutePlaceholder`s; the typed check-in client
-and mutation already exist.
+`GET /loans`. CHORE-01 is complete (`loansApi.list({ bookId })`, `loansApi.get` / `useLoan`, Check In deep-link
+`/checkin?bookId=...`). Reuse FEAT-03 typed helpers (`booksApi.checkin`, `useCheckinBook`, `useLoans`); never simulate
+check-in with generic `PATCH`. Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard metrics UI is
+FEAT-11. Do not pull those into FEAT-08.
 
 FEAT-07 delivered `/checkout` via `CheckoutPage` and `checkoutModel` (`checkoutFormValuesToRequest`, borrower
 blank/255 validation, omit blank optionals, UTC ISO `checked_out_at` / date-only `due_at`), wired to existing
@@ -248,13 +248,15 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
   `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets. Colocated unit tests cover both modules.
-- `src/api/queryKeys.ts`: Shared React Query keys for books, loans, and dashboard.
+- `src/api/queryKeys.ts`: Shared React Query keys for books, loans (`all`, `list(bookId?)`, `detail(id)`), and
+  dashboard.
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `protected`,
   `backup`) plus the underlying `client`.
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`, `restore`,
   `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and
   serialize only documented request fields.
-- `src/api/loansApi.ts`: `list()` (`GET /loans`).
+- `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`; omit empty/`undefined`),
+  `get(id)` (`GET /loans/{id}`).
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
 - `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
 - `src/api/protectedApi.ts`: `get()` (`GET /protected`).
@@ -267,8 +269,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations (including `useCreateBook` and
   `useCheckoutBook`) that write returned `BookRead` into the detail cache and invalidate per PLAN.md 7.5 (lists
   including `include_deleted` via the `['books']` prefix, detail, dashboard, and loans on checkout/check-in).
-- `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` and `useDashboard` using the same keys mutations
-  invalidate.
+- `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` (optional `{ bookId }`), `useLoan(id)` (disabled when
+  falsy), and `useDashboard` using the same keys mutations invalidate (`queryKeys.loans.list` / `detail` / `all`).
 
 ### Routing and Layout
 
@@ -293,7 +295,8 @@ Implemented (do not revert to placeholders):
 - `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04): active collection via `useBooks`; loading, error+retry,
   empty state with link to `/books/new`, and list rows linking to detail with safe enum display
 - `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04): detail via `useBook`; loading,
-  not-found / error recovery, and field presentation with safe enum display
+  not-found / error recovery, and field presentation with safe enum display. Check In uses
+  `/checkin?bookId=...` when active and on loan (CHORE-01).
 - `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05 + FEAT-06): mounts shared `BookForm`, optional
   ISBN lookup via `useBookLookup` (checksum-gated; apply draft without overwriting the typed ISBN; progress/cancel/retry
   and manual fallback), creates via `useCreateBook`, maps create `422` field errors into the form summary, disables
@@ -333,8 +336,9 @@ Still `RoutePlaceholder` (owned by later tickets):
 - `src/features/books/routes/EditBookPage.tsx` (`/books/:bookId/edit`, FEAT-10)
 - `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`, FEAT-10)
 - `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`, FEAT-10)
-- `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
-- `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
+
+Check-in and loans routes exist as WIP for FEAT-08 (`CheckinPage` at `/checkin` with `?bookId=`, `LoansPage` at
+`/loans`); finish against FEAT-08 acceptance criteria rather than treating them as placeholders.
 
 Connection feature (FEAT-02, complete):
 

@@ -34,8 +34,6 @@ function makeBookList(
                 purchase_price: null,
                 acquisition_source: null,
                 notes: null,
-                borrower: null,
-                datetime_loaned_out: null,
                 deletion_date: null,
                 completion_date: null,
                 rating: null,

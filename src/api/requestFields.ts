@@ -11,10 +11,8 @@ import type {
 export const BOOK_CREATE_KEYS = [
     'acquisition_source',
     'authors',
-    'borrower',
     'category',
     'completion_date',
-    'datetime_loaned_out',
     'is_read',
     'isbn13',
     'notes',
@@ -34,10 +32,8 @@ export const BOOK_CREATE_KEYS = [
 export const BOOK_UPDATE_KEYS = [
     'acquisition_source',
     'authors',
-    'borrower',
     'category',
     'completion_date',
-    'datetime_loaned_out',
     'is_read',
     'isbn13',
     'notes',

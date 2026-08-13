@@ -19,17 +19,6 @@
             "title": "Authors",
             "type": "string"
           },
-          "borrower": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Borrower"
-          },
           "category": {
             "$ref": "#/components/schemas/Category",
             "default": "unknown"
@@ -44,17 +33,6 @@
               }
             ],
             "title": "Completion Date"
-          },
-          "datetime_loaned_out": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Datetime Loaned Out"
           },
           "is_read": {
             "default": false,
@@ -341,17 +319,6 @@
             ],
             "title": "Average Loan Days"
           },
-          "borrower": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Borrower"
-          },
           "category": {
             "$ref": "#/components/schemas/Category",
             "default": "unknown"
@@ -370,17 +337,6 @@
           "creation_date": {
             "title": "Creation Date",
             "type": "string"
-          },
-          "datetime_loaned_out": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Datetime Loaned Out"
           },
           "deletion_date": {
             "anyOf": [
@@ -592,17 +548,6 @@
             ],
             "title": "Authors"
           },
-          "borrower": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Borrower"
-          },
           "category": {
             "anyOf": [
               {
@@ -623,17 +568,6 @@
               }
             ],
             "title": "Completion Date"
-          },
-          "datetime_loaned_out": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Datetime Loaned Out"
           },
           "is_read": {
             "anyOf": [
@@ -2117,6 +2051,24 @@
     "/loans": {
       "get": {
         "operationId": "list_loans_loans_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Book Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2128,6 +2080,16 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
           "403": {
             "content": {
               "application/json": {
@@ -2137,6 +2099,26 @@
               }
             },
             "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -2145,6 +2127,83 @@
           }
         ],
         "summary": "List Loans",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/loans/{id}": {
+      "get": {
+        "operationId": "get_loan_loans__id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Loan",
         "tags": [
           "loans"
         ]

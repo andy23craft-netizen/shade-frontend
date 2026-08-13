@@ -13,7 +13,35 @@ import {
     useConnection,
 } from '../features/connection/useConnection'
 
-export function useLoans() {
+export function useLoans(
+    options: {
+        bookId?: string
+    } = {},
+) {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const loansApi =
+        createLoansApi(apiClient)
+
+    const bookId = options.bookId
+
+    return useQuery({
+        queryKey: queryKeys.loans.list(bookId),
+        queryFn: ({
+            signal,
+        }) =>
+            loansApi.list({
+                bookId,
+                signal,
+            }),
+    })
+}
+
+export function useLoan(
+    id: string,
+) {
     const {
         apiClient,
     } = useConnection()
@@ -22,12 +50,13 @@ export function useLoans() {
         createLoansApi(apiClient)
 
     return useQuery({
-        queryKey: queryKeys.loans.all,
+        queryKey: queryKeys.loans.detail(id),
         queryFn: ({
             signal,
         }) =>
-            loansApi.list({
+            loansApi.get(id, {
                 signal,
             }),
+        enabled: Boolean(id),
     })
 }

@@ -381,21 +381,11 @@ export function BookDetailsPage() {
                 <section>
                     <h2>Current Loan</h2>
 
-                    <dl>
-                        <dt>Borrower</dt>
-                        <dd>
-                            {displayValue(
-                                book.borrower,
-                            )}
-                        </dd>
-
-                        <dt>Loaned Out</dt>
-                        <dd>
-                            {displayDate(
-                                book.datetime_loaned_out,
-                            )}
-                        </dd>
-                    </dl>
+                    <p>
+                        This book is currently on loan.
+                        Borrower and checkout timing live
+                        on the loan record.
+                    </p>
                 </section>
             ) : null}
 
@@ -444,7 +434,7 @@ export function BookDetailsPage() {
 
                     {canCheckin ? (
                         <AppLink
-                            to={`/books/${book.id}/checkin`}
+                            to={`/checkin?bookId=${encodeURIComponent(book.id)}`}
                             variant="primary"
                         >
                             Check In

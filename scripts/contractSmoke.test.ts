@@ -43,6 +43,7 @@ const expectedPaths = [
     '/dashboard',
     '/health',
     '/loans',
+    '/loans/{id}',
     '/protected',
 ] as const
 
