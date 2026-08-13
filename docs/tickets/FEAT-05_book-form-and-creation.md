@@ -9,9 +9,9 @@ Create books through typed ISBN lookup or fully manual entry without depending o
 FEAT-04 is complete. Reuse FEAT-03 typed helpers (`booksApi.create` / `lookup`, `useCreateBook`, `useBookLookup` /
 `useLookupBook`) and mutation/cache invalidation. Do not invent a second create/lookup client.
 
-Extend the existing create UI in `src/features/books/routes/NewBookPage.tsx` and
-`src/features/books/components/BookForm.tsx` rather than replacing them. Scanner capture belongs to FEAT-06; reading
-completion and mark-read belong to FEAT-09; metadata edit belongs to FEAT-10.
+Consolidate create UI around `src/features/books/components/BookForm.tsx` (and `bookFormDefaults` /
+`bookFormModel`) rather than keeping a parallel inline form on `NewBookPage`. Scanner capture belongs to FEAT-06;
+reading completion and mark-read belong to FEAT-09; metadata edit belongs to FEAT-10.
 
 ## Explicitly out of scope (owned by later tickets)
 
@@ -63,55 +63,58 @@ Confirm against a representative running backend `/openapi.json` before locking 
 
 Already in place and should be extended, not replaced:
 
-- `NewBookPage` (`/books/new`): mounts `BookForm` with `bookFormDefaults`, creates via `useCreateBook`, shows a generic
-  create error `Alert`, disables submit/cancel while pending, navigates to `/books/:bookId` on success, and cancels back
-  to `/books`. Manual create works without lookup. No create-page UI calls lookup yet.
+- `NewBookPage` (`/books/new`): inline create form (does **not** mount `BookForm`). Creates via `useCreateBook`,
+  navigates to `/books/:bookId` on success, cancels back to `/books`, and shows a generic create error `Alert`. Manual
+  create works without lookup.
+- ISBN lookup UI is already on `/books/new` via `useBookLookup`: progress label, `found: false` info alert, lookup
+  error alert with manual-fallback copy, and an "Apply Lookup" control that copies draft fields into the form. Lookup
+  never persists a book.
 - `useCreateBook` already writes the returned `BookRead` into the detail cache and invalidates list/detail/dashboard
   (FEAT-03 / PLAN 7.5).
-- `useBookLookup` / `useLookupBook` exist as typed React Query hooks; unused by the create page.
-- Create UI no longer exposes status, borrower, loan timestamp, read checkbox, completion date, rating, or review.
-  Those stay at create defaults (`status=available`, `is_read=false`) rather than editable controls.
-- `BookFormValues` is a UI-oriented shape (string controls for pages / purchase price; no status / reading fields).
-  `bookFormDefaults` matches that shape. `bookFormModel.ts` defines `formValuesToBookCreate` (blank optionals to
-  `null`, forces create defaults for `status` / `is_read`), but `BookForm` still converts inline and does not call it.
-- `BookForm` still uses a single top-of-form validation string for empty title/authors; Field `error` wiring and an
-  error summary are not used. Publication date remains `type="date"` (cannot hold year-only lookup values). Tags trim
-  and drop empties on change only. Colocated `BookForm.test.tsx` is out of sync with the gated create fields (still
-  asserts Status / Read and defaults `status` / `is_read`).
+- `BookForm` / `bookFormDefaults` / `bookFormModel.formValuesToBookCreate` exist as a reusable path for FEAT-10, but
+  `NewBookPage` duplicates its own form state and submit mapping instead of using them. `BookForm` still converts
+  inline and does not call `formValuesToBookCreate`.
+- Create UI still exposes status, read, completion date, rating, and review on `NewBookPage` (and status / read on
+  `BookForm`). Those must be gated or removed from create so defaults stay `status=available` and `is_read=false`.
+- `BookForm` uses a single top-of-form validation string for empty title/authors; Field `error` wiring and an error
+  summary are not used. Publication date remains `type="date"` on both forms (cannot hold year-only lookup values).
+  Tags exist only on `BookForm` (trim / drop empties on change); `NewBookPage` has no tags field.
 - `src/features/books/utils/isbn.ts`: `isValidIsbn10` / `isValidIsbn13` / `isValidIsbn` strip separators only for
   checksum calculation. Colocated tests cover valid and invalid ISBN-10 (including an `X` check digit), formatted
-  values, and ISBN-13. These helpers are not yet called from `BookForm` or lookup.
-- Component / route tests cover basic field rendering, empty title/authors rejection, submit shaping, trim, cancel,
-  submitting disabled state, and new-book create/navigate/cancel paths (update them as the remaining form model and
-  lookup work lands).
+  values, and ISBN-13. These helpers are not yet called from `NewBookPage`, `BookForm`, or lookup.
+- Route / component tests cover basic create submit/navigate/cancel, form field rendering, empty title/authors
+  rejection, and ISBN unit cases. Lookup-flow tests, create `422` field mapping, blank-optional-to-`null`, year-only
+  `publication_date`, and purchase-price serialization coverage are still missing or incomplete.
 
 ## Remaining scope
 
 ### Form model and create-field discipline
 
-- Finish the reusable form path: wire `formValuesToBookCreate` (or equivalent) from `BookForm` submit so FEAT-10 edit
-  can share the same values shape and conversion later; drop the duplicate inline `BookCreate` mapping.
+- Mount `BookForm` from `NewBookPage` (or otherwise share one values shape and conversion) so FEAT-10 can reuse the
+  same model. Wire `formValuesToBookCreate` (or equivalent) from submit; drop duplicate inline `BookCreate` mapping.
+- Gate create fields: remove editable status, borrower/loan, read, completion, rating, and review from create. Keep
+  create defaults for `status` / `is_read` in the conversion path; never use create/`PATCH` to simulate checkout,
+  check-in, or mark-read.
 - Enforce documented 255-character title/authors limits, positive integer pages (`exclusiveMinimum: 0`), and accessible
-  field/summary errors (not only a single top-of-form string). Keep create defaults for `status` / `is_read` in the
-  conversion path; never use create/`PATCH` to simulate checkout, check-in, or mark-read.
+  field/summary errors (not only a single top-of-form string or browser `required`).
 - Wire `isbn.ts` into lookup and create so invalid ISBN-10 / ISBN-13 check digits are rejected before the request.
   Preserve separators in the submitted value and rely on the API for canonical normalization.
-- Define and test deterministic tag trimming, empty-tag removal, duplicate handling, and ordering (UI currently trims
-  and drops empties on change only).
+- Define and test deterministic tag trimming, empty-tag removal, duplicate handling, and ordering; expose tags on the
+  shared create form.
 - Cover blank-optional-to-`null` conversion, year-only lookup `publication_date` passthrough as an editable API string
   (do not invent month/day; replace or supplement today's `type="date"` control), and unconstrained `purchase_price`
   number/`null` serialization without inventing currency fields. Align `BookForm.test.tsx` with the gated create UI.
 
-### ISBN lookup on `/books/new`
+### ISBN lookup hardening on `/books/new`
 
-- Add optional `GET /books/lookup?isbn=...` beside manual entry (reuse `useLookupBook` / `useBookLookup`). Preserve the
-  submitted ISBN exactly for API validation; do not normalize it in the frontend.
-- On successful lookup (`found: true`), populate an editable draft from `BookLookupDraft` (and retain the user's
-  submitted ISBN string in the form). Support partial metadata.
-- Handle progress, cancel, `found: false`, string-detail `422`, `502`, `504`, unexpected lookup failure (including
+- Keep optional `GET /books/lookup?isbn=...` beside manual entry (reuse `useLookupBook` / `useBookLookup`). Preserve the
+  user's submitted ISBN string in the form; do not overwrite it with the draft's normalized `isbn13` on apply.
+- On successful lookup (`found: true`), populate an editable draft from `BookLookupDraft` (partial metadata allowed).
+- Harden progress, cancel, `found: false`, string-detail `422`, `502`, `504`, unexpected lookup failure (including
   possible `500`), timeout, retry, and manual fallback. Always retain the ISBN and keep the form editable.
 - Create only after explicit confirmation with `POST /books`. Map create `422 detail[].loc` entries to fields; preserve
   input, focus an error summary, and link field errors.
+- Add route tests for lookup success / `found: false` / failure / checksum rejection paths.
 
 ## Acceptance criteria
 
