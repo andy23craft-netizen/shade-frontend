@@ -35,7 +35,6 @@ drift as a blocker.
 | Method | Path | Success | Documented errors |
 | ------ | ---- | ------- | ----------------- |
 | `GET` | `/health` | `200` JSON | (public; no auth error) |
-| `GET` | `/protected` | `200` | `403` |
 | `GET` | `/books` | `200` `BookList` | `403`, `422` |
 | `POST` | `/books` | `201` `BookRead` | `403`, `422` |
 | `GET` | `/books/lookup` | `200` `BookLookupResponse` | `403`, `422`, `502`, `504` |
@@ -56,8 +55,8 @@ Non-JSON successes that mocks and assertions must not treat as JSON parse failur
 
 #### Error and recovery families tests must represent
 
-- `403` -- missing/invalid Bearer (`{"detail": "Invalid authentication credentials"}`); clears protected cache via the
-  existing unauthorized seam.
+- `403` -- missing/invalid Bearer (`{"detail": "Invalid authentication credentials"}`); show page-level error without
+  retry or destructive cache clearing.
 - `404` -- missing book, soft-deleted target on checkout / check-in / mark-read, second delete (`Book already deleted`),
   or missing restore/delete target (`Book not found`). Soft-deleted rows remain readable via `GET /books/{id}` and may
   still appear in `GET /loans` history.

@@ -260,7 +260,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
-  dashboard, health/protected, validation/error schemas, enums).
+  dashboard, health, validation/error schemas, enums).
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
@@ -277,8 +277,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets. Colocated unit tests cover both modules.
 - `src/api/queryKeys.ts`: Shared React Query keys for books (`all`, `list({ includeDeleted, isbn? })`, `detail(id)`,
   `lookup(isbn)`), loans (`all`, `list(bookId?)`, `detail(id)`), and dashboard.
-- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `protected`,
-  `backup`) plus the underlying `client`.
+- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `backup`) plus the
+  underlying `client`.
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`; omit empty/`undefined` `isbn`), `create`, `lookup`,
   `get`, `update`, `remove`, `restore`, `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers
   accept optional `AbortSignal` and serialize only documented request fields.
@@ -286,7 +286,6 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `get(id)` (`GET /loans/{id}`).
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
 - `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
-- `src/api/protectedApi.ts`: `get()` (`GET /protected`).
 - `src/api/backupApi.ts`: `get()` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
   `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
@@ -457,7 +456,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
-  `dashboardApi.test.ts` / `healthApi.test.ts` / `protectedApi.test.ts` / `backupApi.test.ts`: Typed route helper
+  `dashboardApi.test.ts` / `healthApi.test.ts` / `backupApi.test.ts`: Typed route helper coverage including lookup
   coverage including lookup `found: false`, mark-read `{}`, omitted check-in body, restore/checkout/check-in `409`
   bodies, and a 2_000-item list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.

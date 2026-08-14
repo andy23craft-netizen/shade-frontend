@@ -336,9 +336,8 @@ surface becomes too large, but its acceptance criteria must not be lost.
 **Deliverables:**
 
 - Runtime config loading and validation for API URL and release identifier.
-- Connection settings and session token management.
-- Public reachability checking through `/health`.
-- Credential verification through `/protected`.
+- Build-time Bearer token from repo-root `.env` (`VITE_API_SECRET_KEY`).
+- Public reachability checking through `/health` only.
 - Typed client for all documented routes.
 - Authenticated blob-download support for `/backup`, including safe `Content-Disposition` filename parsing.
 - Normalized error model, request timeout policy, and safe retry rules.
@@ -348,12 +347,12 @@ surface becomes too large, but its acceptance criteria must not be lost.
 
 **Acceptance criteria:**
 
-- No secret appears in the built assets, source maps, test snapshots, URLs, or logs.
-- Protected requests consistently include the runtime token.
+- The repo-root `.env` file is not copied into `dist/`; the build-time token value is embedded in JS bundles by design.
+- Protected requests consistently include the Bearer token from `VITE_API_SECRET_KEY`.
 - `403`, `404`, `409`, `422`, backup `500`, `502`, `504`, network failures, binary success responses, and `204` are
   covered by client tests.
 - Changing runtime API URL does not require rebuilding the frontend.
-- Health and credential checks produce distinct, actionable connection states.
+- Health reachability and auth rejection produce distinct, actionable connection and page-level error states.
 - A contract smoke test succeeds against a representative running API.
 
 **Suggested ticket:** `FEAT-03 — Runtime API configuration and client platform`.
