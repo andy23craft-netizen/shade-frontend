@@ -70,6 +70,7 @@ export function useBooks(
     options: {
         includeDeleted?: boolean
         isbn?: string
+        enabled?: boolean
     } = {},
 ) {
     const {
@@ -82,6 +83,7 @@ export function useBooks(
     const includeDeleted =
         options.includeDeleted ?? false
     const isbn = options.isbn
+    const enabled = options.enabled ?? true
 
     return useQuery({
         queryKey: queryKeys.books.list({
@@ -96,6 +98,7 @@ export function useBooks(
                 isbn,
                 signal,
             }),
+        enabled,
     })
 }
 

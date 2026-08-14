@@ -5,6 +5,7 @@ import {
 } from 'vitest'
 
 import {
+    compactIsbnForListFilter,
     isValidIsbn,
     isValidIsbn10,
     isValidIsbn13,
@@ -116,6 +117,44 @@ describe('ISBN validation', () => {
                     'not an isbn',
                 ),
             ).toBe(false)
+        })
+    })
+
+    describe('compactIsbnForListFilter', () => {
+        it('strips spaces and hyphens without rewriting digits', () => {
+            expect(
+                compactIsbnForListFilter(
+                    '978-0-441-17271-9',
+                ),
+            ).toBe('9780441172719')
+
+            expect(
+                compactIsbnForListFilter(
+                    '0 441 17271 7',
+                ),
+            ).toBe('0441172717')
+        })
+
+        it('strips dots and slashes without adding prefix digits', () => {
+            expect(
+                compactIsbnForListFilter(
+                    '978.0441/172719',
+                ),
+            ).toBe('9780441172719')
+        })
+
+        it('does not convert ISBN-10 into ISBN-13', () => {
+            expect(
+                compactIsbnForListFilter(
+                    '0-441-17271-7',
+                ),
+            ).toBe('0441172717')
+        })
+
+        it('returns empty for whitespace-only input', () => {
+            expect(
+                compactIsbnForListFilter('   '),
+            ).toBe('')
         })
     })
 })

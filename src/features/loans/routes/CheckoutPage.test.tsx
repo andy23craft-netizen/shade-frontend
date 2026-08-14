@@ -22,20 +22,40 @@ const mockSetSearchParams = vi.fn()
 const mockMutate = vi.fn()
 const mockInvalidateQueries = vi.fn()
 const mockRefetchBooks = vi.fn()
+const mockRefetchIsbnSearch = vi.fn()
+
+type MockBook = {
+    id: string
+    title: string
+    authors: string
+    status: string
+    deletion_date: string | null
+    isbn13?: string | null
+}
 
 let mockBooksResponse: {
-    items: Array<{
-        id: string
-        title: string
-        authors: string
-        status: string
-        deletion_date: string | null
-    }>
+    items: MockBook[]
 }
+
+let mockIsbnSearchResponse:
+    | {
+          items: MockBook[]
+      }
+    | undefined
 
 let mockBooksPending = false
 let mockBooksError = false
 let mockCheckoutPending = false
+let mockIsbnSearchFetching = false
+let mockIsbnSearchError = false
+let mockIsbnSearchErrorMessage =
+    'ISBN search failed'
+let lastIsbnSearchOptions:
+    | {
+          isbn?: string
+          enabled?: boolean
+      }
+    | undefined
 
 vi.mock('react-router-dom', async () => {
     const actual =
@@ -70,17 +90,72 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 vi.mock('../../../api/booksQueries', () => ({
-    useBooks: () => ({
-        data: mockBooksResponse,
-        isPending: mockBooksPending,
-        isError: mockBooksError,
-        refetch: mockRefetchBooks,
-    }),
+    useBooks: (
+        options: {
+            isbn?: string
+            enabled?: boolean
+        } = {},
+    ) => {
+        if (options.enabled !== undefined) {
+            lastIsbnSearchOptions = options
+
+            return {
+                data:
+                    options.enabled
+                        ? mockIsbnSearchResponse
+                        : undefined,
+                isPending: false,
+                isFetching: mockIsbnSearchFetching,
+                isError: mockIsbnSearchError,
+                error: mockIsbnSearchError
+                    ? new Error(
+                          mockIsbnSearchErrorMessage,
+                      )
+                    : null,
+                refetch: mockRefetchIsbnSearch,
+            }
+        }
+
+        return {
+            data: mockBooksResponse,
+            isPending: mockBooksPending,
+            isError: mockBooksError,
+            refetch: mockRefetchBooks,
+        }
+    },
 
     useCheckoutBook: () => ({
         mutate: mockMutate,
         isPending: mockCheckoutPending,
     }),
+}))
+
+vi.mock('../../scanning/IsbnCameraScanner', () => ({
+    IsbnCameraScanner: ({
+        onDetected,
+        onCancel,
+    }: {
+        onDetected: (isbn: string) => void
+        onCancel: () => void
+    }) => (
+        <div>
+            <button
+                type="button"
+                onClick={() =>
+                    onDetected('9780441172719')
+                }
+            >
+                Simulate ISBN scan
+            </button>
+
+            <button
+                type="button"
+                onClick={onCancel}
+            >
+                Cancel scanner
+            </button>
+        </div>
+    ),
 }))
 
 function renderPage(
@@ -143,6 +218,8 @@ const deletedBook = {
     deletion_date: '2026-08-01T00:00:00Z',
 }
 
+const VALID_ISBN_13 = '9780441172719'
+
 describe('CheckoutPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -154,6 +231,9 @@ describe('CheckoutPage', () => {
         mockRefetchBooks.mockResolvedValue(
             undefined,
         )
+        mockRefetchIsbnSearch.mockResolvedValue(
+            undefined,
+        )
 
         mockBooksResponse = {
             items: [
@@ -163,8 +243,14 @@ describe('CheckoutPage', () => {
             ],
         }
 
+        mockIsbnSearchResponse = undefined
         mockBooksPending = false
         mockBooksError = false
+        mockIsbnSearchFetching = false
+        mockIsbnSearchError = false
+        mockIsbnSearchErrorMessage =
+            'ISBN search failed'
+        lastIsbnSearchOptions = undefined
     })
 
     it('renders the checkout page', () => {
@@ -897,5 +983,419 @@ describe('CheckoutPage', () => {
         ).toBeInTheDocument()
 
         expect(mockMutate).not.toHaveBeenCalled()
+    })
+
+    it('selects a single eligible ISBN match via Find', async () => {
+        mockIsbnSearchResponse = {
+            items: [
+                {
+                    ...availableBook,
+                    isbn13: VALID_ISBN_13,
+                },
+            ],
+        }
+
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('ISBN'),
+            {
+                target: {
+                    value: '978-0-441-17271-9',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                lastIsbnSearchOptions,
+            ).toEqual({
+                isbn: VALID_ISBN_13,
+                enabled: true,
+            })
+        })
+
+        await waitFor(() => {
+            expect(
+                mockSetSearchParams,
+            ).toHaveBeenCalledWith({
+                bookId: 'book-1',
+            })
+        })
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue(VALID_ISBN_13)
+    })
+
+    it('explains when ISBN Find returns zero matches', async () => {
+        mockIsbnSearchResponse = {
+            items: [],
+        }
+
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('ISBN'),
+            {
+                target: {
+                    value: VALID_ISBN_13,
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        expect(
+            await screen.findByText(
+                'No book in the library matched that ISBN.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+
+        expect(
+            screen.getByLabelText('Book'),
+        ).toBeInTheDocument()
+    })
+
+    it('explains when ISBN matches exist but none are eligible', async () => {
+        mockIsbnSearchResponse = {
+            items: [
+                {
+                    ...unavailableBook,
+                    isbn13: VALID_ISBN_13,
+                },
+                {
+                    ...deletedBook,
+                    isbn13: VALID_ISBN_13,
+                },
+            ],
+        }
+
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('ISBN'),
+            {
+                target: {
+                    value: VALID_ISBN_13,
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        expect(
+            await screen.findByText(
+                'A matching book was found, but it is not available for checkout.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            mockSetSearchParams,
+        ).not.toHaveBeenCalled()
+    })
+
+    it('rejects an invalid ISBN checksum without searching', () => {
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('ISBN'),
+            {
+                target: {
+                    value: '9780441172718',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                'Enter a valid ISBN-10 or ISBN-13.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            lastIsbnSearchOptions?.enabled,
+        ).toBe(false)
+    })
+
+    it('does not search for a blank ISBN', () => {
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                'Enter an ISBN to find a book.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            lastIsbnSearchOptions?.enabled,
+        ).toBe(false)
+    })
+
+    it('does not search for whitespace-only ISBN', () => {
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('ISBN'),
+            {
+                target: {
+                    value: '   ',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                'Enter an ISBN to find a book.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            lastIsbnSearchOptions?.enabled,
+        ).toBe(false)
+    })
+
+    it('hands a camera-scanned ISBN into Find', async () => {
+        mockIsbnSearchResponse = {
+            items: [
+                {
+                    ...availableBook,
+                    isbn13: VALID_ISBN_13,
+                },
+            ],
+        }
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Scan ISBN',
+            }),
+        )
+
+        expect(
+            await screen.findByRole('button', {
+                name: 'Simulate ISBN scan',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Simulate ISBN scan',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                lastIsbnSearchOptions,
+            ).toEqual({
+                isbn: VALID_ISBN_13,
+                enabled: true,
+            })
+        })
+
+        await waitFor(() => {
+            expect(
+                mockSetSearchParams,
+            ).toHaveBeenCalledWith({
+                bookId: 'book-1',
+            })
+        })
+
+        expect(mockMutate).not.toHaveBeenCalled()
+    })
+
+    it('hands a hardware-scanned ISBN into Find', async () => {
+        mockIsbnSearchResponse = {
+            items: [
+                {
+                    ...availableBook,
+                    isbn13: VALID_ISBN_13,
+                },
+            ],
+        }
+
+        renderPage()
+
+        for (const key of VALID_ISBN_13) {
+            fireEvent.keyDown(window, { key })
+        }
+
+        fireEvent.keyDown(window, {
+            key: 'Enter',
+        })
+
+        await waitFor(() => {
+            expect(
+                lastIsbnSearchOptions,
+            ).toEqual({
+                isbn: VALID_ISBN_13,
+                enabled: true,
+            })
+        })
+
+        await waitFor(() => {
+            expect(
+                mockSetSearchParams,
+            ).toHaveBeenCalledWith({
+                bookId: 'book-1',
+            })
+        })
+
+        expect(mockMutate).not.toHaveBeenCalled()
+    })
+
+    it('checks out after selecting a book via ISBN Find', async () => {
+        mockIsbnSearchResponse = {
+            items: [
+                {
+                    ...availableBook,
+                    isbn13: VALID_ISBN_13,
+                },
+            ],
+        }
+
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('ISBN'),
+            {
+                target: {
+                    value: VALID_ISBN_13,
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                lastIsbnSearchOptions?.isbn,
+            ).toBe(VALID_ISBN_13)
+        })
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        await submitAndConfirmCheckout()
+
+        expect(mockMutate).toHaveBeenCalledWith(
+            {
+                id: 'book-1',
+                request: {
+                    borrower: 'Pat',
+                },
+            },
+            expect.any(Object),
+        )
+    })
+
+    it('lets the user choose when multiple eligible ISBN matches exist', async () => {
+        mockIsbnSearchResponse = {
+            items: [
+                {
+                    ...availableBook,
+                    isbn13: VALID_ISBN_13,
+                },
+                {
+                    id: 'book-4',
+                    title: 'Another Match',
+                    authors: 'Other Author',
+                    status: 'available',
+                    deletion_date: null,
+                    isbn13: VALID_ISBN_13,
+                },
+            ],
+        }
+
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('ISBN'),
+            {
+                target: {
+                    value: VALID_ISBN_13,
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Find',
+            }),
+        )
+
+        expect(
+            await screen.findByText(
+                'Multiple matches',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: /Another Match/,
+            }),
+        )
+
+        expect(
+            mockSetSearchParams,
+        ).toHaveBeenCalledWith({
+            bookId: 'book-4',
+        })
     })
 })

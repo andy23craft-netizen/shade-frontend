@@ -2,6 +2,19 @@ function normalizeIsbn(value: string): string {
     return value.replace(/[\s-]/g, '').toUpperCase()
 }
 
+/**
+ * Compact an ISBN for `GET /books?isbn=` list filtering.
+ * Strips spaces, hyphens, and similar punctuation only -- never rewrites digits
+ * (no ISBN-10 to ISBN-13 conversion, no added prefixes).
+ */
+export function compactIsbnForListFilter(
+    value: string,
+): string {
+    return value
+        .replace(/[\s\-._/]/g, '')
+        .toUpperCase()
+}
+
 export function isValidIsbn10(
     value: string,
 ): boolean {

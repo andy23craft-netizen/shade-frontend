@@ -1,4 +1,6 @@
 import {
+    lazy,
+    Suspense,
     useEffect,
     useRef,
     useState,
@@ -11,15 +13,22 @@ import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog'
 import { Field } from '../../../components/Field'
+import { LoadingState } from '../../../components/LoadingState'
 import {
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
+import type { BookRead } from '../../../api/apiTypes'
 import {
     useBooks,
     useCheckoutBook,
 } from '../../../api/booksQueries'
 import { queryKeys } from '../../../api/queryKeys'
+import {
+    compactIsbnForListFilter,
+    isValidIsbn,
+} from '../../books/utils/isbn'
+import { useHardwareIsbnScanner } from '../../scanning/useHardwareIsbnScanner'
 import {
     checkoutFormDefaults,
     checkoutFormValuesToRequest,
@@ -57,6 +66,24 @@ const FIELD_IDS: Record<
 
 const CONFLICT_MESSAGE =
     'Book is already checked out'
+
+const IsbnCameraScanner = lazy(
+    () =>
+        import('../../scanning/IsbnCameraScanner').then(
+            (module) => ({
+                default: module.IsbnCameraScanner,
+            }),
+        ),
+)
+
+function isCheckoutEligible(
+    book: BookRead,
+): boolean {
+    return (
+        book.deletion_date === null &&
+        book.status === 'available'
+    )
+}
 
 function mapCheckoutFieldErrors(
     fieldErrors: readonly ApiFieldError[],
@@ -100,6 +127,10 @@ export function CheckoutPage() {
 
     const summaryRef =
         useRef<HTMLDivElement>(null)
+    const borrowerInputRef =
+        useRef<HTMLInputElement>(null)
+    const appliedSearchRef =
+        useRef('')
 
     const [
         values,
@@ -123,15 +154,38 @@ export function CheckoutPage() {
         setConfirmOpen,
     ] = useState(false)
 
+    const [
+        isbnDraft,
+        setIsbnDraft,
+    ] = useState('')
+
+    const [
+        activeSearchIsbn,
+        setActiveSearchIsbn,
+    ] = useState('')
+
+    const [
+        isbnClientError,
+        setIsbnClientError,
+    ] = useState<string | null>(null)
+
+    const [
+        isScannerOpen,
+        setIsScannerOpen,
+    ] = useState(false)
+
+    const isbnSearchQuery = useBooks({
+        isbn: activeSearchIsbn || undefined,
+        enabled: Boolean(activeSearchIsbn),
+    })
+
     const books = booksQuery.data?.items ?? []
 
     const selectedBookId =
         searchParams.get('bookId') ?? ''
 
     const eligibleBooks = books.filter(
-        (book) =>
-            book.deletion_date === null &&
-            book.status === 'available',
+        isCheckoutEligible,
     )
 
     const selectedBook =
@@ -141,9 +195,48 @@ export function CheckoutPage() {
 
     const selectedBookIsEligible =
         selectedBook !== null &&
-        selectedBook.deletion_date === null &&
-        selectedBook.status === 'available'
+        isCheckoutEligible(selectedBook)
 
+    const isbnSearchPending =
+        Boolean(activeSearchIsbn) &&
+        isbnSearchQuery.isFetching
+
+    let isbnFindStatusMessage: string | null =
+        null
+    let isbnMatchChoices: BookRead[] | null =
+        null
+    let isbnSingleMatch: BookRead | null = null
+
+    if (
+        activeSearchIsbn &&
+        !isbnSearchQuery.isFetching
+    ) {
+        if (isbnSearchQuery.isError) {
+            isbnFindStatusMessage = isApiError(
+                isbnSearchQuery.error,
+            )
+                ? isbnSearchQuery.error.message
+                : 'ISBN search failed. You can still select a book from the list.'
+        } else if (isbnSearchQuery.data) {
+            const items =
+                isbnSearchQuery.data.items
+            const eligible = items.filter(
+                isCheckoutEligible,
+            )
+
+            if (eligible.length === 1) {
+                isbnSingleMatch = eligible[0]
+            } else if (eligible.length > 1) {
+                isbnMatchChoices = eligible
+            } else if (items.length === 0) {
+                isbnFindStatusMessage =
+                    'No book in the library matched that ISBN.'
+            } else {
+                isbnFindStatusMessage =
+                    'A matching book was found, but it is not available for checkout.'
+            }
+        }
+    }
     const errorEntries = (
         Object.entries(fieldErrors) as [
             keyof CheckoutFormFieldErrors,
@@ -185,6 +278,67 @@ export function CheckoutPage() {
         )
         setFormError(null)
     }
+
+    function focusBorrowerField() {
+        window.requestAnimationFrame(() => {
+            borrowerInputRef.current?.focus()
+        })
+    }
+
+    function applyEligibleMatch(
+        book: BookRead,
+    ) {
+        selectBook(book.id)
+        setActiveSearchIsbn('')
+        focusBorrowerField()
+    }
+
+    function startFind(
+        isbnInput: string,
+    ) {
+        const compacted =
+            compactIsbnForListFilter(isbnInput)
+
+        if (!compacted) {
+            setIsbnClientError(
+                'Enter an ISBN to find a book.',
+            )
+            return
+        }
+
+        if (!isValidIsbn(compacted)) {
+            setIsbnClientError(
+                'Enter a valid ISBN-10 or ISBN-13.',
+            )
+            return
+        }
+
+        setIsbnClientError(null)
+        setIsbnDraft(compacted)
+        appliedSearchRef.current = ''
+
+        if (activeSearchIsbn === compacted) {
+            void isbnSearchQuery.refetch()
+            return
+        }
+
+        setActiveSearchIsbn(compacted)
+    }
+
+    function handleIsbnDetected(
+        isbn: string,
+    ) {
+        setIsScannerOpen(false)
+        setIsbnDraft(isbn)
+        startFind(isbn)
+    }
+
+    useHardwareIsbnScanner({
+        enabled:
+            !isScannerOpen &&
+            !isbnSearchQuery.isFetching,
+        onDetected: handleIsbnDetected,
+    })
 
     function updateField<
         K extends keyof CheckoutFormValues,
@@ -337,6 +491,37 @@ export function CheckoutPage() {
         hasSummary,
     ])
 
+    useEffect(() => {
+        if (
+            !isbnSingleMatch ||
+            !activeSearchIsbn
+        ) {
+            return
+        }
+
+        if (
+            appliedSearchRef.current ===
+            activeSearchIsbn
+        ) {
+            return
+        }
+
+        appliedSearchRef.current =
+            activeSearchIsbn
+
+        setSearchParams({
+            bookId: isbnSingleMatch.id,
+        })
+
+        window.requestAnimationFrame(() => {
+            borrowerInputRef.current?.focus()
+        })
+    }, [
+        activeSearchIsbn,
+        isbnSingleMatch,
+        setSearchParams,
+    ])
+
     if (booksQuery.isPending) {
         return (
             <section className="route-page">
@@ -442,6 +627,149 @@ export function CheckoutPage() {
                 </Alert>
             ) : null}
 
+            <section aria-labelledby="isbn-find-heading">
+                <h2 id="isbn-find-heading">
+                    Find by ISBN
+                </h2>
+                <p>
+                    Scan a barcode or type an ISBN to select
+                    an available library book.
+                </p>
+
+                <div>
+                    <Field
+                        label="ISBN"
+                        id="checkout-isbn"
+                        helpText="ISBN-10 or ISBN-13; spaces and hyphens are allowed"
+                        error={isbnClientError}
+                    >
+                        <input
+                            id="checkout-isbn"
+                            name="checkoutIsbn"
+                            value={isbnDraft}
+                            onChange={(event) => {
+                                setIsbnDraft(
+                                    event.target
+                                        .value,
+                                )
+                                setIsbnClientError(
+                                    null,
+                                )
+                            }}
+                            autoComplete="off"
+                        />
+                    </Field>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                            startFind(isbnDraft)
+                        }
+                        disabled={isbnSearchPending}
+                    >
+                        {isbnSearchPending
+                            ? 'Finding…'
+                            : 'Find'}
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                            setIsScannerOpen(true)
+                        }
+                        disabled={
+                            isbnSearchPending ||
+                            isScannerOpen
+                        }
+                    >
+                        Scan ISBN
+                    </Button>
+                </div>
+
+                {isScannerOpen ? (
+                    <Suspense
+                        fallback={
+                            <LoadingState label="Loading camera scanner…" />
+                        }
+                    >
+                        <IsbnCameraScanner
+                            onDetected={
+                                handleIsbnDetected
+                            }
+                            onCancel={() =>
+                                setIsScannerOpen(
+                                    false,
+                                )
+                            }
+                        />
+                    </Suspense>
+                ) : null}
+
+                {isbnSearchPending ? (
+                    <LoadingState label="Searching library by ISBN…" />
+                ) : null}
+
+                {isbnFindStatusMessage ? (
+                    <Alert variant="info">
+                        <p>{isbnFindStatusMessage}</p>
+                        {isbnFindStatusMessage.includes(
+                            'No book in the library',
+                        ) ? (
+                            <p>
+                                <AppLink to="/books/new">
+                                    Add a book
+                                </AppLink>
+                                {' '}
+                                if this ISBN is new to the
+                                library. You can still select
+                                a book from the list below.
+                            </p>
+                        ) : (
+                            <p>
+                                You can still select a book
+                                from the list below.
+                            </p>
+                        )}
+                    </Alert>
+                ) : null}
+
+                {isbnMatchChoices &&
+                isbnMatchChoices.length > 1 ? (
+                    <Alert
+                        variant="info"
+                        title="Multiple matches"
+                    >
+                        <p>
+                            More than one available book
+                            matched that ISBN. Choose one:
+                        </p>
+                        <ul>
+                            {isbnMatchChoices.map(
+                                (book) => (
+                                    <li key={book.id}>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            onClick={() =>
+                                                applyEligibleMatch(
+                                                    book,
+                                                )
+                                            }
+                                        >
+                                            {book.title}
+                                            {' — '}
+                                            {book.authors}
+                                        </Button>
+                                    </li>
+                                ),
+                            )}
+                        </ul>
+                    </Alert>
+                ) : null}
+            </section>
+
             <form onSubmit={handleSubmit} noValidate>
                 {hasSummary ? (
                     <div
@@ -523,6 +851,7 @@ export function CheckoutPage() {
                 >
                     <input
                         id="checkout-borrower"
+                        ref={borrowerInputRef}
                         type="text"
                         value={values.borrower}
                         onChange={(event) =>
