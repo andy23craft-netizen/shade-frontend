@@ -1,6 +1,8 @@
 import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
-import { afterEach } from 'vitest'
+import { afterEach, vi } from 'vitest'
+
+vi.stubEnv('VITE_API_SECRET_KEY', 'test-api-token')
 
 afterEach(() => {
     cleanup()

@@ -120,3 +120,30 @@ export function mapValidationFieldErrors(
 
     return errors
 }
+
+export function formatApiQueryError(
+    error: unknown,
+): string {
+    if (isApiError(error)) {
+        if (error.kind === 'unauthorized') {
+            return 'API access was rejected.'
+        }
+
+        return error.message
+    }
+
+    if (error instanceof Error) {
+        return error.message
+    }
+
+    return 'An unexpected error occurred.'
+}
+
+export function isUnauthorizedQueryError(
+    error: unknown,
+): boolean {
+    return (
+        isApiError(error) &&
+        error.kind === 'unauthorized'
+    )
+}

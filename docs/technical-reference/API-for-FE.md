@@ -25,6 +25,10 @@ There is no login, logout, or session system. Missing or invalid credentials ret
 Public routes: `GET /health` and FastAPI's generated docs/OpenAPI routes (`/docs`, `/redoc`, `/openapi.json`,
 `/docs/oauth2-redirect`). Every other business route requires the Bearer token.
 
+There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated).
+Learn whether credentials are accepted from the first protected request you need (e.g., `GET /books` or
+`GET /dashboard`); a **403** means the token is missing or invalid.
+
 ---
 
 # CORS

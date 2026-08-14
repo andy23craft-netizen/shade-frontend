@@ -22,10 +22,6 @@ import {
     createLoansApi,
 } from './loansApi'
 
-import {
-    createProtectedApi,
-} from './protectedApi'
-
 export function createApi(
     options: Parameters<
         typeof createApiClient
@@ -41,8 +37,6 @@ export function createApi(
         dashboard:
             createDashboardApi(client),
         health: createHealthApi(client),
-        protected:
-            createProtectedApi(client),
         backup: createBackupApi(client),
     }
 }

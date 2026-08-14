@@ -5,7 +5,9 @@ import {
 } from 'vitest'
 import {
     ApiError,
+    formatApiQueryError,
     isApiError,
+    isUnauthorizedQueryError,
     mapValidationFieldErrors,
 } from './apiErrors'
 
@@ -103,5 +105,59 @@ describe('mapValidationFieldErrors', () => {
                 'ISBN is invalid',
             ),
         ).toEqual([])
+    })
+})
+
+describe('formatApiQueryError', () => {
+    it('returns the rejected-access message for unauthorized errors', () => {
+        expect(
+            formatApiQueryError(
+                new ApiError({
+                    kind: 'unauthorized',
+                    status: 403,
+                    message:
+                        'Raw backend detail',
+                }),
+            ),
+        ).toBe('API access was rejected.')
+    })
+
+    it('preserves other ApiError messages', () => {
+        expect(
+            formatApiQueryError(
+                new ApiError({
+                    kind: 'unreachable',
+                    message:
+                        'Unable to reach the Shade API.',
+                }),
+            ),
+        ).toBe('Unable to reach the Shade API.')
+    })
+
+    it('falls back safely for unknown values', () => {
+        expect(
+            formatApiQueryError('unexpected'),
+        ).toBe('An unexpected error occurred.')
+    })
+})
+
+describe('isUnauthorizedQueryError', () => {
+    it('detects unauthorized ApiError values', () => {
+        expect(
+            isUnauthorizedQueryError(
+                new ApiError({
+                    kind: 'unauthorized',
+                    status: 403,
+                    message:
+                        'API access was rejected.',
+                }),
+            ),
+        ).toBe(true)
+
+        expect(
+            isUnauthorizedQueryError(
+                new Error('Network failure'),
+            ),
+        ).toBe(false)
     })
 })

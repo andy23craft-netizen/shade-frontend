@@ -7,6 +7,7 @@ import type {
     BookList,
     LoanList,
 } from '../../../api/apiTypes'
+import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
 
 const mockUseLoans = vi.fn()
@@ -175,6 +176,42 @@ describe('LoansPage', () => {
             }),
         ).toBeInTheDocument()
     })
+
+    it(
+        'shows a rejected-access message without retry when loans return 403',
+        () => {
+            mockUseLoans.mockReturnValue({
+                isPending: false,
+                isError: true,
+                error: new ApiError({
+                    kind: 'unauthorized',
+                    status: 403,
+                    message:
+                        'API access was rejected.',
+                }),
+            })
+
+            mockUseBooks.mockReturnValue({
+                isPending: false,
+                isError: false,
+                data: makeBookList(),
+            })
+
+            renderPage()
+
+            expect(
+                screen.getByRole('alert'),
+            ).toHaveTextContent(
+                'API access was rejected.',
+            )
+
+            expect(
+                screen.queryByRole('button', {
+                    name: 'Retry',
+                }),
+            ).not.toBeInTheDocument()
+        },
+    )
 
     it('shows an error when the book collection fails', () => {
         mockUseLoans.mockReturnValue({

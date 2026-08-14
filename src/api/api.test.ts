@@ -22,7 +22,6 @@ describe('createApi', () => {
         expect(api.loans).toBeDefined()
         expect(api.dashboard).toBeDefined()
         expect(api.health).toBeDefined()
-        expect(api.protected).toBeDefined()
         expect(api.backup).toBeDefined()
     })
 })

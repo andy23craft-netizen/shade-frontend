@@ -1087,19 +1087,6 @@
         "title": "MarkReadRequest",
         "type": "object"
       },
-      "ProtectedResponse": {
-        "properties": {
-          "message": {
-            "title": "Message",
-            "type": "string"
-          }
-        },
-        "required": [
-          "message"
-        ],
-        "title": "ProtectedResponse",
-        "type": "object"
-      },
       "Shelf": {
         "enum": [
           "unknown",
@@ -2058,6 +2045,7 @@
     },
     "/health": {
       "get": {
+        "description": "Public health check. No authentication required.",
         "operationId": "health_health_get",
         "responses": {
           "200": {
@@ -2233,39 +2221,6 @@
         "tags": [
           "loans"
         ]
-      }
-    },
-    "/protected": {
-      "get": {
-        "operationId": "protected_route_protected_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProtectedResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Authentication failure"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Protected Route"
       }
     }
   }

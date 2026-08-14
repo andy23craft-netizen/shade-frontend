@@ -35,7 +35,6 @@ drift as a blocker.
 | Method | Path | Success | Documented errors |
 | ------ | ---- | ------- | ----------------- |
 | `GET` | `/health` | `200` JSON | (public; no auth error) |
-| `GET` | `/protected` | `200` | `403` |
 | `GET` | `/books` | `200` `BookList` | `403`, `422` |
 | `POST` | `/books` | `201` `BookRead` | `403`, `422` |
 | `GET` | `/books/lookup` | `200` `BookLookupResponse` | `403`, `422`, `502`, `504` |
@@ -56,8 +55,8 @@ Non-JSON successes that mocks and assertions must not treat as JSON parse failur
 
 #### Error and recovery families tests must represent
 
-- `403` -- missing/invalid Bearer (`{"detail": "Invalid authentication credentials"}`); clears protected cache via the
-  existing unauthorized seam.
+- `403` -- missing/invalid Bearer (`{"detail": "Invalid authentication credentials"}`); show page-level error without
+  retry or destructive cache clearing.
 - `404` -- missing book, soft-deleted target on checkout / check-in / mark-read, second delete (`Book already deleted`),
   or missing restore/delete target (`Book not found`). Soft-deleted rows remain readable via `GET /books/{id}` and may
   still appear in `GET /loans` history.
@@ -101,7 +100,7 @@ Non-JSON successes that mocks and assertions must not treat as JSON parse failur
   states across feature tickets FEAT-02 through FEAT-11, including soft-delete / `404` / `409` recovery and lookup
   `found: false` / `502` / `504`.
 - Add automated accessibility checks for routes, forms, dialogs, notifications, and destructive confirmations.
-- Add isolated browser-level journeys for connection setup, manual add, ISBN lookup/edit (including unknown ISBN →
+- Add isolated browser-level journeys for `.env` token setup (FEAT-05), manual add, ISBN lookup/edit (including unknown ISBN →
   manual entry), checkout/check-in via dedicated endpoints, mark-read / reading edit, delete/restore, authenticated SQL
   backup (success and generation `500`), and updated dashboard values after mutations.
 - Exercise direct navigation/refresh with an SPA fallback in the browser-test host.
@@ -114,7 +113,7 @@ Non-JSON successes that mocks and assertions must not treat as JSON parse failur
 - Tests assert user outcomes and accessibility rather than internal implementation details.
 - No critical journey depends on test ordering or shared mutable backend records.
 - Browser journeys cover every MVP outcome and every dedicated lifecycle endpoint (lookup, checkout, check-in,
-  mark-read, restore, delete, backup) plus connection, collection/detail, loans, and dashboard.
+  mark-read, restore, delete, backup) plus env verification, collection/detail, loans, and dashboard.
 - Mocks and fixtures cover the full OpenAPI route/status matrix above; non-JSON successes (`204`, SQL blob) are never
   JSON-parsed as errors.
 - Network, authentication (`403`), validation (both `422` shapes), conflict (`409` with documented detail strings),

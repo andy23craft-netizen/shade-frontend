@@ -105,7 +105,7 @@ Use client-side routing with these user-facing destinations:
 - `/loans` — active and returned loan history.
 - `/admin/deleted` — soft-deleted books and restore actions.
 - `/admin/backup` — authenticated full-library SQL backup.
-- `/settings/connection` — runtime API URL and Bearer-token configuration.
+- `/admin/backup` — authenticated SQL backup download.
 - A not-found route with a path back into the application.
 
 The application shell must provide persistent access to Dashboard, Books, Add Book, Check Out, Check In, and Loans.
@@ -157,30 +157,27 @@ concrete cross-route state requirement emerges.
 - Preserve unknown response fields and fail safely if a future enum value is returned. The UI should display a neutral
   fallback rather than crash.
 
-### 7.3 Runtime connection and token handling
+### 7.3 API token and connection handling
 
-The static bundle must load non-secret connection configuration at runtime so one artifact can be promoted between
-environments. At minimum, runtime configuration must provide the API base URL and application release identifier.
+The static bundle loads non-secret runtime configuration (`apiBaseUrl`, `release`) from `public/config.js` so one
+artifact can be promoted between environments. The Bearer token is read from the repository-root `.env` file as
+`VITE_API_SECRET_KEY` and injected at dev-server and build time (embedded in JS bundles). Missing or blank values
+throw at bootstrap before the app shell mounts.
 
-API routes are rooted directly at the configured base URL; the client must not assume an `/api` prefix. Use public `GET
-/health` to distinguish basic API reachability from protected-access verification where useful.
+API routes are rooted directly at the configured base URL; the client must not assume an `/api` prefix. Use public
+`GET /health` at startup for reachability only.
 
-The Bearer token must be entered or injected at runtime and kept out of source files, build arguments, generated
-JavaScript, source maps, URLs, analytics, and error reports. The default browser implementation should:
+The default browser implementation should:
 
-- Provide a connection settings screen before protected routes are used.
-- Keep the token in memory and `sessionStorage`, not in the static runtime config.
-- Offer an explicit "forget token" action.
-- Verify credentials using `GET /protected`.
 - Send `Authorization: Bearer <token>` on every protected request.
-- Clear the active token and return to connection setup after a confirmed invalid credential response.
+- Show "API access was rejected." on confirmed `403` without retrying or clearing the query cache.
+- Direct operators to fix `VITE_API_SECRET_KEY` in `.env` and restart or rebuild.
 
 Because the API returns `403` for both missing and invalid credentials, the UI should describe this as "API access was
 rejected" rather than pretending to know the cause.
 
-The token remains inspectable by a user or script running in the browser. Production release therefore requires trusted
-network access, strong content-security controls at the host, and acceptance of this limitation. A future
-user-authentication or server-side token-injection design supersedes this model.
+The token remains inspectable in built JavaScript. Production release therefore requires trusted network access,
+strong content-security controls at the host, and acceptance of this limitation.
 
 ### 7.4 Browser connectivity
 
@@ -339,9 +336,8 @@ surface becomes too large, but its acceptance criteria must not be lost.
 **Deliverables:**
 
 - Runtime config loading and validation for API URL and release identifier.
-- Connection settings and session token management.
-- Public reachability checking through `/health`.
-- Credential verification through `/protected`.
+- Build-time Bearer token from repo-root `.env` (`VITE_API_SECRET_KEY`).
+- Public reachability checking through `/health` only.
 - Typed client for all documented routes.
 - Authenticated blob-download support for `/backup`, including safe `Content-Disposition` filename parsing.
 - Normalized error model, request timeout policy, and safe retry rules.
@@ -351,12 +347,12 @@ surface becomes too large, but its acceptance criteria must not be lost.
 
 **Acceptance criteria:**
 
-- No secret appears in the built assets, source maps, test snapshots, URLs, or logs.
-- Protected requests consistently include the runtime token.
+- The repo-root `.env` file is not copied into `dist/`; the build-time token value is embedded in JS bundles by design.
+- Protected requests consistently include the Bearer token from `VITE_API_SECRET_KEY`.
 - `403`, `404`, `409`, `422`, backup `500`, `502`, `504`, network failures, binary success responses, and `204` are
   covered by client tests.
 - Changing runtime API URL does not require rebuilding the frontend.
-- Health and credential checks produce distinct, actionable connection states.
+- Health reachability and auth rejection produce distinct, actionable connection and page-level error states.
 - A contract smoke test succeeds against a representative running API.
 
 **Suggested ticket:** `FEAT-03 — Runtime API configuration and client platform`.

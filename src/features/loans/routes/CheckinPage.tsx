@@ -15,6 +15,7 @@ import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import { LoadingState } from '../../../components/LoadingState'
+import { QueryErrorState } from '../../../components/QueryErrorState'
 import {
     isApiError,
     type ApiFieldError,
@@ -394,23 +395,13 @@ export function CheckinPage() {
                         Check In Book
                     </h1>
 
-                    <Alert
-                        variant="error"
+                    <QueryErrorState
                         title="Unable to load books"
-                    >
-                        {booksQuery.error instanceof Error
-                            ? booksQuery.error.message
-                            : 'The books could not be loaded.'}
-                    </Alert>
-
-                    <Button
-                        type="button"
-                        onClick={() => {
+                        error={booksQuery.error}
+                        onRetry={() => {
                             void booksQuery.refetch()
                         }}
-                    >
-                        Retry
-                    </Button>
+                    />
                 </section>
             )
         }
@@ -422,23 +413,13 @@ export function CheckinPage() {
                         Check In Book
                     </h1>
 
-                    <Alert
-                        variant="error"
+                    <QueryErrorState
                         title="Unable to load loans"
-                    >
-                        {loansQuery.error instanceof Error
-                            ? loansQuery.error.message
-                            : 'The loan state could not be loaded.'}
-                    </Alert>
-
-                    <Button
-                        type="button"
-                        onClick={() => {
+                        error={loansQuery.error}
+                        onRetry={() => {
                             void loansQuery.refetch()
                         }}
-                    >
-                        Retry
-                    </Button>
+                    />
                 </section>
             )
         }
@@ -607,23 +588,13 @@ export function CheckinPage() {
                     ← Back to Books
                 </AppLink>
 
-                <Alert
-                    variant="error"
+                <QueryErrorState
                     title="Unable to load book"
-                >
-                    {bookQuery.error instanceof Error
-                        ? bookQuery.error.message
-                        : 'The book could not be loaded.'}
-                </Alert>
-
-                <Button
-                    type="button"
-                    onClick={() => {
+                    error={bookQuery.error}
+                    onRetry={() => {
                         void bookQuery.refetch()
                     }}
-                >
-                    Retry
-                </Button>
+                />
             </section>
         )
     }
@@ -638,23 +609,13 @@ export function CheckinPage() {
                     ← Back to Book
                 </AppLink>
 
-                <Alert
-                    variant="error"
+                <QueryErrorState
                     title="Unable to load loan state"
-                >
-                    {loansQuery.error instanceof Error
-                        ? loansQuery.error.message
-                        : 'The loan state could not be loaded.'}
-                </Alert>
-
-                <Button
-                    type="button"
-                    onClick={() => {
+                    error={loansQuery.error}
+                    onRetry={() => {
                         void loansQuery.refetch()
                     }}
-                >
-                    Retry
-                </Button>
+                />
             </section>
         )
     }

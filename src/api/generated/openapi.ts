@@ -167,7 +167,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health */
+        /**
+         * Health
+         * @description Public health check. No authentication required.
+         */
         get: operations["health_health_get"];
         put?: never;
         post?: never;
@@ -203,23 +206,6 @@ export interface paths {
         };
         /** Get Loan */
         get: operations["get_loan_loans__id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/protected": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Protected Route */
-        get: operations["protected_route_protected_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -507,11 +493,6 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-        };
-        /** ProtectedResponse */
-        ProtectedResponse: {
-            /** Message */
-            message: string;
         };
         /**
          * Shelf
@@ -1280,35 +1261,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    protected_route_protected_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProtectedResponse"];
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
         };

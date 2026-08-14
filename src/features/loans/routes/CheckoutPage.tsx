@@ -14,7 +14,9 @@ import { Button } from '../../../components/Button'
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog'
 import { Field } from '../../../components/Field'
 import { LoadingState } from '../../../components/LoadingState'
+import { QueryErrorState } from '../../../components/QueryErrorState'
 import {
+    formatApiQueryError,
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
@@ -212,11 +214,9 @@ export function CheckoutPage() {
         !isbnSearchQuery.isFetching
     ) {
         if (isbnSearchQuery.isError) {
-            isbnFindStatusMessage = isApiError(
+            isbnFindStatusMessage = formatApiQueryError(
                 isbnSearchQuery.error,
             )
-                ? isbnSearchQuery.error.message
-                : 'ISBN search failed. You can still select a book from the list.'
         } else if (isbnSearchQuery.data) {
             const items =
                 isbnSearchQuery.data.items
@@ -541,21 +541,13 @@ export function CheckoutPage() {
                     ← Back to Books
                 </AppLink>
 
-                <Alert
-                    variant="error"
+                <QueryErrorState
                     title="Could not load books"
-                >
-                    The available books could not be loaded.
-                </Alert>
-
-                <Button
-                    type="button"
-                    onClick={() => {
+                    error={booksQuery.error}
+                    onRetry={() => {
                         void booksQuery.refetch()
                     }}
-                >
-                    Retry
-                </Button>
+                />
             </section>
         )
     }

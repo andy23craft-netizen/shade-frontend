@@ -1,13 +1,7 @@
-let currentToken: string | null = null
+import { readApiToken } from '../../config/apiToken'
 
-export function getCurrentToken(): string | null {
-    return currentToken
-}
+const envToken = readApiToken()
 
-export function setCurrentToken(token: string): void {
-    currentToken = token
-}
-
-export function clearCurrentToken(): void {
-    currentToken = null
+export function getCurrentToken(): string {
+    return envToken
 }

@@ -120,6 +120,11 @@ vi.mock('../../../api/booksQueries', () => ({
             data: mockBooksResponse,
             isPending: mockBooksPending,
             isError: mockBooksError,
+            error: mockBooksError
+                ? new Error(
+                      'The available books could not be loaded.',
+                  )
+                : null,
             refetch: mockRefetchBooks,
         }
     },

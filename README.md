@@ -11,14 +11,18 @@ The React frontend for the Shade library application.
 
 ## Setup
 
-Activate the Node.js version recorded in `.nvmrc`, then enable Corepack and
-install the locked dependencies:
+Activate the Node.js version recorded in `.nvmrc`, then enable Corepack,
+install the locked dependencies, and configure the API token:
 
 ```sh
 nvm use
 corepack enable
 make install
+cp -n .env.example .env
 ```
+
+Edit `.env` and set `VITE_API_SECRET_KEY` to match the backend
+`API_SECRET_KEY`. Restart the dev server after changing `.env`.
 
 ## Development
 
@@ -60,14 +64,21 @@ make build
 
 Production output is written to `dist/`.
 
-## API token storage
+## API token
 
-The Bearer token is entered at runtime on the connection screen. It is kept in
-memory and `sessionStorage` for the browser tab. That limits persistence across
-tabs and browser restarts, but it does not hide the token from anyone who can use
-the browser or run same-origin script. Never put a token in source, runtime
-config, build arguments, generated assets, source maps, URLs, logs, or error
-reports.
+The Bearer token is read from the repository-root `.env` file as
+`VITE_API_SECRET_KEY`. Vite injects this value at dev-server and production
+build time, so the secret is embedded in generated JavaScript bundles. Keep
+`.env` gitignored and never commit real secrets.
+
+Copy `.env.example` to `.env`, set the value to match the backend
+`API_SECRET_KEY`, and restart `make run` after changes. Hot reload does not
+reload env files. A missing or blank `VITE_API_SECRET_KEY` prevents the app
+from starting.
+
+For production builds, set `VITE_API_SECRET_KEY` in the build environment before
+running `make build`. Release artifacts must not include the `.env` file itself
+— only built static assets under `dist/`.
 
 ## Production connectivity (release blocker)
 

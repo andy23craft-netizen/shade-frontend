@@ -44,7 +44,6 @@ const expectedPaths = [
     '/health',
     '/loans',
     '/loans/{id}',
-    '/protected',
 ] as const
 
 describe('OpenAPI contract smoke', () => {

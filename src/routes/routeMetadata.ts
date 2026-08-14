@@ -49,11 +49,6 @@ export const routeMetadata = {
     title: 'Backup Library',
     heading: 'Backup Library',
   },
-  connection: {
-    path: '/settings/connection',
-    title: 'Connection Settings',
-    heading: 'Connection Settings',
-  },
   notFound: {
     path: '*',
     title: 'Page Not Found',
