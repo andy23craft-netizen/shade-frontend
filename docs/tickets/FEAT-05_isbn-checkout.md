@@ -2,8 +2,9 @@
 
 ## Objective
 
-Let the checkout page find an eligible library book by typed or scanned ISBN, using the backend `GET /books?isbn=`
-filter, then continue the existing FEAT-07 checkout form and mutation.
+Let the checkout page find an eligible library book by ISBN, primarily via hardware barcode scanner or camera scan
+(with typed entry as a fallback), using the backend `GET /books?isbn=` filter, then continue the existing FEAT-07
+checkout form and mutation.
 
 ## Dependencies
 
@@ -45,9 +46,12 @@ Confirm against a representative running backend `/openapi.json` before locking 
   default list filter and continue to require `deletion_date === null` and `status === 'available'` before selection
   or submit (same eligibility as FEAT-07).
 - Stored `isbn13` values are normalized on create/update (typically compact ISBN-13). The list filter does **not**
-  normalize hyphens/spaces like lookup. Before querying, strip spaces and hyphens from the user/scanner value so a
-  formatted scan still matches stored compact ISBN-13. Prefer checksum-gated full ISBN-10 / ISBN-13 for Find / scan
-  handoff (reuse `isValidIsbn` from `src/features/books/utils/isbn.ts`); do not send invalid checksum values.
+  normalize hyphens/spaces like lookup. Before querying, strip spaces, hyphens, and similar punctuation from the
+  scanned or typed value so a formatted barcode still matches stored compact ISBN-13. Do **not** convert ISBN-10 to
+  ISBN-13, prepend `978`/`979`, or otherwise add digits -- search with the compact scanned/typed string as-is.
+  Scans are nearly always ISBN-13 Bookland barcodes; ISBN-10 edge cases are out of scope for this Find path.
+- Prefer checksum-gated values for Find / scan handoff (reuse `isValidIsbn` from `src/features/books/utils/isbn.ts`);
+  do not send blank, whitespace-only, or invalid-checksum values.
 - Checkout mutation remains `POST /books/{id}/checkout` with existing request shaping. ISBN search only selects `id`;
   it does not change the checkout payload.
 
@@ -72,11 +76,13 @@ Already in place and should be reused (not rebuilt):
 
 ### Product behavior
 
-- On `/checkout`, keep the existing eligible-book `<select>` (and `?bookId=` deep-link). Add an adjacent ISBN find path:
-  typed ISBN field, Find action, optional "Scan ISBN" camera control, and hardware-wedge listening when appropriate.
+- On `/checkout`, keep the existing eligible-book `<select>` (and `?bookId=` deep-link). Add an adjacent ISBN find path
+  aimed at barcode capture: hardware-wedge listening when appropriate, "Scan ISBN" camera control, plus a typed ISBN
+  field and Find action as fallback.
 - On a successful Find / scan:
-  1. Normalize (strip spaces/hyphens) and validate with `isValidIsbn`.
-  2. Query `useBooks({ isbn: <normalized> })` (or an equivalent one-shot refetch through the same helper). Do not call
+  1. Compact the value by stripping spaces, hyphens, and similar punctuation only; validate with `isValidIsbn`. Do not
+     rewrite the digit string (no ISBN-10→ISBN-13 conversion, no added prefix digits).
+  2. Query `useBooks({ isbn: <compacted> })` (or an equivalent one-shot refetch through the same helper). Do not call
      `useBookLookup` / `booksApi.lookup`.
   3. From results, keep only FEAT-07-eligible books.
   4. Zero eligible matches: accessible explanation (none in library vs found but not available / soft-deleted), keep
@@ -99,8 +105,8 @@ Already in place and should be reused (not rebuilt):
 |------|--------|
 | `src/features/loans/routes/CheckoutPage.tsx` | Primary UI work: ISBN field + Find, lazy camera scanner, hardware scanner hook, `useBooks({ isbn })` (or enabled-when-set search state), eligibility filtering of ISBN results, multi/zero/one match handling, wire selection into existing `selectBook` / form. Keep full eligible list query for the `<select>` unless a measured reason says otherwise (two queries: unfiltered eligible list + ISBN-filtered search is fine). |
 | `src/features/loans/routes/CheckoutPage.test.tsx` | Cover typed Find success (single eligible), zero matches, ineligible-only matches, client checksum rejection, blank prevention (no request), camera/hardware handoff into Find (mirror `NewBookPage` scanner tests), and that checkout mutate path is unchanged after ISBN selection. |
-| `src/features/loans/checkoutModel.ts` | Only if ISBN draft/validation helpers belong outside the page. Prefer page-local search state unless shared conversion grows; do not fold ISBN into `CheckoutRequest`. Update `checkoutModel.test.ts` only if model helpers are added. |
-| `src/features/books/utils/isbn.ts` | Reuse `isValidIsbn` / normalization. Export a small shared "compact for list filter" helper only if Checkout and NewBook would otherwise duplicate strip logic; add colocated unit coverage if exported. |
+| `src/features/loans/checkoutModel.ts` | Only if ISBN draft/validation helpers belong outside the page. Prefer page-local search state unless shared compact helpers grow; do not fold ISBN into `CheckoutRequest`. Update `checkoutModel.test.ts` only if model helpers are added. |
+| `src/features/books/utils/isbn.ts` | Reuse `isValidIsbn`. Export a small shared "compact for list filter" helper (strip spaces/hyphens/punctuation only -- never rewrite digits) only if Checkout would otherwise duplicate strip logic; add colocated unit coverage if exported. |
 | `src/features/scanning/*` | Prefer reuse as-is. Change only if checkout needs a documented shared enablement prop or handoff helper; do not specialize scanners for checkout payloads. |
 | `src/api/booksApi.ts` / `booksQueries.ts` / `queryKeys.ts` | Expect no transport changes if CHORE-01 is present. If `isbn` list support is missing in the working tree, add omit-empty `isbn` on `list`, `useBooks({ isbn })`, and list query-key shape, plus API/query tests -- then proceed with UI. |
 | `docs/baselines/FEAT-06_scanner-support.md` | Optionally note `/checkout` as a second capture surface in the manual matrix; do not rewrite the matrix. |
@@ -109,16 +115,19 @@ Already in place and should be reused (not rebuilt):
 
 ### Out of scope
 
-- Creating books from checkout when ISBN is unknown (send users to `/books/new` via a link at most; do not embed create).
+- Creating books from checkout when ISBN is unknown (link to `/books/new` at most; do not embed create).
 - Using `GET /books/lookup`, catalog-wide title search, UPC, or multi-copy inventory.
+- Converting ISBN-10 to ISBN-13 (or any other digit rewriting) before `GET /books?isbn=`; strip punctuation only.
 - Changing checkout request fields, loan history, or check-in ISBN selection (check-in can mirror later).
 - Rebuilding FEAT-06 scanners or FEAT-07 confirmation/mutation flow.
 - Backend OpenAPI or filter semantics changes (substring contains and 400-on-blank stay as documented).
 
 ## Acceptance criteria
 
-- From `/checkout`, a user can type a valid ISBN, run Find, and select the matching available library book without using
-  the full eligible dropdown when a single eligible match exists.
+- From `/checkout`, a user can scan (camera or hardware wedge) or type a valid ISBN, run Find, and select the matching
+  available library book without using the full eligible dropdown when a single eligible match exists.
+- Find sends the compacted scan/type string (punctuation stripped only) to `GET /books?isbn=`; it never invents or
+  rewrites digits (no ISBN-10→ISBN-13 conversion).
 - Camera "Scan ISBN" and hardware-wedge capture on `/checkout` feed the same Find path; unsupported/denied camera paths
   leave typed Find and the eligible `<select>` usable.
 - Invalid checksum / blank ISBN never calls `GET /books?isbn=`; blank/whitespace never produce a **400** from this UI.
@@ -126,15 +135,19 @@ Already in place and should be reused (not rebuilt):
   eligible without blocking the rest of the form.
 - Existing `?bookId=` deep-link, confirmation, `useCheckoutBook`, Field-linked `422`, and `404`/`409` refresh behavior
   still pass.
-- Colocated `CheckoutPage` tests cover the ISBN paths above; `make check` (or focused lint/typecheck/test plus build when
-  proportionate) passes.
+- Colocated `CheckoutPage` tests cover the ISBN paths above; `make check` (or focused lint/typecheck/test plus build
+  when proportionate) passes.
 - No secrets, ISBN drafts, or borrower fields appear in diagnostics beyond existing redaction rules.
 
 ## Implementation notes
 
+- Primary capture path is barcode scanner / camera; typed Find is the fallback. Design enablement and focus flow for
+  scan-first use (hardware listening when safe; lazy camera until Scan is opened).
 - Prefer two React Query usages on the page: `useBooks()` for the eligible `<select>`, and `useBooks({ isbn })` with
   `enabled: Boolean(activeSearchIsbn)` for Find results. Avoid filtering the full in-memory list as a substitute for
   the API filter once ISBN Find is invoked -- the point of the backend change is server-side `isbn` search.
+- Compact helper must only remove punctuation (spaces, hyphens, and similar). Do not call lookup normalization or add
+  prefix digits so ISBN-10 values become ISBN-13.
 - When applying a Find result, reuse `setSearchParams({ bookId })` so refresh and detail deep-links stay consistent.
 - Keep lines of product copy short; reuse `Alert`, `Field`, `Button`, and `LoadingState` from
   `src/components/index.ts`.
