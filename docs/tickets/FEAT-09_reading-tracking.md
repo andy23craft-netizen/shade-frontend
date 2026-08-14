@@ -6,7 +6,12 @@ Record initial reading completion and maintain completion date, rating, and revi
 
 ## Dependencies
 
-FEAT-08.
+FEAT-08 is complete (ticket file removed). Reuse FEAT-03 typed helpers (`booksApi.markRead`, `pickMarkReadRequest`,
+`useMarkBookRead`, `booksApi.update`, `pickBookUpdate`, `useUpdateBook`, `dateTime.ts`) and FEAT-07/FEAT-08 form
+patterns (`ConfirmationDialog`, Field-linked `422`, stale `404` refetch with preserved input). Do not invent a second
+reading client. Prefer the dedicated mark-read endpoint for the initial unread → read transition; never simulate that
+transition with generic `PATCH` (`is_read=true` or otherwise). Metadata edit, delete, restore, and backup remain FEAT-10;
+do not pull those into FEAT-09.
 
 ## Contract references
 
@@ -19,11 +24,7 @@ Treat these as complementary, not interchangeable:
   today-UTC default vs explicit `completion_date: null`, soft-delete `404` on mark-read, independent loan/reading axes,
   unvalidated temporal strings, and FE vs API ownership of reading state).
 
-Reuse FEAT-03 typed mark-read and book-update helpers and mutation/cache invalidation. Do not invent a second reading
-client. Prefer the dedicated mark-read endpoint for the initial unread → read transition; never simulate that
-transition with generic `PATCH` (`is_read=true` or otherwise).
-
-### Documented contract facts for this ticket
+### Documented contract facts still relevant
 
 Confirm against a representative running backend `/openapi.json` before locking behavior; record drift as a blocker.
 
@@ -58,30 +59,57 @@ Confirm against a representative running backend `/openapi.json` before locking 
   `POST .../mark-read` (or `{}`) → display returned `BookRead`. Later, FE patches only changed reading fields →
   display returned `BookRead`.
 
-## Scope
+## Current baseline
 
-- Add a mark-read action for active unread books (`is_read=false`, non-null `deletion_date` absent) from appropriate
-  list/detail contexts. Soft-deleted and already-read books must not be offered the initial action or submitted through
-  the current UI.
-- Collect optional `YYYY-MM-DD` completion date, integer rating from 1 through 5, and review, with review/confirmation,
-  in-flight duplicate prevention, success feedback, and accessible validation.
-- Use `POST /books/{id}/mark-read` for the initial transition, including `{}` when all values are omitted. Reject blank
-  or out-of-range ratings client-side even when the backend would also `422`.
-- Add a later edit flow limited to `completion_date`, `rating`, and `review` using `PATCH /books/{id}`, including
-  intentional nullable-field clears. Map create/update-time `422 detail[].loc` entries to fields; preserve input, focus
-  an error summary, and link field errors.
-- Present read state and rating in collection and detail views (building on FEAT-04 presentation; do not rename wire
-  fields).
-- On success, update the returned `BookRead` in cache and invalidate book lists, detail, and dashboard queries per
-  FEAT-03 / PLAN 7.5. Reading mutations do not require loans-list invalidation unless a shared helper already does so
-  for book writes.
+Already in place and should be reused (not rebuilt):
+
+- Typed transport: `booksApi.markRead` (defaults to `{}`), `pickMarkReadRequest`, `useMarkBookRead` (detail-cache write
+  + PLAN 7.5 invalidation via `invalidateBookCaches`, including dashboard), `booksApi.update`, `pickBookUpdate`,
+  `useUpdateBook`, and `formatDateOnly` / related helpers in `dateTime.ts`. Colocated API and hook tests cover empty
+  mark-read bodies and cache invalidation.
+- FEAT-04 collection/detail presentation: `BooksPage` shows read vs unread; `BookDetailsPage` renders `is_read`,
+  `completion_date`, `rating`, and `review` on the detail view.
+- `BookDetailsPage` links to `/books/:bookId/mark-read` for every non-deleted book (stub only: the route is not
+  registered, the link is not gated on `is_read=false`, and there is no mark-read or reading-edit UI yet).
+
+## Remaining scope
+
+### Initial mark-read
+
+- Register `/books/:bookId/mark-read` (or equivalent owned route) and implement `MarkReadPage` + `markReadModel`
+  (optional `YYYY-MM-DD` completion date, rating 1–5, review; blank optionals omitted; `{}` when all omitted;
+  client-side rating bounds; `ConfirmationDialog`; `useMarkBookRead`; success navigation back to detail).
+- Gate the initial action to active unread books (`deletion_date === null` and `is_read === false`) on detail and any
+  list entry points. Do not offer mark-read for soft-deleted or already-read books.
+- Map mark-read `422 detail[].loc` entries to fields; preserve input, focus an error summary, and link field errors
+  (mirror FEAT-07 checkout / FEAT-08 check-in patterns).
 - On `404`, explain stale/missing/soft-deleted state, refetch affected book data, and preserve safe form input. On
   network or other retryable failures, preserve input and refetch state.
-- Keep review text out of logs and diagnostics.
+- Prevent duplicate submissions while a mutation is pending.
+
+### Later reading edits
+
+- Add a reading-edit flow for already-read books limited to `completion_date`, `rating`, and `review` via
+  `PATCH /books/{id}` / `useUpdateBook`, including intentional nullable-field clears. Send only changed reading fields.
+  Map `422` field errors and preserve draft input. Do not offer "mark unread" or loan/status mutation through this
+  flow.
+
+### Presentation
+
+- Show rating alongside read state in the collection list (detail already shows reading fields; extend list presentation
+  without renaming wire fields).
+- After success, bind visible read state from the returned `BookRead` (cache writes already occur in the hooks).
+
+### Tests
+
+- Colocated route/model tests for mark-read success (`200` `BookRead`), `{}` when all optionals omitted, explicit
+  clears, rating bounds, Field-linked `422`, `404` for missing/deleted books, stale-state refetch, network failure,
+  confirmation cancel, pending disable, eligibility gating, and reading PATCH edits.
+- Update `BookDetailsPage` tests for gated Mark Read / reading-edit entry points.
 
 ## Acceptance criteria
 
-- Soft-deleted and missing books cannot be marked read; already-read books are not offered the initial action.
+- Soft-deleted and missing books cannot be marked read; already-read books are not offered the initial mark-read action.
 - Initial completion never uses generic `PATCH`.
 - Optional omission sends `{}` and allows the API to choose its default completion date (today UTC).
 - Omitted fields preserve/default according to the endpoint, while explicit `null` clears that field; explicit
@@ -95,9 +123,8 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - Reading state never changes checkout state.
 - Success visibly reflects `is_read`, `completion_date`, `rating`, and `review` from the returned `BookRead`.
 - Duplicate clicks cause one mutation.
-- Component/integration tests cover success (`200` `BookRead`), `422` for an omitted body or invalid rating, `404` for
-  missing/deleted books, the required empty object, omitted optional values, explicit clears, rating bounds, cache
-  invalidation, network failure, and retry.
+- Component/integration tests cover the mark-read and reading-edit flows listed above.
+- Keep review text out of logs and diagnostics.
 - `make check` passes.
 
 ## Plan coverage
