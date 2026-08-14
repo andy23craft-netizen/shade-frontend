@@ -265,6 +265,10 @@ export function BookDetailsPage() {
 
     const canDelete =
         canShowActiveActions && !isOnLoan
+    const canMarkRead =
+        canShowActiveActions &&
+        !book.is_read
+
     return (
         <section className="route-page">
             <div className="book-details__topbar">
@@ -495,12 +499,14 @@ export function BookDetailsPage() {
                         </AppLink>
                     ) : null}
 
-                    <AppLink
-                        to={`/books/${book.id}/mark-read`}
-                        variant="secondary"
-                    >
-                        Mark Read
-                    </AppLink>
+                    {canMarkRead ? (
+                        <AppLink
+                            to={`/books/${book.id}/mark-read`}
+                            variant="secondary"
+                        >
+                            Mark Read
+                        </AppLink>
+                    ) : null}
 
                     {canDelete ? (
                         <AppLink

@@ -5,6 +5,7 @@ import { BookDetailsPage } from '../features/books/routes/BookDetailsPage'
 import { BooksPage } from '../features/books/routes/BooksPage'
 import { DeletedBooksPage } from '../features/books/routes/DeletedBooksPage'
 import { EditBookPage } from '../features/books/routes/EditBookPage'
+import { MarkReadPage } from '../features/books/routes/MarkReadPage'
 import { NewBookPage } from '../features/books/routes/NewBookPage'
 import { CheckoutPage } from '../features/loans/routes/CheckoutPage'
 import { CheckinPage } from '../features/loans/routes/CheckinPage'
@@ -12,6 +13,7 @@ import { LoansPage } from '../features/loans/routes/LoansPage'
 import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
 import { NotFoundPage } from './NotFoundPage'
 import { routeMetadata } from './routeMetadata'
+
 
 export const routeConfig = [
     {
@@ -44,6 +46,13 @@ export const routeConfig = [
                     title: routeMetadata.bookDetails.title,
                 },
                 element: <BookDetailsPage />,
+            },
+            {
+                path: routeMetadata.markRead.path,
+                handle: {
+                    title: routeMetadata.markRead.title,
+                },
+                element: <MarkReadPage />,
             },
             {
                 path: routeMetadata.editBook.path,
