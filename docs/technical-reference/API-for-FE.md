@@ -100,6 +100,11 @@ Prefer dedicated endpoints over reproducing their effects with `PATCH`:
 
 Books are ordered by title. Path `{id}` accepts any string and returns **404** when no row matches.
 
+Optional `isbn` on `GET /books` filters to books whose stored `isbn13` contains the given substring (literal
+contains; the filter string is not normalized like create/lookup). Empty or whitespace-only `isbn` is **400**.
+No matches return an empty `BookList` (`items: []`, `total: 0`), not **404**. Soft-delete rules still apply unless
+`include_deleted=true`.
+
 ---
 
 # ISBN lookup and normalization

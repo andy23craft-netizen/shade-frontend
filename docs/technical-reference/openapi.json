@@ -1283,6 +1283,22 @@
               "title": "Include Deleted",
               "type": "boolean"
             }
+          },
+          {
+            "in": "query",
+            "name": "isbn",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Isbn"
+            }
           }
         ],
         "responses": {
@@ -1295,6 +1311,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
           },
           "403": {
             "content": {
