@@ -5,8 +5,9 @@
 }
 
 .app-header {
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-brass);
+  background: var(--color-wood-dark);
+  box-shadow: 0 2px 8px rgb(10 8 6 / 20%);
 }
 
 .app-header__inner,
@@ -28,10 +29,16 @@
 
 .app-brand {
   flex: 0 0 auto;
-  color: var(--color-text);
+  color: var(--color-primary-text);
+  font-family: var(--font-family-heading);
   font-size: 1.25rem;
   font-weight: 700;
+  letter-spacing: 0.04em;
   text-decoration: none;
+}
+
+.app-brand:hover {
+  color: var(--color-brass-light);
 }
 
 .app-nav {
@@ -49,7 +56,7 @@
 .app-nav__group--admin {
   margin-left: var(--space-4);
   padding-left: var(--space-4);
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-brass);
 }
 
 .app-nav__link {
@@ -58,17 +65,21 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
   border-radius: var(--radius-medium);
-  color: var(--color-text);
+  color: var(--color-primary-text);
   font-weight: 600;
   text-decoration: none;
 }
 
 .app-nav__link:hover {
-  background: var(--color-surface-muted);
+  border-color: var(--color-brass);
+  background: rgb(245 240 230 / 8%);
+  color: var(--color-brass-light);
 }
 
 .app-nav__link[aria-current="page"] {
+  border-color: var(--color-brass-light);
   background: var(--color-primary);
   color: var(--color-primary-text);
 }
@@ -85,14 +96,14 @@
 }
 
 .route-page__content {
-  max-width: 48rem;
   display: grid;
+  max-width: 48rem;
   gap: var(--space-4);
 }
 
 .app-footer {
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-top: 1px solid var(--color-brass);
+  background: var(--color-wood-dark);
 }
 
 .app-footer__inner {
@@ -101,7 +112,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding-block: var(--space-6);
-  color: var(--color-text-muted);
+  color: var(--color-primary-text);
   font-size: var(--font-size-small);
 }
 
@@ -120,7 +131,7 @@
     margin-left: 0;
     padding-top: var(--space-2);
     padding-left: 0;
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-brass);
     border-left: 0;
   }
 

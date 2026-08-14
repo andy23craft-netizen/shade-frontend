@@ -12,31 +12,36 @@
   line-height: 1.2;
   text-decoration: none;
   transition:
-    background-color var(--duration-normal) ease,
-    border-color var(--duration-normal) ease,
-    color var(--duration-normal) ease;
+          background-color var(--duration-normal) ease,
+          border-color var(--duration-normal) ease,
+          color var(--duration-normal) ease;
 }
 
 .button--primary {
+  border-color: var(--color-brass);
   background: var(--color-primary);
   color: var(--color-primary-text);
 }
 
 .button--primary:hover:not(:disabled) {
+  border-color: var(--color-brass-light);
   background: var(--color-primary-hover);
 }
 
 .button--secondary {
-  border-color: var(--color-border);
+  border-color: var(--color-card-border);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-surface-text);
 }
 
 .button--secondary:hover:not(:disabled) {
+  border-color: var(--color-brass);
   background: var(--color-surface-muted);
+  color: var(--color-surface-text);
 }
 
 .button--danger {
+  border-color: var(--color-danger-border);
   background: var(--color-danger);
   color: #ffffff;
 }
@@ -55,29 +60,49 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
   border-radius: var(--radius-medium);
   font-weight: 600;
   text-decoration: none;
+  transition:
+          background-color var(--duration-normal) ease,
+          border-color var(--duration-normal) ease,
+          color var(--duration-normal) ease;
 }
 
 .app-link--primary {
+  border-color: var(--color-brass);
   background: var(--color-primary);
   color: var(--color-primary-text);
 }
 
 .app-link--secondary {
-  border: 1px solid var(--color-border);
+  border-color: var(--color-card-border);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-surface-text);
 }
 
 .app-link--danger {
+  border-color: var(--color-danger-border);
   background: var(--color-danger);
   color: #ffffff;
 }
 
-.app-link:hover {
-  text-decoration: underline;
+.app-link--primary:hover {
+  border-color: var(--color-brass-light);
+  background: var(--color-primary-hover);
+  color: var(--color-primary-text);
+}
+
+.app-link--secondary:hover {
+  border-color: var(--color-brass);
+  background: var(--color-surface-muted);
+  color: var(--color-surface-text);
+}
+
+.app-link--danger:hover {
+  color: #ffffff;
+  filter: brightness(0.9);
 }
 
 .field {
@@ -145,7 +170,7 @@
   width: 2rem;
   height: 2rem;
   border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  border-top-color: var(--color-brass-light);
   border-radius: 50%;
   animation: loading-spin 700ms linear infinite;
 }
@@ -166,9 +191,11 @@
   display: grid;
   gap: var(--space-4);
   padding: var(--space-8);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
+  border: 1px dashed var(--color-card-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  color: var(--color-surface-text);
 }
 
 .empty-state__action {
@@ -178,15 +205,15 @@
 .confirmation-dialog {
   width: min(calc(100% - 2rem), 32rem);
   padding: 0;
-  border: 0;
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
   box-shadow: var(--shadow-dialog);
-  color: var(--color-text);
+  color: var(--color-surface-text);
 }
 
 .confirmation-dialog::backdrop {
-  background: rgb(23 32 27 / 55%);
+  background: rgb(8 18 15 / 70%);
 }
 
 .confirmation-dialog__content {
@@ -217,19 +244,26 @@
   grid-template-columns: 1fr auto;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
   box-shadow: var(--shadow-small);
+  color: var(--color-surface-text);
 }
 
 .notification__dismiss {
   min-width: var(--control-target);
   min-height: var(--control-target);
   padding: var(--space-2);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-card-border);
   border-radius: var(--radius-small);
   background: var(--color-surface);
+  color: var(--color-surface-text);
+}
+
+.notification__dismiss:hover {
+  border-color: var(--color-brass);
+  background: var(--color-surface-muted);
 }
 
 .notification--info {

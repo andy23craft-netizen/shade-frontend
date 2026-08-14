@@ -40,12 +40,13 @@ select {
 }
 
 a {
-  color: var(--color-link);
+  color: var(--color-text);
   text-underline-offset: 0.15em;
+  text-decoration-thickness: 0.08em;
 }
 
 a:hover {
-  color: var(--color-link-hover);
+  color: var(--color-brass-light);
 }
 
 :focus-visible {
@@ -56,26 +57,32 @@ a:hover {
 h1,
 h2,
 h3 {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-weight: 700;
   line-height: var(--line-height-heading);
+  letter-spacing: 0.015em;
 }
 
 h1 {
-  margin: 0;
   font-size: var(--font-size-h1);
 }
 
 h2 {
-  margin: 0;
   font-size: var(--font-size-h2);
 }
 
 h3 {
-  margin: 0;
   font-size: var(--font-size-h3);
 }
 
 p {
   margin: 0;
+}
+
+strong,
+b {
+  font-weight: 700;
 }
 
 button {
