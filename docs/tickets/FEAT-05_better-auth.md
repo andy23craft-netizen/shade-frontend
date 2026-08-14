@@ -83,6 +83,8 @@ These choices are fixed for implementation; do not re-open them unless product d
 | React Query retry on `403` | **Disabled.** Queries must not retry after `kind: 'unauthorized'`. Page-level retry controls must not refetch on `403` either (hide or disable Retry when the error is unauthorized). |
 | `403` cache invalidation | **Do not** call `queryClient.clear()` on auth rejection. Let queries settle with `isError: true`. |
 | Production build token test | **Option (a):** build with a known dummy `VITE_API_SECRET_KEY` and assert the `.env` file itself is not copied into `dist/`. |
+| Production tarball (FEAT-14 / FEAT-16) | **Exclude `.env`.** Release artifacts package `dist/` and other deployable static assets only; never include the repo-root `.env` file in the production tarball. |
+| Podman preview (FEAT-15) | **Include `.env`.** Copy or bind-mount the repo-root `.env` into the Podman container so dev and preview workflows can read `VITE_API_SECRET_KEY` at server or build start. |
 
 ## Remaining scope
 
@@ -90,7 +92,7 @@ These choices are fixed for implementation; do not re-open them unless product d
 
 | File | Change |
 |------|--------|
-| **`.env.example`** (committed) | Already present in the repository. Verify it defines `VITE_API_SECRET_KEY=change-me` with a short comment that the value must match the backend `API_SECRET_KEY`. No real secrets. |
+| **`.env.example`** (committed) | **Complete.** Defines `VITE_API_SECRET_KEY=change-me` (no real secret). Optionally add a short comment that the value must match the backend `API_SECRET_KEY`. |
 | **`.env`** (local, gitignored) | Operators maintain a repo-root `.env` copied from `.env.example`. It is listed in `.gitignore` (lines 31–34) and is not visible to CI or other clones. |
 | **`.gitignore`** | No change required. Confirm `.env.example` is **not** matched by any ignore rule. |
 | **`README.md`** | Replace the "API token storage" section. Document `cp .env.example .env`, set `VITE_API_SECRET_KEY`, restart `make run` after changes. Remove references to the connection screen and `sessionStorage`. Note that the secret is embedded in built assets. State that a missing or invalid `.env` prevents the app from starting. |
@@ -178,13 +180,13 @@ Run `make check` after implementation.
 | **`docs/product-docs/PLAN.md`** | Revise §7.3 runtime connection and token handling; remove connection settings screen requirement. |
 | **`docs/tickets/FEAT-12_operational-and-browser-hardening.md`** | Note dependency on updated auth model if FEAT-12 assumes runtime token entry. |
 | **`docs/tickets/FEAT-13_workflow-and-accessibility-tests.md`** | Replace connection-screen journey with env setup. |
-| **`docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`** | CI must supply `VITE_API_SECRET_KEY` for any step that runs `vite build` expecting a token, or use a documented dummy value for build-only checks. Do not commit real secrets. |
-| **`docs/tickets/FEAT-15_podman-development-and-preview.md`** | Replace "token outside image layers" guidance with env-file or build-arg strategy for container previews. |
-| **`docs/tickets/FEAT-16_versioned-release-artifacts.md`** | Update smoke checklist: remove "connection" UI step; add env verification. |
+| **`docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`** | CI must supply `VITE_API_SECRET_KEY` for any step that runs `vite build` (documented dummy for build-only checks; real value only via CI secrets when needed). Do not commit real secrets. Production release tarball must **not** include the repo-root `.env` file — only `dist/` and deployable static assets. Replace "token must not appear in `dist/`" inspection with asserting `.env` is absent from `dist/` and packaged artifacts; embedded build-time token in JS bundles is expected after this ticket. |
+| **`docs/tickets/FEAT-15_podman-development-and-preview.md`** | **Copy or bind-mount** the repo-root `.env` into the Podman container at startup (development and preview). Replace "token outside image layers" guidance — the container needs `.env` for Vite to read `VITE_API_SECRET_KEY`. Document that operators maintain a local gitignored `.env` (never committed). Prefer bind-mount over baking `.env` into image layers when feasible. |
+| **`docs/tickets/FEAT-16_versioned-release-artifacts.md`** | Update smoke checklist: remove "connection" UI step; add env verification. Production tarball must exclude the repo-root `.env` file (package `dist/` and deployable static assets only). |
 
 ## Acceptance criteria
 
-- Repository includes a committed `.env.example` with `VITE_API_SECRET_KEY=change-me` (no real secret).
+- Committed `.env.example` defines `VITE_API_SECRET_KEY=change-me` (no real secret; already present in the repository).
 - `.env` at the repo root is gitignored and is the sole source of the Bearer token at runtime.
 - Missing `.env`, missing `VITE_API_SECRET_KEY`, or a blank value throws at bootstrap and prevents the application from
   mounting (no in-app recovery UI for env misconfiguration).
@@ -213,7 +215,11 @@ Run `make check` after implementation.
 - **Vite env access:** Only variables prefixed with `VITE_` are exposed to client code. Access via
   `import.meta.env.VITE_API_SECRET_KEY`, not `process.env`, in browser modules.
 - **Dev workflow:** After editing `.env`, restart the Vite dev server; hot reload does not reload env files.
-- **Production:** Set `VITE_API_SECRET_KEY` in the build environment (CI secret, deployment env) before `make build`.
+- **Production:** Set `VITE_API_SECRET_KEY` in the build environment (CI secret, deployment env) before `make build`. The
+  production tarball (FEAT-14 / FEAT-16) must not include the `.env` file — only built static assets — even though the
+  secret value is embedded in JS bundles at build time.
+- **Podman (FEAT-15):** Copy or bind-mount the repo-root `.env` into the container so Vite can read
+  `VITE_API_SECRET_KEY` during dev-server and preview workflows.
 - **403 copy:** Prefer the existing generic product string **"API access was rejected."** (`apiClient.ts`) over exposing
   raw backend `detail` text, consistent with `AGENTS.md`.
 - **403 retry:** `createQueryClient()` already skips retry for `unauthorized` in `shouldRetryQuery`; preserve that and

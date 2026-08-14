@@ -46,8 +46,11 @@ representative running backend `/openapi.json` when locking or changing the gate
 - If an optional live contract smoke job exists (against a representative API), supply credentials only through the CI
   secret store, never through the repository, workflow defaults, build args, or runtime-config templates committed for
   CI. Prefer public `GET /health` for reachability; use protected routes only when the smoke explicitly needs them.
-- Production-build token inspection from earlier tickets remains required: known test tokens must not appear in `dist/`
-  or source maps. CI fails the build when they do.
+- Production-build inspection (updated for FEAT-05 `.env` auth): CI supplies a documented dummy `VITE_API_SECRET_KEY` for
+  any step that runs `vite build`. Assert the repo-root `.env` file is **not** copied into `dist/` or packaged into the
+  production release tarball. Embedded build-time token values in JS bundles are expected after FEAT-05; do not fail the
+  build solely because a dummy secret appears in compiled assets. CI fails when `.env` itself appears in `dist/` or
+  release artifacts.
 
 #### Privacy denylist for logs and retained artifacts
 
@@ -83,13 +86,15 @@ Do not snapshot or upload backup blobs "for debugging."
 - Record production build size and report material regressions against the budget established in FEAT-03.
 - Retain test and build diagnostics needed to investigate failures without publishing credentials or private library
   data (see denylist above).
+- Package production release artifacts from `dist/` and deployable static assets only; **never** include the repo-root
+  `.env` file in the production tarball (FEAT-16).
 - Document required branch checks and whether any live-API smoke job is optional vs required.
 
 ## Acceptance criteria
 
 - A clean checkout runs the complete documented pipeline with pinned prerequisites and an unchanged lockfile.
 - CI fails on lockfile drift, lint warnings, type errors, tests, OpenAPI/fixture contract drift, accessibility/browser
-  regressions, production-build token leakage, or build failure.
+  regressions, `.env` packaged into `dist/` or the production tarball, or build failure.
 - CI and `make check` execute equivalent required checks and produce the same successful production build.
 - Dependency caching cannot bypass immutable installation or alter lockfile semantics.
 - Browser tests use isolated data and do not depend on execution order or a shared mutable backend library.
