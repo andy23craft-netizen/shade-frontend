@@ -7,6 +7,10 @@ import { AppLink } from '../../../components/AppLink'
 import { LoadingState } from '../../../components/LoadingState'
 import { isApiError } from '../../../api/apiErrors'
 import { useBook } from '../../../api/booksQueries'
+import { useLoans } from '../../../api/loansQueries'
+import {
+    isCheckinEligible,
+} from '../../loans/checkinEligibility'
 import { queryKeys } from '../../../api/queryKeys'
 import type {
     Category,
@@ -152,6 +156,10 @@ export function BookDetailsPage() {
 
     const bookQuery = useBook(bookId ?? '')
 
+    const loansQuery = useLoans({
+        bookId: bookId ?? '',
+    })
+
     const isNotFound =
         bookQuery.isError &&
         isApiError(bookQuery.error) &&
@@ -250,7 +258,13 @@ export function BookDetailsPage() {
         book.status === 'available'
 
     const canCheckin =
-        canShowActiveActions && isOnLoan
+        canShowActiveActions &&
+        !loansQuery.isPending &&
+        !loansQuery.isError &&
+        isCheckinEligible(
+            book,
+            loansQuery.data?.items ?? [],
+        )
 
     const canDelete =
         canShowActiveActions && !isOnLoan

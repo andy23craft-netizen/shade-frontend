@@ -538,6 +538,7 @@ it(
 
         const book = {
             id: 'book-123',
+            status: 'available',
         } as BookRead
 
         mockCheckout.mockResolvedValueOnce(

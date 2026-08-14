@@ -9,21 +9,29 @@ import {
 import {
     useLoans,
 } from '../../../api/loansQueries'
+import {
+    displayLoanDate,
+    getLoanDueState,
+} from '../loanTemporal'
 
-function displayDate(
-    value: string | null | undefined,
+function dueStateLabel(
+    dueAt: string | null | undefined,
 ): string {
-    if (!value) {
-        return 'Not provided'
+    const state =
+        getLoanDueState(dueAt)
+
+    switch (state) {
+        case 'no_due_date':
+            return 'Active — no due date'
+        case 'due':
+            return 'Active — due'
+        case 'due_today':
+            return 'Active — due today'
+        case 'overdue':
+            return 'Active — overdue'
+        case 'unknown':
+            return 'Active — due date could not be interpreted'
     }
-
-    const date = new Date(value)
-
-    if (Number.isNaN(date.getTime())) {
-        return value
-    }
-
-    return date.toLocaleString()
 }
 
 export function LoansPage() {
@@ -159,6 +167,7 @@ export function LoansPage() {
         <section className="route-page">
             <header>
                 <h1 tabIndex={-1}>Loans</h1>
+
                 <p>
                     {loansQuery.data.total} loan
                     {loansQuery.data.total === 1
@@ -167,10 +176,14 @@ export function LoansPage() {
                 </p>
             </header>
 
-            {activeLoans.length > 0 ? (
-                <section>
-                    <h2>Active Loans</h2>
+            <section>
+                <h2>Active Loans</h2>
 
+                {activeLoans.length === 0 ? (
+                    <p role="status">
+                        No books are currently checked out.
+                    </p>
+                ) : (
                     <ul aria-label="Active loans">
                         {activeLoans.map((loan) => (
                             <li key={loan.id}>
@@ -180,6 +193,16 @@ export function LoansPage() {
                                             loan.book_id,
                                         )}
                                     </h3>
+
+                                    <p>
+                                        <strong>
+                                            {
+                                                dueStateLabel(
+                                                    loan.due_at,
+                                                )
+                                            }
+                                        </strong>
+                                    </p>
 
                                     <dl>
                                         <div>
@@ -198,16 +221,18 @@ export function LoansPage() {
                                                 Checked Out
                                             </dt>
                                             <dd>
-                                                {displayDate(
+                                                {displayLoanDate(
                                                     loan.checked_out_at,
                                                 )}
                                             </dd>
                                         </div>
 
                                         <div>
-                                            <dt>Due</dt>
+                                            <dt>
+                                                Due
+                                            </dt>
                                             <dd>
-                                                {displayDate(
+                                                {displayLoanDate(
                                                     loan.due_at,
                                                 )}
                                             </dd>
@@ -230,13 +255,17 @@ export function LoansPage() {
                             </li>
                         ))}
                     </ul>
-                </section>
-            ) : null}
+                )}
+            </section>
 
-            {returnedLoans.length > 0 ? (
-                <section>
-                    <h2>Returned Loans</h2>
+            <section>
+                <h2>Returned Loans</h2>
 
+                {returnedLoans.length === 0 ? (
+                    <p role="status">
+                        No returned loans yet.
+                    </p>
+                ) : (
                     <ul aria-label="Returned loans">
                         {returnedLoans.map((loan) => (
                             <li key={loan.id}>
@@ -246,6 +275,12 @@ export function LoansPage() {
                                             loan.book_id,
                                         )}
                                     </h3>
+
+                                    <p>
+                                        <strong>
+                                            Returned
+                                        </strong>
+                                    </p>
 
                                     <dl>
                                         <div>
@@ -264,7 +299,7 @@ export function LoansPage() {
                                                 Checked Out
                                             </dt>
                                             <dd>
-                                                {displayDate(
+                                                {displayLoanDate(
                                                     loan.checked_out_at,
                                                 )}
                                             </dd>
@@ -275,7 +310,7 @@ export function LoansPage() {
                                                 Returned
                                             </dt>
                                             <dd>
-                                                {displayDate(
+                                                {displayLoanDate(
                                                     loan.returned_at,
                                                 )}
                                             </dd>
@@ -298,8 +333,8 @@ export function LoansPage() {
                             </li>
                         ))}
                     </ul>
-                </section>
-            ) : null}
+                )}
+            </section>
         </section>
     )
 }

@@ -404,4 +404,214 @@ describe('LoansPage', () => {
             screen.queryByText('Notes'),
         ).not.toBeInTheDocument()
     })
+
+    it('shows an explicit empty active state when only returned history exists', () => {
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList({
+                items: [
+                    {
+                        ...makeLoanList().items[0],
+                        returned_at:
+                            '2026-08-13T15:30:00Z',
+                    },
+                ],
+            }),
+        })
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'No books are currently checked out.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Returned Loans',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('shows an explicit empty returned state when only active loans exist', () => {
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList(),
+        })
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'No returned loans yet.',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('renders date-only due values without timezone shifting', () => {
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList({
+                items: [
+                    {
+                        ...makeLoanList().items[0],
+                        due_at: '2026-08-20',
+                    },
+                ],
+            }),
+        })
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        const expected =
+            new Intl.DateTimeFormat(
+                undefined,
+                {
+                    dateStyle: 'medium',
+                },
+            ).format(
+                new Date(
+                    2026,
+                    7,
+                    20,
+                ),
+            )
+
+        expect(
+            screen.getByText(expected),
+        ).toBeInTheDocument()
+    })
+
+    it('renders malformed due values safely', () => {
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList({
+                items: [
+                    {
+                        ...makeLoanList().items[0],
+                        due_at: 'not-a-date',
+                    },
+                ],
+            }),
+        })
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'not-a-date (unrecognized date)',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText(
+                'Active — due date could not be interpreted',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('preserves API order within active and returned loan groups', () => {
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList({
+                items: [
+                    {
+                        ...makeLoanList().items[0],
+                        id: 'active-first',
+                        borrower: 'Active First',
+                        returned_at: null,
+                    },
+                    {
+                        ...makeLoanList().items[0],
+                        id: 'returned-first',
+                        borrower: 'Returned First',
+                        returned_at:
+                            '2026-08-13T15:30:00Z',
+                    },
+                    {
+                        ...makeLoanList().items[0],
+                        id: 'active-second',
+                        borrower: 'Active Second',
+                        returned_at: null,
+                    },
+                    {
+                        ...makeLoanList().items[0],
+                        id: 'returned-second',
+                        borrower: 'Returned Second',
+                        returned_at:
+                            '2026-08-12T15:30:00Z',
+                    },
+                ],
+                total: 4,
+            }),
+        })
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        const activeList =
+            screen.getByRole('list', {
+                name: 'Active loans',
+            })
+
+        expect(
+            activeList.textContent?.indexOf(
+                'Active First',
+            ),
+        ).toBeLessThan(
+            activeList.textContent?.indexOf(
+                'Active Second',
+            ) ?? -1,
+        )
+
+        const returnedList =
+            screen.getByRole('list', {
+                name: 'Returned loans',
+            })
+
+        expect(
+            returnedList.textContent?.indexOf(
+                'Returned First',
+            ),
+        ).toBeLessThan(
+            returnedList.textContent?.indexOf(
+                'Returned Second',
+            ) ?? -1,
+        )
+    })
 })

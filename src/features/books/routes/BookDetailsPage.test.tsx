@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '../../../test/renderAppTree'
 import { BookDetailsPage } from './BookDetailsPage'
 import { useBook } from '../../../api/booksQueries'
+import { useLoans } from '../../../api/loansQueries'
 import type { BookRead } from '../../../api/apiTypes'
 import { ApiError } from '../../../api/apiErrors'
 
@@ -11,7 +12,13 @@ vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
 }))
 
+vi.mock('../../../api/loansQueries', () => ({
+    useLoans: vi.fn(),
+}))
+
 const mockedUseBook = vi.mocked(useBook)
+
+const mockedUseLoans = vi.mocked(useLoans)
 
 const completeBook: BookRead = {
     id: 'test-book-id',
@@ -41,6 +48,28 @@ const completeBook: BookRead = {
     deletion_date: null,
 }
 
+const activeLoan = {
+    id: 'loan-1',
+    book_id: completeBook.id,
+    borrower: 'Jane Reader',
+    checked_out_at:
+        '2026-08-12T14:00:00Z',
+    due_at: null,
+    notes: null,
+    returned_at: null,
+    created_date:
+        '2026-08-12T14:00:00Z',
+    last_updated_date:
+        '2026-08-12T14:00:00Z',
+}
+
+const returnedLoan = {
+    ...activeLoan,
+    id: 'loan-returned',
+    returned_at:
+        '2026-08-13T15:30:00Z',
+}
+
 function renderBookDetails(
     bookId = 'test-book-id',
 ) {
@@ -63,6 +92,18 @@ function renderBookDetails(
 describe('BookDetailsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+
+        mockedUseLoans.mockReturnValue({
+            data: {
+                items: [],
+                total: 0,
+            },
+            isPending: false,
+            isError: false,
+            error: null,
+        } as unknown as ReturnType<
+            typeof useLoans
+        >)
     })
 
     it('shows a loading state while the book is loading', () => {
@@ -377,6 +418,16 @@ describe('BookDetailsPage', () => {
         ).toBeInTheDocument()
     })
     it('does not offer checkout or delete for an on-loan book', () => {
+        mockedUseLoans.mockReturnValue({
+            data: {
+                items: [activeLoan],
+                total: 1,
+            },
+            isPending: false,
+            isError: false,
+            error: null,
+        } as ReturnType<typeof useLoans>)
+
         mockedUseBook.mockReturnValue({
             isPending: false,
             isError: false,
@@ -435,6 +486,16 @@ describe('BookDetailsPage', () => {
     })
 
     it('hides lifecycle actions for a soft-deleted book', () => {
+        mockedUseLoans.mockReturnValue({
+            data: {
+                items: [activeLoan],
+                total: 1,
+            },
+            isPending: false,
+            isError: false,
+            error: null,
+        } as ReturnType<typeof useLoans>)
+
         mockedUseBook.mockReturnValue({
             isPending: false,
             isError: false,
@@ -458,6 +519,71 @@ describe('BookDetailsPage', () => {
         expect(
             screen.queryByRole('navigation', {
                 name: 'Book actions',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('offers check-in when an active loan exists even if book status is inconsistent', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                status: 'available',
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        mockedUseLoans.mockReturnValue({
+            data: {
+                items: [activeLoan],
+                total: 1,
+            },
+            isPending: false,
+            isError: false,
+            error: null,
+        } as ReturnType<typeof useLoans>)
+
+        renderBookDetails()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Check In',
+            }),
+        ).toHaveAttribute(
+            'href',
+            `/checkin?bookId=${encodeURIComponent(
+                completeBook.id,
+            )}`,
+        )
+    })
+
+    it('does not offer check-in when an on-loan book has no active loan', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                status: 'on_loan',
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        mockedUseLoans.mockReturnValue({
+            data: {
+                items: [returnedLoan],
+                total: 1,
+            },
+            isPending: false,
+            isError: false,
+            error: null,
+        } as ReturnType<typeof useLoans>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Check In',
             }),
         ).not.toBeInTheDocument()
     })
