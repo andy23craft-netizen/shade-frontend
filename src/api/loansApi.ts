@@ -12,6 +12,8 @@ import type {
 export interface ListLoansOptions
     extends ApiCallOptions {
     bookId?: string
+    skip?: number
+    take?: number
 }
 
 function withSignal(
@@ -40,6 +42,20 @@ export function createLoansApi(
                 params.set(
                     'book_id',
                     options.bookId,
+                )
+            }
+
+            if (options.skip !== undefined) {
+                params.set(
+                    'skip',
+                    String(options.skip),
+                )
+            }
+
+            if (options.take !== undefined) {
+                params.set(
+                    'take',
+                    String(options.take),
                 )
             }
 

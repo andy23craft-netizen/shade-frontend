@@ -39,6 +39,7 @@ import {
     useCheckoutBook,
     useCheckinBook,
     useMarkBookRead,
+    useInfiniteBooks,
 } from './booksQueries'
 
 const mockList = vi.fn()
@@ -139,6 +140,314 @@ describe('book queries', () => {
         expect(
             result.current.data,
         ).toEqual(books)
+
+        queryClient.clear()
+    })
+
+    it('passes pagination and sort options to the books API', async () => {
+        const books: BookList = {
+            items: [],
+            total: 100,
+        }
+
+        mockList.mockResolvedValueOnce(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useBooks({
+                    skip: 50,
+                    take: 50,
+                    sortBy: 'title',
+                    sortOrder: 'desc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockList,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 50,
+                take: 50,
+                sortBy: 'title',
+                sortOrder: 'desc',
+            }),
+        )
+
+        queryClient.clear()
+    })
+
+    it('uses distinct query keys per page and sort', async () => {
+        const books: BookList = {
+            items: [],
+            total: 100,
+        }
+
+        mockList.mockResolvedValue(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const first = renderHook(
+            () =>
+                useBooks({
+                    skip: 0,
+                    take: 50,
+                    sortBy: 'author',
+                    sortOrder: 'asc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        const second = renderHook(
+            () =>
+                useBooks({
+                    skip: 50,
+                    take: 50,
+                    sortBy: 'title',
+                    sortOrder: 'desc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                first.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                second.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            queryClient.getQueryCache().getAll(),
+        ).toHaveLength(2)
+
+        queryClient.clear()
+    })
+
+    it('loads additional infinite book pages with chained skip values', async () => {
+        const firstPage: BookList = {
+            items: Array.from(
+                {
+                    length: 30,
+                },
+                (_, index) => ({
+                    id: `book-${index}`,
+                }),
+            ) as BookList['items'],
+            total: 65,
+        }
+
+        const secondPage: BookList = {
+            items: Array.from(
+                {
+                    length: 30,
+                },
+                (_, index) => ({
+                    id: `book-${index + 30}`,
+                }),
+            ) as BookList['items'],
+            total: 65,
+        }
+
+        mockList.mockReset()
+        mockList.mockImplementation(
+            async (options) => {
+                if (options.skip === 0) {
+                    return firstPage
+                }
+
+                if (options.skip === 30) {
+                    return secondPage
+                }
+
+                throw new Error(
+                    `Unexpected books list skip: ${String(options.skip)}`,
+                )
+            },
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useInfiniteBooks({
+                    sortBy: 'author',
+                    sortOrder: 'asc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.hasNextPage,
+            ).toBe(true),
+        )
+
+        const fetchResult =
+            await result.current.fetchNextPage()
+
+        expect(fetchResult.isError).toBe(false)
+
+        expect(
+            fetchResult.data?.pages,
+        ).toHaveLength(2)
+
+        expect(
+            mockList.mock.calls.some(
+                ([options]) =>
+                    options.skip === 30,
+            ),
+        ).toBe(true)
+
+        expect(mockList).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 0,
+                take: 30,
+                sortBy: 'author',
+                sortOrder: 'asc',
+            }),
+        )
+
+        expect(mockList).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 30,
+                take: 30,
+                sortBy: 'author',
+                sortOrder: 'asc',
+            }),
+        )
+
+        expect(
+            fetchResult.hasNextPage,
+        ).toBe(true)
+
+        queryClient.clear()
+    })
+
+    it('stops infinite book pagination when all items are loaded', async () => {
+        mockList.mockReset()
+        mockList.mockResolvedValue({
+            items: Array.from(
+                {
+                    length: 5,
+                },
+                (_, index) => ({
+                    id: `book-${index}`,
+                }),
+            ) as BookList['items'],
+            total: 5,
+        })
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () => useInfiniteBooks(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.hasNextPage,
+            ).toBe(false),
+        )
+
+        queryClient.clear()
+    })
+
+    it('uses distinct infinite query keys per sort variant', async () => {
+        mockList.mockResolvedValue({
+            items: [],
+            total: 0,
+        })
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const first = renderHook(
+            () =>
+                useInfiniteBooks({
+                    sortBy: 'author',
+                    sortOrder: 'asc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        const second = renderHook(
+            () =>
+                useInfiniteBooks({
+                    sortBy: 'title',
+                    sortOrder: 'desc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                first.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                second.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            queryClient.getQueryCache().getAll(),
+        ).toHaveLength(2)
 
         queryClient.clear()
     })

@@ -27,6 +27,7 @@ import {
 import {
     useLoan,
     useLoans,
+    useInfiniteLoans,
 } from './loansQueries'
 import {
     queryKeys,
@@ -189,6 +190,173 @@ describe('loans and dashboard queries', () => {
                 queryKeys.loans.list('book-1'),
             ),
         ).toEqual(loans)
+
+        queryClient.clear()
+    })
+
+    it('loads additional infinite loan pages with chained skip values', async () => {
+        const firstPage: LoanList = {
+            items: Array.from(
+                {
+                    length: 30,
+                },
+                (_, index) => ({
+                    id: `loan-${index}`,
+                    book_id: 'book-1',
+                    borrower: 'Reader',
+                    checked_out_at:
+                        '2026-08-12T14:00:00Z',
+                    created_date:
+                        '2026-08-12T14:00:00Z',
+                    due_at: null,
+                    last_updated_date:
+                        '2026-08-12T14:00:00Z',
+                    notes: null,
+                    returned_at: null,
+                }),
+            ),
+            total: 40,
+        }
+
+        const secondPage: LoanList = {
+            items: Array.from(
+                {
+                    length: 10,
+                },
+                (_, index) => ({
+                    id: `loan-${index + 30}`,
+                    book_id: 'book-1',
+                    borrower: 'Reader',
+                    checked_out_at:
+                        '2026-08-12T14:00:00Z',
+                    created_date:
+                        '2026-08-12T14:00:00Z',
+                    due_at: null,
+                    last_updated_date:
+                        '2026-08-12T14:00:00Z',
+                    notes: null,
+                    returned_at:
+                        '2026-08-13T15:30:00Z',
+                }),
+            ),
+            total: 40,
+        }
+
+        mockListLoans.mockReset()
+        mockListLoans.mockImplementation(
+            async (options) => {
+                if (options.skip === 0) {
+                    return firstPage
+                }
+
+                if (options.skip === 30) {
+                    return secondPage
+                }
+
+                throw new Error(
+                    `Unexpected loans list skip: ${String(options.skip)}`,
+                )
+            },
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () => useInfiniteLoans(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.hasNextPage,
+            ).toBe(true),
+        )
+
+        await result.current.fetchNextPage()
+
+        await waitFor(() =>
+            expect(
+                result.current.data?.pages,
+            ).toHaveLength(2),
+        )
+
+        expect(
+            mockListLoans,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 0,
+                take: 30,
+            }),
+        )
+
+        expect(
+            mockListLoans,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 30,
+                take: 30,
+            }),
+        )
+
+        queryClient.clear()
+    })
+
+    it('uses distinct infinite loan query keys when filtered by bookId', async () => {
+        const loans: LoanList = {
+            items: [],
+            total: 0,
+        }
+
+        mockListLoans.mockResolvedValue(loans)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const unfiltered = renderHook(
+            () => useInfiniteLoans(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        const filtered = renderHook(
+            () =>
+                useInfiniteLoans({
+                    bookId: 'book-1',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                unfiltered.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                filtered.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            queryClient.getQueryCache().getAll(),
+        ).toHaveLength(2)
 
         queryClient.clear()
     })

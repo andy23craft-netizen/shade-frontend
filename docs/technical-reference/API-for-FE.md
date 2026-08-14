@@ -52,7 +52,9 @@ can still reach the server, but browser JS cannot read the response.
 
 | Status | Meaning beyond the OpenAPI label |
 | ------ | -------------------------------- |
-| `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query) |
+| `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query); |
+|        | empty/whitespace `isbn` on `GET /books`; partial or invalid `skip`/`take` on list endpoints; |
+|        | invalid `sortBy` or `sortOrder` on `GET /books` |
 | `403`  | Missing or invalid Bearer token |
 | `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / second delete; |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}` |
@@ -70,8 +72,13 @@ validate format, timezone, ordering, or calendar correctness. Clients should sti
 UTC timestamps as ISO 8601 (e.g., `2026-08-08T10:00:00.000Z`), because borrowing statistics parse them as datetimes.
 Malformed stored loan timestamps can later cause an unhandled **500** when those statistics run.
 
-There are no WebSocket, SSE, subscription, or push endpoints. `/books` and `/loans` return full result sets with no
-pagination. `GET /backup` is the only streaming response (a finite SQL attachment).
+There are no WebSocket, SSE, subscription, or push endpoints. `GET /backup` is the only streaming response (a finite
+SQL attachment).
+
+List endpoints (`GET /books`, `GET /loans`) support optional offset/limit pagination. Send both `skip` and `take`
+together, or omit both for the full filtered result set. When paginated, `total` is still the count of all rows
+matching filters (not the page size). Partial params (`skip` only or `take` only), negative `skip`, or non-positive
+`take` return **400**.
 
 ---
 
@@ -99,10 +106,16 @@ Prefer dedicated endpoints over reproducing their effects with `PATCH`:
 
 * checkout / check-in / mark-read / restore / lookup
 
-`PATCH` does not bump `updated_date`. Do not send `null` for DB-required fields such as `title`, `authors`,
+`PATCH` bumps `updated_date` via a SQLite trigger when the handler does not set it explicitly (the column still
+changes on successful update). Do not send `null` for DB-required fields such as `title`, `authors`,
 `category`, `shelf`, `is_read`, or `status` -- that can cause an unhandled server error on commit.
 
-Books are ordered by title. Path `{id}` accepts any string and returns **404** when no row matches.
+Books default to author ascending (`sortBy=author`, `sortOrder=asc` when omitted). Allowed `sortBy` values:
+`author`, `title`, `creationDate`. Allowed `sortOrder` values: `asc`, `desc`. Invalid values return **400**. A stable
+tie-breaker on book `id` keeps paginated pages consistent. The previous implicit title sort is no longer the default;
+pass `sortBy=title` when title order is required.
+
+Path `{id}` accepts any string and returns **404** when no row matches.
 
 Optional `isbn` on `GET /books` filters to books whose stored `isbn13` contains the given substring (literal
 contains; the filter string is not normalized like create/lookup). Empty or whitespace-only `isbn` is **400**.
@@ -146,9 +159,11 @@ loan row. Conflict when book `status` is `on_loan` or an active loan already exi
 Completes the active loan and sets book `status=available`. Conflict is based on active loan existence, not only
 book `status`: `{"detail": "Book is not checked out"}`. Soft-deleted or missing book → **404**.
 
-**Loans:** `GET /loans` returns all loans (active and returned), ordered by stored `checked_out_at` text descending
-(chronological only when clients use one consistent timestamp format). Optional `book_id` filters to that book's
-loans (including an empty list when the book exists but has no loans). `GET /loans/{id}` returns a single loan.
+**Loans:** `GET /loans` returns all loans (active and returned), including loans for soft-deleted books, unless
+`skip`/`take` paginate the result. Default order is stored `checked_out_at` text descending, then loan `id` descending
+(chronological only when clients use one consistent timestamp format). Optional `book_id` filters to that book's loans
+(including soft-deleted books; empty list when the book exists but has no loans). `GET /loans/{id}` returns a single
+loan.
 For both the path `{id}` and the `book_id` query param: **400** when the value is empty or not a valid GUID;
 **404** when the GUID is well-formed but unknown (book for `book_id`, loan for `{id}`). No create/update/delete
 loan HTTP endpoints; loans are created by checkout and completed by check-in. Active loan ⇒ `returned_at: null`.
@@ -167,7 +182,8 @@ request. Soft-deleted or missing book → **404**.
 `checked_out_at` (chronologically latest only with consistent formatting); `average_loan_days` uses returned loans
 only (`null` when none).
 
-**Dashboard:** soft-deleted books are excluded. Averages are `null` when there is insufficient data.
+**Dashboard:** soft-deleted books are excluded from all counts; loan metrics use only loans tied to non-deleted books.
+Averages are `null` when there is insufficient data.
 `recent_window_days` is currently `30`. `reading.books_read` / `books_unread` match top-level `read` / `unread`.
 
 ---

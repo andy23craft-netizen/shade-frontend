@@ -1,14 +1,29 @@
+import {
+    useSearchParams,
+} from 'react-router-dom'
+
+import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
+import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
-import { useBooks } from '../../../api/booksQueries'
+import { useInfiniteBooks } from '../../../api/booksQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
     Category,
     Shelf,
     Status,
 } from '../../../api/apiTypes'
+import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
+import { BooksListControls } from '../components/BooksListControls'
+import {
+    flattenInfiniteBookPages,
+    parseSortByParam,
+    parseSortOrderParam,
+    type BookSortBy,
+    type BookSortOrder,
+} from '../booksListModel'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -59,8 +74,81 @@ function displayReadState(
     return isRead ? 'Read' : 'Unread'
 }
 
+function updateListParams(
+    searchParams: URLSearchParams,
+    updates: {
+        sortBy?: BookSortBy
+        sortOrder?: BookSortOrder
+    },
+): URLSearchParams {
+    const next = new URLSearchParams(searchParams)
+
+    if (updates.sortBy !== undefined) {
+        if (updates.sortBy === 'author') {
+            next.delete('sortBy')
+        } else {
+            next.set(
+                'sortBy',
+                updates.sortBy,
+            )
+        }
+    }
+
+    if (updates.sortOrder !== undefined) {
+        if (updates.sortOrder === 'asc') {
+            next.delete('sortOrder')
+        } else {
+            next.set(
+                'sortOrder',
+                updates.sortOrder,
+            )
+        }
+    }
+
+    next.delete('page')
+
+    return next
+}
+
 export function BooksPage() {
-    const booksQuery = useBooks()
+    const [
+        searchParams,
+        setSearchParams,
+    ] = useSearchParams()
+
+    const sortBy = parseSortByParam(
+        searchParams.get('sortBy'),
+    )
+    const sortOrder = parseSortOrderParam(
+        searchParams.get('sortOrder'),
+    )
+
+    const booksQuery = useInfiniteBooks({
+        sortBy,
+        sortOrder,
+    })
+
+    const fetchNextBooksPage =
+        booksQuery.fetchNextPage
+
+    const books = flattenInfiniteBookPages(
+        booksQuery.data?.pages,
+    )
+    const total =
+        booksQuery.data?.pages[0]?.total ?? 0
+
+    const {
+        getRowRef,
+    } = useInfiniteScrollTrigger({
+        enabled: booksQuery.isSuccess,
+        hasNextPage: booksQuery.hasNextPage,
+        isFetchingNextPage:
+            booksQuery.isFetchingNextPage,
+        fetchNextPage: () => {
+            void fetchNextBooksPage()
+        },
+        itemCount: books.length,
+    })
 
     if (booksQuery.isPending) {
         return (
@@ -71,7 +159,7 @@ export function BooksPage() {
         )
     }
 
-    if (booksQuery.isError) {
+    if (booksQuery.isLoadingError) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>Books</h1>
@@ -86,9 +174,7 @@ export function BooksPage() {
         )
     }
 
-    const books = booksQuery.data.items
-
-    if (booksQuery.data.total === 0) {
+    if (total === 0) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>Books</h1>
@@ -115,16 +201,48 @@ export function BooksPage() {
             <div className="books-page__heading">
                 <h1 tabIndex={-1}>Books</h1>
                 <p>
-                    {booksQuery.data.total} books in
-                    the library.
+                    {total} books in the library.
                 </p>
             </div>
+
+            <BooksListControls
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortByChange={(nextSortBy) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                sortBy: nextSortBy,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+                onSortOrderChange={(
+                    nextSortOrder,
+                ) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                sortOrder: nextSortOrder,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+            />
 
             <ul
                 className="books-list"
                 aria-label="Library books"
             >
-                {books.map((book) => {
+                {books.map((book, index) => {
                     const status = displayEnum(
                         book.status,
                         STATUS_VALUES,
@@ -143,6 +261,7 @@ export function BooksPage() {
                     return (
                         <li
                             key={book.id}
+                            ref={getRowRef(index)}
                             className="books-list__item"
                         >
                             <article className="book-card">
@@ -190,6 +309,29 @@ export function BooksPage() {
                     )
                 })}
             </ul>
+
+            {booksQuery.isFetchingNextPage ? (
+                <div className="infinite-scroll__footer">
+                    <LoadingState label="Loading more books…" />
+                </div>
+            ) : null}
+
+            {booksQuery.isFetchNextPageError ? (
+                <div className="infinite-scroll__footer">
+                    <Alert variant="error">
+                        Unable to load more books.
+                    </Alert>
+
+                    <Button
+                        variant="secondary"
+                        onClick={() => {
+                            void fetchNextBooksPage()
+                        }}
+                    >
+                        Retry
+                    </Button>
+                </div>
+            ) : null}
         </section>
     )
 }

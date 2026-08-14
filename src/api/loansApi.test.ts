@@ -104,6 +104,77 @@ describe('createLoansApi', () => {
         ).toHaveBeenCalledWith('/loans')
     })
 
+    it('serializes skip and take when paginating', async () => {
+        const loans: LoanList = {
+            items: [],
+            total: 100,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(loans)
+
+        const api = createLoansApi(client)
+
+        await api.list({
+            skip: 30,
+            take: 30,
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/loans?skip=30&take=30',
+        )
+    })
+
+    it('omits skip and take when not requested', async () => {
+        const loans: LoanList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(loans)
+
+        const api = createLoansApi(client)
+
+        await api.list()
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith('/loans')
+    })
+
+    it('combines bookId with pagination params', async () => {
+        const loans: LoanList = {
+            items: [],
+            total: 10,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(loans)
+
+        const api = createLoansApi(client)
+
+        await api.list({
+            bookId: 'book-1',
+            skip: 0,
+            take: 30,
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/loans?book_id=book-1&skip=0&take=30',
+        )
+    })
+
     it('omits book_id when bookId is an empty string', async () => {
         const loans: LoanList = {
             items: [],

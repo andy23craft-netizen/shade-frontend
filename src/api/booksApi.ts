@@ -26,6 +26,10 @@ export interface ListBooksOptions
     extends ApiCallOptions {
     includeDeleted?: boolean
     isbn?: string
+    skip?: number
+    take?: number
+    sortBy?: string
+    sortOrder?: string
 }
 
 function withSignal(
@@ -66,6 +70,34 @@ export function createBooksApi(
                 params.set(
                     'isbn',
                     options.isbn,
+                )
+            }
+
+            if (options.skip !== undefined) {
+                params.set(
+                    'skip',
+                    String(options.skip),
+                )
+            }
+
+            if (options.take !== undefined) {
+                params.set(
+                    'take',
+                    String(options.take),
+                )
+            }
+
+            if (options.sortBy !== undefined) {
+                params.set(
+                    'sortBy',
+                    options.sortBy,
+                )
+            }
+
+            if (options.sortOrder !== undefined) {
+                params.set(
+                    'sortOrder',
+                    options.sortOrder,
                 )
             }
 

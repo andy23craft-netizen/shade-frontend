@@ -175,6 +175,108 @@ describe('createBooksApi', () => {
         )
     })
 
+    it('lists books with pagination params', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            skip: 0,
+            take: 50,
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?skip=0&take=50',
+        )
+    })
+
+    it('lists books with sort params', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            sortBy: 'title',
+            sortOrder: 'desc',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?sortBy=title&sortOrder=desc',
+        )
+    })
+
+    it('combines isbn, pagination, and sort query params', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isbn: '9780441',
+            skip: 50,
+            take: 50,
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?isbn=9780441&skip=50&take=50&sortBy=author&sortOrder=asc',
+        )
+    })
+
+    it('omits pagination params when not requested', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            sortBy: 'title',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?sortBy=title',
+        )
+    })
+
     it('forwards an abort signal when listing books', async () => {
         const books: BookList = {
             items: [],

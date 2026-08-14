@@ -73,5 +73,51 @@ describe('large-library list baseline fixture', () => {
         // Practical responsiveness baseline for FEAT-12 regressions:
         // typed list helper over a 2_000-item fixture should stay under 250ms
         // in local Vitest/jsdom (see docs/baselines/FEAT-03_performance.md).
+        // BooksPage uses paginated requests; this guard covers unpaginated callers.
+    })
+
+    it('handles a paginated 2_000-book library slice through the typed helper', async () => {
+        const paginatedList: BookList = {
+            items: Array.from(
+                {
+                    length: 50,
+                },
+                (_, index) =>
+                    createBook(index),
+            ),
+            total: 2_000,
+        }
+
+        const client = {
+            request: vi.fn(),
+            requestJson: vi.fn(),
+            get: vi.fn(),
+            getJson: vi.fn()
+                .mockResolvedValue(paginatedList),
+        } as unknown as ReturnType<
+            typeof createApiClient
+        >
+
+        const api = createBooksApi(client)
+
+        const startedAt = performance.now()
+        const result = await api.list({
+            skip: 0,
+            take: 50,
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+        const elapsedMs =
+            performance.now() - startedAt
+
+        expect(result.total).toBe(2_000)
+        expect(result.items).toHaveLength(50)
+        expect(elapsedMs).toBeLessThan(250)
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?skip=0&take=50&sortBy=author&sortOrder=asc',
+        )
     })
 })

@@ -1,72 +1,123 @@
-import { screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+    fireEvent,
+    screen,
+} from '@testing-library/react'
+import {
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest'
 
-import { MemoryRouter } from 'react-router-dom'
+import {
+    MemoryRouter,
+} from 'react-router-dom'
 import { BooksPage } from './BooksPage'
-import type { BookList, BookRead } from '../../../api/apiTypes'
+import type {
+    BookList,
+    BookRead,
+} from '../../../api/apiTypes'
 import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
 
-const mockUseBooks = vi.fn()
+const mockUseInfiniteBooks = vi.fn()
+const mockUseInfiniteScrollTrigger = vi.fn()
 
 vi.mock('../../../api/booksQueries', () => ({
-    useBooks: () => mockUseBooks(),
+    useInfiniteBooks: (options: unknown) =>
+        mockUseInfiniteBooks(options),
 }))
 
-function makeBookList(
-    overrides: Partial<BookList> = {},
-): BookList {
+vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
+    useInfiniteScrollTrigger: (
+        options: unknown,
+    ) =>
+        mockUseInfiniteScrollTrigger(options),
+}))
+
+function makeBook(
+    overrides: Partial<BookRead> = {},
+): BookRead {
     return {
-        items: [
-            {
-                id: 'book-1',
-                title: 'The Left Hand of Darkness',
-                authors: 'Ursula K. Le Guin',
-                category: 'fiction',
-                shelf: 'liz_tbr',
-                status: 'available',
-                is_read: false,
-                isbn13: null,
-                publisher: null,
-                publication_date: null,
-                pages: null,
-                tags: null,
-                purchase_date: null,
-                purchase_price: null,
-                acquisition_source: null,
-                notes: null,
-                deletion_date: null,
-                completion_date: null,
-                rating: null,
-                review: null,
-                times_borrowed: 0,
-                last_borrowed_at: null,
-                average_loan_days: null,
-                creation_date: '2026-08-12T00:00:00Z',
-                updated_date: '2026-08-12T00:00:00Z',
-            },
-        ],
-        total: 1,
+        id: 'book-1',
+        title: 'The Left Hand of Darkness',
+        authors: 'Ursula K. Le Guin',
+        category: 'fiction',
+        shelf: 'liz_tbr',
+        status: 'available',
+        is_read: false,
+        isbn13: null,
+        publisher: null,
+        publication_date: null,
+        pages: null,
+        tags: null,
+        purchase_date: null,
+        purchase_price: null,
+        acquisition_source: null,
+        notes: null,
+        deletion_date: null,
+        completion_date: null,
+        rating: null,
+        review: null,
+        times_borrowed: 0,
+        last_borrowed_at: null,
+        average_loan_days: null,
+        creation_date: '2026-08-12T00:00:00Z',
+        updated_date: '2026-08-12T00:00:00Z',
         ...overrides,
     }
 }
 
+function makeInfiniteBooksResult(
+    pages: BookList[],
+    overrides: Record<string, unknown> = {},
+) {
+    return {
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        hasNextPage: false,
+        isFetchingNextPage: false,
+        isFetchNextPageError: false,
+        fetchNextPage: vi.fn(),
+        refetch: vi.fn(),
+        data: {
+            pages,
+        },
+        ...overrides,
+    }
+}
+
+function renderBooksPage(
+    initialEntry = '/books',
+) {
+    return renderWithProviders(
+        <MemoryRouter
+            initialEntries={[initialEntry]}
+        >
+            <BooksPage />
+        </MemoryRouter>,
+    )
+}
+
 describe('BooksPage', () => {
     beforeEach(() => {
-        mockUseBooks.mockReset()
+        mockUseInfiniteBooks.mockReset()
+        mockUseInfiniteScrollTrigger.mockReset()
+
+        mockUseInfiniteScrollTrigger.mockReturnValue({
+            getRowRef: () => undefined,
+        })
     })
 
     it('shows a loading state while books are loading', () => {
-        mockUseBooks.mockReturnValue({
+        mockUseInfiniteBooks.mockReturnValue({
             isPending: true,
             isError: false,
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
-        )
+        renderBooksPage()
 
         expect(
             screen.getByRole('heading', {
@@ -82,19 +133,16 @@ describe('BooksPage', () => {
     })
 
     it('shows an error when the collection fails', () => {
-        mockUseBooks.mockReturnValue({
+        mockUseInfiniteBooks.mockReturnValue({
             isPending: false,
+            isLoadingError: true,
             isError: true,
             error: new Error(
                 'Unable to reach the API',
             ),
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
-        )
+        renderBooksPage()
 
         expect(
             screen.getByRole('alert'),
@@ -112,8 +160,9 @@ describe('BooksPage', () => {
     it(
         'shows a rejected-access message without retry when the API returns 403',
         () => {
-            mockUseBooks.mockReturnValue({
+            mockUseInfiniteBooks.mockReturnValue({
                 isPending: false,
+                isLoadingError: true,
                 isError: true,
                 error: new ApiError({
                     kind: 'unauthorized',
@@ -123,11 +172,7 @@ describe('BooksPage', () => {
                 }),
             })
 
-            renderWithProviders(
-                <MemoryRouter>
-                    <BooksPage />
-                </MemoryRouter>,
-            )
+            renderBooksPage()
 
             expect(
                 screen.getByRole('alert'),
@@ -144,20 +189,16 @@ describe('BooksPage', () => {
     )
 
     it('shows an empty state when the collection contains no books', () => {
-        mockUseBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: {
-                items: [],
-                total: 0,
-            },
-        })
-
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    items: [],
+                    total: 0,
+                },
+            ]),
         )
+
+        renderBooksPage()
 
         expect(
             screen.getByRole('heading', {
@@ -173,33 +214,324 @@ describe('BooksPage', () => {
             'href',
             '/books/new',
         )
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Previous',
+            }),
+        ).not.toBeInTheDocument()
     })
 
-    it('renders the complete collection result', () => {
-        mockUseBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeBookList({
-                items: [
-                    makeBookList().items[0],
-                    {
-                        ...makeBookList().items[0],
-                        id: 'book-2',
-                        title: 'Pale Fire',
-                        authors: 'Vladimir Nabokov',
-                        status: 'on_loan',
-                        is_read: true,
-                    },
-                ],
-                total: 2,
-            }),
+    it('requests the default infinite first batch with author ascending sort', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 237,
+                    items: Array.from(
+                        {
+                            length: 30,
+                        },
+                        (_, index) =>
+                            makeBook({
+                                id: `book-${index}`,
+                                title: `Book ${index}`,
+                            }),
+                    ),
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith({
+            sortBy: 'author',
+            sortOrder: 'asc',
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
+        expect(
+            screen.getByText(
+                '237 books in the library.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByText(/Showing /),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Previous',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Next',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('honors URL search params for sort without page', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 237,
+                    items: Array.from(
+                        {
+                            length: 30,
+                        },
+                        (_, index) =>
+                            makeBook({
+                                id: `book-${index}`,
+                                title: `Book ${index}`,
+                            }),
+                    ),
+                },
+            ]),
         )
+
+        renderBooksPage(
+            '/books?page=2&sortBy=title&sortOrder=desc',
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith({
+            sortBy: 'title',
+            sortOrder: 'desc',
+        })
+    })
+
+    it('issues a fresh first batch when sort field changes', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 237,
+                    items: Array.from(
+                        {
+                            length: 30,
+                        },
+                        (_, index) =>
+                            makeBook({
+                                id: `book-${index}`,
+                                title: `Book ${index}`,
+                            }),
+                    ),
+                },
+            ]),
+        )
+
+        renderBooksPage('/books?page=2')
+
+        fireEvent.change(
+            screen.getByLabelText('Sort by'),
+            {
+                target: {
+                    value: 'title',
+                },
+            },
+        )
+
+        expect(
+            screen.getByLabelText('Sort by'),
+        ).toHaveValue('title')
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenLastCalledWith({
+            sortBy: 'title',
+            sortOrder: 'asc',
+        })
+    })
+
+    it('flattens multiple loaded pages for rendering', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 65,
+                    items: Array.from(
+                        {
+                            length: 30,
+                        },
+                        (_, index) =>
+                            makeBook({
+                                id: `book-${index}`,
+                                title: `Book ${index}`,
+                            }),
+                    ),
+                },
+                {
+                    total: 65,
+                    items: Array.from(
+                        {
+                            length: 30,
+                        },
+                        (_, index) =>
+                            makeBook({
+                                id: `book-${index + 30}`,
+                                title: `Book ${index + 30}`,
+                            }),
+                    ),
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Book 0',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Book 59',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('shows a bottom loader while fetching the next page', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult(
+                [
+                    {
+                        total: 65,
+                        items: Array.from(
+                            {
+                                length: 30,
+                            },
+                            (_, index) =>
+                                makeBook({
+                                    id: `book-${index}`,
+                                    title: `Book ${index}`,
+                                }),
+                        ),
+                    },
+                ],
+                {
+                    hasNextPage: true,
+                    isFetchingNextPage: true,
+                },
+            ),
+        )
+
+        renderBooksPage()
+
+        expect(
+            screen.getByText(
+                'Loading more books…',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows a bottom retry affordance when the next page fails', () => {
+        const fetchNextPage = vi.fn()
+
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult(
+                [
+                    {
+                        total: 65,
+                        items: Array.from(
+                            {
+                                length: 30,
+                            },
+                            (_, index) =>
+                                makeBook({
+                                    id: `book-${index}`,
+                                    title: `Book ${index}`,
+                                }),
+                        ),
+                    },
+                ],
+                {
+                    hasNextPage: true,
+                    isFetchNextPageError: true,
+                    fetchNextPage,
+                },
+            ),
+        )
+
+        renderBooksPage()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Book 0',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText(
+                'Unable to load more books.',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(fetchNextPage).toHaveBeenCalledOnce()
+    })
+
+    it('wires the infinite scroll trigger to loaded rows', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 65,
+                    items: Array.from(
+                        {
+                            length: 30,
+                        },
+                        (_, index) =>
+                            makeBook({
+                                id: `book-${index}`,
+                                title: `Book ${index}`,
+                            }),
+                    ),
+                },
+            ], {
+                hasNextPage: true,
+            }),
+        )
+
+        renderBooksPage()
+
+        expect(
+            mockUseInfiniteScrollTrigger,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                enabled: true,
+                hasNextPage: true,
+                itemCount: 30,
+            }),
+        )
+    })
+
+    it('renders the current page of books', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    items: [
+                        makeBook(),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                            authors: 'Vladimir Nabokov',
+                            status: 'on_loan',
+                            is_read: true,
+                        }),
+                    ],
+                    total: 2,
+                },
+            ]),
+        )
+
+        renderBooksPage()
 
         expect(
             screen.getByRole('link', {
@@ -249,26 +581,22 @@ describe('BooksPage', () => {
     })
 
     it('renders unknown enum values safely', () => {
-        mockUseBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeBookList({
-                items: [
-                    {
-                        ...makeBookList().items[0],
-                        status: 'future_status' as unknown as BookRead['status'],
-                        category: 'future_category' as unknown as BookRead['category'],
-                        shelf: 'future_shelf' as unknown as BookRead['shelf'],
-                    },
-                ],
-            }),
-        })
-
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    items: [
+                        makeBook({
+                            status: 'future_status' as unknown as BookRead['status'],
+                            category: 'future_category' as unknown as BookRead['category'],
+                            shelf: 'future_shelf' as unknown as BookRead['shelf'],
+                        }),
+                    ],
+                    total: 1,
+                },
+            ]),
         )
+
+        renderBooksPage()
 
         expect(
             screen.getByText(
