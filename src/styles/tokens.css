@@ -1,8 +1,11 @@
 :root {
   /* Typography */
   --font-family-sans:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+          "Baskerville", "Libre Baskerville", "Palatino Linotype", Palatino,
+          "Book Antiqua", Georgia, serif;
+
+  --font-family-heading:
+          "Courier Prime", "Courier New", Courier, monospace;
 
   --font-size-body: 1rem;
   --font-size-small: 0.875rem;
@@ -10,7 +13,7 @@
   --font-size-h2: clamp(1.5rem, 3vw, 2rem);
   --font-size-h3: 1.25rem;
 
-  --line-height-body: 1.5;
+  --line-height-body: 1.6;
   --line-height-heading: 1.15;
 
   /* Spacing */
@@ -29,41 +32,58 @@
   --control-target: 44px;
   --narrow-breakpoint: 48rem;
 
-  /* Colors */
-  --color-page: #f4f7f2;
-  --color-surface: #ffffff;
-  --color-surface-muted: #edf2ee;
+  /* Main palette */
+  /* Main palette */
+  --color-page: #0f2a26;
+  --color-surface: #f5f0e6;
+  --color-surface-muted: #e7dfcf;
 
-  --color-text: #17201b;
-  --color-text-muted: #506057;
-  --color-border: #cbd6cf;
+  --color-text: #f3ead8;
+  --color-text-muted: #c8bda9;
 
-  --color-link: #24553a;
-  --color-link-hover: #173d28;
+  --color-surface-text: #2d241c;
+  --color-surface-text-muted: #665b50;
 
-  --color-primary: #24553a;
-  --color-primary-hover: #173d28;
-  --color-primary-text: #ffffff;
+  --color-border: #8a642f;
+
+  --color-link: #1e5a4d;
+  --color-link-hover: #143d35;
+
+  --color-primary: #1e3a32;
+  --color-primary-hover: #142b25;
+  --color-primary-text: #f5f0e6;
+
+  /* Library-card palette */
+  --color-card: #f3ead8;
+  --color-card-muted: #e8ddc8;
+  --color-card-border: #9a7a4c;
+  --color-card-rule: #c8b38f;
+
+  /* Wood / brass accents */
+  --color-wood: #4c1a17;
+  --color-wood-dark: #34110f;
+  --color-brass: #8a642f;
+  --color-brass-light: #b38a48;
 
   /* Status colors */
-  --color-success: #216e39;
-  --color-success-background: #eaf6ed;
-  --color-success-border: #9bc8a7;
+  --color-success: #285c3d;
+  --color-success-background: #e3efe4;
+  --color-success-border: #8aad91;
 
-  --color-warning: #795300;
-  --color-warning-background: #fff7df;
-  --color-warning-border: #e2c66f;
+  --color-warning: #75520f;
+  --color-warning-background: #f8efd4;
+  --color-warning-border: #c8a858;
 
-  --color-danger: #a4262c;
-  --color-danger-background: #fcebed;
-  --color-danger-border: #e1a1a6;
+  --color-danger: #7a2929;
+  --color-danger-background: #f4dfdc;
+  --color-danger-border: #c68f88;
 
-  --color-info: #155a8a;
-  --color-info-background: #e8f4fb;
-  --color-info-border: #9bc8df;
+  --color-info: #315b64;
+  --color-info-background: #ddecef;
+  --color-info-border: #8fb2ba;
 
   /* Focus */
-  --color-focus: #8a4b00;
+  --color-focus: #c78a1e;
   --focus-width: 3px;
   --focus-offset: 2px;
 
@@ -71,10 +91,18 @@
   --radius-small: 0.25rem;
   --radius-medium: 0.5rem;
   --radius-large: 0.75rem;
+  --radius-card: 0.625rem;
 
   /* Shadows */
-  --shadow-small: 0 1px 3px rgb(23 32 27 / 12%);
-  --shadow-dialog: 0 1rem 3rem rgb(23 32 27 / 24%);
+  --shadow-small:
+          0 2px 4px rgb(20 14 9 / 18%);
+
+  --shadow-card:
+          0 2px 3px rgb(20 14 9 / 18%),
+          0 8px 18px rgb(20 14 9 / 10%);
+
+  --shadow-dialog:
+          0 1rem 3rem rgb(10 8 6 / 38%);
 
   /* Motion */
   --duration-normal: 160ms;
