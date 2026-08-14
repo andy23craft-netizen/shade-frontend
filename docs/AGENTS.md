@@ -22,9 +22,9 @@ Shade is a browser UI for a personal home-library FastAPI backend. Planned capab
 **Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), FEAT-03
 (typed API and server state), FEAT-04 (active collection and book details), historical FEAT-05 (book form and
 creation), FEAT-06 (ISBN camera and hardware-scanner capture), FEAT-07 (checkout workflow), and FEAT-05 ISBN
-checkout selection (`docs/tickets/FEAT-05_isbn-checkout.md` -- distinct from historical create FEAT-05; ticket file
-may remain until maintainers archive it). Remaining tickets are `FEAT-08` through `FEAT-16` under `docs/tickets/`.
-Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can lag).
+checkout selection (distinct from historical create FEAT-05; ticket file removed). Remaining tickets are `FEAT-08`
+through `FEAT-16` under `docs/tickets/`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging
+completion (the checklist can lag).
 
 **Next / in progress:** FEAT-08 (check-in and loan history). CHORE-01 is complete (`loansApi.list({ bookId })`,
 `loansApi.get` / `useLoan`, Check In deep-link `/checkin?bookId=...`, optional `booksApi.list({ isbn })` /
@@ -538,8 +538,7 @@ items below only when their contents are necessary for the current work. Do not 
 starting from this document.
 
 - `docs/tickets/FEAT-*.md`: Sequenced implementation tickets with acceptance criteria (`FEAT-08` through `FEAT-16`;
-  historical FEAT-01 through FEAT-07 ticket files are gone; `FEAT-05_isbn-checkout.md` documents completed checkout ISBN
-  Find and may remain until maintainers archive it).
+  historical FEAT-01 through FEAT-07 and FEAT-05 ISBN checkout ticket files are gone).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines for later hardening tickets.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag ticket-file removal).
