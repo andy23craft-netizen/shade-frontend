@@ -295,6 +295,15 @@ export function BooksPage() {
                                     </div>
 
                                     <div className="book-card__field">
+                                        <dt>Rating</dt>
+                                        <dd>
+                                            {book.rating === null
+                                                ? '—'
+                                                : `${book.rating} / 5`}
+                                        </dd>
+                                    </div>
+
+                                    <div className="book-card__field">
                                         <dt>Category</dt>
                                         <dd>{category}</dd>
                                     </div>

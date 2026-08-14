@@ -13,6 +13,7 @@ import { LoansPage } from '../features/loans/routes/LoansPage'
 import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
 import { NotFoundPage } from './NotFoundPage'
 import { routeMetadata } from './routeMetadata'
+import { ReadingEditPage } from '../features/books/routes/ReadingEditPage'
 
 
 export const routeConfig = [
@@ -53,6 +54,13 @@ export const routeConfig = [
                     title: routeMetadata.markRead.title,
                 },
                 element: <MarkReadPage />,
+            },
+            {
+                path: routeMetadata.reading.path,
+                handle: {
+                    title: routeMetadata.reading.title,
+                },
+                element: <ReadingEditPage />,
             },
             {
                 path: routeMetadata.editBook.path,

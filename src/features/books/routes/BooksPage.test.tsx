@@ -1,8 +1,4 @@
 import {
-    fireEvent,
-    screen,
-} from '@testing-library/react'
-import {
     beforeEach,
     describe,
     expect,
@@ -20,6 +16,11 @@ import type {
 } from '../../../api/apiTypes'
 import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
+import {
+    fireEvent,
+    screen,
+    within,
+} from '@testing-library/react'
 
 const mockUseInfiniteBooks = vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
@@ -614,6 +615,65 @@ describe('BooksPage', () => {
             screen.getByText(
                 'future_shelf (unknown)',
             ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows reading state and rating in collection cards', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook({
+                            id: 'rated-book',
+                            title: 'Rated Book',
+                            is_read: true,
+                            rating: 5,
+                        }),
+                        makeBook({
+                            id: 'unrated-book',
+                            title: 'Unrated Book',
+                            is_read: false,
+                            rating: null,
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        const ratedCard =
+            screen
+                .getByRole('link', {
+                    name: 'Rated Book',
+                })
+                .closest('article')
+
+        const unratedCard =
+            screen
+                .getByRole('link', {
+                    name: 'Unrated Book',
+                })
+                .closest('article')
+
+        expect(ratedCard).not.toBeNull()
+        expect(unratedCard).not.toBeNull()
+
+        expect(
+            within(ratedCard!).getByText('Read'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(ratedCard!).getByText('5 / 5'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(unratedCard!).getByText('Unread'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(unratedCard!).getByText('—'),
         ).toBeInTheDocument()
     })
 })

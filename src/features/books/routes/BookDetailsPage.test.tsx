@@ -106,6 +106,71 @@ describe('BookDetailsPage', () => {
         >)
     })
 
+    it('offers Mark Read for an active unread book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                is_read: false,
+                completion_date: null,
+                rating: null,
+                review: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Mark Read',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books/test-book-id/mark-read',
+        )
+    })
+
+    it('does not offer Mark Read for an already-read book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: completeBook,
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Mark Read',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('does not offer Mark Read for a deleted unread book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                is_read: false,
+                completion_date: null,
+                rating: null,
+                review: null,
+                deletion_date:
+                    '2026-08-14T12:00:00.000Z',
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Mark Read',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
     it('shows a loading state while the book is loading', () => {
         mockedUseBook.mockReturnValue({
             isPending: true,
@@ -642,6 +707,85 @@ describe('BookDetailsPage', () => {
         expect(
             screen.queryByRole('link', {
                 name: 'Check In',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('offers Edit Reading for an active read book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                is_read: true,
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Edit Reading',
+            }),
+        ).toHaveAttribute(
+            'href',
+            `/books/${completeBook.id}/reading`,
+        )
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Mark Read',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('does not offer Edit Reading for an unread book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                is_read: false,
+                completion_date: null,
+                rating: null,
+                review: null,
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Edit Reading',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Mark Read',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('does not offer Edit Reading for a deleted read book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                is_read: true,
+                deletion_date:
+                    '2026-08-14T12:00:00.000Z',
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Edit Reading',
             }),
         ).not.toBeInTheDocument()
     })

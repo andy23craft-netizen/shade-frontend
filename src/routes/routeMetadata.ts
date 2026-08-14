@@ -24,6 +24,11 @@ export const routeMetadata = {
     title: 'Mark Book Read',
     heading: 'Mark Book Read',
   },
+  reading: {
+    path: '/books/:bookId/reading',
+    title: 'Edit Reading',
+    heading: 'Edit Reading',
+  },
   editBook: {
     path: '/books/:bookId/edit',
     title: 'Edit Book',

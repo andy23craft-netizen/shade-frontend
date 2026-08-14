@@ -268,6 +268,9 @@ export function BookDetailsPage() {
     const canMarkRead =
         canShowActiveActions &&
         !book.is_read
+    const canEditReading =
+        canShowActiveActions &&
+        book.is_read
 
     return (
         <section className="route-page">
@@ -505,6 +508,15 @@ export function BookDetailsPage() {
                             variant="secondary"
                         >
                             Mark Read
+                        </AppLink>
+                    ) : null}
+
+                    {canEditReading ? (
+                        <AppLink
+                            to={`/books/${book.id}/reading`}
+                            variant="secondary"
+                        >
+                            Edit Reading
                         </AppLink>
                     ) : null}
 
