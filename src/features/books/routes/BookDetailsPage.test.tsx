@@ -653,6 +653,66 @@ describe('BookDetailsPage', () => {
         ).not.toBeInTheDocument()
     })
 
+    it('does not offer delete when an active loan exists even if book status is available', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                status: 'available',
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        mockedUseLoans.mockReturnValue({
+            data: {
+                items: [activeLoan],
+                total: 1,
+            },
+            isPending: false,
+            isError: false,
+            error: null,
+        } as ReturnType<typeof useLoans>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Delete Book',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('does not offer delete when book status is on_loan even without an active loan', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                status: 'on_loan',
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        mockedUseLoans.mockReturnValue({
+            data: {
+                items: [returnedLoan],
+                total: 1,
+            },
+            isPending: false,
+            isError: false,
+            error: null,
+        } as ReturnType<typeof useLoans>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Delete Book',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
     it('offers the appropriate actions for an active unread book', () => {
         mockedUseBook.mockReturnValue({
             isPending: false,

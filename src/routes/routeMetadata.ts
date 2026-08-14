@@ -34,6 +34,11 @@ export const routeMetadata = {
     title: 'Edit Book',
     heading: 'Edit Book',
   },
+  deleteBook: {
+    path: '/books/:bookId/delete',
+    title: 'Delete Book',
+    heading: 'Delete Book',
+  },
   checkout: {
     path: '/checkout',
     title: 'Check Out',

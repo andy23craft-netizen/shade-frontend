@@ -10,6 +10,7 @@ import { isApiError } from '../../../api/apiErrors'
 import { useBook } from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
 import {
+    findActiveLoan,
     isCheckinEligible,
 } from '../../loans/checkinEligibility'
 import { queryKeys } from '../../../api/queryKeys'
@@ -263,8 +264,18 @@ export function BookDetailsPage() {
             loansQuery.data?.items ?? [],
         )
 
+    const hasActiveLoan =
+        !loansQuery.isPending &&
+        !loansQuery.isError &&
+        findActiveLoan(
+            book.id,
+            loansQuery.data?.items ?? [],
+        ) !== undefined
+
     const canDelete =
-        canShowActiveActions && !isOnLoan
+        canShowActiveActions &&
+        !isOnLoan &&
+        !hasActiveLoan
     const canMarkRead =
         canShowActiveActions &&
         !book.is_read

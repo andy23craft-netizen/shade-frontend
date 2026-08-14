@@ -14,7 +14,7 @@ import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
 import { NotFoundPage } from './NotFoundPage'
 import { routeMetadata } from './routeMetadata'
 import { ReadingEditPage } from '../features/books/routes/ReadingEditPage'
-
+import { DeleteBookPage } from '../features/books/routes/DeleteBookPage'
 
 export const routeConfig = [
     {
@@ -68,6 +68,13 @@ export const routeConfig = [
                     title: routeMetadata.editBook.title,
                 },
                 element: <EditBookPage />,
+            },
+            {
+                path: routeMetadata.deleteBook.path,
+                handle: {
+                    title: routeMetadata.deleteBook.title,
+                },
+                element: <DeleteBookPage />,
             },
             {
                 path: routeMetadata.checkout.path,

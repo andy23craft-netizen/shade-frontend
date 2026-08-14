@@ -1,6 +1,371 @@
-import { RoutePlaceholder } from '../../../routes/RoutePlaceholder'
-import { routeMetadata } from '../../../routes/routeMetadata'
+import {
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
+import {
+    useNavigate,
+    useParams,
+} from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+
+import {
+    Alert,
+    AppLink,
+    LoadingState,
+} from '../../../components'
+import {
+    isApiError,
+    type ApiFieldError,
+} from '../../../api/apiErrors'
+import {
+    useBook,
+    useUpdateBook,
+} from '../../../api/booksQueries'
+import { queryKeys } from '../../../api/queryKeys'
+import {
+    BookForm,
+    type BookFormValues,
+} from '../components/BookForm'
+import type {
+    BookFormField,
+    BookFormFieldErrors,
+} from '../components/bookFormModel'
+import {
+    bookFormValuesFromBook,
+    bookFormValuesToUpdate,
+} from './bookEditModel'
+
+const BOOK_FORM_FIELDS = new Set<string>([
+    'title',
+    'authors',
+    'isbn13',
+    'publisher',
+    'publication_date',
+    'pages',
+    'category',
+    'shelf',
+    'tags',
+    'acquisition_source',
+    'purchase_date',
+    'purchase_price',
+    'notes',
+])
+
+function mapEditFieldErrors(
+    fieldErrors: readonly ApiFieldError[],
+): BookFormFieldErrors {
+    const mapped: BookFormFieldErrors = {}
+
+    for (const entry of fieldErrors) {
+        const field = entry.field.split('.')[0]
+
+        if (
+            !field ||
+            !BOOK_FORM_FIELDS.has(field) ||
+            mapped[field as BookFormField]
+        ) {
+            continue
+        }
+
+        mapped[field as BookFormField] =
+            entry.message
+    }
+
+    return mapped
+}
 
 export function EditBookPage() {
-    return <RoutePlaceholder heading={routeMetadata.editBook.heading} />
+    const { bookId = '' } = useParams()
+    const navigate = useNavigate()
+    const queryClient = useQueryClient()
+
+    const bookQuery = useBook(bookId)
+    const updateBook = useUpdateBook()
+
+    const initializedBookIdRef =
+        useRef<string | null>(null)
+
+    const [
+        values,
+        setValues,
+    ] = useState<BookFormValues | null>(
+        null,
+    )
+
+    const [
+        serverFieldErrors,
+        setServerFieldErrors,
+    ] = useState<BookFormFieldErrors>({})
+
+    const [
+        formError,
+        setFormError,
+    ] = useState<string | null>(null)
+
+    useEffect(() => {
+        const book = bookQuery.data
+
+        if (
+            !book ||
+            initializedBookIdRef.current ===
+            book.id
+        ) {
+            return
+        }
+
+        setValues(
+            bookFormValuesFromBook(book),
+        )
+
+        initializedBookIdRef.current =
+            book.id
+    }, [bookQuery.data])
+
+    async function refetchBookState() {
+        await Promise.all([
+            queryClient.invalidateQueries({
+                queryKey:
+                    queryKeys.books.detail(bookId),
+            }),
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.books.all,
+            }),
+        ])
+    }
+
+    function handleSubmit(
+        nextValues: BookFormValues,
+    ) {
+        if (updateBook.isPending) {
+            return
+        }
+
+        setServerFieldErrors({})
+        setFormError(null)
+
+        const book = bookQuery.data
+
+        if (!book) {
+            setFormError(
+                'The book is not available to update.',
+            )
+            return
+        }
+
+        if (book.deletion_date !== null) {
+            setFormError(
+                'Deleted books cannot be edited here.',
+            )
+            void refetchBookState()
+            return
+        }
+
+        const request =
+            bookFormValuesToUpdate(
+                book,
+                nextValues,
+            )
+
+        if (Object.keys(request).length === 0) {
+            setFormError(
+                'No changes have been made.',
+            )
+            return
+        }
+
+        updateBook.mutate(
+            {
+                id: book.id,
+                book: request,
+            },
+            {
+                onSuccess: (updatedBook) => {
+                    navigate(
+                        `/books/${updatedBook.id}`,
+                    )
+                },
+                onError: (error) => {
+                    if (
+                        isApiError(error) &&
+                        error.status === 422
+                    ) {
+                        const mapped =
+                            mapEditFieldErrors(
+                                error.fieldErrors,
+                            )
+
+                        setServerFieldErrors(
+                            mapped,
+                        )
+
+                        setFormError(
+                            Object.keys(mapped)
+                                .length > 0
+                                ? 'Correct the marked fields and try again.'
+                                : error.message,
+                        )
+                        return
+                    }
+
+                    if (
+                        isApiError(error) &&
+                        error.status === 404
+                    ) {
+                        setFormError(
+                            'This book could not be updated because it is missing or no longer available.',
+                        )
+                        void refetchBookState()
+                        return
+                    }
+
+                    setFormError(
+                        error instanceof Error
+                            ? error.message
+                            : 'The book could not be updated.',
+                    )
+
+                    void refetchBookState()
+                },
+            },
+        )
+    }
+
+    if (bookQuery.isPending) {
+        return (
+            <section className="route-page">
+                <h1 tabIndex={-1}>
+                    Edit Book
+                </h1>
+
+                <LoadingState label="Loading book…" />
+            </section>
+        )
+    }
+
+    if (bookQuery.isError) {
+        const isNotFound =
+            isApiError(bookQuery.error) &&
+            bookQuery.error.status === 404
+
+        return (
+            <section className="route-page">
+                <h1 tabIndex={-1}>
+                    Edit Book
+                </h1>
+
+                <Alert
+                    variant={
+                        isNotFound
+                            ? 'warning'
+                            : 'error'
+                    }
+                    title={
+                        isNotFound
+                            ? 'Book not found'
+                            : 'Unable to load book'
+                    }
+                >
+                    {isNotFound
+                        ? 'This book could not be found. It may have been removed.'
+                        : bookQuery.error instanceof
+                        Error
+                            ? bookQuery.error.message
+                            : 'An unexpected error occurred.'}
+                </Alert>
+
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    Back to Books
+                </AppLink>
+            </section>
+        )
+    }
+
+    const book = bookQuery.data
+
+    if (book.deletion_date !== null) {
+        return (
+            <section className="route-page">
+                <div className="book-details__topbar">
+                    <AppLink
+                        to={`/books/${book.id}`}
+                        variant="secondary"
+                    >
+                        ← Back to Book
+                    </AppLink>
+                </div>
+
+                <h1 tabIndex={-1}>
+                    Edit Book
+                </h1>
+
+                <Alert
+                    variant="warning"
+                    title="This book has been deleted"
+                >
+                    Deleted books cannot be edited here.
+                </Alert>
+            </section>
+        )
+    }
+
+    if (values === null) {
+        return (
+            <section className="route-page">
+                <h1 tabIndex={-1}>
+                    Edit Book
+                </h1>
+
+                <LoadingState label="Preparing book…" />
+            </section>
+        )
+    }
+
+    return (
+        <section className="route-page">
+            <div className="book-details__topbar">
+                <AppLink
+                    to={`/books/${book.id}`}
+                    variant="secondary"
+                >
+                    ← Back to Book
+                </AppLink>
+            </div>
+
+            <h1 tabIndex={-1}>
+                Edit Book
+            </h1>
+
+            <p>
+                Update metadata for{' '}
+                <strong>{book.title}</strong> by{' '}
+                {book.authors}.
+            </p>
+
+            <BookForm
+                values={values}
+                onChange={(nextValues) => {
+                    setValues(nextValues)
+                    setServerFieldErrors({})
+                    setFormError(null)
+                }}
+                onSubmit={handleSubmit}
+                onCancel={() => {
+                    navigate(
+                        `/books/${book.id}`,
+                    )
+                }}
+                isSubmitting={
+                    updateBook.isPending
+                }
+                serverFieldErrors={
+                    serverFieldErrors
+                }
+                formError={formError}
+            />
+        </section>
+    )
 }

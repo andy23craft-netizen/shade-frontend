@@ -254,7 +254,7 @@ describe('BookForm', () => {
         expect(onSubmit).not.toHaveBeenCalled()
     })
 
-    it('submits through formValuesToBookCreate with create defaults', () => {
+    it('submits the validated form values', () => {
         const onSubmit = vi.fn()
 
         render(
@@ -352,22 +352,20 @@ describe('BookForm', () => {
             title: 'Dune',
             authors: 'Frank Herbert',
             isbn13: '978-0-441-17271-9',
-            publisher: null,
+            publisher: '',
             publication_date: '1965',
-            pages: 412,
+            pages: '412',
             category: 'fiction',
             shelf: 'a1',
-            status: 'available',
-            is_read: false,
-            tags: null,
-            acquisition_source: null,
-            purchase_date: null,
-            purchase_price: 12.5,
-            notes: null,
+            tags: '',
+            acquisition_source: '',
+            purchase_date: '',
+            purchase_price: '12.50',
+            notes: '',
         })
     })
 
-    it('trims title and authors before submitting', () => {
+    it('submits the current form values after validation', () => {
         const onSubmit = vi.fn()
 
         render(
@@ -403,12 +401,10 @@ describe('BookForm', () => {
 
         expect(onSubmit).toHaveBeenCalledWith(
             expect.objectContaining({
-                title: 'Dune',
-                authors: 'Frank Herbert',
-                pages: null,
-                purchase_price: null,
-                status: 'available',
-                is_read: false,
+                title: '  Dune  ',
+                authors: '  Frank Herbert  ',
+                pages: '',
+                purchase_price: '',
             }),
         )
     })

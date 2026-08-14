@@ -10,13 +10,11 @@ import {
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import type {
-    BookCreate,
     Category,
     Shelf,
 } from '../../../api/apiTypes'
 
 import {
-    formValuesToBookCreate,
     parseTagsInput,
     validateBookFormValues,
     type BookFormField,
@@ -116,7 +114,7 @@ export interface BookFormProps {
         values: BookFormValues,
     ) => void
     onSubmit: (
-        values: BookCreate,
+        values: BookFormValues,
     ) => void | Promise<void>
     onCancel: () => void
     isSubmitting?: boolean
@@ -264,9 +262,7 @@ export function BookForm({
             return
         }
 
-        await onSubmit(
-            formValuesToBookCreate(nextValues),
-        )
+        await onSubmit(nextValues)
     }
 
     useEffect(() => {

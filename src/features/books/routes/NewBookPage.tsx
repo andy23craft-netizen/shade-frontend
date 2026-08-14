@@ -18,9 +18,6 @@ import {
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
-import type {
-    BookCreate,
-} from '../../../api/apiTypes'
 import {
     isValidIsbn,
 } from '../utils/isbn'
@@ -29,8 +26,9 @@ import {
     type BookFormValues,
 } from '../components/BookForm'
 import { bookFormDefaults } from '../components/bookFormDefaults'
-import type {
+import {
     BookFormField,
+    formValuesToBookCreate,
     BookFormFieldErrors,
 } from '../components/bookFormModel'
 import { useHardwareIsbnScanner } from '../../scanning/useHardwareIsbnScanner'
@@ -242,10 +240,14 @@ export function NewBookPage() {
     }
 
     function handleSubmit(
-        book: BookCreate,
+        nextValues: BookFormValues,
     ) {
         setServerFieldErrors({})
         setFormError(null)
+
+        const book = formValuesToBookCreate(
+            nextValues,
+        )
 
         createBook.mutate(
             book,
