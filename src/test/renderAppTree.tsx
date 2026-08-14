@@ -59,6 +59,36 @@ export function mockReachableApi() {
                     )
                 }
 
+                if (pathname === '/dashboard') {
+                    return new Response(
+                        JSON.stringify({
+                            total_books: 0,
+                            checked_out: 0,
+                            read: 0,
+                            unread: 0,
+                            recently_added: 0,
+                            recent_window_days: 30,
+                            borrowing: {
+                                active_loans: 0,
+                                lifetime_loans: 0,
+                                average_loan_days: null,
+                            },
+                            reading: {
+                                books_read: 0,
+                                books_unread: 0,
+                                average_rating: null,
+                            },
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
                 return new Response(
                     JSON.stringify({
                         status: 'ok',
