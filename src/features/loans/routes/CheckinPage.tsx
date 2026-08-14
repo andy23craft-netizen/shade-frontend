@@ -1,13 +1,21 @@
-import { useState } from 'react'
+import {
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
 import {
     useNavigate,
     useSearchParams,
 } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
+import {
+    isApiError,
+} from '../../../api/apiErrors'
 import {
     useBook,
     useCheckinBook,
@@ -15,6 +23,7 @@ import {
 import {
     useLoans,
 } from '../../../api/loansQueries'
+import { queryKeys } from '../../../api/queryKeys'
 import {
     checkinFormDefaults,
     checkinFormValuesToRequest,
@@ -23,8 +32,15 @@ import {
     type CheckinFormValues,
 } from '../checkinModel'
 
+function focusSummary(
+    node: HTMLDivElement | null,
+) {
+    node?.focus()
+}
+
 export function CheckinPage() {
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const [searchParams] = useSearchParams()
     const bookId = searchParams.get('bookId') ?? ''
 
@@ -37,6 +53,9 @@ export function CheckinPage() {
             : {},
     )
     const checkinBook = useCheckinBook()
+
+    const summaryRef =
+        useRef<HTMLDivElement>(null)
 
     const [
         values,
@@ -54,6 +73,41 @@ export function CheckinPage() {
         formError,
         setFormError,
     ] = useState<string | null>(null)
+
+    const activeLoan =
+        loansQuery.data?.items.find(
+            (loan) => loan.returned_at === null,
+        )
+
+    const errorEntries = (
+        Object.entries(fieldErrors) as [
+            keyof CheckinFormFieldErrors,
+            string,
+        ][]
+    ).filter(
+        (
+            entry,
+        ): entry is [
+            keyof CheckinFormFieldErrors,
+            string,
+        ] => Boolean(entry[1]),
+    )
+
+    const hasSummary =
+        errorEntries.length > 0 ||
+        Boolean(formError)
+
+    useEffect(() => {
+        if (!hasSummary) {
+            return
+        }
+
+        focusSummary(summaryRef.current)
+    }, [
+        formError,
+        fieldErrors,
+        hasSummary,
+    ])
 
     if (!bookId) {
         return (
@@ -74,8 +128,6 @@ export function CheckinPage() {
             </section>
         )
     }
-
-    const checkedInBookId = bookId
 
     if (bookQuery.isPending) {
         return (
@@ -104,6 +156,15 @@ export function CheckinPage() {
                         ? bookQuery.error.message
                         : 'The book could not be loaded.'}
                 </Alert>
+
+                <Button
+                    type="button"
+                    onClick={() => {
+                        void bookQuery.refetch()
+                    }}
+                >
+                    Retry
+                </Button>
             </section>
         )
     }
@@ -134,11 +195,6 @@ export function CheckinPage() {
         )
     }
 
-    const activeLoan =
-        loansQuery.data?.items.find(
-            (loan) => loan.returned_at === null,
-        )
-
     function updateReturnedAt(
         value: string,
     ) {
@@ -162,6 +218,23 @@ export function CheckinPage() {
         setFormError(null)
     }
 
+    async function refetchStaleLoanState() {
+        await Promise.all([
+            queryClient.invalidateQueries({
+                queryKey:
+                    queryKeys.books.detail(bookId),
+            }),
+            queryClient.invalidateQueries({
+                queryKey:
+                queryKeys.books.all,
+            }),
+            queryClient.invalidateQueries({
+                queryKey:
+                queryKeys.loans.all,
+            }),
+        ])
+    }
+
     function handleSubmit(
         event: React.FormEvent<HTMLFormElement>,
     ) {
@@ -182,7 +255,7 @@ export function CheckinPage() {
 
         checkinBook.mutate(
             {
-                id: checkedInBookId,
+                id: bookId,
                 request,
             },
             {
@@ -190,13 +263,45 @@ export function CheckinPage() {
                     navigate(`/books/${bookId}`)
                 },
                 onError: (error) => {
-                    setFormError(
-                        error instanceof Error
-                            ? error.message
-                            : 'The book could not be checked in.',
-                    )
+                    void handleCheckinError(error)
                 },
             },
+        )
+    }
+
+    async function handleCheckinError(
+        error: unknown,
+    ) {
+        if (
+            isApiError(error) &&
+            error.status === 404
+        ) {
+            await refetchStaleLoanState()
+
+            setFormError(
+                'This book or loan could not be found. The book and loan state were refreshed; your return date was kept.',
+            )
+            return
+        }
+
+        if (
+            isApiError(error) &&
+            error.status === 409
+        ) {
+            await refetchStaleLoanState()
+
+            setFormError(
+                'This book is no longer available for check-in. The book and loan state were refreshed; your return date was kept.',
+            )
+            return
+        }
+
+        setFormError(
+            isApiError(error)
+                ? error.message
+                : error instanceof Error
+                    ? error.message
+                    : 'The book could not be checked in.',
         )
     }
 
@@ -236,16 +341,49 @@ export function CheckinPage() {
                 </dl>
             </section>
 
-            {formError ? (
-                <Alert
-                    variant="error"
-                    title="Check-in failed"
+            {hasSummary ? (
+                <div
+                    ref={summaryRef}
+                    tabIndex={-1}
+                    role="alert"
+                    className="alert alert--error"
                 >
-                    {formError}
-                </Alert>
+                    <strong>
+                        {formError
+                            ? 'Check-in failed'
+                            : 'Fix the following errors'}
+                    </strong>
+
+                    {formError ? (
+                        <p>{formError}</p>
+                    ) : null}
+
+                    {errorEntries.length > 0 ? (
+                        <ul>
+                            {errorEntries.map(
+                                ([
+                                     field,
+                                     message,
+                                 ]) => (
+                                    <li key={field}>
+                                        <a
+                                            href="#checkin-returned-at"
+                                        >
+                                            Return date and
+                                            time: {message}
+                                        </a>
+                                    </li>
+                                ),
+                            )}
+                        </ul>
+                    ) : null}
+                </div>
             ) : null}
 
-            <form onSubmit={handleSubmit}>
+            <form
+                onSubmit={handleSubmit}
+                noValidate
+            >
                 <Field
                     label="Return date and time"
                     id="checkin-returned-at"
