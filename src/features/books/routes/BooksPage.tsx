@@ -122,7 +122,7 @@ export function BooksPage() {
 
     return (
         <section className="route-page">
-            <div>
+            <div className="books-page__heading">
                 <h1 tabIndex={-1}>Books</h1>
                 <p>
                     {booksQuery.data.total} books in
@@ -130,7 +130,10 @@ export function BooksPage() {
                 </p>
             </div>
 
-            <ul aria-label="Library books">
+            <ul
+                className="books-list"
+                aria-label="Library books"
+            >
                 {books.map((book) => {
                     const status = displayEnum(
                         book.status,
@@ -148,29 +151,32 @@ export function BooksPage() {
                     )
 
                     return (
-                        <li key={book.id}>
-                            <article>
-                                <h2>
-                                    <AppLink
-                                        to={`/books/${book.id}`}
-                                    >
-                                        {book.title}
-                                    </AppLink>
-                                </h2>
+                        <li
+                            key={book.id}
+                            className="books-list__item"
+                        >
+                            <article className="book-card">
+                                <div className="book-card__heading">
+                                    <h2 className="book-card__title">
+                                        <AppLink
+                                            to={`/books/${book.id}`}
+                                        >
+                                            {book.title}
+                                        </AppLink>
+                                    </h2>
 
-                                <p>
-                                    {book.authors}
-                                </p>
+                                    <p className="book-card__author">
+                                        {book.authors}
+                                    </p>
+                                </div>
 
-                                <dl>
-                                    <div>
+                                <dl className="book-card__metadata">
+                                    <div className="book-card__field">
                                         <dt>Status</dt>
-                                        <dd>
-                                            {status}
-                                        </dd>
+                                        <dd>{status}</dd>
                                     </div>
 
-                                    <div>
+                                    <div className="book-card__field">
                                         <dt>Reading</dt>
                                         <dd>
                                             {displayReadState(
@@ -179,18 +185,14 @@ export function BooksPage() {
                                         </dd>
                                     </div>
 
-                                    <div>
+                                    <div className="book-card__field">
                                         <dt>Category</dt>
-                                        <dd>
-                                            {category}
-                                        </dd>
+                                        <dd>{category}</dd>
                                     </div>
 
-                                    <div>
+                                    <div className="book-card__field">
                                         <dt>Shelf</dt>
-                                        <dd>
-                                            {shelf}
-                                        </dd>
+                                        <dd>{shelf}</dd>
                                     </div>
                                 </dl>
                             </article>
