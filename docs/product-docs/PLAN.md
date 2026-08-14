@@ -145,8 +145,9 @@ concrete cross-route state requirement emerges.
 - Treat the API as the source of truth for ISBN normalization, persistence, lifecycle transitions, loan records, and
   dashboard calculations, while compensating for the documented ISBN-10 and temporal-string validation gaps in
   `API-for-FE.md`.
-- Model collection responses as `{ items, total }`. The books API is title-ordered and the loans API is ordered by
-  `checked_out_at` descending; neither endpoint currently supports pagination, and loans do not support filtering.
+- Model collection responses as `{ items, total }`. The books API supports optional pagination and sorting on
+  `GET /books` (collection browse uses 50-item pages); unpaginated calls remain for checkout, check-in, and loan joins.
+  The loans API is ordered by `checked_out_at` descending; loans do not support filtering or pagination.
 - Send date values as `YYYY-MM-DD` and timestamps as normalized UTC ISO 8601 strings. Keep `publication_date` as an API
   string because lookup may return a year only; use `YYYY-MM-DD` for user-entered purchase dates without coercing
   year-only lookup metadata into a full date.
@@ -721,8 +722,8 @@ publicly reachable or supports untrusted users, release must be blocked until au
 - Metadata lookup should show immediate progress and complete within a few seconds under normal API conditions; client
   timeout must exceed the backend's normal lookup window and offer retry/manual fallback.
 - Avoid loading the book list repeatedly within one navigation session.
-- Because the API has no pagination, test with a representative large personal library and record the practical limit.
-  Pagination/search is a backend follow-up if the result is not acceptable.
+- Collection browse (`/books`) paginates at 50 items with user-controlled sort; checkout, check-in, and loan joins still
+  fetch unpaginated lists. Test with a representative large personal library and record practical limits.
 - Set bundle-size expectations in the foundation or scanning ticket and report material regressions in CI.
 
 ## 14. Requirement traceability
@@ -753,7 +754,7 @@ The product requirements are covered as follows:
 - Multiple copies of one title.
 - Reading lists and wish lists.
 - Import and export formats other than the API-provided full SQL backup.
-- Catalog search, filters, custom sorting, and backend pagination.
+- Catalog search, filters, and custom sorting beyond collection browse controls.
 - Cover image management.
 - Overdue notifications.
 - Goodreads, StoryGraph, or similar integrations.

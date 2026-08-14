@@ -5,13 +5,16 @@ reporting in CI). These are practical local expectations, not hard product SLAs.
 
 ## Large-library list helper
 
-- Fixture: `BookList` with `total: 2000` and 2_000 `BookRead` items
+- Full-list fixture: `BookList` with `total: 2000` and 2_000 `BookRead` items (unpaginated callers such as checkout,
+  check-in, and loans)
+- Paginated fixture: `BookList` with `total: 2000` and 50 `BookRead` items (`skip=0`, `take=50`) for collection browse
 - Exercise: `createBooksApi(...).list()` in Vitest/jsdom
 - Expectation: complete in under **250ms** on a typical developer machine
 - Guard: `src/api/booksApi.largeLibrary.test.ts`
 
-FEAT-12 should re-run a comparable fixture and treat material regressions (for example, sustained multiples of this
-budget) as release blockers or tracked follow-ups. Backend pagination remains out of scope.
+FEAT-12 should re-run comparable fixtures and treat material regressions (for example, sustained multiples of this
+budget) as release blockers or tracked follow-ups. `BooksPage` uses paginated requests; unpaginated full-list callers
+remain for checkout, check-in, and loan joins.
 
 ## Production bundle size
 

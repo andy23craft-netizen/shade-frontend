@@ -70,6 +70,10 @@ export function useBooks(
     options: {
         includeDeleted?: boolean
         isbn?: string
+        skip?: number
+        take?: number
+        sortBy?: string
+        sortOrder?: string
         enabled?: boolean
     } = {},
 ) {
@@ -83,12 +87,20 @@ export function useBooks(
     const includeDeleted =
         options.includeDeleted ?? false
     const isbn = options.isbn
+    const skip = options.skip
+    const take = options.take
+    const sortBy = options.sortBy
+    const sortOrder = options.sortOrder
     const enabled = options.enabled ?? true
 
     return useQuery({
         queryKey: queryKeys.books.list({
             includeDeleted,
             isbn,
+            skip,
+            take,
+            sortBy,
+            sortOrder,
         }),
         queryFn: ({
                       signal,
@@ -96,6 +108,10 @@ export function useBooks(
             booksApi.list({
                 includeDeleted,
                 isbn,
+                skip,
+                take,
+                sortBy,
+                sortOrder,
                 signal,
             }),
         enabled,

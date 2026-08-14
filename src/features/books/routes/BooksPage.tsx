@@ -1,3 +1,10 @@
+import {
+    useEffect,
+} from 'react'
+import {
+    useSearchParams,
+} from 'react-router-dom'
+
 import { AppLink } from '../../../components/AppLink'
 import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
@@ -9,6 +16,17 @@ import type {
     Shelf,
     Status,
 } from '../../../api/apiTypes'
+import { BooksListControls } from '../components/BooksListControls'
+import {
+    BOOKS_PAGE_SIZE,
+    buildBooksListQuery,
+    clampPage,
+    parsePageParam,
+    parseSortByParam,
+    parseSortOrderParam,
+    type BookSortBy,
+    type BookSortOrder,
+} from '../booksListModel'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -59,8 +77,114 @@ function displayReadState(
     return isRead ? 'Read' : 'Unread'
 }
 
+function updateListParams(
+    searchParams: URLSearchParams,
+    updates: {
+        page?: number
+        sortBy?: BookSortBy
+        sortOrder?: BookSortOrder
+    },
+): URLSearchParams {
+    const next = new URLSearchParams(searchParams)
+
+    if (updates.page !== undefined) {
+        if (updates.page <= 1) {
+            next.delete('page')
+        } else {
+            next.set(
+                'page',
+                String(updates.page),
+            )
+        }
+    }
+
+    if (updates.sortBy !== undefined) {
+        if (updates.sortBy === 'author') {
+            next.delete('sortBy')
+        } else {
+            next.set(
+                'sortBy',
+                updates.sortBy,
+            )
+        }
+    }
+
+    if (updates.sortOrder !== undefined) {
+        if (updates.sortOrder === 'asc') {
+            next.delete('sortOrder')
+        } else {
+            next.set(
+                'sortOrder',
+                updates.sortOrder,
+            )
+        }
+    }
+
+    return next
+}
+
 export function BooksPage() {
-    const booksQuery = useBooks()
+    const [
+        searchParams,
+        setSearchParams,
+    ] = useSearchParams()
+
+    const page = parsePageParam(
+        searchParams.get('page'),
+    )
+    const sortBy = parseSortByParam(
+        searchParams.get('sortBy'),
+    )
+    const sortOrder = parseSortOrderParam(
+        searchParams.get('sortOrder'),
+    )
+
+    const listQuery = buildBooksListQuery({
+        page,
+        sortBy,
+        sortOrder,
+    })
+
+    const booksQuery = useBooks({
+        skip: listQuery.skip,
+        take: listQuery.take,
+        sortBy: listQuery.sortBy,
+        sortOrder: listQuery.sortOrder,
+    })
+
+    useEffect(() => {
+        if (
+            !booksQuery.isSuccess ||
+            booksQuery.data.total === 0
+        ) {
+            return
+        }
+
+        const clampedPage = clampPage(
+            page,
+            booksQuery.data.total,
+        )
+
+        if (clampedPage !== page) {
+            setSearchParams(
+                updateListParams(
+                    searchParams,
+                    {
+                        page: clampedPage,
+                    },
+                ),
+                {
+                    replace: true,
+                },
+            )
+        }
+    }, [
+        booksQuery.isSuccess,
+        booksQuery.data?.total,
+        page,
+        searchParams,
+        setSearchParams,
+    ])
 
     if (booksQuery.isPending) {
         return (
@@ -87,8 +211,9 @@ export function BooksPage() {
     }
 
     const books = booksQuery.data.items
+    const total = booksQuery.data.total
 
-    if (booksQuery.data.total === 0) {
+    if (total === 0) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>Books</h1>
@@ -110,15 +235,82 @@ export function BooksPage() {
         )
     }
 
+    const effectivePage = clampPage(page, total)
+
     return (
         <section className="route-page">
             <div className="books-page__heading">
                 <h1 tabIndex={-1}>Books</h1>
                 <p>
-                    {booksQuery.data.total} books in
-                    the library.
+                    {total} books in the library.
                 </p>
             </div>
+
+            <BooksListControls
+                page={effectivePage}
+                pageSize={BOOKS_PAGE_SIZE}
+                skip={listQuery.skip}
+                total={total}
+                itemsOnPage={books.length}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortByChange={(nextSortBy) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                sortBy: nextSortBy,
+                                page: 1,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+                onSortOrderChange={(
+                    nextSortOrder,
+                ) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                sortOrder: nextSortOrder,
+                                page: 1,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+                onPreviousPage={() => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                page: effectivePage - 1,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+                onNextPage={() => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                page: effectivePage + 1,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+            />
 
             <ul
                 className="books-list"

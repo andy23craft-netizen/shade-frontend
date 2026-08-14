@@ -571,6 +571,10 @@ export interface operations {
             query?: {
                 include_deleted?: boolean;
                 isbn?: string | null;
+                skip?: number | null;
+                take?: number | null;
+                sortBy?: string | null;
+                sortOrder?: string | null;
             };
             header?: never;
             path?: never;
@@ -1153,6 +1157,8 @@ export interface operations {
         parameters: {
             query?: {
                 book_id?: string | null;
+                skip?: number | null;
+                take?: number | null;
             };
             header?: never;
             path?: never;

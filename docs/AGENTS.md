@@ -152,9 +152,10 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL backup, runtime API config, CI,
 Podman preview, versioned production artifacts.
 
-**Out of scope unless explicitly requested:** UPC, multi-library/copies, wish lists, catalog search/filter/sort, backend
-pagination, cover images, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD,
-mark-unread, remote Ansible/systemd/TLS/rollback orchestration.
+**Out of scope unless explicitly requested:** UPC, multi-library/copies, wish lists, catalog search/filter/sort, cover
+images, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote
+Ansible/systemd/TLS/rollback orchestration. Collection browse (`BooksPage`) uses backend pagination and sorting; other
+callers still fetch unpaginated full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
@@ -275,13 +276,14 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
   `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets. Colocated unit tests cover both modules.
-- `src/api/queryKeys.ts`: Shared React Query keys for books (`all`, `list({ includeDeleted, isbn? })`, `detail(id)`,
-  `lookup(isbn)`), loans (`all`, `list(bookId?)`, `detail(id)`), and dashboard.
+- `src/api/queryKeys.ts`: Shared React Query keys for books (`all`, `list({ includeDeleted, isbn?, skip?, take?, sortBy?,
+  sortOrder? })`, `detail(id)`, `lookup(isbn)`), loans (`all`, `list(bookId?)`, `detail(id)`), and dashboard.
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `backup`) plus the
   underlying `client`.
-- `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`; omit empty/`undefined` `isbn`), `create`, `lookup`,
-  `get`, `update`, `remove`, `restore`, `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers
-  accept optional `AbortSignal` and serialize only documented request fields.
+- `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `skip`, `take`, `sortBy`, `sortOrder`; omit empty/
+  `undefined` `isbn`; send `skip`/`take` together when paginating), `create`, `lookup`, `get`, `update`, `remove`,
+  `restore`, `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal`
+  and serialize only documented request fields.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`; omit empty/`undefined`),
   `get(id)` (`GET /loans/{id}`).
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
@@ -290,10 +292,10 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
   query retry that skips validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`.
-- `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, enabled }`), `useBook`, `useBookLookup`, plus
-  mutations (including `useCreateBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write
-  returned `BookRead` into the detail cache and invalidate per PLAN.md 7.5 (lists including `include_deleted` via
-  the `['books']` prefix, detail, dashboard, and loans on checkout/check-in).
+- `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, skip, take, sortBy, sortOrder, enabled }`),
+  `useBook`, `useBookLookup`, plus mutations (including `useCreateBook`, `useCheckoutBook`, `useCheckinBook`, and
+  `useMarkBookRead`) that write returned `BookRead` into the detail cache and invalidate per PLAN.md 7.5 (lists including
+  `include_deleted` via the `['books']` prefix, detail, dashboard, and loans on checkout/check-in).
 - `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` (optional `{ bookId }`), `useLoan(id)` (disabled when
   falsy), and `useDashboard` using the same keys mutations invalidate (`queryKeys.loans.list` / `detail` / `all`).
 
@@ -316,8 +318,10 @@ Route ownership under `src/features/*/routes/`. Implemented product UI vs placeh
 
 Implemented (do not revert to placeholders):
 
-- `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04): active collection via `useBooks`; loading, error+retry,
-  empty state with link to `/books/new`, and list rows linking to detail with safe enum display
+- `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04 + pagination/sorting): active collection via paginated
+  `useBooks({ skip, take: 50, sortBy, sortOrder })` with URL search params (`page`, `sortBy`, `sortOrder`); sort and
+  Previous/Next controls; loading, error+retry, empty state with link to `/books/new`, and list rows linking to detail
+  with safe enum display
 - `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04): detail via `useBook`; loading,
   not-found / error recovery, and field presentation with safe enum display. "Check Out" links to
   `/checkout?bookId=` when active and available (FEAT-07). "Check In" links to `/checkin?bookId=...` when active and
@@ -334,6 +338,10 @@ Implemented (do not revert to placeholders):
   `is_read=false`. Client validation, Field-linked errors, error summary focus, tag normalization, and
   `formValuesToBookCreate` blank-optional-to-`null` conversion. Colocated `BookForm.test.tsx` /
   `bookFormModel.test.ts` cover gating, validation, conversion, and server error linking
+- `src/features/books/booksListModel.ts`: `BOOKS_PAGE_SIZE`, sort types, page/skip helpers, query builder, range text,
+  and UI labels for collection browse; colocated `booksListModel.test.ts`
+- `src/features/books/components/BooksListControls.tsx`: labelled sort selects and Previous/Next pagination for
+  `BooksPage`
 - `src/features/books/utils/isbn.ts`: ISBN-10 / ISBN-13 checksum helpers plus `compactIsbnForListFilter` (punctuation
   strip only for `GET /books?isbn=`); used by lookup, create, scanner capture, and checkout ISBN Find; colocated unit
   tests

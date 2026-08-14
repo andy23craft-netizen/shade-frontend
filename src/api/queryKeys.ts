@@ -6,6 +6,10 @@ export const queryKeys = {
             options: {
                 includeDeleted?: boolean
                 isbn?: string
+                skip?: number
+                take?: number
+                sortBy?: string
+                sortOrder?: string
             } = {},
         ) => {
             const includeDeleted =
@@ -16,20 +20,41 @@ export const queryKeys = {
                     ? options.isbn
                     : undefined
 
-            return isbn !== undefined
-                ? ([
-                    'books',
-                    {
-                        includeDeleted,
-                        isbn,
-                    },
-                ] as const)
-                : ([
-                    'books',
-                    {
-                        includeDeleted,
-                    },
-                ] as const)
+            const key: {
+                includeDeleted: boolean
+                isbn?: string
+                skip?: number
+                take?: number
+                sortBy?: string
+                sortOrder?: string
+            } = {
+                includeDeleted,
+            }
+
+            if (isbn !== undefined) {
+                key.isbn = isbn
+            }
+
+            if (options.skip !== undefined) {
+                key.skip = options.skip
+            }
+
+            if (options.take !== undefined) {
+                key.take = options.take
+            }
+
+            if (options.sortBy !== undefined) {
+                key.sortBy = options.sortBy
+            }
+
+            if (options.sortOrder !== undefined) {
+                key.sortOrder = options.sortOrder
+            }
+
+            return [
+                'books',
+                key,
+            ] as const
         },
 
         detail: (id: string) =>

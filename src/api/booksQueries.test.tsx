@@ -143,6 +143,110 @@ describe('book queries', () => {
         queryClient.clear()
     })
 
+    it('passes pagination and sort options to the books API', async () => {
+        const books: BookList = {
+            items: [],
+            total: 100,
+        }
+
+        mockList.mockResolvedValueOnce(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useBooks({
+                    skip: 50,
+                    take: 50,
+                    sortBy: 'title',
+                    sortOrder: 'desc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockList,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 50,
+                take: 50,
+                sortBy: 'title',
+                sortOrder: 'desc',
+            }),
+        )
+
+        queryClient.clear()
+    })
+
+    it('uses distinct query keys per page and sort', async () => {
+        const books: BookList = {
+            items: [],
+            total: 100,
+        }
+
+        mockList.mockResolvedValue(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const first = renderHook(
+            () =>
+                useBooks({
+                    skip: 0,
+                    take: 50,
+                    sortBy: 'author',
+                    sortOrder: 'asc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        const second = renderHook(
+            () =>
+                useBooks({
+                    skip: 50,
+                    take: 50,
+                    sortBy: 'title',
+                    sortOrder: 'desc',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                first.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                second.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            queryClient.getQueryCache().getAll(),
+        ).toHaveLength(2)
+
+        queryClient.clear()
+    })
+
     it('loads a single book by id', async () => {
         const book =
             {} as BookRead

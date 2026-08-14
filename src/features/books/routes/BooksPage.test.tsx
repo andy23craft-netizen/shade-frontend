@@ -1,54 +1,86 @@
-import { screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+    fireEvent,
+    screen,
+} from '@testing-library/react'
+import {
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest'
 
-import { MemoryRouter } from 'react-router-dom'
+import {
+    MemoryRouter,
+} from 'react-router-dom'
 import { BooksPage } from './BooksPage'
-import type { BookList, BookRead } from '../../../api/apiTypes'
+import type {
+    BookList,
+    BookRead,
+} from '../../../api/apiTypes'
 import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
 
 const mockUseBooks = vi.fn()
 
 vi.mock('../../../api/booksQueries', () => ({
-    useBooks: () => mockUseBooks(),
+    useBooks: (options: unknown) =>
+        mockUseBooks(options),
 }))
+
+function makeBook(
+    overrides: Partial<BookRead> = {},
+): BookRead {
+    return {
+        id: 'book-1',
+        title: 'The Left Hand of Darkness',
+        authors: 'Ursula K. Le Guin',
+        category: 'fiction',
+        shelf: 'liz_tbr',
+        status: 'available',
+        is_read: false,
+        isbn13: null,
+        publisher: null,
+        publication_date: null,
+        pages: null,
+        tags: null,
+        purchase_date: null,
+        purchase_price: null,
+        acquisition_source: null,
+        notes: null,
+        deletion_date: null,
+        completion_date: null,
+        rating: null,
+        review: null,
+        times_borrowed: 0,
+        last_borrowed_at: null,
+        average_loan_days: null,
+        creation_date: '2026-08-12T00:00:00Z',
+        updated_date: '2026-08-12T00:00:00Z',
+        ...overrides,
+    }
+}
 
 function makeBookList(
     overrides: Partial<BookList> = {},
 ): BookList {
     return {
-        items: [
-            {
-                id: 'book-1',
-                title: 'The Left Hand of Darkness',
-                authors: 'Ursula K. Le Guin',
-                category: 'fiction',
-                shelf: 'liz_tbr',
-                status: 'available',
-                is_read: false,
-                isbn13: null,
-                publisher: null,
-                publication_date: null,
-                pages: null,
-                tags: null,
-                purchase_date: null,
-                purchase_price: null,
-                acquisition_source: null,
-                notes: null,
-                deletion_date: null,
-                completion_date: null,
-                rating: null,
-                review: null,
-                times_borrowed: 0,
-                last_borrowed_at: null,
-                average_loan_days: null,
-                creation_date: '2026-08-12T00:00:00Z',
-                updated_date: '2026-08-12T00:00:00Z',
-            },
-        ],
+        items: [makeBook()],
         total: 1,
         ...overrides,
     }
+}
+
+function renderBooksPage(
+    initialEntry = '/books',
+) {
+    return renderWithProviders(
+        <MemoryRouter
+            initialEntries={[initialEntry]}
+        >
+            <BooksPage />
+        </MemoryRouter>,
+    )
 }
 
 describe('BooksPage', () => {
@@ -62,11 +94,7 @@ describe('BooksPage', () => {
             isError: false,
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
-        )
+        renderBooksPage()
 
         expect(
             screen.getByRole('heading', {
@@ -90,11 +118,7 @@ describe('BooksPage', () => {
             ),
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
-        )
+        renderBooksPage()
 
         expect(
             screen.getByRole('alert'),
@@ -123,11 +147,7 @@ describe('BooksPage', () => {
                 }),
             })
 
-            renderWithProviders(
-                <MemoryRouter>
-                    <BooksPage />
-                </MemoryRouter>,
-            )
+            renderBooksPage()
 
             expect(
                 screen.getByRole('alert'),
@@ -153,11 +173,7 @@ describe('BooksPage', () => {
             },
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
-        )
+        renderBooksPage()
 
         expect(
             screen.getByRole('heading', {
@@ -173,33 +189,200 @@ describe('BooksPage', () => {
             'href',
             '/books/new',
         )
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Previous',
+            }),
+        ).not.toBeInTheDocument()
     })
 
-    it('renders the complete collection result', () => {
+    it('requests the default paginated first page with author ascending sort', () => {
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList({
+                total: 237,
+                items: Array.from(
+                    {
+                        length: 50,
+                    },
+                    (_, index) =>
+                        makeBook({
+                            id: `book-${index}`,
+                            title: `Book ${index}`,
+                        }),
+                ),
+            }),
+        })
+
+        renderBooksPage()
+
+        expect(mockUseBooks).toHaveBeenCalledWith({
+            skip: 0,
+            take: 50,
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+
+        expect(
+            screen.getByText(
+                'Showing 1-50 of 237 books',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Previous',
+            }),
+        ).toBeDisabled()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Next',
+            }),
+        ).toBeEnabled()
+    })
+
+    it('honors URL search params for page and sort', () => {
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList({
+                total: 237,
+                items: Array.from(
+                    {
+                        length: 50,
+                    },
+                    (_, index) =>
+                        makeBook({
+                            id: `book-${index + 50}`,
+                            title: `Book ${index + 50}`,
+                        }),
+                ),
+            }),
+        })
+
+        renderBooksPage(
+            '/books?page=2&sortBy=title&sortOrder=desc',
+        )
+
+        expect(mockUseBooks).toHaveBeenCalledWith({
+            skip: 50,
+            take: 50,
+            sortBy: 'title',
+            sortOrder: 'desc',
+        })
+
+        expect(
+            screen.getByText(
+                'Showing 51-100 of 237 books',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('resets page to 1 when sort field changes', () => {
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList({
+                total: 237,
+                items: Array.from(
+                    {
+                        length: 50,
+                    },
+                    (_, index) =>
+                        makeBook({
+                            id: `book-${index + 50}`,
+                            title: `Book ${index + 50}`,
+                        }),
+                ),
+            }),
+        })
+
+        renderBooksPage('/books?page=2')
+
+        fireEvent.change(
+            screen.getByLabelText('Sort by'),
+            {
+                target: {
+                    value: 'title',
+                },
+            },
+        )
+
+        expect(
+            screen.getByLabelText('Sort by'),
+        ).toHaveValue('title')
+
+        expect(mockUseBooks).toHaveBeenLastCalledWith({
+            skip: 0,
+            take: 50,
+            sortBy: 'title',
+            sortOrder: 'asc',
+        })
+    })
+
+    it('disables Next on the last page', () => {
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList({
+                total: 75,
+                items: Array.from(
+                    {
+                        length: 25,
+                    },
+                    (_, index) =>
+                        makeBook({
+                            id: `book-${index + 50}`,
+                            title: `Book ${index + 50}`,
+                        }),
+                ),
+            }),
+        })
+
+        renderBooksPage('/books?page=2')
+
+        expect(
+            screen.getByText(
+                'Showing 51-75 of 75 books',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Previous',
+            }),
+        ).toBeEnabled()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Next',
+            }),
+        ).toBeDisabled()
+    })
+
+    it('renders the current page of books', () => {
         mockUseBooks.mockReturnValue({
             isPending: false,
             isError: false,
             data: makeBookList({
                 items: [
-                    makeBookList().items[0],
-                    {
-                        ...makeBookList().items[0],
+                    makeBook(),
+                    makeBook({
                         id: 'book-2',
                         title: 'Pale Fire',
                         authors: 'Vladimir Nabokov',
                         status: 'on_loan',
                         is_read: true,
-                    },
+                    }),
                 ],
                 total: 2,
             }),
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
-        )
+        renderBooksPage()
 
         expect(
             screen.getByRole('link', {
@@ -254,21 +437,16 @@ describe('BooksPage', () => {
             isError: false,
             data: makeBookList({
                 items: [
-                    {
-                        ...makeBookList().items[0],
+                    makeBook({
                         status: 'future_status' as unknown as BookRead['status'],
                         category: 'future_category' as unknown as BookRead['category'],
                         shelf: 'future_shelf' as unknown as BookRead['shelf'],
-                    },
+                    }),
                 ],
             }),
         })
 
-        renderWithProviders(
-            <MemoryRouter>
-                <BooksPage />
-            </MemoryRouter>,
-        )
+        renderBooksPage()
 
         expect(
             screen.getByText(

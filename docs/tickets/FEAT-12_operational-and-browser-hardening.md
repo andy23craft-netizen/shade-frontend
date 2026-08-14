@@ -58,9 +58,10 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - There are no WebSocket, SSE, subscription, or push endpoints. Document that multiple open clients do not update
   instantly; refresh remains route-entry, mutation invalidation, explicit refresh, and stale focus/online refetch from
   FEAT-03.
-- `GET /books` and `GET /loans` return full result sets with no pagination. Large-library responsiveness checks from
-  FEAT-03 remain the baseline; material regressions are release blockers or tracked follow-ups (backend pagination is
-  out of MVP scope).
+- `GET /books` supports optional pagination and sorting for collection browse; checkout, check-in, and loan joins still
+  use unpaginated full lists where needed. `GET /loans` returns full result sets with no sort params. Large-library
+  responsiveness checks from FEAT-03 remain the baseline; material regressions are release blockers or tracked
+  follow-ups.
 - `GET /backup` is the only streaming response: a finite `application/sql` attachment whose filename pattern is
   `Shade Library - YYYY-mm-dd_HH-MM-SS_Z.sql` (UTC; literal `Z`). Prefer the exposed UTF-8 `filename*` form; use a
   documented fallback when missing/malformed. Always revoke object URLs. Never inspect, log, cache, upload, or send dump
