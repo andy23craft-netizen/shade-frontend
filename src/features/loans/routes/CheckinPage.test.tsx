@@ -2,6 +2,7 @@ import {
     fireEvent,
     render,
     screen,
+    waitFor,
 } from '@testing-library/react'
 import {
     QueryClient,
@@ -9,7 +10,6 @@ import {
 } from '@tanstack/react-query'
 import {
     MemoryRouter,
-    useNavigate,
 } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -113,6 +113,16 @@ function setupSuccessfulBook() {
         isError: false,
         error: null,
     } as ReturnType<typeof useLoans>)
+}
+
+function confirmCheckin() {
+    fireEvent.click(
+        screen.getByRole('dialog', {
+            name: 'Confirm check-in',
+        }).querySelector(
+            'button.button--danger',
+        )!,
+    )
 }
 
 describe('CheckinPage', () => {
@@ -246,15 +256,13 @@ describe('CheckinPage', () => {
         )
     })
 
-    it('submits a check-in with no explicit return date', async () => {
+    it('submits a check-in with no explicit return date', () => {
         const mutate = vi.fn()
 
         mockUseCheckinBook.mockReturnValue({
             mutate,
             isPending: false,
-        } as unknown as ReturnType<
-            typeof useCheckinBook
-        >)
+        } as unknown as ReturnType<typeof useCheckinBook>)
 
         renderPage()
 
@@ -263,6 +271,8 @@ describe('CheckinPage', () => {
                 name: 'Check In Book',
             }),
         )
+
+        confirmCheckin()
 
         expect(mutate).toHaveBeenCalledWith(
             {
@@ -276,15 +286,13 @@ describe('CheckinPage', () => {
         )
     })
 
-    it('submits a check-in with an explicit return date', async () => {
+    it('submits a check-in with an explicit return date', () => {
         const mutate = vi.fn()
 
         mockUseCheckinBook.mockReturnValue({
             mutate,
             isPending: false,
-        } as unknown as ReturnType<
-            typeof useCheckinBook
-        >)
+        } as unknown as ReturnType<typeof useCheckinBook>)
 
         renderPage()
 
@@ -305,6 +313,8 @@ describe('CheckinPage', () => {
             }),
         )
 
+        confirmCheckin()
+
         expect(mutate).toHaveBeenCalledWith(
             {
                 id: 'test-book-id',
@@ -320,7 +330,7 @@ describe('CheckinPage', () => {
         )
     })
 
-    it('navigates to the book after successful check-in', async () => {
+    it('navigates to the book after successful check-in', () => {
         const mutate = vi.fn(
             (
                 _variables: unknown,
@@ -335,9 +345,7 @@ describe('CheckinPage', () => {
         mockUseCheckinBook.mockReturnValue({
             mutate,
             isPending: false,
-        } as unknown as ReturnType<
-            typeof useCheckinBook
-        >)
+        } as unknown as ReturnType<typeof useCheckinBook>)
 
         renderPage()
 
@@ -346,6 +354,8 @@ describe('CheckinPage', () => {
                 name: 'Check In Book',
             }),
         )
+
+        confirmCheckin()
 
         expect(mockNavigate).toHaveBeenCalledWith(
             '/books/test-book-id',
@@ -377,17 +387,27 @@ describe('CheckinPage', () => {
 
         renderPage()
 
-        fireEvent.click(
+        fireEvent.submit(
             screen.getByRole('button', {
                 name: 'Check In Book',
-            }),
+            }).closest('form')!,
         )
 
-        expect(
-            screen.getByRole('alert'),
-        ).toHaveTextContent(
-            'Book is not on loan.',
+        fireEvent.click(
+            screen.getByRole('dialog', {
+                name: 'Confirm check-in',
+            }).querySelector(
+                'button.button--danger',
+            )!,
         )
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('alert'),
+            ).toHaveTextContent(
+                'Book is not on loan.',
+            )
+        })
     })
 
     it('shows the generic mutation error when the error is not an Error', async () => {
@@ -419,6 +439,8 @@ describe('CheckinPage', () => {
             }),
         )
 
+        confirmCheckin()
+
         expect(
             screen.getByRole('alert'),
         ).toHaveTextContent(
@@ -427,7 +449,6 @@ describe('CheckinPage', () => {
     })
 
     it('cancels by navigating back', async () => {
-
         renderPage()
 
         fireEvent.click(
@@ -445,9 +466,7 @@ describe('CheckinPage', () => {
         mockUseCheckinBook.mockReturnValue({
             mutate: vi.fn(),
             isPending: true,
-        } as unknown as ReturnType<
-            typeof useCheckinBook
-        >)
+        } as unknown as ReturnType<typeof useCheckinBook>)
 
         renderPage()
 

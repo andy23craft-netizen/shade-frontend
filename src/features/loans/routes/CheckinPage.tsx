@@ -8,7 +8,7 @@ import {
     useSearchParams,
 } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-
+import { ConfirmationDialog} from "../../../components"
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
@@ -108,6 +108,12 @@ export function CheckinPage() {
         fieldErrors,
         hasSummary,
     ])
+
+    const [pendingCheckinRequest, setPendingCheckinRequest] =
+        useState<ReturnType<typeof checkinFormValuesToRequest> | null>(null)
+
+    const [isConfirmationOpen, setIsConfirmationOpen] =
+        useState(false)
 
     if (!bookId) {
         return (
@@ -253,10 +259,21 @@ export function CheckinPage() {
         const request =
             checkinFormValuesToRequest(values)
 
+        setPendingCheckinRequest(request)
+        setIsConfirmationOpen(true)
+    }
+
+    function handleConfirmCheckin() {
+        if (pendingCheckinRequest === null) {
+            return
+        }
+
+        setIsConfirmationOpen(false)
+
         checkinBook.mutate(
             {
                 id: bookId,
-                request,
+                request: pendingCheckinRequest,
             },
             {
                 onSuccess: () => {
@@ -269,6 +286,9 @@ export function CheckinPage() {
         )
     }
 
+    function handleCancelCheckin() {
+        setIsConfirmationOpen(false)
+    }
     async function handleCheckinError(
         error: unknown,
     ) {
@@ -429,7 +449,19 @@ export function CheckinPage() {
                         Cancel
                     </Button>
                 </div>
-            </form>
+
+                </form>
+
+            <ConfirmationDialog
+                open={isConfirmationOpen}
+                title="Confirm check-in"
+                confirmLabel="Confirm check-in"
+                onConfirm={handleConfirmCheckin}
+                onCancel={handleCancelCheckin}
+            >
+                Are you sure you want to check in this book?
+            </ConfirmationDialog>
+
         </section>
     )
 }
