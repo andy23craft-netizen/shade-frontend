@@ -33,7 +33,7 @@ FEAT-15.
 - A production-like host verifies runtime configuration, protected API access, CORS/preflight or proxy behavior,
   permitted `Authorization`/`Content-Type`, readable backup `Content-Disposition`, direct-route SPA fallback,
   revalidated HTML/config, and long-lived immutable asset caching.
-- A smoke checklist passes for connection, dashboard, list, create, checkout, check-in, mark-read, delete, restore, and
+- A smoke checklist passes for env verification, dashboard, list, create, checkout, check-in, mark-read, delete, restore, and
   authenticated backup download.
 - Backup verification covers a non-empty SQL attachment, safe server/fallback filename handling, recoverable generation
   `500`, and no bogus download or retained/inspected SQL contents after failure.

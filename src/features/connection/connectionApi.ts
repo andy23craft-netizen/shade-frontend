@@ -7,12 +7,6 @@ import {
 import {
     createHealthApi,
 } from '../../api/healthApi'
-import {
-    createProtectedApi,
-} from '../../api/protectedApi'
-import type {
-    ProtectedResponse,
-} from '../../api/apiTypes'
 
 export interface ConnectionApiError {
     kind: 'unreachable' | 'unauthorized' | 'server'
@@ -27,7 +21,7 @@ function mapToConnectionError(
             return {
                 kind: 'unauthorized',
                 message:
-                    'The API token was rejected.',
+                    'API access was rejected.',
             }
         }
 
@@ -64,22 +58,6 @@ export async function checkHealth(
 
     try {
         await createHealthApi(client).get()
-    } catch (error) {
-        throw mapToConnectionError(error)
-    }
-}
-
-export async function verifyToken(
-    apiBaseUrl: string,
-    token: string,
-): Promise<ProtectedResponse> {
-    const client = createApiClient({
-        apiBaseUrl,
-        getToken: () => token,
-    })
-
-    try {
-        return await createProtectedApi(client).get()
     } catch (error) {
         throw mapToConnectionError(error)
     }

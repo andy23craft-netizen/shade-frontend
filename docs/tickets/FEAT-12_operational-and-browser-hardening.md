@@ -19,7 +19,7 @@ Treat these as complementary, not interchangeable:
   no session, exact-origin CORS, error-status meanings, no realtime/pagination, backup blob download, and privacy-
   sensitive payload fields).
 
-Reuse FEAT-02 / FEAT-03 connection, error-model, and redaction seams. Do not invent a second diagnostic transport or
+Reuse FEAT-02 / FEAT-03 / FEAT-05 connection, error-model, and redaction seams. Do not invent a second diagnostic transport or
 assume undocumented backend headers, cookies, or push channels.
 
 ### Documented contract facts for this ticket

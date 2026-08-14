@@ -68,7 +68,7 @@ Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer t
 - Vite 8
 - React Router 7 (`react-router-dom`), integrated in `src/main.tsx`
 - TanStack React Query 5 (`QueryClientProvider` mounted under `AppProviders` with configured client defaults,
-  connection-invalidation subscription, books/loans/dashboard hooks, and mutation detail-cache writes)
+  books/loans/dashboard hooks, and mutation detail-cache writes)
 - `openapi-typescript` for generating `src/api/generated/openapi.ts` from the checked-in OpenAPI document
 - `@zxing/browser` + `@zxing/library` for camera ISBN decode (lazy-loaded from `/books/new` and `/checkout`; not on
   the critical path for ordinary navigation)
@@ -108,12 +108,18 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 - Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
 - No login, logout, user accounts, sessions, or roles
+- Token comes from a repository-root `.env` file via `VITE_API_SECRET_KEY`; Vite injects it at dev-server and
+  production build time into JS bundles (`.env` stays gitignored; `.env.example` is committed)
+- Fail-fast bootstrap: `readApiToken()` in `src/main.tsx` throws before the app shell mounts when the variable is
+  missing or blank
+- No `sessionStorage`, no connection settings screen, and no runtime token entry
 - Missing or invalid credentials return `403`; describe generically as "API access was rejected"
-- Token is runtime-only: memory plus `sessionStorage`, with an explicit forget action
-- Never commit, bundle, put in URLs, log, or send the token to analytics
-- Confirmed `403` clears the active token and returns the user to connection setup
-- A browser-held shared token is inspectable by anyone with device access; that is an accepted risk for this trusted
-  personal deployment and is not real multi-user authentication
+- On `403`, show a page-level error via `QueryErrorState` / `formatApiQueryError`; do not clear the query cache or
+  loop back into loading
+- Startup reachability uses public `GET /health` only; do not verify auth with `GET /protected`
+- Never commit the token, put it in URLs, log Authorization headers, or send it to analytics
+- A build-time token in JS bundles is inspectable by anyone with device or artifact access; that is an accepted risk
+  for this trusted personal deployment and is not real multi-user authentication
 
 ### Lifecycle endpoints (never simulate with generic PATCH)
 
@@ -187,6 +193,7 @@ The browser startup and styling flow is:
 index.html
   -> /config.js (sets window.__SHADE_CONFIG__)
   -> src/main.tsx
+       -> readApiToken() (fail fast when missing)
        -> readRuntimeConfig()
             -> on failure: RuntimeConfigScreen (retry)
             -> on success:
@@ -194,7 +201,7 @@ index.html
                    -> AppProviders
                         -> NotificationsProvider
                         -> QueryClientProvider (createQueryClient())
-                        -> ConnectionProvider (createApiClient, token, health/protected)
+                        -> ConnectionProvider (createApiClient, token, GET /health)
                              -> RouterProvider(router from src/routes/routes.tsx)
                                   -> AppShell (layout route)
                                        -> feature route pages via Outlet
@@ -211,7 +218,7 @@ Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
 navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side navigations.
-Live product UI today: `/settings/connection` (`ConnectionScreen`), `/books` (`BooksPage`), `/books/:bookId`
+Live product UI today: `/books` (`BooksPage`), `/books/:bookId`
 (`BookDetailsPage`), `/books/new` (`NewBookPage` + `BookForm` / `bookFormModel` with ISBN lookup plus FEAT-06
 camera/hardware scanner capture), `/checkout` (`CheckoutPage` + `checkoutModel` with ISBN Find via
 `useBooks({ isbn })`, confirmation, and `useCheckoutBook`), `/checkin` (`CheckinPage` + `checkinModel` +
@@ -233,11 +240,11 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `index.html`: Vite's HTML entrypoint. Defines page metadata, creates `#root`, loads `/config.js`, then `src/main.tsx`.
 - `public/config.js`: Runtime config assigned to `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). Not bundled; edit
   for local or deployed environments.
-- `src/main.tsx`: Browser bootstrap. Reads runtime config, either mounts `RuntimeConfigScreen` or `RootErrorBoundary` ->
-  `AppProviders` -> `RouterProvider` in `StrictMode`, and imports global CSS.
+- `src/main.tsx`: Browser bootstrap. Calls `readApiToken()` (throws when missing), reads runtime config, either mounts
+  `RuntimeConfigScreen` or `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`, and imports
+  global CSS.
 - `src/AppProviders.tsx`: Application-wide providers. Wraps `NotificationsProvider`, `QueryClientProvider`
-  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig`). Subscribes
-  `subscribeQueryClientToConnectionInvalidation` so forgotten or rejected tokens clear the query cache.
+  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig`).
 - `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home).
 - `src/vite-env.d.ts`: Adds Vite client and asset declarations to TypeScript. It has no runtime behavior.
 
@@ -246,6 +253,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/config/runtimeConfig.ts`: Validates and normalizes `apiBaseUrl` and `release`; throws `RuntimeConfigError`.
 - `src/config/runtimeConfigState.ts`: `readRuntimeConfig()` returns `{ config, error }` without throwing.
 - `src/config/RuntimeConfigScreen.tsx`: Blocking UI when config is missing or invalid, with retry.
+- `src/config/apiToken.ts`: `readApiToken()` reads `import.meta.env.VITE_API_SECRET_KEY` (trimmed); throws
+  `ApiTokenError` when missing or blank.
 
 ### API Layer
 
@@ -258,9 +267,10 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
   handling, invalid-JSON errors, and `403` via `onUnauthorized`.
 - `src/api/apiErrors.ts`: `ApiError` kinds (`unreachable`, `timeout`, `cancelled`, `unauthorized`, `validation`,
-  `invalid_response`, `server`, `http`), optional `detail` / `correlationId` / `fieldErrors`, and
-  `mapValidationFieldErrors` for FastAPI `422 detail[]`. `correlationId` stays unset until the backend documents a
-  safe source (do not invent a header or body field).
+  `invalid_response`, `server`, `http`), optional `detail` / `correlationId` / `fieldErrors`,
+  `mapValidationFieldErrors` for FastAPI `422 detail[]`, `formatApiQueryError` for page-level error messages, and
+  `isUnauthorizedQueryError` for `403` handling. `correlationId` stays unset until the backend documents a safe source
+  (do not invent a header or body field).
 - `src/api/apiRedaction.ts`: Safe diagnostic projection and assertions so API/error logs never retain headers, tokens,
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
@@ -281,8 +291,6 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
   query retry that skips validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`.
-- `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when connection
-  invalidation fires; subscribed from `AppProviders`.
 - `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, enabled }`), `useBook`, `useBookLookup`, plus
   mutations (including `useCreateBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write
   returned `BookRead` into the detail cache and invalidate per PLAN.md 7.5 (lists including `include_deleted` via
@@ -295,7 +303,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
   `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
-  `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
+  `/admin/deleted`, `/admin/backup`, and `*` (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route body used by unfinished feature pages (`h1` with `tabIndex={-1}`).
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
@@ -309,7 +317,6 @@ Route ownership under `src/features/*/routes/`. Implemented product UI vs placeh
 
 Implemented (do not revert to placeholders):
 
-- `src/features/connection/routes/ConnectionPage.tsx` (`/settings/connection`, FEAT-02; mounts `ConnectionScreen`)
 - `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04): active collection via `useBooks`; loading, error+retry,
   empty state with link to `/books/new`, and list rows linking to detail with safe enum display
 - `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04): detail via `useBook`; loading,
@@ -376,20 +383,18 @@ Still `RoutePlaceholder` (owned by later tickets):
 - `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`, FEAT-10)
 - `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`, FEAT-10)
 
-Connection feature (FEAT-02, complete):
+Connection feature (FEAT-02 + FEAT-05 better auth, complete):
 
-- `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `setup_required`, `connected`,
-  `unauthorized`, `unreachable`).
-- `src/features/connection/connectionToken.ts`: In-memory current token accessors.
-- `src/features/connection/connectionStorage.ts`: `sessionStorage` load/save/clear helpers.
-- `src/features/connection/connectionApi.ts`: Routes health/protected checks through typed `healthApi` /
-  `protectedApi` while preserving FEAT-02 connection error mapping.
-- `src/features/connection/connectionInvalidation.ts`: `subscribeToConnectionInvalidation` /
-  `notifyConnectionInvalidated` seam for clearing cached protected data when the token is forgotten or rejected.
-- `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook.
-- `src/features/connection/ConnectionProvider.tsx`: Owns status, token lifecycle, `apiClient`, connect / retry / forget,
-  and unauthorized handling.
-- `src/features/connection/ConnectionScreen.tsx`: Connection settings UI.
+- `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `connected`, `unauthorized`,
+  `unreachable`).
+- `src/features/connection/connectionToken.ts`: Reads the build-time token once via `readApiToken()`;
+  `getCurrentToken()` returns it for `createApiClient`.
+- `src/features/connection/connectionApi.ts`: Public `GET /health` reachability check through typed `healthApi` with
+  FEAT-02 connection error mapping.
+- `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook (`status`, `apiBaseUrl`,
+  `release`, `errorMessage`, `apiClient`).
+- `src/features/connection/ConnectionProvider.tsx`: Owns status, `apiClient`, startup health verification, and
+  `onUnauthorized` page error state (no connect / forget / retry / `hasToken`).
 
 ### Shared Components
 
@@ -403,14 +408,16 @@ Import shared UI from `src/components/index.ts` rather than deep paths when writ
 - `src/components/EmptyState.tsx`: Empty-content section with optional supporting text and action slot.
 - `src/components/Field.tsx`: Labelled control wrapper that wires `id`, help text, and error associations.
 - `src/components/LoadingState.tsx`: Polite live-region loading indicator.
+- `src/components/QueryErrorState.tsx`: Shared query error alert with `formatApiQueryError` messaging; hides Retry on
+  `403` and shows `.env` / rebuild guidance for unauthorized errors.
 - `src/components/Notifications.tsx`: `NotificationsProvider` and dismissible toast list (per-item live roles).
 - `src/components/NotificationsContext.ts`: Notification types and React context.
 - `src/components/useNotifications.ts`: Hook that reads the notifications context (throws outside the provider).
 - `src/components/index.ts`: Barrel re-exports for the shared components and notifications API.
 
-These components apply the class names defined in `src/styles/components.css`. Connection, books list/detail, create
-form, scanner capture, checkout, check-in, and loan history already use them in product UI; remaining feature tickets
-should keep reusing these primitives.
+These components apply the class names defined in `src/styles/components.css`. Books list/detail, create form, scanner
+capture, checkout, check-in, and loan history already use them in product UI (including `QueryErrorState` for API
+errors); remaining feature tickets should keep reusing these primitives.
 
 ### Styling
 
@@ -443,6 +450,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
 - `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation and read helpers.
+- `src/config/apiToken.test.ts`: `readApiToken()` missing, blank, and trimmed success cases.
 - `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, `5xx`
   (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success, and
   `204`.
@@ -453,13 +461,12 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   coverage including lookup `found: false`, mark-read `{}`, omitted check-in body, restore/checkout/check-in `409`
   bodies, and a 2_000-item list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
-- `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx`
-  / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation subscription, books/loans/dashboard
-  hooks, detail-cache writes, and abort/stale overwrite guards.
+- `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
+  Query client defaults, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable.
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
-- `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` / `connectionToken.test.ts`:
-  Connection lifecycle and UI.
+- `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
+  unauthorized handling without cache clear, and build-time token wiring.
 - `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection,
   detail, and create-route behavior (loading/error/empty, navigation, create success, lookup success / `found: false` /
   provider failure / checksum rejection, create `422` field mapping, camera and hardware scanner handoff into lookup)
@@ -486,8 +493,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
   `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API.
-- `scripts/productionBuildTokenInspection.test.ts`: Production build with source maps; fails if known test tokens appear
-  in artifacts.
+- `scripts/productionBuildTokenInspection.test.ts`: Production build env inspection; asserts `.env` is not copied into
+  `dist/` and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
 
 Tests use a jsdom browser simulation (except the Node-environment production-build inspection). Prefer semantic Testing
 Library queries such as `getByRole()` and test user-visible behavior instead of implementation details. Route tests
@@ -525,8 +532,8 @@ yarn test
 
 ### Repository Guidance
 
-- `README.md`: Concise human onboarding for prerequisites, setup, development, local CORS-or-proxy options,
-  `sessionStorage` token limits, production connectivity release blocker, checks, and production builds.
+- `README.md`: Concise human onboarding for prerequisites, setup, development, local CORS-or-proxy options, `.env`
+  token configuration, checks, and production builds.
 - `.gitignore`: Excludes dependencies, generated output, secrets, local data, editor files, and OS metadata.
 - `.gitattributes`: Normalizes text files to LF line endings and marks common binary extensions.
 - `.cursor/rules/documentation-style.mdc`: Markdown punctuation, line-length, and newline rules for Cursor.
@@ -627,8 +634,9 @@ make build
   `docs/technical-reference/API-for-FE.md` as behavioral guidance. Prefer a running backend `/openapi.json` for drift
   checks when available; do not invent lifecycle behavior with generic `PATCH`.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
-- Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API text as HTML, or
-  upload SQL backup contents to telemetry. SQL backups are sensitive.
+- Never commit the API token (keep `.env` gitignored), put it in URLs, log Authorization headers, render API text as
+  HTML, or upload SQL backup contents to telemetry. The token is injected at build time and appears in JS bundles by
+  design. SQL backups are sensitive.
 
 ## Change Workflow
 

@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router-dom'
 import { AppProviders } from './AppProviders'
 import { RootErrorBoundary } from './RootErrorBoundary'
 import { RuntimeConfigScreen } from './config/RuntimeConfigScreen'
+import { readApiToken } from './config/apiToken'
 import { readRuntimeConfig } from './config/runtimeConfigState'
 import { router } from './routes/routes'
 import './index.css'
@@ -17,6 +18,8 @@ if (!rootElement) {
 const root = createRoot(rootElement)
 
 function renderApplication() {
+    readApiToken()
+
     const runtimeConfigState = readRuntimeConfig()
 
     if (runtimeConfigState.error || !runtimeConfigState.config) {

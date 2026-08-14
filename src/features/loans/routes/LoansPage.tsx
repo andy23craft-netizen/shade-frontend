@@ -1,8 +1,7 @@
-import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
-import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
+import { QueryErrorState } from '../../../components/QueryErrorState'
 import {
     useBooks,
 } from '../../../api/booksQueries'
@@ -55,23 +54,13 @@ export function LoansPage() {
             <section className="route-page">
                 <h1 tabIndex={-1}>Loans</h1>
 
-                <Alert
-                    variant="error"
+                <QueryErrorState
                     title="Unable to load loans"
-                >
-                    {loansQuery.error instanceof Error
-                        ? loansQuery.error.message
-                        : 'An unexpected error occurred.'}
-                </Alert>
-
-                <Button
-                    type="button"
-                    onClick={() => {
+                    error={loansQuery.error}
+                    onRetry={() => {
                         void loansQuery.refetch()
                     }}
-                >
-                    Retry
-                </Button>
+                />
             </section>
         )
     }
@@ -81,23 +70,13 @@ export function LoansPage() {
             <section className="route-page">
                 <h1 tabIndex={-1}>Loans</h1>
 
-                <Alert
-                    variant="error"
+                <QueryErrorState
                     title="Unable to load books"
-                >
-                    {booksQuery.error instanceof Error
-                        ? booksQuery.error.message
-                        : 'An unexpected error occurred.'}
-                </Alert>
-
-                <Button
-                    type="button"
-                    onClick={() => {
+                    error={booksQuery.error}
+                    onRetry={() => {
                         void booksQuery.refetch()
                     }}
-                >
-                    Retry
-                </Button>
+                />
             </section>
         )
     }

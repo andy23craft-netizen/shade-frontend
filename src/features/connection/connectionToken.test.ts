@@ -3,47 +3,26 @@ import {
     describe,
     expect,
     it,
+    vi,
 } from 'vitest'
-import {
-    clearCurrentToken,
-    getCurrentToken,
-    setCurrentToken,
-} from './connectionToken'
 
 describe('connection token', () => {
     afterEach(() => {
-        clearCurrentToken()
+        vi.unstubAllEnvs()
     })
 
-    it('starts without a token', () => {
-        expect(
-            getCurrentToken(),
-        ).toBeNull()
-    })
+    it('returns the env-sourced token', async () => {
+        vi.stubEnv(
+            'VITE_API_SECRET_KEY',
+            'env-token',
+        )
 
-    it('stores and returns the current token', () => {
-        setCurrentToken('token-one')
+        vi.resetModules()
 
-        expect(
-            getCurrentToken(),
-        ).toBe('token-one')
-    })
-
-    it('replaces the current token', () => {
-        setCurrentToken('token-one')
-        setCurrentToken('token-two')
+        const module = await import('./connectionToken')
 
         expect(
-            getCurrentToken(),
-        ).toBe('token-two')
-    })
-
-    it('clears the current token', () => {
-        setCurrentToken('token-one')
-        clearCurrentToken()
-
-        expect(
-            getCurrentToken(),
-        ).toBeNull()
+            module.getCurrentToken(),
+        ).toBe('env-token')
     })
 })

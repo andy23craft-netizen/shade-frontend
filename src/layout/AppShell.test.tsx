@@ -19,12 +19,10 @@ import {
 describe('AppShell layout and navigation', () => {
   beforeEach(() => {
     mockReachableApi()
-    sessionStorage.clear()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
-    sessionStorage.clear()
   })
 
   it('exposes skip link, landmarks, and primary navigation labels', () => {
@@ -67,7 +65,6 @@ describe('AppShell layout and navigation', () => {
       'Loans',
       'Deleted Books',
       'Backup Library',
-      'Connection Settings',
     ]) {
       expect(
         within(primaryNav).getByRole('link', { name: label }),

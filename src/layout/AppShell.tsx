@@ -130,14 +130,6 @@ export function AppShell() {
                             >
                                 Backup Library
                             </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/settings/connection"
-                                end
-                            >
-                                Connection Settings
-                            </NavLink>
                         </div>
                     </nav>
                 </div>

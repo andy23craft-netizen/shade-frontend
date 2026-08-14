@@ -16,29 +16,97 @@ const inspectionOutDir = path.join(
     'node_modules/.tmp/token-inspection-dist',
 )
 
-/**
- * Known test tokens and placeholder secrets used in the suite. Production
- * artifacts must never embed these (or any real API token).
- */
-const forbiddenTokenSubstrings = [
-    'initial-token',
-    'replacement-token',
-    'token-one',
-    'token-two',
-    'secret-token',
-    'super-secret-token',
-] as const
+const buildToken = 'dummy-build-token-for-inspection'
 
-const textArtifactExtensions = new Set([
-    '.css',
-    '.html',
-    '.js',
-    '.json',
-    '.map',
-    '.mjs',
-    '.svg',
-    '.txt',
-])
+describe('production build env inspection', () => {
+    afterAll(async () => {
+        await rm(inspectionOutDir, {
+            recursive: true,
+            force: true,
+        })
+    })
+
+    it(
+        'does not copy the repository-root .env file into dist',
+        async () => {
+            await rm(inspectionOutDir, {
+                recursive: true,
+                force: true,
+            })
+
+            process.env.VITE_API_SECRET_KEY = buildToken
+
+            await build({
+                root: repositoryRoot,
+                configFile: path.join(
+                    repositoryRoot,
+                    'vite.config.ts',
+                ),
+                build: {
+                    outDir: inspectionOutDir,
+                    emptyOutDir: true,
+                    sourcemap: true,
+                },
+                logLevel: 'error',
+            })
+
+            const distEntries = await readdir(
+                inspectionOutDir,
+                {
+                    recursive: true,
+                },
+            )
+
+            expect(
+                distEntries.some(
+                    (entry) =>
+                        entry === '.env' ||
+                        String(entry).endsWith(
+                            '/.env',
+                        ),
+                ),
+            ).toBe(false)
+
+            const jsFiles: string[] = []
+
+            for await (const filePath of walkFiles(
+                inspectionOutDir,
+            )) {
+                if (
+                    filePath.endsWith('.js') ||
+                    filePath.endsWith('.mjs')
+                ) {
+                    jsFiles.push(filePath)
+                }
+            }
+
+            expect(jsFiles.length).toBeGreaterThan(0)
+
+            const embeddedTokenHits: string[] = []
+
+            for (const filePath of jsFiles) {
+                const content = await readFile(
+                    filePath,
+                    'utf8',
+                )
+
+                if (content.includes(buildToken)) {
+                    embeddedTokenHits.push(
+                        path.relative(
+                            inspectionOutDir,
+                            filePath,
+                        ),
+                    )
+                }
+            }
+
+            expect(embeddedTokenHits.length).toBeGreaterThan(
+                0,
+            )
+        },
+        120_000,
+    )
+})
 
 async function* walkFiles(
     directory: string,
@@ -58,63 +126,3 @@ async function* walkFiles(
         yield fullPath
     }
 }
-
-describe('production build token inspection', () => {
-    afterAll(async () => {
-        await rm(inspectionOutDir, {
-            recursive: true,
-            force: true,
-        })
-    })
-
-    it(
-        'keeps test and real tokens out of assets and source maps',
-        async () => {
-            await rm(inspectionOutDir, {
-                recursive: true,
-                force: true,
-            })
-
-            await build({
-                root: repositoryRoot,
-                configFile: path.join(
-                    repositoryRoot,
-                    'vite.config.ts',
-                ),
-                build: {
-                    outDir: inspectionOutDir,
-                    emptyOutDir: true,
-                    sourcemap: true,
-                },
-                logLevel: 'error',
-            })
-
-            const hits: string[] = []
-
-            for await (const filePath of walkFiles(
-                inspectionOutDir,
-            )) {
-                const extension = path.extname(filePath)
-
-                if (!textArtifactExtensions.has(extension)) {
-                    continue
-                }
-
-                const content = await readFile(filePath, 'utf8')
-                const relativePath = path.relative(
-                    inspectionOutDir,
-                    filePath,
-                )
-
-                for (const token of forbiddenTokenSubstrings) {
-                    if (content.includes(token)) {
-                        hits.push(`${relativePath}: ${token}`)
-                    }
-                }
-            }
-
-            expect(hits).toEqual([])
-        },
-        120_000,
-    )
-})

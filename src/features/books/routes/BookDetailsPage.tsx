@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { LoadingState } from '../../../components/LoadingState'
+import { QueryErrorState } from '../../../components/QueryErrorState'
 import { isApiError } from '../../../api/apiErrors'
 import { useBook } from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
@@ -223,14 +224,10 @@ export function BookDetailsPage() {
                     Book Details
                 </h1>
 
-                <Alert
-                    variant="error"
+                <QueryErrorState
                     title="Unable to load book"
-                >
-                    {bookQuery.error instanceof Error
-                        ? bookQuery.error.message
-                        : 'An unexpected error occurred.'}
-                </Alert>
+                    error={bookQuery.error}
+                />
 
                 <AppLink
                     to="/books"

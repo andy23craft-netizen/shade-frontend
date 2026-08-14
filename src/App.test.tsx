@@ -19,12 +19,10 @@ import {
 describe('application routing effects', () => {
   beforeEach(() => {
     mockReachableApi()
-    sessionStorage.clear()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
-    sessionStorage.clear()
   })
 
   it('sets the document title on initial load without moving focus', async () => {

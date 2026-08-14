@@ -1,29 +1,34 @@
-import { StrictMode } from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { StrictMode, type ReactNode } from 'react'
+import {
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react'
+import {
+    QueryClient,
+    QueryClientProvider,
+    useQuery,
+} from '@tanstack/react-query'
+import {
+    afterEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest'
 import { ConnectionProvider } from './ConnectionProvider'
 import { useConnection } from './useConnection'
-import {
-    subscribeToConnectionInvalidation,
-} from './connectionInvalidation'
 
 function ConnectionProbe() {
     const {
         status,
-        hasToken,
         errorMessage,
         apiClient,
-        connect,
-        forgetConnection,
     } = useConnection()
 
     return (
         <div>
             <span data-testid="status">{status}</span>
-
-            <span data-testid="has-token">
-                {String(hasToken)}
-            </span>
 
             <span data-testid="error-message">
                 {errorMessage}
@@ -32,395 +37,293 @@ function ConnectionProbe() {
             <button
                 type="button"
                 onClick={() => {
-                    void apiClient.get('/books').catch(() => undefined)
+                    void apiClient
+                        .get('/books')
+                        .catch(() => undefined)
                 }}
             >
                 Request books
             </button>
-
-            <button
-                type="button"
-                onClick={() => void connect('replacement-token')}
-            >
-                Replace token
-            </button>
-
-            <button
-                type="button"
-                onClick={forgetConnection}
-            >
-                Forget
-            </button>
         </div>
     )
 }
-function renderProvider() {
+
+function BooksQueryProbe() {
+    const { apiClient } = useConnection()
+    const booksQuery = useQuery({
+        queryKey: ['books', 'probe'],
+        queryFn: () =>
+            apiClient.getJson<{
+                items: unknown[]
+                total: number
+            }>('/books'),
+    })
+
+    return (
+        <div>
+            <span data-testid="query-pending">
+                {String(booksQuery.isPending)}
+            </span>
+
+            <span data-testid="query-error">
+                {String(booksQuery.isError)}
+            </span>
+
+            <span data-testid="query-message">
+                {booksQuery.error instanceof Error
+                    ? booksQuery.error.message
+                    : ''}
+            </span>
+        </div>
+    )
+}
+
+function renderProvider(
+    children: ReactNode = (
+        <ConnectionProbe />
+    ),
+) {
     return render(
         <StrictMode>
             <ConnectionProvider
                 runtimeConfig={{
-                    apiBaseUrl: 'https://library.example.com',
+                    apiBaseUrl:
+                        'https://library.example.com',
                     release: 'test',
                 }}
             >
-                <ConnectionProbe />
+                {children}
             </ConnectionProvider>
+        </StrictMode>,
+    )
+}
+
+function renderProviderWithQuery() {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: {
+                retry: false,
+            },
+        },
+    })
+
+    return render(
+        <StrictMode>
+            <QueryClientProvider client={queryClient}>
+                <ConnectionProvider
+                    runtimeConfig={{
+                        apiBaseUrl:
+                            'https://library.example.com',
+                        release: 'test',
+                    }}
+                >
+                    <BooksQueryProbe />
+                </ConnectionProvider>
+            </QueryClientProvider>
         </StrictMode>,
     )
 }
 
 afterEach(() => {
     vi.restoreAllMocks()
-    sessionStorage.clear()
 })
 
 describe('ConnectionProvider', () => {
-    it('uses the current verified token for protected requests', async () => {
-        sessionStorage.setItem(
-            'shade.apiToken',
-            'initial-token',
-        )
+    it(
+        'uses the env token for protected requests after health check',
+        async () => {
+            const fetchMock = vi
+                .spyOn(globalThis, 'fetch')
+                .mockImplementation(
+                    async (input, init) => {
+                        const url = String(input)
 
-        const fetchMock = vi
-            .spyOn(globalThis, 'fetch')
-            .mockImplementation(async (input, init) => {
-                const url = String(input)
+                        if (url.endsWith('/health')) {
+                            return new Response(
+                                JSON.stringify({
+                                    status: 'ok',
+                                }),
+                                { status: 200 },
+                            )
+                        }
 
-                if (url.endsWith('/health')) {
-                    return new Response(
-                        JSON.stringify({ status: 'ok' }),
-                        { status: 200 },
-                    )
-                }
+                        if (url.endsWith('/books')) {
+                            expect(
+                                new Headers(
+                                    init?.headers,
+                                ).get(
+                                    'Authorization',
+                                ),
+                            ).toBe(
+                                'Bearer test-api-token',
+                            )
 
-                if (url.endsWith('/protected')) {
-                    expect(
-                        new Headers(init?.headers).get(
-                            'Authorization',
-                        ),
-                    ).toBe('Bearer initial-token')
+                            return new Response('{}', {
+                                status: 200,
+                            })
+                        }
 
-                    return new Response(
-                        JSON.stringify({
-                            message: 'You are authenticated',
-                        }),
-                        { status: 200 },
-                    )
-                }
-
-                if (url.endsWith('/books')) {
-                    return new Response('{}', {
-                        status: 200,
-                    })
-                }
-
-                throw new Error(
-                    `Unexpected request: ${url}`,
+                        throw new Error(
+                            `Unexpected request: ${url}`,
+                        )
+                    },
                 )
+
+            renderProvider()
+
+            await waitFor(() => {
+                expect(
+                    screen.getByTestId('status'),
+                ).toHaveTextContent('connected')
             })
 
-        renderProvider()
-
-        await waitFor(() => {
-            expect(
-                screen.getByTestId('status'),
-            ).toHaveTextContent('connected')
-        })
-
-        await screen.getByRole('button', {
-            name: 'Request books',
-        }).click()
-
-        await waitFor(() => {
             expect(fetchMock).toHaveBeenCalledWith(
-                'https://library.example.com/books',
+                'https://library.example.com/health',
                 expect.objectContaining({
-                    headers: expect.any(Headers),
+                    method: 'GET',
                 }),
             )
-        })
 
-        const booksCall = fetchMock.mock.calls.find(
-            ([input]) =>
-                String(input).endsWith('/books'),
-        )
+            expect(
+                fetchMock.mock.calls.some(
+                    ([input]) =>
+                        String(input).endsWith(
+                            '/protected',
+                        ),
+                ),
+            ).toBe(false)
 
-        expect(
-            new Headers(
-                booksCall?.[1]?.headers,
-            ).get('Authorization'),
-        ).toBe('Bearer initial-token')
-    })
+            await screen.getByRole('button', {
+                name: 'Request books',
+            }).click()
 
-    it('shows an actionable unreachable state when the health check fails', async () => {
-        const fetchMock = vi
-            .spyOn(globalThis, 'fetch')
-            .mockRejectedValue(
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalledWith(
+                    'https://library.example.com/books',
+                    expect.objectContaining({
+                        headers: expect.any(Headers),
+                    }),
+                )
+            })
+        },
+    )
+
+    it(
+        'shows an actionable unreachable state when the health check fails',
+        async () => {
+            vi.spyOn(globalThis, 'fetch').mockRejectedValue(
                 new TypeError('Network failure'),
             )
 
-        renderProvider()
+            renderProvider()
 
-        await waitFor(() => {
-            expect(
-                screen.getByTestId('status'),
-            ).toHaveTextContent('unreachable')
-        })
-
-        expect(
-            screen.getByTestId('has-token'),
-        ).toHaveTextContent('false')
-
-        expect(
-            screen.getByText(
-                'Unable to reach the Shade API.',
-            ),
-        ).toBeInTheDocument()
-
-        expect(fetchMock).toHaveBeenCalledWith(
-            'https://library.example.com/health',
-            expect.objectContaining({
-                method: 'GET',
-            }),
-        )
-    })
-
-    it('uses the replacement token for subsequent protected requests', async () => {
-        sessionStorage.setItem(
-            'shade.apiToken',
-            'initial-token',
-        )
-
-        const fetchMock = vi
-            .spyOn(globalThis, 'fetch')
-            .mockImplementation(async (input) => {
-                const url = String(input)
-
-                if (
-                    url.endsWith('/health') ||
-                    url.endsWith('/protected')
-                ) {
-                    return new Response('{}', {
-                        status: 200,
-                    })
-                }
-
-                if (url.endsWith('/books')) {
-                    return new Response('{}', {
-                        status: 200,
-                    })
-                }
-
-                throw new Error(
-                    `Unexpected request: ${url}`,
-                )
+            await waitFor(() => {
+                expect(
+                    screen.getByTestId('status'),
+                ).toHaveTextContent('unreachable')
             })
 
-        renderProvider()
-
-        await waitFor(() => {
             expect(
-                screen.getByTestId('status'),
-            ).toHaveTextContent('connected')
-        })
-
-        await screen.getByRole('button', {
-            name: 'Replace token',
-        }).click()
-
-        await waitFor(() => {
-            expect(
-                sessionStorage.getItem(
-                    'shade.apiToken',
+                screen.getByText(
+                    'Unable to reach the Shade API.',
                 ),
-            ).toBe('replacement-token')
-        })
+            ).toBeInTheDocument()
+        },
+    )
 
-        await screen.getByRole('button', {
-            name: 'Request books',
-        }).click()
+    it(
+        'sets unauthorized on 403 without leaving a child query stuck pending',
+        async () => {
+            vi.spyOn(globalThis, 'fetch').mockImplementation(
+                async (input) => {
+                    const url = String(input)
 
-        await waitFor(() => {
-            const booksCall = fetchMock.mock.calls.find(
-                ([input]) =>
-                    String(input).endsWith('/books'),
+                    if (url.endsWith('/health')) {
+                        return new Response('{}', {
+                            status: 200,
+                        })
+                    }
+
+                    if (url.endsWith('/books')) {
+                        return new Response('{}', {
+                            status: 403,
+                        })
+                    }
+
+                    throw new Error(
+                        `Unexpected request: ${url}`,
+                    )
+                },
             )
 
+            renderProviderWithQuery()
+
+            await waitFor(() => {
+                expect(
+                    screen.getByTestId('query-error'),
+                ).toHaveTextContent('true')
+            })
+
             expect(
-                new Headers(
-                    booksCall?.[1]?.headers,
-                ).get('Authorization'),
-            ).toBe('Bearer replacement-token')
-        })
-    })
+                screen.getByTestId('query-pending'),
+            ).toHaveTextContent('false')
 
-    it('clears the current token when the connection is forgotten', async () => {
-        sessionStorage.setItem(
-            'shade.apiToken',
-            'initial-token',
-        )
-
-        vi.spyOn(globalThis, 'fetch').mockImplementation(
-            async (input) => {
-                const url = String(input)
-
-                if (
-                    url.endsWith('/health') ||
-                    url.endsWith('/protected')
-                ) {
-                    return new Response('{}', {
-                        status: 200,
-                    })
-                }
-
-                return new Response('{}', {
-                    status: 200,
-                })
-            },
-        )
-
-        renderProvider()
-
-        await waitFor(() => {
             expect(
-                screen.getByTestId('status'),
-            ).toHaveTextContent('connected')
-        })
+                screen.getByTestId('query-message'),
+            ).toHaveTextContent(
+                'API access was rejected.',
+            )
+        },
+    )
 
-        await screen.getByRole('button', {
-            name: 'Forget',
-        }).click()
+    it(
+        'sets unauthorized when a protected request receives 403',
+        async () => {
+            vi.spyOn(globalThis, 'fetch').mockImplementation(
+                async (input) => {
+                    const url = String(input)
 
-        expect(
-            screen.getByTestId('status'),
-        ).toHaveTextContent('setup_required')
+                    if (url.endsWith('/health')) {
+                        return new Response('{}', {
+                            status: 200,
+                        })
+                    }
 
-        expect(
-            screen.getByTestId('has-token'),
-        ).toHaveTextContent('false')
+                    if (url.endsWith('/books')) {
+                        return new Response('{}', {
+                            status: 403,
+                        })
+                    }
 
-        expect(
-            sessionStorage.getItem(
-                'shade.apiToken',
-            ),
-        ).toBeNull()
-    })
+                    throw new Error(
+                        `Unexpected request: ${url}`,
+                    )
+                },
+            )
 
-    it('notifies protected-data caches when the connection is forgotten', async () => {
-        sessionStorage.setItem(
-            'shade.apiToken',
-            'initial-token',
-        )
+            renderProvider()
 
-        vi.spyOn(globalThis, 'fetch').mockImplementation(
-            async (input) => {
-                const url = String(input)
+            await waitFor(() => {
+                expect(
+                    screen.getByTestId('status'),
+                ).toHaveTextContent('connected')
+            })
 
-                if (
-                    url.endsWith('/health') ||
-                    url.endsWith('/protected')
-                ) {
-                    return new Response('{}', {
-                        status: 200,
-                    })
-                }
+            await screen.getByRole('button', {
+                name: 'Request books',
+            }).click()
 
-                return new Response('{}', {
-                    status: 200,
-                })
-            },
-        )
+            await waitFor(() => {
+                expect(
+                    screen.getByTestId('status'),
+                ).toHaveTextContent('unauthorized')
+            })
 
-        const invalidated = vi.fn()
-
-        const unsubscribe =
-            subscribeToConnectionInvalidation(invalidated)
-
-        renderProvider()
-
-        await waitFor(() => {
             expect(
-                screen.getByTestId('status'),
-            ).toHaveTextContent('connected')
-        })
-
-        await screen.getByRole('button', {
-            name: 'Forget',
-        }).click()
-
-        expect(invalidated).toHaveBeenCalledOnce()
-
-        unsubscribe()
-    })
-
-    it('notifies protected-data caches when the API rejects the token', async () => {
-        sessionStorage.setItem(
-            'shade.apiToken',
-            'initial-token',
-        )
-
-        vi.spyOn(globalThis, 'fetch').mockImplementation(
-            async (input) => {
-                const url = String(input)
-
-                if (url.endsWith('/health')) {
-                    return new Response('{}', {
-                        status: 200,
-                    })
-                }
-
-                if (url.endsWith('/protected')) {
-                    return new Response('{}', {
-                        status: 200,
-                    })
-                }
-
-                if (url.endsWith('/books')) {
-                    return new Response('{}', {
-                        status: 403,
-                    })
-                }
-
-                throw new Error(
-                    `Unexpected request: ${url}`,
-                )
-            },
-        )
-
-        const invalidated = vi.fn()
-
-        const unsubscribe =
-            subscribeToConnectionInvalidation(invalidated)
-
-        renderProvider()
-
-        await waitFor(() => {
-            expect(
-                screen.getByTestId('status'),
-            ).toHaveTextContent('connected')
-        })
-
-        await screen.getByRole('button', {
-            name: 'Request books',
-        }).click()
-
-        await waitFor(() => {
-            expect(
-                screen.getByTestId('status'),
-            ).toHaveTextContent('unauthorized')
-        })
-
-        expect(invalidated).toHaveBeenCalledOnce()
-
-        expect(
-            screen.getByTestId('has-token'),
-        ).toHaveTextContent('false')
-
-        expect(
-            sessionStorage.getItem('shade.apiToken'),
-        ).toBeNull()
-
-        unsubscribe()
-    })
+                screen.getByTestId('error-message'),
+            ).toHaveTextContent(
+                'API access was rejected.',
+            )
+        },
+    )
 })
-

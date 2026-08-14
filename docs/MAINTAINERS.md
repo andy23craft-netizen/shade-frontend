@@ -44,6 +44,7 @@ The browser follows this path when it loads the application:
 index.html
   -> /config.js (sets window.__SHADE_CONFIG__)
   -> src/main.tsx
+       -> readApiToken()
        -> readRuntimeConfig()
             -> on failure: RuntimeConfigScreen (retry)
             -> on success:
@@ -51,7 +52,7 @@ index.html
                    -> AppProviders
                         -> NotificationsProvider
                         -> QueryClientProvider (createQueryClient())
-                        -> ConnectionProvider (createApiClient, token, health/protected)
+                        -> ConnectionProvider (createApiClient, env token, GET /health)
                              -> RouterProvider(router from src/routes/routes.tsx)
                                   -> AppShell (layout route)
                                        -> feature route pages via Outlet
@@ -68,8 +69,7 @@ Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and
 admin navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side
-navigations. `/settings/connection` mounts `ConnectionScreen`. Other feature pages under `src/features/*/routes/`
-still render `RoutePlaceholder`; product UI arrives in later tickets.
+navigations. Feature routes under `src/features/*/routes/` render product UI or placeholders per ticket.
 
 Vite handles the development server and production bundling. TypeScript checks the code but does not create
 JavaScript files itself; Vite performs that transformation during development and builds. The CSS import order is
@@ -84,9 +84,10 @@ Treat these as complementary sources of truth:
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express
 
 Authentication uses a shared Bearer token (`Authorization: Bearer <API_SECRET_KEY>`). There are no user accounts.
-Missing or invalid credentials return `403` (describe generically as "API access was rejected"). The token is
-runtime-only (memory plus `sessionStorage`) with an explicit forget action. Confirmed `403` clears the active token
-and returns the user to connection setup.
+Missing or invalid credentials return `403` (describe generically as "API access was rejected"). The token is read
+from the repository-root `.env` file as `VITE_API_SECRET_KEY` and injected at dev-server and build time (embedded in
+JS bundles). Missing or blank env values throw at bootstrap. Confirmed `403` shows a page-level error without clearing
+the query cache or redirecting to a settings screen.
 
 Never simulate lifecycle operations with a generic `PATCH`. Use the dedicated endpoints (create, edit, delete,
 restore, checkout, check-in, mark-read, ISBN lookup, backup). Prefer regenerating `src/api/generated/openapi.ts`
@@ -152,8 +153,6 @@ recreate them.
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`,
   `refetchOnReconnect`, query retry that skips validation / auth / cancelled / invalid-response errors, and
   `mutations.retry: false`.
-- `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when
-  connection invalidation fires; subscribed from `AppProviders`.
 - `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations that write returned `BookRead`
   into the detail cache and invalidate per PLAN.md 7.5 (lists, detail, dashboard, and loans on checkout/check-in).
 - `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` and `useDashboard` using the same keys mutations
@@ -164,7 +163,7 @@ recreate them.
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths
   are `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
-  `/admin/deleted`, `/admin/backup`, `/settings/connection`, and `*` (not found).
+  `/admin/deleted`, `/admin/backup`, and `*` (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route body used by unfinished feature pages (`h1` with `tabIndex={-1}`).
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
@@ -176,32 +175,18 @@ recreate them.
 
 Route ownership under `src/features/*/routes/`. Implemented product UI vs placeholders:
 
-Implemented: connection (`/settings/connection`), books list/detail/create (`/books`, `/books/:bookId`, `/books/new`),
-and checkout (`/checkout` via `CheckoutPage` + `checkoutModel`, FEAT-07).
+Implemented: books list/detail/create, checkout, check-in, and loans (see `docs/AGENTS.md` for the current inventory).
 
-Still `RoutePlaceholder` (owned by later tickets):
+Connection feature (FEAT-02 + FEAT-05 better auth):
 
-- `src/features/dashboard/routes/DashboardPage.tsx` (`/`, FEAT-11)
-- `src/features/books/routes/EditBookPage.tsx` (`/books/:bookId/edit`, FEAT-10)
-- `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`, FEAT-10)
-- `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`, FEAT-10)
-- `src/features/loans/routes/CheckinPage.tsx` (`/checkin`, FEAT-08)
-- `src/features/loans/routes/LoansPage.tsx` (`/loans`, FEAT-08)
-
-Connection feature (FEAT-02, complete):
-
-- `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `setup_required`, `connected`,
-  `unauthorized`, `unreachable`).
-- `src/features/connection/connectionToken.ts`: In-memory current token accessors.
-- `src/features/connection/connectionStorage.ts`: `sessionStorage` load/save/clear helpers.
-- `src/features/connection/connectionApi.ts`: Routes health/protected checks through typed `healthApi` /
-  `protectedApi` while preserving FEAT-02 connection error mapping.
-- `src/features/connection/connectionInvalidation.ts`: `subscribeToConnectionInvalidation` /
-  `notifyConnectionInvalidated` seam for clearing cached protected data when the token is forgotten or rejected.
+- `src/config/apiToken.ts`: `readApiToken()` from `VITE_API_SECRET_KEY`; throws at bootstrap when missing/blank.
+- `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `connected`, `unauthorized`,
+  `unreachable`).
+- `src/features/connection/connectionToken.ts`: Env-sourced token accessor for `createApiClient`.
+- `src/features/connection/connectionApi.ts`: Public `GET /health` reachability check.
 - `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook.
-- `src/features/connection/ConnectionProvider.tsx`: Owns status, token lifecycle, `apiClient`, connect / retry /
-  forget, and unauthorized handling.
-- `src/features/connection/ConnectionScreen.tsx`: Connection settings UI.
+- `src/features/connection/ConnectionProvider.tsx`: Owns status, `apiClient`, and unauthorized handling without cache
+  clears.
 
 ### Shared Components
 
@@ -215,11 +200,10 @@ Import shared UI from `src/components/index.ts` rather than deep paths when writ
 - `EmptyState`: Empty-content section with optional supporting text and action slot.
 - `Field`: Labelled control wrapper that wires `id`, help text, and error associations.
 - `LoadingState`: Polite live-region loading indicator.
+- `QueryErrorState`: Shared query error alert with optional Retry (hidden on `403`).
 - `NotificationsProvider` / `useNotifications`: Toast-style notifications with dismiss actions.
 
-These components apply the class names defined in `src/styles/components.css`. Live route pages still use placeholders
-except connection settings, so most primitives are exercised by tests and ready for feature tickets rather than by
-product workflows.
+These components apply the class names defined in `src/styles/components.css`.
 
 ### Styles
 
@@ -317,13 +301,12 @@ The available commands are:
 `make check` currently type-checks twice: once directly and once as part of the build command. This is redundant,
 but it is expected behavior rather than a failure.
 
-### Runtime connection, CORS, and token limits
+### Runtime configuration, CORS, and token
 
-Runtime configuration lives in `public/config.js` as `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). The
-Bearer token is never part of that file. Users enter the token on the connection screen; the app keeps it in memory
-and `sessionStorage` for the tab. `sessionStorage` limits persistence across tabs and restarts, but it does not
-protect the token from a browser user or same-origin script. Never put a token in source, runtime config, build
-arguments, generated assets, source maps, URLs, logs, diagnostics, snapshots, or error reports.
+Runtime configuration lives in `public/config.js` as `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). The Bearer
+token lives in the repository-root `.env` as `VITE_API_SECRET_KEY` and is injected at dev-server and build time. Copy
+`.env.example` to `.env`, set the value to match the backend `API_SECRET_KEY`, and restart after changes. Release
+artifacts must not include the `.env` file itself — only built static assets under `dist/`.
 
 Local API access:
 
@@ -343,8 +326,8 @@ Production connectivity remains a release blocker until one arrangement is chose
 Verification must cover authenticated requests, browser preflights, and JavaScript access to the backup
 `Content-Disposition` filename. See also `README.md` and `docs/technical-reference/API-for-FE.md`.
 
-`scripts/productionBuildTokenInspection.test.ts` builds with source maps and fails if known test or placeholder
-tokens appear in production assets or maps.
+`scripts/productionBuildTokenInspection.test.ts` builds with a dummy `VITE_API_SECRET_KEY` and asserts the repository-root
+`.env` file is not copied into `dist/` (embedded build-time token in JS bundles is expected).
 
 ### Build, TypeScript, and Lint Configuration
 

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { BooksPage } from './BooksPage'
 import type { BookList, BookRead } from '../../../api/apiTypes'
+import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
 
 const mockUseBooks = vi.fn()
@@ -100,7 +101,47 @@ describe('BooksPage', () => {
         ).toHaveTextContent(
             'Unable to reach the API',
         )
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        ).toBeInTheDocument()
     })
+
+    it(
+        'shows a rejected-access message without retry when the API returns 403',
+        () => {
+            mockUseBooks.mockReturnValue({
+                isPending: false,
+                isError: true,
+                error: new ApiError({
+                    kind: 'unauthorized',
+                    status: 403,
+                    message:
+                        'API access was rejected.',
+                }),
+            })
+
+            renderWithProviders(
+                <MemoryRouter>
+                    <BooksPage />
+                </MemoryRouter>,
+            )
+
+            expect(
+                screen.getByRole('alert'),
+            ).toHaveTextContent(
+                'API access was rejected.',
+            )
+
+            expect(
+                screen.queryByRole('button', {
+                    name: 'Retry',
+                }),
+            ).not.toBeInTheDocument()
+        },
+    )
 
     it('shows an empty state when the collection contains no books', () => {
         mockUseBooks.mockReturnValue({
