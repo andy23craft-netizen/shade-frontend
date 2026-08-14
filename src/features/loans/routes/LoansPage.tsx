@@ -1,13 +1,22 @@
+import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
+import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
+import type {
+    LoanRead,
+} from '../../../api/apiTypes'
 import {
     useBooks,
 } from '../../../api/booksQueries'
 import {
-    useLoans,
+    useInfiniteLoans,
 } from '../../../api/loansQueries'
+import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
+import {
+    flattenInfiniteListPages,
+} from '../loansListModel'
 import {
     displayLoanDate,
     getLoanDueState,
@@ -34,8 +43,40 @@ function dueStateLabel(
 }
 
 export function LoansPage() {
-    const loansQuery = useLoans()
+    const loansQuery = useInfiniteLoans()
     const booksQuery = useBooks()
+
+    const fetchNextLoansPage =
+        loansQuery.fetchNextPage
+
+    const loans = flattenInfiniteListPages<
+        {
+            items: LoanRead[]
+        },
+        LoanRead
+    >(loansQuery.data?.pages)
+    const total =
+        loansQuery.data?.pages[0]?.total ?? 0
+
+    const {
+        getRowRef,
+    } = useInfiniteScrollTrigger({
+        enabled: loansQuery.isSuccess,
+        hasNextPage: loansQuery.hasNextPage,
+        isFetchingNextPage:
+            loansQuery.isFetchingNextPage,
+        fetchNextPage: () => {
+            void fetchNextLoansPage()
+        },
+        itemCount: loans.length,
+    })
+
+    const loanIndexById = new Map(
+        loans.map((loan, index) => [
+            loan.id,
+            index,
+        ]),
+    )
 
     if (
         loansQuery.isPending ||
@@ -49,7 +90,7 @@ export function LoansPage() {
         )
     }
 
-    if (loansQuery.isError) {
+    if (loansQuery.isLoadingError) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>Loans</h1>
@@ -81,9 +122,7 @@ export function LoansPage() {
         )
     }
 
-    const loans = loansQuery.data.items
-
-    if (loans.length === 0) {
+    if (total === 0) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>Loans</h1>
@@ -105,6 +144,7 @@ export function LoansPage() {
         )
     }
 
+    // Book titles resolve from the unpaginated collection cache; paginate loans only.
     const booksById = new Map(
         booksQuery.data.items.map((book) => [
             book.id,
@@ -142,14 +182,27 @@ export function LoansPage() {
         )
     }
 
+    function renderLoanRowRef(
+        loanId: string,
+    ) {
+        const index =
+            loanIndexById.get(loanId)
+
+        if (index === undefined) {
+            return undefined
+        }
+
+        return getRowRef(index)
+    }
+
     return (
         <section className="route-page">
             <header>
                 <h1 tabIndex={-1}>Loans</h1>
 
                 <p>
-                    {loansQuery.data.total} loan
-                    {loansQuery.data.total === 1
+                    {total} loan
+                    {total === 1
                         ? ''
                         : 's'} in the history.
                 </p>
@@ -165,7 +218,12 @@ export function LoansPage() {
                 ) : (
                     <ul aria-label="Active loans">
                         {activeLoans.map((loan) => (
-                            <li key={loan.id}>
+                            <li
+                                key={loan.id}
+                                ref={renderLoanRowRef(
+                                    loan.id,
+                                )}
+                            >
                                 <article>
                                     <h3>
                                         {renderBookName(
@@ -247,7 +305,12 @@ export function LoansPage() {
                 ) : (
                     <ul aria-label="Returned loans">
                         {returnedLoans.map((loan) => (
-                            <li key={loan.id}>
+                            <li
+                                key={loan.id}
+                                ref={renderLoanRowRef(
+                                    loan.id,
+                                )}
+                            >
                                 <article>
                                     <h3>
                                         {renderBookName(
@@ -314,6 +377,29 @@ export function LoansPage() {
                     </ul>
                 )}
             </section>
+
+            {loansQuery.isFetchingNextPage ? (
+                <div className="infinite-scroll__footer">
+                    <LoadingState label="Loading more loans…" />
+                </div>
+            ) : null}
+
+            {loansQuery.isFetchNextPageError ? (
+                <div className="infinite-scroll__footer">
+                    <Alert variant="error">
+                        Unable to load more loans.
+                    </Alert>
+
+                    <Button
+                        variant="secondary"
+                        onClick={() => {
+                            void fetchNextLoansPage()
+                        }}
+                    >
+                        Retry
+                    </Button>
+                </div>
+            ) : null}
         </section>
     )
 }

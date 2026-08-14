@@ -1,4 +1,5 @@
 import {
+    useInfiniteQuery,
     useQuery,
 } from '@tanstack/react-query'
 
@@ -12,6 +13,29 @@ import {
 import {
     useConnection,
 } from '../features/connection/useConnection'
+
+import {
+    INFINITE_SCROLL_BATCH_SIZE,
+} from '../features/shared/infiniteScrollConfig'
+
+import type {
+    LoanList,
+} from './apiTypes'
+
+function getNextListPageParam(
+    lastPage: LoanList,
+    allPages: LoanList[],
+): number | undefined {
+    const loaded = allPages.reduce(
+        (count, page) =>
+            count + page.items.length,
+        0,
+    )
+
+    return loaded < lastPage.total
+        ? loaded
+        : undefined
+}
 
 export function useLoans(
     options: {
@@ -36,6 +60,43 @@ export function useLoans(
                 bookId,
                 signal,
             }),
+    })
+}
+
+export function useInfiniteLoans(
+    options: {
+        bookId?: string
+        enabled?: boolean
+    } = {},
+) {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const loansApi =
+        createLoansApi(apiClient)
+
+    const bookId = options.bookId
+    const enabled = options.enabled ?? true
+
+    return useInfiniteQuery({
+        queryKey: queryKeys.loans.infiniteList({
+            bookId,
+            take: INFINITE_SCROLL_BATCH_SIZE,
+        }),
+        initialPageParam: 0,
+        queryFn: ({
+            pageParam,
+            signal,
+        }) =>
+            loansApi.list({
+                bookId,
+                skip: pageParam,
+                take: INFINITE_SCROLL_BATCH_SIZE,
+                signal,
+            }),
+        getNextPageParam: getNextListPageParam,
+        enabled,
     })
 }
 

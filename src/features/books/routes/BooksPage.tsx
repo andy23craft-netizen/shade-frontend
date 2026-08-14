@@ -1,27 +1,24 @@
 import {
-    useEffect,
-} from 'react'
-import {
     useSearchParams,
 } from 'react-router-dom'
 
+import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
+import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
-import { useBooks } from '../../../api/booksQueries'
+import { useInfiniteBooks } from '../../../api/booksQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
     Category,
     Shelf,
     Status,
 } from '../../../api/apiTypes'
+import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
 import { BooksListControls } from '../components/BooksListControls'
 import {
-    BOOKS_PAGE_SIZE,
-    buildBooksListQuery,
-    clampPage,
-    parsePageParam,
+    flattenInfiniteBookPages,
     parseSortByParam,
     parseSortOrderParam,
     type BookSortBy,
@@ -80,23 +77,11 @@ function displayReadState(
 function updateListParams(
     searchParams: URLSearchParams,
     updates: {
-        page?: number
         sortBy?: BookSortBy
         sortOrder?: BookSortOrder
     },
 ): URLSearchParams {
     const next = new URLSearchParams(searchParams)
-
-    if (updates.page !== undefined) {
-        if (updates.page <= 1) {
-            next.delete('page')
-        } else {
-            next.set(
-                'page',
-                String(updates.page),
-            )
-        }
-    }
 
     if (updates.sortBy !== undefined) {
         if (updates.sortBy === 'author') {
@@ -120,6 +105,8 @@ function updateListParams(
         }
     }
 
+    next.delete('page')
+
     return next
 }
 
@@ -129,9 +116,6 @@ export function BooksPage() {
         setSearchParams,
     ] = useSearchParams()
 
-    const page = parsePageParam(
-        searchParams.get('page'),
-    )
     const sortBy = parseSortByParam(
         searchParams.get('sortBy'),
     )
@@ -139,52 +123,32 @@ export function BooksPage() {
         searchParams.get('sortOrder'),
     )
 
-    const listQuery = buildBooksListQuery({
-        page,
+    const booksQuery = useInfiniteBooks({
         sortBy,
         sortOrder,
     })
 
-    const booksQuery = useBooks({
-        skip: listQuery.skip,
-        take: listQuery.take,
-        sortBy: listQuery.sortBy,
-        sortOrder: listQuery.sortOrder,
+    const fetchNextBooksPage =
+        booksQuery.fetchNextPage
+
+    const books = flattenInfiniteBookPages(
+        booksQuery.data?.pages,
+    )
+    const total =
+        booksQuery.data?.pages[0]?.total ?? 0
+
+    const {
+        getRowRef,
+    } = useInfiniteScrollTrigger({
+        enabled: booksQuery.isSuccess,
+        hasNextPage: booksQuery.hasNextPage,
+        isFetchingNextPage:
+            booksQuery.isFetchingNextPage,
+        fetchNextPage: () => {
+            void fetchNextBooksPage()
+        },
+        itemCount: books.length,
     })
-
-    useEffect(() => {
-        if (
-            !booksQuery.isSuccess ||
-            booksQuery.data.total === 0
-        ) {
-            return
-        }
-
-        const clampedPage = clampPage(
-            page,
-            booksQuery.data.total,
-        )
-
-        if (clampedPage !== page) {
-            setSearchParams(
-                updateListParams(
-                    searchParams,
-                    {
-                        page: clampedPage,
-                    },
-                ),
-                {
-                    replace: true,
-                },
-            )
-        }
-    }, [
-        booksQuery.isSuccess,
-        booksQuery.data?.total,
-        page,
-        searchParams,
-        setSearchParams,
-    ])
 
     if (booksQuery.isPending) {
         return (
@@ -195,7 +159,7 @@ export function BooksPage() {
         )
     }
 
-    if (booksQuery.isError) {
+    if (booksQuery.isLoadingError) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>Books</h1>
@@ -209,9 +173,6 @@ export function BooksPage() {
             </section>
         )
     }
-
-    const books = booksQuery.data.items
-    const total = booksQuery.data.total
 
     if (total === 0) {
         return (
@@ -235,8 +196,6 @@ export function BooksPage() {
         )
     }
 
-    const effectivePage = clampPage(page, total)
-
     return (
         <section className="route-page">
             <div className="books-page__heading">
@@ -247,11 +206,6 @@ export function BooksPage() {
             </div>
 
             <BooksListControls
-                page={effectivePage}
-                pageSize={BOOKS_PAGE_SIZE}
-                skip={listQuery.skip}
-                total={total}
-                itemsOnPage={books.length}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onSortByChange={(nextSortBy) => {
@@ -260,7 +214,6 @@ export function BooksPage() {
                             searchParams,
                             {
                                 sortBy: nextSortBy,
-                                page: 1,
                             },
                         ),
                         {
@@ -276,33 +229,6 @@ export function BooksPage() {
                             searchParams,
                             {
                                 sortOrder: nextSortOrder,
-                                page: 1,
-                            },
-                        ),
-                        {
-                            replace: true,
-                        },
-                    )
-                }}
-                onPreviousPage={() => {
-                    setSearchParams(
-                        updateListParams(
-                            searchParams,
-                            {
-                                page: effectivePage - 1,
-                            },
-                        ),
-                        {
-                            replace: true,
-                        },
-                    )
-                }}
-                onNextPage={() => {
-                    setSearchParams(
-                        updateListParams(
-                            searchParams,
-                            {
-                                page: effectivePage + 1,
                             },
                         ),
                         {
@@ -316,7 +242,7 @@ export function BooksPage() {
                 className="books-list"
                 aria-label="Library books"
             >
-                {books.map((book) => {
+                {books.map((book, index) => {
                     const status = displayEnum(
                         book.status,
                         STATUS_VALUES,
@@ -335,6 +261,7 @@ export function BooksPage() {
                     return (
                         <li
                             key={book.id}
+                            ref={getRowRef(index)}
                             className="books-list__item"
                         >
                             <article className="book-card">
@@ -382,6 +309,29 @@ export function BooksPage() {
                     )
                 })}
             </ul>
+
+            {booksQuery.isFetchingNextPage ? (
+                <div className="infinite-scroll__footer">
+                    <LoadingState label="Loading more books…" />
+                </div>
+            ) : null}
+
+            {booksQuery.isFetchNextPageError ? (
+                <div className="infinite-scroll__footer">
+                    <Alert variant="error">
+                        Unable to load more books.
+                    </Alert>
+
+                    <Button
+                        variant="secondary"
+                        onClick={() => {
+                            void fetchNextBooksPage()
+                        }}
+                    >
+                        Retry
+                    </Button>
+                </div>
+            ) : null}
         </section>
     )
 }

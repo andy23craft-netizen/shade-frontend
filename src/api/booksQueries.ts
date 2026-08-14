@@ -1,4 +1,5 @@
 import {
+    useInfiniteQuery,
     useMutation,
     useQuery,
     useQueryClient,
@@ -15,14 +16,34 @@ import {
     useConnection,
 } from '../features/connection/useConnection'
 
+import {
+    INFINITE_SCROLL_BATCH_SIZE,
+} from '../features/shared/infiniteScrollConfig'
+
 import type {
     BookCreate,
+    BookList,
     BookRead,
     BookUpdate,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
 } from './apiTypes'
+
+function getNextListPageParam(
+    lastPage: BookList,
+    allPages: BookList[],
+): number | undefined {
+    const loaded = allPages.reduce(
+        (count, page) =>
+            count + page.items.length,
+        0,
+    )
+
+    return loaded < lastPage.total
+        ? loaded
+        : undefined
+}
 
 async function invalidateBookCaches(
     queryClient: ReturnType<
@@ -114,6 +135,56 @@ export function useBooks(
                 sortOrder,
                 signal,
             }),
+        enabled,
+    })
+}
+
+export function useInfiniteBooks(
+    options: {
+        includeDeleted?: boolean
+        isbn?: string
+        sortBy?: string
+        sortOrder?: string
+        enabled?: boolean
+    } = {},
+) {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    const includeDeleted =
+        options.includeDeleted ?? false
+    const isbn = options.isbn
+    const sortBy = options.sortBy
+    const sortOrder = options.sortOrder
+    const enabled = options.enabled ?? true
+
+    return useInfiniteQuery({
+        queryKey: queryKeys.books.infiniteList({
+            includeDeleted,
+            isbn,
+            sortBy,
+            sortOrder,
+            take: INFINITE_SCROLL_BATCH_SIZE,
+        }),
+        initialPageParam: 0,
+        queryFn: ({
+            pageParam,
+            signal,
+        }) =>
+            booksApi.list({
+                includeDeleted,
+                isbn,
+                skip: pageParam,
+                take: INFINITE_SCROLL_BATCH_SIZE,
+                sortBy,
+                sortOrder,
+                signal,
+            }),
+        getNextPageParam: getNextListPageParam,
         enabled,
     })
 }

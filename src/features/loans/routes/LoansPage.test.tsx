@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -10,15 +10,23 @@ import type {
 import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
 
-const mockUseLoans = vi.fn()
+const mockUseInfiniteLoans = vi.fn()
 const mockUseBooks = vi.fn()
+const mockUseInfiniteScrollTrigger = vi.fn()
 
 vi.mock('../../../api/loansQueries', () => ({
-    useLoans: () => mockUseLoans(),
+    useInfiniteLoans: () => mockUseInfiniteLoans(),
 }))
 
 vi.mock('../../../api/booksQueries', () => ({
     useBooks: () => mockUseBooks(),
+}))
+
+vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
+    useInfiniteScrollTrigger: (
+        options: unknown,
+    ) =>
+        mockUseInfiniteScrollTrigger(options),
 }))
 
 function makeBookList(
@@ -86,6 +94,26 @@ function makeLoanList(
     }
 }
 
+function makeInfiniteLoansResult(
+    pages: LoanList[],
+    overrides: Record<string, unknown> = {},
+) {
+    return {
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        hasNextPage: false,
+        isFetchingNextPage: false,
+        isFetchNextPageError: false,
+        fetchNextPage: vi.fn(),
+        refetch: vi.fn(),
+        data: {
+            pages,
+        },
+        ...overrides,
+    }
+}
+
 function renderPage() {
     return renderWithProviders(
         <MemoryRouter>
@@ -96,12 +124,17 @@ function renderPage() {
 
 describe('LoansPage', () => {
     beforeEach(() => {
-        mockUseLoans.mockReset()
+        mockUseInfiniteLoans.mockReset()
         mockUseBooks.mockReset()
+        mockUseInfiniteScrollTrigger.mockReset()
+
+        mockUseInfiniteScrollTrigger.mockReturnValue({
+            getRowRef: () => undefined,
+        })
     })
 
     it('shows a loading state while loans are loading', () => {
-        mockUseLoans.mockReturnValue({
+        mockUseInfiniteLoans.mockReturnValue({
             isPending: true,
             isError: false,
         })
@@ -127,11 +160,11 @@ describe('LoansPage', () => {
     })
 
     it('shows a loading state while books are loading', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList(),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: true,
@@ -148,8 +181,9 @@ describe('LoansPage', () => {
     })
 
     it('shows an error when the loan collection fails', () => {
-        mockUseLoans.mockReturnValue({
+        mockUseInfiniteLoans.mockReturnValue({
             isPending: false,
+            isLoadingError: true,
             isError: true,
             error: new Error(
                 'Unable to reach the loans API',
@@ -180,8 +214,9 @@ describe('LoansPage', () => {
     it(
         'shows a rejected-access message without retry when loans return 403',
         () => {
-            mockUseLoans.mockReturnValue({
+            mockUseInfiniteLoans.mockReturnValue({
                 isPending: false,
+                isLoadingError: true,
                 isError: true,
                 error: new ApiError({
                     kind: 'unauthorized',
@@ -214,11 +249,11 @@ describe('LoansPage', () => {
     )
 
     it('shows an error when the book collection fails', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList(),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -238,14 +273,14 @@ describe('LoansPage', () => {
     })
 
     it('shows an empty state when there is no loan history', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: {
-                items: [],
-                total: 0,
-            },
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                {
+                    items: [],
+                    total: 0,
+                },
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -272,11 +307,11 @@ describe('LoansPage', () => {
     })
 
     it('renders an active loan with its book details', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList(),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -325,29 +360,29 @@ describe('LoansPage', () => {
     })
 
     it('renders returned loans separately from active loans', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList({
-                items: [
-                    {
-                        ...makeLoanList().items[0],
-                        id: 'loan-active',
-                        borrower: 'Active Reader',
-                        returned_at: null,
-                    },
-                    {
-                        ...makeLoanList().items[0],
-                        id: 'loan-returned',
-                        borrower: 'Past Reader',
-                        returned_at:
-                            '2026-08-13T15:30:00Z',
-                        notes: null,
-                    },
-                ],
-                total: 2,
-            }),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'loan-active',
+                            borrower: 'Active Reader',
+                            returned_at: null,
+                        },
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'loan-returned',
+                            borrower: 'Past Reader',
+                            returned_at:
+                                '2026-08-13T15:30:00Z',
+                            notes: null,
+                        },
+                    ],
+                    total: 2,
+                }),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -387,18 +422,18 @@ describe('LoansPage', () => {
     })
 
     it('falls back to the book ID when the book is not in the collection', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList({
-                items: [
-                    {
-                        ...makeLoanList().items[0],
-                        book_id: 'deleted-book',
-                    },
-                ],
-            }),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            book_id: 'deleted-book',
+                        },
+                    ],
+                }),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -416,18 +451,18 @@ describe('LoansPage', () => {
     })
 
     it('does not render the notes field when notes are absent', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList({
-                items: [
-                    {
-                        ...makeLoanList().items[0],
-                        notes: null,
-                    },
-                ],
-            }),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            notes: null,
+                        },
+                    ],
+                }),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -443,19 +478,19 @@ describe('LoansPage', () => {
     })
 
     it('shows an explicit empty active state when only returned history exists', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList({
-                items: [
-                    {
-                        ...makeLoanList().items[0],
-                        returned_at:
-                            '2026-08-13T15:30:00Z',
-                    },
-                ],
-            }),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            returned_at:
+                                '2026-08-13T15:30:00Z',
+                        },
+                    ],
+                }),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -479,11 +514,11 @@ describe('LoansPage', () => {
     })
 
     it('shows an explicit empty returned state when only active loans exist', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList(),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -501,18 +536,18 @@ describe('LoansPage', () => {
     })
 
     it('renders date-only due values without timezone shifting', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList({
-                items: [
-                    {
-                        ...makeLoanList().items[0],
-                        due_at: '2026-08-20',
-                    },
-                ],
-            }),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            due_at: '2026-08-20',
+                        },
+                    ],
+                }),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -542,18 +577,18 @@ describe('LoansPage', () => {
     })
 
     it('renders malformed due values safely', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList({
-                items: [
-                    {
-                        ...makeLoanList().items[0],
-                        due_at: 'not-a-date',
-                    },
-                ],
-            }),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            due_at: 'not-a-date',
+                        },
+                    ],
+                }),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -577,41 +612,41 @@ describe('LoansPage', () => {
     })
 
     it('preserves API order within active and returned loan groups', () => {
-        mockUseLoans.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeLoanList({
-                items: [
-                    {
-                        ...makeLoanList().items[0],
-                        id: 'active-first',
-                        borrower: 'Active First',
-                        returned_at: null,
-                    },
-                    {
-                        ...makeLoanList().items[0],
-                        id: 'returned-first',
-                        borrower: 'Returned First',
-                        returned_at:
-                            '2026-08-13T15:30:00Z',
-                    },
-                    {
-                        ...makeLoanList().items[0],
-                        id: 'active-second',
-                        borrower: 'Active Second',
-                        returned_at: null,
-                    },
-                    {
-                        ...makeLoanList().items[0],
-                        id: 'returned-second',
-                        borrower: 'Returned Second',
-                        returned_at:
-                            '2026-08-12T15:30:00Z',
-                    },
-                ],
-                total: 4,
-            }),
-        })
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'active-first',
+                            borrower: 'Active First',
+                            returned_at: null,
+                        },
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'returned-first',
+                            borrower: 'Returned First',
+                            returned_at:
+                                '2026-08-13T15:30:00Z',
+                        },
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'active-second',
+                            borrower: 'Active Second',
+                            returned_at: null,
+                        },
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'returned-second',
+                            borrower: 'Returned Second',
+                            returned_at:
+                                '2026-08-12T15:30:00Z',
+                        },
+                    ],
+                    total: 4,
+                }),
+            ]),
+        )
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -649,6 +684,154 @@ describe('LoansPage', () => {
             returnedList.textContent?.indexOf(
                 'Returned Second',
             ) ?? -1,
+        )
+    })
+
+    it('flattens multiple loaded loan pages into sections', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    total: 2,
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'loan-active',
+                            borrower: 'Active Reader',
+                            returned_at: null,
+                        },
+                    ],
+                }),
+                makeLoanList({
+                    total: 2,
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            id: 'loan-returned',
+                            borrower: 'Past Reader',
+                            returned_at:
+                                '2026-08-13T15:30:00Z',
+                        },
+                    ],
+                }),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.getByText('Active Reader'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText('Past Reader'),
+        ).toBeInTheDocument()
+    })
+
+    it('shows a bottom loader while fetching the next page', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult(
+                [makeLoanList({
+                    total: 40,
+                })],
+                {
+                    hasNextPage: true,
+                    isFetchingNextPage: true,
+                },
+            ),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'Loading more loans…',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows a bottom retry affordance when the next page fails', () => {
+        const fetchNextPage = vi.fn()
+
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult(
+                [makeLoanList({
+                    total: 40,
+                })],
+                {
+                    hasNextPage: true,
+                    isFetchNextPageError: true,
+                    fetchNextPage,
+                },
+            ),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.getByText('Jane Reader'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText(
+                'Unable to load more loans.',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(fetchNextPage).toHaveBeenCalledOnce()
+    })
+
+    it('wires the infinite scroll trigger to loaded loans', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult(
+                [makeLoanList({
+                    total: 40,
+                })],
+                {
+                    hasNextPage: true,
+                },
+            ),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            mockUseInfiniteScrollTrigger,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                enabled: true,
+                hasNextPage: true,
+                itemCount: 1,
+            }),
         )
     })
 })
