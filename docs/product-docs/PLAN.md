@@ -246,7 +246,7 @@ Client validation exists for timely, accessible feedback; backend validation rem
 - Convert blank optional values to the API's expected `null` or omitted value.
 - Keep tags editable as individual strings and define deterministic whitespace and duplicate handling in the
   implementation ticket.
-- Never expose direct editing of `borrower` or `datetime_loaned_out` in the generic metadata form.
+- Do not drive loan state via book `PATCH`, and do not invent book-level borrower fields in the generic metadata form.
 - Preserve unsaved user input when a recoverable request fails.
 
 Allow explicit `null` only for documented nullable fields. Never send `null` for `title`, `authors`, `category`, `shelf`,

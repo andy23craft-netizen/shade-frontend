@@ -41,15 +41,15 @@ Confirm against a representative running backend `/openapi.json` before locking 
 - Omitted or explicit-null `returned_at` uses current UTC on the server. Prefer omitting the property (or sending
   `{}` / `null` body) when the user leaves return time blank rather than inventing a browser timestamp or sending empty
   string. When the user supplies a value, send normalized UTC ISO 8601 so borrowing-statistics parsing remains reliable.
-- Success completes the active loan (`returned_at` set) and clears book loan fields on the returned `BookRead`
-  (`status` available, borrower / `datetime_loaned_out` cleared as the API defines). Do not rename transport properties
+- Success completes the active loan (`returned_at` set) and sets book `status` to available on the returned `BookRead`.
+  Borrower and checkout timing live on the loan row, not on book fields. Do not rename transport properties
   in the UI layer's data binding.
 - Conflict (`409`) is based on active loan existence (`returned_at=null`), not book `status` alone. Detail string:
   `{"detail": "Book is not checked out"}`. Explain stale state, refetch affected book and loan data, and avoid unsafe
   resubmission. Treat that documented detail as the user-facing conflict message.
 - Soft-delete and loan axes are independent: deleting an on-loan book leaves its active loan open; restore the book
   before check-in can complete that loan. Do not offer check-in for soft-deleted books, and do not use `PATCH` to clear
-  `status` / `borrower` / `datetime_loaned_out`.
+  loan state or flip book `status` in place of `POST .../checkin`.
 - `GET /loans` returns `LoanList` `{ items, total }` -- the full result set with optional `book_id` filtering (via
   `useLoans({ bookId })` from CHORE-01) and no pagination. Soft-deleted books' historical (and still-open) loans
   remain in this list. Auth failure is `403`. Unknown or malformed `book_id` may return `400` / `404`.

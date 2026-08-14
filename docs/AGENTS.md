@@ -26,13 +26,13 @@ tickets are `FEAT-08` through `FEAT-16` under `docs/tickets/`. Prefer ticket pre
 `docs/ToDo.md` when judging completion (the checklist can lag).
 
 **Next / in progress:** FEAT-08 (check-in and loan history). CHORE-01 is complete (`loansApi.list({ bookId })`,
-`loansApi.get` / `useLoan`, Check In deep-link `/checkin?bookId=...`). `CheckinPage` / `checkinModel` and `LoansPage`
-are real WIP (not placeholders). Reuse FEAT-03 typed helpers (`booksApi.checkin`, `pickCheckinRequest`,
-`useCheckinBook`, `useLoans({ bookId })`, `useLoan`, `dateTime.ts`) and FEAT-07 checkout patterns; never simulate
-check-in with generic `PATCH`. Remaining FEAT-08 work: active-loan eligibility (not book `status` alone), `/checkin`
-without `bookId` selection, Field-linked `422`, documented `409` messaging, and due/overdue loan-history presentation.
-Reading completion is FEAT-09; edit/delete/restore is FEAT-10; dashboard metrics UI is FEAT-11. Do not pull those into
-FEAT-08.
+`loansApi.get` / `useLoan`, Check In deep-link `/checkin?bookId=...`, optional `booksApi.list({ isbn })` /
+`useBooks({ isbn })`). `CheckinPage` / `checkinModel` and `LoansPage` are real WIP (not placeholders). Reuse FEAT-03
+typed helpers (`booksApi.checkin`, `pickCheckinRequest`, `useCheckinBook`, `useLoans({ bookId })`, `useLoan`,
+`dateTime.ts`) and FEAT-07 checkout patterns; never simulate check-in with generic `PATCH`. Remaining FEAT-08 work:
+active-loan eligibility (not book `status` alone), `/checkin` without `bookId` selection, Field-linked `422`,
+documented `409` messaging, and due/overdue loan-history presentation. Reading completion is FEAT-09;
+edit/delete/restore is FEAT-10; dashboard metrics UI is FEAT-11. Do not pull those into FEAT-08.
 
 FEAT-07 delivered `/checkout` via `CheckoutPage` and `checkoutModel` (`checkoutFormValuesToRequest`, borrower
 blank/255 validation, omit blank optionals, UTC ISO `checked_out_at` / date-only `due_at`), wired to existing
@@ -257,13 +257,13 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
   `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets. Colocated unit tests cover both modules.
-- `src/api/queryKeys.ts`: Shared React Query keys for books, loans (`all`, `list(bookId?)`, `detail(id)`), and
-  dashboard.
+- `src/api/queryKeys.ts`: Shared React Query keys for books (`all`, `list({ includeDeleted, isbn? })`, `detail(id)`,
+  `lookup(isbn)`), loans (`all`, `list(bookId?)`, `detail(id)`), and dashboard.
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `protected`,
   `backup`) plus the underlying `client`.
-- `src/api/booksApi.ts`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`, `restore`,
-  `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and
-  serialize only documented request fields.
+- `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`; omit empty/`undefined` `isbn`), `create`, `lookup`,
+  `get`, `update`, `remove`, `restore`, `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers
+  accept optional `AbortSignal` and serialize only documented request fields.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`; omit empty/`undefined`),
   `get(id)` (`GET /loans/{id}`).
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
@@ -275,10 +275,10 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   query retry that skips validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`.
 - `src/api/queryInvalidation.ts`: `subscribeQueryClientToConnectionInvalidation` clears the query cache when connection
   invalidation fires; subscribed from `AppProviders`.
-- `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations (including `useCreateBook`,
-  `useCheckoutBook`, and `useCheckinBook`) that write returned `BookRead` into the detail cache and invalidate per
-  PLAN.md 7.5 (lists including `include_deleted` via the `['books']` prefix, detail, dashboard, and loans on
-  checkout/check-in).
+- `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn }`), `useBook`, `useBookLookup`, plus
+  mutations (including `useCreateBook`, `useCheckoutBook`, and `useCheckinBook`) that write returned `BookRead` into
+  the detail cache and invalidate per PLAN.md 7.5 (lists including `include_deleted` via the `['books']` prefix,
+  detail, dashboard, and loans on checkout/check-in).
 - `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` (optional `{ bookId }`), `useLoan(id)` (disabled when
   falsy), and `useDashboard` using the same keys mutations invalidate (`queryKeys.loans.list` / `detail` / `all`).
 

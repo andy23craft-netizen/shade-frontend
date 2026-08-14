@@ -150,9 +150,7 @@ describe('stale query overwrite guard', () => {
             },
         })
 
-        const queryKey = queryKeys.books.list(
-            false,
-        )
+        const queryKey = queryKeys.books.list()
 
         const first = queryClient.fetchQuery({
             queryKey,

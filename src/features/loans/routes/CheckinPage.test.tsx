@@ -319,8 +319,13 @@ describe('CheckinPage', () => {
             {
                 id: 'test-book-id',
                 request: {
-                    returned_at:
-                        '2026-08-13T20:30:00.000Z',
+                    returned_at: new Date(
+                        2026,
+                        7,
+                        13,
+                        15,
+                        30,
+                    ).toISOString(),
                 },
             },
             expect.objectContaining({

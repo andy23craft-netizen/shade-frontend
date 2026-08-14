@@ -82,6 +82,129 @@ describe('createBooksApi', () => {
         )
     })
 
+    it('lists books filtered by isbn', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isbn: '9780441',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?isbn=9780441',
+        )
+    })
+
+    it('omits isbn when isbn is undefined', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isbn: undefined,
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith('/books')
+    })
+
+    it('omits isbn when isbn is an empty string', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isbn: '',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith('/books')
+    })
+
+    it('combines isbn and includeDeleted query params', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            includeDeleted: true,
+            isbn: '0441',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?include_deleted=true&isbn=0441',
+        )
+    })
+
+    it('forwards an abort signal when listing books', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+        const signal =
+            new AbortController().signal
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isbn: '9780441',
+            signal,
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?isbn=9780441',
+            {
+                signal,
+            },
+        )
+    })
+
     it('creates a book', async () => {
         const book =
             {} as BookCreate

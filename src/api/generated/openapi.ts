@@ -589,6 +589,7 @@ export interface operations {
         parameters: {
             query?: {
                 include_deleted?: boolean;
+                isbn?: string | null;
             };
             header?: never;
             path?: never;
@@ -603,6 +604,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
             /** @description Authentication failure */

@@ -32,7 +32,7 @@ Confirm against a representative running backend `/openapi.json` before locking 
 #### Metadata edit (`PATCH /books/{id}`)
 
 - Path `{id}` is any string; missing rows return `404` with string `detail` (`Book not found`). Soft-deleted books
-  remain readable via `GET /books/{id}` and still accept generic `PATCH` (including `status` / `borrower` / `is_read`)
+  remain readable via `GET /books/{id}` and still accept generic `PATCH` (including `status` / `is_read`)
   without creating or updating loans -- do not use that as a lifecycle back door.
 - Request body is required `BookUpdate`. Every property is optional (partial update). Request models ignore unknown
   properties. OpenAPI documents success as `200` with `BookRead`, plus `403`, `404`, and FastAPI `422` (`detail[]`).
@@ -44,9 +44,10 @@ Confirm against a representative running backend `/openapi.json` before locking 
   `purchase_date`, `purchase_price`, `notes`, `acquisition_source`, and non-loan `status` values (`unknown`,
   `available`, `missing`, `display_only`, `reserved`, `reading`). Unchanged fields must be absent from the request
   (`exclude_unset` semantics).
-- Exclude from this ticket's edit payload: `borrower`, `datetime_loaned_out`, `status=on_loan`, reading fields owned by
-  FEAT-09 (`is_read`, `completion_date`, `rating`, `review`), and any attempt to drive soft-delete/restore through
-  `PATCH` (`deletion_date` is not a `BookUpdate` property; restore is `POST .../restore` only).
+- Exclude from this ticket's edit payload: `status=on_loan`, reading fields owned by
+  FEAT-09 (`is_read`, `completion_date`, `rating`, `review`), and any attempt to drive soft-delete/restore or loan
+  state through `PATCH` (`deletion_date` is not a `BookUpdate` property; restore is `POST .../restore` only; borrower
+  and checkout timing live on loan rows, not book schemas).
 - Never send `null` for DB-required fields such as `title`, `authors`, `category`, `shelf`, `is_read`, or `status` --
   that can cause an unhandled server error on commit. A blank ISBN intentionally clears to `null` (same create/update
   rule as FEAT-05). The API normalizes `isbn13` when possible; preserve the submitted value and rely on the API for

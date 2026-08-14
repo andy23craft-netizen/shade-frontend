@@ -44,7 +44,8 @@ Confirm against a representative running backend `/openapi.json` before locking 
   the API does not validate format, timezone, ordering, or calendar correctness.
 - Later edits of an already-read book use `PATCH /books/{id}` with a required `BookUpdate` body. For this ticket, send
   only intentionally changed reading fields: `completion_date`, `rating`, and/or `review`. Explicit `null` clears those
-  nullable fields. Never include loan-related properties (`status`, `borrower`, `datetime_loaned_out`). Never send
+  nullable fields. Never include loan-driving `status` values that simulate checkout or check-in, and do not invent
+  book-level borrower or checkout-timing fields (those live on loan rows). Never send
   `is_read=false`, `is_read=null`, or any "mark unread" payload -- the UI must not offer that action, and nulling
   DB-required fields such as `is_read` can cause an unhandled server error on commit.
 - Soft-delete and loan/reading axes are independent: do not offer mark-read for soft-deleted or already-read books.

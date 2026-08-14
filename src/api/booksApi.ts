@@ -25,6 +25,7 @@ import {
 export interface ListBooksOptions
     extends ApiCallOptions {
     includeDeleted?: boolean
+    isbn?: string
 }
 
 function withSignal(
@@ -55,6 +56,16 @@ export function createBooksApi(
                     String(
                         options.includeDeleted,
                     ),
+                )
+            }
+
+            if (
+                options.isbn !== undefined &&
+                options.isbn !== ''
+            ) {
+                params.set(
+                    'isbn',
+                    options.isbn,
                 )
             }
 

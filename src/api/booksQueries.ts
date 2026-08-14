@@ -69,6 +69,7 @@ function writeBookDetailCache(
 export function useBooks(
     options: {
         includeDeleted?: boolean
+        isbn?: string
     } = {},
 ) {
     const {
@@ -80,16 +81,19 @@ export function useBooks(
 
     const includeDeleted =
         options.includeDeleted ?? false
+    const isbn = options.isbn
 
     return useQuery({
-        queryKey: queryKeys.books.list(
+        queryKey: queryKeys.books.list({
             includeDeleted,
-        ),
+            isbn,
+        }),
         queryFn: ({
                       signal,
                   }) =>
             booksApi.list({
                 includeDeleted,
+                isbn,
                 signal,
             }),
     })

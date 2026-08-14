@@ -162,8 +162,9 @@ prefix). In-repo contract: `docs/technical-reference/openapi.json` (schemas) plu
 - FEAT-01 through FEAT-07 are complete. Their ticket files were removed; remaining tickets are `FEAT-08` through
   `FEAT-16`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can
   lag).
-- CHORE-01 is complete: `loansApi.list({ bookId })`, `loansApi.get` / `useLoan`, and Check In deep-link
-  `/checkin?bookId=...` on book detail when active and on loan.
+- CHORE-01 is complete: `loansApi.list({ bookId })`, `loansApi.get` / `useLoan`, Check In deep-link
+  `/checkin?bookId=...` on book detail when active and on loan, and optional `booksApi.list({ isbn })` /
+  `useBooks({ isbn })`.
 - Active ticket: `docs/tickets/FEAT-08_checkin-and-loan-history.md` (finish check-in and loan history). Reuse FEAT-03
   typed helpers (`booksApi.checkin`, `pickCheckinRequest`, `useCheckinBook`, `useLoans({ bookId })`, `useLoan`,
   `dateTime.ts`) and FEAT-07 checkout patterns (`ConfirmationDialog`, eligible selection, `?bookId=` deep-link with
@@ -209,13 +210,13 @@ index.html
     backup contents, or full bodies in logs)
   - `src/api/requestFields.ts` / `dateTime.ts` documented request-field picking and `YYYY-MM-DD` / UTC ISO 8601
     normalizers for later form tickets
-  - `src/api/queryKeys.ts` shared React Query keys for books, loans (`all`, `list(bookId?)`, `detail(id)`), and
-    dashboard
+  - `src/api/queryKeys.ts` shared React Query keys for books (`all`, `list({ includeDeleted, isbn? })`, `detail(id)`,
+    `lookup(isbn)`), loans (`all`, `list(bookId?)`, `detail(id)`), and dashboard
   - `src/api/api.ts` `createApi` aggregates typed helpers: `books`, `loans`, `dashboard`, `health`, `protected`,
     `backup`, plus the underlying `client`
-  - `booksApi`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`, `restore`,
-    `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`); helpers accept optional `AbortSignal` and
-    serialize only documented request fields
+  - `booksApi`: `list` (optional `includeDeleted`, `isbn`; omit empty/`undefined` `isbn`), `create`, `lookup`, `get`,
+    `update`, `remove`, `restore`, `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`); helpers accept
+    optional `AbortSignal` and serialize only documented request fields
   - `loansApi.list` (`GET /loans`, optional `bookId` -> `?book_id=...`; omit empty/`undefined`), `loansApi.get(id)`
     (`GET /loans/{id}`), `dashboardApi.get`, `healthApi.get` (public), `protectedApi.get`
   - `backupApi.get` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8 `Content-Disposition`
@@ -230,10 +231,10 @@ index.html
     validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`
   - `AppProviders` subscribes `subscribeQueryClientToConnectionInvalidation` so forgotten or rejected tokens clear the
     query cache
-  - `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations (including `useCreateBook`,
-    `useCheckoutBook`, and `useCheckinBook`) that write returned `BookRead` into the detail cache and invalidate per
-    PLAN.md 7.5 (lists including `include_deleted` via `['books']` prefix, detail, dashboard, and loans on
-    checkout/check-in)
+  - `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn }`), `useBook`, `useBookLookup`, plus
+    mutations (including `useCreateBook`, `useCheckoutBook`, and `useCheckinBook`) that write returned `BookRead` into
+    the detail cache and invalidate per PLAN.md 7.5 (lists including `include_deleted` via `['books']` prefix, detail,
+    dashboard, and loans on checkout/check-in)
   - `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` (optional `{ bookId }`), `useLoan(id)` (disabled when
     falsy), and `useDashboard` using the same keys mutations invalidate (`queryKeys.loans.list` / `detail` / `all`)
   - Abort/stale overwrite guards are covered by colocated tests

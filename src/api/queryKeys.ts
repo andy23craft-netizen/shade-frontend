@@ -3,14 +3,34 @@ export const queryKeys = {
         all: ['books'] as const,
 
         list: (
-            includeDeleted = false,
-        ) =>
-            [
-                'books',
-                {
-                    includeDeleted,
-                },
-            ] as const,
+            options: {
+                includeDeleted?: boolean
+                isbn?: string
+            } = {},
+        ) => {
+            const includeDeleted =
+                options.includeDeleted ?? false
+            const isbn =
+                options.isbn !== undefined &&
+                options.isbn !== ''
+                    ? options.isbn
+                    : undefined
+
+            return isbn !== undefined
+                ? ([
+                    'books',
+                    {
+                        includeDeleted,
+                        isbn,
+                    },
+                ] as const)
+                : ([
+                    'books',
+                    {
+                        includeDeleted,
+                    },
+                ] as const)
+        },
 
         detail: (id: string) =>
             ['books', id] as const,
