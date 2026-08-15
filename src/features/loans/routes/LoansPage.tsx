@@ -196,7 +196,7 @@ export function LoansPage() {
     }
 
     return (
-        <section className="route-page">
+        <section className="route-page circulation-page loans-page">
             <header>
                 <h1 tabIndex={-1}>Loans</h1>
 
@@ -216,7 +216,10 @@ export function LoansPage() {
                         No books are currently checked out.
                     </p>
                 ) : (
-                    <ul aria-label="Active loans">
+                    <ul
+                        className="loans-card-list"
+                        aria-label="Active loans"
+                    >
                         {activeLoans.map((loan) => (
                             <li
                                 key={loan.id}
@@ -224,24 +227,20 @@ export function LoansPage() {
                                     loan.id,
                                 )}
                             >
-                                <article>
-                                    <h3>
-                                        {renderBookName(
-                                            loan.book_id,
-                                        )}
-                                    </h3>
+                                <article className="circulation-record-card">
+                                    <header className="circulation-record-card__heading">
+                                        <p className="circulation-record-card__eyebrow">
+                                            {dueStateLabel(loan.due_at)}
+                                        </p>
 
-                                    <p>
-                                        <strong>
-                                            {
-                                                dueStateLabel(
-                                                    loan.due_at,
-                                                )
-                                            }
-                                        </strong>
-                                    </p>
+                                        <h3>
+                                            {renderBookName(
+                                                loan.book_id,
+                                            )}
+                                        </h3>
+                                    </header>
 
-                                    <dl>
+                                    <dl className="circulation-record-card__metadata">
                                         <div>
                                             <dt>
                                                 Borrower
@@ -276,14 +275,12 @@ export function LoansPage() {
                                         </div>
 
                                         {loan.notes ? (
-                                            <div>
+                                            <div className="circulation-record-card__metadata-wide">
                                                 <dt>
                                                     Notes
                                                 </dt>
                                                 <dd>
-                                                    {
-                                                        loan.notes
-                                                    }
+                                                    {loan.notes}
                                                 </dd>
                                             </div>
                                         ) : null}
@@ -303,7 +300,10 @@ export function LoansPage() {
                         No returned loans yet.
                     </p>
                 ) : (
-                    <ul aria-label="Returned loans">
+                    <ul
+                        className="loans-card-list"
+                        aria-label="Returned loans"
+                    >
                         {returnedLoans.map((loan) => (
                             <li
                                 key={loan.id}
@@ -311,20 +311,20 @@ export function LoansPage() {
                                     loan.id,
                                 )}
                             >
-                                <article>
-                                    <h3>
-                                        {renderBookName(
-                                            loan.book_id,
-                                        )}
-                                    </h3>
-
-                                    <p>
-                                        <strong>
+                                <article className="circulation-record-card">
+                                    <header className="circulation-record-card__heading">
+                                        <p className="circulation-record-card__eyebrow">
                                             Returned
-                                        </strong>
-                                    </p>
+                                        </p>
 
-                                    <dl>
+                                        <h3>
+                                            {renderBookName(
+                                                loan.book_id,
+                                            )}
+                                        </h3>
+                                    </header>
+
+                                    <dl className="circulation-record-card__metadata">
                                         <div>
                                             <dt>
                                                 Borrower
@@ -359,7 +359,7 @@ export function LoansPage() {
                                         </div>
 
                                         {loan.notes ? (
-                                            <div>
+                                            <div className="circulation-record-card__metadata-wide">
                                                 <dt>
                                                     Notes
                                                 </dt>

@@ -378,7 +378,7 @@ export function CheckinPage() {
             loansQuery.isPending
         ) {
             return (
-                <section className="route-page">
+                <section className="route-page circulation page">
                     <h1 tabIndex={-1}>
                         Check In Book
                     </h1>
@@ -464,7 +464,10 @@ export function CheckinPage() {
                         available for check-in.
                     </Alert>
                 ) : (
-                    <ul aria-label="Books available for check-in">
+                    <ul
+                        className="checkin-card-list"
+                        aria-label="Books available for check-in"
+                    >
                         {eligibleBooks.map(
                             (book) => {
                                 const loan =
@@ -475,38 +478,45 @@ export function CheckinPage() {
 
                                 return (
                                     <li key={book.id}>
-                                        <article>
-                                            <h2>
-                                                {
-                                                    book.title
-                                                }
-                                            </h2>
+                                        <article className="circulation-record-card">
+                                            <header className="circulation-record-card__heading">
+                                                <p className="circulation-record-card__eyebrow">
+                                                    Active Loan
+                                                </p>
 
-                                            <p>
-                                                {
-                                                    book.authors
-                                                }
-                                            </p>
+                                                <h2>
+                                                    {book.title}
+                                                </h2>
 
-                                            <dl>
-                                                <dt>
-                                                    Borrower
-                                                </dt>
-                                                <dd>
-                                                    {loan?.borrower ??
-                                                        'Not provided'}
-                                                </dd>
+                                                <p className="circulation-record-card__author">
+                                                    {book.authors}
+                                                </p>
+                                            </header>
 
-                                                <dt>
-                                                    Checked Out
-                                                </dt>
-                                                <dd>
-                                                    {loan?.checked_out_at ??
-                                                        'Not provided'}
-                                                </dd>
+                                            <dl className="circulation-record-card__metadata">
+                                                <div>
+                                                    <dt>
+                                                        Borrower
+                                                    </dt>
+                                                    <dd>
+                                                        {loan?.borrower ??
+                                                            'Not provided'}
+                                                    </dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>
+                                                        Checked Out
+                                                    </dt>
+                                                    <dd>
+                                                        {loan?.checked_out_at ??
+                                                            'Not provided'}
+                                                    </dd>
+                                                </div>
                                             </dl>
 
-                                            <Button
+                                            <div className="circulation-record-card__actions">
+                                                <Button
                                                 type="button"
                                                 variant="primary"
                                                 onClick={() => {
@@ -520,6 +530,7 @@ export function CheckinPage() {
                                             >
                                                 Select
                                             </Button>
+                                            </div>
                                         </article>
                                     </li>
                                 )
@@ -658,7 +669,7 @@ export function CheckinPage() {
     }
 
     return (
-        <section className="route-page">
+        <section className="route-page circulation-page">
             <AppLink
                 to={`/books/${bookId}`}
                 variant="secondary"
@@ -675,24 +686,7 @@ export function CheckinPage() {
                 </p>
             </header>
 
-            <section>
-                <h2>{book.title}</h2>
-                <p>{book.authors}</p>
 
-                <dl>
-                    <dt>Borrower</dt>
-                    <dd>
-                        {activeLoan?.borrower ??
-                            'Not provided'}
-                    </dd>
-
-                    <dt>Checked Out</dt>
-                    <dd>
-                        {activeLoan?.checked_out_at ??
-                            'Not provided'}
-                    </dd>
-                </dl>
-            </section>
 
             {hasSummary ? (
                 <div
@@ -732,9 +726,53 @@ export function CheckinPage() {
             ) : null}
 
             <form
+                className="circulation-card"
                 onSubmit={handleSubmit}
                 noValidate
             >
+                <header className="circulation-card__heading">
+                    <div>
+                        <p className="circulation-card__eyebrow">
+                            Shade Library
+                        </p>
+
+                        <h2>Return Card</h2>
+                    </div>
+
+                    <p className="circulation-card__number">
+                        Check-In Record
+                    </p>
+                </header>
+
+                <section className="circulation-card__book">
+                    <div className="circulation-card__book-heading">
+                        <p className="circulation-card__stamp">
+                            On Loan
+                        </p>
+
+                        <h3>{book.title}</h3>
+
+                        <p>{book.authors}</p>
+                    </div>
+
+                    <dl className="circulation-card__metadata">
+                        <div>
+                            <dt>Borrower</dt>
+                            <dd>
+                                {activeLoan?.borrower ??
+                                    'Not provided'}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Checked Out</dt>
+                            <dd>
+                                {activeLoan?.checked_out_at ??
+                                    'Not provided'}
+                            </dd>
+                        </div>
+                    </dl>
+                </section>
                 <Field
                     label="Return date and time"
                     id="checkin-returned-at"
@@ -757,7 +795,7 @@ export function CheckinPage() {
                     />
                 </Field>
 
-                <div>
+                <div className="circulation-card__actions">
                     <Button
                         type="submit"
                         variant="primary"

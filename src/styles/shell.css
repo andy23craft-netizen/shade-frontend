@@ -89,6 +89,8 @@
 }
 
 .app-brand {
+    display: grid;
+    gap: 0.1rem;
   flex: 0 0 auto;
   color: var(--color-primary-text);
   font-family: var(--font-family-heading);
@@ -96,6 +98,25 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-decoration: none;
+}
+
+.app-brand__name {
+    line-height: 1;
+}
+
+.app-brand__established {
+    color: var(--color-brass-light);
+
+    font-family: var(--font-family-heading);
+    font-size: 0.68rem;
+    font-style: italic;
+    font-weight: 400;
+
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: lowercase;
+
+    opacity: 0.8;
 }
 
 .app-brand:hover {

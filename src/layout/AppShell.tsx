@@ -54,7 +54,13 @@ export function AppShell() {
             <header className="app-header">
                 <div className="app-header__inner">
                     <NavLink className="app-brand" to="/" end>
-                        Shade Library
+                        <span className="app-brand__name">
+                            Shade Library
+                        </span>
+
+                        <span className="app-brand__established">
+                            est. 2026
+                        </span>
                     </NavLink>
 
                     <nav

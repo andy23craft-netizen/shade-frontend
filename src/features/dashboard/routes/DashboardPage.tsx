@@ -176,10 +176,6 @@ export function DashboardPage() {
                     className="dashboard-drawer"
                     aria-labelledby="dashboard-collection-heading"
                 >
-                    <div
-                        className="dashboard-drawer__clip"
-                        aria-hidden="true"
-                    />
 
                     <header className="dashboard-drawer__heading">
                         <span
@@ -246,10 +242,6 @@ export function DashboardPage() {
                     className="dashboard-drawer"
                     aria-labelledby="dashboard-circulation-heading"
                 >
-                    <div
-                        className="dashboard-drawer__clip"
-                        aria-hidden="true"
-                    />
 
                     <header className="dashboard-drawer__heading">
                         <span
@@ -330,10 +322,6 @@ export function DashboardPage() {
                     className="dashboard-drawer"
                     aria-labelledby="dashboard-reading-heading"
                 >
-                    <div
-                        className="dashboard-drawer__clip"
-                        aria-hidden="true"
-                    />
 
                     <header className="dashboard-drawer__heading">
     <span
