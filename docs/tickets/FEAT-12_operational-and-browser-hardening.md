@@ -6,7 +6,10 @@ Harden the completed product for supported browsers and safe production diagnosi
 
 ## Dependencies
 
-FEAT-11.
+FEAT-11 is complete (ticket file removed). Reuse FEAT-02 / FEAT-03 / FEAT-05 connection, error-model, and redaction
+seams. Do not invent a second diagnostic transport or assume undocumented backend headers, cookies, or push channels.
+Browser journey automation and coverage thresholds remain FEAT-13; CI packaging of those checks remains FEAT-14;
+deployment-owned HTTPS/CSP rollout remains FEAT-16. Do not pull those into FEAT-12.
 
 ## Contract references
 
@@ -19,87 +22,76 @@ Treat these as complementary, not interchangeable:
   no session, exact-origin CORS, error-status meanings, no realtime/pagination, backup blob download, and privacy-
   sensitive payload fields).
 
-Reuse FEAT-02 / FEAT-03 / FEAT-05 connection, error-model, and redaction seams. Do not invent a second diagnostic transport or
-assume undocumented backend headers, cookies, or push channels.
-
-### Documented contract facts for this ticket
-
 Confirm against a representative running backend `/openapi.json` before locking behavior; record drift as a blocker.
 
-#### Auth, CORS, and connectivity
+### Documented contract facts still relevant
 
-- Protected business routes require `Authorization: Bearer <API_SECRET_KEY>`. There is no login, logout, or session
-  system. Missing or invalid credentials return `403` with
-  `{"detail": "Invalid authentication credentials"}`. Public routes are only `GET /health` and FastAPI's generated
-  docs/OpenAPI routes.
-- Default allowed browser origins are the local Vite origins. Deployed frontends must set backend `CORS_ORIGINS` to a
-  JSON array of exact origins (scheme, hostname, and port; no path or trailing slash). CORS does not replace
-  authentication.
 - Cross-origin browser requests may send `Authorization` and `Content-Type`. Credentialed CORS (cookies) is disabled.
   Frontend code must not send `OPTIONS` manually. `Content-Disposition` is exposed so backup filenames are readable
-  from JavaScript when the exact frontend origin is allowed.
-- A same-origin reverse proxy remains an optional alternative to cross-origin CORS. Whichever arrangement is selected
-  must be documented and verified for preflight (when applicable) and authenticated backup filename access.
+  when the exact frontend origin is in backend `CORS_ORIGINS`. A same-origin reverse proxy remains an optional
+  alternative.
+- Explicit API errors use string `detail`; FastAPI validation uses a `detail` array. Preserve HTTP status and safe
+  server `detail` in the UI error model; never forward raw request headers, tokens, or full bodies to diagnostics.
+- Neither OpenAPI nor `API-for-FE.md` documents a request/correlation ID. Do not invent one. Include a backend-
+  supplied ID in user-visible errors and diagnostics only when a representative backend actually provides one.
+- There is no realtime API. Refresh remains route-entry, mutation invalidation, explicit refresh, and stale
+  focus/online refetch from FEAT-03.
+- `GET /backup` is a finite `application/sql` attachment. Prefer exposed UTF-8 `filename*`; use the documented
+  fallback when missing/malformed. Always revoke object URLs. Never inspect, log, cache, upload, or send dump
+  contents to diagnostics.
 
-#### Errors, diagnostics, and correlation
+#### Privacy denylist (still required for any new reporting path)
 
-- Explicit API errors use string `detail` (`ErrorDetail`). FastAPI validation uses a `detail` array
-  (`HTTPValidationError`). Preserve HTTP status and safe server `detail` in the UI error model; never forward raw
-  request headers, tokens, or full bodies to diagnostics.
-- Documented statuses that recovery paths must remain consistent for include `403`, `404`, `409`, both `422` shapes,
-  backup generation `500`, lookup `502` / `504`, network/timeout/invalid JSON, and unexpected `5xx`. Handle `204` and
-  backup `application/sql` success without treating them as JSON errors.
-- Neither OpenAPI nor `API-for-FE.md` currently documents a request/correlation ID header or body field. Do not invent
-  one. If a representative backend later supplies a safe ID (header or body), include it in user-visible error details
-  and diagnostics; until then, omit it without failing diagnostics.
+Never appear in logs, diagnostics, analytics, or error reports by default: Bearer tokens / `Authorization` headers,
+runtime connection secrets, borrower names, book and loan notes, reviews, ISBN drafts, SQL backup contents, and full
+request/response bodies. Safe allowlisted context may include HTTP status, error kind, route/operation name, release
+identifier, and a backend-supplied correlation ID when one exists.
 
-#### No realtime, full result sets, and backup privacy
+## Current baseline
 
-- There are no WebSocket, SSE, subscription, or push endpoints. Document that multiple open clients do not update
-  instantly; refresh remains route-entry, mutation invalidation, explicit refresh, and stale focus/online refetch from
-  FEAT-03.
-- `GET /books` supports optional pagination and sorting for collection browse; checkout, check-in, and loan joins still
-  use unpaginated full lists where needed. `GET /loans` returns full result sets with no sort params. Large-library
-  responsiveness checks from FEAT-03 remain the baseline; material regressions are release blockers or tracked
-  follow-ups.
-- `GET /backup` is the only streaming response: a finite `application/sql` attachment whose filename pattern is
-  `Shade Library - YYYY-mm-dd_HH-MM-SS_Z.sql` (UTC; literal `Z`). Prefer the exposed UTF-8 `filename*` form; use a
-  documented fallback when missing/malformed. Always revoke object URLs. Never inspect, log, cache, upload, or send dump
-  contents to diagnostics or error reporting.
+Already in place and should be reused (not rebuilt):
 
-#### Privacy denylist fields
+- Shared `ApiError` / `formatApiQueryError` / `QueryErrorState` recovery for `403`, `404`, `409`, both `422` shapes,
+  backup generation `500`, lookup `502` / `504`, network / timeout / invalid JSON, unexpected `5xx`, empty `204`, and
+  backup `application/sql` success.
+- `apiRedaction.ts` (`toSafeApiErrorDiagnostic`, `serializeSafeApiErrorDiagnostic`, `assertSafeApiDiagnostic`) with
+  colocated denylist tests. `correlationId` stays unset until the backend documents a safe source.
+- `RootErrorBoundary` recoverable fallback (retry / return home) without a blank screen. It does not yet report through
+  a redacted diagnostic hook.
+- Authenticated backup download via `backupApi.get` / `BackupLibraryPage` with programmatic `<a download>` and
+  `URL.revokeObjectURL` on success and failure paths; UI tests assert no download after `403` / generation `500` /
+  network failure.
+- Production connectivity notes in `README.md` and `docs/MAINTAINERS.md` (exact-origin `CORS_ORIGINS` or same-origin
+  proxy; permitted `Authorization` / `Content-Type`; readable backup `Content-Disposition`; disabled credentialed
+  CORS). Accepted build-time token risk and no-realtime refresh expectations are documented in AGENTS / MAINTAINERS /
+  README. CSP and related host security-header assumptions are not yet finalized here.
+- Scanner browser / device matrix and manual checklist: `docs/baselines/FEAT-06_scanner-support.md`. Broader evergreen
+  product smoke matrix is still outstanding.
+- Large-library and bundle-size expectations: `docs/baselines/FEAT-03_performance.md` (including
+  `booksApi.largeLibrary.test.ts`). FEAT-12 has not yet re-recorded comparable results against that baseline.
+- Feature routes already follow shared landmarks, heading focus, Field-linked errors, live regions, and reduced-motion
+  conventions from earlier tickets. A deliberate cross-route hardening audit and long-content checks are still open.
 
-Fields and materials that must never appear in logs, diagnostics, analytics, or error reports by default:
+## Remaining scope
 
-- Bearer tokens and `Authorization` headers
-- Runtime connection state (token presence/value, connection secrets)
-- Borrower names
-- Book and loan notes
-- Reviews
-- ISBN drafts from lookup
-- SQL backup contents
-- Full request and response bodies
-
-Safe allowlisted diagnostic context may include HTTP status, error kind, route/operation name, release identifier, and a
-backend-supplied correlation ID when one exists.
-
-## Scope
-
-- Audit every route for semantic landmarks, heading hierarchy, focus order, labels, help text, linked errors, live
-  regions, hit targets, reduced motion, and non-color status indicators.
-- Make root-boundary and route-level recovery behavior consistent for startup and post-load API failures across the
-  documented status families above.
-- Add a redacted diagnostic hook interface and optional production error reporting configured only at runtime.
+- Add a redacted diagnostic hook interface and optional production error reporting configured only at runtime (for
+  example via `public/config.js` / `RuntimeConfig`) so reporting can be disabled or retargeted without rebuilding.
+  Wire root-boundary and request-failure recovery through it using the existing redaction helpers; enforce the privacy
+  denylist on every path.
 - Include safe correlation/request IDs in user-visible error details and diagnostics only when a representative backend
   actually supplies them; do not fabricate IDs.
-- Enforce the privacy denylist above for all diagnostic and reporting paths.
-- Finalize supported browser/device documentation and scanner limitations.
-- Test representative long titles, authors, borrower names, tags, notes, and reviews.
-- Record large-library responsiveness and bundle-size results against FEAT-03 expectations; fix material regressions or
-  create explicit release blockers.
-- Document no-realtime behavior, accepted browser-token risk, exact-origin backend `CORS_ORIGINS` or same-origin proxy
-  requirements, exposed backup `Content-Disposition`, and security-header assumptions owned by the deployment host
-  (HTTPS, restrictive CSP compatible with camera use and the configured API origin, and related browser headers).
+- Audit every route for semantic landmarks, heading hierarchy, focus order, labels, help text, linked errors, live
+  regions, hit targets, reduced motion, and non-color status indicators. Fix gaps found by the audit.
+- Test representative long titles, authors, borrower names, tags, notes, and reviews so content wraps or truncates
+  accessibly without hiding required actions.
+- Finalize supported evergreen desktop and mobile browser/device documentation (beyond the FEAT-06 scanner matrix) and
+  record smoke results or explicit blockers.
+- Re-run large-library responsiveness and production bundle-size checks against `docs/baselines/FEAT-03_performance.md`;
+  fix material regressions or create explicit tracked release blockers, and update the baseline document when the
+  numbers move for a known reason.
+- Document deployment-host security-header assumptions owned outside this repo (HTTPS, restrictive CSP compatible with
+  camera use and the configured API origin, and related browser headers), alongside the existing CORS / proxy /
+  no-realtime / token-risk notes.
 
 ## Acceptance criteria
 
@@ -107,17 +99,13 @@ backend-supplied correlation ID when one exists.
 - Deliberately thrown render and request failures recover without a blank screen or private-data disclosure.
 - Diagnostics expose only allowlisted context and safely include a correlation ID only when a backend-supplied value is
   present.
-- Documented API failure families (`403`, `404`, `409`, both `422` shapes, backup `500`, lookup `502`/`504`, network /
-  unexpected `5xx`) recover through the shared error model without leaking denylisted fields.
-- All routes are usable with keyboard only and at 320-pixel, tablet, and desktop widths.
-- Current supported evergreen desktop and mobile browsers pass the documented smoke matrix.
+- All routes are usable with keyboard only and at 320-pixel, tablet, and desktop widths after the audit fixes.
+- Current supported evergreen desktop and mobile browsers pass the documented smoke matrix (or blockers are explicit).
 - Long content wraps or truncates accessibly without hiding required actions.
-- Backup downloads leave no retained object URL or application cache entry, and diagnostics never inspect or report SQL
-  contents.
-- Production-like documentation states exact-origin `CORS_ORIGINS` (or same-origin proxy), permitted
-  `Authorization`/`Content-Type`, readable backup `Content-Disposition`, disabled credentialed CORS, and no-realtime
-  refresh expectations.
 - Bundle and large-library results are documented against the expectations set in FEAT-03.
+- Production-facing docs state exact-origin `CORS_ORIGINS` (or same-origin proxy), permitted
+  `Authorization`/`Content-Type`, readable backup `Content-Disposition`, disabled credentialed CORS, no-realtime
+  refresh expectations, accepted browser-token risk, and host-owned HTTPS/CSP/security-header assumptions.
 - No unresolved high-severity privacy, browser, performance, or operational issue remains untracked.
 - `make check` passes.
 
