@@ -1,11 +1,12 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-14 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-15 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
-other LLM prompt or agents guide. Attach product tickets, OpenAPI, and other `docs/` references only when the current
-task needs them. Inspect the current repository before making changes because the code may have changed since this
-document was written. A user's explicit request takes precedence over general guidance here.
+other LLM prompt or agents guide (`docs/prompt-master-context.md` is a slim ChatGPT pack, not required here). Attach
+product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
+repository before making changes because the code may have changed since this document was written. A user's explicit
+request takes precedence over general guidance here.
 
 ## Project Summary
 
@@ -25,22 +26,26 @@ checkout selection (distinct from historical create FEAT-05; ticket file removed
 history), FEAT-09 (reading completion, rating, and review), historical FEAT-10 (edit metadata, soft delete/restore,
 deleted admin, and authenticated SQL backup), FEAT-10 API contract sync (regenerated OpenAPI types for wishlist /
 dashboard-report paths; `booksApi` / query keys for `author` / `title` / `category`; collection `sortBy=shelf`;
-checkout `412` `display_only` handling -- no wishlist or incomplete-metadata product UI), and FEAT-11 (library
-dashboard). Remaining tickets are `FEAT-12` through `FEAT-20` under `docs/tickets/`. Prefer ticket presence under
-`docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can lag). CHORE-01 is complete
-(`loansApi.list({ bookId })`, `loansApi.get` / `useLoan`, Check In deep-link `/checkin?bookId=...`, optional
-`booksApi.list({ isbn })` / `useBooks({ isbn })`).
+checkout `412` `display_only` refetch/messaging -- no alternate-copy offers, wishlist, or incomplete-metadata
+product UI), and FEAT-11 (library dashboard). Remaining tickets are `FEAT-12` through `FEAT-21` under `docs/tickets/`.
+Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can lag).
+CHORE-01 is complete (`loansApi.list({ bookId })`, `loansApi.get` / `useLoan`, Check In deep-link
+`/checkin?bookId=...`, optional `booksApi.list({ isbn })` / `useBooks({ isbn })`).
 
 **Next / in progress:** `docs/tickets/FEAT-12_operational-and-browser-hardening.md` (redacted runtime diagnostic
 reporting, cross-route a11y/long-content audit, evergreen browser smoke docs, FEAT-03 baseline re-check, and
 host-owned HTTPS/CSP notes). Reuse FEAT-02 / FEAT-03 / FEAT-05 connection, error-model, and `apiRedaction`
 seams. Do not invent a second diagnostic transport, fabricate correlation IDs, or pull FEAT-13 journey automation,
-FEAT-14 CI packaging, or FEAT-16 deployment-owned HTTPS/CSP rollout into FEAT-12. Product routes are fully
-implemented (no unfinished `RoutePlaceholder` feature pages remain). Later product tickets cover collection category
-filter UI (FEAT-18), wishlists (FEAT-19), and dashboard report surfaces (FEAT-20) -- generated types already know
-those paths; do not call them from product UI until those tickets.
+FEAT-14 CI packaging, FEAT-16 deployment-owned HTTPS/CSP rollout, or later product tickets into FEAT-12. Product
+routes are fully implemented (no unfinished `RoutePlaceholder` feature pages remain). Later product tickets cover
+About as homepage with relocated dashboard (FEAT-17), collection category filter UI (FEAT-18; shelf sort already
+shipped), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX
+(FEAT-21). Generated OpenAPI types already know wishlist and dashboard-report paths; `booksApi` already accepts
+`author` / `title` / `category` list filters -- do not call wishlist or report APIs, or ship those UIs, until their
+tickets. Leave alternate-copy offers to FEAT-21 (reuse existing `412` handling).
 
-FEAT-11 delivered `/` via `DashboardPage` + `useDashboard` / `dashboardApi.get`. Displays API-provided Collection,
+FEAT-11 delivered `/` via `DashboardPage` + `useDashboard` / `dashboardApi.get` (FEAT-17 will move About to `/` and
+relocate the dashboard). Displays API-provided Collection,
 Circulation, and Reading Record metrics without recalculating business totals; null averages render as
 "Not enough data"; inconsistent `read` / `reading.books_read` (and unread counterparts) show a contract warning
 without inventing corrected numbers. Explicit Refresh, offline/paused and stale refresh status, and
@@ -185,12 +190,14 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 **In scope for MVP:** dashboard, active books, detail, manual/ISBN/camera/scanner add flows, edit, checkout, check-in,
 loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL backup, runtime API config, CI,
-Podman preview, versioned production artifacts.
+Podman preview, versioned production artifacts. Ticketed follow-ons (implement only when working that ticket): About
+homepage (FEAT-17), collection category filter UI (FEAT-18), wishlists (FEAT-19), dashboard reports / incomplete
+metadata (FEAT-20), display-only alternate-copy checkout UX (FEAT-21).
 
-**Out of scope unless explicitly requested:** UPC, multi-library/copies, wish lists, catalog search/filter/sort, cover
-images, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote
-Ansible/systemd/TLS/rollback orchestration. Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite
-scroll with backend pagination; other callers still fetch unpaginated full lists when needed.
+**Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
+Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
+orchestration. Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite scroll with backend
+pagination; other callers still fetch unpaginated full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
@@ -556,7 +563,10 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
   Query client defaults, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
-- `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable.
+- `src/api/queryKeys.test.ts`: Books/loans/dashboard key shape coverage including `author` / `title` / `category`
+  omission of blank filters and `infiniteList` isolation.
+- `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
+  (includes wishlist and dashboard-report paths plus existing lifecycle routes).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
   unauthorized handling without cache clear, and build-time token wiring.
@@ -663,7 +673,7 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-12_operational-and-browser-hardening.md` through `FEAT-20_*.md`: Sequenced implementation tickets
+- `docs/tickets/FEAT-12_operational-and-browser-hardening.md` through `FEAT-21_*.md`: Sequenced implementation tickets
   with acceptance criteria (historical FEAT-01 through FEAT-11, FEAT-05 ISBN checkout, and FEAT-10 API-contract sync
   ticket files are gone).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines for FEAT-12 / FEAT-14.
@@ -675,7 +685,10 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (see Backend Contract).
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json`.
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
-- `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document).
+- `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
+  this baseline).
+- `docs/prompt-master-context.md`: Optional slim always-on pack for chats without repo access (not required when
+  this file is already loaded).
 
 ## Development Commands
 
@@ -747,10 +760,10 @@ make build
   API stats only; null averages as "Not enough data"). Leave reading flows under `MarkReadPage` / `markReadModel` /
   `ReadingEditPage` / `readingEditModel`. Leave scanner code under `src/features/scanning/` lazy-loaded from
   `/books/new` and `/checkout`. Leave checkout under `CheckoutPage` / `checkoutModel`, including ISBN Find via
-  `useBooks({ isbn })` (not lookup). Leave check-in and loan history under `CheckinPage` / `checkinModel` /
-  `checkinEligibility` / `LoansPage` / `loanTemporal`. Do not pull FEAT-13 journey automation, FEAT-14 CI packaging,
-  or FEAT-16 deployment-owned HTTPS/CSP into FEAT-12. Never simulate restore, checkout, check-in, or initial
-  mark-read with generic `PATCH`.
+  `useBooks({ isbn })` (not lookup) and existing `412` `display_only` handling. Leave check-in and loan history under
+  `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Do not pull FEAT-13 journey
+  automation, FEAT-14 CI packaging, FEAT-16 deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into
+  FEAT-12. Never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
