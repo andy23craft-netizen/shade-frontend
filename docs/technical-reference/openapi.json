@@ -840,6 +840,109 @@
         "title": "DashboardBorrowing",
         "type": "object"
       },
+      "DashboardBreakdowns": {
+        "properties": {
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "By Category",
+            "type": "array"
+          },
+          "by_creation_year": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "By Creation Year",
+            "type": "array"
+          },
+          "by_shelf": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "By Shelf",
+            "type": "array"
+          },
+          "on_loan": {
+            "title": "On Loan",
+            "type": "integer"
+          },
+          "total_books": {
+            "title": "Total Books",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_books",
+          "on_loan",
+          "by_category",
+          "by_shelf",
+          "by_creation_year"
+        ],
+        "title": "DashboardBreakdowns",
+        "type": "object"
+      },
+      "DashboardCountBucket": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "count"
+        ],
+        "title": "DashboardCountBucket",
+        "type": "object"
+      },
+      "DashboardIncompleteMetadata": {
+        "properties": {
+          "missing_category": {
+            "title": "Missing Category",
+            "type": "integer"
+          },
+          "missing_isbn": {
+            "title": "Missing Isbn",
+            "type": "integer"
+          },
+          "missing_pages": {
+            "title": "Missing Pages",
+            "type": "integer"
+          },
+          "missing_publisher": {
+            "title": "Missing Publisher",
+            "type": "integer"
+          },
+          "missing_shelf": {
+            "title": "Missing Shelf",
+            "type": "integer"
+          },
+          "missing_year": {
+            "title": "Missing Year",
+            "type": "integer"
+          },
+          "total_incomplete": {
+            "title": "Total Incomplete",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_incomplete",
+          "missing_category",
+          "missing_shelf",
+          "missing_pages",
+          "missing_publisher",
+          "missing_year",
+          "missing_isbn"
+        ],
+        "title": "DashboardIncompleteMetadata",
+        "type": "object"
+      },
       "DashboardReading": {
         "properties": {
           "average_rating": {
@@ -1186,6 +1289,268 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WishlistBookCreate": {
+        "properties": {
+          "book_id": {
+            "title": "Book Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WishlistBookStatus",
+            "default": "wanted"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "book_id"
+        ],
+        "title": "WishlistBookCreate",
+        "type": "object"
+      },
+      "WishlistBookList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WishlistBookRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "WishlistBookList",
+        "type": "object"
+      },
+      "WishlistBookRead": {
+        "properties": {
+          "book_id": {
+            "title": "Book Id",
+            "type": "string"
+          },
+          "created_date": {
+            "title": "Created Date",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WishlistBookStatus"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "wishlist_book_id": {
+            "title": "Wishlist Book Id",
+            "type": "string"
+          },
+          "wishlist_id": {
+            "title": "Wishlist Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "wishlist_book_id",
+          "wishlist_id",
+          "created_date",
+          "book_id",
+          "status"
+        ],
+        "title": "WishlistBookRead",
+        "type": "object"
+      },
+      "WishlistBookStatus": {
+        "enum": [
+          "wanted",
+          "ordered",
+          "owned",
+          "dropped"
+        ],
+        "title": "WishlistBookStatus",
+        "type": "string"
+      },
+      "WishlistCreate": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "WishlistCreate",
+        "type": "object"
+      },
+      "WishlistList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WishlistRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "WishlistList",
+        "type": "object"
+      },
+      "WishlistRead": {
+        "properties": {
+          "created_date": {
+            "title": "Created Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "last_updated_date": {
+            "title": "Last Updated Date",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "wishlist_id": {
+            "title": "Wishlist Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "wishlist_id",
+          "created_date",
+          "name",
+          "last_updated_date"
+        ],
+        "title": "WishlistRead",
+        "type": "object"
+      },
+      "WishlistUpdate": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "WishlistUpdate",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -1285,6 +1650,54 @@
                 }
               ],
               "title": "Isbn"
+            }
+          },
+          {
+            "in": "query",
+            "name": "author",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Author"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Category"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
             }
           },
           {
@@ -1895,6 +2308,16 @@
             },
             "description": "State conflict"
           },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Precondition failed"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2102,6 +2525,184 @@
           }
         ],
         "summary": "Get Dashboard",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/dashboard/breakdowns": {
+      "get": {
+        "operationId": "get_dashboard_breakdowns_dashboard_breakdowns_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardBreakdowns"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Dashboard Breakdowns",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/dashboard/incomplete-metadata": {
+      "get": {
+        "operationId": "get_dashboard_incomplete_metadata_dashboard_incomplete_metadata_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardIncompleteMetadata"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Dashboard Incomplete Metadata",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/dashboard/incomplete-metadata/books": {
+      "get": {
+        "operationId": "list_incomplete_metadata_books_dashboard_incomplete_metadata_books_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "field",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Field"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Take"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Incomplete Metadata Books",
         "tags": [
           "dashboard"
         ]
@@ -2316,6 +2917,499 @@
         "summary": "Get Loan",
         "tags": [
           "loans"
+        ]
+      }
+    },
+    "/wishlists": {
+      "get": {
+        "operationId": "list_wishlists_wishlists_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Take"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Wishlists",
+        "tags": [
+          "wishlists"
+        ]
+      },
+      "post": {
+        "operationId": "create_wishlist_wishlists_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WishlistCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Wishlist",
+        "tags": [
+          "wishlists"
+        ]
+      }
+    },
+    "/wishlists/{wishlist_id}": {
+      "delete": {
+        "operationId": "delete_wishlist_wishlists__wishlist_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Wishlist",
+        "tags": [
+          "wishlists"
+        ]
+      },
+      "patch": {
+        "operationId": "update_wishlist_wishlists__wishlist_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WishlistUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Wishlist",
+        "tags": [
+          "wishlists"
+        ]
+      }
+    },
+    "/wishlists/{wishlist_id}/books": {
+      "get": {
+        "operationId": "list_wishlist_books_wishlists__wishlist_id__books_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Take"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistBookList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Wishlist Books",
+        "tags": [
+          "wishlists"
+        ]
+      },
+      "post": {
+        "operationId": "add_wishlist_book_wishlists__wishlist_id__books_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WishlistBookCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistBookRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Wishlist Book",
+        "tags": [
+          "wishlists"
         ]
       }
     }
