@@ -17,8 +17,3 @@
 * [ ] Add more functionality to the website
   * [ ] Finish the feature tickets in the backend
   * [ ] Run `make openapi` in the backend and update `../shade-backend/docs/API-for-FE.md`
-  * [ ] Create new FE tickets
-    * [ ] Augment `/books` with: filtering on category (shelf sort shipped with FEAT-10 API sync)
-    * [ ] Augment `/dashboard` with: Dashboard reports
-      * Missing section, missing category, missing shelf, missing pages, missing publisher, missing year, missing isbn
-    * [ ] Add a new `/wishlists`: Show wishlists. Also add ability to add books to wishlists.
