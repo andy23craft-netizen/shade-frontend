@@ -636,7 +636,7 @@
   z-index: 1;
   top: 1rem;
   right: 0.7rem;
-  bottom: 0.7rem;
+  bottom: 4.1rem;
   left: 0.7rem;
 
   border: 1px solid rgb(111 83 53 / 55%);
@@ -773,6 +773,114 @@
   letter-spacing: 0.08em;
 }
 
+.dashboard-reading-chart {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  padding:
+          var(--space-2)
+          var(--space-3)
+          var(--space-5);
+  border-bottom: 1px solid rgb(113 84 52 / 18%);
+}
+
+.dashboard-reading-chart__pie {
+  --percentage-read: 0%;
+
+  position: relative;
+  display: grid;
+  width: 9rem;
+  height: 9rem;
+  place-items: center;
+  border: 1px solid rgb(83 55 34 / 28%);
+  border-radius: 50%;
+
+  background:
+          conic-gradient(
+                  var(--color-wood) 0 var(--percentage-read),
+                  var(--color-card-rule) var(--percentage-read) 100%
+          );
+
+  box-shadow:
+          0 0.2rem 0.35rem rgb(10 8 6 / 12%),
+          inset 0 0 0.5rem rgb(255 255 255 / 15%);
+}
+
+.dashboard-reading-chart__center {
+  display: grid;
+  width: 6.25rem;
+  height: 6.25rem;
+  place-content: center;
+  justify-items: center;
+  border: 1px solid rgb(113 84 52 / 20%);
+  border-radius: 50%;
+
+  background:
+          radial-gradient(
+                  circle at 35% 25%,
+                  rgb(255 255 255 / 35%),
+                  transparent 45%
+          ),
+          var(--color-card);
+
+  box-shadow:
+          inset 0 0 0.5rem rgb(76 50 29 / 8%);
+}
+
+.dashboard-reading-chart__center strong {
+  color: var(--color-wood-dark);
+  font-family: var(--font-family-heading);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.dashboard-reading-chart__center span {
+  margin-top: var(--space-1);
+  color: var(--color-surface-text-muted);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-reading-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+.dashboard-reading-chart__legend p {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-surface-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.dashboard-reading-chart__legend strong {
+  color: var(--color-surface-text);
+  font-family: var(--font-family-heading);
+}
+
+.dashboard-reading-chart__key {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: 0 0 auto;
+  border: 1px solid rgb(62 39 24 / 35%);
+  border-radius: 50%;
+}
+
+.dashboard-reading-chart__key--read {
+  background: var(--color-wood);
+}
+
+.dashboard-reading-chart__key--unread {
+  background: var(--color-card-rule);
+}
+
 .dashboard-metrics {
   display: grid;
   align-content: start;
@@ -843,43 +951,121 @@
   text-decoration: underline;
 }
 
+/*
+ * Wooden drawer front.
+ *
+ * This is the face closest to the viewer. It projects out from
+ * underneath the paper-lined interior and gives the brass pull
+ * somewhere physical to be mounted.
+ */
 .dashboard-drawer__pull {
   position: relative;
   z-index: 4;
-  justify-self: center;
-  width: 3.5rem;
-  height: 1.65rem;
-  margin-top: var(--space-3);
+
+  justify-self: stretch;
+
+  height: 4rem;
+
+  margin:
+          var(--space-3)
+          calc(-1 * var(--space-5))
+          calc(-1 * var(--space-5));
+
+  border-top: 1px solid rgb(61 38 22 / 95%);
+  border-right: 1px solid rgb(52 32 19 / 95%);
+  border-bottom: 1px solid rgb(39 24 15 / 95%);
+  border-left: 1px solid rgb(52 32 19 / 95%);
+
+  border-radius:
+          0 0
+          calc(var(--radius-card) - 0.1rem)
+          calc(var(--radius-card) - 0.1rem);
+
+  background:
+          repeating-linear-gradient(
+                  3deg,
+                  rgb(255 255 255 / 3%) 0,
+                  rgb(255 255 255 / 3%) 1px,
+                  transparent 1px,
+                  transparent 7px
+          ),
+          repeating-linear-gradient(
+                  91deg,
+                  rgb(0 0 0 / 7%) 0,
+                  rgb(0 0 0 / 7%) 1px,
+                  transparent 1px,
+                  transparent 15px
+          ),
+          radial-gradient(
+                  ellipse at 25% 35%,
+                  rgb(161 103 60 / 13%),
+                  transparent 32%
+          ),
+          radial-gradient(
+                  ellipse at 76% 72%,
+                  rgb(0 0 0 / 12%),
+                  transparent 40%
+          ),
+          linear-gradient(
+                  180deg,
+                  var(--color-wood),
+                  var(--color-wood-dark)
+          );
+
+  box-shadow:
+          inset 0 2px rgb(255 255 255 / 7%),
+          inset 0 -3px rgb(0 0 0 / 24%),
+          0 -0.28rem 0 rgb(43 27 17 / 55%),
+          0 0.35rem 0.45rem rgb(10 8 6 / 28%);
 }
 
+/*
+ * Brass mounting plate.
+ */
 .dashboard-drawer__pull::before {
   content: "";
   position: absolute;
-  inset: 0.15rem 0;
-  border: 1px solid rgb(89 57 18 / 85%);
-  border-radius: 0.35rem;
+
+  top: 50%;
+  left: 50%;
+
+  width: 3.3rem;
+  height: 1.85rem;
+
+  border: 1px solid rgb(76 48 15 / 95%);
+  border-radius: 0.45rem;
 
   background:
           linear-gradient(
                   180deg,
-                  var(--color-brass-light),
-                  var(--color-brass) 45%,
-                  rgb(111 71 21)
+                  rgb(222 183 94),
+                  var(--color-brass-light) 18%,
+                  var(--color-brass) 50%,
+                  rgb(105 65 18) 100%
           );
 
   box-shadow:
-          0 0.2rem 0.3rem rgb(10 8 6 / 28%),
-          inset 0 1px rgb(255 245 190 / 45%);
+          0 0.18rem 0.3rem rgb(10 8 6 / 40%),
+          inset 0 1px rgb(255 244 181 / 55%),
+          inset 0 -2px rgb(70 42 12 / 35%);
+
+  transform: translate(-50%, -50%);
 }
 
+/*
+ * Raised brass handle mounted to the plate.
+ */
 .dashboard-drawer__pull::after {
   content: "";
   position: absolute;
-  top: 0.48rem;
+
+  top: 50%;
   left: 50%;
-  width: 1.7rem;
-  height: 0.65rem;
-  border: 1px solid rgb(79 49 15 / 90%);
+
+  width: 1.85rem;
+  height: 0.8rem;
+
+  border: 1px solid rgb(72 43 12 / 95%);
   border-top: 0;
   border-radius: 0 0 1rem 1rem;
 
@@ -887,14 +1073,17 @@
           linear-gradient(
                   180deg,
                   var(--color-brass),
-                  rgb(105 66 20)
+                  rgb(100 60 16)
           );
 
   box-shadow:
-          0 0.18rem 0.2rem rgb(10 8 6 / 30%);
+          0 0.2rem 0.22rem rgb(10 8 6 / 38%),
+          inset 0 -1px rgb(54 31 9 / 30%);
 
-  transform: translateX(-50%);
+  transform: translate(-50%, -35%);
 }
+
+
 
 @media (min-width: 40rem) {
   .dashboard-page__heading {

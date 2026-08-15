@@ -6,6 +6,7 @@ import {
     LoadingState,
     QueryErrorState,
 } from '../../../components'
+import type { CSSProperties } from 'react'
 
 function displayAverage(
     value: number | null,
@@ -15,7 +16,7 @@ function displayAverage(
         return 'Not enough data'
     }
 
-    return `${value}${suffix}`
+    return `${value.toFixed(1)}${suffix}`
 }
 
 export function DashboardPage() {
@@ -79,6 +80,13 @@ export function DashboardPage() {
     const readingCountsMatch =
         dashboard.read === dashboard.reading.books_read &&
         dashboard.unread === dashboard.reading.books_unread
+
+    const readingTotal = dashboard.read + dashboard.unread
+
+    const percentageRead =
+        readingTotal === 0
+            ? 0
+            : (dashboard.read / readingTotal) * 100
 
     return (
         <section className="route-page dashboard-page">
@@ -328,12 +336,12 @@ export function DashboardPage() {
                     />
 
                     <header className="dashboard-drawer__heading">
-                        <span
-                            className="dashboard-drawer__index"
-                            aria-hidden="true"
-                        >
-                            III
-                        </span>
+    <span
+        className="dashboard-drawer__index"
+        aria-hidden="true"
+    >
+        III
+    </span>
 
                         <h2 id="dashboard-reading-heading">
                             Reading Record
@@ -343,6 +351,45 @@ export function DashboardPage() {
                             Reading progress across the collection.
                         </p>
                     </header>
+
+                    <div
+                        className="dashboard-reading-chart"
+                        aria-label={`${percentageRead.toFixed(1)}% of the collection has been read`}
+                    >
+                        <div
+                            className="dashboard-reading-chart__pie"
+                            style={{
+                                '--percentage-read': `${percentageRead}%`,
+                            } as CSSProperties}
+                            aria-hidden="true"
+                        >
+                            <div className="dashboard-reading-chart__center">
+                                <strong>
+                                    {percentageRead.toFixed(1)}%
+                                </strong>
+
+                                <span>read</span>
+                            </div>
+                        </div>
+
+                        <div className="dashboard-reading-chart__legend">
+                            <p>
+            <span
+                className="dashboard-reading-chart__key dashboard-reading-chart__key--read"
+                aria-hidden="true"
+            />
+                                <strong>{dashboard.read}</strong> read
+                            </p>
+
+                            <p>
+            <span
+                className="dashboard-reading-chart__key dashboard-reading-chart__key--unread"
+                aria-hidden="true"
+            />
+                                <strong>{dashboard.unread}</strong> unread
+                            </p>
+                        </div>
+                    </div>
 
                     <dl className="dashboard-metrics">
                         <div className="dashboard-metric">
