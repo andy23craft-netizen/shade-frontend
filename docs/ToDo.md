@@ -14,6 +14,3 @@
   * [ ] Complete feature ticket `docs/tickets/FEAT-20_dashboard-metrics.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-21_display-only.md`.
   * [ ] Confirm that `product-docs/PLAN.md` is fully implemented.
-* [ ] Add more functionality to the website
-  * [ ] Finish the feature tickets in the backend
-  * [ ] Run `make openapi` in the backend and update `../shade-backend/docs/API-for-FE.md`
