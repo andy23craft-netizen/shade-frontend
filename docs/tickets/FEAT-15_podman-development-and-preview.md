@@ -20,7 +20,9 @@ FEAT-14.
 - Serve client routes with an SPA fallback and appropriate preview cache behavior.
 - Add Make targets and documentation for image build, development startup, preview startup, configuration, and cleanup.
 - Add a container health/smoke check that does not require storing protected credentials in the image.
-- Document clearly that this image is a local/preview convenience and not the production deployment unit.
+- Document clearly that this image is a local/preview convenience and not the production deployment unit. Another
+  project (orchestrator / compose stack) is expected to run this image in Podman Compose alongside the backend; this
+  ticket builds and documents the frontend image only, not the multi-service Compose file.
 
 ## Acceptance criteria
 

@@ -550,6 +550,27 @@ describe('BookDetailsPage', () => {
         ).not.toBeInTheDocument()
     })
 
+    it('does not offer checkout for a display-only book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                status: 'display_only',
+                is_read: false,
+                deletion_date: null,
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('link', {
+                name: 'Check Out',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
     it('hides lifecycle actions for a soft-deleted book', () => {
         mockedUseLoans.mockReturnValue({
             data: {

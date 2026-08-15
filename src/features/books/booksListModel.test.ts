@@ -22,6 +22,7 @@ describe('booksListModel', () => {
         expect(parseSortByParam('invalid')).toBe('author')
         expect(parseSortByParam('title')).toBe('title')
         expect(parseSortByParam('creationDate')).toBe('creationDate')
+        expect(parseSortByParam('shelf')).toBe('shelf')
 
         expect(parseSortOrderParam(null)).toBe('asc')
         expect(parseSortOrderParam('invalid')).toBe('asc')
@@ -32,6 +33,7 @@ describe('booksListModel', () => {
         expect(sortByLabel('author')).toBe('Author')
         expect(sortByLabel('title')).toBe('Title')
         expect(sortByLabel('creationDate')).toBe('Date added')
+        expect(sortByLabel('shelf')).toBe('Shelf')
         expect(sortOrderLabel('asc')).toBe('Ascending')
         expect(sortOrderLabel('desc')).toBe('Descending')
     })

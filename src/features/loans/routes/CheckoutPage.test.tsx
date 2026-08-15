@@ -223,6 +223,14 @@ const deletedBook = {
     deletion_date: '2026-08-01T00:00:00Z',
 }
 
+const displayOnlyBook = {
+    id: 'book-4',
+    title: 'Display Only Atlas',
+    authors: 'Cartographer',
+    status: 'display_only',
+    deletion_date: null,
+}
+
 const VALID_ISBN_13 = '9780441172719'
 
 describe('CheckoutPage', () => {
@@ -245,6 +253,7 @@ describe('CheckoutPage', () => {
                 availableBook,
                 unavailableBook,
                 deletedBook,
+                displayOnlyBook,
             ],
         }
 
@@ -297,6 +306,12 @@ describe('CheckoutPage', () => {
         expect(
             screen.queryByRole('option', {
                 name: /Deleted Book/,
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('option', {
+                name: /Display Only Atlas/,
             }),
         ).not.toBeInTheDocument()
 
@@ -878,6 +893,84 @@ describe('CheckoutPage', () => {
         expect(
             mockRefetchBooks,
         ).toHaveBeenCalledTimes(1)
+    })
+
+    it('explains display-only deep links without offering checkout', () => {
+        renderPage(
+            '/checkout?bookId=book-4',
+        )
+
+        expect(
+            screen.getByText(
+                /is marked display only and cannot be checked out/,
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Check Out Book',
+            }),
+        ).toBeDisabled()
+    })
+
+    it('explains 412 when the book is display only and refetches', async () => {
+        renderPage('/checkout?bookId=book-1')
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Notes'),
+            {
+                target: {
+                    value: 'Keep notes',
+                },
+            },
+        )
+
+        await submitAndConfirmCheckout()
+
+        const options =
+            mockMutate.mock.calls[0][1]
+
+        await options.onError(
+            new ApiError({
+                kind: 'http',
+                status: 412,
+                message:
+                    'Book is display only',
+                detail:
+                    'Book is display only',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByText(
+                    /Book is display only/,
+                ),
+            ).toBeInTheDocument()
+        })
+
+        expect(
+            mockInvalidateQueries,
+        ).toHaveBeenCalled()
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+
+        expect(
+            screen.getByLabelText('Notes'),
+        ).toHaveValue('Keep notes')
+
+        expect(mockNavigate).not.toHaveBeenCalled()
     })
 
     it('offers a refresh path for a missing deep-linked book', () => {

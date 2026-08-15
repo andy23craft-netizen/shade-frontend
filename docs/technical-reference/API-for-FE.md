@@ -53,13 +53,18 @@ can still reach the server, but browser JS cannot read the response.
 | Status | Meaning beyond the OpenAPI label |
 | ------ | -------------------------------- |
 | `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query); |
-|        | empty/whitespace `isbn` on `GET /books`; partial or invalid `skip`/`take` on list endpoints; |
-|        | invalid `sortBy` or `sortOrder` on `GET /books` |
+|        | malformed or empty `wishlist_id` / membership `book_id` on wishlist routes; |
+|        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; partial or invalid `skip`/`take` on list endpoints; |
+|        | invalid `sortBy` or `sortOrder` on `GET /books`; invalid or blank `field` on |
+|        | `GET /dashboard/incomplete-metadata/books` |
 | `403`  | Missing or invalid Bearer token |
 | `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / second delete; |
-|        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}` |
+|        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
+|        | unknown wishlist, or unknown book when adding a wishlist membership |
 | `409`  | Restore an active book; checkout when already on loan; check-in with no active loan |
-| `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body |
+| `412`  | Checkout when the book has `status=display_only` |
+| `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body; |
+|        | unsupported wishlist membership `status` |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
 | `504`  | ISBN metadata provider timeout |
@@ -75,7 +80,8 @@ Malformed stored loan timestamps can later cause an unhandled **500** when those
 There are no WebSocket, SSE, subscription, or push endpoints. `GET /backup` is the only streaming response (a finite
 SQL attachment).
 
-List endpoints (`GET /books`, `GET /loans`) support optional offset/limit pagination. Send both `skip` and `take`
+List endpoints (`GET /books`, `GET /loans`, `GET /wishlists`, `GET /wishlists/{wishlist_id}/books`, and
+`GET /dashboard/incomplete-metadata/books`) support optional offset/limit pagination. Send both `skip` and `take`
 together, or omit both for the full filtered result set. When paginated, `total` is still the count of all rows
 matching filters (not the page size). Partial params (`skip` only or `take` only), negative `skip`, or non-positive
 `take` return **400**.
@@ -111,16 +117,31 @@ changes on successful update). Do not send `null` for DB-required fields such as
 `category`, `shelf`, `is_read`, or `status` -- that can cause an unhandled server error on commit.
 
 Books default to author ascending (`sortBy=author`, `sortOrder=asc` when omitted). Allowed `sortBy` values:
-`author`, `title`, `creationDate`. Allowed `sortOrder` values: `asc`, `desc`. Invalid values return **400**. A stable
-tie-breaker on book `id` keeps paginated pages consistent. The previous implicit title sort is no longer the default;
-pass `sortBy=title` when title order is required.
+`author`, `title`, `creationDate`, `shelf`. Shelf sorting is lexical on the stored shelf codes. Allowed `sortOrder`
+values: `asc`, `desc`. Invalid values return **400**. A stable tie-breaker on book `id` keeps paginated pages
+consistent. The previous implicit title sort is no longer the default; pass `sortBy=title` when title order is
+required.
 
 Path `{id}` accepts any string and returns **404** when no row matches.
 
-Optional `isbn` on `GET /books` filters to books whose stored `isbn13` contains the given substring (literal
-contains; the filter string is not normalized like create/lookup). Empty or whitespace-only `isbn` is **400**.
-No matches return an empty `BookList` (`items: []`, `total: 0`), not **404**. Soft-delete rules still apply unless
-`include_deleted=true`.
+Optional `isbn`, `author`, and `title` on `GET /books` support catalog lookup. `isbn` retains its existing literal
+substring match against stored `isbn13` and is not normalized like create/lookup. `author` and `title` use
+case-insensitive substring matching. Empty or whitespace-only values for any of these filters return **400**.
+
+The filters compose with each other, `category`, `include_deleted`, pagination, and sorting. When multiple filters
+are supplied, all predicates must match. No matches return an empty `BookList` (`items: []`, `total: 0`), not
+**404**. When paginated, `total` remains the count of all matching rows before pagination.
+
+For alternate-copy lookup, use the existing `isbn` filter to find copies sharing an ISBN. To look for another
+edition of the same work, use `author` and `title`; the API has no dedicated alternate-edition or work resource.
+The frontend should exclude the current book and prefer `status=available` when presenting a checkout substitute.
+
+Optional `category` on `GET /books` filters by exact `Category` enum value. This is the API surface used when the
+frontend needs to narrow the catalog by collection/category; there is no separate `collection` query parameter.
+Invalid category values are rejected by FastAPI validation with **422**. A valid category with no matches returns
+an empty `BookList` (`items: []`, `total: 0`), not **404**. The category filter composes with `isbn`, `author`,
+`title`, `include_deleted`, pagination, and sorting; when paginated, `total` remains the count of all matching rows
+before pagination.
 
 ---
 
@@ -152,8 +173,10 @@ Recommended add-book flow: FE captures ISBN → `GET /books/lookup` → editable
 **Checkout:** only `borrower` is required (1-255 chars; whitespace-only is not rejected). Omitted `checked_out_at`
 defaults to current UTC. Formats for `checked_out_at` / `due_at` / `notes` are not validated. Success sets book
 `status=on_loan` and creates a `Loan` with `returned_at=null`. Borrower and checkout timestamps live only on the
-loan row. Conflict when book `status` is `on_loan` or an active loan already exists:
-`{"detail": "Book is already checked out"}`.
+loan row. A book with `status=display_only` is rejected with **412**
+`{"detail": "Book is display only"}`; no loan is created and its status is unchanged. The frontend may use the
+`isbn` and/or `author` + `title` list filters to offer another copy or edition. Conflict when book `status` is
+`on_loan` or an active loan already exists: `{"detail": "Book is already checked out"}`.
 
 **Check-in:** body optional (`{}`, omit, or `null`). Omitted or explicit-null `returned_at` uses current UTC.
 Completes the active loan and sets book `status=available`. Conflict is based on active loan existence, not only
@@ -182,9 +205,52 @@ request. Soft-deleted or missing book → **404**.
 `checked_out_at` (chronologically latest only with consistent formatting); `average_loan_days` uses returned loans
 only (`null` when none).
 
-**Dashboard:** soft-deleted books are excluded from all counts; loan metrics use only loans tied to non-deleted books.
-Averages are `null` when there is insufficient data.
-`recent_window_days` is currently `30`. `reading.books_read` / `books_unread` match top-level `read` / `unread`.
+**Dashboard:** `GET /dashboard` remains the high-level summary used for collection, borrowing, and reading widgets.
+Soft-deleted books are excluded from all dashboard counts; loan metrics use only loans tied to non-deleted books.
+Averages are `null` when there is insufficient data. `recent_window_days` is currently `30`.
+`reading.books_read` / `books_unread` match top-level `read` / `unread`.
+
+`GET /dashboard/breakdowns` provides active-catalog totals plus counts by category, shelf, and creation year.
+`on_loan` uses active books whose stored `status` is `on_loan`, matching the summary's `checked_out` definition.
+Category and shelf buckets use their stored enum strings. Creation-year buckets are derived from `creation_date`.
+Zero-count buckets are omitted because the response is built from existing grouped rows.
+
+`GET /dashboard/incomplete-metadata` reports cleanup counts for missing category, shelf, pages, publisher,
+publication year, and ISBN. Category and shelf are missing when their stored value is `unknown`. Publisher,
+`publication_date`, and `isbn13` are missing when `null` or blank; pages are missing when `null`.
+`missing_year` refers to `publication_date`, while the breakdown's creation-year chart uses `creation_date`.
+`total_incomplete` counts distinct active books missing at least one tracked field and is not the sum of the
+individual field counts.
+
+`GET /dashboard/incomplete-metadata/books` returns the full `BookList` / `BookRead` representation for books
+missing at least one tracked field, including calculated borrow statistics. Soft-deleted books are excluded.
+Optional `field` values are `category`, `shelf`, `pages`, `publisher`, `year`, and `isbn`. Invalid or blank values
+return **400**. There is no `section` metadata field or query value. Default order is `creation_date` descending,
+then book `id` ascending. Optional `skip` / `take` pagination follows the normal paired-parameter rules, and
+`total` remains the unpaginated matching count.
+
+---
+
+# Wishlists
+
+Wishlist routes are authenticated. There is no soft-delete for wishlists. `GET /wishlists` returns wishlists newest
+first by `created_date`, then `wishlist_id`, both descending.
+
+`GET /wishlists/{wishlist_id}/books` returns membership rows, not full `BookRead` objects. Memberships reference
+existing catalog books by `book_id`. The default order is priority ascending with `null` priorities last, then
+`created_date` ascending and `wishlist_book_id` ascending.
+
+`POST /wishlists` creates a wishlist. `PATCH /wishlists/{wishlist_id}` is partial and preserves omitted fields;
+`last_updated_date` is bumped by a SQLite trigger when the handler does not set it. `DELETE /wishlists/{wishlist_id}`
+permanently deletes its membership rows before deleting the wishlist itself; catalog books are not deleted.
+
+`POST /wishlists/{wishlist_id}/books` adds an existing catalog book to a wishlist. `status` defaults to `wanted`;
+allowed values are `wanted`, `ordered`, `owned`, and `dropped` (see `WishlistBookStatus` in OpenAPI). Duplicate
+`(wishlist_id, book_id)` memberships are permitted. Soft-deleted catalog books may be referenced because existence,
+not active/deleted state, is the rule. The current API does not provide membership-level PATCH or DELETE endpoints.
+
+For path `wishlist_id` and membership `book_id`: **400** when empty or not a valid GUID; **404** when the GUID is
+well-formed but unknown.
 
 ---
 

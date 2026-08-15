@@ -77,6 +77,8 @@ Do not snapshot or upload backup blobs "for debugging."
 ## Scope
 
 - Add pull-request and default-branch CI with immutable Yarn installation.
+- Follow patterns in `../shade-backend/ci/` where they fit this frontend (workflow layout, pinning, caching, and
+  privacy-safe diagnostics), adapted to Yarn/`make check` rather than copied wholesale.
 - Run lint, type-check, unit/integration tests (including OpenAPI/fixture contract checks), production build,
   accessibility checks, and browser journeys from FEAT-13.
 - Cache dependencies/build inputs without weakening lockfile semantics.
@@ -87,7 +89,7 @@ Do not snapshot or upload backup blobs "for debugging."
 - Retain test and build diagnostics needed to investigate failures without publishing credentials or private library
   data (see denylist above).
 - Package production release artifacts from `dist/` and deployable static assets only; **never** include the repo-root
-  `.env` file in the production tarball (FEAT-16).
+  `.env` file in the production tarball (FEAT-16 owns the versioned tarball Make target and checksum/manifest).
 - Document required branch checks and whether any live-API smoke job is optional vs required.
 
 ## Acceptance criteria

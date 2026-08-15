@@ -190,6 +190,102 @@ describe('book queries', () => {
         queryClient.clear()
     })
 
+    it('passes author, title, and category filters to the books API', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        mockList.mockResolvedValueOnce(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useBooks({
+                    author: 'Le Guin',
+                    title: 'Darkness',
+                    category: 'fiction',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockList,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                author: 'Le Guin',
+                title: 'Darkness',
+                category: 'fiction',
+            }),
+        )
+
+        queryClient.clear()
+    })
+
+    it('uses distinct query keys for filtered book lists', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        mockList.mockResolvedValue(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const first = renderHook(
+            () =>
+                useBooks({
+                    author: 'Le Guin',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        const second = renderHook(
+            () =>
+                useBooks({
+                    title: 'Darkness',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                first.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                second.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            queryClient.getQueryCache().getAll(),
+        ).toHaveLength(2)
+
+        queryClient.clear()
+    })
+
     it('uses distinct query keys per page and sort', async () => {
         const books: BookList = {
             items: [],

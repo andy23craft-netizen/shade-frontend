@@ -6,6 +6,7 @@ export type BookSortBy =
     | 'author'
     | 'title'
     | 'creationDate'
+    | 'shelf'
 
 export type BookSortOrder =
     | 'asc'
@@ -18,6 +19,7 @@ const SORT_BY_VALUES: readonly BookSortBy[] = [
     'author',
     'title',
     'creationDate',
+    'shelf',
 ]
 
 const SORT_ORDER_VALUES: readonly BookSortOrder[] = [
@@ -65,6 +67,8 @@ export function sortByLabel(
             return 'Title'
         case 'creationDate':
             return 'Date added'
+        case 'shelf':
+            return 'Shelf'
     }
 }
 

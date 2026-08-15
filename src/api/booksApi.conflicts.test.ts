@@ -95,4 +95,50 @@ describe('booksApi conflict responses', () => {
             (api) => api.checkin('book-1'),
         )
     })
+
+    it('surfaces checkout 412 display-only bodies as ApiError', async () => {
+        vi.spyOn(
+            globalThis,
+            'fetch',
+        ).mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    detail:
+                        'Book is display only',
+                }),
+                {
+                    status: 412,
+                    headers: {
+                        'Content-Type':
+                            'application/json',
+                    },
+                },
+            ),
+        )
+
+        const client = createApiClient({
+            apiBaseUrl:
+                'https://api.example.test',
+            getToken: () => 'secret-token',
+        })
+
+        const api = createBooksApi(client)
+
+        await expect(
+            api.checkout('book-1', {
+                borrower: 'Pat',
+            }),
+        ).rejects.toMatchObject({
+            name: 'ApiError',
+            kind: 'http',
+            status: 412,
+            detail: 'Book is display only',
+        } satisfies Partial<ApiError>)
+
+        expect(
+            vi.mocked(fetch).mock.calls[0]?.[0],
+        ).toBe(
+            'https://api.example.test/books/book-1/checkout',
+        )
+    })
 })

@@ -41,9 +41,15 @@ const expectedPaths = [
     '/books/{id}/mark-read',
     '/books/{id}/restore',
     '/dashboard',
+    '/dashboard/breakdowns',
+    '/dashboard/incomplete-metadata',
+    '/dashboard/incomplete-metadata/books',
     '/health',
     '/loans',
     '/loans/{id}',
+    '/wishlists',
+    '/wishlists/{wishlist_id}',
+    '/wishlists/{wishlist_id}/books',
 ] as const
 
 describe('OpenAPI contract smoke', () => {
