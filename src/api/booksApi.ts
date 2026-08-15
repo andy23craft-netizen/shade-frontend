@@ -4,6 +4,7 @@ import type {
     BookLookupResponse,
     BookRead,
     BookUpdate,
+    Category,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -26,6 +27,9 @@ export interface ListBooksOptions
     extends ApiCallOptions {
     includeDeleted?: boolean
     isbn?: string
+    author?: string
+    title?: string
+    category?: Category | string
     skip?: number
     take?: number
     sortBy?: string
@@ -40,6 +44,25 @@ function withSignal(
         : {
             signal,
         }
+}
+
+/** Omit undefined / blank / whitespace-only filters (backend returns 400 for empty isbn/author/title). */
+function setOptionalStringParam(
+    params: URLSearchParams,
+    name: string,
+    value: string | undefined,
+): void {
+    if (value === undefined) {
+        return
+    }
+
+    const trimmed = value.trim()
+
+    if (trimmed === '') {
+        return
+    }
+
+    params.set(name, trimmed)
 }
 
 export function createBooksApi(
@@ -63,15 +86,26 @@ export function createBooksApi(
                 )
             }
 
-            if (
-                options.isbn !== undefined &&
-                options.isbn !== ''
-            ) {
-                params.set(
-                    'isbn',
-                    options.isbn,
-                )
-            }
+            setOptionalStringParam(
+                params,
+                'isbn',
+                options.isbn,
+            )
+            setOptionalStringParam(
+                params,
+                'author',
+                options.author,
+            )
+            setOptionalStringParam(
+                params,
+                'title',
+                options.title,
+            )
+            setOptionalStringParam(
+                params,
+                'category',
+                options.category,
+            )
 
             if (options.skip !== undefined) {
                 params.set(

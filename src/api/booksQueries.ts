@@ -91,6 +91,9 @@ export function useBooks(
     options: {
         includeDeleted?: boolean
         isbn?: string
+        author?: string
+        title?: string
+        category?: string
         skip?: number
         take?: number
         sortBy?: string
@@ -108,6 +111,9 @@ export function useBooks(
     const includeDeleted =
         options.includeDeleted ?? false
     const isbn = options.isbn
+    const author = options.author
+    const title = options.title
+    const category = options.category
     const skip = options.skip
     const take = options.take
     const sortBy = options.sortBy
@@ -118,6 +124,9 @@ export function useBooks(
         queryKey: queryKeys.books.list({
             includeDeleted,
             isbn,
+            author,
+            title,
+            category,
             skip,
             take,
             sortBy,
@@ -129,6 +138,9 @@ export function useBooks(
             booksApi.list({
                 includeDeleted,
                 isbn,
+                author,
+                title,
+                category,
                 skip,
                 take,
                 sortBy,
@@ -143,6 +155,9 @@ export function useInfiniteBooks(
     options: {
         includeDeleted?: boolean
         isbn?: string
+        author?: string
+        title?: string
+        category?: string
         sortBy?: string
         sortOrder?: string
         enabled?: boolean
@@ -158,6 +173,9 @@ export function useInfiniteBooks(
     const includeDeleted =
         options.includeDeleted ?? false
     const isbn = options.isbn
+    const author = options.author
+    const title = options.title
+    const category = options.category
     const sortBy = options.sortBy
     const sortOrder = options.sortOrder
     const enabled = options.enabled ?? true
@@ -166,6 +184,9 @@ export function useInfiniteBooks(
         queryKey: queryKeys.books.infiniteList({
             includeDeleted,
             isbn,
+            author,
+            title,
+            category,
             sortBy,
             sortOrder,
             take: INFINITE_SCROLL_BATCH_SIZE,
@@ -178,6 +199,9 @@ export function useInfiniteBooks(
             booksApi.list({
                 includeDeleted,
                 isbn,
+                author,
+                title,
+                category,
                 skip: pageParam,
                 take: INFINITE_SCROLL_BATCH_SIZE,
                 sortBy,

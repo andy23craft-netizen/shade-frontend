@@ -305,6 +305,47 @@ describe('BooksPage', () => {
         })
     })
 
+    it('honors URL search params for shelf sort', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 237,
+                    items: Array.from(
+                        {
+                            length: 30,
+                        },
+                        (_, index) =>
+                            makeBook({
+                                id: `book-${index}`,
+                                title: `Book ${index}`,
+                            }),
+                    ),
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?sortBy=shelf&sortOrder=asc',
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith({
+            sortBy: 'shelf',
+            sortOrder: 'asc',
+        })
+
+        expect(
+            screen.getByLabelText('Sort by'),
+        ).toHaveValue('shelf')
+
+        expect(
+            screen.getByRole('option', {
+                name: 'Shelf',
+            }),
+        ).toBeInTheDocument()
+    })
+
     it('issues a fresh first batch when sort field changes', () => {
         mockUseInfiniteBooks.mockReturnValue(
             makeInfiniteBooksResult([

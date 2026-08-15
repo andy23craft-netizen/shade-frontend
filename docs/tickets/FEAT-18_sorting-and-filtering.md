@@ -9,13 +9,11 @@ client-side dump of the library.
 
 ## Dependencies
 
-FEAT-04 collection browse, infinite scroll, and URL-backed sort controls are complete. Prefer landing
-`docs/tickets/FEAT-10_update-api.md` first when that ticket is still open: it already specifies `booksApi.list`
-`author` / `title` / `category` query wiring, query-key isolation, and `sortBy=shelf` in `booksListModel` /
-`BooksListControls`, while explicitly deferring category filter **UI** to a later ticket (this one).
+FEAT-04 collection browse, infinite scroll, and URL-backed sort controls are complete. FEAT-10 API contract sync
+already shipped `booksApi.list` `author` / `title` / `category` query wiring, query-key isolation, and
+`sortBy=shelf` in `booksListModel` / `BooksListControls`, while deferring category filter **UI** to this ticket.
 
-If FEAT-10 has not yet shipped those API and sort-model pieces, implement them here as prerequisites rather than
-blocking. Do not pull wishlists, dashboard reports, FEAT-12 hardening, journey automation, CI, Podman, release
+Do not pull wishlists, dashboard reports, FEAT-12 hardening, journey automation, CI, Podman, release
 artifacts, or FEAT-17 About/homepage routing into FEAT-18.
 
 ## Contract references

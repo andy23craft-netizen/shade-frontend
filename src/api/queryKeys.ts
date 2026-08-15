@@ -1,3 +1,17 @@
+function nonEmptyFilter(
+    value: string | undefined,
+): string | undefined {
+    if (value === undefined) {
+        return undefined
+    }
+
+    const trimmed = value.trim()
+
+    return trimmed === ''
+        ? undefined
+        : trimmed
+}
+
 export const queryKeys = {
     books: {
         all: ['books'] as const,
@@ -6,6 +20,9 @@ export const queryKeys = {
             options: {
                 includeDeleted?: boolean
                 isbn?: string
+                author?: string
+                title?: string
+                category?: string
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -13,15 +30,25 @@ export const queryKeys = {
         ) => {
             const includeDeleted =
                 options.includeDeleted ?? false
-            const isbn =
-                options.isbn !== undefined &&
-                options.isbn !== ''
-                    ? options.isbn
-                    : undefined
+            const isbn = nonEmptyFilter(
+                options.isbn,
+            )
+            const author = nonEmptyFilter(
+                options.author,
+            )
+            const title = nonEmptyFilter(
+                options.title,
+            )
+            const category = nonEmptyFilter(
+                options.category,
+            )
 
             const key: {
                 includeDeleted: boolean
                 isbn?: string
+                author?: string
+                title?: string
+                category?: string
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -34,6 +61,18 @@ export const queryKeys = {
 
             if (isbn !== undefined) {
                 key.isbn = isbn
+            }
+
+            if (author !== undefined) {
+                key.author = author
+            }
+
+            if (title !== undefined) {
+                key.title = title
+            }
+
+            if (category !== undefined) {
+                key.category = category
             }
 
             if (options.sortBy !== undefined) {
@@ -54,6 +93,9 @@ export const queryKeys = {
             options: {
                 includeDeleted?: boolean
                 isbn?: string
+                author?: string
+                title?: string
+                category?: string
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -62,15 +104,25 @@ export const queryKeys = {
         ) => {
             const includeDeleted =
                 options.includeDeleted ?? false
-            const isbn =
-                options.isbn !== undefined &&
-                options.isbn !== ''
-                    ? options.isbn
-                    : undefined
+            const isbn = nonEmptyFilter(
+                options.isbn,
+            )
+            const author = nonEmptyFilter(
+                options.author,
+            )
+            const title = nonEmptyFilter(
+                options.title,
+            )
+            const category = nonEmptyFilter(
+                options.category,
+            )
 
             const key: {
                 includeDeleted: boolean
                 isbn?: string
+                author?: string
+                title?: string
+                category?: string
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -81,6 +133,18 @@ export const queryKeys = {
 
             if (isbn !== undefined) {
                 key.isbn = isbn
+            }
+
+            if (author !== undefined) {
+                key.author = author
+            }
+
+            if (title !== undefined) {
+                key.title = title
+            }
+
+            if (category !== undefined) {
+                key.category = category
             }
 
             if (options.skip !== undefined) {

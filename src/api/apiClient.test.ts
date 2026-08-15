@@ -256,6 +256,53 @@ describe('createApiClient', () => {
     )
 
     it(
+        'maps 412 to an HTTP error with detail preserved',
+        async () => {
+            vi.spyOn(
+                globalThis,
+                'fetch',
+            ).mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        detail:
+                            'Book is display only',
+                    }),
+                    {
+                        status: 412,
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+                        },
+                    },
+                ),
+            )
+
+            const client =
+                createApiClient({
+                    apiBaseUrl:
+                        'https://api.example.test',
+                })
+
+            await expect(
+                client.requestJson(
+                    '/books/1/checkout',
+                    {
+                        method: 'POST',
+                        body: {
+                            borrower: 'Pat',
+                        },
+                    },
+                ),
+            ).rejects.toMatchObject({
+                kind: 'http',
+                status: 412,
+                detail:
+                    'Book is display only',
+            })
+        },
+    )
+
+    it(
         'maps 422 string detail to a validation error',
         async () => {
             vi.spyOn(

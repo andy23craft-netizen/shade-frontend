@@ -12,6 +12,7 @@ const SORT_BY_OPTIONS: readonly BookSortBy[] = [
     'author',
     'title',
     'creationDate',
+    'shelf',
 ]
 
 const SORT_ORDER_OPTIONS: readonly BookSortOrder[] = [

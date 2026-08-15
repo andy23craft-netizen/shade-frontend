@@ -69,6 +69,9 @@ const FIELD_IDS: Record<
 const CONFLICT_MESSAGE =
     'Book is already checked out'
 
+const DISPLAY_ONLY_DETAIL =
+    'Book is display only'
+
 const IsbnCameraScanner = lazy(
     () =>
         import('../../scanning/IsbnCameraScanner').then(
@@ -461,6 +464,21 @@ export function CheckoutPage() {
 
         if (
             isApiError(error) &&
+            error.status === 412
+        ) {
+            await refetchStaleLoanState(bookId)
+            const detail =
+                error.detail ??
+                error.message ??
+                DISPLAY_ONLY_DETAIL
+            setFormError(
+                `${detail}. Eligible books and loans were refreshed; your borrower and optional fields were kept. Use Find by ISBN if another copy is available.`,
+            )
+            return
+        }
+
+        if (
+            isApiError(error) &&
             error.status === 404
         ) {
             await refetchStaleLoanState(bookId)
@@ -577,13 +595,26 @@ export function CheckoutPage() {
                     variant="warning"
                     title="Book is no longer available"
                 >
-                    <p>
-                        {selectedBook.title} cannot be checked
-                        out because its current status is{' '}
-                        {selectedBook.status}.
-                        Please select another book or refresh
-                        the eligible list.
-                    </p>
+                    {selectedBook.status ===
+                    'display_only' ? (
+                        <p>
+                            {selectedBook.title} is marked
+                            display only and cannot be
+                            checked out. Use Find by ISBN if
+                            another copy or edition is in the
+                            library, or select a different
+                            book.
+                        </p>
+                    ) : (
+                        <p>
+                            {selectedBook.title} cannot be
+                            checked out because its current
+                            status is{' '}
+                            {selectedBook.status}.
+                            Please select another book or
+                            refresh the eligible list.
+                        </p>
+                    )}
                     <Button
                         type="button"
                         variant="secondary"

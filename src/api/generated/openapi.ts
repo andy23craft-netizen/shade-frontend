@@ -160,6 +160,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dashboard/breakdowns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Breakdowns */
+        get: operations["get_dashboard_breakdowns_dashboard_breakdowns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/incomplete-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Incomplete Metadata */
+        get: operations["get_dashboard_incomplete_metadata_dashboard_incomplete_metadata_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/incomplete-metadata/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Incomplete Metadata Books */
+        get: operations["list_incomplete_metadata_books_dashboard_incomplete_metadata_books_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -208,6 +259,60 @@ export interface paths {
         get: operations["get_loan_loans__id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/wishlists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Wishlists */
+        get: operations["list_wishlists_wishlists_get"];
+        put?: never;
+        /** Create Wishlist */
+        post: operations["create_wishlist_wishlists_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/wishlists/{wishlist_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Wishlist */
+        delete: operations["delete_wishlist_wishlists__wishlist_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Wishlist */
+        patch: operations["update_wishlist_wishlists__wishlist_id__patch"];
+        trace?: never;
+    };
+    "/wishlists/{wishlist_id}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Wishlist Books */
+        get: operations["list_wishlist_books_wishlists__wishlist_id__books_get"];
+        put?: never;
+        /** Add Wishlist Book */
+        post: operations["add_wishlist_book_wishlists__wishlist_id__books_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -410,6 +515,43 @@ export interface components {
             /** Lifetime Loans */
             lifetime_loans: number;
         };
+        /** DashboardBreakdowns */
+        DashboardBreakdowns: {
+            /** By Category */
+            by_category: components["schemas"]["DashboardCountBucket"][];
+            /** By Creation Year */
+            by_creation_year: components["schemas"]["DashboardCountBucket"][];
+            /** By Shelf */
+            by_shelf: components["schemas"]["DashboardCountBucket"][];
+            /** On Loan */
+            on_loan: number;
+            /** Total Books */
+            total_books: number;
+        };
+        /** DashboardCountBucket */
+        DashboardCountBucket: {
+            /** Count */
+            count: number;
+            /** Key */
+            key: string;
+        };
+        /** DashboardIncompleteMetadata */
+        DashboardIncompleteMetadata: {
+            /** Missing Category */
+            missing_category: number;
+            /** Missing Isbn */
+            missing_isbn: number;
+            /** Missing Pages */
+            missing_pages: number;
+            /** Missing Publisher */
+            missing_publisher: number;
+            /** Missing Shelf */
+            missing_shelf: number;
+            /** Missing Year */
+            missing_year: number;
+            /** Total Incomplete */
+            total_incomplete: number;
+        };
         /** DashboardReading */
         DashboardReading: {
             /** Average Rating */
@@ -517,6 +659,83 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WishlistBookCreate */
+        WishlistBookCreate: {
+            /** Book Id */
+            book_id: string;
+            /** Notes */
+            notes?: string | null;
+            /** Priority */
+            priority?: number | null;
+            /** @default wanted */
+            status: components["schemas"]["WishlistBookStatus"];
+            /** Url */
+            url?: string | null;
+        };
+        /** WishlistBookList */
+        WishlistBookList: {
+            /** Items */
+            items: components["schemas"]["WishlistBookRead"][];
+            /** Total */
+            total: number;
+        };
+        /** WishlistBookRead */
+        WishlistBookRead: {
+            /** Book Id */
+            book_id: string;
+            /** Created Date */
+            created_date: string;
+            /** Notes */
+            notes?: string | null;
+            /** Priority */
+            priority?: number | null;
+            status: components["schemas"]["WishlistBookStatus"];
+            /** Url */
+            url?: string | null;
+            /** Wishlist Book Id */
+            wishlist_book_id: string;
+            /** Wishlist Id */
+            wishlist_id: string;
+        };
+        /**
+         * WishlistBookStatus
+         * @enum {string}
+         */
+        WishlistBookStatus: "wanted" | "ordered" | "owned" | "dropped";
+        /** WishlistCreate */
+        WishlistCreate: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+        };
+        /** WishlistList */
+        WishlistList: {
+            /** Items */
+            items: components["schemas"]["WishlistRead"][];
+            /** Total */
+            total: number;
+        };
+        /** WishlistRead */
+        WishlistRead: {
+            /** Created Date */
+            created_date: string;
+            /** Description */
+            description?: string | null;
+            /** Last Updated Date */
+            last_updated_date: string;
+            /** Name */
+            name: string;
+            /** Wishlist Id */
+            wishlist_id: string;
+        };
+        /** WishlistUpdate */
+        WishlistUpdate: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -571,6 +790,9 @@ export interface operations {
             query?: {
                 include_deleted?: boolean;
                 isbn?: string | null;
+                author?: string | null;
+                title?: string | null;
+                category?: components["schemas"]["Category"] | null;
                 skip?: number | null;
                 take?: number | null;
                 sortBy?: string | null;
@@ -982,6 +1204,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Precondition failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1133,6 +1364,115 @@ export interface operations {
             };
         };
     };
+    get_dashboard_breakdowns_dashboard_breakdowns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardBreakdowns"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_dashboard_incomplete_metadata_dashboard_incomplete_metadata_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardIncompleteMetadata"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    list_incomplete_metadata_books_dashboard_incomplete_metadata_books_get: {
+        parameters: {
+            query?: {
+                field?: string | null;
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -1231,6 +1571,339 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LoanRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_wishlists_wishlists_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_wishlist_wishlists_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_wishlist_wishlists__wishlist_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wishlist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_wishlist_wishlists__wishlist_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wishlist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_wishlist_books_wishlists__wishlist_id__books_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: never;
+            path: {
+                wishlist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistBookList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_wishlist_book_wishlists__wishlist_id__books_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wishlist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistBookCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistBookRead"];
                 };
             };
             /** @description Malformed or missing identifier */

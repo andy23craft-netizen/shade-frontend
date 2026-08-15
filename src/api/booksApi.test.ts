@@ -150,6 +150,104 @@ describe('createBooksApi', () => {
         ).toHaveBeenCalledWith('/books')
     })
 
+    it('omits isbn when isbn is whitespace-only', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isbn: '   ',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith('/books')
+    })
+
+    it('lists books filtered by author, title, and category', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            author: 'Le Guin',
+            title: 'Darkness',
+            category: 'fiction',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?author=Le+Guin&title=Darkness&category=fiction',
+        )
+    })
+
+    it('omits blank and whitespace author, title, and category filters', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            author: '  ',
+            title: '',
+            category: '\t',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith('/books')
+    })
+
+    it('trims author, title, and category before sending', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            author: '  Le Guin  ',
+            title: ' Darkness ',
+            category: ' fiction ',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?author=Le+Guin&title=Darkness&category=fiction',
+        )
+    })
+
     it('combines isbn and includeDeleted query params', async () => {
         const books: BookList = {
             items: [],
@@ -250,6 +348,37 @@ describe('createBooksApi', () => {
             client.getJson,
         ).toHaveBeenCalledWith(
             '/books?isbn=9780441&skip=50&take=50&sortBy=author&sortOrder=asc',
+        )
+    })
+
+    it('combines author, title, category, isbn, pagination, and sort', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isbn: '9780441',
+            author: 'Le Guin',
+            title: 'Darkness',
+            category: 'fiction',
+            skip: 0,
+            take: 30,
+            sortBy: 'shelf',
+            sortOrder: 'asc',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?isbn=9780441&author=Le+Guin&title=Darkness&category=fiction&skip=0&take=30&sortBy=shelf&sortOrder=asc',
         )
     })
 
