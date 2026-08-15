@@ -1112,3 +1112,264 @@
   }
 }
 
+/*
+ * Shared circulation-card treatment.
+ *
+ * Used by checkout, check-in, and loan records so all lending
+ * surfaces resemble physical cards from a library circulation
+ * system.
+ */
+.circulation-page {
+  gap: var(--space-6);
+}
+
+.circulation-card {
+  position: relative;
+  display: grid;
+  gap: var(--space-6);
+  padding:
+          var(--space-10)
+          var(--space-6)
+          var(--space-10);
+
+  border: 1px solid rgb(111 83 53 / 70%);
+  border-radius: 0.15rem;
+
+
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(87 62 39 / 2%) 0,
+                  rgb(87 62 39 / 2%) 1px,
+                  transparent 1px,
+                  transparent 4px
+          ),
+          repeating-linear-gradient(
+                  90deg,
+                  rgb(255 255 255 / 5%) 0,
+                  rgb(255 255 255 / 5%) 1px,
+                  transparent 1px,
+                  transparent 7px
+          ),
+          radial-gradient(
+                  circle at 18% 12%,
+                  rgb(255 255 255 / 38%),
+                  transparent 34%
+          ),
+          radial-gradient(
+                  circle at 80% 78%,
+                  rgb(120 82 47 / 6%),
+                  transparent 42%
+          ),
+          var(--color-card);
+
+  box-shadow:
+          0 0.2rem 0 rgb(92 61 36 / 30%),
+          0 0.6rem 1.1rem rgb(10 8 6 / 18%),
+          inset 0 0 2.5rem rgb(104 71 41 / 5%);
+
+  color: var(--color-surface-text);
+
+  box-sizing: border-box;
+}
+
+/*
+ * Printed writing area inside the circulation card.
+ *
+ * The card itself remains broad, but fields and text sit inward
+ * from the physical paper edges like a real library form.
+ */
+.circulation-card > :not(.circulation-card__heading) {
+  margin-inline:
+          clamp(var(--space-4), 4vw, var(--space-8));
+}
+
+/*
+ * Slightly imperfect inner border gives the card a printed,
+ * handled-object quality rather than a modern UI-panel look.
+ */
+.circulation-card::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+
+  inset: 0.45rem;
+
+  border:
+          1px solid
+          rgb(113 84 52 / 22%);
+}
+
+/*
+ * Heavy rule along the top, like the printed heading line on
+ * an old circulation card.
+ */
+.circulation-card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+
+  top: 0;
+  right: 0;
+  left: 0;
+
+  height: 0.28rem;
+
+  background:
+          linear-gradient(
+                  90deg,
+                  var(--color-wood-dark),
+                  var(--color-wood),
+                  var(--color-wood-dark)
+          );
+
+  opacity: 0.9;
+}
+
+.circulation-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-inline:
+          clamp(var(--space-4), 4vw, var(--space-8));
+  padding-bottom: var(--space-5);
+
+  border-bottom:
+          2px solid
+          rgb(113 84 52 / 40%);
+}
+
+.circulation-card__heading > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.circulation-card__heading h2 {
+  margin: 0;
+
+  color: var(--color-wood-dark);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-h2);
+  letter-spacing: 0.025em;
+}
+
+.circulation-card__heading p {
+  margin: 0;
+}
+
+.circulation-card__eyebrow {
+  color: var(--color-wood) !important;
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.circulation-card__number {
+  color: var(--color-surface-text-muted);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/*
+ * Form labels should read like the pre-printed field names on
+ * a physical library card.
+ */
+.circulation-card .field > label,
+.circulation-card .field__label {
+  color: var(--color-wood-dark);
+
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+/*
+ * Inputs remain unmistakably editable, but lose some of the
+ * generic web-form appearance.
+ */
+.circulation-card input,
+.circulation-card select,
+.circulation-card textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  border-color: rgb(113 84 52 / 48%);
+
+  background:
+          rgb(255 252 239 / 58%);
+
+  color: var(--color-surface-text);
+
+  box-shadow:
+          inset 0 1px 0 rgb(77 50 29 / 7%);
+}
+
+.circulation-card .field {
+  min-width: 0;
+}
+
+.circulation-card input:focus,
+.circulation-card select:focus,
+.circulation-card textarea:focus {
+  border-color: var(--color-brass);
+
+  outline-color: var(--color-brass);
+}
+
+.circulation-card textarea {
+  min-height: 7rem;
+
+  background:
+          repeating-linear-gradient(
+                  180deg,
+                  transparent 0,
+                  transparent 1.65rem,
+                  rgb(113 84 52 / 15%) 1.65rem,
+                  rgb(113 84 52 / 15%) calc(1.65rem + 1px)
+          ),
+          rgb(255 252 239 / 58%);
+
+  line-height: 1.65rem;
+}
+
+/*
+ * Bottom action area behaves like the final ruled section of
+ * the physical card.
+ */
+.circulation-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+
+  padding-top: var(--space-5);
+
+  border-top:
+          1px solid
+          rgb(113 84 52 / 30%);
+}
+
+@media (min-width: 40rem) {
+  .circulation-card__heading {
+    flex-direction: row;
+    align-items: end;
+    justify-content: space-between;
+  }
+
+  .circulation-card__number {
+    text-align: right;
+  }
+}
+
+

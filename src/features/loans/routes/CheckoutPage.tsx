@@ -573,7 +573,7 @@ export function CheckoutPage() {
     const trimmedBorrower = values.borrower.trim()
 
     return (
-        <section className="route-page">
+        <section className="route-page circulation-page">
             <AppLink
                 to="/books"
                 variant="secondary"
@@ -793,7 +793,26 @@ export function CheckoutPage() {
                 ) : null}
             </section>
 
-            <form onSubmit={handleSubmit} noValidate>
+            <form
+                className="circulation-card"
+                onSubmit={handleSubmit}
+                noValidate
+            >
+
+                <header className="circulation-card__heading">
+                    <div>
+                        <p className="circulation-card__eyebrow">
+                            Shade Library
+                        </p>
+
+                        <h2>Borrower's Card</h2>
+                    </div>
+
+                    <p className="circulation-card__number">
+                        Circulation Record
+                    </p>
+                </header>
+
                 {hasSummary ? (
                     <div
                         ref={summaryRef}
@@ -945,7 +964,7 @@ export function CheckoutPage() {
                     />
                 </Field>
 
-                <div>
+                <div className="circulation-card__actions">
                     <Button
                         type="submit"
                         variant="primary"
