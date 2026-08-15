@@ -163,32 +163,38 @@ export function DashboardPage() {
                 </div>
             ) : null}
 
-            <div className="dashboard-sections">
+            <div className="dashboard-drawer-bank">
                 <section
-                    className="dashboard-section"
+                    className="dashboard-drawer"
                     aria-labelledby="dashboard-collection-heading"
                 >
-                    <div className="dashboard-section__heading">
-                        <p className="dashboard-section__index">
+                    <div
+                        className="dashboard-drawer__clip"
+                        aria-hidden="true"
+                    />
+
+                    <header className="dashboard-drawer__heading">
+                        <span
+                            className="dashboard-drawer__index"
+                            aria-hidden="true"
+                        >
                             I
+                        </span>
+
+                        <h2 id="dashboard-collection-heading">
+                            Collection
+                        </h2>
+
+                        <p>
+                            The books currently held in the library.
                         </p>
-
-                        <div>
-                            <h2 id="dashboard-collection-heading">
-                                Collection
-                            </h2>
-
-                            <p>
-                                The books currently held in the
-                                library.
-                            </p>
-                        </div>
-                    </div>
+                    </header>
 
                     <dl className="dashboard-metrics">
                         <div className="dashboard-metric">
                             <dt>Total Books</dt>
                             <dd>{dashboard.total_books}</dd>
+
                             <p>
                                 <AppLink to="/books">
                                     Browse collection
@@ -199,6 +205,7 @@ export function DashboardPage() {
                         <div className="dashboard-metric">
                             <dt>Checked Out Books</dt>
                             <dd>{dashboard.checked_out}</dd>
+
                             <p>
                                 Books whose current catalog status
                                 is on loan.
@@ -211,44 +218,59 @@ export function DashboardPage() {
                                 {dashboard.recent_window_days}{' '}
                                 days
                             </dt>
+
                             <dd>{dashboard.recently_added}</dd>
+
                             <p>
                                 Recent additions reported by the
                                 library.
                             </p>
                         </div>
                     </dl>
+
+                    <div
+                        className="dashboard-drawer__pull"
+                        aria-hidden="true"
+                    />
                 </section>
 
                 <section
-                    className="dashboard-section"
+                    className="dashboard-drawer"
                     aria-labelledby="dashboard-circulation-heading"
                 >
-                    <div className="dashboard-section__heading">
-                        <p className="dashboard-section__index">
+                    <div
+                        className="dashboard-drawer__clip"
+                        aria-hidden="true"
+                    />
+
+                    <header className="dashboard-drawer__heading">
+                        <span
+                            className="dashboard-drawer__index"
+                            aria-hidden="true"
+                        >
                             II
+                        </span>
+
+                        <h2 id="dashboard-circulation-heading">
+                            Circulation
+                        </h2>
+
+                        <p>
+                            The lending record of the library.
                         </p>
-
-                        <div>
-                            <h2 id="dashboard-circulation-heading">
-                                Circulation
-                            </h2>
-
-                            <p>
-                                The lending record of the library.
-                            </p>
-                        </div>
-                    </div>
+                    </header>
 
                     <dl className="dashboard-metrics">
                         <div className="dashboard-metric">
                             <dt>Active Loan Records</dt>
+
                             <dd>
                                 {
                                     dashboard.borrowing
                                         .active_loans
                                 }
                             </dd>
+
                             <p>
                                 Open borrowing records, kept
                                 distinct from book status.
@@ -257,12 +279,14 @@ export function DashboardPage() {
 
                         <div className="dashboard-metric">
                             <dt>Lifetime Loans</dt>
+
                             <dd>
                                 {
                                     dashboard.borrowing
                                         .lifetime_loans
                                 }
                             </dd>
+
                             <p>
                                 <AppLink to="/loans">
                                     View loan history
@@ -272,6 +296,7 @@ export function DashboardPage() {
 
                         <div className="dashboard-metric">
                             <dt>Average Loan Length</dt>
+
                             <dd>
                                 {displayAverage(
                                     dashboard.borrowing
@@ -279,48 +304,60 @@ export function DashboardPage() {
                                     ' days',
                                 )}
                             </dd>
+
                             <p>
                                 Based on returned loans recorded
                                 by the library.
                             </p>
                         </div>
                     </dl>
+
+                    <div
+                        className="dashboard-drawer__pull"
+                        aria-hidden="true"
+                    />
                 </section>
 
                 <section
-                    className="dashboard-section"
+                    className="dashboard-drawer"
                     aria-labelledby="dashboard-reading-heading"
                 >
-                    <div className="dashboard-section__heading">
-                        <p className="dashboard-section__index">
+                    <div
+                        className="dashboard-drawer__clip"
+                        aria-hidden="true"
+                    />
+
+                    <header className="dashboard-drawer__heading">
+                        <span
+                            className="dashboard-drawer__index"
+                            aria-hidden="true"
+                        >
                             III
+                        </span>
+
+                        <h2 id="dashboard-reading-heading">
+                            Reading Record
+                        </h2>
+
+                        <p>
+                            Reading progress across the collection.
                         </p>
-
-                        <div>
-                            <h2 id="dashboard-reading-heading">
-                                Reading Record
-                            </h2>
-
-                            <p>
-                                Reading progress across the
-                                collection.
-                            </p>
-                        </div>
-                    </div>
+                    </header>
 
                     <dl className="dashboard-metrics">
                         <div className="dashboard-metric">
                             <dt>Books Read</dt>
                             <dd>{dashboard.read}</dd>
+
                             <p>
-                                Books marked as read in the
-                                catalog.
+                                Books marked as read in the catalog.
                             </p>
                         </div>
 
                         <div className="dashboard-metric">
                             <dt>Books Unread</dt>
                             <dd>{dashboard.unread}</dd>
+
                             <p>
                                 Books not yet marked as read.
                             </p>
@@ -328,6 +365,7 @@ export function DashboardPage() {
 
                         <div className="dashboard-metric">
                             <dt>Average Rating</dt>
+
                             <dd>
                                 {displayAverage(
                                     dashboard.reading
@@ -335,12 +373,18 @@ export function DashboardPage() {
                                     ' / 5',
                                 )}
                             </dd>
+
                             <p>
                                 Based only on books with a
                                 recorded rating.
                             </p>
                         </div>
                     </dl>
+
+                    <div
+                        className="dashboard-drawer__pull"
+                        aria-hidden="true"
+                    />
                 </section>
             </div>
         </section>
