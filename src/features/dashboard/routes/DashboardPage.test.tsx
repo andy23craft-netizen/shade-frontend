@@ -134,15 +134,15 @@ describe('DashboardPage', () => {
             screen.getByText('Books Read'),
         ).toBeInTheDocument()
         expect(
-            screen.getByText('318'),
-        ).toBeInTheDocument()
+            screen.getByText('Books Read').closest('.dashboard-metric'),
+        ).toHaveTextContent('318')
 
         expect(
             screen.getByText('Books Unread'),
         ).toBeInTheDocument()
         expect(
-            screen.getByText('224'),
-        ).toBeInTheDocument()
+            screen.getByText('Books Unread').closest('.dashboard-metric'),
+        ).toHaveTextContent('224')
 
         expect(
             screen.getByText('4.2 / 5'),
@@ -202,8 +202,34 @@ describe('DashboardPage', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getAllByText('0'),
-        ).toHaveLength(7)
+            screen.getByText('Total Books').closest('.dashboard-metric'),
+        ).toHaveTextContent('0')
+
+        expect(
+            screen.getByText('Checked Out Books').closest('.dashboard-metric'),
+        ).toHaveTextContent('0')
+
+        expect(
+            screen.getByText(
+                'Added in the last 30 days',
+            ).closest('.dashboard-metric'),
+        ).toHaveTextContent('0')
+
+        expect(
+            screen.getByText('Active Loan Records').closest('.dashboard-metric'),
+        ).toHaveTextContent('0')
+
+        expect(
+            screen.getByText('Lifetime Loans').closest('.dashboard-metric'),
+        ).toHaveTextContent('0')
+
+        expect(
+            screen.getByText('Books Read').closest('.dashboard-metric'),
+        ).toHaveTextContent('0')
+
+        expect(
+            screen.getByText('Books Unread').closest('.dashboard-metric'),
+        ).toHaveTextContent('0')
 
         expect(
             screen.queryByText(
@@ -305,12 +331,12 @@ describe('DashboardPage', () => {
         )
 
         expect(
-            screen.getByText('318'),
-        ).toBeInTheDocument()
+            screen.getByText('Books Read').closest('.dashboard-metric'),
+        ).toHaveTextContent('318')
 
         expect(
-            screen.getByText('224'),
-        ).toBeInTheDocument()
+            screen.getByText('Books Unread').closest('.dashboard-metric'),
+        ).toHaveTextContent('224')
 
         expect(
             screen.queryByText('999'),
