@@ -13,14 +13,12 @@ Record summary sections from `GET /dashboard`.
 
 ## Dependencies
 
-FEAT-11 dashboard summary UI is complete (`DashboardPage` + `useDashboard` / `dashboardApi.get`). Prefer landing
-`docs/tickets/FEAT-10_update-api.md` first when that ticket is still open: it regenerates OpenAPI types (including
-dashboard report schemas/paths) and updates `scripts/contractSmoke.test.ts`, while explicitly leaving dashboard-report
-product UI to this ticket.
+FEAT-11 dashboard summary UI is complete (`DashboardPage` + `useDashboard` / `dashboardApi.get`). FEAT-10 API contract
+sync already regenerated OpenAPI types and `scripts/contractSmoke.test.ts` for the three dashboard-report paths and
+schemas; this ticket owns the typed helpers, query hooks, and product UI only.
 
-If FEAT-10 has not yet regenerated types or contract smoke, regenerate and extend smoke here as a prerequisite rather
-than blocking. Reuse FEAT-03 typed client, query keys, PLAN.md 7.5 invalidation, shared components, and existing
-dashboard layout/CSS. Do not invent a second metrics transport or recalculate aggregates from `GET /books`.
+Reuse FEAT-03 typed client, query keys, PLAN.md 7.5 invalidation, shared components, and existing dashboard layout/CSS.
+Do not invent a second metrics transport or recalculate aggregates from `GET /books`.
 
 Do not pull FEAT-12 hardening, FEAT-13 journey automation, FEAT-14 CI, FEAT-15 Podman, FEAT-16 release artifacts,
 FEAT-17 About/homepage routing, FEAT-18 collection filters, or FEAT-19 wishlists into this ticket.
@@ -69,10 +67,12 @@ Already in place and should be reused (not rebuilt):
   `src/styles/components.css`.
 - `queryKeys.dashboard.all` is `['dashboard']`; book lifecycle mutations invalidate that key (React Query prefix
   matching will also cover nested dashboard keys if they stay under `['dashboard', ...]`).
-- `apiTypes` exports `DashboardSummary` / borrowing / reading aliases only -- no breakdown or incomplete-metadata
-  aliases unless FEAT-10 already added them.
-- Generated OpenAPI / contract smoke may already include the three report paths after FEAT-10; verify before editing.
-  `dashboardApi` still exposes only `get()`.
+- Generated OpenAPI (`src/api/generated/openapi.ts`) and `scripts/contractSmoke.test.ts` already include
+  `/dashboard/breakdowns`, `/dashboard/incomplete-metadata`, and `/dashboard/incomplete-metadata/books` plus
+  `DashboardBreakdowns` / `DashboardCountBucket` / `DashboardIncompleteMetadata` schemas (FEAT-10).
+- `apiTypes` still exports only `DashboardSummary` / borrowing / reading aliases -- no breakdown or
+  incomplete-metadata aliases yet.
+- `dashboardApi` still exposes only `get()`; `dashboardQueries` only `useDashboard`.
 - Shared UI: `Alert`, `AppLink`, `Button`, `EmptyState`, `LoadingState`, `QueryErrorState`, `enumDisplayValue` for
   unknown category/shelf keys in breakdown buckets.
 - Book detail and edit routes already exist for healing follow-through (`/books/:bookId`, `/books/:bookId/edit`).
@@ -104,16 +104,14 @@ current `.dashboard-metric` patterns.
 
 ## Remaining scope (file-level plan)
 
-### 1. Contract lock (only if FEAT-10 left gaps)
-
-Skip or no-op any row already completed by FEAT-10.
+### 1. Schema aliases
 
 | File | Change |
 | ---- | ------ |
-| `src/api/generated/openapi.ts` | Regenerate with `yarn api:generate` if report paths/schemas are missing. Do not hand-edit. |
-| `scripts/contractSmoke.test.ts` | Ensure expected paths include `/dashboard/breakdowns`, `/dashboard/incomplete-metadata`, and `/dashboard/incomplete-metadata/books`. |
 | `src/api/apiTypes.ts` | Export aliases for `DashboardBreakdowns`, `DashboardCountBucket`, and `DashboardIncompleteMetadata` (and reuse existing `BookList` / `BookRead` for the books drill-down). |
 | `src/api/apiTypes.test.ts` | Fixture coverage for breakdown bucket shapes and incomplete-metadata required fields (including that `total_incomplete` is an independent integer). |
+
+Regenerate OpenAPI / extend contract smoke only if those paths/schemas regress; they are already present from FEAT-10.
 
 ### 2. Typed dashboard helpers and query keys
 
@@ -156,7 +154,6 @@ Do not compute incomplete totals or breakdown buckets from `booksApi.list`.
 | ---- | ------ |
 | `docs/AGENTS.md` | Note dashboard report sections on `/` (breakdowns + incomplete metadata + books drill-down); update `dashboardApi` / `dashboardQueries` / `queryKeys` / `DashboardPage` inventory. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging completion. |
 | `docs/ToDo.md` | Mark the "Augment `/dashboard` with: Dashboard reports" checklist item done when maintainers still use that file. |
-| `docs/tickets/FEAT-10_update-api.md` | If still present: note that dashboard-report product UI moved to FEAT-20 (avoid conflicting "no incomplete-metadata UI" instructions). |
 
 ## Suggested section behavior
 
@@ -190,7 +187,7 @@ Exact copy is implementer-owned; keep it accurate:
 ## Plan coverage
 
 Extends Workstream 10 (read-only dashboard) beyond the original `GET /dashboard` summary to the backend's catalog
-breakdown and incomplete-metadata report surface. Completes the product UI that `FEAT-10_update-api` deferred for
+breakdown and incomplete-metadata report surface. Completes the product UI that FEAT-10 API contract sync deferred for
 dashboard reports.
 
 ## Out of scope
@@ -201,3 +198,4 @@ dashboard reports.
 - Wishlist UI, collection category filter UI, cover images, or automated bulk metadata fills.
 - Inventing a `section` incomplete field or any query value not documented by the API.
 - Changing auth, runtime config, connection bootstrap, or FEAT-12+ packaging/hardening work.
+- Regenerating OpenAPI or extending contract smoke unless those paths/schemas regress (already shipped by FEAT-10).
