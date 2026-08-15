@@ -1,12 +1,8 @@
 # Build the Frontend
 
 * [ ] Read helpful docs:
-  * [ ] Read `docs/technical-reference/basic-concepts.md`
+  * [ ] Read `docs/technical-reference/bash-reference.md`
 * [ ] Implement the feature docs:
-  * [ ] Complete feature ticket `docs/tickets/FEAT-08_checkin-and-loan-history.md`.
-  * [ ] Complete the manual checklist to ensure Feat-06 is working: `docs/baselines/FEAT-06_isbn-scanner-capture.md`
-  * [ ] Complete feature ticket `docs/tickets/FEAT-09_reading-tracking.md`.
-  * [ ] Complete feature ticket `docs/tickets/FEAT-10_update-api.md` (API contract sync; done -- ticket removed).
   * [ ] Complete feature ticket `docs/tickets/FEAT-12_operational-and-browser-hardening.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`.
@@ -16,12 +12,8 @@
   * [ ] Complete feature ticket `docs/tickets/FEAT-18_sorting-and-filtering.md` (category filter UI; shelf sort already in FEAT-10).
   * [ ] Complete feature ticket `docs/tickets/FEAT-19_wishlists.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-20_dashboard-metrics.md`.
+  * [ ] Complete feature ticket `docs/tickets/FEAT-21_display-only.md`.
   * [ ] Confirm that `product-docs/PLAN.md` is fully implemented.
-* [ ] Build out the CI/CD for this project
-  * [ ] Package into a podman container for convenience
-    * [ ] Follow patterns in `../shade-backend/ci/`
-    * [ ] For prod: Zip the website's deployable files into a tarball
-    * [ ] For dev: Build a Podman container. Another project will run this in Podman Compose with the BE.
 * [ ] Add more functionality to the website
   * [ ] Finish the feature tickets in the backend
   * [ ] Run `make openapi` in the backend and update `../shade-backend/docs/API-for-FE.md`
