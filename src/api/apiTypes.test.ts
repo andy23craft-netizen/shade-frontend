@@ -10,7 +10,9 @@ import type {
     DashboardSummary,
     LoanList,
     LoanRead,
+    ShelfCreate,
     ShelfRead,
+    ShelfUpdate,
 } from './apiTypes'
 
 describe('API transport types', () => {
@@ -56,6 +58,23 @@ describe('API transport types', () => {
         expect(shelf.common_name).toBe('a1')
         expect(shelf.location).toBe('Living room')
         expect(shelf.description).toBeNull()
+    })
+
+    it('preserves ShelfCreate and ShelfUpdate field names', () => {
+        const create = {
+            common_name: 'a1',
+            location: 'Living room',
+            description: null,
+        } satisfies ShelfCreate
+
+        const update = {
+            common_name: 'b2',
+            location: null,
+            description: 'Notes',
+        } satisfies ShelfUpdate
+
+        expect(create.common_name).toBe('a1')
+        expect(update.description).toBe('Notes')
     })
 
     it('preserves LoanRead audit field names', () => {

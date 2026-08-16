@@ -8,6 +8,8 @@ import type {
     ShelfRead,
 } from '../../api/apiTypes'
 import {
+    canDeleteShelf,
+    canRenameShelf,
     filterAssignableShelves,
     formatShelfCommonNameForDisplay,
     isAssignableShelf,
@@ -107,6 +109,22 @@ describe('assignable shelf rules', () => {
         expect(
             isSystemShelfCommonName('a1'),
         ).toBe(false)
+    })
+
+    it('forbids rename and delete for system shelves only', () => {
+        const unknown = makeShelf({
+            shelf_id: 'id-unknown',
+            common_name: 'unknown',
+        })
+        const custom = makeShelf({
+            shelf_id: 'id-a1',
+            common_name: 'a1',
+        })
+
+        expect(canRenameShelf(unknown)).toBe(false)
+        expect(canDeleteShelf(unknown)).toBe(false)
+        expect(canRenameShelf(custom)).toBe(true)
+        expect(canDeleteShelf(custom)).toBe(true)
     })
 })
 
