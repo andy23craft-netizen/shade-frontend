@@ -9,6 +9,9 @@ export interface ApiClientOptions {
     apiBaseUrl: string
     getToken?: () => string | null
     onUnauthorized?: () => void
+    onRequestFailure?: (
+        error: ApiError,
+    ) => void
     timeoutMs?: number
 }
 
@@ -74,8 +77,23 @@ export function createApiClient({
                                     apiBaseUrl,
                                     getToken,
                                     onUnauthorized,
+                                    onRequestFailure,
                                     timeoutMs = 10000,
                                 }: ApiClientOptions) {
+    function throwRequestFailure(
+        error: ApiError,
+    ): never {
+        if (error.kind !== 'cancelled') {
+            try {
+                onRequestFailure?.(error)
+            } catch {
+                // Failure reporting must never replace or mask
+                // the original API error.
+            }
+        }
+
+        throw error
+    }
     async function request(
         path: string,
         options: ApiRequestOptions = {},
@@ -135,64 +153,76 @@ export function createApiClient({
                 error.name === 'AbortError'
             ) {
                 if (callerSignal?.aborted) {
-                    throw new ApiError({
-                        kind: 'cancelled',
-                        message:
-                            'Shade API request was cancelled.',
-                    })
+                    throwRequestFailure(
+                        new ApiError({
+                            kind: 'cancelled',
+                            message:
+                                'Shade API request was cancelled.',
+                        }),
+                    )
                 }
 
-                throw new ApiError({
-                    kind: 'timeout',
-                    message:
-                        'Shade API request timed out.',
-                })
+                throwRequestFailure(
+                    new ApiError({
+                        kind: 'timeout',
+                        message:
+                            'Shade API request timed out.',
+                    }),
+                )
             }
 
-            throw new ApiError({
-                kind: 'unreachable',
-                message:
-                    'Unable to reach the Shade API.',
-            })
+            throwRequestFailure(
+                new ApiError({
+                    kind: 'unreachable',
+                    message:
+                        'Unable to reach the Shade API.',
+                }),
+            )
         } finally {
             clearTimeout(timeoutId)
         }
 
-        if (
-            response.status === 403 &&
-            authenticated
-        ) {
-            onUnauthorized?.()
+            if (
+                response.status === 403 &&
+                authenticated
+            ) {
+                onUnauthorized?.()
 
-            throw new ApiError({
-                kind: 'unauthorized',
-                status: 403,
-                message: 'API access was rejected.',
-            })
-        }
+                throwRequestFailure(
+                    new ApiError({
+                        kind: 'unauthorized',
+                        status: 403,
+                        message:
+                            'API access was rejected.',
+                    }),
+                )
+            }
 
-        if (!response.ok) {
-            const errorResponse =
-                await parseErrorResponse(response)
+            if (!response.ok) {
+                const errorResponse =
+                    await parseErrorResponse(response)
 
-            const kind =
-                response.status === 422
-                    ? 'validation'
-                    : response.status >= 500
-                        ? 'server'
-                        : 'http'
+                const kind =
+                    response.status === 422
+                        ? 'validation'
+                        : response.status >= 500
+                            ? 'server'
+                            : 'http'
 
-            throw new ApiError({
-                kind,
-                status: response.status,
-                message:
-                    errorResponse.detail ??
-                    `Shade API request failed with status ${response.status}.`,
-                detail: errorResponse.detail,
-                fieldErrors:
-                errorResponse.fieldErrors,
-            })
-        }
+                throwRequestFailure(
+                    new ApiError({
+                        kind,
+                        status: response.status,
+                        message:
+                            errorResponse.detail ??
+                            `Shade API request failed with status ${response.status}.`,
+                        detail:
+                        errorResponse.detail,
+                        fieldErrors:
+                        errorResponse.fieldErrors,
+                    }),
+                )
+            }
 
         return response
     }
@@ -233,12 +263,14 @@ export function createApiClient({
         try {
             data = await response.json()
         } catch {
-            throw new ApiError({
-                kind: 'invalid_response',
-                status: response.status,
-                message:
-                    'Shade API returned an invalid JSON response.',
-            })
+            throwRequestFailure(
+                new ApiError({
+                    kind: 'invalid_response',
+                    status: response.status,
+                    message:
+                        'Shade API returned an invalid JSON response.',
+                }),
+            )
         }
 
         return data as T

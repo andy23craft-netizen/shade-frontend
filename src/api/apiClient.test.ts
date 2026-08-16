@@ -720,4 +720,118 @@ describe('createApiClient', () => {
             })
         },
     )
+
+    it(
+        'notifies the request-failure reporter for API failures',
+        async () => {
+            vi.spyOn(
+                globalThis,
+                'fetch',
+            ).mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        detail:
+                            'Server failure.',
+                    }),
+                    {
+                        status: 500,
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+                        },
+                    },
+                ),
+            )
+
+            const onRequestFailure =
+                vi.fn()
+
+            const client =
+                createApiClient({
+                    apiBaseUrl:
+                        'https://api.example.test',
+                    onRequestFailure,
+                })
+
+            await expect(
+                client.get('/books'),
+            ).rejects.toMatchObject({
+                kind: 'server',
+                status: 500,
+            })
+
+            expect(
+                onRequestFailure,
+            ).toHaveBeenCalledOnce()
+
+            expect(
+                onRequestFailure,
+            ).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    kind: 'server',
+                    status: 500,
+                }),
+            )
+        },
+    )
+
+    it(
+        'does not report caller cancellation as a request failure',
+        async () => {
+            const controller =
+                new AbortController()
+
+            vi.spyOn(
+                globalThis,
+                'fetch',
+            ).mockImplementation(
+                (_input, init) =>
+                    new Promise<Response>(
+                        (_resolve, reject) => {
+                            init?.signal?.addEventListener(
+                                'abort',
+                                () => {
+                                    reject(
+                                        new DOMException(
+                                            'Aborted',
+                                            'AbortError',
+                                        ),
+                                    )
+                                },
+                            )
+                        },
+                    ),
+            )
+
+            const onRequestFailure =
+                vi.fn()
+
+            const client =
+                createApiClient({
+                    apiBaseUrl:
+                        'https://api.example.test',
+                    onRequestFailure,
+                })
+
+            const request = client.get(
+                '/books',
+                {
+                    signal:
+                    controller.signal,
+                },
+            )
+
+            controller.abort()
+
+            await expect(
+                request,
+            ).rejects.toMatchObject({
+                kind: 'cancelled',
+            })
+
+            expect(
+                onRequestFailure,
+            ).not.toHaveBeenCalled()
+        },
+    )
 })

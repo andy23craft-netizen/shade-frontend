@@ -339,9 +339,15 @@
 
 .book-card__heading {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-card-rule);
+}
+
+.book-card__title,
+.book-card__author {
+  overflow-wrap: anywhere;
 }
 
 .book-card__title {
@@ -380,6 +386,7 @@
 
 .book-card__field {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
 }
 
@@ -390,6 +397,7 @@
 
 .book-card__field dd {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--color-surface-text-muted);
 }
 
@@ -411,6 +419,7 @@
 
 .book-details-card__header {
   display: grid;
+  min-width: 0;
   gap: var(--space-2);
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-card-rule);
@@ -426,6 +435,11 @@
   font-style: italic;
 }
 
+.book-details-card__header h1,
+.book-details-card__header p {
+  overflow-wrap: anywhere;
+}
+
 .book-details-card__metadata {
   display: grid;
   grid-template-columns:
@@ -436,6 +450,7 @@
 
 .book-details-card__field {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
 }
 
@@ -446,6 +461,7 @@
 
 .book-details-card__field dd {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--color-surface-text-muted);
 }
 
@@ -482,6 +498,7 @@
 
 .book-details-panel__metadata div {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
 }
 
@@ -491,6 +508,7 @@
 
 .book-details-panel__metadata dd {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--color-surface-text-muted);
 }
 
@@ -1372,6 +1390,7 @@
 
 .circulation-record-card__heading {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
 
   padding-bottom: var(--space-4);
@@ -1432,6 +1451,18 @@
   color: var(--color-surface-text-muted);
 
   font-style: italic;
+}
+
+.circulation-record-card__heading h2,
+.circulation-record-card__heading h3,
+.circulation-record-card__author {
+  overflow-wrap: anywhere;
+}
+
+.circulation-record-card__metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-surface-text-muted);
 }
 
 .circulation-record-card__metadata {
@@ -1507,7 +1538,25 @@
 
 .circulation-card__book-heading {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
+}
+
+.circulation-card__book-heading h3,
+.circulation-card__book-heading p {
+  overflow-wrap: anywhere;
+}
+
+.circulation-card__metadata > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.circulation-card__metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-surface-text-muted);
 }
 
 .circulation-card__book-heading h3 {

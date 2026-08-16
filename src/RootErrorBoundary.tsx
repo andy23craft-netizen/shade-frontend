@@ -1,8 +1,12 @@
 import { Component, type ReactNode } from 'react'
 import { Button } from './components/Button'
+import type {
+    DiagnosticReporter,
+} from './diagnostics/diagnosticReporter'
 
 interface RootErrorBoundaryProps {
     children: ReactNode
+    diagnosticReporter: DiagnosticReporter
 }
 
 interface RootErrorBoundaryState {
@@ -23,6 +27,10 @@ export class RootErrorBoundary extends Component<
         }
     }
 
+    componentDidCatch() {
+        this.props.diagnosticReporter.reportRenderFailure()
+    }
+
     handleRetry = () => {
         this.setState({
             hasError: false,
@@ -41,7 +49,10 @@ export class RootErrorBoundary extends Component<
                     </p>
 
                     <div>
-                        <Button type="button" onClick={this.handleRetry}>
+                        <Button
+                            type="button"
+                            onClick={this.handleRetry}
+                        >
                             Try again
                         </Button>
 

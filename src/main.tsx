@@ -8,6 +8,9 @@ import { readApiToken } from './config/apiToken'
 import { readRuntimeConfig } from './config/runtimeConfigState'
 import { router } from './routes/routes'
 import './index.css'
+import {
+    createDiagnosticReporter,
+} from './diagnostics/diagnosticReporter'
 
 const rootElement = document.getElementById('root')
 
@@ -32,10 +35,27 @@ function renderApplication() {
         return
     }
 
+    const diagnosticReporter =
+        createDiagnosticReporter({
+            config:
+            runtimeConfigState.config.diagnostics,
+            release:
+            runtimeConfigState.config.release,
+        })
+
     root.render(
         <StrictMode>
-            <RootErrorBoundary>
-                <AppProviders runtimeConfig={runtimeConfigState.config}>
+            <RootErrorBoundary
+                diagnosticReporter={diagnosticReporter}
+            >
+                <AppProviders
+                    runtimeConfig={
+                        runtimeConfigState.config
+                    }
+                    diagnosticReporter={
+                        diagnosticReporter
+                    }
+                >
                     <RouterProvider router={router} />
                 </AppProviders>
             </RootErrorBoundary>

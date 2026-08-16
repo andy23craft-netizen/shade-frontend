@@ -303,7 +303,7 @@ export function NewBookPage() {
             </AppLink>
 
             <header>
-                <h1>Add Book</h1>
+                <h1 tabIndex={-1}>Add Book</h1>
                 <p>
                     Add a book manually or use
                     ISBN lookup to prefill its

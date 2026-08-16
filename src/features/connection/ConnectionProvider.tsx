@@ -19,10 +19,14 @@ import {
     ConnectionContext,
     type ConnectionContextValue,
 } from './ConnectionContext'
+import type {
+    DiagnosticReporter,
+} from '../../diagnostics/diagnosticReporter'
 
 interface ConnectionProviderProps {
     children: ReactNode
     runtimeConfig: RuntimeConfig
+    diagnosticReporter?: DiagnosticReporter
 }
 
 function mapReachabilityFailure(
@@ -71,9 +75,10 @@ function mapReachabilityFailure(
 }
 
 export function ConnectionProvider({
-    children,
-    runtimeConfig,
-}: ConnectionProviderProps) {
+                                       children,
+                                       runtimeConfig,
+                                       diagnosticReporter,
+                                   }: ConnectionProviderProps) {
     const [status, setStatus] =
         useState<ConnectionStatus>('checking')
     const [errorMessage, setErrorMessage] =
@@ -84,6 +89,11 @@ export function ConnectionProvider({
             createApiClient({
                 apiBaseUrl: runtimeConfig.apiBaseUrl,
                 getToken: getCurrentToken,
+                onRequestFailure: (error) => {
+                    diagnosticReporter?.reportApiFailure(
+                        error,
+                    )
+                },
                 onUnauthorized: () => {
                     setStatus('unauthorized')
                     setErrorMessage(
@@ -91,7 +101,10 @@ export function ConnectionProvider({
                     )
                 },
             }),
-        [runtimeConfig.apiBaseUrl],
+        [
+            runtimeConfig.apiBaseUrl,
+            diagnosticReporter,
+        ],
     )
 
     useEffect(() => {

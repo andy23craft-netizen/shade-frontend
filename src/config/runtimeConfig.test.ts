@@ -15,6 +15,10 @@ describe('loadRuntimeConfig', () => {
         ).toEqual({
             apiBaseUrl: 'http://127.0.0.1:8000',
             release: '2026.08.10',
+            diagnostics: {
+                enabled: false,
+                endpoint: null,
+            },
         })
     })
 
@@ -25,6 +29,87 @@ describe('loadRuntimeConfig', () => {
                 release: '1.0.0',
             }).apiBaseUrl,
         ).toBe('https://library.example.com')
+    })
+
+    it('loads enabled diagnostic reporting from runtime configuration', () => {
+        expect(
+            loadRuntimeConfig({
+                apiBaseUrl: 'https://library.example.com',
+                release: '1.0.0',
+                diagnostics: {
+                    enabled: true,
+                    endpoint:
+                        'https://diagnostics.example.com/report/',
+                },
+            }).diagnostics,
+        ).toEqual({
+            enabled: true,
+            endpoint:
+                'https://diagnostics.example.com/report',
+        })
+    })
+
+    it('normalizes disabled diagnostic reporting without requiring an endpoint', () => {
+        expect(
+            loadRuntimeConfig({
+                apiBaseUrl: 'https://library.example.com',
+                release: '1.0.0',
+                diagnostics: {
+                    enabled: false,
+                },
+            }).diagnostics,
+        ).toEqual({
+            enabled: false,
+            endpoint: null,
+        })
+    })
+
+    it('rejects enabled diagnostic reporting without an endpoint', () => {
+        expect(() =>
+            loadRuntimeConfig({
+                apiBaseUrl: 'https://library.example.com',
+                release: '1.0.0',
+                diagnostics: {
+                    enabled: true,
+                },
+            }),
+        ).toThrow(RuntimeConfigError)
+    })
+
+    it('rejects an invalid diagnostic endpoint', () => {
+        expect(() =>
+            loadRuntimeConfig({
+                apiBaseUrl: 'https://library.example.com',
+                release: '1.0.0',
+                diagnostics: {
+                    enabled: true,
+                    endpoint: 'not-a-url',
+                },
+            }),
+        ).toThrow(RuntimeConfigError)
+    })
+
+    it('rejects an unsupported diagnostic endpoint protocol', () => {
+        expect(() =>
+            loadRuntimeConfig({
+                apiBaseUrl: 'https://library.example.com',
+                release: '1.0.0',
+                diagnostics: {
+                    enabled: true,
+                    endpoint: 'ftp://example.com/report',
+                },
+            }),
+        ).toThrow(RuntimeConfigError)
+    })
+
+    it('rejects malformed diagnostic configuration', () => {
+        expect(() =>
+            loadRuntimeConfig({
+                apiBaseUrl: 'https://library.example.com',
+                release: '1.0.0',
+                diagnostics: 'enabled',
+            }),
+        ).toThrow(RuntimeConfigError)
     })
 
     it('rejects missing configuration', () => {
@@ -96,12 +181,36 @@ describe('getRuntimeConfig', () => {
         expect(getRuntimeConfig()).toEqual({
             apiBaseUrl: 'http://127.0.0.1:8000',
             release: '2026.08.10',
+            diagnostics: {
+                enabled: false,
+                endpoint: null,
+            },
+        })
+    })
+
+    it('loads diagnostic reporting from the browser runtime object', () => {
+        window.__SHADE_CONFIG__ = {
+            apiBaseUrl: 'http://127.0.0.1:8000',
+            release: '2026.08.10',
+            diagnostics: {
+                enabled: true,
+                endpoint:
+                    'https://diagnostics.example.test/report',
+            },
+        }
+
+        expect(getRuntimeConfig().diagnostics).toEqual({
+            enabled: true,
+            endpoint:
+                'https://diagnostics.example.test/report',
         })
     })
 
     it('rejects missing browser runtime configuration', () => {
         window.__SHADE_CONFIG__ = undefined
 
-        expect(() => getRuntimeConfig()).toThrow(RuntimeConfigError)
+        expect(() => getRuntimeConfig()).toThrow(
+            RuntimeConfigError,
+        )
     })
 })

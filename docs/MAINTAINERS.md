@@ -301,7 +301,7 @@ but it is expected behavior rather than a failure.
 
 ### Runtime configuration, CORS, and token
 
-Runtime configuration lives in `public/config.js` as `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). The Bearer
+Runtime configuration lives in `public/config.js` as `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`, and optional diagnostic-reporting configuration). The Bearer
 token lives in the repository-root `.env` as `VITE_API_SECRET_KEY` and is injected at dev-server and build time. Copy
 `.env.example` to `.env`, set the value to match the backend `API_SECRET_KEY`, and restart after changes. Release
 artifacts must not include the `.env` file itself — only built static assets under `dist/`.
@@ -323,6 +323,21 @@ Production connectivity remains a release blocker until one arrangement is chose
 
 Verification must cover authenticated requests, browser preflights, and JavaScript access to the backup
 `Content-Disposition` filename. See also `README.md` and `docs/technical-reference/API-for-FE.md`.
+
+Production host security is owned by the deployment environment rather than this frontend repository. Before release,
+the production host must:
+
+- Serve the frontend and production API traffic over HTTPS.
+- Apply a restrictive Content Security Policy compatible with the frontend's static assets, configured API origin,
+  and camera access used by the ISBN scanner.
+- Apply appropriate browser security headers, including HSTS where applicable.
+- Provide SPA fallback routing to `index.html` for client-side routes.
+- Serve deployment-managed runtime configuration with the intended production values.
+
+These are deployment requirements, not frontend implementations. FEAT-16 and the deployment repository own the
+concrete static-server, TLS, CSP/security-header, artifact-installation, and rollback configuration. Production
+verification must confirm these controls rather than treating a successful frontend build as evidence that they are
+present.
 
 `scripts/productionBuildTokenInspection.test.ts` builds with a dummy `VITE_API_SECRET_KEY` and asserts the repository-root
 `.env` file is not copied into `dist/` (embedded build-time token in JS bundles is expected).

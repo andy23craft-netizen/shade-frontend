@@ -678,7 +678,7 @@ export function CheckinPage() {
             </AppLink>
 
             <header>
-                <h1>Check In Book</h1>
+                <h1 tabIndex={-1}>Check In Book</h1>
 
                 <p>
                     Complete the current loan for this

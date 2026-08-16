@@ -125,11 +125,19 @@ export function formatApiQueryError(
     error: unknown,
 ): string {
     if (isApiError(error)) {
-        if (error.kind === 'unauthorized') {
-            return 'API access was rejected.'
+        const message =
+            error.kind === 'unauthorized'
+                ? 'API access was rejected.'
+                : error.message
+
+        if (error.correlationId) {
+            return (
+                `${message} ` +
+                `Request ID: ${error.correlationId}`
+            )
         }
 
-        return error.message
+        return message
     }
 
     if (error instanceof Error) {

@@ -543,7 +543,7 @@ export function CheckoutPage() {
     if (booksQuery.isPending) {
         return (
             <section className="route-page">
-                <h1>Check Out Book</h1>
+                <h1 tabIndex={-1}>Check Out Book</h1>
                 <p>Loading books…</p>
             </section>
         )
@@ -582,7 +582,7 @@ export function CheckoutPage() {
             </AppLink>
 
             <header>
-                <h1>Check Out Book</h1>
+                <h1 tabIndex={-1}>Check Out Book</h1>
                 <p>
                     Record a loan for an available book.
                 </p>

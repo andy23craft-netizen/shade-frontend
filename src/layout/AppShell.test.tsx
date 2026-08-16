@@ -115,7 +115,7 @@ describe('AppShell layout and navigation', () => {
   })
 
   it('navigates to a feature route without mutating window history', async () => {
-    const router = renderAppTree(['/books'])
+    renderAppTree(['/books'])
 
     const historyLengthBefore =
         window.history.length
@@ -125,39 +125,16 @@ describe('AppShell layout and navigation', () => {
           name: 'Check Out',
         })
 
-    console.log(
-        'CHECKOUT LINK:',
-        checkoutLink.getAttribute('href'),
-    )
-
     fireEvent.click(checkoutLink)
 
-    await screen.findByRole('heading', {
-      level: 1,
-      name: 'Check Out Book',
-    })
-
-    console.log(
-        'ROUTER LOCATION:',
-        router.state.location.pathname,
-    )
-
-    console.log(
-        'ROUTER SEARCH:',
-        router.state.location.search,
-    )
-
-    console.log(
-        'ROUTER ERRORS:',
-        router.state.errors,
-    )
-
-    expect(
-        screen.getByRole('heading', {
+    const checkoutHeading =
+        await screen.findByRole('heading', {
           level: 1,
           name: 'Check Out Book',
-        }),
-    ).toBeInTheDocument()
+        })
+
+    expect(checkoutHeading).toBeInTheDocument()
+    expect(checkoutHeading).toHaveFocus()
 
     expect(
         window.history.length,

@@ -41,3 +41,44 @@ reason.
 - Live comparison target when available: `http://127.0.0.1:8000/openapi.json`
 - Live backend was unavailable when this baseline was recorded; drift must be fixed in the owning system or recorded as
   an explicit blocker rather than inventing frontend semantics
+
+
+## FEAT-12 re-check — 2026-08-16
+
+### Large-library list helper
+
+Re-ran `src/api/booksApi.largeLibrary.test.ts` with the FEAT-03 fixtures:
+
+- Full 2,000-book payload: **6 ms**
+- Paginated 50-book slice from a 2,000-book library: **2 ms**
+- Budget: **250 ms**
+
+No material large-library regression was observed.
+
+### Production bundle size
+
+Measured with `yarn build`:
+
+| Artifact                            | Raw size  | Gzip size |
+|-------------------------------------|-----------|-----------|
+| `dist/assets/index-*.js`            | 429.15 kB | 124.98 kB |
+| `dist/assets/index-*.css`           | 30.56 kB  | 5.61 kB   |
+| `dist/index.html`                   | 0.49 kB   | 0.30 kB   |
+| `dist/assets/IsbnCameraScanner-*.js`| 481.64 kB | 126.53 kB |
+
+The main JS entry increased from **101.37 kB gzip** at the FEAT-03 baseline to **124.98 kB gzip**. This exceeds the suggested **120 kB soft-warning** threshold but remains below the **150 kB hard-failure candidate**.
+
+The increase is accepted for FEAT-12 because the application has accumulated substantial implemented product functionality since the original baseline. The camera-scanner dependency remains isolated in its lazy-loaded chunk rather than being included in the main entry.
+
+Treat further sustained growth of the main entry as a candidate for FEAT-14 bundle-budget enforcement or a dedicated optimization follow-up.
+
+### Contract smoke
+
+Compared the representative running backend at `http://127.0.0.1:8000/openapi.json` with the checked-in `docs/technical-reference/openapi.json` after canonical JSON key sorting.
+
+- Path sets matched.
+- Schema sets matched.
+- Canonical documents had no diff.
+- No backend request/correlation ID header was observed.
+
+No contract drift blocker was found.

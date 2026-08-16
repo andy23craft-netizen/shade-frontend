@@ -12,6 +12,10 @@ describe('readRuntimeConfig', () => {
             config: {
                 apiBaseUrl: 'http://127.0.0.1:8000',
                 release: '2026.08.10',
+                diagnostics: {
+                    enabled: false,
+                    endpoint: null,
+                },
             },
             error: null,
         })

@@ -12,5 +12,7 @@ interface Window {
     __SHADE_CONFIG__?: {
         apiBaseUrl?: unknown
         release?: unknown
+        diagnostics?: unknown
     }
 }
+

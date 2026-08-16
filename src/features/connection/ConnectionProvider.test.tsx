@@ -90,6 +90,10 @@ function renderProvider(
                     apiBaseUrl:
                         'https://library.example.com',
                     release: 'test',
+                    diagnostics: {
+                        enabled: false,
+                        endpoint: null,
+                    },
                 }}
             >
                 {children}
@@ -115,6 +119,10 @@ function renderProviderWithQuery() {
                         apiBaseUrl:
                             'https://library.example.com',
                         release: 'test',
+                        diagnostics: {
+                            enabled: false,
+                            endpoint: null,
+                        },
                     }}
                 >
                     <BooksQueryProbe />

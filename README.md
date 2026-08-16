@@ -92,3 +92,26 @@ Either choice remains a release blocker until authenticated requests, browser
 CORS preflights, and JavaScript access to the backup response
 `Content-Disposition` filename are verified. Cross-origin requests may send
 `Authorization` and `Content-Type`. Cookies and credentialed CORS are not used.
+
+## Production host security
+
+The frontend repository produces static application assets; the production
+deployment host is responsible for transport and browser security controls.
+
+Before production release, the deployment environment must:
+
+- serve the frontend and production API traffic over HTTPS;
+- apply a restrictive Content Security Policy compatible with the application's
+  static assets, configured API origin, and camera access used by the ISBN
+  scanner;
+- apply appropriate browser security headers, including HSTS where applicable;
+- provide SPA fallback routing to `index.html` for client-side routes; and
+- serve the deployment-managed runtime configuration with production values.
+
+These requirements are deployment assumptions, not frontend implementations.
+The deployment repository and FEAT-16 own the concrete web-server, TLS, CSP,
+security-header, artifact-installation, and rollback configuration.
+
+Production release must verify these host controls alongside the connectivity
+requirements above rather than assuming that a successful frontend build
+provides them.

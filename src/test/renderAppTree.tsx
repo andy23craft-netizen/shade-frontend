@@ -5,10 +5,22 @@ import { vi } from 'vitest'
 import { AppProviders } from '../AppProviders'
 import type { RuntimeConfig } from '../config/runtimeConfig'
 import { createTestRouter } from '../routes/createMemoryRouter'
+import type {
+    DiagnosticReporter,
+} from '../diagnostics/diagnosticReporter'
 
+export const testDiagnosticReporter:
+    DiagnosticReporter = {
+    reportApiFailure: () => undefined,
+    reportRenderFailure: () => undefined,
+}
 export const testRuntimeConfig: RuntimeConfig = {
     apiBaseUrl: 'https://library.example.com',
     release: 'test-release',
+    diagnostics: {
+        enabled: false,
+        endpoint: null,
+    },
 }
 
 export function mockReachableApi() {
@@ -113,7 +125,14 @@ export function renderAppTree(
 
     render(
         <StrictMode>
-            <AppProviders runtimeConfig={runtimeConfig}>
+            <AppProviders
+                runtimeConfig={
+                    runtimeConfig
+                }
+                diagnosticReporter={
+                    testDiagnosticReporter
+                }
+            >
                 <RouterProvider router={router} />
             </AppProviders>
         </StrictMode>,
@@ -128,7 +147,14 @@ export function renderWithProviders(
 ) {
     return render(
         <StrictMode>
-            <AppProviders runtimeConfig={runtimeConfig}>
+            <AppProviders
+                runtimeConfig={
+                    runtimeConfig
+                }
+                diagnosticReporter={
+                    testDiagnosticReporter
+                }
+            >
                 {children}
             </AppProviders>
         </StrictMode>,

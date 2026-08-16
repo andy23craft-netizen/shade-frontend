@@ -134,6 +134,53 @@ describe('formatApiQueryError', () => {
         ).toBe('Unable to reach the Shade API.')
     })
 
+    it('includes a backend-supplied correlation ID', () => {
+        expect(
+            formatApiQueryError(
+                new ApiError({
+                    kind: 'server',
+                    status: 500,
+                    message:
+                        'Server failure.',
+                    correlationId:
+                        'backend-123',
+                }),
+            ),
+        ).toBe(
+            'Server failure. Request ID: backend-123',
+        )
+    })
+
+    it('does not fabricate a request ID', () => {
+        expect(
+            formatApiQueryError(
+                new ApiError({
+                    kind: 'server',
+                    status: 500,
+                    message:
+                        'Server failure.',
+                }),
+            ),
+        ).toBe(
+            'Server failure.',
+        )
+    })
+
+    it('does not fabricate a request ID', () => {
+        expect(
+            formatApiQueryError(
+                new ApiError({
+                    kind: 'server',
+                    status: 500,
+                    message:
+                        'Server failure.',
+                }),
+            ),
+        ).toBe(
+            'Server failure.',
+        )
+    })
+
     it('falls back safely for unknown values', () => {
         expect(
             formatApiQueryError('unexpected'),
