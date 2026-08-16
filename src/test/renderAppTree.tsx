@@ -114,6 +114,21 @@ export function mockReachableApi() {
                     )
                 }
 
+                if (pathname === '/version') {
+                    return new Response(
+                        JSON.stringify({
+                            version: '0.2.1',
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
                 return new Response(
                     JSON.stringify({
                         status: 'ok',

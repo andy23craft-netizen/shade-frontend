@@ -26,6 +26,10 @@ import {
     createShelvesApi,
 } from './shelvesApi'
 
+import {
+    createVersionApi,
+} from './versionApi'
+
 export function createApi(
     options: Parameters<
         typeof createApiClient
@@ -42,6 +46,7 @@ export function createApi(
         dashboard:
             createDashboardApi(client),
         health: createHealthApi(client),
+        version: createVersionApi(client),
         backup: createBackupApi(client),
     }
 }

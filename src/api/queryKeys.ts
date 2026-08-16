@@ -226,6 +226,10 @@ export const queryKeys = {
         all: ['dashboard'] as const,
     },
 
+    version: {
+        all: ['version'] as const,
+    },
+
     shelves: {
         all: ['shelves'] as const,
 

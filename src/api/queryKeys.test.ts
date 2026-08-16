@@ -82,3 +82,11 @@ describe('queryKeys.shelves', () => {
         ).not.toBe(queryKeys.loans.all[0])
     })
 })
+
+describe('queryKeys.version', () => {
+    it('uses a stable version root key', () => {
+        expect(queryKeys.version.all).toEqual([
+            'version',
+        ])
+    })
+})

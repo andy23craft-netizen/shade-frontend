@@ -49,6 +49,7 @@ const expectedPaths = [
     '/loans/{id}',
     '/shelves',
     '/shelves/{shelf_id}',
+    '/version',
     '/wishlists',
     '/wishlists/{wishlist_id}',
     '/wishlists/{wishlist_id}/books',
@@ -95,6 +96,12 @@ describe('OpenAPI contract smoke', () => {
         )
         expect(generated).toContain(
             'delete_shelf_shelves__shelf_id__delete',
+        )
+        expect(generated).toContain(
+            'VersionResponse',
+        )
+        expect(generated).toContain(
+            'get_version_version_get',
         )
     })
 

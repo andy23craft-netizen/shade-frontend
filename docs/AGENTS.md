@@ -135,6 +135,7 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 - On `403`, show a page-level error via `QueryErrorState` / `formatApiQueryError`; do not clear the query cache or
   loop back into loading
 - Startup reachability uses public `GET /health` only; do not verify auth with `GET /protected`
+- Use public `GET /version` for the footer API release string only; do not treat it as a health probe
 - Never commit the token, put it in URLs, log Authorization headers, or send it to analytics
 - A build-time token in JS bundles is inspectable by anyone with device or artifact access; that is an accepted risk
   for this trusted personal deployment and is not real multi-user authentication
@@ -242,8 +243,8 @@ valid, the bootstrap module creates a `DiagnosticReporter`, then renders `Router
 and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
-navigation (brand includes "est. 2026"), the main `Outlet`, footer (runtime release identifier), and heading focus
-after client-side navigations.
+navigation (brand includes "est. 2026"), the main `Outlet`, footer (runtime release identifier plus API version from
+public `GET /version` when available), and heading focus after client-side navigations.
 Live product UI today: `/` (`DashboardPage` + `useDashboard`), `/books` (`BooksPage`, including Read/Unread
 and rating on collection cards), `/books/:bookId` (`BookDetailsPage`, including reading-field display, gated Mark
 Read / Edit Reading / Edit Book / Delete Book), `/books/new` (`NewBookPage` + `BookForm` / `bookFormModel` with ISBN
@@ -310,7 +311,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
-  dashboard, health, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, validation/error schemas, enums). Book payloads use
+  dashboard, health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, validation/error schemas, enums). Book payloads use
   `shelf_name` (string); there is no hard-coded `Shelf` enum.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
@@ -330,11 +331,11 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/queryKeys.ts`: Shared React Query keys for books (`all`,
   `list({ includeDeleted, isbn?, author?, title?, category?, skip?, take?, sortBy?, sortOrder? })`,
   `infiniteList({ includeDeleted, isbn?, author?, title?, category?, sortBy?, sortOrder?, take })`, `detail(id)`,
-  `lookup(isbn)`), loans (`all`, `list(bookId?)`, `infiniteList({ bookId?, take })`, `detail(id)`), dashboard, and
-  shelves (`all`, `list()` unpaginated). Blank/whitespace `isbn` / `author` / `title` / `category` are omitted from
+  `lookup(isbn)`), loans (`all`, `list(bookId?)`, `infiniteList({ bookId?, take })`, `detail(id)`), dashboard, version,
+  and shelves (`all`, `list()` unpaginated). Blank/whitespace `isbn` / `author` / `title` / `category` are omitted from
   keys (trimmed when present).
-- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `dashboard`, `health`, `backup`)
-  plus the underlying `client`. No wishlist aggregate yet (generated OpenAPI types include wishlist and
+- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `dashboard`, `health`, `version`,
+  `backup`) plus the underlying `client`. No wishlist aggregate yet (generated OpenAPI types include wishlist and
   dashboard-report paths; product helpers wait for FEAT-19 / FEAT-20).
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `author`, `title`, `category`, `skip`, `take`,
   `sortBy` including `shelf`, `sortOrder`; omit empty/whitespace `isbn` / `author` / `title` / `category`; send
@@ -349,6 +350,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   documented `ShelfCreate` / `ShelfUpdate` fields.
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
 - `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
+- `src/api/versionApi.ts` / `versionQueries.ts`: `get()` public (`GET /version`, `authenticated: false`) and
+  `useVersion` for the AppShell footer API release string (not a health probe).
 - `src/api/backupApi.ts`: `get()` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
   `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
@@ -377,8 +380,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
 - `src/layout/AppShell.tsx`: Application frame with skip link, header (brand name plus "est. 2026"), primary
-  navigation (including Shelves), admin/settings group, `Outlet` main region, footer (including runtime release
-  identifier), document title, and heading focus on location change.
+  navigation (including Shelves), admin/settings group, `Outlet` main region, footer (runtime release identifier plus
+  `API {version}` from `useVersion` / `GET /version` when available), document title, and heading focus on location
+  change.
 
 ### Feature Modules
 
@@ -574,8 +578,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 - `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.
-- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels (including Shelves), footer release identifier,
-  current-page state, and not-found recovery.
+- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels (including Shelves), footer release identifier plus API
+  version, current-page state, and not-found recovery.
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
@@ -590,18 +594,19 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
-  `dashboardApi.test.ts` / `healthApi.test.ts` / `backupApi.test.ts`: Typed route helper coverage including lookup
-  coverage including lookup `found: false`, mark-read `{}`, omitted check-in body, restore/checkout/check-in `409`
-  bodies, and a 2_000-item list timing guard.
+  `dashboardApi.test.ts` / `healthApi.test.ts` / `versionApi.test.ts` / `backupApi.test.ts`: Typed route helper coverage
+  including lookup coverage including lookup `found: false`, mark-read `{}`, omitted check-in body, restore/checkout/check-in
+  `409` bodies, and a 2_000-item list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
   Query client defaults, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
-- `src/api/queryKeys.test.ts`: Books/loans/dashboard/shelves key shape coverage including `author` / `title` /
+- `src/api/queryKeys.test.ts`: Books/loans/dashboard/shelves/version key shape coverage including `author` / `title` /
   `category` omission of blank filters, `infiniteList` isolation, and shelves list isolation.
 - `src/api/shelvesApi.test.ts` / `shelvesQueries.test.tsx`: `GET` / `POST` / `PATCH` / `DELETE /shelves` helpers and
   `useShelves` / write mutation hooks (including rename invalidation of books/dashboard).
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
-  (includes `/shelves`, `/shelves/{shelf_id}`, wishlist and dashboard-report paths plus existing lifecycle routes).
+  (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, wishlist and dashboard-report paths plus existing lifecycle
+  routes).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations; includes the recorded re-check
   (FEAT-14 owns future budget enforcement).
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix and blocker policy.
@@ -660,7 +665,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `VITE_API_SECRET_KEY`; HTML reporter; CI retries). FEAT-13 owns expanding coverage and folding into `make check`.
 - `e2e/dashboard.smoke.spec.ts`: Dashboard browser smoke (heading/title, null-average copy, axe serious/critical
   gate) via mocked API
-- `e2e/support/mockApi.ts`: Playwright route mock for `http://127.0.0.1:8000/**` (health + dashboard fixtures so far)
+- `e2e/support/mockApi.ts`: Playwright route mock for `http://127.0.0.1:8000/**` (health + version + dashboard fixtures so
+  far)
 - `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,

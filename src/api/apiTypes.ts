@@ -37,6 +37,9 @@ export type DashboardSummary =
 export type HealthResponse =
     Schemas['HealthResponse']
 
+export type VersionResponse =
+    Schemas['VersionResponse']
+
 export type ErrorDetail =
     Schemas['ErrorDetail']
 
