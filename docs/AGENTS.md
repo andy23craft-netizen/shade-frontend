@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-15 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-16 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/prompt-master-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -27,25 +27,38 @@ history), FEAT-09 (reading completion, rating, and review), historical FEAT-10 (
 deleted admin, and authenticated SQL backup), FEAT-10 API contract sync (regenerated OpenAPI types for wishlist /
 dashboard-report paths; `booksApi` / query keys for `author` / `title` / `category`; collection `sortBy=shelf`;
 checkout `412` `display_only` refetch/messaging -- no alternate-copy offers, wishlist, or incomplete-metadata
-product UI), and FEAT-11 (library dashboard). Remaining tickets are `FEAT-12` through `FEAT-21` under `docs/tickets/`.
-Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can lag).
-CHORE-01 is complete (`loansApi.list({ bookId })`, `loansApi.get` / `useLoan`, Check In deep-link
-`/checkin?bookId=...`, optional `booksApi.list({ isbn })` / `useBooks({ isbn })`).
+product UI), FEAT-11 (library dashboard), and FEAT-12 (operational and browser hardening; ticket file removed).
+Remaining tickets are `FEAT-13` through `FEAT-21` under `docs/tickets/`. Prefer ticket presence under `docs/tickets/`
+over `docs/ToDo.md` when judging completion (the checklist can lag). CHORE-01 is complete (`loansApi.list({ bookId })`,
+`loansApi.get` / `useLoan`, Check In deep-link `/checkin?bookId=...`, optional `booksApi.list({ isbn })` /
+`useBooks({ isbn })`).
 
-**Next / in progress:** `docs/tickets/FEAT-12_operational-and-browser-hardening.md` (redacted runtime diagnostic
-reporting, cross-route a11y/long-content audit, evergreen browser smoke docs, FEAT-03 baseline re-check, and
-host-owned HTTPS/CSP notes). Reuse FEAT-02 / FEAT-03 / FEAT-05 connection, error-model, and `apiRedaction`
-seams. Do not invent a second diagnostic transport, fabricate correlation IDs, or pull FEAT-13 journey automation,
-FEAT-14 CI packaging, FEAT-16 deployment-owned HTTPS/CSP rollout, or later product tickets into FEAT-12. Product
-routes are fully implemented (no unfinished `RoutePlaceholder` feature pages remain). Later product tickets cover
-About as homepage with relocated dashboard (FEAT-17), collection category filter UI (FEAT-18; shelf sort already
-shipped), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX
-(FEAT-21). Generated OpenAPI types already know wishlist and dashboard-report paths; `booksApi` already accepts
-`author` / `title` / `category` list filters -- do not call wishlist or report APIs, or ship those UIs, until their
-tickets. Leave alternate-copy offers to FEAT-21 (reuse existing `412` handling).
+**Next / in progress:** `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` (automated accessibility checks,
+browser-level journeys for MVP routes and lifecycle endpoints, mock/fixture coverage of the documented status matrix,
+coverage thresholds, and folding those suites into `make check`). Reuse FEAT-02 through FEAT-12 typed helpers, page
+tests, redaction seams, and the FEAT-06 / FEAT-12 manual matrices. Do not invent undocumented routes, realtime
+channels, or lifecycle shortcuts through generic `PATCH`. Do not pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16
+release artifacts, or FEAT-17 through FEAT-21 product work into FEAT-13. Product routes are fully implemented (no
+unfinished `RoutePlaceholder` feature pages remain). Later product tickets cover About as homepage with relocated
+dashboard (FEAT-17), collection category filter UI (FEAT-18; shelf sort already shipped), wishlists (FEAT-19),
+dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX (FEAT-21). Generated OpenAPI types
+already know wishlist and dashboard-report paths; `booksApi` already accepts `author` / `title` / `category` list
+filters -- do not call wishlist or report APIs, or ship those UIs, until their tickets. Leave alternate-copy offers to
+FEAT-21 (reuse existing `412` handling).
 
-FEAT-11 delivered `/` via `DashboardPage` + `useDashboard` / `dashboardApi.get` (FEAT-17 will move About to `/` and
-relocate the dashboard). Displays API-provided Collection,
+FEAT-12 delivered optional runtime-configured diagnostic reporting via `src/diagnostics/diagnosticReporter.ts`
+(`createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `release`), wired through `RootErrorBoundary`
+(render failures), `AppProviders`, `ConnectionProvider`, and `apiClient` `onRequestFailure` (API failures). Payloads
+are allowlisted/redacted through `assertSafeApiDiagnostic`; reporting defaults disabled in `public/config.js` and can
+be enabled or retargeted without rebuilding; never invent a second telemetry transport or fabricate correlation IDs
+(live OpenAPI had no documented correlation header). Cross-route a11y/long-content hardening: heading focus on route
+change (including create/checkout/check-in `h1` `tabIndex={-1}`), long-content wrap in `components.css`, and
+evergreen smoke recorded in `docs/baselines/FEAT-12_browser-support.md` (Firefox desktop Pass; Edge/Safari pending;
+Chrome not tested locally; iOS/Android blocked). FEAT-03 performance re-check recorded in
+`docs/baselines/FEAT-03_performance.md` (2k-book fixture and bundle sizes; FEAT-14 owns future budget enforcement).
+Host-owned HTTPS/CSP / SPA fallback / production config serving notes live in `README.md` and `docs/MAINTAINERS.md`
+(FEAT-16 owns rollout). FEAT-11 delivered `/` via `DashboardPage` + `useDashboard` / `dashboardApi.get` (FEAT-17 will
+move About to `/` and relocate the dashboard). Displays API-provided Collection,
 Circulation, and Reading Record metrics without recalculating business totals; null averages render as
 "Not enough data"; inconsistent `read` / `reading.books_read` (and unread counterparts) show a contract warning
 without inventing corrected numbers. Explicit Refresh, offline/paused and stale refresh status, and
@@ -240,11 +253,12 @@ index.html
        -> readRuntimeConfig()
             -> on failure: RuntimeConfigScreen (retry)
             -> on success:
-                 RootErrorBoundary
-                   -> AppProviders
+                 createDiagnosticReporter(runtime diagnostics + release)
+                 RootErrorBoundary (reports redacted render failures)
+                   -> AppProviders (shared DiagnosticReporter)
                         -> NotificationsProvider
                         -> QueryClientProvider (createQueryClient())
-                        -> ConnectionProvider (createApiClient, token, GET /health)
+                        -> ConnectionProvider (createApiClient + onRequestFailure reporter, token, GET /health)
                              -> RouterProvider(router from src/routes/routes.tsx)
                                   -> AppShell (layout route)
                                        -> feature route pages via Outlet
@@ -256,11 +270,12 @@ index.html
 ```
 
 `index.html` creates the `#root` mount point, loads `/config.js`, then loads `src/main.tsx`. When runtime config is
-valid, the bootstrap module renders `RouterProvider` inside `RootErrorBoundary` and `AppProviders` in `StrictMode`.
-Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
+valid, the bootstrap module creates a `DiagnosticReporter`, then renders `RouterProvider` inside `RootErrorBoundary`
+and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
-navigation, the main `Outlet`, footer (runtime release identifier), and heading focus after client-side navigations.
+navigation (brand includes "est. 2026"), the main `Outlet`, footer (runtime release identifier), and heading focus
+after client-side navigations.
 Live product UI today: `/` (`DashboardPage` + `useDashboard`, FEAT-11), `/books` (`BooksPage`, including Read/Unread
 and rating on collection cards), `/books/:bookId` (`BookDetailsPage`, including reading-field display, gated Mark
 Read / Edit Reading / Edit Book / Delete Book), `/books/new` (`NewBookPage` + `BookForm` / `bookFormModel` with ISBN
@@ -284,24 +299,43 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 ### Browser Application
 
 - `index.html`: Vite's HTML entrypoint. Defines page metadata, creates `#root`, loads `/config.js`, then `src/main.tsx`.
-- `public/config.js`: Runtime config assigned to `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`). Not bundled; edit
-  for local or deployed environments.
+- `public/config.js`: Runtime config assigned to `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`, optional
+  `diagnostics: { enabled, endpoint }`). Not bundled; edit for local or deployed environments. Diagnostics default to
+  `enabled: false` / `endpoint: null` so reporting can be enabled or retargeted without rebuilding.
 - `public/favicon.png`: Static favicon served as-is (not bundled).
 - `src/main.tsx`: Browser bootstrap. Calls `readApiToken()` (throws when missing), reads runtime config, either mounts
-  `RuntimeConfigScreen` or `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`, and imports
-  global CSS.
+  `RuntimeConfigScreen` or creates `createDiagnosticReporter` then mounts `RootErrorBoundary` -> `AppProviders` ->
+  `RouterProvider` in `StrictMode`, and imports global CSS.
 - `src/AppProviders.tsx`: Application-wide providers. Wraps `NotificationsProvider`, `QueryClientProvider`
-  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig`).
-- `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home).
-- `src/vite-env.d.ts`: Adds Vite client and asset declarations to TypeScript. It has no runtime behavior.
+  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig` and shared
+  `diagnosticReporter`).
+- `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home); reports
+  redacted render failures through `diagnosticReporter.reportRenderFailure()`.
+- `src/vite-env.d.ts`: Adds Vite client, asset, and `window.__SHADE_CONFIG__` (`diagnostics?: unknown`) declarations
+  to TypeScript. It has no runtime behavior.
 
 ### Runtime Configuration
 
-- `src/config/runtimeConfig.ts`: Validates and normalizes `apiBaseUrl` and `release`; throws `RuntimeConfigError`.
+- `src/config/runtimeConfig.ts`: Validates and normalizes `apiBaseUrl`, `release`, and optional `diagnostics`
+  (`RuntimeDiagnosticConfig`: `enabled`, `endpoint`); throws `RuntimeConfigError`. Omitted `diagnostics` defaults to
+  disabled with a null endpoint; when `enabled` is true, `endpoint` must be a valid HTTP(S) URL.
 - `src/config/runtimeConfigState.ts`: `readRuntimeConfig()` returns `{ config, error }` without throwing.
 - `src/config/RuntimeConfigScreen.tsx`: Blocking UI when config is missing or invalid, with retry.
 - `src/config/apiToken.ts`: `readApiToken()` reads `import.meta.env.VITE_API_SECRET_KEY` (trimmed); throws
   `ApiTokenError` when missing or blank.
+
+### Diagnostics (FEAT-12, complete -- extend, do not replace)
+
+- `src/diagnostics/diagnosticReporter.ts`: `createDiagnosticReporter({ config, release })` returns a
+  `DiagnosticReporter` with `reportApiFailure` / `reportRenderFailure`. When disabled or endpoint is null, methods are
+  no-ops. Enabled reporters POST allowlisted JSON (`api_request_failure` or `render_failure`) after
+  `assertSafeApiDiagnostic`; fetch failures are swallowed so diagnostics never interfere with recovery. Do not invent
+  a second telemetry transport or fabricate correlation IDs.
+- `src/diagnostics/diagnosticReporter.test.ts`: Disabled/enabled reporting, redaction assertions, and failure
+  isolation coverage.
+- Wiring: `main.tsx` creates the reporter; `RootErrorBoundary` reports render failures; `ConnectionProvider` passes
+  `onRequestFailure` into `createApiClient` so API failures call `reportApiFailure`; `renderAppTree` supplies a
+  reporter in tests.
 
 ### API Layer
 
@@ -312,12 +346,13 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
   prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
-  handling, invalid-JSON errors, and `403` via `onUnauthorized`.
+  handling, invalid-JSON errors, `403` via `onUnauthorized`, and optional `onRequestFailure` for allowlisted/redacted
+  diagnostic reporting of request failures.
 - `src/api/apiErrors.ts`: `ApiError` kinds (`unreachable`, `timeout`, `cancelled`, `unauthorized`, `validation`,
   `invalid_response`, `server`, `http`), optional `detail` / `correlationId` / `fieldErrors`,
-  `mapValidationFieldErrors` for FastAPI `422 detail[]`, `formatApiQueryError` for page-level error messages, and
-  `isUnauthorizedQueryError` for `403` handling. `correlationId` stays unset until the backend documents a safe source
-  (do not invent a header or body field).
+  `mapValidationFieldErrors` for FastAPI `422 detail[]`, `formatApiQueryError` for page-level error messages
+  (appends `Request ID:` only when `correlationId` is present), and `isUnauthorizedQueryError` for `403` handling.
+  `correlationId` stays unset until the backend documents a safe source (do not invent a header or body field).
 - `src/api/apiRedaction.ts`: Safe diagnostic projection and assertions so API/error logs never retain headers, tokens,
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
@@ -365,9 +400,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   routes; keep only if a future ticket needs a temporary placeholder.
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
-- `src/layout/AppShell.tsx`: Application frame with skip link, header, primary navigation, admin/settings group,
-  `Outlet` main region, footer (including runtime release identifier), document title, and heading focus on location
-  change.
+- `src/layout/AppShell.tsx`: Application frame with skip link, header (brand name plus "est. 2026"), primary
+  navigation, admin/settings group, `Outlet` main region, footer (including runtime release identifier), document
+  title, and heading focus on location change.
 
 ### Feature Modules
 
@@ -490,8 +525,9 @@ Connection feature (FEAT-02 + FEAT-05 better auth, complete):
   FEAT-02 connection error mapping.
 - `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook (`status`, `apiBaseUrl`,
   `release`, `errorMessage`, `apiClient`).
-- `src/features/connection/ConnectionProvider.tsx`: Owns status, `apiClient`, startup health verification, and
-  `onUnauthorized` page error state (no connect / forget / retry / `hasToken`).
+- `src/features/connection/ConnectionProvider.tsx`: Owns status, `apiClient`, startup health verification,
+  `onUnauthorized` page error state, and optional `diagnosticReporter` wired through `createApiClient`
+  `onRequestFailure` (no connect / forget / retry / `hasToken`).
 
 ### Shared Components
 
@@ -527,7 +563,8 @@ keep reusing these primitives.
   responsive layouts.
 - `src/styles/components.css`: Shared class-based primitives for buttons, links, forms, alerts, status views, dialogs,
   notifications, and dashboard layout (`.dashboard-page`, `.dashboard-section`, `.dashboard-metric`, and related). They
-  use BEM-like naming and are referenced by the shared component modules and `DashboardPage`.
+  use BEM-like naming and are referenced by the shared component modules and `DashboardPage`. FEAT-12 long-content
+  wrapping (`overflow-wrap: anywhere`, `min-width: 0` on book/circulation cards and details) lives here.
 
 Choose the CSS layer based on responsibility:
 
@@ -543,17 +580,20 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 ### Tests
 
 - `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `renderAppTree`.
-- `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback.
+- `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.
 - `src/layout/AppShell.test.tsx`: Landmarks, navigation labels, footer release identifier, current-page state, and
   not-found recovery.
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
-- `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation and read helpers.
+- `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation (including optional
+  diagnostics) and read helpers.
 - `src/config/apiToken.test.ts`: `readApiToken()` missing, blank, and trimmed success cases.
+- `src/diagnostics/diagnosticReporter.test.ts`: Disabled/enabled reporters, allowlisted payloads, redaction
+  assertions, and swallowed transport failures.
 - `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, `5xx`
-  (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success, and
-  `204`.
+  (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success,
+  `204`, and `onRequestFailure` diagnostic hooks.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
@@ -567,7 +607,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   omission of blank filters and `infiniteList` isolation.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
   (includes wishlist and dashboard-report paths plus existing lifecycle routes).
-- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
+- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations; includes the FEAT-12 re-check
+  (FEAT-14 owns future budget enforcement).
+- `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix and blocker policy for FEAT-12.
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
   unauthorized handling without cache clear, and build-time token wiring.
 - `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection
@@ -617,7 +659,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
-  `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API.
+  `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API and a diagnostic reporter.
 - `scripts/productionBuildTokenInspection.test.ts`: Production build env inspection; asserts `.env` is not copied into
   `dist/` and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
 
@@ -658,7 +700,8 @@ yarn test
 ### Repository Guidance
 
 - `README.md`: Concise human onboarding for prerequisites, setup, development, local CORS-or-proxy options, `.env`
-  token configuration, checks, and production builds.
+  token configuration, checks, and production builds. Also documents the production-host security boundary (HTTPS/CSP /
+  SPA fallback / production config serving owned by deployment / FEAT-16).
 - `.env.example`: Committed template for `VITE_API_SECRET_KEY`; copy to gitignored `.env` for local dev and builds.
 - `.gitignore`: Excludes dependencies, generated output, secrets, local data, editor files, and OS metadata.
 - `.gitattributes`: Normalizes text files to LF line endings and marks common binary extensions.
@@ -673,11 +716,14 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-12_operational-and-browser-hardening.md` through `FEAT-21_*.md`: Sequenced implementation tickets
-  with acceptance criteria (historical FEAT-01 through FEAT-11, FEAT-05 ISBN checkout, and FEAT-10 API-contract sync
+- `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` through `FEAT-21_*.md`: Sequenced implementation tickets
+  with acceptance criteria (historical FEAT-01 through FEAT-12, FEAT-05 ISBN checkout, and FEAT-10 API-contract sync
   ticket files are gone).
-- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines for FEAT-12 / FEAT-14.
+- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines (FEAT-12 re-check recorded; FEAT-14
+  owns future enforcement).
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
+- `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
+  pending/blocked/not tested as recorded).
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag ticket-file removal).
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
@@ -686,7 +732,7 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json`.
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
-  this baseline).
+  this baseline). Includes production-host security ownership notes from FEAT-12.
 - `docs/prompt-master-context.md`: Optional slim always-on pack for chats without repo access (not required when
   this file is already loaded).
 
@@ -748,10 +794,11 @@ make build
 - Use extensionless relative TypeScript imports, matching current source style.
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; extend implemented pages rather than
-  inventing a parallel tree. Product routes for FEAT-01 through FEAT-11 are complete -- do not revert them to
-  placeholders. For FEAT-12, reuse `apiRedaction` / `ApiError` / `QueryErrorState` / `RootErrorBoundary` and optional
-  runtime config (`public/config.js` / `RuntimeConfig`) for a redacted diagnostic reporting hook that can be disabled
-  without rebuilding; never fabricate correlation IDs or log denylisted fields. Leave edit under `EditBookPage` /
+  inventing a parallel tree. Product routes for FEAT-01 through FEAT-12 are complete -- do not revert them to
+  placeholders. Leave diagnostics under `src/diagnostics/diagnosticReporter.ts` wired through `RootErrorBoundary` /
+  `AppProviders` / `ConnectionProvider` / `apiClient` `onRequestFailure` and optional runtime config
+  (`public/config.js` / `RuntimeConfig.diagnostics`); never fabricate correlation IDs, invent a second telemetry
+  transport, or log denylisted fields. Leave edit under `EditBookPage` /
   `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; never send `status=on_loan`, reading fields, or
   loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`; block when
   `status === 'on_loan'` or `findActiveLoan` is present). Leave `/admin/deleted` under `DeletedBooksPage` and
@@ -761,9 +808,11 @@ make build
   `ReadingEditPage` / `readingEditModel`. Leave scanner code under `src/features/scanning/` lazy-loaded from
   `/books/new` and `/checkout`. Leave checkout under `CheckoutPage` / `checkoutModel`, including ISBN Find via
   `useBooks({ isbn })` (not lookup) and existing `412` `display_only` handling. Leave check-in and loan history under
-  `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Do not pull FEAT-13 journey
-  automation, FEAT-14 CI packaging, FEAT-16 deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into
-  FEAT-12. Never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`.
+  `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. For FEAT-13, extend existing
+  Vitest / Testing Library coverage and shared `renderAppTree` helpers; add accessibility and browser-journey suites
+  into `make check` without inventing a parallel fake-API stack. Do not pull FEAT-14 CI packaging, FEAT-15 Podman,
+  FEAT-16 deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into FEAT-13. Never simulate restore,
+  checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after

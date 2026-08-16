@@ -6,10 +6,10 @@ repository access).
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
 the dated codebase baseline -- start from this file alone. Do not treat
-any other project prompt, agents guide, or maintainer note as required
-reading before beginning. Attach the on-demand docs listed in section 8
-only when the current ticket needs them; do not re-synthesize those
-sources here.
+any other project prompt or maintainer note as required reading before
+beginning, and do not seek a second "agents" baseline for the same
+facts. Attach the on-demand docs listed in section 8 only when the
+current ticket needs them; do not re-synthesize those sources here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
@@ -45,6 +45,12 @@ If UI/design is in question:
 
 If scanner capture behavior or device support is in question:
   - docs/baselines/FEAT-06_scanner-support.md
+
+If FEAT-13 workflow / accessibility tests:
+  - docs/tickets/FEAT-13_workflow-and-accessibility-tests.md
+  - docs/technical-reference/openapi.json and API-for-FE.md (status matrix and recovery families)
+  - docs/baselines/FEAT-06_scanner-support.md and FEAT-12_browser-support.md when reusing manual matrices
+  - extend existing Vitest / Testing Library / renderAppTree coverage; do not invent a parallel fake-API stack
 
 If CI, Podman, or release artifacts (FEAT-14 through FEAT-16):
   - the current ticket
@@ -198,39 +204,43 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 
 **Known baseline (as of 2026-08-16 -- verify before editing):**
 
--   FEAT-01 through FEAT-11 are complete, plus FEAT-05 ISBN checkout
+-   FEAT-01 through FEAT-12 are complete, plus FEAT-05 ISBN checkout
     selection (distinct from historical create FEAT-05; that ticket file
     is also gone) and FEAT-10 API contract sync (regenerated OpenAPI
     types for wishlist / dashboard-report paths; `booksApi` / query keys
     for `author` / `title` / `category`; collection `sortBy=shelf`;
     checkout `412` `display_only` refetch/messaging -- no alternate-copy
-    offers, wishlist, or incomplete-metadata product UI). FEAT-12
-    operational/browser hardening is complete in the implementation
-    baseline; remaining product / delivery tickets begin with `FEAT-13`
-    and continue through `FEAT-21`. Prefer ticket presence under
-    `docs/tickets/` over `docs/ToDo.md` when judging completion (the
-    checklist can lag).
+    offers, wishlist, or incomplete-metadata product UI). Remaining
+    product / delivery tickets begin with `FEAT-13` and continue through
+    `FEAT-21`. Prefer ticket presence under `docs/tickets/` over
+    `docs/ToDo.md` when judging completion (the checklist can lag).
 -   CHORE-01 is complete: `loansApi.list({ bookId })`, `loansApi.get` /
     `useLoan`, Check In deep-link `/checkin?bookId=...` on book detail
     when check-in eligible, and optional `booksApi.list({ isbn })` /
     `useBooks({ isbn })`.
 -   FEAT-12 operational/browser hardening is complete in the current
-    implementation baseline. It added optional runtime-configured
-    diagnostic reporting using the existing `ApiError` / `apiRedaction`
-    seams; API and render-failure reporting are allowlisted/redacted,
-    diagnostics can be disabled without rebuilding, and correlation IDs
-    remain unset unless the backend supplies a documented safe source.
-    `RootErrorBoundary`, `AppProviders`, `ConnectionProvider`, and
-    `apiClient` are wired to the shared `DiagnosticReporter`; do not
-    invent a second telemetry transport.
+    implementation baseline. Optional runtime-configured diagnostic
+    reporting lives in `src/diagnostics/diagnosticReporter.ts`
+    (`createDiagnosticReporter` from `RuntimeConfig.diagnostics` +
+    `release`), wired through `RootErrorBoundary` (render failures),
+    `AppProviders`, `ConnectionProvider`, and `apiClient`
+    `onRequestFailure` (API failures). Payloads are allowlisted/redacted
+    via `assertSafeApiDiagnostic`; `public/config.js` defaults
+    diagnostics to `enabled: false` / `endpoint: null` so reporting can
+    be enabled or retargeted without rebuilding. Correlation IDs remain
+    unset unless the backend supplies a documented safe source. Do not
+    invent a second telemetry transport or fabricate correlation IDs.
 -   FEAT-12 also completed the cross-route accessibility/responsive
     hardening baseline: route changes update the document title and
-    focus the page heading; skip-link, visible focus, field-linked
-    errors, dialog focus trapping/restoration, no-color-only status,
+    focus the page heading (including create/checkout/check-in `h1`
+    `tabIndex={-1}`); skip-link, visible focus, field-linked errors,
+    dialog focus trapping/restoration, no-color-only status,
     reduced-motion behavior, 320px layout, and long-content wrapping
+    (`overflow-wrap: anywhere` / `min-width: 0` in `components.css`)
     were audited/hardened. Firefox desktop manual smoke passed at
-    mobile/tablet/desktop widths. Additional Edge/Safari verification is
-    documented as pending/unavailable rather than assumed to pass in
+    mobile/tablet/desktop widths. Additional Edge/Safari verification
+    is documented as pending/unavailable rather than assumed to pass;
+    Chrome was not tested locally; iOS/Android are blocked -- see
     `docs/baselines/FEAT-12_browser-support.md`.
 -   FEAT-12 performance re-check: the 2,000-book typed-helper fixture
     completed in 6 ms and the 50-book paginated slice in 2 ms against
@@ -253,20 +263,28 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     HSTS/security headers, SPA fallback, production runtime-config
     serving, installation, and rollback. Do not implement
     deployment-owned HTTPS/CSP rollout early.
--   The next ticket is supplied separately. Do not pull FEAT-14 CI
-    packaging, FEAT-16 deployment work, or FEAT-17 through FEAT-21
-    product work into an earlier ticket. Product routes remain fully
-    implemented (no unfinished `RoutePlaceholder` feature pages;
-    `RoutePlaceholder.tsx` is only an unused helper). Later product
-    tickets cover About as homepage with relocated dashboard (FEAT-17),
-    collection category filter UI (FEAT-18; shelf sort already shipped),
-    wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and
-    display-only checkout alternate-copy UX (FEAT-21). Generated OpenAPI
-    types already know wishlist and dashboard-report paths; `booksApi`
-    already accepts `author` / `title` / `category` list filters -- do
-    not call wishlist or report APIs, or ship those UIs, until their
-    tickets. Leave alternate-copy offers to FEAT-21 (reuse existing
-    `412` handling).
+-   Expected next when no other ticket is supplied:
+    `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md`
+    (automated accessibility checks, browser-level journeys for MVP
+    routes and lifecycle endpoints, mock/fixture coverage of the
+    documented status matrix, coverage thresholds, and folding those
+    suites into `make check`). Reuse FEAT-02 through FEAT-12 typed
+    helpers, page tests, redaction seams, and the FEAT-06 / FEAT-12
+    manual matrices. Do not invent undocumented routes, realtime
+    channels, or lifecycle shortcuts through generic `PATCH`. Do not
+    pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16 release
+    artifacts, or FEAT-17 through FEAT-21 product work into FEAT-13.
+    Product routes remain fully implemented (no unfinished
+    `RoutePlaceholder` feature pages; `RoutePlaceholder.tsx` is only an
+    unused helper). Later product tickets cover About as homepage with
+    relocated dashboard (FEAT-17), collection category filter UI
+    (FEAT-18; shelf sort already shipped), wishlists (FEAT-19),
+    dashboard report surfaces (FEAT-20), and display-only checkout
+    alternate-copy UX (FEAT-21). Generated OpenAPI types already know
+    wishlist and dashboard-report paths; `booksApi` already accepts
+    `author` / `title` / `category` list filters -- do not call wishlist
+    or report APIs, or ship those UIs, until their tickets. Leave
+    alternate-copy offers to FEAT-21 (reuse existing `412` handling).
 -   FEAT-11 delivered `/` via `DashboardPage` + `useDashboard` /
     `dashboardApi.get` (FEAT-17 will move About to `/` and relocate the
     dashboard). Displays API-provided Collection, Circulation, and
@@ -632,7 +650,8 @@ index.html
     download, and dashboard already use these primitives.
 -   CSS layers: `tokens` -\> `base` -\> `shell` -\> `components` via
     `src/index.css` (plain CSS; BEM-like component classes). Shell
-    footer shows the runtime release identifier.
+    footer shows the runtime release identifier. FEAT-12 long-content
+    wrapping lives in `components.css`.
 -   Local setup: copy `.env.example` to `.env` and set
     `VITE_API_SECRET_KEY` to match the backend `API_SECRET_KEY`; restart
     the dev server after changing `.env`. Optional same-origin proxy:
@@ -777,15 +796,16 @@ route change, no color-only status, 320px viewport, reduced motion.
     Testing Library queries and user-visible behavior.
 -   Keep feature UI behind `src/features/*/routes/`; extend implemented
     pages rather than inventing a parallel tree. Product routes for
-    FEAT-01 through FEAT-11 are complete -- do not revert them to
-    placeholders. FEAT-12 diagnostics and accessibility/browser
-    hardening are also complete -- extend rather than replace
-    `apiRedaction` / `ApiError` / `QueryErrorState` /
-    `RootErrorBoundary` / `DiagnosticReporter` / runtime diagnostics
-    configuration, and preserve the route-heading focus, dialog,
+    FEAT-01 through FEAT-12 are complete -- do not revert them to
+    placeholders. Leave diagnostics under
+    `src/diagnostics/diagnosticReporter.ts` wired through
+    `RootErrorBoundary` / `AppProviders` / `ConnectionProvider` /
+    `apiClient` `onRequestFailure` and optional runtime config
+    (`public/config.js` / `RuntimeConfig.diagnostics`); never fabricate
+    correlation IDs, invent a second telemetry transport, or log
+    denylisted fields. Preserve the route-heading focus, dialog,
     field-error, reduced-motion, 320px, and long-content accessibility
-    baseline. Never fabricate correlation IDs or log denylisted fields.
-    Leave edit under `EditBookPage` / `bookEditModel` (minimal
+    baseline. Leave edit under `EditBookPage` / `bookEditModel` (minimal
     `BookUpdate` patch; blank ISBN -\> `null`; never send
     `status=on_loan`, reading fields, or loan-driving values). Leave
     delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`;
@@ -804,10 +824,13 @@ route change, no color-only status, 320px viewport, reduced motion.
     history under `CheckinPage` / `checkinModel` / `checkinEligibility`
     / `LoansPage` / `loanTemporal`. Leave infinite scroll under
     `useInfiniteBooks` / `useInfiniteLoans` / `useInfiniteScrollTrigger`
-    / `booksListModel` / `BooksListControls`. Do not pull FEAT-13
-    journey automation, FEAT-14 CI packaging, FEAT-16 deployment-owned
-    HTTPS/CSP, or FEAT-17 through FEAT-21 product work into earlier
-    tickets. Never simulate restore, checkout, check-in, or initial
+    / `booksListModel` / `BooksListControls`. For FEAT-13, extend
+    existing Vitest / Testing Library coverage and shared
+    `renderAppTree` helpers; add accessibility and browser-journey
+    suites into `make check` without inventing a parallel fake-API
+    stack. Do not pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16
+    deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work
+    into FEAT-13. Never simulate restore, checkout, check-in, or initial
     mark-read with generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
     it.
@@ -840,11 +863,12 @@ Do not expand a ticket into out-of-scope features. Do not implement
 future tickets prematurely.
 
 Remaining tickets begin with `FEAT-13` and continue through `FEAT-21`
-(historical FEAT-01 through FEAT-11, the FEAT-05 ISBN checkout ticket,
-and the FEAT-10 API-contract sync ticket files are gone; FEAT-12 is
-complete in the current implementation baseline). The supplied ticket's
-acceptance criteria are authoritative unless they contradict the backend
-contract or established architecture.
+(historical FEAT-01 through FEAT-12, the FEAT-05 ISBN checkout ticket,
+and the FEAT-10 API-contract sync ticket files are gone). The expected
+next ticket is FEAT-13 workflow and accessibility tests unless a
+different ticket is supplied. The supplied ticket's acceptance criteria
+are authoritative unless they contradict the backend contract or
+established architecture.
 
 ------------------------------------------------------------------------
 
@@ -872,8 +896,8 @@ repo before editing.
   Infinite      `src/features/shared/infiniteScrollConfig.ts`, `src/hooks/useInfiniteScrollTrigger.ts`
   scroll        
 
-  Routing /     `src/routes/*`, `src/layout/AppShell.tsx`
-  shell         
+  Routing /     `src/routes/*`, `src/layout/AppShell.tsx` (brand includes
+  shell         "est. 2026"; footer shows runtime release)
 
   Feature       `src/features/{dashboard,books,loans,connection,scanning,shared}/` (scanning is a feature module, not a top-level route)
   routes        
@@ -891,9 +915,10 @@ repo before editing.
 
   Shared UI     `src/components/*` (import via `index.ts`; includes `QueryErrorState`)
 
-  Styles        `src/index.css`, `src/styles/{tokens,base,shell,components}.css` (dashboard classes in `components.css`)
+  Styles        `src/index.css`, `src/styles/{tokens,base,shell,components}.css` (dashboard classes and FEAT-12
+                long-content wrap in `components.css`)
 
-  Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx`
+  Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (includes diagnostic reporter)
 
   Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`
 
@@ -915,9 +940,10 @@ API contract sync (complete -- list filters, shelf sort, checkout
 operational/browser hardening (FEAT-12, complete -- runtime diagnostics,
 cross-route accessibility/responsive hardening, browser-support
 documentation, performance/contract re-check, and production-host
-security ownership notes). Later tickets: FEAT-17 About homepage,
-FEAT-18 category filter UI, FEAT-19 wishlists, FEAT-20 dashboard
-reports, FEAT-21 display-only alternate-copy UX.
+security ownership notes). Next expected: FEAT-13 workflow and
+accessibility tests. Later tickets: FEAT-17 About homepage, FEAT-18
+category filter UI, FEAT-19 wishlists, FEAT-20 dashboard reports,
+FEAT-21 display-only alternate-copy UX.
 
 ------------------------------------------------------------------------
 
@@ -975,11 +1001,13 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
   Product requirements (source)   `docs/product-docs/PRODUCT_REQS.V1.md`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
-  Feature tickets                 Remaining current tickets `FEAT-13_...`
-                                  through `FEAT-21_...`; FEAT-12 is complete in
-                                  the implementation baseline (historical
-                                  FEAT-01-11, FEAT-05 ISBN, and FEAT-10
-                                  API-contract sync ticket files gone)
+  Feature tickets                 Remaining current tickets
+                                  `FEAT-13_workflow-and-accessibility-tests.md`
+                                  through `FEAT-21_...`; historical FEAT-01
+                                  through FEAT-12, FEAT-05 ISBN, and FEAT-10
+                                  API-contract sync ticket files are gone;
+                                  expected next is FEAT-13 unless another
+                                  ticket is supplied
 
   Performance baselines (large    `docs/baselines/FEAT-03_performance.md`
   library / bundle)               (FEAT-12 re-check recorded; FEAT-14 owns
@@ -1005,7 +1033,8 @@ Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
 baseline. Do not treat other project guides as required reading before
-starting from this pack.
+starting from this pack, and do not defer to a second baseline document
+for the same inventory.
 
 ------------------------------------------------------------------------
 
