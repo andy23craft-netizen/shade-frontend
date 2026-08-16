@@ -33,19 +33,22 @@ FEAT-15.
 - A production-like host verifies runtime configuration, protected API access, CORS/preflight or proxy behavior,
   permitted `Authorization`/`Content-Type`, readable backup `Content-Disposition`, direct-route SPA fallback,
   revalidated HTML/config, and long-lived immutable asset caching.
-- A smoke checklist passes for env verification, dashboard, list, create, checkout, check-in, mark-read, delete, restore, and
-  authenticated backup download.
-- Backup verification covers a non-empty SQL attachment, safe server/fallback filename handling, recoverable generation
-  `500`, and no bogus download or retained/inspected SQL contents after failure.
-- The deployment handoff covers every requirement in `../product-docs/PLAN.md` without implementing deployment-owned systems here.
-- No critical/high defect, serious accessibility violation, exposed secret, or release-blocking contract mismatch remains.
+- A smoke checklist passes for env verification, dashboard, list, create (including shelf selection), shelves
+  catalog create/edit/delete, checkout, check-in, mark-read, delete, restore, and authenticated backup download.
+- Backup verification covers a non-empty SQL attachment, safe server/fallback filename handling, recoverable
+  generation `500`, and no bogus download or retained/inspected SQL contents after failure.
+- The deployment handoff covers every requirement in `../product-docs/PLAN.md` without implementing
+  deployment-owned systems here.
+- No critical/high defect, serious accessibility violation, exposed secret, or release-blocking contract mismatch
+  remains.
 - `make check` passes.
 
 ## Plan coverage
 
-The packaging/documentation portion of Workstream 12; artifact and operational handoff gates; the complete definition of
-done.
+The packaging/documentation portion of Workstream 12; artifact and operational handoff gates; the complete
+definition of done.
 
 ## Out of scope
 
-Remote transfer, Ansible, systemd, TLS provisioning, production static-server configuration, and rollback implementation.
+Remote transfer, Ansible, systemd, TLS provisioning, production static-server configuration, and rollback
+implementation.

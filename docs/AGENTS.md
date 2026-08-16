@@ -3,7 +3,7 @@
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
 operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-16 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
-other LLM prompt or agents guide (`docs/prompt-master-context.md` is a slim ChatGPT pack, not required here). Attach
+other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
 repository before making changes because the code may have changed since this document was written. A user's explicit
 request takes precedence over general guidance here.
@@ -20,39 +20,37 @@ Shade is a browser UI for a personal home-library FastAPI backend. Planned capab
 - Sending a shared Bearer token with backend API requests (no user accounts).
 
 **Completed:** FEAT-01 (application shell and shared UI), FEAT-02 (runtime configuration and connection), FEAT-03
-(typed API and server state), FEAT-04 (active collection and book details), historical FEAT-05 (book form and
-creation), FEAT-06 (ISBN camera and hardware-scanner capture), FEAT-07 (checkout workflow), FEAT-05 ISBN
-checkout selection (distinct from historical create FEAT-05; ticket file removed), FEAT-08 (check-in and loan
-history), FEAT-09 (reading completion, rating, and review), historical FEAT-10 (edit metadata, soft delete/restore,
-deleted admin, and authenticated SQL backup), FEAT-10 API contract sync (regenerated OpenAPI types for wishlist /
-dashboard-report paths; `booksApi` / query keys for `author` / `title` / `category`; collection `sortBy=shelf`;
-checkout `412` `display_only` refetch/messaging -- no alternate-copy offers, wishlist, or incomplete-metadata
-product UI), FEAT-11 (library dashboard), and FEAT-12 (operational and browser hardening; ticket file removed).
-CHORE-01 (shelves contract sync and catalog writes) delivered `GET` / `POST` / `PATCH` /
-`DELETE /shelves` via `shelvesApi` (`list` / `create` / `update` / `remove`) and
-`useShelves` / `useCreateShelf` / `useUpdateShelf` / `useDeleteShelf`, book payloads on
-`shelf_name` (string; old `Shelf` enum removed), `/shelves` create/edit/delete UI with
-system-shelf protection (`unknown` / `removed` cannot be renamed or deleted; metadata
-edits allowed), and Add/Edit Book shelf pickers fed by the API (`shelf_id` in memory,
-Title Case `common_name` labels, submit `shelf_name`; `unknown` allowed; `removed`
-excluded except edit may surface current `removed` membership; create requires an
-explicit shelf; Add/Edit Book block the page when shelves fail to load). Remaining
-tickets are `FEAT-13` through `FEAT-21` under `docs/tickets/`. Prefer ticket presence
-under `docs/tickets/` over `docs/ToDo.md` when judging completion (the checklist can
-lag).
+(typed API and server state), FEAT-04 (active collection and book details), FEAT-05 (book form and creation),
+FEAT-06 (ISBN camera and hardware-scanner capture), FEAT-07 (checkout workflow), checkout Find-by-ISBN (typed /
+camera / hardware via `useBooks({ isbn })`, distinct from book-create ISBN lookup), FEAT-08 (check-in and loan
+history), FEAT-09 (reading completion, rating, and review), FEAT-10 (edit metadata, soft delete/restore, deleted
+admin, and authenticated SQL backup), API contract sync (regenerated OpenAPI types for wishlist / dashboard-report
+paths; `booksApi` / query keys for `author` / `title` / `category`; collection `sortBy=shelf`; checkout `412`
+`display_only` refetch/messaging -- no alternate-copy offers, wishlist, or incomplete-metadata product UI),
+FEAT-11 (library dashboard), FEAT-12 (operational and browser hardening), and CHORE-01 (shelves contract sync and
+catalog writes). CHORE-01 delivered `GET` / `POST` / `PATCH` / `DELETE /shelves` via `shelvesApi`
+(`list` / `create` / `update` / `remove`) and `useShelves` / `useCreateShelf` / `useUpdateShelf` /
+`useDeleteShelf`, book payloads on `shelf_name` (string; old `Shelf` enum removed), `/shelves` create/edit/delete
+UI with system-shelf protection (`unknown` / `removed` cannot be renamed or deleted; metadata edits allowed), and
+Add/Edit Book shelf pickers fed by the API (`shelf_id` in memory, Title Case `common_name` labels, submit
+`shelf_name`; `unknown` allowed; `removed` excluded except edit may surface current `removed` membership; create
+requires an explicit shelf; Add/Edit Book block the page when shelves fail to load). Remaining tickets are
+`FEAT-13` through `FEAT-21` under `docs/tickets/`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md`
+when judging what is still open (the checklist can lag).
 
 **Next / in progress:** `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` (automated accessibility checks,
 browser-level journeys for MVP routes and lifecycle endpoints, mock/fixture coverage of the documented status matrix,
-coverage thresholds, and folding those suites into `make check`). Reuse FEAT-02 through FEAT-12 typed helpers, page
-tests, redaction seams, and the FEAT-06 / FEAT-12 manual matrices. Do not invent undocumented routes, realtime
-channels, or lifecycle shortcuts through generic `PATCH`. Do not pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16
-release artifacts, or FEAT-17 through FEAT-21 product work into FEAT-13. Product routes are fully implemented (no
-unfinished `RoutePlaceholder` feature pages remain). Later product tickets cover About as homepage with relocated
-dashboard (FEAT-17), collection category filter UI (FEAT-18; shelf sort already shipped), wishlists (FEAT-19),
-dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX (FEAT-21). Generated OpenAPI types
-already know wishlist and dashboard-report paths; `booksApi` already accepts `author` / `title` / `category` list
-filters -- do not call wishlist or report APIs, or ship those UIs, until their tickets. Leave alternate-copy offers to
-FEAT-21 (reuse existing `412` handling).
+coverage thresholds, and folding those suites into `make check`). Scaffolding already present: `playwright.config.ts`,
+`e2e/` (dashboard smoke, mock API helper, axe helper), and `yarn test:e2e` -- not yet part of `make check`. Reuse
+existing typed helpers, page tests, redaction seams, and the checked-in FEAT-06 / FEAT-12 baseline matrices. Do not
+invent undocumented routes, realtime channels, or lifecycle shortcuts through generic `PATCH`. Do not pull FEAT-14 CI
+packaging, FEAT-15 Podman, FEAT-16 release artifacts, or FEAT-17 through FEAT-21 product work into FEAT-13. Product
+routes are fully implemented (no unfinished `RoutePlaceholder` feature pages remain). Later product tickets cover
+About as homepage with relocated dashboard (FEAT-17), collection category filter UI (FEAT-18; shelf sort already
+shipped), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX
+(FEAT-21). Generated OpenAPI types already know wishlist and dashboard-report paths; `booksApi` already accepts
+`author` / `title` / `category` list filters -- do not call wishlist or report APIs, or ship those UIs, until their
+tickets. Leave alternate-copy offers to FEAT-21 (reuse existing `412` handling).
 
 FEAT-12 delivered optional runtime-configured diagnostic reporting via `src/diagnostics/diagnosticReporter.ts`
 (`createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `release`), wired through `RootErrorBoundary`
@@ -81,10 +79,10 @@ UI; success to detail. Soft delete via dedicated `/books/:bookId/delete` (`Delet
 `ConfirmationDialog` + `useRestoreBook` / `booksApi.restore`). `/admin/backup` via `BackupLibraryPage` +
 `backupApi.get` (programmatic `<a download>`, always `URL.revokeObjectURL`; never inspect/log/cache/upload dump
 contents). Prefer dedicated delete/restore endpoints; never simulate restore, checkout, check-in, or initial
-mark-read with generic `PATCH`. FEAT-05 ISBN checkout selection extended `/checkout` with Find-by-ISBN (typed,
-camera, hardware wedge) that queries `useBooks({ isbn })` / `GET /books?isbn=` (compact punctuation only via
+mark-read with generic `PATCH`. Checkout Find-by-ISBN extended `/checkout` with typed, camera, and hardware-wedge
+capture that queries `useBooks({ isbn })` / `GET /books?isbn=` (compact punctuation only via
 `compactIsbnForListFilter`; checksum-gated; never `GET /books/lookup` or digit rewriting), filters to
-FEAT-07-eligible books, auto-selects a single match, offers a short chooser for multiples, and explains zero /
+checkout-eligible books, auto-selects a single match, offers a short chooser for multiples, and explains zero /
 ineligible results without clearing borrower fields. FEAT-07 delivered `/checkout` via `CheckoutPage` and
 `checkoutModel` (`checkoutFormValuesToRequest`, borrower blank/255 validation, omit blank optionals, UTC ISO
 `checked_out_at` / date-only `due_at`), wired to existing `useCheckoutBook` / `booksApi.checkout` /
@@ -111,9 +109,9 @@ ineligible warning UI. Detail gates "Mark Read" to active unread books and "Edit
 books. Collection cards show Read/Unread plus rating (`N / 5`, or an em dash when null). There is no mark-unread.
 FEAT-06 delivered `src/features/scanning/` with lazy-loaded `IsbnCameraScanner` (`@zxing/browser` + `@zxing/library`),
 `isbnCameraCapture` helpers, `IsbnScannerParser` / `useHardwareIsbnScanner` keyboard-wedge capture, and handoff into
-the existing FEAT-05 lookup path on `/books/new` (never calls `POST /books` from scanner success); the same modules
-are also lazy-loaded from `/checkout` for library ISBN Find (never checkout or create from scan success). Support
-matrix: `docs/baselines/FEAT-06_scanner-support.md`. Historical FEAT-05 delivered `/books/new` via shared `BookForm` /
+the existing book-create lookup path on `/books/new` (never calls `POST /books` from scanner success); the same
+modules are also lazy-loaded from `/checkout` for library ISBN Find (never checkout or create from scan success).
+Support matrix: `docs/baselines/FEAT-06_scanner-support.md`. FEAT-05 delivered `/books/new` via shared `BookForm` /
 `bookFormDefaults` / `bookFormModel`. FEAT-04 delivered read-only browse/detail on `/books` and `/books/:bookId`.
 FEAT-03 delivered OpenAPI generation, typed route helpers, React Query hooks (including `useCheckoutBook`,
 `useCheckinBook`, `useMarkBookRead`, `useUpdateBook`, `useDeleteBook`, and `useRestoreBook`), and PLAN.md 7.5
@@ -135,6 +133,8 @@ Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer t
   the critical path for ordinary navigation)
 - Vitest with jsdom
 - Testing Library and jest-dom
+- Playwright (`@playwright/test`) with `@axe-core/playwright` for browser journeys and accessibility checks (FEAT-13;
+  `yarn test:e2e`; not yet folded into `make check`)
 - ESLint flat configuration
 - Yarn 4 through Corepack (`yarn@4.18.0` in `package.json`)
 - Node.js 26.7.0
@@ -512,7 +512,7 @@ Implemented (do not revert to placeholders):
 - `src/features/books/utils/isbn.ts`: ISBN-10 / ISBN-13 checksum helpers plus `compactIsbnForListFilter` (punctuation
   strip only for `GET /books?isbn=`); used by lookup, create, scanner capture, and checkout ISBN Find; colocated unit
   tests
-- `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07 + FEAT-05 ISBN selection): eligible books via
+- `src/features/loans/routes/CheckoutPage.tsx` (`/checkout`, FEAT-07 + Find-by-ISBN): eligible books via
   `useBooks`; ISBN Find via checksum-gated `useBooks({ isbn })` with typed / camera / hardware handoff (lazy
   `IsbnCameraScanner`, same enablement pattern as `/books/new`); single-match auto-select via `?bookId=`, multi-match
   chooser, zero / ineligible messaging; `?bookId=` deep-link with refresh; confirmation via `ConfirmationDialog`;
@@ -552,7 +552,7 @@ Scanning feature (FEAT-06, complete -- extend, do not replace):
 - Support matrix and manual device checklist: `docs/baselines/FEAT-06_scanner-support.md`
 - Colocated scanning tests plus `NewBookPage` / `CheckoutPage` handoff tests for camera and hardware captures
 
-Connection feature (FEAT-02 + FEAT-05 better auth, complete):
+Connection feature (FEAT-02 + build-time Bearer auth, complete):
 
 - `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `connected`, `unauthorized`,
   `unreachable`).
@@ -700,15 +700,23 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/features/scanning/IsbnCameraScanner.test.tsx` / `isbnCameraCapture.test.ts` / `isbnScannerParser.test.ts` /
   `useHardwareIsbnScanner.test.ts`: Camera UI, capture helpers, keyboard-wedge parser, and hardware hook coverage
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist
+- `playwright.config.ts`: Playwright browser-journey config (Chromium; local Vite webServer on `127.0.0.1:4173` with
+  `VITE_API_SECRET_KEY`; HTML reporter; CI retries). FEAT-13 owns expanding coverage and folding into `make check`.
+- `e2e/dashboard.smoke.spec.ts`: Dashboard browser smoke (heading/title, null-average copy, axe serious/critical
+  gate) via mocked API
+- `e2e/support/mockApi.ts`: Playwright route mock for `http://127.0.0.1:8000/**` (health + dashboard fixtures so far)
+- `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
   `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API and a diagnostic reporter.
 - `scripts/productionBuildTokenInspection.test.ts`: Production build env inspection; asserts `.env` is not copied into
   `dist/` and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
 
-Tests use a jsdom browser simulation (except the Node-environment production-build inspection). Prefer semantic Testing
-Library queries such as `getByRole()` and test user-visible behavior instead of implementation details. Route tests
-should use `createTestRouter` / `renderAppTree` and must not mutate `window.history` across cases.
+Tests use a jsdom browser simulation for Vitest (except the Node-environment production-build inspection). Prefer
+semantic Testing Library queries such as `getByRole()` and test user-visible behavior instead of implementation
+details. Route tests should use `createTestRouter` / `renderAppTree` and must not mutate `window.history` across
+cases. Browser journeys live under `e2e/` and run through Playwright (`yarn test:e2e`); keep mocks aligned with
+OpenAPI / `API-for-FE.md` rather than inventing a second fake-API stack.
 
 The test flow is:
 
@@ -718,6 +726,11 @@ yarn test
   -> jsdom supplies browser APIs
   -> src/test/setup.ts installs shared matchers
   -> colocated *.test.tsx / *.test.ts files render through Testing Library
+
+yarn test:e2e
+  -> Playwright reads playwright.config.ts
+  -> starts Vite webServer (or reuses one outside CI)
+  -> runs e2e/*.spec.ts against Chromium
 ```
 
 ### Dependencies and Commands
@@ -759,15 +772,15 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` through `FEAT-21_*.md`: Sequenced implementation tickets
-  with acceptance criteria (historical FEAT-01 through FEAT-12, FEAT-05 ISBN checkout, FEAT-10 API-contract sync, and
-  CHORE-01 shelves write UI ticket files are gone).
+- `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` through `FEAT-21_*.md`: Remaining sequenced implementation
+  tickets with acceptance criteria. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what
+  is still open.
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines (FEAT-12 re-check recorded; FEAT-14
   owns future enforcement).
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
   pending/blocked/not tested as recorded).
-- `docs/ToDo.md`: Human checklist of ticket completion status (may lag ticket-file removal).
+- `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
@@ -776,7 +789,7 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
   this baseline). Includes production-host security ownership notes from FEAT-12.
-- `docs/prompt-master-context.md`: Optional slim always-on pack for chats without repo access (not required when
+- `docs/full-project-context.md`: Optional slim always-on pack for chats without repo access (not required when
   this file is already loaded).
 
 ## Development Commands
@@ -798,6 +811,8 @@ Common commands:
 - `make typecheck`: Runs TypeScript build mode across both TypeScript configurations.
 - `make test`: Runs all Vitest tests once.
 - `yarn test:watch`: Runs Vitest in watch mode during development.
+- `yarn test:e2e`: Runs Playwright browser journeys under `e2e/` (not yet part of `make check`; FEAT-13).
+- `yarn test:coverage`: Runs Vitest with V8 coverage (thresholds / CI folding are FEAT-13 / FEAT-14).
 - `make build`: Type-checks and writes an optimized application to `dist/`.
 - `make check`: Runs lint, type checking, tests, and a production build.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
@@ -849,16 +864,16 @@ make build
   inspect, log, cache, or upload dump contents). Leave dashboard under `DashboardPage` / `useDashboard` (display
   API stats only; null averages as "Not enough data"). Leave reading flows under `MarkReadPage` / `markReadModel` /
   `ReadingEditPage` / `readingEditModel`. Leave scanner code under `src/features/scanning/` lazy-loaded from
-  `/books/new` and `/checkout`.   Leave checkout under `CheckoutPage` / `checkoutModel`, including ISBN Find via
+  `/books/new` and `/checkout`. Leave checkout under `CheckoutPage` / `checkoutModel`, including ISBN Find via
   `useBooks({ isbn })` (not lookup) and existing `412` `display_only` handling. Leave check-in and loan history under
   `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Leave shelves under
   `ShelvesPage` / `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations (`/shelves` owns
   create/edit/delete with system-shelf protection; book forms use API-fed pickers with `shelf_name`, never shelf CRUD
-  on Add/Edit Book). For FEAT-13, extend existing
-  Vitest / Testing Library coverage and shared `renderAppTree` helpers; add accessibility and browser-journey suites
-  into `make check` without inventing a parallel fake-API stack. Do not pull FEAT-14 CI packaging, FEAT-15 Podman,
-  FEAT-16 deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into FEAT-13. Never simulate restore,
-  checkout, check-in, or initial mark-read with generic `PATCH`.
+  on Add/Edit Book). For FEAT-13, extend existing Vitest / Testing Library / `renderAppTree` coverage and the
+  Playwright `e2e/` scaffolding (`playwright.config.ts`, mock API, axe helper); fold accessibility and browser-journey
+  suites into `make check` without inventing a parallel fake-API stack. Do not pull FEAT-14 CI packaging, FEAT-15
+  Podman, FEAT-16 deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into FEAT-13. Never simulate
+  restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the FEAT-03 typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
