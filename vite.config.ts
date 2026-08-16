@@ -47,5 +47,22 @@ export default defineConfig({
             'src/**/*.{test,spec}.{ts,tsx}',
             'scripts/**/*.{test,spec}.ts',
         ],
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'html', 'json-summary'],
+            include: ['src/**/*.{ts,tsx}'],
+            exclude: [
+                'src/**/*.test.{ts,tsx}',
+                'src/api/generated/**',
+                'src/vite-env.d.ts',
+                'src/main.tsx',
+            ],
+            thresholds: {
+                statements: 88,
+                branches: 83,
+                functions: 92,
+                lines: 88,
+            },
+        },
     },
 })

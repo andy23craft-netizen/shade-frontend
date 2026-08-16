@@ -898,11 +898,14 @@
   line-height: 1;
 }
 
-.dashboard-metric p {
+.dashboard-metric dd.dashboard-metric__description {
   align-self: end;
   margin: var(--space-1) 0 0;
   color: var(--color-surface-text-muted);
+  font-family: var(--font-family-body);
   font-size: var(--font-size-small);
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .dashboard-metric .app-link {

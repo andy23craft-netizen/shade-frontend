@@ -45,3 +45,5 @@ node_modules/
 # Frontend build and tooling output
 coverage/
 .vite/
+playwright-report/
+test-results/
