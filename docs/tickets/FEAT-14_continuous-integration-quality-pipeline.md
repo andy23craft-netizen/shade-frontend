@@ -37,7 +37,7 @@ representative running backend `/openapi.json` when locking or changing the gate
 - Browser journeys and accessibility suites from FEAT-13 run in CI with isolated data. They must not depend on
   execution order or a shared mutable live library. Responses they assert against stay aligned with OpenAPI success/
   error shapes and `API-for-FE.md` semantics (including both `422` detail shapes, lookup `found: false`, dedicated
-  lifecycle endpoints, and backup generation `500`).
+  lifecycle endpoints, shelves CRUD status families, and backup generation `500`).
 
 #### Secrets, credentials, and CI environment
 
@@ -46,11 +46,11 @@ representative running backend `/openapi.json` when locking or changing the gate
 - If an optional live contract smoke job exists (against a representative API), supply credentials only through the CI
   secret store, never through the repository, workflow defaults, build args, or runtime-config templates committed for
   CI. Prefer public `GET /health` for reachability; use protected routes only when the smoke explicitly needs them.
-- Production-build inspection (updated for FEAT-05 `.env` auth): CI supplies a documented dummy `VITE_API_SECRET_KEY` for
-  any step that runs `vite build`. Assert the repo-root `.env` file is **not** copied into `dist/` or packaged into the
-  production release tarball. Embedded build-time token values in JS bundles are expected after FEAT-05; do not fail the
-  build solely because a dummy secret appears in compiled assets. CI fails when `.env` itself appears in `dist/` or
-  release artifacts.
+- Production-build inspection (build-time Bearer via `.env`): CI supplies a documented dummy
+  `VITE_API_SECRET_KEY` for any step that runs `vite build`. Assert the repo-root `.env` file is **not** copied into
+  `dist/` or packaged into the production release tarball. Embedded build-time token values in JS bundles are
+  expected; do not fail the build solely because a dummy secret appears in compiled assets. CI fails when `.env`
+  itself appears in `dist/` or release artifacts.
 
 #### Privacy denylist for logs and retained artifacts
 

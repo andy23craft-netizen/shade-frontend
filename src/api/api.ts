@@ -22,6 +22,14 @@ import {
     createLoansApi,
 } from './loansApi'
 
+import {
+    createShelvesApi,
+} from './shelvesApi'
+
+import {
+    createVersionApi,
+} from './versionApi'
+
 export function createApi(
     options: Parameters<
         typeof createApiClient
@@ -34,9 +42,11 @@ export function createApi(
         client,
         books: createBooksApi(client),
         loans: createLoansApi(client),
+        shelves: createShelvesApi(client),
         dashboard:
             createDashboardApi(client),
         health: createHealthApi(client),
+        version: createVersionApi(client),
         backup: createBackupApi(client),
     }
 }

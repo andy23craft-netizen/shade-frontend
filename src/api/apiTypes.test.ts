@@ -10,6 +10,9 @@ import type {
     DashboardSummary,
     LoanList,
     LoanRead,
+    ShelfCreate,
+    ShelfRead,
+    ShelfUpdate,
 } from './apiTypes'
 
 describe('API transport types', () => {
@@ -19,7 +22,7 @@ describe('API transport types', () => {
             title: 'A Book',
             authors: 'An Author',
             category: 'unknown',
-            shelf: 'unknown',
+            shelf_name: 'unknown',
             status: 'available',
             is_read: false,
             creation_date: '2026-08-01T00:00:00Z',
@@ -36,8 +39,42 @@ describe('API transport types', () => {
         expect(book.updated_date)
             .toBe('2026-08-02T00:00:00Z')
 
+        expect(book.shelf_name).toBe('unknown')
         expect(book.times_borrowed).toBe(3)
         expect(book.average_loan_days).toBe(4.5)
+    })
+
+    it('preserves ShelfRead transport field names', () => {
+        const shelf = {
+            shelf_id: 'shelf-1',
+            common_name: 'a1',
+            location: 'Living room',
+            description: null,
+            created_date: '2026-01-01T00:00:00Z',
+            updated_date: '2026-01-02T00:00:00Z',
+        } satisfies ShelfRead
+
+        expect(shelf.shelf_id).toBe('shelf-1')
+        expect(shelf.common_name).toBe('a1')
+        expect(shelf.location).toBe('Living room')
+        expect(shelf.description).toBeNull()
+    })
+
+    it('preserves ShelfCreate and ShelfUpdate field names', () => {
+        const create = {
+            common_name: 'a1',
+            location: 'Living room',
+            description: null,
+        } satisfies ShelfCreate
+
+        const update = {
+            common_name: 'b2',
+            location: null,
+            description: 'Notes',
+        } satisfies ShelfUpdate
+
+        expect(create.common_name).toBe('a1')
+        expect(update.description).toBe('Notes')
     })
 
     it('preserves LoanRead audit field names', () => {

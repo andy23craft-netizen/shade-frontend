@@ -10,11 +10,9 @@ describe('loadRuntimeConfig', () => {
         expect(
             loadRuntimeConfig({
                 apiBaseUrl: 'http://127.0.0.1:8000/',
-                release: '2026.08.10',
             }),
         ).toEqual({
             apiBaseUrl: 'http://127.0.0.1:8000',
-            release: '2026.08.10',
             diagnostics: {
                 enabled: false,
                 endpoint: null,
@@ -26,7 +24,6 @@ describe('loadRuntimeConfig', () => {
         expect(
             loadRuntimeConfig({
                 apiBaseUrl: 'https://library.example.com',
-                release: '1.0.0',
             }).apiBaseUrl,
         ).toBe('https://library.example.com')
     })
@@ -35,7 +32,6 @@ describe('loadRuntimeConfig', () => {
         expect(
             loadRuntimeConfig({
                 apiBaseUrl: 'https://library.example.com',
-                release: '1.0.0',
                 diagnostics: {
                     enabled: true,
                     endpoint:
@@ -53,7 +49,6 @@ describe('loadRuntimeConfig', () => {
         expect(
             loadRuntimeConfig({
                 apiBaseUrl: 'https://library.example.com',
-                release: '1.0.0',
                 diagnostics: {
                     enabled: false,
                 },
@@ -68,7 +63,6 @@ describe('loadRuntimeConfig', () => {
         expect(() =>
             loadRuntimeConfig({
                 apiBaseUrl: 'https://library.example.com',
-                release: '1.0.0',
                 diagnostics: {
                     enabled: true,
                 },
@@ -80,7 +74,6 @@ describe('loadRuntimeConfig', () => {
         expect(() =>
             loadRuntimeConfig({
                 apiBaseUrl: 'https://library.example.com',
-                release: '1.0.0',
                 diagnostics: {
                     enabled: true,
                     endpoint: 'not-a-url',
@@ -93,7 +86,6 @@ describe('loadRuntimeConfig', () => {
         expect(() =>
             loadRuntimeConfig({
                 apiBaseUrl: 'https://library.example.com',
-                release: '1.0.0',
                 diagnostics: {
                     enabled: true,
                     endpoint: 'ftp://example.com/report',
@@ -106,7 +98,6 @@ describe('loadRuntimeConfig', () => {
         expect(() =>
             loadRuntimeConfig({
                 apiBaseUrl: 'https://library.example.com',
-                release: '1.0.0',
                 diagnostics: 'enabled',
             }),
         ).toThrow(RuntimeConfigError)
@@ -120,9 +111,7 @@ describe('loadRuntimeConfig', () => {
 
     it('rejects a missing API URL', () => {
         expect(() =>
-            loadRuntimeConfig({
-                release: '1.0.0',
-            }),
+            loadRuntimeConfig({}),
         ).toThrow(RuntimeConfigError)
     })
 
@@ -130,7 +119,6 @@ describe('loadRuntimeConfig', () => {
         expect(() =>
             loadRuntimeConfig({
                 apiBaseUrl: 'not-a-url',
-                release: '1.0.0',
             }),
         ).toThrow(RuntimeConfigError)
     })
@@ -139,24 +127,6 @@ describe('loadRuntimeConfig', () => {
         expect(() =>
             loadRuntimeConfig({
                 apiBaseUrl: 'ftp://example.com',
-                release: '1.0.0',
-            }),
-        ).toThrow(RuntimeConfigError)
-    })
-
-    it('rejects a missing release identifier', () => {
-        expect(() =>
-            loadRuntimeConfig({
-                apiBaseUrl: 'http://127.0.0.1:8000',
-            }),
-        ).toThrow(RuntimeConfigError)
-    })
-
-    it('rejects an empty release identifier', () => {
-        expect(() =>
-            loadRuntimeConfig({
-                apiBaseUrl: 'http://127.0.0.1:8000',
-                release: '   ',
             }),
         ).toThrow(RuntimeConfigError)
     })
@@ -165,7 +135,6 @@ describe('loadRuntimeConfig', () => {
         expect(
             loadRuntimeConfig({
                 apiBaseUrl: 'https://example.com/library/',
-                release: '1.0.0',
             }).apiBaseUrl,
         ).toBe('https://example.com/library')
     })
@@ -175,12 +144,10 @@ describe('getRuntimeConfig', () => {
     it('loads configuration from the browser runtime object', () => {
         window.__SHADE_CONFIG__ = {
             apiBaseUrl: 'http://127.0.0.1:8000/',
-            release: '2026.08.10',
         }
 
         expect(getRuntimeConfig()).toEqual({
             apiBaseUrl: 'http://127.0.0.1:8000',
-            release: '2026.08.10',
             diagnostics: {
                 enabled: false,
                 endpoint: null,
@@ -191,7 +158,6 @@ describe('getRuntimeConfig', () => {
     it('loads diagnostic reporting from the browser runtime object', () => {
         window.__SHADE_CONFIG__ = {
             apiBaseUrl: 'http://127.0.0.1:8000',
-            release: '2026.08.10',
             diagnostics: {
                 enabled: true,
                 endpoint:

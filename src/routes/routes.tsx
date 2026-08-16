@@ -10,6 +10,7 @@ import { NewBookPage } from '../features/books/routes/NewBookPage'
 import { CheckoutPage } from '../features/loans/routes/CheckoutPage'
 import { CheckinPage } from '../features/loans/routes/CheckinPage'
 import { LoansPage } from '../features/loans/routes/LoansPage'
+import { ShelvesPage } from '../features/shelves/routes/ShelvesPage'
 import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
 import { NotFoundPage } from './NotFoundPage'
 import { routeMetadata } from './routeMetadata'
@@ -96,6 +97,13 @@ export const routeConfig = [
                     title: routeMetadata.loans.title,
                 },
                 element: <LoansPage />,
+            },
+            {
+                path: routeMetadata.shelves.path,
+                handle: {
+                    title: routeMetadata.shelves.title,
+                },
+                element: <ShelvesPage />,
             },
             {
                 path: routeMetadata.deletedBooks.path,

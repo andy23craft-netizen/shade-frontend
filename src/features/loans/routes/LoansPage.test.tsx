@@ -39,7 +39,7 @@ function makeBookList(
                 title: 'The Left Hand of Darkness',
                 authors: 'Ursula K. Le Guin',
                 category: 'fiction',
-                shelf: 'liz_tbr',
+                shelf_name: 'liz_tbr',
                 status: 'on_loan',
                 is_read: false,
                 isbn13: null,

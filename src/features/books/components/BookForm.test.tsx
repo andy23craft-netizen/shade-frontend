@@ -5,6 +5,7 @@ import {
     fireEvent,
     render,
     screen,
+    within,
 } from '@testing-library/react'
 import {
     describe,
@@ -13,12 +14,50 @@ import {
     vi,
 } from 'vitest'
 
+import type {
+    ShelfRead,
+} from '../../../api/apiTypes'
 import {
     BookForm,
     type BookFormProps,
     type BookFormValues,
 } from './BookForm'
 import { bookFormDefaults } from './bookFormDefaults'
+
+const TEST_SHELVES: ShelfRead[] = [
+    {
+        shelf_id: 'id-unknown',
+        common_name: 'unknown',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-a1',
+        common_name: 'a1',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-liz',
+        common_name: 'liz_tbr',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-removed',
+        common_name: 'removed',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
 
 function makeBook(
     overrides: Partial<BookFormValues> = {},
@@ -27,12 +66,14 @@ function makeBook(
         ...bookFormDefaults,
         title: 'The Great Gatsby',
         authors: 'F. Scott Fitzgerald',
+        shelfId: 'id-a1',
         ...overrides,
     }
 }
 
 function ControlledBookForm({
     initialValues = makeBook(),
+    shelves = TEST_SHELVES,
     onSubmit = vi.fn(),
     onCancel = vi.fn(),
     ...rest
@@ -47,6 +88,7 @@ function ControlledBookForm({
     return (
         <BookForm
             values={values}
+            shelves={shelves}
             onChange={setValues}
             onSubmit={onSubmit}
             onCancel={onCancel}
@@ -119,6 +161,36 @@ describe('BookForm', () => {
         ).toBeInTheDocument()
     })
 
+    it('shows Title Case shelf labels and excludes removed from create options', () => {
+        render(
+            <ControlledBookForm
+                initialValues={bookFormDefaults}
+            />,
+        )
+
+        const shelf = screen.getByLabelText(
+            'Shelf',
+        )
+
+        expect(
+            within(shelf).getByRole('option', {
+                name: 'Unknown',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            within(shelf).getByRole('option', {
+                name: 'Liz Tbr',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            within(shelf).queryByRole('option', {
+                name: 'Removed',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
     it('uses the supplied values', () => {
         render(
             <ControlledBookForm
@@ -127,7 +199,7 @@ describe('BookForm', () => {
                     publisher: 'Scribner',
                     pages: '180',
                     category: 'fiction',
-                    shelf: 'a1',
+                    shelfId: 'id-a1',
                     notes: 'A classic.',
                     tags: 'classic, american',
                 })}
@@ -160,7 +232,7 @@ describe('BookForm', () => {
 
         expect(
             screen.getByLabelText('Shelf'),
-        ).toHaveValue('a1')
+        ).toHaveValue('id-a1')
 
         expect(
             screen.getByLabelText('Notes'),
@@ -195,6 +267,33 @@ describe('BookForm', () => {
             screen.getByRole('alert'),
         ).toHaveTextContent(
             'Title is required.',
+        )
+
+        expect(onSubmit).not.toHaveBeenCalled()
+    })
+
+    it('rejects a missing shelf selection', () => {
+        const onSubmit = vi.fn()
+
+        render(
+            <ControlledBookForm
+                initialValues={makeBook({
+                    shelfId: '',
+                })}
+                onSubmit={onSubmit}
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Book',
+            }),
+        )
+
+        expect(
+            screen.getByRole('alert'),
+        ).toHaveTextContent(
+            'Shelf is required.',
         )
 
         expect(onSubmit).not.toHaveBeenCalled()
@@ -304,7 +403,7 @@ describe('BookForm', () => {
             screen.getByLabelText('Shelf'),
             {
                 target: {
-                    value: 'a1',
+                    value: 'id-a1',
                 },
             },
         )
@@ -356,7 +455,7 @@ describe('BookForm', () => {
             publication_date: '1965',
             pages: '412',
             category: 'fiction',
-            shelf: 'a1',
+            shelfId: 'id-a1',
             tags: '',
             acquisition_source: '',
             purchase_date: '',
@@ -370,7 +469,9 @@ describe('BookForm', () => {
 
         render(
             <ControlledBookForm
-                initialValues={bookFormDefaults}
+                initialValues={makeBook({
+                    shelfId: 'id-unknown',
+                })}
                 onSubmit={onSubmit}
             />,
         )
@@ -403,6 +504,7 @@ describe('BookForm', () => {
             expect.objectContaining({
                 title: '  Dune  ',
                 authors: '  Frank Herbert  ',
+                shelfId: 'id-unknown',
                 pages: '',
                 purchase_price: '',
             }),
@@ -453,9 +555,7 @@ describe('BookForm', () => {
         expect(bookFormDefaults.category).toBe(
             'unknown',
         )
-        expect(bookFormDefaults.shelf).toBe(
-            'unknown',
-        )
+        expect(bookFormDefaults.shelfId).toBe('')
         expect(bookFormDefaults.tags).toBe('')
     })
 

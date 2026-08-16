@@ -87,6 +87,18 @@ export async function installMockApi(
 
             if (
                 request.method() === 'GET' &&
+                url.pathname === '/version'
+            ) {
+                await fulfillJson(route, {
+                    body: {
+                        version: '0.2.1',
+                    },
+                })
+                return
+            }
+
+            if (
+                request.method() === 'GET' &&
                 url.pathname === '/dashboard'
             ) {
                 await fulfillJson(route, {

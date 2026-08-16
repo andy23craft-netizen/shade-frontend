@@ -16,7 +16,6 @@ export const testDiagnosticReporter:
 }
 export const testRuntimeConfig: RuntimeConfig = {
     apiBaseUrl: 'https://library.example.com',
-    release: 'test-release',
     diagnostics: {
         enabled: false,
         endpoint: null,
@@ -90,6 +89,34 @@ export function mockReachableApi() {
                                 books_unread: 0,
                                 average_rating: null,
                             },
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
+                if (pathname === '/shelves') {
+                    return new Response(
+                        JSON.stringify([]),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
+                if (pathname === '/version') {
+                    return new Response(
+                        JSON.stringify({
+                            version: '0.2.1',
                         }),
                         {
                             status: 200,

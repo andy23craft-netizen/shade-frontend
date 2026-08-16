@@ -7,6 +7,7 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import { createApiClient } from '../../api/apiClient'
+import { APP_VERSION } from '../../config/appVersion'
 import type { RuntimeConfig } from '../../config/runtimeConfig'
 import {
     checkHealth,
@@ -140,14 +141,13 @@ export function ConnectionProvider({
         () => ({
             status,
             apiBaseUrl: runtimeConfig.apiBaseUrl,
-            release: runtimeConfig.release,
+            release: APP_VERSION,
             errorMessage,
             apiClient,
         }),
         [
             status,
             runtimeConfig.apiBaseUrl,
-            runtimeConfig.release,
             errorMessage,
             apiClient,
         ],

@@ -45,7 +45,7 @@ function makeBook(
         title: 'The Left Hand of Darkness',
         authors: 'Ursula K. Le Guin',
         category: 'fiction',
-        shelf: 'liz_tbr',
+        shelf_name: 'liz_tbr',
         status: 'available',
         is_read: false,
         isbn13: null,
@@ -630,7 +630,7 @@ describe('BooksPage', () => {
                         makeBook({
                             status: 'future_status' as unknown as BookRead['status'],
                             category: 'future_category' as unknown as BookRead['category'],
-                            shelf: 'future_shelf' as unknown as BookRead['shelf'],
+                            shelf_name: 'future_shelf',
                         }),
                     ],
                     total: 1,
@@ -654,7 +654,7 @@ describe('BooksPage', () => {
 
         expect(
             screen.getByText(
-                'future_shelf (unknown)',
+                'Future Shelf',
             ),
         ).toBeInTheDocument()
     })

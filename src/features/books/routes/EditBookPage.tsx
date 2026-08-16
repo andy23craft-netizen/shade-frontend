@@ -13,6 +13,7 @@ import {
     Alert,
     AppLink,
     LoadingState,
+    QueryErrorState,
 } from '../../../components'
 import {
     isApiError,
@@ -22,6 +23,9 @@ import {
     useBook,
     useUpdateBook,
 } from '../../../api/booksQueries'
+import {
+    useShelves,
+} from '../../../api/shelvesQueries'
 import { queryKeys } from '../../../api/queryKeys'
 import {
     BookForm,
@@ -44,7 +48,7 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'publication_date',
     'pages',
     'category',
-    'shelf',
+    'shelfId',
     'tags',
     'acquisition_source',
     'purchase_date',
@@ -58,7 +62,11 @@ function mapEditFieldErrors(
     const mapped: BookFormFieldErrors = {}
 
     for (const entry of fieldErrors) {
-        const field = entry.field.split('.')[0]
+        let field = entry.field.split('.')[0]
+
+        if (field === 'shelf_name') {
+            field = 'shelfId'
+        }
 
         if (
             !field ||
@@ -81,6 +89,7 @@ export function EditBookPage() {
     const queryClient = useQueryClient()
 
     const bookQuery = useBook(bookId)
+    const shelvesQuery = useShelves()
     const updateBook = useUpdateBook()
 
     const initializedBookIdRef =
@@ -105,9 +114,11 @@ export function EditBookPage() {
 
     useEffect(() => {
         const book = bookQuery.data
+        const shelves = shelvesQuery.data
 
         if (
             !book ||
+            shelves === undefined ||
             initializedBookIdRef.current ===
             book.id
         ) {
@@ -115,12 +126,18 @@ export function EditBookPage() {
         }
 
         setValues(
-            bookFormValuesFromBook(book),
+            bookFormValuesFromBook(
+                book,
+                shelves,
+            ),
         )
 
         initializedBookIdRef.current =
             book.id
-    }, [bookQuery.data])
+    }, [
+        bookQuery.data,
+        shelvesQuery.data,
+    ])
 
     async function refetchBookState() {
         await Promise.all([
@@ -145,8 +162,9 @@ export function EditBookPage() {
         setFormError(null)
 
         const book = bookQuery.data
+        const shelves = shelvesQuery.data
 
-        if (!book) {
+        if (!book || shelves === undefined) {
             setFormError(
                 'The book is not available to update.',
             )
@@ -165,6 +183,7 @@ export function EditBookPage() {
             bookFormValuesToUpdate(
                 book,
                 nextValues,
+                shelves,
             )
 
         if (Object.keys(request).length === 0) {
@@ -210,6 +229,22 @@ export function EditBookPage() {
 
                     if (
                         isApiError(error) &&
+                        error.status === 400
+                    ) {
+                        setServerFieldErrors({
+                            shelfId:
+                                error.detail ??
+                                error.message,
+                        })
+                        setFormError(
+                            error.detail ??
+                                error.message,
+                        )
+                        return
+                    }
+
+                    if (
+                        isApiError(error) &&
                         error.status === 404
                     ) {
                         setFormError(
@@ -231,7 +266,10 @@ export function EditBookPage() {
         )
     }
 
-    if (bookQuery.isPending) {
+    if (
+        bookQuery.isPending ||
+        shelvesQuery.isPending
+    ) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>
@@ -239,6 +277,36 @@ export function EditBookPage() {
                 </h1>
 
                 <LoadingState label="Loading book…" />
+            </section>
+        )
+    }
+
+    if (shelvesQuery.isError) {
+        return (
+            <section className="route-page">
+                <h1 tabIndex={-1}>
+                    Edit Book
+                </h1>
+
+                <p>
+                    Shelves must load before a
+                    book can be edited.
+                </p>
+
+                <QueryErrorState
+                    error={shelvesQuery.error}
+                    onRetry={() => {
+                        void shelvesQuery.refetch()
+                    }}
+                    title="Unable to load shelves"
+                />
+
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    Back to Books
+                </AppLink>
             </section>
         )
     }
@@ -285,6 +353,7 @@ export function EditBookPage() {
     }
 
     const book = bookQuery.data
+    const shelves = shelvesQuery.data ?? []
 
     if (book.deletion_date !== null) {
         return (
@@ -347,6 +416,7 @@ export function EditBookPage() {
 
             <BookForm
                 values={values}
+                shelves={shelves}
                 onChange={(nextValues) => {
                     setValues(nextValues)
                     setServerFieldErrors({})

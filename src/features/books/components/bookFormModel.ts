@@ -1,6 +1,10 @@
 import type {
     BookCreate,
+    ShelfRead,
 } from '../../../api/apiTypes'
+import {
+    shelfCommonNameById,
+} from '../../shelves/shelfDisplay'
 import {
     isValidIsbn,
 } from '../utils/isbn'
@@ -81,6 +85,10 @@ export function validateBookFormValues(
             `Authors must be at most ${TITLE_AUTHORS_MAX_LENGTH} characters.`
     }
 
+    if (values.shelfId.trim() === '') {
+        errors.shelfId = 'Shelf is required.'
+    }
+
     const isbn = values.isbn13.trim()
 
     if (
@@ -131,14 +139,25 @@ export function validateBookFormValues(
 
 export function formValuesToBookCreate(
     values: BookFormValues,
+    shelves: readonly ShelfRead[],
 ): BookCreate {
     const tags = parseTagsInput(values.tags)
+    const shelfName = shelfCommonNameById(
+        shelves,
+        values.shelfId,
+    )
+
+    if (shelfName === undefined) {
+        throw new Error(
+            'A valid shelf must be selected before creating a book.',
+        )
+    }
 
     return {
         title: values.title.trim(),
         authors: values.authors.trim(),
         category: values.category,
-        shelf: values.shelf,
+        shelf_name: shelfName,
         is_read: false,
         status: 'available',
 

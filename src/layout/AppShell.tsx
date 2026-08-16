@@ -5,14 +5,15 @@ import {
     useLocation,
     useMatches,
 } from 'react-router-dom'
-import { useConnection } from '../features/connection/useConnection'
+import { useVersion } from '../api/versionQueries'
+import { APP_VERSION } from '../config/appVersion'
 
 interface RouteHandle {
     title?: string
 }
 
 export function AppShell() {
-    const { release } = useConnection()
+    const { data: versionData } = useVersion()
     const location = useLocation()
     const matches = useMatches()
     const mainRef = useRef<HTMLElement>(null)
@@ -28,6 +29,12 @@ export function AppShell() {
     const routeTitle =
         (currentRoute?.handle as RouteHandle | undefined)?.title ??
         'Page Not Found'
+
+    const apiVersion = versionData?.version?.trim()
+    const releaseLabel =
+        apiVersion !== undefined && apiVersion !== ''
+            ? `Release ${APP_VERSION} · API ${apiVersion}`
+            : `Release ${APP_VERSION}`
 
     useEffect(() => {
         document.title = `${routeTitle} — Shade`
@@ -115,6 +122,14 @@ export function AppShell() {
                             >
                                 Loans
                             </NavLink>
+
+                            <NavLink
+                                className="app-nav__link"
+                                to="/shelves"
+                                end
+                            >
+                                Shelves
+                            </NavLink>
                         </div>
 
                         <div
@@ -152,7 +167,7 @@ export function AppShell() {
             <footer className="app-footer">
                 <div className="app-footer__inner">
                     <span>Shade Library</span>
-                    <span>Release {release}</span>
+                    <span>{releaseLabel}</span>
                 </div>
             </footer>
         </div>

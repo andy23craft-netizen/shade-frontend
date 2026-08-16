@@ -265,6 +265,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/shelves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Shelves */
+        get: operations["list_shelves_shelves_get"];
+        put?: never;
+        /** Create Shelf */
+        post: operations["create_shelf_shelves_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shelves/{shelf_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Shelf */
+        delete: operations["delete_shelf_shelves__shelf_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Shelf */
+        patch: operations["update_shelf_shelves__shelf_id__patch"];
+        trace?: never;
+    };
+    "/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Version
+         * @description Public project version from ci/VERSION. No authentication required.
+         */
+        get: operations["get_version_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/wishlists": {
         parameters: {
             query?: never;
@@ -356,8 +412,8 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-            /** @default unknown */
-            shelf: components["schemas"]["Shelf"];
+            /** Shelf Name */
+            shelf_name: string;
             /** @default available */
             status: components["schemas"]["Status"];
             /** Tags */
@@ -436,8 +492,8 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-            /** @default unknown */
-            shelf: components["schemas"]["Shelf"];
+            /** Shelf Name */
+            shelf_name: string;
             /** @default available */
             status: components["schemas"]["Status"];
             /** Tags */
@@ -478,7 +534,8 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-            shelf?: components["schemas"]["Shelf"] | null;
+            /** Shelf Name */
+            shelf_name?: string | null;
             status?: components["schemas"]["Status"] | null;
             /** Tags */
             tags?: string[] | null;
@@ -605,7 +662,7 @@ export interface components {
         };
         /**
          * LoanRead
-         * @description Read shape for loan history; write paths land in FEAT-05/06.
+         * @description Read shape for loan history; loans are created by checkout and completed by check-in.
          */
         LoanRead: {
             /** Book Id */
@@ -636,11 +693,39 @@ export interface components {
             /** Review */
             review?: string | null;
         };
-        /**
-         * Shelf
-         * @enum {string}
-         */
-        Shelf: "unknown" | "a1" | "a2" | "a3" | "a4" | "b1" | "b2" | "b3" | "bath" | "c1" | "c2" | "c3" | "c4" | "d1" | "d2" | "d3" | "d4" | "d5" | "e1" | "e2" | "e3" | "e4" | "e5" | "e6" | "f1" | "f2" | "f3" | "f4" | "f5" | "g1" | "g2" | "g3" | "g4" | "g5" | "g6" | "h1" | "h2" | "h3" | "h4" | "h5" | "liz_tbr";
+        /** ShelfCreate */
+        ShelfCreate: {
+            /** Common Name */
+            common_name: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+        };
+        /** ShelfRead */
+        ShelfRead: {
+            /** Common Name */
+            common_name: string;
+            /** Created Date */
+            created_date: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Shelf Id */
+            shelf_id: string;
+            /** Updated Date */
+            updated_date: string;
+        };
+        /** ShelfUpdate */
+        ShelfUpdate: {
+            /** Common Name */
+            common_name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+        };
         /**
          * Status
          * @enum {string}
@@ -658,6 +743,11 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionResponse */
+        VersionResponse: {
+            /** Version */
+            version: string;
         };
         /** WishlistBookCreate */
         WishlistBookCreate: {
@@ -864,6 +954,15 @@ export interface operations {
                     "application/json": components["schemas"]["BookRead"];
                 };
             };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Authentication failure */
             403: {
                 headers: {
@@ -1060,6 +1159,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
             /** @description Authentication failure */
@@ -1607,6 +1715,251 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_shelves_shelves_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfRead"][];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    create_shelf_shelves_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShelfCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_shelf_shelves__shelf_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shelf_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_shelf_shelves__shelf_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shelf_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShelfUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_version_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionResponse"];
                 };
             };
         };

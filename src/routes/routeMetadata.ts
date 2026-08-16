@@ -54,6 +54,11 @@ export const routeMetadata = {
     title: 'Loans',
     heading: 'Loans',
   },
+  shelves: {
+    path: '/shelves',
+    title: 'Shelves',
+    heading: 'Shelves',
+  },
   deletedBooks: {
     path: '/admin/deleted',
     title: 'Deleted Books',

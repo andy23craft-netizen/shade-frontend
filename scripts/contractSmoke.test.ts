@@ -47,6 +47,9 @@ const expectedPaths = [
     '/health',
     '/loans',
     '/loans/{id}',
+    '/shelves',
+    '/shelves/{shelf_id}',
+    '/version',
     '/wishlists',
     '/wishlists/{wishlist_id}',
     '/wishlists/{wishlist_id}/books',
@@ -78,6 +81,28 @@ describe('OpenAPI contract smoke', () => {
                 `"${path}"`,
             )
         }
+
+        expect(generated).toContain(
+            'ShelfCreate',
+        )
+        expect(generated).toContain(
+            'ShelfUpdate',
+        )
+        expect(generated).toContain(
+            'create_shelf_shelves_post',
+        )
+        expect(generated).toContain(
+            'update_shelf_shelves__shelf_id__patch',
+        )
+        expect(generated).toContain(
+            'delete_shelf_shelves__shelf_id__delete',
+        )
+        expect(generated).toContain(
+            'VersionResponse',
+        )
+        expect(generated).toContain(
+            'get_version_version_get',
+        )
     })
 
     it('records that live OpenAPI drift checks are blocked when the API is unavailable', () => {

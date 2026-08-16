@@ -11,8 +11,13 @@ import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import type {
     Category,
-    Shelf,
+    ShelfRead,
 } from '../../../api/apiTypes'
+import {
+    filterAssignableShelves,
+    formatShelfCommonNameForDisplay,
+    normalizeShelfCommonName,
+} from '../../shelves/shelfDisplay'
 
 import {
     parseTagsInput,
@@ -29,50 +34,6 @@ const CATEGORY_VALUES: readonly Category[] = [
     'nonfiction',
 ]
 
-const SHELF_VALUES: readonly Shelf[] = [
-    'unknown',
-    'a1',
-    'a2',
-    'a3',
-    'a4',
-    'b1',
-    'b2',
-    'b3',
-    'bath',
-    'c1',
-    'c2',
-    'c3',
-    'c4',
-    'd1',
-    'd2',
-    'd3',
-    'd4',
-    'd5',
-    'e1',
-    'e2',
-    'e3',
-    'e4',
-    'e5',
-    'e6',
-    'f1',
-    'f2',
-    'f3',
-    'f4',
-    'f5',
-    'g1',
-    'g2',
-    'g3',
-    'g4',
-    'g5',
-    'g6',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'liz_tbr',
-]
-
 export interface BookFormValues {
     title: string
     authors: string
@@ -81,7 +42,7 @@ export interface BookFormValues {
     publication_date: string
     pages: string
     category: Category
-    shelf: Shelf
+    shelfId: string
     tags: string
     acquisition_source: string
     purchase_date: string
@@ -100,7 +61,7 @@ const FIELD_LABELS: Record<
     publication_date: 'Publication date',
     pages: 'Pages',
     category: 'Category',
-    shelf: 'Shelf',
+    shelfId: 'Shelf',
     tags: 'Tags',
     acquisition_source: 'Acquisition source',
     purchase_date: 'Purchase date',
@@ -110,6 +71,7 @@ const FIELD_LABELS: Record<
 
 export interface BookFormProps {
     values: BookFormValues
+    shelves: readonly ShelfRead[]
     onChange: (
         values: BookFormValues,
     ) => void
@@ -130,6 +92,7 @@ function focusSummary(
 
 export function BookForm({
     values,
+    shelves,
     onChange,
     onSubmit,
     onCancel,
@@ -144,6 +107,28 @@ export function BookForm({
         clientErrors,
         setClientErrors,
     ] = useState<BookFormFieldErrors>({})
+
+    const assignableShelves =
+        filterAssignableShelves(shelves)
+
+    const selectedShelf = shelves.find(
+        (shelf) =>
+            shelf.shelf_id === values.shelfId,
+    )
+
+    const selectedIsRemoved =
+        selectedShelf !== undefined &&
+        normalizeShelfCommonName(
+            selectedShelf.common_name,
+        ) === 'removed'
+
+    const shelfOptions = selectedIsRemoved &&
+        selectedShelf !== undefined
+        ? [
+            selectedShelf,
+            ...assignableShelves,
+        ]
+        : assignableShelves
 
     const fieldErrors: BookFormFieldErrors = {
         ...serverFieldErrors,
@@ -476,28 +461,48 @@ export function BookForm({
 
                 <Field
                     label="Shelf"
-                    id={fieldId('shelf')}
-                    error={fieldErrors.shelf}
+                    id={fieldId('shelfId')}
+                    error={fieldErrors.shelfId}
                 >
                     <select
-                        value={values.shelf}
+                        value={values.shelfId}
                         onChange={(event) =>
                             updateField(
-                                'shelf',
+                                'shelfId',
                                 event.target
-                                    .value as Shelf,
+                                    .value,
                             )
                         }
                     >
-                        {SHELF_VALUES.map(
-                            (shelf) => (
-                                <option
-                                    key={shelf}
-                                    value={shelf}
-                                >
-                                    {shelf}
-                                </option>
-                            ),
+                        <option value="">
+                            Select a shelf
+                        </option>
+                        {shelfOptions.map(
+                            (shelf) => {
+                                const isRemoved =
+                                    normalizeShelfCommonName(
+                                        shelf.common_name,
+                                    ) ===
+                                    'removed'
+
+                                return (
+                                    <option
+                                        key={
+                                            shelf.shelf_id
+                                        }
+                                        value={
+                                            shelf.shelf_id
+                                        }
+                                        disabled={
+                                            isRemoved
+                                        }
+                                    >
+                                        {formatShelfCommonNameForDisplay(
+                                            shelf.common_name,
+                                        )}
+                                    </option>
+                                )
+                            },
                         )}
                     </select>
                 </Field>

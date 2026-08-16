@@ -5,6 +5,7 @@ import { AppProviders } from './AppProviders'
 import { RootErrorBoundary } from './RootErrorBoundary'
 import { RuntimeConfigScreen } from './config/RuntimeConfigScreen'
 import { readApiToken } from './config/apiToken'
+import { APP_VERSION } from './config/appVersion'
 import { readRuntimeConfig } from './config/runtimeConfigState'
 import { router } from './routes/routes'
 import './index.css'
@@ -39,8 +40,7 @@ function renderApplication() {
         createDiagnosticReporter({
             config:
             runtimeConfigState.config.diagnostics,
-            release:
-            runtimeConfigState.config.release,
+            release: APP_VERSION,
         })
 
     root.render(

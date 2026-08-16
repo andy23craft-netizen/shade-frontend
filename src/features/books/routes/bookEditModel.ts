@@ -1,7 +1,12 @@
 import type {
     BookRead,
     BookUpdate,
+    ShelfRead,
 } from '../../../api/apiTypes'
+import {
+    shelfCommonNameById,
+    shelfIdByCommonName,
+} from '../../shelves/shelfDisplay'
 import type {
     BookFormValues,
 } from '../components/BookForm'
@@ -11,6 +16,7 @@ import {
 
 export function bookFormValuesFromBook(
     book: BookRead,
+    shelves: readonly ShelfRead[],
 ): BookFormValues {
     return {
         title: book.title,
@@ -25,7 +31,11 @@ export function bookFormValuesFromBook(
                 ? ''
                 : String(book.pages),
         category: book.category,
-        shelf: book.shelf,
+        shelfId:
+            shelfIdByCommonName(
+                shelves,
+                book.shelf_name,
+            ) ?? '',
         tags: book.tags?.join(', ') ?? '',
         acquisition_source:
             book.acquisition_source ?? '',
@@ -89,6 +99,7 @@ function tagsEqual(
 export function bookFormValuesToUpdate(
     original: BookRead,
     values: BookFormValues,
+    shelves: readonly ShelfRead[],
 ): BookUpdate {
     const update: BookUpdate = {}
 
@@ -143,8 +154,16 @@ export function bookFormValuesToUpdate(
         update.category = values.category
     }
 
-    if (values.shelf !== original.shelf) {
-        update.shelf = values.shelf
+    const shelfName = shelfCommonNameById(
+        shelves,
+        values.shelfId,
+    )
+
+    if (
+        shelfName !== undefined &&
+        shelfName !== original.shelf_name
+    ) {
+        update.shelf_name = shelfName
     }
 
     const tags = nullableTags(values.tags)

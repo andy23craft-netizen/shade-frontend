@@ -37,6 +37,9 @@ export type DashboardSummary =
 export type HealthResponse =
     Schemas['HealthResponse']
 
+export type VersionResponse =
+    Schemas['VersionResponse']
+
 export type ErrorDetail =
     Schemas['ErrorDetail']
 
@@ -49,8 +52,14 @@ export type ValidationError =
 export type Category =
     Schemas['Category']
 
-export type Shelf =
-    Schemas['Shelf']
+export type ShelfCreate =
+    Schemas['ShelfCreate']
+
+export type ShelfUpdate =
+    Schemas['ShelfUpdate']
+
+export type ShelfRead =
+    Schemas['ShelfRead']
 
 export type Status =
     Schemas['Status']

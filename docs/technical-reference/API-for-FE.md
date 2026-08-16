@@ -22,12 +22,13 @@ Authorization: Bearer <API_SECRET_KEY>
 There is no login, logout, or session system. Missing or invalid credentials return **403** with
 `{"detail": "Invalid authentication credentials"}`.
 
-Public routes: `GET /health` and FastAPI's generated docs/OpenAPI routes (`/docs`, `/redoc`, `/openapi.json`,
-`/docs/oauth2-redirect`). Every other business route requires the Bearer token.
+Public routes: `GET /health`, `GET /version`, and FastAPI's generated docs/OpenAPI routes (`/docs`, `/redoc`,
+`/openapi.json`, `/docs/oauth2-redirect`). Every other business route requires the Bearer token.
 
 There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated).
-Learn whether credentials are accepted from the first protected request you need (e.g., `GET /books` or
-`GET /dashboard`); a **403** means the token is missing or invalid.
+Use `GET /version` when the UI needs the running API release string (same value as `ci/VERSION` and OpenAPI
+`info.version`); do not treat it as a health probe. Learn whether credentials are accepted from the first protected
+request you need (e.g., `GET /books` or `GET /dashboard`); a **403** means the token is missing or invalid.
 
 ---
 
@@ -54,17 +55,24 @@ can still reach the server, but browser JS cannot read the response.
 | ------ | -------------------------------- |
 | `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query); |
 |        | malformed or empty `wishlist_id` / membership `book_id` on wishlist routes; |
-|        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; partial or invalid `skip`/`take` on list endpoints; |
+|        | malformed or empty `shelf_id` on shelf update/delete; |
+|        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; |
+|        | partial or invalid `skip`/`take` on list endpoints; |
 |        | invalid `sortBy` or `sortOrder` on `GET /books`; invalid or blank `field` on |
-|        | `GET /dashboard/incomplete-metadata/books` |
+|        | `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book create/update; |
+|        | `shelf_name` that normalizes to `removed` on book create/update; |
+|        | create/rename/delete of system shelves `unknown` / `removed`, or rename to those names |
 | `403`  | Missing or invalid Bearer token |
-| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / second delete; |
+| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / second delete; |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
-|        | unknown wishlist, or unknown book when adding a wishlist membership |
-| `409`  | Restore an active book; checkout when already on loan; check-in with no active loan |
+|        | unknown wishlist, or unknown book when adding a wishlist membership; |
+|        | unknown shelf for `PATCH` / `DELETE /shelves/{shelf_id}` |
+| `409`  | Restore an active book; checkout when already on loan; check-in with no active loan; |
+|        | duplicate shelf `common_name` on create/rename; delete shelf while books remain |
 | `412`  | Checkout when the book has `status=display_only` |
 | `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body; |
-|        | unsupported wishlist membership `status` |
+|        | unsupported wishlist membership `status`; null or blank `shelf_name` on book create/update; |
+|        | null or blank shelf `common_name` on shelf create/update |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
 | `504`  | ISBN metadata provider timeout |
@@ -86,6 +94,8 @@ together, or omit both for the full filtered result set. When paginated, `total`
 matching filters (not the page size). Partial params (`skip` only or `take` only), negative `skip`, or non-positive
 `take` return **400**.
 
+`GET /shelves` is **not** a paginated list envelope: it returns a plain JSON array (see Shelves below).
+
 ---
 
 # Book lifecycle (behavioral)
@@ -100,11 +110,13 @@ active --DELETE--> soft-deleted --restore--> active
 
 Soft-deleted books:
 
+* set `deletion_date` on delete; restore clears `deletion_date`
 * are omitted from `GET /books` unless `include_deleted=true` (then they count in `total` too)
-* remain readable via `GET /books/{id}`
-* are rejected by checkout, check-in, and mark-read (**404**)
+* remain readable via `GET /books/{id}` (including `shelf_name` of `removed` and a non-null `deletion_date`)
+* are rejected by checkout, check-in, mark-read, and `PATCH` (**404**)
 * keep loan and reading data
-* still accept generic `PATCH` (including `status` / `is_read`) without creating or updating loans
+* have shelf membership moved to the system shelf `removed` on delete; restore moves membership to `unknown`
+  (the pre-delete shelf is not restored)
 
 Deleting an on-loan book leaves its active loan open; restore the book before check-in will complete that loan.
 
@@ -114,10 +126,16 @@ Prefer dedicated endpoints over reproducing their effects with `PATCH`:
 
 `PATCH` bumps `updated_date` via a SQLite trigger when the handler does not set it explicitly (the column still
 changes on successful update). Do not send `null` for DB-required fields such as `title`, `authors`,
-`category`, `shelf`, `is_read`, or `status` -- that can cause an unhandled server error on commit.
+`category`, `is_read`, or `status`. `shelf_name` must not be JSON `null` on update (**422**); omit the field to leave
+membership unchanged.
+
+Books use `shelf_name` (maps to `shelves.common_name`), not a hard-coded shelf enum and not a book-level `shelf`
+column. Create requires `shelf_name`. Incoming names are trimmed then lowercased (max length 32 after trim). Unknown
+names and names that normalize to `removed` return **400** on create/update -- only `DELETE /books/{id}` assigns
+`removed`. See Shelves for list and catalog CRUD behavior.
 
 Books default to author ascending (`sortBy=author`, `sortOrder=asc` when omitted). Allowed `sortBy` values:
-`author`, `title`, `creationDate`, `shelf`. Shelf sorting is lexical on the stored shelf codes. Allowed `sortOrder`
+`author`, `title`, `creationDate`, `shelf`. Shelf sorting is lexical on `shelves.common_name`. Allowed `sortOrder`
 values: `asc`, `desc`. Invalid values return **400**. A stable tie-breaker on book `id` keeps paginated pages
 consistent. The previous implicit title sort is no longer the default; pass `sortBy=title` when title order is
 required.
@@ -142,6 +160,41 @@ Invalid category values are rejected by FastAPI validation with **422**. A valid
 an empty `BookList` (`items: []`, `total: 0`), not **404**. The category filter composes with `isbn`, `author`,
 `title`, `include_deleted`, pagination, and sorting; when paginated, `total` remains the count of all matching rows
 before pagination.
+
+---
+
+# Shelves
+
+Shelves are a separate catalog resource. Book placement is membership (`books_shelves`), exposed to clients as
+`shelf_name` on book create/update/read -- not as a free-form book column.
+
+`GET /shelves`:
+
+* requires Bearer authentication (same as other business routes)
+* returns an unpaginated JSON **array** of `ShelfRead` objects (fields in OpenAPI), not `{ "items", "total" }`
+* includes system shelves `unknown` and `removed`
+* orders by `common_name` ascending, then `shelf_id` ascending
+
+Write routes (same Bearer auth):
+
+* `POST /shelves` -- create with required `common_name` (trimmed/lowercased, max 32) and optional
+  `location` / `description`; returns **201** `ShelfRead`. Reserved names `unknown` / `removed` are **400**;
+  duplicate `common_name` is **409**.
+* `PATCH /shelves/{shelf_id}` -- update provided fields; returns **200** `ShelfRead`. Malformed id **400**;
+  missing **404**. System shelves cannot be renamed (**400**), but `location` / `description` may change.
+  Rename to a reserved name is **400**; rename conflict is **409**.
+* `DELETE /shelves/{shelf_id}` -- remove an empty non-system shelf (**204**). System shelves **400**; any
+  remaining book membership **409** (books are unchanged).
+
+Refresh `GET /shelves` after create/update/delete so pickers stay current. New `common_name` values are
+immediately assignable on book create/update via `shelf_name`.
+
+For book forms: load `GET /shelves`, present `common_name` values (exclude `removed` for create/update), and
+submit the chosen name as `shelf_name`. Omit `shelf_name` on `PATCH` when membership should not change. After
+soft-delete, expect `shelf_name: "removed"` and a non-null `deletion_date`; after restore, expect
+`shelf_name: "unknown"` and `deletion_date: null`.
+
+Dashboard incomplete-shelf / `missing_shelf` means membership on `unknown` (not `removed`).
 
 ---
 
@@ -212,12 +265,14 @@ Averages are `null` when there is insufficient data. `recent_window_days` is cur
 
 `GET /dashboard/breakdowns` provides active-catalog totals plus counts by category, shelf, and creation year.
 `on_loan` uses active books whose stored `status` is `on_loan`, matching the summary's `checked_out` definition.
-Category and shelf buckets use their stored enum strings. Creation-year buckets are derived from `creation_date`.
-Zero-count buckets are omitted because the response is built from existing grouped rows.
+Category buckets use stored category strings. Shelf buckets use `shelves.common_name` via membership. Creation-year
+buckets are derived from `creation_date`. Zero-count buckets are omitted because the response is built from existing
+grouped rows.
 
 `GET /dashboard/incomplete-metadata` reports cleanup counts for missing category, shelf, pages, publisher,
-publication year, and ISBN. Category and shelf are missing when their stored value is `unknown`. Publisher,
-`publication_date`, and `isbn13` are missing when `null` or blank; pages are missing when `null`.
+publication year, and ISBN. Category is missing when stored as `unknown`. Shelf is missing when membership is on
+`common_name = unknown` (not `removed`). Publisher, `publication_date`, and `isbn13` are missing when `null` or blank;
+pages are missing when `null`.
 `missing_year` refers to `publication_date`, while the breakdown's creation-year chart uses `creation_date`.
 `total_incomplete` counts distinct active books missing at least one tracked field and is not the sum of the
 individual field counts.
@@ -294,10 +349,20 @@ URL.revokeObjectURL(objectUrl);
 | Responsibility | Owner |
 | -------------- | ----- |
 | Barcode/camera/manual ISBN capture, editable drafts, forms, presentation | Frontend |
+| Display of API release/version from `GET /version` | Frontend |
+| Shelf picker UI from `GET /shelves`; submit chosen `common_name` as `shelf_name` | Frontend |
+| Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
+| Canonical project version (`ci/VERSION` via `GET /version`) | API |
 | Soft delete/restore, loan records, checkout/check-in, reading state | API |
+| Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
 | Borrowing and dashboard statistics | API |
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/book) → `POST .../checkout` or
 `POST .../checkin` → refresh loan state via `GET /loans?book_id=...` (or `GET /loans/{id}`) and display returned
 `BookRead` status. Do not drive loan state through generic `PATCH`.
+
+Recommended shelf assignment: FE loads `GET /shelves` → user picks a `common_name` (not `removed` for create/update)
+→ send as `shelf_name` on `POST /books` or `PATCH /books/{id}`. Manage the catalog with `POST` / `PATCH` /
+`DELETE /shelves`, then refresh `GET /shelves`. After delete/restore, re-read the book (or list) for updated
+`shelf_name` and `deletion_date`; do not assume the prior shelf is restored.

@@ -9,11 +9,15 @@ import {
     pickCheckoutRequest,
     pickDocumentedRequestFields,
     pickMarkReadRequest,
+    pickShelfCreate,
+    pickShelfUpdate,
 } from './requestFields'
 import type {
     BookCreate,
     CheckoutRequest,
     MarkReadRequest,
+    ShelfCreate,
+    ShelfUpdate,
 } from './apiTypes'
 
 describe('requestFields', () => {
@@ -47,7 +51,7 @@ describe('requestFields', () => {
                 title: 'Title',
                 authors: 'Author',
                 category: 'unknown',
-                shelf: 'unknown',
+                shelf_name: 'unknown',
                 id: 'book-1',
                 updated_date:
                     '2026-08-01T00:00:00Z',
@@ -59,7 +63,7 @@ describe('requestFields', () => {
             title: 'Title',
             authors: 'Author',
             category: 'unknown',
-            shelf: 'unknown',
+            shelf_name: 'unknown',
         })
     })
 
@@ -83,6 +87,32 @@ describe('requestFields', () => {
         ).toEqual({
             borrower: 'Pat',
             notes: 'Handle with care',
+        })
+    })
+
+    it('keeps documented shelf create and update fields only', () => {
+        expect(
+            pickShelfCreate({
+                common_name: 'a1',
+                location: 'Office',
+                mystery: true,
+            } as ShelfCreate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            common_name: 'a1',
+            location: 'Office',
+        })
+
+        expect(
+            pickShelfUpdate({
+                description: null,
+                mystery: true,
+            } as ShelfUpdate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            description: null,
         })
     })
 })

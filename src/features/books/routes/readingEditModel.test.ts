@@ -20,7 +20,7 @@ const readBook: BookRead = {
     authors: 'Vladimir Nabokov',
     isbn13: '9780679723427',
     category: 'fiction',
-    shelf: 'a1',
+    shelf_name: 'a1',
     status: 'available',
     publication_date: '1962',
     publisher: 'Vintage',

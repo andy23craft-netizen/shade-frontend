@@ -6,6 +6,8 @@ import type {
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
+    ShelfCreate,
+    ShelfUpdate,
 } from './apiTypes'
 
 export const BOOK_CREATE_KEYS = [
@@ -23,7 +25,7 @@ export const BOOK_CREATE_KEYS = [
     'purchase_price',
     'rating',
     'review',
-    'shelf',
+    'shelf_name',
     'status',
     'tags',
     'title',
@@ -44,7 +46,7 @@ export const BOOK_UPDATE_KEYS = [
     'purchase_price',
     'rating',
     'review',
-    'shelf',
+    'shelf_name',
     'status',
     'tags',
     'title',
@@ -66,6 +68,18 @@ export const MARK_READ_REQUEST_KEYS = [
     'rating',
     'review',
 ] as const satisfies readonly (keyof MarkReadRequest)[]
+
+export const SHELF_CREATE_KEYS = [
+    'common_name',
+    'description',
+    'location',
+] as const satisfies readonly (keyof ShelfCreate)[]
+
+export const SHELF_UPDATE_KEYS = [
+    'common_name',
+    'description',
+    'location',
+] as const satisfies readonly (keyof ShelfUpdate)[]
 
 export function pickDocumentedRequestFields<
     T extends object,
@@ -126,5 +140,23 @@ export function pickMarkReadRequest(
     return pickDocumentedRequestFields(
         request,
         MARK_READ_REQUEST_KEYS,
+    )
+}
+
+export function pickShelfCreate(
+    shelf: ShelfCreate,
+): ShelfCreate {
+    return pickDocumentedRequestFields(
+        shelf,
+        SHELF_CREATE_KEYS,
+    )
+}
+
+export function pickShelfUpdate(
+    shelf: ShelfUpdate,
+): ShelfUpdate {
+    return pickDocumentedRequestFields(
+        shelf,
+        SHELF_UPDATE_KEYS,
     )
 }

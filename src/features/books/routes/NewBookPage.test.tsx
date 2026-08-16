@@ -14,11 +14,40 @@ import {
 } from 'vitest'
 
 import { ApiError } from '../../../api/apiErrors'
+import type { ShelfRead } from '../../../api/apiTypes'
 import { NewBookPage } from './NewBookPage'
 
 const mockNavigate = vi.fn()
 const mockMutate = vi.fn()
 const mockRefetch = vi.fn()
+const mockShelvesRefetch = vi.fn()
+
+const TEST_SHELVES: ShelfRead[] = [
+    {
+        shelf_id: 'id-unknown',
+        common_name: 'unknown',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-a1',
+        common_name: 'a1',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
+const shelvesState = {
+    data: TEST_SHELVES as ShelfRead[] | undefined,
+    isPending: false,
+    isError: false,
+    error: null as unknown,
+    isSuccess: true,
+}
 
 const lookupState = {
     data: undefined as undefined | {
@@ -59,6 +88,13 @@ vi.mock('../../../api/booksQueries', () => ({
     useBookLookup: () => ({
         ...lookupState,
         refetch: mockRefetch,
+    }),
+}))
+
+vi.mock('../../../api/shelvesQueries', () => ({
+    useShelves: () => ({
+        ...shelvesState,
+        refetch: mockShelvesRefetch,
     }),
 }))
 
@@ -104,6 +140,12 @@ describe('NewBookPage', () => {
         mockNavigate.mockReset()
         mockMutate.mockReset()
         mockRefetch.mockReset()
+        mockShelvesRefetch.mockReset()
+        shelvesState.data = TEST_SHELVES
+        shelvesState.isPending = false
+        shelvesState.isError = false
+        shelvesState.error = null
+        shelvesState.isSuccess = true
         lookupState.data = undefined
         lookupState.isPending = false
         lookupState.isFetching = false
@@ -140,6 +182,40 @@ describe('NewBookPage', () => {
         ).toBeInTheDocument()
     })
 
+    it('blocks the page when shelves fail to load', () => {
+        shelvesState.data = undefined
+        shelvesState.isPending = false
+        shelvesState.isError = true
+        shelvesState.isSuccess = false
+        shelvesState.error = new ApiError({
+            kind: 'unreachable',
+            message:
+                'The API could not be reached',
+        })
+
+        renderNewBookPage()
+
+        expect(
+            screen.getByText(
+                'Unable to load shelves',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByLabelText('Title'),
+        ).not.toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(
+            mockShelvesRefetch,
+        ).toHaveBeenCalled()
+    })
+
     it('submits the book through the create mutation', () => {
         renderNewBookPage()
 
@@ -161,6 +237,15 @@ describe('NewBookPage', () => {
             },
         )
 
+        fireEvent.change(
+            screen.getByLabelText('Shelf'),
+            {
+                target: {
+                    value: 'id-unknown',
+                },
+            },
+        )
+
         fireEvent.click(
             screen.getByRole('button', {
                 name: 'Save Book',
@@ -173,7 +258,7 @@ describe('NewBookPage', () => {
                 title: 'Dune',
                 authors: 'Frank Herbert',
                 category: 'unknown',
-                shelf: 'unknown',
+                shelf_name: 'unknown',
                 status: 'available',
                 is_read: false,
             }),
@@ -201,6 +286,15 @@ describe('NewBookPage', () => {
             {
                 target: {
                     value: 'Frank Herbert',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Shelf'),
+            {
+                target: {
+                    value: 'id-unknown',
                 },
             },
         )
@@ -527,6 +621,15 @@ describe('NewBookPage', () => {
             {
                 target: {
                     value: 'Frank Herbert',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Shelf'),
+            {
+                target: {
+                    value: 'id-unknown',
                 },
             },
         )

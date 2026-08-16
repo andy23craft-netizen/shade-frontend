@@ -8,9 +8,9 @@ without remaining the landing route.
 
 ## Dependencies
 
-FEAT-01 (shell, navigation, route metadata) and FEAT-11 (dashboard) are complete. This ticket does not depend on
-FEAT-12 through FEAT-16. Do not pull operational hardening, journey automation, CI packaging, Podman, or release
-artifact work into FEAT-17.
+FEAT-01 (shell, navigation, route metadata), FEAT-11 (dashboard), and CHORE-01 (shelves catalog at `/shelves`) are
+complete. This ticket does not depend on FEAT-12 through FEAT-16. Do not pull operational hardening, journey
+automation, CI packaging, Podman, or release artifact work into FEAT-17.
 
 ## Contract references
 
@@ -24,6 +24,7 @@ Already in place and should be reused (not rebuilt):
 - `/` is `DashboardPage` (`src/features/dashboard/routes/DashboardPage.tsx`) via `routeMetadata.dashboard.path`
   (`'/'`) in `src/routes/routes.tsx`.
 - Primary navigation in `AppShell` links "Dashboard" to `/`; the brand link "Shade Library" also goes to `/`.
+  Primary nav also includes Books, Add Book, Check Out, Check In, Loans, and Shelves (`/shelves`), plus admin links.
 - Document title and heading focus come from route `handle.title` plus `AppShell` behavior.
 - `NotFoundPage` links back with "Return to the dashboard" (`to="/"`).
 - `RootErrorBoundary` recovery copy mentions returning to the dashboard; the control is an `<a href="/">` labeled
@@ -43,8 +44,8 @@ The About homepage should answer three questions for a first-time (or returning)
 2. **Why it exists** -- Manage a private physical book collection: add titles (manual / ISBN / scanner), lend books,
    record reading, soft-delete / restore, and back up library data without multi-tenant SaaS complexity.
 3. **How to use it** -- Short, actionable guidance with in-app links to the main workflows (browse, add, check out /
-   in, loans, dashboard metrics, admin restore / backup). Keep copy accurate to shipped routes; do not describe
-   out-of-scope product ideas (wish lists, cover images, multi-library, accounts, and so on).
+   in, loans, shelves catalog, dashboard metrics, admin restore / backup). Keep copy accurate to shipped routes; do
+   not describe out-of-scope product ideas (wish lists, cover images, multi-library, accounts, and so on).
 
 Tone: clear maintainer/operator documentation inside the product, not marketing fluff. Prefer one composition with a
 clear heading hierarchy over a card grid or dashboard of widgets.
@@ -56,7 +57,7 @@ clear heading hierarchy over a card grid or dashboard of widgets.
 | File | Change |
 | ---- | ------ |
 | `src/features/about/routes/AboutPage.tsx` | New static route page. Semantic `section.route-page` (or an about-specific BEM root if styles need it), `h1` with `tabIndex={-1}` matching other routes, sections for what / why / how-to-use, and `AppLink` CTAs into existing product routes. No React Query, no API client. |
-| `src/features/about/routes/AboutPage.test.tsx` | Colocated tests: heading / document-title path via `renderAppTree` when wired at `/`; presence of the three explanatory sections; primary "how to use" links resolve to `/books`, `/books/new`, `/checkout`, `/checkin`, `/loans`, `/dashboard`, and admin routes as chosen in copy; keyboard-focusable heading; no network calls asserted. |
+| `src/features/about/routes/AboutPage.test.tsx` | Colocated tests: heading / document-title path via `renderAppTree` when wired at `/`; presence of the three explanatory sections; primary "how to use" links resolve to `/books`, `/books/new`, `/checkout`, `/checkin`, `/loans`, `/shelves`, `/dashboard`, and admin routes as chosen in copy; keyboard-focusable heading; no network calls asserted. |
 
 ### Routing and metadata
 
@@ -69,7 +70,7 @@ clear heading hierarchy over a card grid or dashboard of widgets.
 
 | File | Change |
 | ---- | ------ |
-| `src/layout/AppShell.tsx` | Keep the brand `NavLink` to `/` (now About / home). Point the "Dashboard" nav item to `/dashboard`. Optionally add a primary "About" nav item to `/` with `end` (recommended for current-page clarity when not relying solely on the brand). Do not remove Books / Add Book / Check Out / Check In / Loans / admin links. |
+| `src/layout/AppShell.tsx` | Keep the brand `NavLink` to `/` (now About / home). Point the "Dashboard" nav item to `/dashboard`. Optionally add a primary "About" nav item to `/` with `end` (recommended for current-page clarity when not relying solely on the brand). Do not remove Books / Add Book / Check Out / Check In / Loans / Shelves / admin links. |
 | `src/routes/NotFoundPage.tsx` | Update recovery link label and destination semantics: link to `/` as "Return home" (or "Return to About"). Stop calling `/` "the dashboard". |
 | `src/RootErrorBoundary.tsx` | Align body copy with home being About (e.g., remove "return to the dashboard" if `/` is no longer the dashboard). Keep "Return home" → `/`. |
 | `src/layout/AppShell.test.tsx` | Expect Dashboard nav to `/dashboard`; expect About (and/or brand) current-page behavior on `/`; update not-found recovery assertion away from "Return to the dashboard" if that string changes. |
@@ -89,6 +90,7 @@ clear heading hierarchy over a card grid or dashboard of widgets.
 | File | Change |
 | ---- | ------ |
 | `docs/AGENTS.md` | Record About as `/` and Dashboard as `/dashboard`; list `src/features/about/`; update "Live product UI" and remaining-ticket notes to include FEAT-17. |
+| `docs/full-project-context.md` | Same homepage / `/dashboard` path notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist entry for FEAT-17 when maintainers track it there. |
 | `docs/product-docs/PLAN.md` | Note that `/` is the About landing page and `/dashboard` hosts read-only metrics (PLAN currently documents `/` as dashboard). |
 
@@ -112,6 +114,7 @@ three sections. Example outline (exact copy is implementer-owned; keep it accura
    - Browse the collection (`/books`) and open a book for detail actions.
    - Add a book manually or via ISBN / camera / hardware scanner (`/books/new`).
    - Check out and check in (`/checkout`, `/checkin`); review loans (`/loans`).
+   - Manage shelves (`/shelves`); Add/Edit Book pickers load from that catalog.
    - Mark read / edit reading from book detail when eligible.
    - Review metrics on the Dashboard (`/dashboard`).
    - Restore soft-deleted books and download SQL backup under Administration (`/admin/deleted`, `/admin/backup`).
@@ -131,7 +134,8 @@ three sections. Example outline (exact copy is implementer-owned; keep it accura
 - Keyboard and 320px usability match existing shell conventions (landmarks, focusable `h1`, visible focus).
 - Colocated About tests pass; updated shell / recovery / home-route tests pass.
 - `make check` passes.
-- `docs/AGENTS.md` (and PLAN / ToDo as needed) reflect the new homepage and `/dashboard` path.
+- `docs/AGENTS.md` (and PLAN / ToDo / `docs/full-project-context.md` as needed) reflect the new homepage and
+  `/dashboard` path.
 
 ## Plan coverage
 

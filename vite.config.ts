@@ -1,5 +1,32 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
+
+const repositoryRoot = join(
+    dirname(fileURLToPath(import.meta.url)),
+)
+
+const packageJson = JSON.parse(
+    readFileSync(
+        join(repositoryRoot, 'package.json'),
+        'utf8',
+    ),
+) as {
+    version?: unknown
+}
+
+const appVersion =
+    typeof packageJson.version === 'string'
+        ? packageJson.version.trim()
+        : ''
+
+if (appVersion === '') {
+    throw new Error(
+        'package.json is missing a valid version.',
+    )
+}
 
 /**
  * Optional same-origin API proxy for local development.
@@ -33,6 +60,9 @@ const apiProxy = createDevServerProxy()
 
 export default defineConfig({
     plugins: [react()],
+    define: {
+        __APP_VERSION__: JSON.stringify(appVersion),
+    },
     ...(apiProxy
         ? {
               server: {

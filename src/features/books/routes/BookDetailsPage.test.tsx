@@ -26,7 +26,7 @@ const completeBook: BookRead = {
     authors: 'Vladimir Nabokov',
     isbn13: '9780679723427',
     category: 'fiction',
-    shelf: 'a1',
+    shelf_name: 'a1',
     status: 'available',
     publication_date: '1962',
     publisher: 'Vintage',
@@ -242,7 +242,7 @@ describe('BookDetailsPage', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText('a1'),
+            screen.getByText('A1'),
         ).toBeInTheDocument()
 
         expect(
@@ -345,7 +345,7 @@ describe('BookDetailsPage', () => {
         const bookWithUnknownEnums = {
             ...completeBook,
             category: 'future_category',
-            shelf: 'future_shelf',
+            shelf_name: 'future_shelf',
             status: 'future_status',
         } as unknown as BookRead
 
@@ -365,7 +365,7 @@ describe('BookDetailsPage', () => {
 
         expect(
             screen.getByText(
-                /future_shelf \(unknown\)/,
+                /Future Shelf/,
             ),
         ).toBeInTheDocument()
 
