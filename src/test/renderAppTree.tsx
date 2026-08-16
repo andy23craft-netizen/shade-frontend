@@ -16,7 +16,6 @@ export const testDiagnosticReporter:
 }
 export const testRuntimeConfig: RuntimeConfig = {
     apiBaseUrl: 'https://library.example.com',
-    release: 'test-release',
     diagnostics: {
         enabled: false,
         endpoint: null,

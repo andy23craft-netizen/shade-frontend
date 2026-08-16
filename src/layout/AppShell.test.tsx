@@ -11,6 +11,7 @@ import {
   it,
   vi,
 } from 'vitest'
+import { APP_VERSION } from '../config/appVersion'
 import {
   mockReachableApi,
   renderAppTree,
@@ -73,7 +74,7 @@ describe('AppShell layout and navigation', () => {
     }
   })
 
-  it('shows the runtime release and API version in the footer', async () => {
+  it('shows the VERSION release and API version in the footer', async () => {
     renderAppTree(['/'])
 
     const footer = screen.getByRole('contentinfo')
@@ -81,7 +82,7 @@ describe('AppShell layout and navigation', () => {
     expect(footer).toHaveTextContent('Shade Library')
     expect(
       await screen.findByText(
-        'Release test-release · API 0.2.1',
+        `Release ${APP_VERSION} · API 0.2.1`,
       ),
     ).toBeInTheDocument()
   })

@@ -5,13 +5,11 @@ describe('readRuntimeConfig', () => {
     it('returns valid runtime configuration', () => {
         window.__SHADE_CONFIG__ = {
             apiBaseUrl: 'http://127.0.0.1:8000',
-            release: '2026.08.10',
         }
 
         expect(readRuntimeConfig()).toEqual({
             config: {
                 apiBaseUrl: 'http://127.0.0.1:8000',
-                release: '2026.08.10',
                 diagnostics: {
                     enabled: false,
                     endpoint: null,
@@ -34,13 +32,16 @@ describe('readRuntimeConfig', () => {
     it('does not expose configuration details through the error', () => {
         window.__SHADE_CONFIG__ = {
             apiBaseUrl: 'https://example.com',
-            release: '',
+            diagnostics: {
+                enabled: true,
+                endpoint: 'not-a-url',
+            },
         }
 
         const result = readRuntimeConfig()
 
         expect(result.error?.message).toContain(
-            'release identifier',
+            'diagnostic endpoint',
         )
         expect(result.error?.message).not.toContain(
             'https://example.com',

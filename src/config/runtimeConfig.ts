@@ -5,13 +5,11 @@ export interface RuntimeDiagnosticConfig {
 
 export interface RuntimeConfig {
     apiBaseUrl: string
-    release: string
     diagnostics: RuntimeDiagnosticConfig
 }
 
 export interface RuntimeConfigSource {
     apiBaseUrl?: unknown
-    release?: unknown
     diagnostics?: unknown
 }
 
@@ -58,16 +56,6 @@ function normalizeApiBaseUrl(value: unknown): string {
         value,
         'API base URL',
     )
-}
-
-function validateRelease(value: unknown): string {
-    if (typeof value !== 'string' || value.trim() === '') {
-        throw new RuntimeConfigError(
-            'Runtime configuration is missing a valid release identifier.',
-        )
-    }
-
-    return value.trim()
 }
 
 function validateDiagnostics(
@@ -128,7 +116,6 @@ export function loadRuntimeConfig(
 
     return {
         apiBaseUrl: normalizeApiBaseUrl(source.apiBaseUrl),
-        release: validateRelease(source.release),
         diagnostics: validateDiagnostics(
             source.diagnostics,
         ),

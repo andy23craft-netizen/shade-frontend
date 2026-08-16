@@ -6,14 +6,13 @@ import {
     useMatches,
 } from 'react-router-dom'
 import { useVersion } from '../api/versionQueries'
-import { useConnection } from '../features/connection/useConnection'
+import { APP_VERSION } from '../config/appVersion'
 
 interface RouteHandle {
     title?: string
 }
 
 export function AppShell() {
-    const { release } = useConnection()
     const { data: versionData } = useVersion()
     const location = useLocation()
     const matches = useMatches()
@@ -34,8 +33,8 @@ export function AppShell() {
     const apiVersion = versionData?.version?.trim()
     const releaseLabel =
         apiVersion !== undefined && apiVersion !== ''
-            ? `Release ${release} · API ${apiVersion}`
-            : `Release ${release}`
+            ? `Release ${APP_VERSION} · API ${apiVersion}`
+            : `Release ${APP_VERSION}`
 
     useEffect(() => {
         document.title = `${routeTitle} — Shade`

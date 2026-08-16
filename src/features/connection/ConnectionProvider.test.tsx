@@ -89,7 +89,6 @@ function renderProvider(
                 runtimeConfig={{
                     apiBaseUrl:
                         'https://library.example.com',
-                    release: 'test',
                     diagnostics: {
                         enabled: false,
                         endpoint: null,
@@ -118,7 +117,6 @@ function renderProviderWithQuery() {
                     runtimeConfig={{
                         apiBaseUrl:
                             'https://library.example.com',
-                        release: 'test',
                         diagnostics: {
                             enabled: false,
                             endpoint: null,
