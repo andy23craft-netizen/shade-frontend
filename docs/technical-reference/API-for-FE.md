@@ -54,18 +54,24 @@ can still reach the server, but browser JS cannot read the response.
 | ------ | -------------------------------- |
 | `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query); |
 |        | malformed or empty `wishlist_id` / membership `book_id` on wishlist routes; |
-|        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; partial or invalid `skip`/`take` on list endpoints; |
+|        | malformed or empty `shelf_id` on shelf update/delete; |
+|        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; |
+|        | partial or invalid `skip`/`take` on list endpoints; |
 |        | invalid `sortBy` or `sortOrder` on `GET /books`; invalid or blank `field` on |
 |        | `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book create/update; |
-|        | `shelf_name` that normalizes to `removed` on book create/update |
+|        | `shelf_name` that normalizes to `removed` on book create/update; |
+|        | create/rename/delete of system shelves `unknown` / `removed`, or rename to those names |
 | `403`  | Missing or invalid Bearer token |
 | `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / second delete; |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
-|        | unknown wishlist, or unknown book when adding a wishlist membership |
-| `409`  | Restore an active book; checkout when already on loan; check-in with no active loan |
+|        | unknown wishlist, or unknown book when adding a wishlist membership; |
+|        | unknown shelf for `PATCH` / `DELETE /shelves/{shelf_id}` |
+| `409`  | Restore an active book; checkout when already on loan; check-in with no active loan; |
+|        | duplicate shelf `common_name` on create/rename; delete shelf while books remain |
 | `412`  | Checkout when the book has `status=display_only` |
 | `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body; |
-|        | unsupported wishlist membership `status`; null or blank `shelf_name` on book create/update |
+|        | unsupported wishlist membership `status`; null or blank `shelf_name` on book create/update; |
+|        | null or blank shelf `common_name` on shelf create/update |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
 | `504`  | ISBN metadata provider timeout |
@@ -125,7 +131,7 @@ membership unchanged.
 Books use `shelf_name` (maps to `shelves.common_name`), not a hard-coded shelf enum and not a book-level `shelf`
 column. Create requires `shelf_name`. Incoming names are trimmed then lowercased (max length 32 after trim). Unknown
 names and names that normalize to `removed` return **400** on create/update -- only `DELETE /books/{id}` assigns
-`removed`. See Shelves for list/discovery behavior.
+`removed`. See Shelves for list and catalog CRUD behavior.
 
 Books default to author ascending (`sortBy=author`, `sortOrder=asc` when omitted). Allowed `sortBy` values:
 `author`, `title`, `creationDate`, `shelf`. Shelf sorting is lexical on `shelves.common_name`. Allowed `sortOrder`
@@ -168,13 +174,24 @@ Shelves are a separate catalog resource. Book placement is membership (`books_sh
 * includes system shelves `unknown` and `removed`
 * orders by `common_name` ascending, then `shelf_id` ascending
 
-There is no shelf create/update/delete HTTP yet. The frontend cannot add shelves through the API until that write
-surface exists; until then, treat `GET /shelves` as the source of truth for assignable names (and still reject
-assigning `removed` on create/update -- only soft-delete does that).
+Write routes (same Bearer auth):
 
-For book forms: load `GET /shelves`, present `common_name` values, and submit the chosen name as `shelf_name`. Omit
-`shelf_name` on `PATCH` when membership should not change. After soft-delete, expect `shelf_name: "removed"` and a
-non-null `deletion_date`; after restore, expect `shelf_name: "unknown"` and `deletion_date: null`.
+* `POST /shelves` -- create with required `common_name` (trimmed/lowercased, max 32) and optional
+  `location` / `description`; returns **201** `ShelfRead`. Reserved names `unknown` / `removed` are **400**;
+  duplicate `common_name` is **409**.
+* `PATCH /shelves/{shelf_id}` -- update provided fields; returns **200** `ShelfRead`. Malformed id **400**;
+  missing **404**. System shelves cannot be renamed (**400**), but `location` / `description` may change.
+  Rename to a reserved name is **400**; rename conflict is **409**.
+* `DELETE /shelves/{shelf_id}` -- remove an empty non-system shelf (**204**). System shelves **400**; any
+  remaining book membership **409** (books are unchanged).
+
+Refresh `GET /shelves` after create/update/delete so pickers stay current. New `common_name` values are
+immediately assignable on book create/update via `shelf_name`.
+
+For book forms: load `GET /shelves`, present `common_name` values (exclude `removed` for create/update), and
+submit the chosen name as `shelf_name`. Omit `shelf_name` on `PATCH` when membership should not change. After
+soft-delete, expect `shelf_name: "removed"` and a non-null `deletion_date`; after restore, expect
+`shelf_name: "unknown"` and `deletion_date: null`.
 
 Dashboard incomplete-shelf / `missing_shelf` means membership on `unknown` (not `removed`).
 
@@ -332,9 +349,10 @@ URL.revokeObjectURL(objectUrl);
 | -------------- | ----- |
 | Barcode/camera/manual ISBN capture, editable drafts, forms, presentation | Frontend |
 | Shelf picker UI from `GET /shelves`; submit chosen `common_name` as `shelf_name` | Frontend |
+| Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
 | Soft delete/restore, loan records, checkout/check-in, reading state | API |
-| Shelf catalog read (`GET /shelves`) and book membership via `shelf_name` | API |
+| Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
 | Borrowing and dashboard statistics | API |
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/book) → `POST .../checkout` or
@@ -342,5 +360,6 @@ Recommended borrowing/returning: FE collects borrower (or selects loan/book) →
 `BookRead` status. Do not drive loan state through generic `PATCH`.
 
 Recommended shelf assignment: FE loads `GET /shelves` → user picks a `common_name` (not `removed` for create/update)
-→ send as `shelf_name` on `POST /books` or `PATCH /books/{id}`. After delete/restore, re-read the book (or list) for
-updated `shelf_name` and `deletion_date`; do not assume the prior shelf is restored.
+→ send as `shelf_name` on `POST /books` or `PATCH /books/{id}`. Manage the catalog with `POST` / `PATCH` /
+`DELETE /shelves`, then refresh `GET /shelves`. After delete/restore, re-read the book (or list) for updated
+`shelf_name` and `deletion_date`; do not assume the prior shelf is restored.
