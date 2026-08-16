@@ -4,6 +4,9 @@ import {
     it,
 } from 'vitest'
 
+import type {
+    ShelfRead,
+} from '../../../api/apiTypes'
 import { bookFormDefaults } from './bookFormDefaults'
 import type { BookFormValues } from './BookForm'
 import {
@@ -13,6 +16,33 @@ import {
     validateBookFormValues,
 } from './bookFormModel'
 
+const SHELVES: ShelfRead[] = [
+    {
+        shelf_id: 'id-unknown',
+        common_name: 'unknown',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-a1',
+        common_name: 'a1',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-removed',
+        common_name: 'removed',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
 function makeValues(
     overrides: Partial<BookFormValues> = {},
 ): BookFormValues {
@@ -20,6 +50,7 @@ function makeValues(
         ...bookFormDefaults,
         title: 'Dune',
         authors: 'Frank Herbert',
+        shelfId: 'id-unknown',
         ...overrides,
     }
 }
@@ -70,17 +101,19 @@ describe('parseTagsInput', () => {
 })
 
 describe('validateBookFormValues', () => {
-    it('requires title and authors', () => {
+    it('requires title, authors, and shelf', () => {
         expect(
             validateBookFormValues(
                 makeValues({
                     title: '   ',
                     authors: '',
+                    shelfId: '',
                 }),
             ),
         ).toEqual({
             title: 'Title is required.',
             authors: 'Authors are required.',
+            shelfId: 'Shelf is required.',
         })
     })
 
@@ -148,7 +181,7 @@ describe('validateBookFormValues', () => {
 })
 
 describe('formValuesToBookCreate', () => {
-    it('converts blank optional fields to null', () => {
+    it('converts blank optional fields to null and resolves shelf_name', () => {
         expect(
             formValuesToBookCreate(
                 makeValues({
@@ -162,12 +195,13 @@ describe('formValuesToBookCreate', () => {
                     notes: '   ',
                     tags: '',
                 }),
+                SHELVES,
             ),
         ).toEqual({
             title: 'Dune',
             authors: 'Frank Herbert',
             category: 'unknown',
-            shelf: 'unknown',
+            shelf_name: 'unknown',
             is_read: false,
             status: 'available',
             isbn13: null,
@@ -188,6 +222,7 @@ describe('formValuesToBookCreate', () => {
                 makeValues({
                     publication_date: '1965',
                 }),
+                SHELVES,
             ).publication_date,
         ).toBe('1965')
     })
@@ -197,6 +232,7 @@ describe('formValuesToBookCreate', () => {
             makeValues({
                 purchase_price: '12.50',
             }),
+            SHELVES,
         )
 
         expect(book.purchase_price).toBe(12.5)
@@ -210,12 +246,15 @@ describe('formValuesToBookCreate', () => {
             makeValues({
                 isbn13: '978-0-441-17271-9',
                 tags: ' classic , sci-fi, classic ',
+                shelfId: 'id-a1',
             }),
+            SHELVES,
         )
 
         expect(book.isbn13).toBe(
             '978-0-441-17271-9',
         )
+        expect(book.shelf_name).toBe('a1')
         expect(book.status).toBe('available')
         expect(book.is_read).toBe(false)
         expect(book.tags).toEqual([
@@ -230,6 +269,7 @@ describe('formValuesToBookCreate', () => {
                 makeValues({
                     pages: '412',
                 }),
+                SHELVES,
             ).pages,
         ).toBe(412)
     })

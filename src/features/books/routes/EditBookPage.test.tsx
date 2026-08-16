@@ -22,16 +22,26 @@ import {
 } from 'vitest'
 
 import { ApiError } from '../../../api/apiErrors'
-import type { BookRead } from '../../../api/apiTypes'
+import type {
+    BookRead,
+    ShelfRead,
+} from '../../../api/apiTypes'
 import {
     useBook,
     useUpdateBook,
 } from '../../../api/booksQueries'
+import {
+    useShelves,
+} from '../../../api/shelvesQueries'
 import { EditBookPage } from './EditBookPage'
 
 vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
     useUpdateBook: vi.fn(),
+}))
+
+vi.mock('../../../api/shelvesQueries', () => ({
+    useShelves: vi.fn(),
 }))
 
 const mockNavigate = vi.fn()
@@ -54,6 +64,34 @@ vi.mock(
 const mockUseBook = vi.mocked(useBook)
 const mockUseUpdateBook =
     vi.mocked(useUpdateBook)
+const mockUseShelves = vi.mocked(useShelves)
+
+const TEST_SHELVES: ShelfRead[] = [
+    {
+        shelf_id: 'id-a1',
+        common_name: 'a1',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-a2',
+        common_name: 'a2',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-unknown',
+        common_name: 'unknown',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
 
 const book: BookRead = {
     id: 'test-book-id',
@@ -61,7 +99,7 @@ const book: BookRead = {
     authors: 'Vladimir Nabokov',
     isbn13: '9780441172719',
     category: 'fiction',
-    shelf: 'a1',
+    shelf_name: 'a1',
     status: 'available',
     publication_date: '1962',
     publisher: 'Vintage',
@@ -131,6 +169,21 @@ function renderPage(
     }
 }
 
+function setupSuccessfulShelves(
+    value: ShelfRead[] = TEST_SHELVES,
+) {
+    mockUseShelves.mockReturnValue({
+        data: value,
+        isPending: false,
+        isError: false,
+        error: null,
+        isSuccess: true,
+        refetch: vi.fn(),
+    } as unknown as ReturnType<
+        typeof useShelves
+    >)
+}
+
 function setupSuccessfulBook(
     value: BookRead = book,
 ) {
@@ -149,6 +202,7 @@ describe('EditBookPage', () => {
         vi.clearAllMocks()
 
         setupSuccessfulBook()
+        setupSuccessfulShelves()
 
         mockUseUpdateBook.mockReturnValue({
             mutate: vi.fn(),
@@ -186,6 +240,10 @@ describe('EditBookPage', () => {
         expect(
             screen.getByLabelText('Pages'),
         ).toHaveValue(315)
+
+        expect(
+            screen.getByLabelText('Shelf'),
+        ).toHaveValue('id-a1')
 
         expect(
             screen.getByLabelText('Tags'),

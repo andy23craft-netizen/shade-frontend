@@ -24,7 +24,7 @@ function createBook(
         title: `Title ${index}`,
         authors: `Author ${index}`,
         category: 'unknown',
-        shelf: 'unknown',
+        shelf_name: 'unknown',
         status: 'available',
         is_read: false,
         creation_date: '2026-01-01T00:00:00Z',

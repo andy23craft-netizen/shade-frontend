@@ -6,11 +6,42 @@ import {
 
 import type {
     BookRead,
+    ShelfRead,
 } from '../../../api/apiTypes'
+import type {
+    BookFormValues,
+} from '../components/BookForm'
 import {
     bookFormValuesFromBook,
     bookFormValuesToUpdate,
 } from './bookEditModel'
+
+const SHELVES: ShelfRead[] = [
+    {
+        shelf_id: 'id-a1',
+        common_name: 'a1',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-a2',
+        common_name: 'a2',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        shelf_id: 'id-unknown',
+        common_name: 'unknown',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
 
 const BOOK: BookRead = {
     id: 'book-1',
@@ -21,7 +52,7 @@ const BOOK: BookRead = {
     publication_date: '1965',
     pages: 412,
     category: 'fiction',
-    shelf: 'a1',
+    shelf_name: 'a1',
     tags: ['science fiction', 'classic'],
     acquisition_source: 'Bookstore',
     purchase_date: '2026-01-02',
@@ -43,7 +74,10 @@ const BOOK: BookRead = {
 describe('bookFormValuesFromBook', () => {
     it('maps book metadata into editable form values', () => {
         expect(
-            bookFormValuesFromBook(BOOK),
+            bookFormValuesFromBook(
+                BOOK,
+                SHELVES,
+            ),
         ).toEqual({
             title: 'Dune',
             authors: 'Frank Herbert',
@@ -52,7 +86,7 @@ describe('bookFormValuesFromBook', () => {
             publication_date: '1965',
             pages: '412',
             category: 'fiction',
-            shelf: 'a1',
+            shelfId: 'id-a1',
             tags: 'science fiction, classic',
             acquisition_source: 'Bookstore',
             purchase_date: '2026-01-02',
@@ -62,18 +96,21 @@ describe('bookFormValuesFromBook', () => {
     })
 
     it('maps nullable metadata to blank form values', () => {
-        const values = bookFormValuesFromBook({
-            ...BOOK,
-            isbn13: null,
-            publisher: null,
-            publication_date: null,
-            pages: null,
-            tags: null,
-            acquisition_source: null,
-            purchase_date: null,
-            purchase_price: null,
-            notes: null,
-        })
+        const values = bookFormValuesFromBook(
+            {
+                ...BOOK,
+                isbn13: null,
+                publisher: null,
+                publication_date: null,
+                pages: null,
+                tags: null,
+                acquisition_source: null,
+                purchase_date: null,
+                purchase_price: null,
+                notes: null,
+            },
+            SHELVES,
+        )
 
         expect(values.isbn13).toBe('')
         expect(values.publisher).toBe('')
@@ -89,38 +126,48 @@ describe('bookFormValuesFromBook', () => {
 
 describe('bookFormValuesToUpdate', () => {
     it('returns an empty update when metadata is unchanged', () => {
-        const values =
-            bookFormValuesFromBook(BOOK)
+        const values = bookFormValuesFromBook(
+            BOOK,
+            SHELVES,
+        )
 
         expect(
             bookFormValuesToUpdate(
                 BOOK,
                 values,
+                SHELVES,
             ),
         ).toEqual({})
     })
 
     it('includes only changed metadata fields', () => {
-        const values = {
-            ...bookFormValuesFromBook(BOOK),
+        const values: BookFormValues = {
+            ...bookFormValuesFromBook(
+                BOOK,
+                SHELVES,
+            ),
             title: 'Dune Messiah',
-            shelf: 'a2' as const,
+            shelfId: 'id-a2',
         }
 
         expect(
             bookFormValuesToUpdate(
                 BOOK,
                 values,
+                SHELVES,
             ),
         ).toEqual({
             title: 'Dune Messiah',
-            shelf: 'a2',
+            shelf_name: 'a2',
         })
     })
 
     it('sends null when nullable metadata is cleared', () => {
         const values = {
-            ...bookFormValuesFromBook(BOOK),
+            ...bookFormValuesFromBook(
+                BOOK,
+                SHELVES,
+            ),
             isbn13: '',
             publisher: '',
             pages: '',
@@ -133,6 +180,7 @@ describe('bookFormValuesToUpdate', () => {
             bookFormValuesToUpdate(
                 BOOK,
                 values,
+                SHELVES,
             ),
         ).toEqual({
             isbn13: null,
@@ -146,7 +194,10 @@ describe('bookFormValuesToUpdate', () => {
 
     it('normalizes changed metadata before comparison', () => {
         const values = {
-            ...bookFormValuesFromBook(BOOK),
+            ...bookFormValuesFromBook(
+                BOOK,
+                SHELVES,
+            ),
             title: '  Dune  ',
             authors: '  Frank Herbert  ',
             tags:
@@ -158,21 +209,25 @@ describe('bookFormValuesToUpdate', () => {
             bookFormValuesToUpdate(
                 BOOK,
                 values,
+                SHELVES,
             ),
         ).toEqual({})
     })
 
     it('does not include lifecycle or reading fields', () => {
         const values = {
-            ...bookFormValuesFromBook(BOOK),
+            ...bookFormValuesFromBook(
+                BOOK,
+                SHELVES,
+            ),
             title: 'Changed title',
         }
 
-        const update =
-            bookFormValuesToUpdate(
-                BOOK,
-                values,
-            )
+        const update = bookFormValuesToUpdate(
+            BOOK,
+            values,
+            SHELVES,
+        )
 
         expect(update).toEqual({
             title: 'Changed title',

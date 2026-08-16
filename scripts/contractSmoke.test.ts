@@ -47,6 +47,7 @@ const expectedPaths = [
     '/health',
     '/loans',
     '/loans/{id}',
+    '/shelves',
     '/wishlists',
     '/wishlists/{wishlist_id}',
     '/wishlists/{wishlist_id}/books',

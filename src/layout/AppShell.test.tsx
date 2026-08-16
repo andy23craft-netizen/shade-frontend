@@ -63,6 +63,7 @@ describe('AppShell layout and navigation', () => {
       'Check Out',
       'Check In',
       'Loans',
+      'Shelves',
       'Deleted Books',
       'Backup Library',
     ]) {

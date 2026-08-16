@@ -70,7 +70,7 @@ const book: BookRead = {
     authors: 'Vladimir Nabokov',
     isbn13: null,
     category: 'fiction',
-    shelf: 'a1',
+    shelf_name: 'a1',
     status: 'available',
     publication_date: '1962',
     publisher: 'Vintage',

@@ -8,7 +8,7 @@ export const bookFormDefaults: BookFormValues = {
     publication_date: '',
     pages: '',
     category: 'unknown',
-    shelf: 'unknown',
+    shelfId: '',
     tags: '',
     acquisition_source: '',
     purchase_date: '',

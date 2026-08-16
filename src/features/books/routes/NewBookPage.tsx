@@ -10,10 +10,14 @@ import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import { LoadingState } from '../../../components/LoadingState'
+import { QueryErrorState } from '../../../components/QueryErrorState'
 import {
     useBookLookup,
     useCreateBook,
 } from '../../../api/booksQueries'
+import {
+    useShelves,
+} from '../../../api/shelvesQueries'
 import {
     isApiError,
     type ApiFieldError,
@@ -41,7 +45,7 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'publication_date',
     'pages',
     'category',
-    'shelf',
+    'shelfId',
     'tags',
     'acquisition_source',
     'purchase_date',
@@ -64,7 +68,11 @@ function mapCreateFieldErrors(
     const mapped: BookFormFieldErrors = {}
 
     for (const entry of fieldErrors) {
-        const field = entry.field.split('.')[0]
+        let field = entry.field.split('.')[0]
+
+        if (field === 'shelf_name') {
+            field = 'shelfId'
+        }
 
         if (
             !field ||
@@ -111,6 +119,8 @@ function lookupFailureMessage(
 
 export function NewBookPage() {
     const navigate = useNavigate()
+
+    const shelvesQuery = useShelves()
 
     const [
         values,
@@ -165,6 +175,7 @@ export function NewBookPage() {
 
     useHardwareIsbnScanner({
         enabled:
+            shelvesQuery.isSuccess &&
             !isScannerOpen &&
             !lookup.isFetching,
         onDetected: handleIsbnDetected,
@@ -245,9 +256,24 @@ export function NewBookPage() {
         setServerFieldErrors({})
         setFormError(null)
 
-        const book = formValuesToBookCreate(
-            nextValues,
-        )
+        const shelves =
+            shelvesQuery.data ?? []
+
+        let book
+
+        try {
+            book = formValuesToBookCreate(
+                nextValues,
+                shelves,
+            )
+        } catch (error) {
+            setFormError(
+                error instanceof Error
+                    ? error.message
+                    : 'A valid shelf must be selected.',
+            )
+            return
+        }
 
         createBook.mutate(
             book,
@@ -274,6 +300,22 @@ export function NewBookPage() {
                         return
                     }
 
+                    if (
+                        isApiError(error) &&
+                        error.status === 400
+                    ) {
+                        setServerFieldErrors({
+                            shelfId:
+                                error.detail ??
+                                error.message,
+                        })
+                        setFormError(
+                            error.detail ??
+                                error.message,
+                        )
+                        return
+                    }
+
                     setFormError(
                         isApiError(error)
                             ? error.message
@@ -292,6 +334,60 @@ export function NewBookPage() {
         !lookup.isFetching &&
         !lookup.isError &&
         lookup.data !== undefined
+
+    if (shelvesQuery.isPending) {
+        return (
+            <section className="route-page">
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    ← Back to Books
+                </AppLink>
+
+                <header>
+                    <h1 tabIndex={-1}>
+                        Add Book
+                    </h1>
+                </header>
+
+                <LoadingState label="Loading shelves…" />
+            </section>
+        )
+    }
+
+    if (shelvesQuery.isError) {
+        return (
+            <section className="route-page">
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    ← Back to Books
+                </AppLink>
+
+                <header>
+                    <h1 tabIndex={-1}>
+                        Add Book
+                    </h1>
+                    <p>
+                        Shelves must load before a
+                        book can be added.
+                    </p>
+                </header>
+
+                <QueryErrorState
+                    error={shelvesQuery.error}
+                    onRetry={() => {
+                        void shelvesQuery.refetch()
+                    }}
+                    title="Unable to load shelves"
+                />
+            </section>
+        )
+    }
+
+    const shelves = shelvesQuery.data ?? []
 
     return (
         <section className="route-page">
@@ -456,6 +552,7 @@ export function NewBookPage() {
 
             <BookForm
                 values={values}
+                shelves={shelves}
                 onChange={setValues}
                 onSubmit={handleSubmit}
                 onCancel={() => {

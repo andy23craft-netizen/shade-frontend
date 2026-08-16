@@ -47,7 +47,7 @@ describe('requestFields', () => {
                 title: 'Title',
                 authors: 'Author',
                 category: 'unknown',
-                shelf: 'unknown',
+                shelf_name: 'unknown',
                 id: 'book-1',
                 updated_date:
                     '2026-08-01T00:00:00Z',
@@ -59,7 +59,7 @@ describe('requestFields', () => {
             title: 'Title',
             authors: 'Author',
             category: 'unknown',
-            shelf: 'unknown',
+            shelf_name: 'unknown',
         })
     })
 

@@ -115,6 +115,14 @@ export function AppShell() {
                             >
                                 Loans
                             </NavLink>
+
+                            <NavLink
+                                className="app-nav__link"
+                                to="/shelves"
+                                end
+                            >
+                                Shelves
+                            </NavLink>
                         </div>
 
                         <div

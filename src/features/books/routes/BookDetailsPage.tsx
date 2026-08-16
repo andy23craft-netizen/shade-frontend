@@ -16,9 +16,9 @@ import {
 import { queryKeys } from '../../../api/queryKeys'
 import type {
     Category,
-    Shelf,
     Status,
 } from '../../../api/apiTypes'
+import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 
 const CATEGORY_VALUES: readonly Category[] = [
     'unknown',
@@ -26,50 +26,6 @@ const CATEGORY_VALUES: readonly Category[] = [
     'philosophy',
     'fiction',
     'nonfiction',
-]
-
-const SHELF_VALUES: readonly Shelf[] = [
-    'unknown',
-    'a1',
-    'a2',
-    'a3',
-    'a4',
-    'b1',
-    'b2',
-    'b3',
-    'bath',
-    'c1',
-    'c2',
-    'c3',
-    'c4',
-    'd1',
-    'd2',
-    'd3',
-    'd4',
-    'd5',
-    'e1',
-    'e2',
-    'e3',
-    'e4',
-    'e5',
-    'e6',
-    'f1',
-    'f2',
-    'f3',
-    'f4',
-    'f5',
-    'g1',
-    'g2',
-    'g3',
-    'g4',
-    'g5',
-    'g6',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'liz_tbr',
 ]
 
 const STATUS_VALUES: readonly Status[] = [
@@ -328,9 +284,8 @@ export function BookDetailsPage() {
                     <div className="book-details-card__field">
                         <dt>Shelf</dt>
                         <dd>
-                            {displayEnum(
-                                book.shelf,
-                                SHELF_VALUES,
+                            {formatShelfCommonNameForDisplay(
+                                book.shelf_name,
                             )}
                         </dd>
                     </div>

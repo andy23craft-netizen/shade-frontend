@@ -28,8 +28,14 @@ deleted admin, and authenticated SQL backup), FEAT-10 API contract sync (regener
 dashboard-report paths; `booksApi` / query keys for `author` / `title` / `category`; collection `sortBy=shelf`;
 checkout `412` `display_only` refetch/messaging -- no alternate-copy offers, wishlist, or incomplete-metadata
 product UI), FEAT-11 (library dashboard), and FEAT-12 (operational and browser hardening; ticket file removed).
-Remaining tickets are `FEAT-13` through `FEAT-21` under `docs/tickets/`. Prefer ticket presence under `docs/tickets/`
-over `docs/ToDo.md` when judging completion (the checklist can lag).
+CHORE-01 (shelves contract sync) delivered `GET /shelves` via `shelvesApi.list` / `useShelves`, book payloads on
+`shelf_name` (string; old `Shelf` enum removed), `/shelves` read-only catalog, and Add/Edit Book shelf pickers fed by
+the API (`shelf_id` in memory, Title Case `common_name` labels, submit `shelf_name`; `unknown` allowed; `removed`
+excluded except edit may surface current `removed` membership; create requires an explicit shelf; Add/Edit Book block
+the page when shelves fail to load). Shelf write HTTP (`POST`/`PATCH`/`DELETE /shelves`) is not in checked-in OpenAPI
+yet -- do not invent those routes. Remaining tickets are `FEAT-13` through `FEAT-21` under `docs/tickets/` (plus
+`CHORE-01` until removed). Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging completion
+(the checklist can lag).
 
 **Next / in progress:** `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` (automated accessibility checks,
 browser-level journeys for MVP routes and lifecycle endpoints, mock/fixture coverage of the documented status matrix,
@@ -190,8 +196,10 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 - Validate ISBN-10 check digits (backend does not do this correctly).
 - Send normalized `YYYY-MM-DD` dates and UTC ISO 8601 timestamps.
-- Do not send `null` for required DB fields (title, authors, category, shelf, is_read, status).
-- Prevent blank title, authors, and borrower.
+- Do not send `null` for required DB fields (title, authors, category, shelf_name on create, is_read, status).
+- Load shelves from `GET /shelves` for book placement; send selected `common_name` as `shelf_name` (never Title Case
+  display strings). Do not invent shelf write HTTP until OpenAPI documents it.
+- Prevent blank title, authors, borrower, and (on create) unselected shelf.
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Render unknown enum values safely (see `enumDisplayValue`).
 - Display API-provided dashboard statistics; do not recalculate business metrics. If an average is `null`, show
@@ -282,8 +290,9 @@ FEAT-10), `/books/:bookId/delete` (`DeleteBookPage`, FEAT-10), `/books/:bookId/m
 `markReadModel`, FEAT-09), `/books/:bookId/reading` (`ReadingEditPage` + `readingEditModel`, FEAT-09), `/checkout`
 (`CheckoutPage` + `checkoutModel` with ISBN Find via `useBooks({ isbn })`, confirmation, and `useCheckoutBook`),
 `/checkin` (`CheckinPage` + `checkinModel` + `checkinEligibility`, FEAT-08), `/loans` (`LoansPage` + `loanTemporal`,
-FEAT-08), `/admin/deleted` (`DeletedBooksPage`, FEAT-10), and `/admin/backup` (`BackupLibraryPage`, FEAT-10). No
-feature routes still render `RoutePlaceholder` (`RoutePlaceholder.tsx` remains only as an unused helper).
+FEAT-08), `/shelves` (`ShelvesPage` + `useShelves`, CHORE-01 read-only catalog), `/admin/deleted` (`DeletedBooksPage`,
+FEAT-10), and `/admin/backup` (`BackupLibraryPage`, FEAT-10). No feature routes still render `RoutePlaceholder`
+(`RoutePlaceholder.tsx` remains only as an unused helper).
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
 production bundle. The CSS import order is intentional: later layers use tokens and defaults declared by earlier layers.
@@ -339,7 +348,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
-  dashboard, health, validation/error schemas, enums).
+  dashboard, health, `ShelfRead`, validation/error schemas, enums). Book payloads use `shelf_name` (string); there is
+  no hard-coded `Shelf` enum.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
@@ -358,18 +368,22 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/queryKeys.ts`: Shared React Query keys for books (`all`,
   `list({ includeDeleted, isbn?, author?, title?, category?, skip?, take?, sortBy?, sortOrder? })`,
   `infiniteList({ includeDeleted, isbn?, author?, title?, category?, sortBy?, sortOrder?, take })`, `detail(id)`,
-  `lookup(isbn)`), loans (`all`, `list(bookId?)`, `infiniteList({ bookId?, take })`, `detail(id)`), and dashboard.
-  Blank/whitespace `isbn` / `author` / `title` / `category` are omitted from keys (trimmed when present).
-- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `backup`) plus the
-  underlying `client`. No wishlist aggregate yet (generated OpenAPI types include wishlist and dashboard-report paths;
-  product helpers wait for FEAT-19 / FEAT-20).
+  `lookup(isbn)`), loans (`all`, `list(bookId?)`, `infiniteList({ bookId?, take })`, `detail(id)`), dashboard, and
+  shelves (`all`, `list()` unpaginated). Blank/whitespace `isbn` / `author` / `title` / `category` are omitted from
+  keys (trimmed when present).
+- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `dashboard`, `health`, `backup`)
+  plus the underlying `client`. No wishlist aggregate yet (generated OpenAPI types include wishlist and
+  dashboard-report paths; product helpers wait for FEAT-19 / FEAT-20).
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `author`, `title`, `category`, `skip`, `take`,
   `sortBy` including `shelf`, `sortOrder`; omit empty/whitespace `isbn` / `author` / `title` / `category`; send
   `skip`/`take` together when paginating), `create`, `lookup`, `get`, `update`, `remove`,
   `restore`, `checkout` (including documented **412** `Book is display only`), `checkin` (optional body), `markRead`
-  (defaults to `{}`). Helpers accept optional `AbortSignal` and serialize only documented request fields.
+  (defaults to `{}`). Helpers accept optional `AbortSignal` and serialize only documented request fields (including
+  `shelf_name`).
 - `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`, optional `skip`/`take` together;
   omit empty/`undefined` `bookId` and omitted pagination params), `get(id)` (`GET /loans/{id}`).
+- `src/api/shelvesApi.ts`: `list()` (`GET /shelves`) returns a plain `ShelfRead[]` array (no pagination params). Write
+  helpers wait until OpenAPI documents create/update/delete.
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
 - `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
 - `src/api/backupApi.ts`: `get()` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
@@ -383,24 +397,25 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write returned `BookRead` into the
   detail cache (except delete) and invalidate per PLAN.md 7.5 (lists including `include_deleted` via the `['books']`
   prefix, detail, dashboard, and loans on checkout/check-in).
-- `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` (optional `{ bookId }`), `useInfiniteLoans` (optional
-  `{ bookId, enabled }`; batch size 30 via shared config), `useLoan(id)` (disabled when falsy), and `useDashboard` using
-  the same keys mutations invalidate (`queryKeys.loans.list` / `detail` / `all`).
+- `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId }`),
+  `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size 30 via shared config), `useLoan(id)` (disabled when
+  falsy), `useDashboard`, and `useShelves({ enabled? })` using the same keys mutations invalidate
+  (`queryKeys.loans.list` / `detail` / `all`; `queryKeys.shelves.list`).
 
 ### Routing and Layout
 
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
   `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`,
-  `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`, `/admin/deleted`, `/admin/backup`,
-  and `*` (not found).
+  `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`, `/shelves`, `/admin/deleted`,
+  `/admin/backup`, and `*` (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route-body helper (`h1` with `tabIndex={-1}`). Unused by current feature
   routes; keep only if a future ticket needs a temporary placeholder.
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
 - `src/layout/AppShell.tsx`: Application frame with skip link, header (brand name plus "est. 2026"), primary
-  navigation, admin/settings group, `Outlet` main region, footer (including runtime release identifier), document
-  title, and heading focus on location change.
+  navigation (including Shelves), admin/settings group, `Outlet` main region, footer (including runtime release
+  identifier), document title, and heading focus on location change.
 
 ### Feature Modules
 
@@ -415,21 +430,24 @@ Implemented (do not revert to placeholders):
 - `src/features/books/routes/BooksPage.tsx` (`/books`, FEAT-04 + infinite scroll + FEAT-09 ratings): active collection
   via `useInfiniteBooks({ sortBy, sortOrder })` with URL search params (`sortBy`, `sortOrder` only); sort controls
   include Author, Title, Date added, and Shelf (default author ascending); category filter UI is deferred to FEAT-18;
-  loading, error+retry, empty state with link to `/books/new`, and list rows linking to detail with safe enum display,
-  Read/Unread state, and rating (`N / 5`, or an em dash when null); bottom next-page loading and retry affordances
+  loading, error+retry, empty state with link to `/books/new`, and list rows linking to detail with safe enum display
+  for category/status, Title Case `shelf_name` via `formatShelfCommonNameForDisplay`, Read/Unread state, and rating
+  (`N / 5`, or an em dash when null); bottom next-page loading and retry affordances
 - `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`, FEAT-04 + FEAT-09 + FEAT-10): detail via `useBook`;
-  loading, not-found / error recovery, and field presentation with safe enum display, including `is_read`,
-  `completion_date`, `rating`, and `review`. "Edit Book" links to `/books/:bookId/edit` when active. "Check Out" links
-  to `/checkout?bookId=` when active and available (FEAT-07). "Check In" links to `/checkin?bookId=...` when active and
-  check-in eligible via `isCheckinEligible` (active loan present, not deleted; FEAT-08). "Mark Read" links to
-  `/books/:bookId/mark-read` when active and unread (FEAT-09). "Edit Reading" links to `/books/:bookId/reading` when
-  active and already read (FEAT-09). "Delete Book" links to `/books/:bookId/delete` when active and not on loan
-  (`status !== 'on_loan'` and no `findActiveLoan`; FEAT-10).
+  loading, not-found / error recovery, and field presentation with safe enum display, including Title Case
+  `shelf_name`, `is_read`, `completion_date`, `rating`, and `review`. "Edit Book" links to `/books/:bookId/edit` when
+  active. "Check Out" links to `/checkout?bookId=` when active and available (FEAT-07). "Check In" links to
+  `/checkin?bookId=...` when active and check-in eligible via `isCheckinEligible` (active loan present, not deleted;
+  FEAT-08). "Mark Read" links to `/books/:bookId/mark-read` when active and unread (FEAT-09). "Edit Reading" links to
+  `/books/:bookId/reading` when active and already read (FEAT-09). "Delete Book" links to `/books/:bookId/delete` when
+  active and not on loan (`status !== 'on_loan'` and no `findActiveLoan`; FEAT-10).
 - `src/features/books/routes/EditBookPage.tsx` / `bookEditModel.ts` / `bookEditModel.test.ts` (`/books/:bookId/edit`,
-  FEAT-10): metadata edit via shared `BookForm` + `useUpdateBook` / `booksApi.update`; populate with
-  `bookFormValuesFromBook`; minimal patch via `bookFormValuesToUpdate` (blank ISBN → `null`; never send `status`,
-  reading fields, or loan-driving values); reject no-op submits; Field-linked `422`; `404` refetch with preserved form
-  input; in-flight disable; success to detail; deleted-book warning UI. Reading fields stay on FEAT-09 flows.
+  FEAT-10 + CHORE-01): metadata edit via shared `BookForm` + `useUpdateBook` / `booksApi.update` + `useShelves`;
+  populate with `bookFormValuesFromBook` (seeds `shelfId` from `shelf_name`); minimal patch via
+  `bookFormValuesToUpdate` (blank ISBN → `null`; omit unchanged `shelf_name`; never send `status`, reading fields, or
+  loan-driving values); reject no-op submits; Field-linked `422` / **400** shelf errors; `404` refetch with preserved
+  form input; in-flight disable; success to detail; deleted-book warning UI; full-page shelves load/error gate before
+  the form. Reading fields stay on FEAT-09 flows.
 - `src/features/books/routes/DeleteBookPage.tsx` (`/books/:bookId/delete`, FEAT-10): soft delete via `useDeleteBook` /
   `booksApi.remove` with `ConfirmationDialog`; blocks when `status === 'on_loan'` or `findActiveLoan` is present;
   soft-deleted / not-found / loan-status error recovery; success navigates away from the deleted detail. Never
@@ -453,19 +471,29 @@ Implemented (do not revert to placeholders):
   `pickBookUpdate`; populate from `BookRead`; send only changed `completion_date` / `rating` / `review` (blank →
   `null`); reject no-op submits; `ConfirmationDialog`; Field-linked `422`; `404` refetch with preserved form input;
   success to detail. Active already-read books only; deleted / unread warning UI. Does not offer mark-unread.
-- `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05 + FEAT-06): mounts shared `BookForm`, optional
-  ISBN lookup via `useBookLookup` (checksum-gated; apply draft without overwriting the typed ISBN; progress/cancel/retry
-  and manual fallback), creates via `useCreateBook`, maps create `422` field errors into the form summary, disables
-  controls while pending, and navigates to the new detail on success. FEAT-06 adds camera ("Scan ISBN") and hardware
-  scanner capture that hands one ISBN into the same lookup path (never calls `POST /books` from scanner success);
-  hardware listening is disabled while the camera UI is open or lookup is fetching
+- `src/features/books/routes/NewBookPage.tsx` (`/books/new`, FEAT-05 + FEAT-06 + CHORE-01): loads `useShelves` first
+  (loading / full-page `QueryErrorState` without mounting `BookForm` on failure); mounts shared `BookForm` with shelves,
+  optional ISBN lookup via `useBookLookup` (checksum-gated; apply draft without overwriting the typed ISBN;
+  progress/cancel/retry and manual fallback), creates via `useCreateBook`, maps create `422` `shelf_name` and **400**
+  shelf errors into the form summary, disables controls while pending, and navigates to the new detail on success.
+  FEAT-06 adds camera ("Scan ISBN") and hardware scanner capture that hands one ISBN into the same lookup path (never
+  calls `POST /books` from scanner success); hardware listening is disabled while the camera UI is open or lookup is
+  fetching
 - `src/features/books/components/BookForm.tsx` / `bookFormDefaults.ts` / `bookFormModel.ts`: reusable create/edit form
-  model (title, authors, ISBN, publisher, publication date as text for year-only values, pages, category, shelf, tags,
-  purchase fields, notes). Create UI omits status/read/loan/review; create conversion always sends `status=available`
-  and `is_read=false`. Edit conversion lives in `bookEditModel` (minimal patch; never status/reading/loan fields).
-  Client validation, Field-linked errors, error summary focus, tag normalization, and
-  `formValuesToBookCreate` blank-optional-to-`null` conversion. Submit label is "Save Book". Colocated
-  `BookForm.test.tsx` / `bookFormModel.test.ts` cover gating, validation, conversion, and server error linking
+  model (title, authors, ISBN, publisher, publication date as text for year-only values, pages, category, `shelfId`
+  from `GET /shelves`, tags, purchase fields, notes). Create UI omits status/read/loan/review; create conversion always
+  sends `status=available` and `is_read=false` and resolves `shelfId` → `shelf_name` (`common_name`); create defaults
+  to empty shelf selection (explicit pick required, including `unknown`). Shelf options use Title Case labels; exclude
+  `removed` except edit may surface current `removed` membership as a disabled selected option. No inline shelf CRUD.
+  Edit conversion lives in `bookEditModel` (minimal patch; never status/reading/loan fields). Client validation,
+  Field-linked errors, error summary focus, tag normalization, and `formValuesToBookCreate` blank-optional-to-`null`
+  conversion. Submit label is "Save Book". Colocated `BookForm.test.tsx` / `bookFormModel.test.ts` cover gating,
+  validation, conversion, and server error linking
+- `src/features/shelves/shelfDisplay.ts`: Title Case `formatShelfCommonNameForDisplay`, assignable-shelf helpers
+  (`unknown` allowed; `removed` excluded), and id↔`common_name` lookup; colocated `shelfDisplay.test.ts`
+- `src/features/shelves/routes/ShelvesPage.tsx` (`/shelves`, CHORE-01): read-only catalog via `useShelves`; Title Case
+  names; system-shelf labelling for `unknown` / `removed`; loading / `QueryErrorState` / empty states; honest copy that
+  catalog writes wait for backend write HTTP (do not invent create/edit/delete UI yet)
 - `src/features/books/booksListModel.ts`: `BOOKS_BATCH_SIZE` (from shared infinite-scroll config), sort types
   (`author` | `title` | `creationDate` | `shelf`), sort URL parsing/labels, and page flattening helper; colocated
   `booksListModel.test.ts`
@@ -579,8 +607,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 - `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.
-- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels, footer release identifier, current-page state, and
-  not-found recovery.
+- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels (including Shelves), footer release identifier,
+  current-page state, and not-found recovery.
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
@@ -601,10 +629,12 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
   Query client defaults, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
-- `src/api/queryKeys.test.ts`: Books/loans/dashboard key shape coverage including `author` / `title` / `category`
-  omission of blank filters and `infiniteList` isolation.
+- `src/api/queryKeys.test.ts`: Books/loans/dashboard/shelves key shape coverage including `author` / `title` /
+  `category` omission of blank filters, `infiniteList` isolation, and shelves list isolation.
+- `src/api/shelvesApi.test.ts` / `shelvesQueries.test.tsx`: `GET /shelves` array list helper and `useShelves` hook
+  coverage (including enabled flag and errors).
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
-  (includes wishlist and dashboard-report paths plus existing lifecycle routes).
+  (includes `/shelves`, wishlist and dashboard-report paths plus existing lifecycle routes).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations; includes the FEAT-12 re-check
   (FEAT-14 owns future budget enforcement).
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix and blocker policy for FEAT-12.
@@ -612,10 +642,12 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   unauthorized handling without cache clear, and build-time token wiring.
 - `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection
   infinite scroll (batch size 30, sort URL persistence, flattened pages, bottom loading/retry, Read/Unread and rating
-  on cards), detail (including gated Mark Read / Edit Reading / Edit Book / Delete Book with active-loan gating, and
-  soft-deleted action gating), and create-route behavior (loading/error/empty, navigation, create success, lookup
-  success / `found: false` / provider failure / checksum rejection, create `422` field mapping, camera and hardware
-  scanner handoff into lookup)
+  on cards, Title Case `shelf_name`), detail (including gated Mark Read / Edit Reading / Edit Book / Delete Book with
+  active-loan gating, and soft-deleted action gating), and create-route behavior (shelves load gate / failure blocks
+  form, loading/error/empty, navigation, create success with `shelf_name`, lookup success / `found: false` / provider
+  failure / checksum rejection, create `422` field mapping, camera and hardware scanner handoff into lookup)
+- `src/features/shelves/routes/ShelvesPage.test.tsx` / `shelfDisplay.test.ts`: Shelves catalog loading/error/empty,
+  Title Case labels, system-shelf badges, no invented write UI; display/assignable helper coverage
 - `src/features/books/routes/EditBookPage.test.tsx` / `bookEditModel.test.ts`: Edit eligibility (active books only;
   deleted warning), populate-from-book, minimal changed-fields patch (blank ISBN → `null`; no status/reading/loan
   fields), no-op rejection, Field-linked `422`, mutation `404`, pending disable, and success navigation
@@ -646,8 +678,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/features/loans/routes/LoansPage.test.tsx` / `loanTemporal.test.ts`: Infinite loan pagination into active vs
   returned sections, due/overdue labels, durable missing-book fallback, empty / loading / retryable error states,
   explicit empty active and returned sections, bottom loading/retry, and due-date display
-- `src/features/books/components/BookForm.test.tsx` / `bookFormModel.test.ts`: Form field rendering, gated create
-  controls, initial values, empty title/authors and ISBN rejection, submit payload shaping via `formValuesToBookCreate`,
+- `src/features/books/components/BookForm.test.tsx` / `bookFormModel.test.ts`: Form field rendering, API-fed shelf
+  options (Title Case labels; `removed` excluded; required shelf), gated create controls, initial values, empty
+  title/authors and ISBN rejection, submit payload shaping via `formValuesToBookCreate` (`shelf_name`),
   blank-optional-to-`null`, year-only `publication_date`, purchase-price number serialization, tags normalization,
   cancel, submitting disabled state, and linked server field errors
 - `src/features/books/utils/isbn.test.ts`: ISBN-10 / ISBN-13 checksum acceptance and rejection cases, plus
@@ -716,7 +749,8 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 
 - `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` through `FEAT-21_*.md`: Sequenced implementation tickets
   with acceptance criteria (historical FEAT-01 through FEAT-12, FEAT-05 ISBN checkout, and FEAT-10 API-contract sync
-  ticket files are gone).
+  ticket files are gone). `docs/tickets/CHORE-01_crud-shelves.md` covers shelves contract sync (read + book picker done;
+  write UI deferred until OpenAPI documents shelf writes).
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines (FEAT-12 re-check recorded; FEAT-14
   owns future enforcement).
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
@@ -804,9 +838,11 @@ make build
   inspect, log, cache, or upload dump contents). Leave dashboard under `DashboardPage` / `useDashboard` (display
   API stats only; null averages as "Not enough data"). Leave reading flows under `MarkReadPage` / `markReadModel` /
   `ReadingEditPage` / `readingEditModel`. Leave scanner code under `src/features/scanning/` lazy-loaded from
-  `/books/new` and `/checkout`. Leave checkout under `CheckoutPage` / `checkoutModel`, including ISBN Find via
+  `/books/new` and `/checkout`.   Leave checkout under `CheckoutPage` / `checkoutModel`, including ISBN Find via
   `useBooks({ isbn })` (not lookup) and existing `412` `display_only` handling. Leave check-in and loan history under
-  `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. For FEAT-13, extend existing
+  `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Leave shelves under
+  `ShelvesPage` / `shelfDisplay` / `shelvesApi` / `useShelves` (read-only until OpenAPI documents writes; book forms use
+  API-fed pickers with `shelf_name`, never invent shelf CRUD on Add/Edit Book). For FEAT-13, extend existing
   Vitest / Testing Library coverage and shared `renderAppTree` helpers; add accessibility and browser-journey suites
   into `make check` without inventing a parallel fake-API stack. Do not pull FEAT-14 CI packaging, FEAT-15 Podman,
   FEAT-16 deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into FEAT-13. Never simulate restore,

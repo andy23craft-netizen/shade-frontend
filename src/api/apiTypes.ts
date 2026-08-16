@@ -49,8 +49,8 @@ export type ValidationError =
 export type Category =
     Schemas['Category']
 
-export type Shelf =
-    Schemas['Shelf']
+export type ShelfRead =
+    Schemas['ShelfRead']
 
 export type Status =
     Schemas['Status']

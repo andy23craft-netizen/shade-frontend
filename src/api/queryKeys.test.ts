@@ -57,3 +57,28 @@ describe('queryKeys.books list filters', () => {
         )
     })
 })
+
+describe('queryKeys.shelves', () => {
+    it('uses an unpaginated list key under the shelves prefix', () => {
+        expect(queryKeys.shelves.all).toEqual([
+            'shelves',
+        ])
+
+        expect(queryKeys.shelves.list()).toEqual([
+            'shelves',
+            {
+                list: true,
+            },
+        ])
+    })
+
+    it('isolates shelves keys from books and loans', () => {
+        expect(
+            queryKeys.shelves.list()[0],
+        ).not.toBe(queryKeys.books.all[0])
+
+        expect(
+            queryKeys.shelves.list()[0],
+        ).not.toBe(queryKeys.loans.all[0])
+    })
+})

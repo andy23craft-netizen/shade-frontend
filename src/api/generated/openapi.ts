@@ -265,6 +265,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/shelves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Shelves */
+        get: operations["list_shelves_shelves_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/wishlists": {
         parameters: {
             query?: never;
@@ -356,8 +373,8 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-            /** @default unknown */
-            shelf: components["schemas"]["Shelf"];
+            /** Shelf Name */
+            shelf_name: string;
             /** @default available */
             status: components["schemas"]["Status"];
             /** Tags */
@@ -436,8 +453,8 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-            /** @default unknown */
-            shelf: components["schemas"]["Shelf"];
+            /** Shelf Name */
+            shelf_name: string;
             /** @default available */
             status: components["schemas"]["Status"];
             /** Tags */
@@ -478,7 +495,8 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-            shelf?: components["schemas"]["Shelf"] | null;
+            /** Shelf Name */
+            shelf_name?: string | null;
             status?: components["schemas"]["Status"] | null;
             /** Tags */
             tags?: string[] | null;
@@ -636,11 +654,21 @@ export interface components {
             /** Review */
             review?: string | null;
         };
-        /**
-         * Shelf
-         * @enum {string}
-         */
-        Shelf: "unknown" | "a1" | "a2" | "a3" | "a4" | "b1" | "b2" | "b3" | "bath" | "c1" | "c2" | "c3" | "c4" | "d1" | "d2" | "d3" | "d4" | "d5" | "e1" | "e2" | "e3" | "e4" | "e5" | "e6" | "f1" | "f2" | "f3" | "f4" | "f5" | "g1" | "g2" | "g3" | "g4" | "g5" | "g6" | "h1" | "h2" | "h3" | "h4" | "h5" | "liz_tbr";
+        /** ShelfRead */
+        ShelfRead: {
+            /** Common Name */
+            common_name: string;
+            /** Created Date */
+            created_date: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Shelf Id */
+            shelf_id: string;
+            /** Updated Date */
+            updated_date: string;
+        };
         /**
          * Status
          * @enum {string}
@@ -864,6 +892,15 @@ export interface operations {
                     "application/json": components["schemas"]["BookRead"];
                 };
             };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Authentication failure */
             403: {
                 headers: {
@@ -1060,6 +1097,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
             /** @description Authentication failure */
@@ -1607,6 +1653,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_shelves_shelves_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfRead"][];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
         };

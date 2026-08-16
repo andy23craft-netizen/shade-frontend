@@ -12,10 +12,10 @@ import { useInfiniteBooks } from '../../../api/booksQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
     Category,
-    Shelf,
     Status,
 } from '../../../api/apiTypes'
 import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
+import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 import { BooksListControls } from '../components/BooksListControls'
 import {
     flattenInfiniteBookPages,
@@ -41,11 +41,6 @@ const CATEGORY_VALUES: readonly Category[] = [
     'philosophy',
     'fiction',
     'nonfiction',
-]
-
-const SHELF_VALUES: readonly Shelf[] = [
-    'unknown',
-    'liz_tbr',
 ]
 
 function displayEnum(
@@ -253,10 +248,10 @@ export function BooksPage() {
                         CATEGORY_VALUES,
                     )
 
-                    const shelf = displayEnum(
-                        book.shelf,
-                        SHELF_VALUES,
-                    )
+                    const shelf =
+                        formatShelfCommonNameForDisplay(
+                            book.shelf_name,
+                        )
 
                     return (
                         <li

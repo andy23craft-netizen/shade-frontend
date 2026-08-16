@@ -524,7 +524,7 @@ describe('createBooksApi', () => {
             title: 'Title',
             authors: 'Author',
             category: 'unknown',
-            shelf: 'unknown',
+            shelf_name: 'unknown',
             updated_date: '2026-08-01T00:00:00Z',
         } as BookCreate & {
             updated_date: string
@@ -540,7 +540,7 @@ describe('createBooksApi', () => {
                     title: 'Title',
                     authors: 'Author',
                     category: 'unknown',
-                    shelf: 'unknown',
+                    shelf_name: 'unknown',
                 },
             },
         )

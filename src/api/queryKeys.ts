@@ -225,4 +225,16 @@ export const queryKeys = {
     dashboard: {
         all: ['dashboard'] as const,
     },
+
+    shelves: {
+        all: ['shelves'] as const,
+
+        list: () =>
+            [
+                'shelves',
+                {
+                    list: true,
+                },
+            ] as const,
+    },
 } as const
