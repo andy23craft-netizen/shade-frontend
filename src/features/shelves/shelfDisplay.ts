@@ -57,6 +57,22 @@ export function isSystemShelfCommonName(
     ).includes(normalized)
 }
 
+export function canRenameShelf(
+    shelf: Pick<ShelfRead, 'common_name'>,
+): boolean {
+    return !isSystemShelfCommonName(
+        shelf.common_name,
+    )
+}
+
+export function canDeleteShelf(
+    shelf: Pick<ShelfRead, 'common_name'>,
+): boolean {
+    return !isSystemShelfCommonName(
+        shelf.common_name,
+    )
+}
+
 export function isAssignableShelf(
     shelf: Pick<ShelfRead, 'common_name'>,
 ): boolean {
