@@ -4,7 +4,7 @@
   * [ ] Read `docs/technical-reference/bash-reference.md`
 * [ ] Implement the feature docs:
   * [x] Complete feature ticket `docs/tickets/FEAT-12_operational-and-browser-hardening.md`.
-  * [x] Complete chore ticket `docs/tickets/CHORE-01_crud-shelves.md` (read + book picker; write UI deferred).
+  * [x] Complete chore ticket `docs/tickets/CHORE-01_crud-shelves.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-15_podman-development-and-preview.md`.
