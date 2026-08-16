@@ -54,8 +54,8 @@ tickets under `docs/tickets/`: About as homepage with relocated dashboard (FEAT-
 
 Notable shipped behaviors agents should preserve:
 
-- Diagnostics: `createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `APP_VERSION` (from repository-root
-  `VERSION`), wired through
+- Diagnostics: `createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `APP_VERSION` (from
+  `package.json` `version`), wired through
   `RootErrorBoundary`, `AppProviders`, `ConnectionProvider`, and `apiClient` `onRequestFailure`; allowlisted/redacted
   via `assertSafeApiDiagnostic`; defaults disabled in `public/config.js`; never invent a second telemetry transport or
   fabricate correlation IDs.
@@ -223,7 +223,7 @@ index.html
        -> readRuntimeConfig()
             -> on failure: RuntimeConfigScreen (retry)
             -> on success:
-                 createDiagnosticReporter(runtime diagnostics + APP_VERSION from VERSION)
+                 createDiagnosticReporter(runtime diagnostics + APP_VERSION from package.json)
                  RootErrorBoundary (reports redacted render failures)
                    -> AppProviders (shared DiagnosticReporter)
                         -> NotificationsProvider
@@ -244,7 +244,7 @@ valid, the bootstrap module creates a `DiagnosticReporter`, then renders `Router
 and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
-navigation (brand includes "est. 2026"), the main `Outlet`, footer (`Release` from repository-root `VERSION` via
+navigation (brand includes "est. 2026"), the main `Outlet`, footer (`Release` from `package.json` `version` via
 `APP_VERSION`, plus API version from public `GET /version` when available), and heading focus after client-side
 navigations.
 Live product UI today: `/` (`DashboardPage` + `useDashboard`), `/books` (`BooksPage`, including Read/Unread
@@ -274,10 +274,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `public/config.js`: Runtime config assigned to `window.__SHADE_CONFIG__` (`apiBaseUrl`, optional
   `diagnostics: { enabled, endpoint }`). Not bundled; edit for local or deployed environments. Diagnostics default to
   `enabled: false` / `endpoint: null` so reporting can be enabled or retargeted without rebuilding. Application release
-  comes from repository-root `VERSION` (not runtime config).
-- `VERSION`: Canonical frontend release string (single line, no `v` prefix). Drives `APP_VERSION`, `package.json`
-  `version`, the AppShell footer `Release` label, and diagnostic reporter release metadata. Bump only this file when
-  releasing; keep `package.json` in sync (enforced by `scripts/appVersionConsistency.test.ts`).
+  comes from `package.json` `version` (not runtime config).
 - `public/favicon.png`: Static favicon served as-is (not bundled).
 - `src/main.tsx`: Browser bootstrap. Calls `readApiToken()` (throws when missing), reads runtime config, either mounts
   `RuntimeConfigScreen` or creates `createDiagnosticReporter` (using `APP_VERSION`) then mounts `RootErrorBoundary` ->
@@ -292,12 +289,12 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 ### Runtime Configuration
 
-- `src/config/appVersion.ts`: Exports `APP_VERSION` from repository-root `VERSION` (injected at build/dev time via
+- `src/config/appVersion.ts`: Exports `APP_VERSION` from `package.json` `version` (injected at build/dev time via
   Vite `define` in `vite.config.ts`).
 - `src/config/runtimeConfig.ts`: Validates and normalizes `apiBaseUrl` and optional `diagnostics`
   (`RuntimeDiagnosticConfig`: `enabled`, `endpoint`); throws `RuntimeConfigError`. Omitted `diagnostics` defaults to
   disabled with a null endpoint; when `enabled` is true, `endpoint` must be a valid HTTP(S) URL. Does not own release
-  versioning (`VERSION` / `APP_VERSION` does).
+  versioning (`package.json` / `APP_VERSION` does).
 - `src/config/runtimeConfigState.ts`: `readRuntimeConfig()` returns `{ config, error }` without throwing.
 - `src/config/RuntimeConfigScreen.tsx`: Blocking UI when config is missing or invalid, with retry.
 - `src/config/apiToken.ts`: `readApiToken()` reads `import.meta.env.VITE_API_SECRET_KEY` (trimmed); throws
@@ -390,8 +387,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
 - `src/layout/AppShell.tsx`: Application frame with skip link, header (brand name plus "est. 2026"), primary
   navigation (including Shelves), admin/settings group, `Outlet` main region, footer (`Release ${APP_VERSION}` from
-  `VERSION`, plus `API {version}` from `useVersion` / `GET /version` when available), document title, and heading focus
-  on location change.
+  `package.json`, plus `API {version}` from `useVersion` / `GET /version` when available), document title, and heading
+  focus on location change.
 
 ### Feature Modules
 
@@ -587,16 +584,15 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 - `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.
-- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels (including Shelves), footer `Release` from `VERSION`
-  plus API version, current-page state, and not-found recovery.
+- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels (including Shelves), footer `Release` from
+  `package.json` plus API version, current-page state, and not-found recovery.
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
 - `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation (including optional
   diagnostics; no runtime `release` field) and read helpers.
 - `src/config/apiToken.test.ts`: `readApiToken()` missing, blank, and trimmed success cases.
-- `scripts/appVersionConsistency.test.ts`: Asserts repository-root `VERSION`, `package.json` `version`, and
-  `APP_VERSION` stay aligned.
+- `scripts/appVersionConsistency.test.ts`: Asserts `APP_VERSION` matches `package.json` `version`.
 - `src/diagnostics/diagnosticReporter.test.ts`: Disabled/enabled reporters, allowlisted payloads, redaction
   assertions, and swallowed transport failures.
 - `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, `5xx`
@@ -708,8 +704,9 @@ yarn test:e2e
 
 ### Dependencies and Commands
 
-- `package.json`: Package metadata (version must match repository-root `VERSION`), Node and Yarn requirements, scripts
-  (including `api:generate` / `api:check`), runtime dependencies, and development dependencies.
+- `package.json`: Package metadata (canonical frontend `version` drives `APP_VERSION` and the footer `Release` label),
+  Node and Yarn requirements, scripts (including `api:generate` / `api:check`), runtime dependencies, and development
+  dependencies.
 - `yarn.lock`: Yarn-generated exact dependency resolutions and checksums. Never edit it manually.
 - `Makefile`: Stable wrappers around Yarn scripts for installation, development, checks, tests, and builds.
 - `.nvmrc`: Exact Node.js version used by `nvm use`.

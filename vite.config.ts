@@ -8,14 +8,23 @@ const repositoryRoot = join(
     dirname(fileURLToPath(import.meta.url)),
 )
 
-const appVersion = readFileSync(
-    join(repositoryRoot, 'VERSION'),
-    'utf8',
-).trim()
+const packageJson = JSON.parse(
+    readFileSync(
+        join(repositoryRoot, 'package.json'),
+        'utf8',
+    ),
+) as {
+    version?: unknown
+}
+
+const appVersion =
+    typeof packageJson.version === 'string'
+        ? packageJson.version.trim()
+        : ''
 
 if (appVersion === '') {
     throw new Error(
-        'VERSION file is missing a valid application version.',
+        'package.json is missing a valid version.',
     )
 }
 

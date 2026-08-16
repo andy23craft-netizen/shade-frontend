@@ -25,12 +25,7 @@ const repositoryRoot = join(
 )
 
 describe('application version', () => {
-    it('keeps VERSION, package.json, and APP_VERSION aligned', () => {
-        const versionFromFile = readFileSync(
-            join(repositoryRoot, 'VERSION'),
-            'utf8',
-        ).trim()
-
+    it('keeps APP_VERSION aligned with package.json version', () => {
         const packageJson = JSON.parse(
             readFileSync(
                 join(repositoryRoot, 'package.json'),
@@ -40,10 +35,15 @@ describe('application version', () => {
             version?: string
         }
 
-        expect(versionFromFile).not.toBe('')
-        expect(packageJson.version).toBe(
-            versionFromFile,
+        expect(packageJson.version).toBeTruthy()
+        expect(typeof packageJson.version).toBe(
+            'string',
         )
-        expect(APP_VERSION).toBe(versionFromFile)
+        expect(packageJson.version?.trim()).not.toBe(
+            '',
+        )
+        expect(APP_VERSION).toBe(
+            packageJson.version?.trim(),
+        )
     })
 })

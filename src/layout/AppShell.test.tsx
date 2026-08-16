@@ -74,7 +74,7 @@ describe('AppShell layout and navigation', () => {
     }
   })
 
-  it('shows the VERSION release and API version in the footer', async () => {
+  it('shows the package.json release and API version in the footer', async () => {
     renderAppTree(['/'])
 
     const footer = screen.getByRole('contentinfo')
