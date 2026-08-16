@@ -873,9 +873,6 @@ export function ShelvesPage() {
 
                                                 {shelf.description ? (
                                                     <div className="shelf-row__field">
-                                                        <dt>
-                                                            Description
-                                                        </dt>
                                                         <dd>
                                                             {
                                                                 shelf.description
