@@ -1375,6 +1375,19 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VersionResponse": {
+        "properties": {
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "VersionResponse",
+        "type": "object"
+      },
       "WishlistBookCreate": {
         "properties": {
           "book_id": {
@@ -1648,7 +1661,7 @@
   "info": {
     "description": "Home library management API for books, loans, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "0.2.0"
+    "version": "0.2.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3312,6 +3325,25 @@
         "tags": [
           "shelves"
         ]
+      }
+    },
+    "/version": {
+      "get": {
+        "description": "Public project version from ci/VERSION. No authentication required.",
+        "operationId": "get_version_version_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Version"
       }
     },
     "/wishlists": {

@@ -22,12 +22,13 @@ Authorization: Bearer <API_SECRET_KEY>
 There is no login, logout, or session system. Missing or invalid credentials return **403** with
 `{"detail": "Invalid authentication credentials"}`.
 
-Public routes: `GET /health` and FastAPI's generated docs/OpenAPI routes (`/docs`, `/redoc`, `/openapi.json`,
-`/docs/oauth2-redirect`). Every other business route requires the Bearer token.
+Public routes: `GET /health`, `GET /version`, and FastAPI's generated docs/OpenAPI routes (`/docs`, `/redoc`,
+`/openapi.json`, `/docs/oauth2-redirect`). Every other business route requires the Bearer token.
 
 There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated).
-Learn whether credentials are accepted from the first protected request you need (e.g., `GET /books` or
-`GET /dashboard`); a **403** means the token is missing or invalid.
+Use `GET /version` when the UI needs the running API release string (same value as `ci/VERSION` and OpenAPI
+`info.version`); do not treat it as a health probe. Learn whether credentials are accepted from the first protected
+request you need (e.g., `GET /books` or `GET /dashboard`); a **403** means the token is missing or invalid.
 
 ---
 
@@ -348,9 +349,11 @@ URL.revokeObjectURL(objectUrl);
 | Responsibility | Owner |
 | -------------- | ----- |
 | Barcode/camera/manual ISBN capture, editable drafts, forms, presentation | Frontend |
+| Display of API release/version from `GET /version` | Frontend |
 | Shelf picker UI from `GET /shelves`; submit chosen `common_name` as `shelf_name` | Frontend |
 | Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
+| Canonical project version (`ci/VERSION` via `GET /version`) | API |
 | Soft delete/restore, loan records, checkout/check-in, reading state | API |
 | Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
 | Borrowing and dashboard statistics | API |
