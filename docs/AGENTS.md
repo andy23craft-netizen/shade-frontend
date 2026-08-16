@@ -29,9 +29,7 @@ dashboard-report paths; `booksApi` / query keys for `author` / `title` / `catego
 checkout `412` `display_only` refetch/messaging -- no alternate-copy offers, wishlist, or incomplete-metadata
 product UI), FEAT-11 (library dashboard), and FEAT-12 (operational and browser hardening; ticket file removed).
 Remaining tickets are `FEAT-13` through `FEAT-21` under `docs/tickets/`. Prefer ticket presence under `docs/tickets/`
-over `docs/ToDo.md` when judging completion (the checklist can lag). CHORE-01 is complete (`loansApi.list({ bookId })`,
-`loansApi.get` / `useLoan`, Check In deep-link `/checkin?bookId=...`, optional `booksApi.list({ isbn })` /
-`useBooks({ isbn })`).
+over `docs/ToDo.md` when judging completion (the checklist can lag).
 
 **Next / in progress:** `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` (automated accessibility checks,
 browser-level journeys for MVP routes and lifecycle endpoints, mock/fixture coverage of the documented status matrix,

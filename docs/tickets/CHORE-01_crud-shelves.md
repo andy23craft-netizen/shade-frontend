@@ -13,9 +13,7 @@ Bring the frontend onto the current backend shelf contract, then ship:
 4. Graceful handling of documented backend error statuses for shelf list, book create/update with
    `shelf_name`, and (when present) shelf writes.
 
-This is a **new** shelves chore ticket. It is unrelated to the historical loans-focused CHORE-01 already
-described as complete in `docs/AGENTS.md` (that work landed; its ticket file is gone). Prefer this file under
-`docs/tickets/` when judging shelves-work completion.
+Prefer this file under `docs/tickets/` when judging shelves-work completion.
 
 ## Dependencies
 
@@ -93,14 +91,16 @@ An operator should be able to:
    (`/books/:bookId/edit`) use a dropdown fed by `GET /shelves`. Option **values** are `shelf_id` UUIDs held in
    memory; visible labels are Title Case `common_name`. Submit maps the selected id to that shelf's
    `common_name` and sends it as `shelf_name`. Do **not** offer create/rename/delete of shelves on these pages.
-3. **Avoid system shelves on assignment** -- the book dropdown must not allow choosing `removed` or `unknown`
-   (match product rule; backend already rejects `removed` on create/update with **400**). Soft-delete and restore
-   continue to set those memberships via dedicated book endpoints, not the form.
+3. **Allow `unknown`; never assign `removed`** -- the book dropdown may offer `unknown` as a normal destination
+   (Title Case label `Unknown`). It must not allow choosing `removed` (backend rejects `removed` on create/update
+   with **400**; only soft-delete assigns that membership). Soft-delete and restore continue to set `removed` /
+   `unknown` via dedicated book endpoints when those flows apply; the form may still target `unknown` deliberately.
 4. **Add / edit / optionally delete shelves (when API exists)** -- from `/shelves` only, with confirmation on
    destructive actions and Field-linked validation errors. Until write routes exist, do not invent them.
 5. **Recover from API failures** -- list/load/mutate errors use existing `QueryErrorState` /
    `formatApiQueryError` / Field-linked **422** patterns; **403** stays a page-level unauthorized message without
-   clearing the query cache.
+   clearing the query cache. If `GET /shelves` fails on Add Book, block the whole page (do not render `BookForm`)
+   with a helpful `QueryErrorState` and retry.
 
 ### Title Case display rule
 
@@ -115,12 +115,13 @@ and detail:
 
 ### Create vs edit defaults
 
-- **Create:** do not default to `unknown`. Require an explicit assignable shelf before submit (client validation
-  if none selected). Prefer empty selection + "Shelf is required" over silently picking the first shelf.
-- **Edit:** populate from `book.shelf_name`. If the current membership is `unknown` or `removed`, still show that
-  current value as the selected option (Title Case label) so the operator sees reality, but do not allow choosing
-  `unknown` / `removed` as a *new* target. Unchanged membership should omit `shelf_name` from the minimal
-  `BookUpdate` patch (existing edit no-op / minimal-patch rules). Changing shelf sends the newly chosen
+- **Create:** do not default to `unknown` (or any other shelf). Require an explicit assignable shelf before submit
+  (client validation if none selected). Prefer empty selection + "Shelf is required" over silently picking the
+  first shelf. Assignable options include `unknown` and every other catalog shelf except `removed`.
+- **Edit:** populate from `book.shelf_name`. `unknown` is a normal choosable target. If the current membership is
+  `removed`, still show that current value as the selected option (Title Case label) so the operator sees reality,
+  but do not allow choosing `removed` as a *new* target. Unchanged membership should omit `shelf_name` from the
+  minimal `BookUpdate` patch (existing edit no-op / minimal-patch rules). Changing shelf sends the newly chosen
   `common_name`. Soft-deleted books remain non-editable via existing Edit eligibility (not this ticket's job to
   reopen).
 
@@ -171,21 +172,21 @@ and detail:
 
 | File | Change |
 | ---- | ------ |
-| `src/features/shelves/shelfDisplay.ts` | `formatShelfCommonNameForDisplay(commonName)`; `SYSTEM_SHELF_COMMON_NAMES = ['unknown', 'removed']` (compare on normalized lowercase); `isAssignableShelf(shelf)` / `filterAssignableShelves(shelves)` excluding system names; `shelfCommonNameById(shelves, shelfId)`. |
-| `src/features/shelves/shelfDisplay.test.ts` | Title Case cases; underscore splitting; assignable filter excludes `unknown` / `removed` but keeps other names; id→name lookup. |
+| `src/features/shelves/shelfDisplay.ts` | `formatShelfCommonNameForDisplay(commonName)`; treat `removed` as non-assignable (compare on normalized lowercase); keep `unknown` assignable; optional `SYSTEM_SHELF_COMMON_NAMES = ['unknown', 'removed']` for catalog labelling on `/shelves` only; `isAssignableShelf(shelf)` / `filterAssignableShelves(shelves)` exclude `removed` only; `shelfCommonNameById(shelves, shelfId)`. |
+| `src/features/shelves/shelfDisplay.test.ts` | Title Case cases; underscore splitting; assignable filter excludes `removed` but keeps `unknown` and other names; id→name lookup. |
 
 ### 5. Book form and create/edit conversion (`shelf` → `shelf_name` + API-fed select)
 
 | File | Change |
 | ---- | ------ |
-| `src/features/books/components/BookForm.tsx` | Remove static `SHELF_VALUES` / `Shelf` typing. Accept shelves input: e.g. `shelves: ShelfRead[]` (or assignable-only list + optional `currentShelfName` for edit). Form value for the control should be selected `shelf_id` (string) or empty. Render `<select>` options with `value={shelf_id}` and label `formatShelfCommonNameForDisplay(common_name)`. Exclude `unknown` / `removed` from choosable options except when edit must surface the current system membership as a non-targetable selected option. Loading/empty shelves: disable submit or show Field error / page-level retry -- do not fall back to the old hard-coded enum. **No** "Add shelf" controls on this form. |
-| `src/features/books/components/bookFormDefaults.ts` | Replace `shelf: 'unknown'` with empty selected id (e.g. `shelfId: ''`) or equivalent; create must require a choice. |
+| `src/features/books/components/BookForm.tsx` | Remove static `SHELF_VALUES` / `Shelf` typing. Accept shelves input: e.g. `shelves: ShelfRead[]` (or assignable-only list + optional `currentShelfName` for edit when membership is `removed`). Form value for the control should be selected `shelf_id` (string) or empty. Render `<select>` options with `value={shelf_id}` and label `formatShelfCommonNameForDisplay(common_name)`. Include `unknown` in choosable options; exclude `removed` except when edit must surface the current `removed` membership as a non-targetable selected option. Do not fall back to the old hard-coded enum. **No** "Add shelf" controls on this form. |
+| `src/features/books/components/bookFormDefaults.ts` | Replace `shelf: 'unknown'` with empty selected id (e.g. `shelfId: ''`) or equivalent; create must require a choice (including an explicit pick of `unknown` if that is the intended destination). |
 | `src/features/books/components/bookFormModel.ts` | Rename field to align with form state (`shelfId` or keep UI name `shelf` only as label). Validate required selection on create. `formValuesToBookCreate` resolves `shelf_id` → `common_name` and emits `shelf_name` (never send display Title Case). Map server `fieldErrors.shelf_name` into the shelf Field. |
-| `src/features/books/components/bookFormModel.test.ts` / `BookForm.test.tsx` | Cover required shelf, assignable-only options, Title Case labels, payload `shelf_name`, no system shelves in create options, submitting-disabled while shelves loading if that UX is chosen. |
-| `src/features/books/routes/NewBookPage.tsx` | `useShelves()`; pass data into `BookForm`; map create **422** `shelf_name` and **400** unknown/`removed` into Field or summary errors via existing error mapping; `QueryErrorState` when shelves fail to load. |
-| `src/features/books/routes/EditBookPage.tsx` | Same shelves load; `bookFormValuesFromBook` seeds selected id from matching `common_name` / `shelf_name`. |
+| `src/features/books/components/bookFormModel.test.ts` / `BookForm.test.tsx` | Cover required shelf, assignable options including `unknown`, Title Case labels, payload `shelf_name`, no `removed` in create options. |
+| `src/features/books/routes/NewBookPage.tsx` | `useShelves()`; while shelves are loading show `LoadingState`; on shelves failure **block the whole page** -- render a helpful `QueryErrorState` (with retry when appropriate) and **do not mount `BookForm`**. On success, pass shelves into `BookForm`; map create **422** `shelf_name` and **400** (unknown name / `removed`) into Field or summary errors via existing error mapping. |
+| `src/features/books/routes/EditBookPage.tsx` | Same shelves load; prefer the same full-page load/error gate before the form so the picker is never fed a missing catalog; `bookFormValuesFromBook` seeds selected id from matching `common_name` / `shelf_name`. |
 | `src/features/books/routes/bookEditModel.ts` | Read/write `shelf_name`; compare on API names; omit unchanged `shelf_name`; never send `null`. |
-| `src/features/books/routes/bookEditModel.test.ts` / `EditBookPage.test.tsx` / `NewBookPage.test.tsx` | Update fixtures to `shelf_name`; assert picker wiring and error paths. |
+| `src/features/books/routes/bookEditModel.test.ts` / `EditBookPage.test.tsx` / `NewBookPage.test.tsx` | Update fixtures to `shelf_name`; assert picker wiring; Add Book shelves-failure blocks the page (no form); error paths for create **400**/**422**. |
 
 ### 6. Browse / detail display of shelf names
 
@@ -225,10 +226,10 @@ and detail:
 
 | Situation | Expected FE behavior |
 | --------- | -------------------- |
-| `GET /shelves` **403** | `QueryErrorState` unauthorized copy; no Retry that spam-loops; do not clear cache. |
-| `GET /shelves` network / timeout / 5xx | Retryable `QueryErrorState`; book form does not submit with a stale hard-coded enum. |
+| `GET /shelves` **403** | On Add Book (and prefer Edit Book): full-page `QueryErrorState` unauthorized copy; do not render `BookForm`; no Retry that spam-loops; do not clear cache. |
+| `GET /shelves` network / timeout / 5xx | On Add Book (and prefer Edit Book): full-page retryable `QueryErrorState`; do not render `BookForm` or fall back to the old hard-coded enum. |
 | Create/update book **422** (`shelf_name` null/blank) | Field-linked error on the shelf control; focus error summary per existing BookForm behavior. |
-| Create/update book **400** (unknown name or `removed`) | Page or Field-level message from `detail`; do not pretend success; keep form input. |
+| Create/update book **400** (name not in catalog, or `removed`) | Page or Field-level message from `detail`; do not pretend success; keep form input. |
 | Soft-deleted book edit **404** | Existing EditBook refetch / warning path (unchanged). |
 | Future shelf write errors | Map only statuses documented in OpenAPI / API-for-FE when those routes exist. |
 
@@ -236,7 +237,7 @@ and detail:
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Record `shelf_name`, `GET /shelves`, `shelvesApi` / hooks, `/shelves` route, book-form picker rules (no system shelves; Title Case display; no shelf CRUD on book forms). Note write HTTP status honestly. Clarify this CHORE-01 shelves ticket vs the historical loans CHORE-01 note. Update lifecycle / compensation lines that still say required field `shelf` as an enum. |
+| `docs/AGENTS.md` | Record `shelf_name`, `GET /shelves`, `shelvesApi` / hooks, `/shelves` route, book-form picker rules (`unknown` allowed; `removed` excluded; Title Case display; no shelf CRUD on book forms; Add Book blocked when shelves fail to load). Note write HTTP status honestly. Update lifecycle / compensation lines that still say required field `shelf` as an enum. |
 | `docs/ToDo.md` | Optional checklist line for this chore; prefer ticket presence under `docs/tickets/` as source of truth. |
 
 ## Acceptance criteria
@@ -248,8 +249,11 @@ and detail:
 - `/shelves` lists all shelves with Title Case `common_name` and graceful loading/error/empty states.
 - Add Book and Edit Book shelf controls load from `GET /shelves`, keep `shelf_id` in memory, show Title Case
   labels, submit `shelf_name` as the selected shelf's `common_name`, and do not create/edit shelves inline.
-- `unknown` and `removed` are not choosable assignment targets on create; edit does not offer them as new targets.
-- Book create no longer defaults silently to `unknown`.
+- `unknown` is a choosable assignment target; `removed` is not (except edit may surface current `removed`
+  membership as a non-targetable selected option).
+- Book create no longer defaults silently to `unknown`; the operator must pick a shelf explicitly.
+- When `GET /shelves` fails on Add Book, the page shows a helpful `QueryErrorState` and does not render
+  `BookForm`.
 - Collection and detail shelf display use Title Case `shelf_name` (not the old enum list).
 - Documented **400** / **403** / **422** / network failures for shelves and `shelf_name` are handled without
   clearing auth cache or inventing lifecycle workarounds.
