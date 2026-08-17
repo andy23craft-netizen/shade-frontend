@@ -422,7 +422,8 @@ index.html
         `src/api/enumDisplay.ts` (`enumDisplayValue`)
     -   `src/api/apiCallOptions.ts` shared optional `AbortSignal`
         options for typed helpers
-    -   `src/api/apiClient.ts` (`createApiClient`: Bearer, timeouts,
+    -   `src/api/apiClient.ts` (`createApiClient`: Bearer and
+        `Library-Username: shade` on authenticated requests, timeouts,
         AbortSignal, get/request JSON helpers, `403` via
         `onUnauthorized`; reports allowlisted/redacted request failures
         through the shared optional diagnostic reporter)
@@ -480,7 +481,7 @@ index.html
     -   Colocated helper tests cover happy paths, edge cases (lookup
         `found: false`, mark-read `{}`, omitted check-in body, `409`
         bodies, checkout `412` display-only), large-library timing, and
-        `apiClient` Bearer / public / `403` / `404` / `409` / `412` /
+        `apiClient` Bearer / `Library-Username` / public / `403` / `404` / `409` / `412` /
         both `422` shapes / `5xx` / network / timeout / cancellation /
         invalid JSON / binary backup / `204`
     -   `scripts/contractSmoke.test.ts` OpenAPI path/type smoke
@@ -824,6 +825,10 @@ form library unless a ticket explicitly requires it.
 ### Authentication
 
 -   Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
+-   Protected requests also send `Library-Username: shade` (injected by
+    `apiClient` with the Bearer token)
+-   Public `GET /health` and `GET /version` omit both headers
+    (`authenticated: false`)
 -   No login, logout, user accounts, sessions, or roles
 -   Token comes from a repository-root `.env` file via
     `VITE_API_SECRET_KEY`; Vite injects it at dev-server and production

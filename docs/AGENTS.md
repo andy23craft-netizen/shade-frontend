@@ -163,6 +163,8 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 ### Authentication
 
 - Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
+- Protected requests also send `Library-Username: shade` (injected by `apiClient` with the Bearer token)
+- Public `GET /health` and `GET /version` omit both headers (`authenticated: false`)
 - No login, logout, user accounts, sessions, or roles
 - Token comes from a repository-root `.env` file via `VITE_API_SECRET_KEY`; Vite injects it at dev-server and
   production build time into JS bundles (`.env` stays gitignored; `.env.example` is committed)
@@ -359,7 +361,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
-- `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
+- `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection on authenticated
+  requests, path joining at the configured base URL (no `/api`
   prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
   handling, invalid-JSON errors, `403` via `onUnauthorized`, and optional `onRequestFailure` for allowlisted/redacted
   diagnostic reporting of request failures.
@@ -638,7 +641,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/appVersionConsistency.test.ts`: Asserts `APP_VERSION` matches `package.json` `version`.
 - `src/diagnostics/diagnosticReporter.test.ts`: Disabled/enabled reporters, allowlisted payloads, redaction
   assertions, and swallowed transport failures.
-- `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, `5xx`
+- `src/api/apiClient.test.ts`: Bearer and `Library-Username` injection, public requests omitting both headers, `403`,
+  `404`, `409`, both `422` detail shapes, `5xx`
   (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success,
   `204`, and `onRequestFailure` diagnostic hooks.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,

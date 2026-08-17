@@ -258,7 +258,7 @@ Production must choose and verify one connectivity arrangement before release:
 Either choice remains a release blocker until authenticated requests, browser
 CORS preflights, and JavaScript access to the backup response
 `Content-Disposition` filename are verified. Cross-origin requests may send
-`Authorization` and `Content-Type`. Cookies and credentialed CORS are not used.
+`Authorization`, `Content-Type`, and `Library-Username`. Cookies and credentialed CORS are not used.
 
 ## Production host security
 
@@ -315,8 +315,8 @@ is host and config confirmation, not a second end-to-end stack.
 - [ ] Deployment-managed `config.js` points at the production API; diagnostics
       values are intentional
 - [ ] Protected API access works with the baked Bearer token
-- [ ] CORS/preflight or same-origin proxy permits `Authorization` and
-      `Content-Type`; cookies are not used
+- [ ] CORS/preflight or same-origin proxy permits `Authorization`,
+      `Content-Type`, and `Library-Username`; cookies are not used
 - [ ] Direct-route refresh uses SPA fallback; `index.html` / `config.js`
       revalidate; hashed `/assets/` are long-lived
 - [ ] Dashboard, collection list, and create (including shelf selection)

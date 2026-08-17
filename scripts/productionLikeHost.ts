@@ -259,7 +259,7 @@ function applyCors(
     )
     response.setHeader(
         'Access-Control-Allow-Headers',
-        'Authorization, Content-Type',
+        'Authorization, Content-Type, Library-Username',
     )
     response.setHeader(
         'Access-Control-Allow-Methods',
