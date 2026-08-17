@@ -5,16 +5,14 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline -- start from this file alone. Do not treat
-any other project prompt, agents guide (including `docs/AGENTS.md`), or
-maintainer note as required reading before beginning. Attach the
+the dated codebase baseline -- start from this file alone. Attach the
 on-demand docs listed in section 8 only when the current ticket needs
 them; do not re-synthesize those sources here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
 
-Context pack version: 2026-08-17. Refresh this prompt when operating
+Context pack version: 2026-08-16. Refresh this prompt when operating
 rules, non-negotiables, or the known baseline change.
 
 The **current feature ticket is supplied separately** after this
@@ -47,7 +45,7 @@ If scanner capture behavior or device support is in question:
   - docs/baselines/FEAT-06_scanner-support.md
 
 If test/workflow/accessibility baseline behavior is relevant:
-  - docs/baselines/FEAT-13_workflow-and-accessibility.md
+  - docs/baselines/FEAT-13_testing.md
   - docs/baselines/FEAT-06_scanner-support.md and
     docs/baselines/FEAT-12_browser-support.md when manual support matrices are relevant
   - preserve the existing Vitest / Testing Library / renderAppTree and Playwright e2e architecture;
@@ -195,9 +193,10 @@ types, `@zxing/browser` + `@zxing/library` (camera ISBN decode;
 lazy-loaded from `/books/new` and `/checkout`), Yarn 4 (`yarn@4.18.0`
 via Corepack), Node.js 26.7.0, ESLint (flat), Vitest, Testing Library,
 jsdom, Playwright (`@playwright/test` + `@axe-core/playwright`;
-`yarn test:e2e`; included in `make check`), Make. Native ESM
-(`"type": "module"`). No Next.js, Tailwind, component library, or form
-library.
+`yarn test:e2e`; included in `make check`), Vitest V8 coverage with
+enforced global floors (statements 87%, branches 80%, functions 92%,
+lines 87%), Make. Native ESM (`"type": "module"`). No Next.js,
+Tailwind, component library, or form library.
 
 **Backend:** Separate project. Authoritative for API behavior. Default
 local base: `http://127.0.0.1:8000` (no `/api` prefix). In-repo
@@ -205,7 +204,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 `docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI:
 `/docs` and `/openapi.json` on the running API.
 
-**Known baseline (as of 2026-08-17 -- verify before editing):**
+**Known baseline (as of 2026-08-16 -- verify before editing):**
 
 -   MVP product UI is shipped: application shell and shared primitives;
     runtime config and build-time Bearer auth; typed OpenAPI + React Query
@@ -238,14 +237,15 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 -   Optional runtime-configured diagnostic reporting lives in
     `src/diagnostics/diagnosticReporter.ts`
     (`createDiagnosticReporter` from `RuntimeConfig.diagnostics` +
-    `release`), wired through `RootErrorBoundary` (render failures),
-    `AppProviders`, `ConnectionProvider`, and `apiClient`
-    `onRequestFailure` (API failures). Payloads are allowlisted/redacted
-    via `assertSafeApiDiagnostic`; `public/config.js` defaults
-    diagnostics to `enabled: false` / `endpoint: null` so reporting can
-    be enabled or retargeted without rebuilding. Correlation IDs remain
-    unset unless the backend supplies a documented safe source. Do not
-    invent a second telemetry transport or fabricate correlation IDs.
+    `APP_VERSION` from `package.json` `version`), wired through
+    `RootErrorBoundary` (render failures), `AppProviders`,
+    `ConnectionProvider`, and `apiClient` `onRequestFailure` (API
+    failures). Payloads are allowlisted/redacted via
+    `assertSafeApiDiagnostic`; `public/config.js` defaults diagnostics
+    to `enabled: false` / `endpoint: null` so reporting can be enabled
+    or retargeted without rebuilding. Correlation IDs remain unset
+    unless the backend supplies a documented safe source. Do not invent
+    a second telemetry transport or fabricate correlation IDs.
 -   Cross-route accessibility/responsive hardening: route changes update
     the document title and focus the page heading (including
     create/checkout/check-in `h1` `tabIndex={-1}`); skip-link, visible
@@ -291,12 +291,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     mark-read, delete, and restore through their dedicated endpoints.
     Automated accessibility coverage exercises critical application
     routes and administrative/check-in surfaces. The documented
-    coverage thresholds are enforced rather than treated as advisory.
-    See `docs/baselines/FEAT-13_workflow-and-accessibility.md` for the
-    completed baseline. FEAT-14 owns CI packaging, FEAT-15 Podman,
-    FEAT-16 release artifacts/deployment rollout, and FEAT-17 through
-    FEAT-21 remain product follow-ons. Do not implement those future
-    tickets early.
+    coverage thresholds are enforced rather than treated as advisory
+    (statements 87%, branches 80%, functions 92%, lines 87%). See
+    `docs/baselines/FEAT-13_testing.md` for the completed baseline.
+    FEAT-14 owns CI packaging, FEAT-15 Podman, FEAT-16 release
+    artifacts/deployment rollout, and FEAT-17 through FEAT-21 remain
+    product follow-ons. Do not implement those future tickets early.
 -   Dashboard `/` via `DashboardPage` + `useDashboard` /
     `dashboardApi.get` (FEAT-17 will move About to `/` and relocate the
     dashboard). Displays API-provided Collection, Circulation, and
@@ -333,13 +333,15 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     missing or blank. No `sessionStorage`, no connection settings
     screen, and no runtime token entry.
 -   Runtime config: `public/config.js` sets `window.__SHADE_CONFIG__`
-    (`apiBaseUrl`, `release`, optional `diagnostics`), loaded from
-    `index.html` before the app module. `src/config/runtimeConfig.ts`
-    validates it and defaults diagnostics disabled when omitted; missing
-    or malformed required config shows `RuntimeConfigScreen` instead of
-    the app shell. Diagnostic config is runtime-controlled so reporting
-    can be enabled/disabled or pointed at an endpoint without rebuilding
-    the frontend.
+    (`apiBaseUrl`, optional `diagnostics`), loaded from `index.html`
+    before the app module. Application release comes from
+    `package.json` `version` via `APP_VERSION` (Vite `define`), not
+    runtime config. `src/config/runtimeConfig.ts` validates config and
+    defaults diagnostics disabled when omitted; missing or malformed
+    required config shows `RuntimeConfigScreen` instead of the app
+    shell. Diagnostic config is runtime-controlled so reporting can be
+    enabled/disabled or pointed at an endpoint without rebuilding the
+    frontend.
 -   Bootstrap when token and config are valid:
 
 ``` text
@@ -349,7 +351,7 @@ index.html
        -> readApiToken() (fail fast when missing)
        -> readRuntimeConfig()
             -> fail: RuntimeConfigScreen
-            -> ok: createDiagnosticReporter(runtime diagnostics + release)
+            -> ok: createDiagnosticReporter(runtime diagnostics + APP_VERSION)
                  -> RootErrorBoundary (reports redacted render failures)
                       -> AppProviders (shared DiagnosticReporter)
                            -> NotificationsProvider
@@ -364,6 +366,7 @@ index.html
     build-time token via `connectionToken.ts`, public `GET /health`
     reachability via `connectionApi.ts` (connection error mapping
     preserved), and startup health verification in `ConnectionProvider`.
+    Context exposes `release: APP_VERSION` (not runtime config).
     Statuses: `checking`, `connected`, `unauthorized`, `unreachable`. On
     `403`, show a page-level error via `QueryErrorState` /
     `formatApiQueryError`; do not clear the query cache or loop back
@@ -374,7 +377,7 @@ index.html
         `src/api/generated/openapi.ts` (do not hand-edit)
     -   `src/api/apiTypes.ts` schema aliases (`BookCreate` /
         `BookUpdate` / `BookRead` / `BookList`, lookup, loan, dashboard,
-        health, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`,
+        health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`,
         validation/error schemas, enums). Book payloads use
         `shelf_name` (string); there is no hard-coded `Shelf` enum.
         `src/api/enumDisplay.ts` (`enumDisplayValue`)
@@ -401,15 +404,15 @@ index.html
         `infiniteList({ includeDeleted, isbn?, author?, title?,
         category?, sortBy?, sortOrder?, take })`, `detail(id)`,
         `lookup(isbn)`), loans (`all`, `list(bookId?)`,
-        `infiniteList({ bookId?, take })`, `detail(id)`), dashboard, and
-        shelves (`all`, `list()` unpaginated). Blank/whitespace `isbn` /
-        `author` / `title` / `category` are omitted from keys (trimmed
-        when present).
+        `infiniteList({ bookId?, take })`, `detail(id)`), dashboard,
+        version, and shelves (`all`, `list()` unpaginated).
+        Blank/whitespace `isbn` / `author` / `title` / `category` are
+        omitted from keys (trimmed when present).
     -   `src/api/api.ts` `createApi` aggregates typed helpers: `books`,
-        `loans`, `shelves`, `dashboard`, `health`, `backup`, plus the
-        underlying `client`. No wishlist aggregate yet (generated
-        OpenAPI types include wishlist and dashboard-report paths;
-        product helpers wait for FEAT-19 / FEAT-20).
+        `loans`, `shelves`, `dashboard`, `health`, `version`, `backup`,
+        plus the underlying `client`. No wishlist aggregate yet
+        (generated OpenAPI types include wishlist and dashboard-report
+        paths; product helpers wait for FEAT-19 / FEAT-20).
     -   `booksApi`: `list` (optional `includeDeleted`, `isbn`, `author`,
         `title`, `category`, `skip`, `take`, `sortBy` including `shelf`,
         `sortOrder`; omit empty/whitespace `isbn` / `author` / `title` /
@@ -428,7 +431,9 @@ index.html
         array (no pagination); `create` (`POST` -\> **201**), `update`
         (`PATCH` -\> **200**), and `remove` (`DELETE` -\> **204**)
         serialize only documented `ShelfCreate` / `ShelfUpdate` fields
-    -   `dashboardApi.get`, `healthApi.get` (public)
+    -   `dashboardApi.get`, `healthApi.get` (public), `versionApi.get`
+        (public `GET /version`; footer API release string via
+        `useVersion` -- not a health probe)
     -   `backupApi.get` returns `{ blob, filename }` for authenticated
         `/backup`, parsing UTF-8 `Content-Disposition`
         (`filename*=UTF-8''...`) with a `backup.sql` fallback when the
@@ -440,9 +445,10 @@ index.html
         both `422` shapes / `5xx` / network / timeout / cancellation /
         invalid JSON / binary backup / `204`
     -   `scripts/contractSmoke.test.ts` OpenAPI path/type smoke
-        (includes `/shelves`, `/shelves/{shelf_id}`, wishlist and
-        dashboard-report paths plus existing lifecycle routes);
-        performance notes in `docs/baselines/FEAT-03_performance.md`
+        (includes `/shelves`, `/shelves/{shelf_id}`, `/version`,
+        wishlist and dashboard-report paths plus existing lifecycle
+        routes); performance notes in
+        `docs/baselines/FEAT-03_performance.md`
 -   React Query is mounted and complete for server state:
     -   `createQueryClient()` sets `staleTime` 30s,
         `refetchOnWindowFocus`, `refetchOnReconnect`, query retry that
@@ -705,8 +711,10 @@ index.html
     these primitives.
 -   CSS layers: `tokens` -\> `base` -\> `shell` -\> `components` via
     `src/index.css` (plain CSS; BEM-like component classes). Shell
-    footer shows the runtime release identifier.
-    Long-content wrapping lives in `components.css`.
+    footer shows `Release` from `package.json` `version` via
+    `APP_VERSION`, plus API version from public `GET /version` /
+    `useVersion` when available. Long-content wrapping lives in
+    `components.css`.
 -   Local setup: copy `.env.example` to `.env` and set
     `VITE_API_SECRET_KEY` to match the backend `API_SECRET_KEY`; restart
     the dev server after changing `.env`. Optional same-origin proxy:
@@ -744,6 +752,7 @@ cp -n .env.example .env
 make run
 make check
 make build
+yarn test:coverage
 yarn test:e2e
 yarn api:generate
 yarn api:check
@@ -777,6 +786,8 @@ form library unless a ticket explicitly requires it.
     into loading
 -   Startup reachability uses public `GET /health` only; do not verify
     auth with `GET /protected`
+-   Use public `GET /version` for the footer API release string only; do
+    not treat it as a health probe
 -   Never commit the token, put it in URLs, log Authorization headers,
     or send it to analytics
 -   A build-time token in JS bundles is inspectable by anyone with
@@ -848,13 +859,14 @@ Semantic HTML, landmarks, visible focus, labels linked to errors, skip
 link, focus restoration on dialogs, document title + focus to heading on
 route change, no color-only status, 320px viewport, reduced motion.
 
-FEAT-13 adds automated enforcement around that baseline: Playwright +
-axe browser checks cover critical routes, and browser-level journeys
-exercise representative creation and lifecycle behavior against the
-shared stateful mock API. Keep these suites in `make check`. The current
-Vitest global coverage floor is 87% statements, 81% branches, 92%
-functions, and 87% lines; raising those floors is fine when supported by
-the repository, but do not lower them merely to make a ticket pass.
+FEAT-13 completed automated enforcement around that baseline:
+Playwright + axe browser checks cover critical routes, and
+browser-level journeys exercise representative creation and lifecycle
+behavior against the shared stateful mock API. Keep these suites in
+`make check`. The current Vitest global coverage floor is 87%
+statements, 80% branches, 92% functions, and 87% lines; raising those
+floors is fine when supported by the repository, but do not lower them
+merely to make a ticket pass.
 
 ### Implementation conventions (short)
 
@@ -956,11 +968,14 @@ repo before editing.
   Entry /       `index.html`, `public/config.js`, `src/main.tsx`, `src/AppProviders.tsx`, `src/RootErrorBoundary.tsx`
   bootstrap     
 
-  Runtime       `src/config/runtimeConfig.ts`, `runtimeConfigState.ts`, `RuntimeConfigScreen.tsx`, `apiToken.ts`; runtime config includes optional diagnostics
-  config        
+  Runtime       `src/config/appVersion.ts` (`APP_VERSION` from
+  config        `package.json`), `runtimeConfig.ts`,
+                `runtimeConfigState.ts`, `RuntimeConfigScreen.tsx`,
+                `apiToken.ts`; runtime config includes optional
+                diagnostics (no runtime `release` field)
 
   API           `src/api/generated/openapi.ts`, `apiTypes.ts`, `enumDisplay.ts`, `apiCallOptions.ts`, `apiClient.ts`, `apiErrors.ts`, `apiRedaction.ts`, `requestFields.ts`, `dateTime.ts`, `queryKeys.ts`, `api.ts`, `booksApi.ts`,
-                `loansApi.ts`, `shelvesApi.ts`, `dashboardApi.ts`, `healthApi.ts`, `backupApi.ts`, `queryClient.ts`, `booksQueries.ts`, `loansQueries.ts`, `shelvesQueries.ts`, `dashboardQueries.ts`
+                `loansApi.ts`, `shelvesApi.ts`, `dashboardApi.ts`, `healthApi.ts`, `versionApi.ts`, `versionQueries.ts`, `backupApi.ts`, `queryClient.ts`, `booksQueries.ts`, `loansQueries.ts`, `shelvesQueries.ts`, `dashboardQueries.ts`
 
   Diagnostics   `src/diagnostics/diagnosticReporter.ts` plus `RootErrorBoundary`, `AppProviders`, `ConnectionProvider`, and `apiClient` integration
 
@@ -971,7 +986,8 @@ repo before editing.
 
   Routing /     `src/routes/*`, `src/layout/AppShell.tsx` (brand includes
   shell         "est. 2026"; primary nav includes Shelves; footer shows
-                runtime release)
+                `Release ${APP_VERSION}` plus API version from
+                `useVersion` / `GET /version` when available)
 
   Feature       `src/features/{dashboard,books,loans,shelves,connection,scanning,shared}/` (scanning is a feature module, not a top-level route)
   routes        
@@ -1000,7 +1016,7 @@ repo before editing.
 
   Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`
 
-  Baselines /   `docs/baselines/FEAT-03_performance.md`, `docs/baselines/FEAT-06_scanner-support.md`, `docs/baselines/FEAT-12_browser-support.md`, `docs/baselines/FEAT-13_workflow-and-accessibility.md`, `scripts/contractSmoke.test.ts`
+  Baselines /   `docs/baselines/FEAT-03_performance.md`, `docs/baselines/FEAT-06_scanner-support.md`, `docs/baselines/FEAT-12_browser-support.md`, `docs/baselines/FEAT-13_testing.md`, `scripts/contractSmoke.test.ts`
   smoke         
   --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1092,7 +1108,7 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 
   Browser support / manual smoke  `docs/baselines/FEAT-12_browser-support.md`
 
-  Workflow / accessibility tests  `docs/baselines/FEAT-13_workflow-and-accessibility.md`
+  Workflow / accessibility tests  `docs/baselines/FEAT-13_testing.md`
 
   UI / design decisions           `docs/product-docs/UI_DESIGN_NOTES.MD`
 
@@ -1108,8 +1124,7 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
-baseline. Do not treat other project guides (including `docs/AGENTS.md`)
-as required reading before starting from this pack.
+baseline.
 
 ------------------------------------------------------------------------
 

@@ -40,12 +40,12 @@ Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in
 `PATCH`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open (the
 checklist can lag). Do not invent undocumented routes, realtime channels, or lifecycle shortcuts.
 
-**Completed:** `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` (automated accessibility checks,
-browser-level MVP and lifecycle journeys, mock/fixture coverage of the documented status and error families,
-enforced V8 coverage thresholds, and Playwright integration into the canonical `make check` gate). The completed
-test infrastructure includes `playwright.config.ts`, isolated stateful API fixtures under `e2e/support/`, automated
-axe accessibility checks across critical routes, manual book-creation and lifecycle browser journeys, and regression
-coverage thresholds. Verification and manual-gate ownership are documented in
+**Completed:** FEAT-13 workflow and accessibility tests (ticket file removed after completion). Shipped automated
+accessibility checks, browser-level MVP and lifecycle journeys, mock/fixture coverage of the documented status and
+error families, enforced V8 coverage thresholds, and Playwright integration into the canonical `make check` gate.
+The completed test infrastructure includes `playwright.config.ts`, isolated stateful API fixtures under
+`e2e/support/`, automated axe accessibility checks across critical routes, manual book-creation and lifecycle
+browser journeys, and regression coverage thresholds. Verification and manual-gate ownership are documented in
 `docs/baselines/FEAT-13_testing.md`, with the existing FEAT-06 scanner-support and FEAT-12 browser-support baselines
 remaining authoritative for hardware- and browser-specific manual checks. Product routes are fully implemented
 (no unfinished `RoutePlaceholder` feature pages remain).
@@ -94,8 +94,10 @@ Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer t
   the critical path for ordinary navigation)
 - Vitest with jsdom
 - Testing Library and jest-dom
-- Playwright (`@playwright/test`) with `@axe-core/playwright` for browser journeys and accessibility checks (FEAT-13;
-  `yarn test:e2e`; not yet folded into `make check`)
+- Playwright (`@playwright/test`) with `@axe-core/playwright` for browser journeys and accessibility checks (FEAT-13
+  complete; `yarn test:e2e`; included in `make check`)
+- Vitest V8 coverage with enforced global floors (statements 87%, branches 80%, functions 92%, lines 87%; see
+  `docs/baselines/FEAT-13_testing.md`)
 - ESLint flat configuration
 - Yarn 4 through Corepack (`yarn@4.18.0` in `package.json`)
 - Node.js 26.7.0
@@ -671,12 +673,19 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/features/scanning/IsbnCameraScanner.test.tsx` / `isbnCameraCapture.test.ts` / `isbnScannerParser.test.ts` /
   `useHardwareIsbnScanner.test.ts`: Camera UI, capture helpers, keyboard-wedge parser, and hardware hook coverage
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist
+- `docs/baselines/FEAT-13_testing.md`: Automated quality-gate baseline (coverage floors, Playwright suite scope,
+  accessibility ownership, and manual-gate handoff to FEAT-06 / FEAT-12)
 - `playwright.config.ts`: Playwright browser-journey config (Chromium; local Vite webServer on `127.0.0.1:4173` with
-  `VITE_API_SECRET_KEY`; HTML reporter; CI retries). FEAT-13 owns expanding coverage and folding into `make check`.
-- `e2e/dashboard.smoke.spec.ts`: Dashboard browser smoke (heading/title, null-average copy, axe serious/critical
-  gate) via mocked API
-- `e2e/support/mockApi.ts`: Playwright route mock for `http://127.0.0.1:8000/**` (health + version + dashboard fixtures so
-  far)
+  `VITE_API_SECRET_KEY`; HTML reporter; CI retries). Included in `make check` via `yarn test:e2e`.
+- `e2e/dashboard.smoke.spec.ts`: Dashboard browser smoke (heading/title, null-average and populated fixtures, axe
+  serious/critical gate) via mocked API
+- `e2e/book.creation.spec.ts`: Manual book-creation journey through `/books/new` into the created detail page
+- `e2e/library.lifecycle.spec.ts`: Checkout/check-in, mark-read, and delete/restore browser journeys against the
+  stateful mock API (dedicated lifecycle endpoints, not generic `PATCH`)
+- `e2e/accessibility.spec.ts`: Per-route axe serious/critical scans for critical surfaces plus check-in and deleted
+  admin
+- `e2e/support/mockApi.ts`: Stateful Playwright route mock for `http://127.0.0.1:8000/**` (health, version, shelves,
+  books, loans, dashboard, lookup, lifecycle mutations, and backup fixtures)
 - `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
@@ -699,10 +708,16 @@ yarn test
   -> src/test/setup.ts installs shared matchers
   -> colocated *.test.tsx / *.test.ts files render through Testing Library
 
+yarn test:coverage
+  -> same as yarn test, plus V8 coverage with enforced global thresholds
+
 yarn test:e2e
   -> Playwright reads playwright.config.ts
   -> starts Vite webServer (or reuses one outside CI)
   -> runs e2e/*.spec.ts against Chromium
+
+make check / yarn check
+  -> lint -> typecheck -> test:coverage -> test:e2e -> build
 ```
 
 ### Dependencies and Commands
@@ -717,8 +732,8 @@ yarn test:e2e
 
 ### Build, Type Checking, and Linting
 
-- `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests, global test setup, and an optional
-  same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`).
+- `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests, global test setup, V8 coverage
+  thresholds, and an optional same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`).
 - `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores generated directories and
   treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
@@ -745,14 +760,16 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` through `FEAT-21_*.md`: Remaining sequenced implementation
-  tickets with acceptance criteria. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what
-  is still open.
+- `docs/tickets/FEAT-14_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 is complete; its ticket file is removed). Prefer ticket presence under `docs/tickets/` over
+  `docs/ToDo.md` when judging what is still open.
 - `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines (re-check recorded; FEAT-14
   owns future enforcement).
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
   pending/blocked/not tested as recorded).
+- `docs/baselines/FEAT-13_testing.md`: FEAT-13 completion baseline for coverage floors, Playwright scope, and
+  accessibility / manual-gate ownership.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
@@ -784,10 +801,12 @@ Common commands:
 - `make typecheck`: Runs TypeScript build mode across both TypeScript configurations.
 - `make test`: Runs all Vitest tests once.
 - `yarn test:watch`: Runs Vitest in watch mode during development.
-- `yarn test:e2e`: Runs Playwright browser journeys under `e2e/` (not yet part of `make check`; FEAT-13).
-- `yarn test:coverage`: Runs Vitest with V8 coverage (thresholds / CI folding are FEAT-13 / FEAT-14).
+- `yarn test:e2e`: Runs Playwright browser journeys under `e2e/` (also part of `make check`).
+- `yarn test:coverage`: Runs Vitest with V8 coverage and enforced global thresholds (also part of `make check`;
+  CI packaging of the gate is FEAT-14).
 - `make build`: Type-checks and writes an optimized application to `dist/`.
-- `make check`: Runs lint, type checking, tests, and a production build.
+- `make check`: Runs lint, type checking, Vitest with coverage, Playwright e2e, and a production build
+  (`yarn check`).
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
 - `yarn api:check`: Regenerates types and fails if the generated file differs from git.
 
@@ -842,10 +861,11 @@ make build
   `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Leave shelves under
   `ShelvesPage` / `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations (`/shelves` owns
   create/edit/delete with system-shelf protection; book forms use API-fed pickers with `shelf_name`, never shelf CRUD
-  on Add/Edit Book). For FEAT-13, extend existing Vitest / Testing Library / `renderAppTree` coverage and the
-  Playwright `e2e/` scaffolding (`playwright.config.ts`, mock API, axe helper); fold accessibility and browser-journey
-  suites into `make check` without inventing a parallel fake-API stack. Do not pull FEAT-14 CI packaging, FEAT-15
-  Podman, FEAT-16 deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into FEAT-13. Never simulate
+  on Add/Edit Book). FEAT-13 test infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
+  coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced coverage floors,
+  and `make check` integration (`test:coverage` + `test:e2e`). Extend those suites rather than inventing a parallel
+  fake-API stack or removing them from the gate. Do not pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16
+  deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
