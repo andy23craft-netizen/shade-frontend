@@ -3,7 +3,7 @@
 * [ ] Read helpful docs:
   * [ ] Read `docs/technical-reference/bash-reference.md`
 * [ ] Implement the feature docs:
-  * [ ] Complete feature ticket `docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`.
+  * [x] Complete feature ticket `docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-15_podman-development-and-preview.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-16_versioned-release-artifacts.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-17_about-page.md`.
