@@ -1,4 +1,4 @@
-# FEAT-16 — Versioned release artifacts
+# FEAT-16 -- Versioned release artifacts
 
 ## Objective
 
@@ -6,12 +6,17 @@ Package the verified static build as a reproducible, inspectable artifact ready 
 
 ## Dependencies
 
-FEAT-15.
+FEAT-15 (Podman compose/dev-deployment image, including README coverage of **local development** and **deployed
+development**). Do not redo that image work here. This ticket owns the production tarball and the README **deployed
+production** path.
 
 ## Scope
 
 - Add a Make target that creates a deterministic static tarball from the exact successful `dist/` build.
-- Name the artifact with the application version or commit identifier shown in the running application.
+- Name the tarball so it **includes** the `version` field from `package.json` (always read the current value; do not
+  hard-code it). That string is the same canonical release as `APP_VERSION` / the footer `Release` label. A commit
+  identifier may be included as well, but the package version is required in the filename. The filename, in-app release
+  identifier, and manifest version must agree.
 - Generate a SHA-256 checksum.
 - Generate a manifest containing version, commit, build time, expected runtime-config shape, and hosting requirements.
 - Include only deployable static assets and required public runtime-config templates.
@@ -21,13 +26,19 @@ FEAT-15.
   `CORS_ORIGINS` or a same-origin proxy, exposed `Content-Disposition`, SPA fallback, and required cache behavior.
 - Document build, verification, extraction, contents, browser support, known limitations, accepted token risk, and smoke
   tests.
+- Update `README.md` to add the third way to interact with this project: **deployed production** (this versioned
+  tarball plus the deployment repository). Keep FEAT-15's two paths -- **local development** (`make run`) and **deployed
+  development** (Podman image in Compose) -- and do not collapse production into the compose image. Document how to
+  build the tarball, that its name includes `package.json` `version`, checksum/manifest expectations, and that HTTPS /
+  TLS / host install remain with the deployment repository.
 - Document deployment-repository requirements for HTTPS, cache headers, restrictive CSP/security headers, network
   restriction, atomic install/rollback, supervision, health checks, and checksum retention.
 
 ## Acceptance criteria
 
 - Repeated builds from identical declared inputs produce equivalent archive contents in deterministic order.
-- Artifact name, application release identifier, manifest version/commit, and checksum agree.
+- Artifact name includes `package.json` `version` (same string as `APP_VERSION`). Artifact name, application release
+  identifier, manifest version/commit, and checksum agree.
 - The checksum validates before and after transfer/extraction.
 - Extraction produces no token, source secret, dependency tree, development cache, or non-deployable source file.
 - A production-like host verifies runtime configuration, protected API access, CORS/preflight or proxy behavior,
@@ -41,6 +52,9 @@ FEAT-15.
   deployment-owned systems here.
 - No critical/high defect, serious accessibility violation, exposed secret, or release-blocking contract mismatch
   remains.
+- `README.md` documents three ways to interact with this project: local development, deployed development (FEAT-15),
+  and deployed production (this tarball / deployment-repository path). Production is not described as another Podman
+  image.
 - `make check` passes.
 
 ## Plan coverage
