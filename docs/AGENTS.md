@@ -54,9 +54,18 @@ budget enforcement via `scripts/checkBundleSize.mjs` (`yarn bundle:check` / `mak
 `make check`). The default workflow does not retain `dist/`, coverage, Playwright reports, or secrets as artifacts.
 Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in `README.md` and `docs/MAINTAINERS.md`.
 
-**Next:** Remaining tickets under `docs/tickets/` are Podman development/preview (FEAT-15), versioned release
-artifacts (FEAT-16), About as homepage with relocated dashboard (FEAT-17), collection category filter UI (FEAT-18),
-wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX (FEAT-21).
+FEAT-15 Podman compose/dev-deployment image (ticket file removed after completion). Shipped `ci/Containerfile`
+(runtime-only `nginx:1.31-alpine`, HTTP 8080, copies host-built `dist/`, no Node/Yarn/Vite stage, no `.env` COPY),
+`ci/nginx.conf` (SPA `try_files`, no-cache `index.html` / `config.js`, long-lived hashed `/assets/`),
+`ci/container-entrypoint.sh` (start-time `config.js` from `SHADE_API_BASE_URL`, `SHADE_DIAGNOSTICS_ENABLED`,
+`SHADE_DIAGNOSTICS_ENDPOINT`), `.containerignore`, and Make `container-build` / `container-run` / `container-stop` /
+`container-clean` (image `shade-frontend`, tags `latest` and `package.json` `version`). This is **deployed
+development** (Compose with the backend), not host Vite and not production. `README.md` documents the two interaction
+paths. Do not add containerized Vite/HMR or pull FEAT-16 tarball work into this image.
+
+**Next:** Remaining tickets under `docs/tickets/` are versioned release artifacts (FEAT-16), About as homepage with
+relocated dashboard (FEAT-17), collection category filter UI (FEAT-18), wishlists (FEAT-19), dashboard report surfaces
+(FEAT-20), and display-only checkout alternate-copy UX (FEAT-21).
 
 Notable shipped behaviors agents should preserve:
 
@@ -730,8 +739,8 @@ make check / yarn check
   Node and Yarn requirements, scripts (including `api:generate` / `api:check`, `test:e2e`, `bundle:check`), runtime
   dependencies, and development dependencies.
 - `yarn.lock`: Yarn-generated exact dependency resolutions and checksums. Never edit it manually.
-- `Makefile`: Stable wrappers around Yarn scripts for installation, development, checks, tests, builds, and
-  `bundle-check`.
+- `Makefile`: Stable wrappers around Yarn scripts for installation, development, checks, tests, builds,
+  `bundle-check`, and Podman image targets (`container-build` / `container-run` / `container-stop` / `container-clean`).
 - `.nvmrc`: Exact Node.js version used by `nvm use`.
 - `.yarnrc.yml`: Configures Yarn to use the `node_modules` linker instead of Plug'n'Play.
 
@@ -751,12 +760,33 @@ make check / yarn check
 - `scripts/checkBundleSize.mjs`: Main-entry gzip budget enforcement after `dist/` exists; warns above 120 kB and fails
   above 150 kB (`yarn bundle:check` / `make bundle-check`; also part of `make check`).
 
+### Podman image (complete -- extend, do not replace)
+
+Deployed-development image for Compose with the backend. Not host Vite (`make run`) and not the FEAT-16 production
+tarball. Preserve (do not rebuild or regress):
+
+- `ci/Containerfile`: Runtime-only `nginx:1.31-alpine`. HTTP on 8080. Copies host-built `dist/`. No Node/Yarn/Vite
+  stage. Does not `COPY` `.env`. Healthcheck is `wget` against `http://127.0.0.1:8080/` and `/config.js` (no protected
+  API routes).
+- `ci/nginx.conf`: React Router SPA `try_files` fallback; `Cache-Control: no-cache` for `index.html` and `config.js`;
+  long-lived `/assets/` cache for hashed Vite output.
+- `ci/container-entrypoint.sh`: Writes `/usr/share/nginx/html/config.js` at start from `SHADE_API_BASE_URL`,
+  `SHADE_DIAGNOSTICS_ENABLED` (`true`/`false`), and `SHADE_DIAGNOSTICS_ENDPOINT` (empty → `null`). Changing those
+  values does not require an image rebuild. Application release stays `package.json` `version` from the image build.
+- `.containerignore`: Build context is the repo root; only `dist/` and the `ci/` files above are included.
+- Make targets: `container-build` (runs `make build`, tags `shade-frontend:latest` and
+  `shade-frontend:<package.json version>`), `container-run` (port 8080, `--rm`, the runtime-config env vars above),
+  `container-stop`, `container-clean`. Compose should pull `shade-frontend`. The Compose file lives in the
+  orchestrator, not this repo. Optional `SHADE_API_PROXY=1` remains host `make run` only.
+
 ### Repository Guidance
 
-- `README.md`: Concise human onboarding for prerequisites, setup, development, local CORS-or-proxy options, `.env`
-  token configuration, checks, Playwright Chromium install, CI, and production builds. Also documents the
-  production-host security boundary (HTTPS/CSP / SPA fallback / production config serving owned by deployment /
-  FEAT-16).
+- `README.md`: Concise human onboarding for the two interaction paths -- **local development** (`make run`) and
+  **deployed development** (this Podman image in Compose) -- plus prerequisites (including Podman for the image path),
+  setup, local CORS-or-proxy options, `.env` token configuration (build-time for the image; bind-mounting `.env` at
+  container start does not change the baked token), checks, Playwright Chromium install, CI, image name/tags/Make
+  targets/port 8080/runtime-config env vars/CORS/healthcheck/cleanup, and production-host security boundary
+  (HTTPS/CSP / SPA fallback / production config serving owned by deployment / FEAT-16).
 - `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`. Uses the Node
   version from `.nvmrc`, Corepack/Yarn, immutable `yarn install`, Playwright Chromium
   (`yarn playwright install --with-deps chromium`), `VITE_API_SECRET_KEY=test-api-token`, and `make check`. Does not
@@ -776,9 +806,9 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-15_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 and FEAT-14 are complete; those ticket files are removed). Prefer ticket presence under
-  `docs/tickets/` over `docs/ToDo.md` when judging what is still open (`docs/ToDo.md` still lists FEAT-14).
+- `docs/tickets/FEAT-16_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-15 are complete; those ticket files are removed). Prefer ticket presence under
+  `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
   pending/blocked/not tested as recorded).
@@ -820,6 +850,11 @@ Common commands:
 - `yarn test:coverage`: Runs Vitest with V8 coverage and enforced global thresholds (also part of `make check`).
 - `make build`: Type-checks and writes an optimized application to `dist/`.
 - `make bundle-check`: Enforces the main-entry gzip budget against an existing `dist/` (`yarn bundle:check`).
+- `make container-build`: Runs `make build`, then builds `shade-frontend:latest` and
+  `shade-frontend:<package.json version>` from `ci/Containerfile`.
+- `make container-run`: Runs `shade-frontend:latest` on port 8080 with start-time runtime-config env vars (`--rm`).
+- `make container-stop`: Stops the `shade-frontend-dev` container.
+- `make container-clean`: Removes that container and both image tags.
 - `make check`: Runs lint, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright e2e, the
   production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
@@ -881,9 +916,10 @@ make build
   and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites rather than
   inventing a parallel fake-API stack or removing them from the gate. FEAT-14 CI packaging is complete: keep
   `.github/workflows/check.yml` and `scripts/checkBundleSize.mjs` in the canonical gate; do not add secret-bearing CI
-  artifacts. Do not pull FEAT-15 Podman, FEAT-16 versioned release artifacts or deployment-owned HTTPS/CSP, or
-  FEAT-17 through FEAT-21 product work into unrelated changes. Never simulate restore, checkout, check-in, or
-  initial mark-read with generic `PATCH`.
+  artifacts. FEAT-15 Podman is complete: keep `ci/Containerfile`, `ci/nginx.conf`, `ci/container-entrypoint.sh`,
+  `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
+  Do not pull FEAT-16 versioned release artifacts or deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product
+  work into unrelated changes. Never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after

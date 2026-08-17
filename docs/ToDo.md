@@ -4,7 +4,7 @@
   * [ ] Read `docs/technical-reference/bash-reference.md`
 * [ ] Implement the feature docs:
   * [x] Complete feature ticket `docs/tickets/FEAT-14_continuous-integration-quality-pipeline.md`.
-  * [ ] Complete feature ticket `docs/tickets/FEAT-15_podman-development-and-preview.md`.
+  * [x] Complete feature ticket `docs/tickets/FEAT-15_podman-development-and-preview.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-16_versioned-release-artifacts.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-17_about-page.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-18_sorting-and-filtering.md` (category filter UI; shelf sort already in FEAT-10).
