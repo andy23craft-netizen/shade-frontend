@@ -29,8 +29,9 @@ make run
 make check
 ```
 
-This command runs linting, type checking, tests, and a production build. Running it locally catches many common
-problems before code review or continuous integration.
+This command is the canonical local and CI quality gate. It runs linting, type checking, generated OpenAPI drift
+checking, Vitest with enforced coverage thresholds, Playwright browser/accessibility tests, a production build, and
+the main-entry bundle-size check. GitHub Actions runs the same gate for pull requests and pushes to `main`.
 
 Stack highlights: React 19, TypeScript 6 (strict), Vite 8, React Router 7, TanStack React Query 5, Vitest with
 jsdom, Yarn 4.18.0 via Corepack, and Node.js 26.7.0. There is no Next.js, Tailwind, component library, or form
@@ -247,7 +248,6 @@ Keep the import order in `src/index.css`. Later layers rely on variables and def
   `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation
   subscription, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable.
-- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations for FEAT-12 / FEAT-14.
 - `src/features/connection/ConnectionProvider.test.tsx` / `ConnectionScreen.test.tsx` /
   `connectionToken.test.ts`: Connection lifecycle and UI.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
@@ -292,7 +292,10 @@ The available commands are:
 - `make test`: Runs the test suite once.
 - `yarn test:watch`: Runs Vitest in watch mode during development.
 - `make build`: Type-checks and creates the optimized `dist/` output.
-- `make check`: Runs linting, type checking, tests, and the production build.
+- `make bundle-check`: Checks the built main JavaScript entry against the 120 kB gzip warning budget and 150 kB hard
+  failure budget.
+- `make check`: Runs linting, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright
+  browser/accessibility tests, the production build, and the bundle-size gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
 - `yarn api:check`: Regenerates types and fails if the generated file differs from git.
 
@@ -389,7 +392,6 @@ When you need product or ticket detail, start with:
 - `docs/product-docs/PLAN.md` for the overall frontend roadmap.
 - `docs/product-docs/UI_DESIGN_NOTES.MD` when visual design is in question.
 - `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` for the backend contract.
-- `docs/baselines/FEAT-03_performance.md` for large-library and bundle-size baselines.
 - `docs/AGENTS.md` for the LLM-oriented twin of this guide.
 - `docs/baselines/FEAT-13_testing.md` for browser/accessibility/manual verification baseline.
 

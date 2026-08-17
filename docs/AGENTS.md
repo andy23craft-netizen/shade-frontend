@@ -30,9 +30,6 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   `/admin/backup`).
 - Shelves catalog CRUD on `/shelves` (`shelvesApi` / `useShelves` / write mutations) with system-shelf protection
   (`unknown` / `removed`); book payloads use `shelf_name` (string; no hard-coded `Shelf` enum).
-- Optional runtime-configured diagnostic reporting (`src/diagnostics/diagnosticReporter.ts`), heading focus and
-  long-content hardening, and evergreen smoke in `docs/baselines/FEAT-12_browser-support.md`. Performance notes in
-  `docs/baselines/FEAT-03_performance.md` (FEAT-14 owns future budget enforcement).
 - Generated OpenAPI types already know wishlist and dashboard-report paths; `booksApi` accepts `author` / `title` /
   `category` list filters -- do not call those product APIs or ship those UIs until FEAT-19 / FEAT-20.
 
@@ -52,8 +49,8 @@ remaining authoritative for hardware- and browser-specific manual checks. Produc
 
 **Next:** Later tickets under `docs/tickets/` cover About as homepage with relocated dashboard (FEAT-17), collection
 category filter UI (FEAT-18), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout
-alternate-copy UX (FEAT-21). FEAT-14 owns CI packaging, FEAT-15 owns Podman, and FEAT-16 owns release artifacts and
-rollout. Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in `README.md` and
+alternate-copy UX (FEAT-21). FEAT-14 CI packaging is complete. FEAT-15 owns Podman, and FEAT-16 owns release 
+artifacts and rollout. Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in `README.md` and
 `docs/MAINTAINERS.md`.
 Notable shipped behaviors agents should preserve:
 
@@ -619,8 +616,6 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
   (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, wishlist and dashboard-report paths plus existing lifecycle
   routes).
-- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size expectations; includes the recorded re-check
-  (FEAT-14 owns future budget enforcement).
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix and blocker policy.
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
   unauthorized handling without cache clear, and build-time token wiring.
@@ -717,7 +712,8 @@ yarn test:e2e
   -> runs e2e/*.spec.ts against Chromium
 
 make check / yarn check
-  -> lint -> typecheck -> test:coverage -> test:e2e -> build
+  make check / yarn check
+  -> lint -> typecheck -> api:check -> test:coverage -> test:e2e -> build -> bundle:check
 ```
 
 ### Dependencies and Commands
@@ -760,11 +756,9 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-14_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
+- `docs/tickets/FEAT-15_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
   criteria (FEAT-13 is complete; its ticket file is removed). Prefer ticket presence under `docs/tickets/` over
   `docs/ToDo.md` when judging what is still open.
-- `docs/baselines/FEAT-03_performance.md`: Large-library and bundle-size baselines (re-check recorded; FEAT-14
-  owns future enforcement).
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
   pending/blocked/not tested as recorded).
@@ -802,11 +796,10 @@ Common commands:
 - `make test`: Runs all Vitest tests once.
 - `yarn test:watch`: Runs Vitest in watch mode during development.
 - `yarn test:e2e`: Runs Playwright browser journeys under `e2e/` (also part of `make check`).
-- `yarn test:coverage`: Runs Vitest with V8 coverage and enforced global thresholds (also part of `make check`;
-  CI packaging of the gate is FEAT-14).
+- `yarn test:coverage`: Runs Vitest with V8 coverage and enforced global thresholds (also part of `make check`
 - `make build`: Type-checks and writes an optimized application to `dist/`.
-- `make check`: Runs lint, type checking, Vitest with coverage, Playwright e2e, and a production build
-  (`yarn check`).
+- `make check`: Runs lint, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright e2e, the
+  production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
 - `yarn api:check`: Regenerates types and fails if the generated file differs from git.
 
@@ -867,6 +860,10 @@ make build
   fake-API stack or removing them from the gate. Do not pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16
   deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
+  - `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`; uses the pinned
+  Node/Yarn toolchain, immutable dependency installation, Playwright Chromium dependencies, a dummy build-time API
+  token, and the canonical `make check` command.
+- `scripts/checkBundleSize.mjs`: Main-entry gzip budget enforcement; warns above 120 kB and fails above 150 kB.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after

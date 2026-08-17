@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "yarn typecheck && vite build",
+    "bundle:check": "node scripts/checkBundleSize.mjs",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -b",
@@ -17,7 +18,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "check": "yarn lint && yarn typecheck && yarn test:coverage && yarn test:e2e && yarn build",
+    "check": "yarn lint && yarn typecheck && yarn api:check && yarn test:coverage && yarn test:e2e && yarn build && yarn bundle:check",
     "api:generate": "openapi-typescript docs/technical-reference/openapi.json -o src/api/generated/openapi.ts",
     "api:check": "yarn api:generate && git diff --exit-code -- src/api/generated/openapi.ts"
   },

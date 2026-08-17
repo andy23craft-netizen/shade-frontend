@@ -1,4 +1,4 @@
-.PHONY: install preview lint run typecheck test build check
+.PHONY: install preview lint run typecheck test build bundle-check check
 
 install:
 	yarn install --immutable
@@ -20,6 +20,9 @@ test:
 
 build:
 	yarn build
+
+bundle-check:
+	yarn bundle:check
 
 check:
 	yarn check

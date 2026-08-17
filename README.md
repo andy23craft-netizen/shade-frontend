@@ -80,6 +80,35 @@ For production builds, set `VITE_API_SECRET_KEY` in the build environment before
 running `make build`. Release artifacts must not include the `.env` file itself
 — only built static assets under `dist/`.
 
+### Quality gate and continuous integration
+
+`make check` is the canonical local and CI quality gate. It runs ESLint, TypeScript,
+OpenAPI generated-type drift checking, Vitest with enforced coverage thresholds,
+Playwright browser and accessibility tests, the production build, and the main-entry
+bundle-size check.
+
+Playwright requires Chromium and its Linux system dependencies. On a machine with
+the required privileges, install them with:
+
+```sh
+yarn playwright install --with-deps chromium
+```
+GitHub Actions runs the same `make check` gate for pull requests and pushes to
+`main`. CI uses the Node version from `.nvmrc`, Yarn through Corepack, and
+`yarn install --immutable`; dependency caching does not replace the immutable
+install.
+
+The main JavaScript entry has a gzip soft-warning budget of 120 kB and a hard
+failure budget of 150 kB. Check it separately after a production build with:
+
+```sh
+make bundle-check
+```
+
+CI uses VITE_API_SECRET_KEY=test-api-token as a non-secret build/test value.
+Browser tests use mocked API fixtures and do not require a live protected backend
+or the real deployment Bearer token.
+
 ## Production connectivity (release blocker)
 
 Production must choose and verify one connectivity arrangement before release:
@@ -107,6 +136,22 @@ Before production release, the deployment environment must:
 - apply appropriate browser security headers, including HSTS where applicable;
 - provide SPA fallback routing to `index.html` for client-side routes; and
 - serve the deployment-managed runtime configuration with production values.
+- provision the production `.env` beside the deployed application `.DLL` files;
+  the frontend build and CI pipeline do not create, package, upload, or deploy that
+  file.
+  
+### CI artifacts and privacy
+
+The default CI workflow does not retain `dist/`, coverage output, Playwright
+reports, traces, screenshots, videos, `.env` files, database files, backup dumps,
+or other runtime data.
+
+If CI artifact retention is added later, retained artifacts must be reviewed
+before upload and must exclude secrets and secret-bearing environment files,
+database or backup contents, runtime logs, diagnostic payloads, and other
+sensitive local data. Backup contents must never be uploaded as CI artifacts.
+
+
 
 These requirements are deployment assumptions, not frontend implementations.
 The deployment repository and FEAT-16 own the concrete web-server, TLS, CSP,
