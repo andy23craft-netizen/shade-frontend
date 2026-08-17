@@ -12,6 +12,9 @@ host `make run` / `make preview` / `make build` commands. Do not reinvent those 
 Packaging the same workflows in a Podman image is this ticket; versioned release tarballs remain FEAT-16. Do not pull
 FEAT-16 through FEAT-21 product or packaging work into FEAT-15.
 
+Do not confuse repository `ci/` with FEAT-14 GitHub Actions. The quality pipeline is `.github/workflows/check.yml`.
+`ci/` is copy-pasted container/preview starting material for this ticket (see Current baseline).
+
 ## Runtime and contract facts for this ticket
 
 Treat these as complementary, not interchangeable:
@@ -54,23 +57,63 @@ Already in place and should be reused (not rebuilt):
 - Registered product routes (SPA fallback must serve `index.html` for each, plus `*` not-found): `/`, `/books`,
   `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`, `/books/:bookId/edit`,
   `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`, `/shelves`, `/admin/deleted`, `/admin/backup`.
-- No `Containerfile`, `.containerignore` / `.dockerignore`, or Podman Make targets exist yet. README does not document
-  container build, start, config injection, or cleanup.
+
+Copied container starting material under `ci/` (present, not wired, not Shade-ready as-is):
+
+- `ci/Containerfile` -- runtime-only `nginx:1.31-alpine` image. HTTP on 8080; TLS stays external. No Node/Yarn stage;
+  does not compile the app. Expects a host-built static tree in the `ci/artifacts` build context (`PUBLISH_DIR=publish`)
+  and comments that `make publish-local` / `build-local` copy `nginx.conf` into that context. Those Make targets do not
+  exist here; this repo emits `dist/` via `make build`. Healthcheck is `wget` against `http://127.0.0.1:8080/` only.
+- `ci/nginx.conf` -- SPA `try_files` fallback and long-lived `/assets/` cache (fits Vite hashed output). Comments still
+  mention TanStack Router (this app uses React Router 7). No explicit revalidate headers for `index.html` or
+  `config.js`.
+- `ci/artifacts/.dockerignore` -- build context is `ci/artifacts`; only `publish/` and `nginx.conf` are copied. There is
+  no `publish/` tree in this repo today.
+
+These files were copy-pasted from another project. They are a static-preview sketch, not a finished Shade definition.
+There are still no Podman Make targets, no repo-root `.containerignore` / `.dockerignore`, and README does not document
+container build, start, config injection, or cleanup. Generated staging trees under `ci/artifacts/` are not gitignored.
+
+### Copied `ci/` fitness (keep, adapt, or delete)
+
+Keep the nginx SPA preview pattern only if it remains the cheapest way to serve a host-built `dist/`. It is useful as
+a sketch for HTTP-only preview, SPA fallback, hashed-asset caching, a small build context, and a credential-free `/`
+probe. It is **not** ready-to-go:
+
+- **No development mode.** FEAT-15 still requires Vite `make run` behavior (hot reload, fail-fast missing token,
+  `public/config.js`). The copied image cannot do that.
+- **Wrong publish contract.** Adapt to `make build` / `dist/`, or replace. Do not keep foreign names (`publish/`,
+  `publish-local`, `build-local`) once a Shade path is chosen.
+- **No start-time runtime-config injection.** `COPY` of a baked `config.js` into the image is not enough; `apiBaseUrl`
+  and optional diagnostics must change at container start without rebuilding.
+- **Healthcheck is incomplete.** Ticket requires frontend entry **and** runtime-config availability (for example
+  `config.js`), still without calling protected API routes.
+- **Preview cache is incomplete.** Revalidate `index.html` and `config.js`; the copied conf only special-cases
+  `/assets/`.
+- **No Make targets or operator docs.**
+
+If adapting the copied files costs more than a Shade-shaped Containerfile (or a multi-target file covering dev plus
+preview), delete `ci/` contents and replace them. Do not preserve a foreign layout out of inertia.
 
 ## Remaining scope
 
-- Add a Podman-compatible container definition and ignore file.
-- Support both the documented development workflow and serving an optimized `dist/` build for preview.
+- Ship a Podman-compatible container definition and ignore file. Start from `ci/` only when the fitness notes above
+  still hold after a Shade adaptation; otherwise replace or delete that tree.
+- Support both the documented development workflow and serving an optimized `dist/` build for preview. Development is
+  not covered by the copied runtime-only image; preview may reuse the nginx pattern if adapted to `dist/`, start-time
+  `config.js` injection, React Router routes, and the cache/health rules below.
 - Inject public runtime configuration (`apiBaseUrl` and optional `diagnostics`) when the container starts so those
-  values can change without rebuilding the image. Do not inject application release through runtime config.
+  values can change without rebuilding the image. Do not inject application release through runtime config. Do not treat
+  a host-copied `config.js` baked into image layers as satisfying this.
 - **Copy or bind-mount** the repo-root `.env` into the container at startup so Vite can read `VITE_API_SECRET_KEY`
   during development and in-container production builds. Operators maintain a local gitignored `.env`; prefer bind-mount
   over baking `.env` into image layers. Do not log the token value. Preview of an already-built `dist/` uses the token
   baked at build time (same as non-container production builds).
 - Serve client routes with an SPA fallback and appropriate preview cache behavior for every registered product path
-  listed above.
+  listed above (revalidate `index.html` and `config.js`; hashed `dist/assets/` may be long-lived).
 - Add Make targets and documentation for image build, development startup, preview startup, configuration, and cleanup.
-  Keep existing host `make run` / `make preview` / `make build` working for non-container use.
+  Keep existing host `make run` / `make preview` / `make build` working for non-container use. If a staging directory
+  under `ci/artifacts/` is used, gitignore generated trees so `dist/` copies and secrets are not committed.
 - Add a container health/smoke check that does not require storing protected credentials in the image (frontend entry
   and runtime config availability; do not call protected API routes from the healthcheck).
 - Document clearly that this image is a local/preview convenience and not the production deployment unit. Another
@@ -94,6 +137,8 @@ Already in place and should be reused (not rebuilt):
   in the image.
 - Container startup and shutdown do not leave generated root-owned repository files.
 - `make check` passes from a clean checkout.
+- Foreign copy-paste leftovers are gone from the shipped definition: no TanStack Router comments, no `publish-local` /
+  `build-local` / `publish/` names unless they are real Shade targets, and no unused `ci/` files left "just in case".
 
 ## Plan coverage
 
