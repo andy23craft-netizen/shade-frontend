@@ -5,14 +5,15 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline -- start from this file alone. Attach the
-on-demand docs listed in section 8 only when the current ticket needs
-them; do not re-synthesize those sources here.
+the dated codebase baseline -- start from this file alone. It does not
+depend on any other LLM prompt or agents guide. Attach the on-demand
+docs listed in section 8 only when the current ticket needs them; do
+not re-synthesize those sources here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
 
-Context pack version: 2026-08-16. Refresh this prompt when operating
+Context pack version: 2026-08-17. Refresh this prompt when operating
 rules, non-negotiables, or the known baseline change.
 
 The **current feature ticket is supplied separately** after this
@@ -51,14 +52,14 @@ If test/workflow/accessibility baseline behavior is relevant:
   - preserve the existing Vitest / Testing Library / renderAppTree and Playwright e2e architecture;
     do not invent a parallel fake-API stack
 
-If CI, Podman, or release artifacts (FEAT-14 through FEAT-16):
+If Podman or release artifacts (FEAT-15 / FEAT-16):
   - the current ticket
   - relevant sections of docs/product-docs/PLAN.md
 
-If browser-support, performance, or production-host security baselines are needed:
-  - docs/baselines/FEAT-03_performance.md
+If browser-support or production-host security baselines are needed:
   - docs/baselines/FEAT-12_browser-support.md
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
+  - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
 If later product tickets (FEAT-17 through FEAT-21):
   - the current ticket
@@ -204,7 +205,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 `docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI:
 `/docs` and `/openapi.json` on the running API.
 
-**Known baseline (as of 2026-08-16 -- verify before editing):**
+**Known baseline (as of 2026-08-17 -- verify before editing):**
 
 -   MVP product UI is shipped: application shell and shared primitives;
     runtime config and build-time Bearer auth; typed OpenAPI + React Query
@@ -229,11 +230,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     explicit shelf; Add/Edit Book block the page when shelves fail to
     load). Loan helpers (`loansApi.list({ bookId })`, `loansApi.get` /
     `useLoan`, Check In deep-link, `booksApi.list({ isbn })` /
-    `useBooks({ isbn })`) remain in place. Remaining tickets are
-    `FEAT-14` through `FEAT-21` under `docs/tickets/`. FEAT-13 workflow
-    and accessibility testing is complete. Prefer ticket presence under
-    `docs/tickets/` over `docs/ToDo.md` when judging what is still open
-    (the checklist can lag).
+    `useBooks({ isbn })`) remain in place.     Remaining tickets are `FEAT-15` through `FEAT-21` under
+    `docs/tickets/`. FEAT-13 workflow and accessibility testing and
+    FEAT-14 CI packaging are complete (those ticket files are removed).
+    Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md`
+    when judging what is still open (`docs/ToDo.md` still lists
+    FEAT-14).
 -   Optional runtime-configured diagnostic reporting lives in
     `src/diagnostics/diagnosticReporter.ts`
     (`createDiagnosticReporter` from `RuntimeConfig.diagnostics` +
@@ -260,12 +262,13 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 -   Performance re-check: the 2,000-book typed-helper fixture completed
     in 6 ms and the 50-book paginated slice in 2 ms against the 250 ms
     practical budget. Production main JS measured 429.15 kB raw /
-    124.98 kB gzip, above the earlier 120 kB soft-warning threshold but
-    below the 150 kB hard-failure candidate; scanner code remains
-    isolated in its lazy-loaded 481.64 kB / 126.53 kB gzip chunk. The
-    accepted baseline movement is documented in
-    `docs/baselines/FEAT-03_performance.md`; FEAT-14 owns future
-    bundle-budget enforcement.
+    124.98 kB gzip, above the 120 kB gzip soft-warning threshold but
+    below the 150 kB hard-failure budget. Scanner code remains isolated
+    in its lazy-loaded 481.64 kB / 126.53 kB gzip chunk. FEAT-14 shipped
+    main-entry gzip enforcement via `scripts/checkBundleSize.mjs`
+    (`yarn bundle:check` / `make bundle-check`, included in
+    `make check`): warn above 120 kB, fail above 150 kB. Do not invent a
+    second bundle-budget tool.
 -   Live contract smoke compared the representative running backend
     OpenAPI with `docs/technical-reference/openapi.json`; path/schema
     sets matched and canonical JSON had no diff. The running API did not
@@ -279,24 +282,36 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     serving, installation, and rollback. Do not implement
     deployment-owned HTTPS/CSP rollout early.
 -   FEAT-13 workflow and accessibility testing is complete. The quality
-    gate now includes lint, strict type checking, the Vitest suite with
-    enforced global coverage thresholds, Playwright browser journeys,
-    automated axe accessibility checks, and the production build.
-    `yarn test:e2e` remains available for targeted browser runs, and
-    `make check` is the authoritative full local gate. The completed
-    Playwright baseline uses the existing `e2e/` support architecture,
-    including the shared stateful mock API and axe helper; do not invent
-    a parallel fake-API stack. Browser journeys cover manual book
-    creation and the book lifecycle, including checkout, check-in,
-    mark-read, delete, and restore through their dedicated endpoints.
-    Automated accessibility coverage exercises critical application
-    routes and administrative/check-in surfaces. The documented
-    coverage thresholds are enforced rather than treated as advisory
-    (statements 87%, branches 80%, functions 92%, lines 87%). See
-    `docs/baselines/FEAT-13_testing.md` for the completed baseline.
-    FEAT-14 owns CI packaging, FEAT-15 Podman, FEAT-16 release
-    artifacts/deployment rollout, and FEAT-17 through FEAT-21 remain
-    product follow-ons. Do not implement those future tickets early.
+    gate now includes lint, strict type checking, generated OpenAPI
+    drift checking (`yarn api:check`), the Vitest suite with enforced
+    global coverage thresholds, Playwright browser journeys, automated
+    axe accessibility checks, the production build, and main-entry
+    bundle-size enforcement. `yarn test:e2e` remains available for
+    targeted browser runs, and `make check` is the authoritative full
+    local and CI gate. The completed Playwright baseline uses the
+    existing `e2e/` support architecture, including the shared stateful
+    mock API and axe helper; do not invent a parallel fake-API stack.
+    Browser journeys cover manual book creation and the book lifecycle,
+    including checkout, check-in, mark-read, delete, and restore through
+    their dedicated endpoints. Automated accessibility coverage
+    exercises critical application routes and administrative/check-in
+    surfaces. The documented coverage thresholds are enforced rather
+    than treated as advisory (statements 87%, branches 80%, functions
+    92%, lines 87%). See `docs/baselines/FEAT-13_testing.md` for the
+    completed testing baseline.
+-   FEAT-14 continuous-integration quality pipeline is complete (ticket
+    file removed). Shipped `.github/workflows/check.yml` for pull
+    requests and pushes to `main` (Node from `.nvmrc`, Corepack/Yarn,
+    immutable install, Playwright Chromium, dummy
+    `VITE_API_SECRET_KEY=test-api-token`, canonical `make check`) and
+    `scripts/checkBundleSize.mjs` as described above. The default
+    workflow does not retain `dist/`, coverage, Playwright reports, or
+    secrets as artifacts. Host-owned HTTPS/CSP, SPA fallback, and
+    production configuration notes live in `README.md` and
+    `docs/MAINTAINERS.md`. FEAT-15 owns Podman, FEAT-16 owns release
+    artifacts and deployment-owned HTTPS/CSP rollout, and FEAT-17
+    through FEAT-21 remain product follow-ons. Do not implement those
+    future tickets early.
 -   Dashboard `/` via `DashboardPage` + `useDashboard` /
     `dashboardApi.get` (FEAT-17 will move About to `/` and relocate the
     dashboard). Displays API-provided Collection, Circulation, and
@@ -447,8 +462,7 @@ index.html
     -   `scripts/contractSmoke.test.ts` OpenAPI path/type smoke
         (includes `/shelves`, `/shelves/{shelf_id}`, `/version`,
         wishlist and dashboard-report paths plus existing lifecycle
-        routes); performance notes in
-        `docs/baselines/FEAT-03_performance.md`
+        routes)
 -   React Query is mounted and complete for server state:
     -   `createQueryClient()` sets `staleTime` 30s,
         `refetchOnWindowFocus`, `refetchOnReconnect`, query retry that
@@ -718,7 +732,12 @@ index.html
 -   Local setup: copy `.env.example` to `.env` and set
     `VITE_API_SECRET_KEY` to match the backend `API_SECRET_KEY`; restart
     the dev server after changing `.env`. Optional same-origin proxy:
-    `SHADE_API_PROXY=1 make run`. Production build inspection:
+    `SHADE_API_PROXY=1 make run` (optional `SHADE_API_PROXY_TARGET`).
+    The proxy forwards `/health`, `/books`, `/loans`, `/dashboard`,
+    `/backup`, `/docs`, `/redoc`, and `/openapi.json` only (not
+    `/shelves` or `/version`). Playwright Chromium must be installed
+    once per machine (`yarn playwright install --with-deps chromium`)
+    before `yarn test:e2e` / `make check`. Production build inspection:
     `scripts/productionBuildTokenInspection.test.ts` asserts `.env` is
     not copied into `dist/` and that `VITE_API_SECRET_KEY` is embedded
     in generated JS bundles.
@@ -740,7 +759,10 @@ handling) / `CheckinPage` / `checkinModel` / `checkinEligibility` /
 `ReadingEditPage` / `readingEditModel` / `ShelvesPage` / `shelfDisplay`
 / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations /
 `useInfiniteBooks` / `useInfiniteLoans` / `useInfiniteScrollTrigger` /
-`booksListModel` / `BooksListControls`. Prefer files and command output
+`booksListModel` / `BooksListControls`. FEAT-14 CI packaging is
+complete: keep `.github/workflows/check.yml` and
+`scripts/checkBundleSize.mjs` in the canonical `make check` gate; do
+not add secret-bearing CI artifacts. Prefer files and command output
 supplied in the conversation over this snapshot when they disagree.
 
 Typical commands:
@@ -749,9 +771,11 @@ Typical commands:
 nvm use && corepack enable && make install
 cp -n .env.example .env
 # edit .env: set VITE_API_SECRET_KEY to match backend API_SECRET_KEY
+yarn playwright install --with-deps chromium
 make run
 make check
 make build
+make bundle-check
 yarn test:coverage
 yarn test:e2e
 yarn api:generate
@@ -915,7 +939,12 @@ merely to make a ticket pass.
     `renderAppTree` coverage plus Playwright `e2e/` with the shared
     stateful mock API and axe helper. Browser journeys and automated
     accessibility suites are part of `make check`; do not remove them
-    from the quality gate or invent a parallel fake-API stack. Never
+    from the quality gate or invent a parallel fake-API stack. FEAT-14
+    CI packaging is complete: keep `.github/workflows/check.yml` and
+    `scripts/checkBundleSize.mjs` in the canonical gate; do not add
+    secret-bearing CI artifacts. Do not pull FEAT-15 Podman, FEAT-16
+    versioned release artifacts or deployment-owned HTTPS/CSP, or
+    FEAT-17 through FEAT-21 product work into unrelated changes. Never
     simulate restore, checkout, check-in, or initial mark-read with
     generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
@@ -948,12 +977,12 @@ when needed.
 Do not expand a ticket into out-of-scope features. Do not implement
 future tickets prematurely.
 
-FEAT-13 workflow and accessibility tests are complete. Remaining
-tickets begin with `FEAT-14` and continue through `FEAT-21` under
-`docs/tickets/`. When no current ticket is supplied, do not guess which
-remaining ticket to implement; ask for the next ticket. The supplied
-ticket's acceptance criteria are authoritative unless they contradict
-the backend contract or established architecture.
+FEAT-13 workflow and accessibility tests and FEAT-14 CI packaging are
+complete. Remaining tickets begin with `FEAT-15` and continue through
+`FEAT-21` under `docs/tickets/`. When no current ticket is supplied, do
+not guess which remaining ticket to implement; ask for the next ticket.
+The supplied ticket's acceptance criteria are authoritative unless they
+contradict the backend contract or established architecture.
 
 ------------------------------------------------------------------------
 
@@ -1014,10 +1043,11 @@ repo before editing.
 
   Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,library.lifecycle}.spec.ts`, `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in `make check`)
 
-  Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`
+  Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`,
+                `.github/workflows/check.yml`, `scripts/checkBundleSize.mjs`
 
-  Baselines /   `docs/baselines/FEAT-03_performance.md`, `docs/baselines/FEAT-06_scanner-support.md`, `docs/baselines/FEAT-12_browser-support.md`, `docs/baselines/FEAT-13_testing.md`, `scripts/contractSmoke.test.ts`
-  smoke         
+  Baselines /   `docs/baselines/FEAT-06_scanner-support.md`, `docs/baselines/FEAT-12_browser-support.md`,
+  smoke         `docs/baselines/FEAT-13_testing.md`, `scripts/contractSmoke.test.ts` 
   --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Feature route ownership (all complete unless noted): books list/detail;
@@ -1034,10 +1064,11 @@ performance/contract re-check, and production-host security ownership
 notes); shelves catalog (`ShelvesPage` / `shelfDisplay` /
 `shelfFormModel`); FEAT-13 workflow/accessibility quality-gate coverage
 (Vitest coverage thresholds, Playwright journeys, axe checks, and
-`make check` integration). Remaining tickets begin with FEAT-14. Later
-product tickets: FEAT-17 About homepage, FEAT-18 category filter UI,
-FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only
-alternate-copy UX.
+`make check` integration); FEAT-14 CI packaging (`.github/workflows/check.yml`
+and `scripts/checkBundleSize.mjs`). Remaining tickets begin with FEAT-15
+(Podman), then FEAT-16 (release artifacts). Later product tickets:
+FEAT-17 About homepage, FEAT-18 category filter UI, FEAT-19 wishlists,
+FEAT-20 dashboard reports, FEAT-21 display-only alternate-copy UX.
 
 ------------------------------------------------------------------------
 
@@ -1096,12 +1127,15 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining current tickets under
-                                  `docs/tickets/`: `FEAT-14_...` through
-                                  `FEAT-21_...`; FEAT-13 is complete
+                                  `docs/tickets/`: `FEAT-15_...` through
+                                  `FEAT-21_...`; FEAT-13 and FEAT-14 are
+                                  complete (those ticket files are removed)
 
-  Performance baselines (large    `docs/baselines/FEAT-03_performance.md`
-  library / bundle)               (re-check recorded; FEAT-14 owns
-                                  future bundle-budget enforcement)
+  Bundle budget / CI              Recorded in this master context.
+                                  `scripts/checkBundleSize.mjs` (warn
+                                  120 kB gzip, fail 150 kB).
+                                  `.github/workflows/check.yml` runs
+                                  `make check` (FEAT-14 complete)
 
   Scanner support matrix / manual `docs/baselines/FEAT-06_scanner-support.md`
   device checklist                
@@ -1124,7 +1158,8 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
-baseline.
+baseline. Do not treat another project prompt or agents guide as
+required reading.
 
 ------------------------------------------------------------------------
 

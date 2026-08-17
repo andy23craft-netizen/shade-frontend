@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-16 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-17 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -47,11 +47,17 @@ browser journeys, and regression coverage thresholds. Verification and manual-ga
 remaining authoritative for hardware- and browser-specific manual checks. Product routes are fully implemented
 (no unfinished `RoutePlaceholder` feature pages remain).
 
-**Next:** Later tickets under `docs/tickets/` cover About as homepage with relocated dashboard (FEAT-17), collection
-category filter UI (FEAT-18), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout
-alternate-copy UX (FEAT-21). FEAT-14 CI packaging is complete. FEAT-15 owns Podman, and FEAT-16 owns release 
-artifacts and rollout. Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in `README.md` and
-`docs/MAINTAINERS.md`.
+FEAT-14 continuous-integration quality pipeline (ticket file removed after completion). Shipped
+`.github/workflows/check.yml` for pull requests and pushes to `main` (Node from `.nvmrc`, Corepack/Yarn, immutable
+install, Playwright Chromium, dummy `VITE_API_SECRET_KEY=test-api-token`, canonical `make check`) and main-entry gzip
+budget enforcement via `scripts/checkBundleSize.mjs` (`yarn bundle:check` / `make bundle-check`, included in
+`make check`). The default workflow does not retain `dist/`, coverage, Playwright reports, or secrets as artifacts.
+Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in `README.md` and `docs/MAINTAINERS.md`.
+
+**Next:** Remaining tickets under `docs/tickets/` are Podman development/preview (FEAT-15), versioned release
+artifacts (FEAT-16), About as homepage with relocated dashboard (FEAT-17), collection category filter UI (FEAT-18),
+wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX (FEAT-21).
+
 Notable shipped behaviors agents should preserve:
 
 - Diagnostics: `createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `APP_VERSION` (from
@@ -319,8 +325,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
-  dashboard, health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, validation/error schemas, enums). Book payloads use
-  `shelf_name` (string); there is no hard-coded `Shelf` enum.
+  dashboard, health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, validation/error schemas, enums). Book
+  payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
@@ -391,6 +397,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   navigation (including Shelves), admin/settings group, `Outlet` main region, footer (`Release ${APP_VERSION}` from
   `package.json`, plus `API {version}` from `useVersion` / `GET /version` when available), document title, and heading
   focus on location change.
+- `src/layout/package.json`: Nested npm manifest next to `AppShell`; not a Yarn workspace and not imported by the
+  application. Ignore it.
 
 ### Feature Modules
 
@@ -604,8 +612,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `createApi`, and redaction coverage.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
   `dashboardApi.test.ts` / `healthApi.test.ts` / `versionApi.test.ts` / `backupApi.test.ts`: Typed route helper coverage
-  including lookup coverage including lookup `found: false`, mark-read `{}`, omitted check-in body, restore/checkout/check-in
-  `409` bodies, and a 2_000-item list timing guard.
+  including lookup `found: false`, mark-read `{}`, omitted check-in body, restore/checkout/check-in `409` bodies, and a
+  2_000-item list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
   Query client defaults, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
@@ -670,8 +678,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist
 - `docs/baselines/FEAT-13_testing.md`: Automated quality-gate baseline (coverage floors, Playwright suite scope,
   accessibility ownership, and manual-gate handoff to FEAT-06 / FEAT-12)
-- `playwright.config.ts`: Playwright browser-journey config (Chromium; local Vite webServer on `127.0.0.1:4173` with
-  `VITE_API_SECRET_KEY`; HTML reporter; CI retries). Included in `make check` via `yarn test:e2e`.
+- `playwright.config.ts`: Playwright browser-journey config (Chromium; Vite `yarn dev` webServer on `127.0.0.1:4173`
+  with `VITE_API_SECRET_KEY=test-api-token`; list + HTML reporters; CI retries and a single CI worker). Included in
+  `make check` via `yarn test:e2e`.
 - `e2e/dashboard.smoke.spec.ts`: Dashboard browser smoke (heading/title, null-average and populated fixtures, axe
   serious/critical gate) via mocked API
 - `e2e/book.creation.spec.ts`: Manual book-creation journey through `/books/new` into the created detail page
@@ -712,38 +721,49 @@ yarn test:e2e
   -> runs e2e/*.spec.ts against Chromium
 
 make check / yarn check
-  make check / yarn check
   -> lint -> typecheck -> api:check -> test:coverage -> test:e2e -> build -> bundle:check
 ```
 
 ### Dependencies and Commands
 
 - `package.json`: Package metadata (canonical frontend `version` drives `APP_VERSION` and the footer `Release` label),
-  Node and Yarn requirements, scripts (including `api:generate` / `api:check`), runtime dependencies, and development
-  dependencies.
+  Node and Yarn requirements, scripts (including `api:generate` / `api:check`, `test:e2e`, `bundle:check`), runtime
+  dependencies, and development dependencies.
 - `yarn.lock`: Yarn-generated exact dependency resolutions and checksums. Never edit it manually.
-- `Makefile`: Stable wrappers around Yarn scripts for installation, development, checks, tests, and builds.
+- `Makefile`: Stable wrappers around Yarn scripts for installation, development, checks, tests, builds, and
+  `bundle-check`.
 - `.nvmrc`: Exact Node.js version used by `nvm use`.
 - `.yarnrc.yml`: Configures Yarn to use the `node_modules` linker instead of Plug'n'Play.
 
 ### Build, Type Checking, and Linting
 
-- `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests, global test setup, V8 coverage
-  thresholds, and an optional same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`).
-- `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores generated directories and
-  treats warnings as failures through the package script.
+- `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests (`src/**` and `scripts/**` test
+  files), global test setup, V8 coverage thresholds, `__APP_VERSION__` from `package.json`, and an optional
+  same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
+  `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, and `/openapi.json` only (not `/shelves` or
+  `/version`).
+- `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`, and
+  `node_modules/` and treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
 - `tsconfig.app.json`: Strict browser and React type checking for `src/`. It includes Vite, Vitest, and jest-dom types
   and emits no files.
-- `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts`. It emits no files.
+- `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts` and `scripts/**/*.ts`. It emits no files.
+- `scripts/checkBundleSize.mjs`: Main-entry gzip budget enforcement after `dist/` exists; warns above 120 kB and fails
+  above 150 kB (`yarn bundle:check` / `make bundle-check`; also part of `make check`).
 
 ### Repository Guidance
 
 - `README.md`: Concise human onboarding for prerequisites, setup, development, local CORS-or-proxy options, `.env`
-  token configuration, checks, and production builds. Also documents the production-host security boundary (HTTPS/CSP /
-  SPA fallback / production config serving owned by deployment / FEAT-16).
+  token configuration, checks, Playwright Chromium install, CI, and production builds. Also documents the
+  production-host security boundary (HTTPS/CSP / SPA fallback / production config serving owned by deployment /
+  FEAT-16).
+- `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`. Uses the Node
+  version from `.nvmrc`, Corepack/Yarn, immutable `yarn install`, Playwright Chromium
+  (`yarn playwright install --with-deps chromium`), `VITE_API_SECRET_KEY=test-api-token`, and `make check`. Does not
+  upload `dist/`, coverage, Playwright reports, or secrets as artifacts.
 - `.env.example`: Committed template for `VITE_API_SECRET_KEY`; copy to gitignored `.env` for local dev and builds.
-- `.gitignore`: Excludes dependencies, generated output, secrets, local data, editor files, and OS metadata.
+- `.gitignore`: Excludes dependencies, generated output (`dist/`, `coverage/`, `.vite/`, `playwright-report/`,
+  `test-results/`), secrets, local data, editor files, and OS metadata.
 - `.gitattributes`: Normalizes text files to LF line endings and marks common binary extensions.
 - `.cursor/rules/documentation-style.mdc`: Markdown punctuation, line-length, and newline rules for Cursor.
 - `.cursor/rules/grep-tool.mdc`: Requires `grep` rather than the `rg` shell command in this environment.
@@ -757,8 +777,8 @@ another project prompt as required reading before starting. Attach the items bel
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
 - `docs/tickets/FEAT-15_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 is complete; its ticket file is removed). Prefer ticket presence under `docs/tickets/` over
-  `docs/ToDo.md` when judging what is still open.
+  criteria (FEAT-13 and FEAT-14 are complete; those ticket files are removed). Prefer ticket presence under
+  `docs/tickets/` over `docs/ToDo.md` when judging what is still open (`docs/ToDo.md` still lists FEAT-14).
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
   pending/blocked/not tested as recorded).
@@ -795,9 +815,11 @@ Common commands:
 - `make typecheck`: Runs TypeScript build mode across both TypeScript configurations.
 - `make test`: Runs all Vitest tests once.
 - `yarn test:watch`: Runs Vitest in watch mode during development.
-- `yarn test:e2e`: Runs Playwright browser journeys under `e2e/` (also part of `make check`).
-- `yarn test:coverage`: Runs Vitest with V8 coverage and enforced global thresholds (also part of `make check`
+- `yarn test:e2e`: Runs Playwright browser journeys under `e2e/` (also part of `make check`). Requires Chromium via
+  `yarn playwright install --with-deps chromium` on a new machine.
+- `yarn test:coverage`: Runs Vitest with V8 coverage and enforced global thresholds (also part of `make check`).
 - `make build`: Type-checks and writes an optimized application to `dist/`.
+- `make bundle-check`: Enforces the main-entry gzip budget against an existing `dist/` (`yarn bundle:check`).
 - `make check`: Runs lint, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright e2e, the
   production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
@@ -856,14 +878,12 @@ make build
   create/edit/delete with system-shelf protection; book forms use API-fed pickers with `shelf_name`, never shelf CRUD
   on Add/Edit Book). FEAT-13 test infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
   coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced coverage floors,
-  and `make check` integration (`test:coverage` + `test:e2e`). Extend those suites rather than inventing a parallel
-  fake-API stack or removing them from the gate. Do not pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16
-  deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product work into unrelated changes. Never simulate
-  restore, checkout, check-in, or initial mark-read with generic `PATCH`.
-  - `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`; uses the pinned
-  Node/Yarn toolchain, immutable dependency installation, Playwright Chromium dependencies, a dummy build-time API
-  token, and the canonical `make check` command.
-- `scripts/checkBundleSize.mjs`: Main-entry gzip budget enforcement; warns above 120 kB and fails above 150 kB.
+  and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites rather than
+  inventing a parallel fake-API stack or removing them from the gate. FEAT-14 CI packaging is complete: keep
+  `.github/workflows/check.yml` and `scripts/checkBundleSize.mjs` in the canonical gate; do not add secret-bearing CI
+  artifacts. Do not pull FEAT-15 Podman, FEAT-16 versioned release artifacts or deployment-owned HTTPS/CSP, or
+  FEAT-17 through FEAT-21 product work into unrelated changes. Never simulate restore, checkout, check-in, or
+  initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
