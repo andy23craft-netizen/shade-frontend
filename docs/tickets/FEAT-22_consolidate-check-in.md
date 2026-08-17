@@ -14,7 +14,7 @@ FEAT-08 check-in and loan history are complete (`CheckinPage`, `checkinModel`, `
 homepage, FEAT-18 collection filters, FEAT-19 wishlists, FEAT-20 dashboard reports, or FEAT-21 display-only alternate
 copies into this ticket.
 
-Sibling open tickets still mention `/checkin` in planned copy (FEAT-15 route lists, FEAT-17 About links and nav,
+Sibling open tickets still mention `/checkin` in planned copy (FEAT-17 About links and nav,
 FEAT-19 primary nav). Update those tickets in the same change so later work does not reintroduce the route.
 
 ## Contract references
@@ -151,7 +151,6 @@ out of `routeMetadata`.
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 | `docs/product-docs/PLAN.md` | Target IA: drop `/checkin` as a user-facing destination; check-in lives on `/loans`. Shell persistent access: Dashboard, Books, Add Book, Check Out, Loans (no Check In). Workstream 7 deliverable becomes "check-in on loan history" rather than a separate check-in page. |
 | `docs/MAINTAINERS.md` | Registered product routes: replace `/checkin` with the `/checkin` → `/loans` compatibility redirect if maintainers still list paths; primary IA is `/loans`. |
-| `docs/tickets/FEAT-15_podman-development-and-preview.md` | SPA route list: remove `/checkin` as a first-class path (redirect is enough for old URLs; `try_files` already covers unknown paths). |
 | `docs/tickets/FEAT-17_about-page.md` | How-to links and nav: check in via `/loans`, not `/checkin`. Do not require a Check In nav item. About copy can say check out on `/checkout` and return books on `/loans`. |
 | `docs/tickets/FEAT-19_wishlists.md` | Primary nav baseline: drop Check In. |
 

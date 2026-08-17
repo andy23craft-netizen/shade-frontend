@@ -12,7 +12,7 @@ not change the backend contract: checkout remains `POST /books/{id}/checkout`.
 FEAT-07 checkout is complete (`CheckoutPage`, `checkoutModel`, `useCheckoutBook`, ISBN Find, `412` `display_only`
 refetch/messaging). Book details already gates "Check Out" to active `available` books.
 
-Sibling tickets still describe `/checkout` as a live product page (FEAT-15 route lists, FEAT-17 About links and nav,
+Sibling tickets still describe `/checkout` as a live product page (FEAT-17 About links and nav,
 FEAT-19 primary nav, FEAT-21 alternate-copy UX, FEAT-22 check-in consolidation). Update those tickets in the same
 change so later work does not rebuild the page.
 
@@ -186,7 +186,6 @@ out of `routeMetadata`.
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 | `docs/product-docs/PLAN.md` | Target IA: drop `/checkout` as a user-facing destination; checkout lives on book details. Shell persistent access: drop Check Out (Dashboard, Books, Add Book, Loans -- plus Check In only until FEAT-22). Workstream 6 deliverables: dialog on details, required borrower, optional notes, computed now + one-year due date; no available-book selection page. |
 | `docs/MAINTAINERS.md` | Registered product routes: replace `/checkout` with the `/checkout` → `/books` (or details) compatibility redirect if maintainers still list paths. |
-| `docs/tickets/FEAT-15_podman-development-and-preview.md` | SPA route list: remove `/checkout` as a first-class path (redirect is enough for old URLs; `try_files` already covers unknown paths). |
 | `docs/tickets/FEAT-17_about-page.md` | How-to links and nav: check out from a book's details page, not `/checkout`. Do not require a Check Out nav item. |
 | `docs/tickets/FEAT-19_wishlists.md` | Primary nav baseline: drop Check Out. |
 | `docs/tickets/FEAT-21_display-only.md` | Rebase the planned alternate-copy UX onto `CheckoutDialog` / book details (links to another eligible copy's `/books/{id}`), not `/checkout` or Find-by-ISBN. Keep **412** messaging. Do not implement substitutes in FEAT-23. |

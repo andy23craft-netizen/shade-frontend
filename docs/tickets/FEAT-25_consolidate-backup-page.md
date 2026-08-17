@@ -17,7 +17,7 @@ host cron). Today the browser page is the only operator backup path; removing it
 FEAT-10 backup download is complete (`BackupLibraryPage`, `backupApi.get`, programmatic `<a download>`, always
 `URL.revokeObjectURL`). Deleted-books admin on `/admin/deleted` is independent and stays.
 
-Sibling open tickets still mention `/admin/backup` or a browser backup download (FEAT-15 route lists, FEAT-16
+Sibling open tickets still mention `/admin/backup` or a browser backup download (FEAT-16
 production smoke and `Content-Disposition` access, FEAT-17 About links). Update those tickets in the same change so
 later work does not rebuild the page.
 
@@ -141,7 +141,6 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
 | `docs/product-docs/PLAN.md` | Target IA: drop `/admin/backup` (the duplicate bullet too). Workstream 9 already shipped FEAT-10; record that browser download is withdrawn in favor of backend FEAT-01 nightly fetch. Release-blocker / CORS notes that require JavaScript to read backup `Content-Disposition` should stop treating a browser download as a frontend deliverable (host CORS may still expose the header; the SPA does not consume it). |
 | `docs/MAINTAINERS.md` | Registered product routes: drop `/admin/backup`. Inventory: drop `backupApi` / `BackupLibraryPage`. Keep OpenAPI `/backup` as a backend path. |
 | `README.md` | Production connectivity: do not require "JavaScript access to the backup response `Content-Disposition` filename" as a frontend release blocker. Authenticated API access and CORS/preflight (or same-origin proxy) stay. Artifact/gitignore notes that mention backup dumps as non-deployable files can stay. |
-| `docs/tickets/FEAT-15_podman-development-and-preview.md` | SPA route list: remove `/admin/backup`. |
 | `docs/tickets/FEAT-16_versioned-release-artifacts.md` | Smoke checklist: drop "authenticated backup download" and backup-generation `500` / filename handling as *frontend* browser checks. Keep rejecting SQL dumps inside the static tarball. CORS `Content-Disposition` exposure is not a SPA requirement after this ticket. |
 | `docs/tickets/FEAT-17_about-page.md` | How-to links: restore under `/admin/deleted` only. Do not link `/admin/backup` or promise an in-app SQL download. Optional one-liner that library backups run on the API host is enough; do not document cron internals in About. |
 
