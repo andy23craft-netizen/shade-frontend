@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+#
+# Runtime-only image for local Podman. Expects a host-built static publish directory in the build context (see make
+# publish-local / build-local). Does not compile the app; there is no Node/Yarn stage. Serve HTTP only--TLS is external.
+
+# Check for new versions at: https://hub.docker.com/_/nginx
+FROM docker.io/library/nginx:1.27-alpine
+
+WORKDIR /usr/share/nginx/html
+EXPOSE 8080
+
+# Build context is ci/artifacts; PUBLISH_DIR is the host publish subdirectory.
+# nginx.conf is copied into the context by make publish-local.
+ARG PUBLISH_DIR=publish
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY ${PUBLISH_DIR}/ /usr/share/nginx/html/
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1
