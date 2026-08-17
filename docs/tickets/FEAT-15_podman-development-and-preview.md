@@ -20,159 +20,84 @@ Leave host `make run` / `make preview` / `make build` as they are.
 
 ## Dependencies
 
-FEAT-14 is complete. Reuse the existing `make check` gate (`yarn check`: lint, type-check, OpenAPI drift check, Vitest
-with V8 coverage, Playwright, production build, bundle-size check), dummy `VITE_API_SECRET_KEY` for CI-style builds, and
-host `make build` (`dist/`). Do not reinvent those suites or replace the host Make targets.
+FEAT-14 is complete. Reuse the existing `make check` gate, dummy `VITE_API_SECRET_KEY` for CI-style builds, and host
+`make build` (`dist/`). Do not reinvent those suites or replace the host Make targets.
 
 Versioned release tarballs remain FEAT-16. Do not pull FEAT-16 through FEAT-21 product or packaging work into FEAT-15.
 Do not write the multi-service Compose file here; the orchestrator / compose stack consumes this image.
 
-Do not confuse repository `ci/` with FEAT-14 GitHub Actions. The quality pipeline is `.github/workflows/check.yml`.
-`ci/` is copy-pasted container starting material for this ticket (see Current baseline).
-
-## Runtime and contract facts for this ticket
-
-Treat these as complementary, not interchangeable:
-
-- `public/config.js` -- public runtime config assigned to `window.__SHADE_CONFIG__`: `apiBaseUrl` and optional
-  `diagnostics: { enabled, endpoint }`. Not bundled. Omitted diagnostics default to disabled / null endpoint.
-- `package.json` `version` -- canonical application release (`APP_VERSION`, footer `Release` label). Injected at Vite
-  production-build time. It is **not** a runtime-config field; do not put `release` back into `config.js`. The Podman
-  image build must also tag the image with this same string (plus `latest`; see Remaining scope).
-- Repository-root `.env` (`VITE_API_SECRET_KEY`) -- gitignored Bearer token. Vite injects it at **build** time into JS
-  bundles. The container does not run Vite, so bind-mounting `.env` at container start does not change the baked token.
-  `.env.example` is the committed template.
-- `../technical-reference/API-for-FE.md` -- default API CORS allows only `http://localhost:5173` and
-  `http://127.0.0.1:5173`. A compose-published frontend origin must match an allowed exact origin, or the compose stack
-  must make the browser same-origin with the API. The optional `SHADE_API_PROXY=1` Vite proxy is host-local-dev only; it
-  is not available inside this static image. Do not invent credentialed CORS.
-
-### What the image must keep equivalent
-
-- Serve the same optimized `dist/` assets produced by `make build` / `yarn build` (not a second bundler, not `yarn
-  dev`).
-- SPA fallback must cover every registered product path (see Current baseline). Cache behavior: revalidate `index.html`
-  and `config.js`; hashed assets under `dist/assets/` may be long-lived.
-- Changing `apiBaseUrl` or optional diagnostics at container start must not require an image rebuild (compose needs this
-  so the browser can reach the sibling backend). Changing application release requires a rebuild because `APP_VERSION`
-  comes from `package.json` at Vite time.
-- HTTP only. TLS, reverse proxy, and compose networking belong to the orchestrator / production host, not this image.
-
 ## Current baseline
 
-Already in place and should be reused (not rebuilt):
+The image and Make targets are shipped. User-confirmed: `make container-build`, `make container-run`,
+`make container-stop`, and `make container-clean` work. Do not retest those commands for this ticket.
+
+Preserve (do not rebuild or regress):
 
 - Host quality gate and CI: `make check` / `.github/workflows/check.yml` (FEAT-14 complete).
 - Host local development: `make run` (Vite). Out of scope for this ticket.
-- Host commands this image builds on: `make build` (`dist/`), `make preview` (`yarn preview` of an existing production
-  build, host-only convenience), `make install` (`yarn install --immutable`).
-- Pinned toolchain: Node 26.7.0 (`.nvmrc` / `package.json` `engines`), Yarn 4.18.0 (`packageManager`), Corepack.
-- Runtime config: `public/config.js` (`apiBaseUrl`, optional `diagnostics`). Application release from `package.json` via
-  Vite `define` in `vite.config.ts`.
-- Auth: gitignored `.env` with `VITE_API_SECRET_KEY`; `readApiToken()` fail-fast at bootstrap of the **built** app;
-  dummy `test-api-token` is for CI only, not a substitute for an operator token when building a real compose image.
-- Optional same-origin proxy: `SHADE_API_PROXY=1` / `SHADE_API_PROXY_TARGET` in `vite.config.ts` -- host `make run`
-  only.
-- Registered product routes (SPA fallback must serve `index.html` for each, plus `*` not-found): `/`, `/books`,
+- Host commands the image builds on: `make build` (`dist/`), `make preview`, `make install`.
+- Pinned toolchain: Node 26.7.0, Yarn 4.18.0, Corepack.
+- Runtime config shape: `public/config.js` (`apiBaseUrl`, optional `diagnostics`). Application release from
+  `package.json` via Vite `define` (`APP_VERSION`). Do not put `release` back into `config.js`.
+- Auth: gitignored `.env` with `VITE_API_SECRET_KEY` injected at **build** time. The container does not run Vite, so
+  bind-mounting `.env` at container start does not change the baked token. Dummy `test-api-token` is for CI only.
+- Optional same-origin proxy: `SHADE_API_PROXY=1` -- host `make run` only; not available inside the static image.
+- Registered product routes (nginx `try_files` SPA fallback covers these plus `*` not-found): `/`, `/books`,
   `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`, `/books/:bookId/edit`,
   `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`, `/shelves`, `/admin/deleted`, `/admin/backup`.
 
-Copied container starting material under `ci/` (present, not wired, not Shade-ready as-is):
+Shipped container definition:
 
-- `ci/Containerfile` -- runtime-only `nginx:1.31-alpine` image. HTTP on 8080; TLS stays external. No Node/Yarn stage;
-  does not compile the app. Expects a host-built static tree in the `ci/artifacts` build context (`PUBLISH_DIR=publish`)
-  and comments that `make publish-local` / `build-local` copy `nginx.conf` into that context. Those Make targets do not
-  exist here; this repo emits `dist/` via `make build`. Healthcheck is `wget` against `http://127.0.0.1:8080/` only.
-- `ci/nginx.conf` -- SPA `try_files` fallback and long-lived `/assets/` cache (fits Vite hashed output). Comments still
-  mention TanStack Router (this app uses React Router 7). No explicit revalidate headers for `index.html` or
-  `config.js`.
-- `ci/artifacts/.dockerignore` -- build context is `ci/artifacts`; only `publish/` and `nginx.conf` are copied. There is
-  no `publish/` tree in this repo today.
+- `ci/Containerfile` -- runtime-only `nginx:1.31-alpine`. HTTP on 8080. Copies host-built `dist/`. No Node/Yarn/Vite
+  stage. Does not `COPY` `.env`. Healthcheck is `wget` against `http://127.0.0.1:8080/` and `/config.js` (no protected
+  API routes).
+- `ci/nginx.conf` -- React Router SPA `try_files` fallback; `Cache-Control: no-cache` for `index.html` and `config.js`;
+  long-lived `/assets/` cache for hashed Vite output.
+- `ci/container-entrypoint.sh` -- writes `/usr/share/nginx/html/config.js` at start from `SHADE_API_BASE_URL`,
+  `SHADE_DIAGNOSTICS_ENABLED` (`true`/`false`), and `SHADE_DIAGNOSTICS_ENDPOINT` (empty → `null`). Changing those
+  values does not require an image rebuild. Application release stays `package.json` `version` from the image build.
+- `.containerignore` -- build context is the repo root; only `dist/` and the `ci/` files above are included.
+- Make targets: `container-build` (runs `make build`, tags `shade-frontend:latest` and `shade-frontend:<package.json
+  version>`), `container-run` (port 8080, `--rm`, the runtime-config env vars above), `container-stop`,
+  `container-clean`.
+- Foreign copy-paste leftovers are gone from git (`publish/`, `publish-local`, `build-local`,
+  `ci/artifacts/.dockerignore`, TanStack Router comments). Staging under `ci/artifacts/` is not used.
 
-These files were copy-pasted from another project. The runtime-only nginx shape matches this ticket's goal (static site
-in compose, no Vite in the image). They are still not a finished Shade definition: no Podman Make targets, no repo-root
-`.containerignore` / `.dockerignore`, and README does not document image build, compose-oriented config, or cleanup.
-README today describes local Vite (`make run`) and production-host assumptions; it does not present **local
-development** and **deployed development** (Podman Compose) as the two ways to run this repo. Generated staging trees
-under `ci/artifacts/` are not gitignored.
-
-### Copied `ci/` fitness (keep, adapt, or delete)
-
-The copied files are a reasonable sketch for **this** ticket. Keep the nginx SPA pattern if adapting it to Shade is
-cheaper than starting over. Do **not** add a Node/Yarn/Vite stage for hot reload.
-
-Still not ready-to-go:
-
-- **Wrong publish contract.** Adapt to `make build` / `dist/`, or replace. Do not keep foreign names (`publish/`,
-  `publish-local`, `build-local`) unless they become real Shade targets.
-- **No start-time runtime-config injection.** `COPY` of a baked `config.js` into the image is not enough; `apiBaseUrl`
-  and optional diagnostics must change at container start without rebuilding so compose can point the browser at the
-  backend.
-- **Healthcheck is incomplete.** Verify frontend entry **and** runtime-config availability (for example `config.js`),
-  still without calling protected API routes.
-- **Cache headers are incomplete.** Revalidate `index.html` and `config.js`; the copied conf only special-cases
-  `/assets/`.
-- **No Make targets or operator docs** for building the image that compose will consume, including dual tags
-  (`latest` and `package.json` `version`).
-- **Stale comments** (TanStack Router).
-
-If adapting costs more than a Shade-shaped Containerfile, delete `ci/` contents and replace them. Do not preserve a
-foreign layout out of inertia. Do not expand the image into a second local-dev environment.
+`README.md` still documents local Vite (`make run`) and production-host assumptions. It does **not** present **local
+development** and **deployed development** (this Podman image in Compose) as the two ways to interact with this repo,
+and it does not document image build, tags, runtime-config env vars, CORS/origin for a compose-published frontend, or
+cleanup.
 
 ## Remaining scope
 
-- Ship a Podman-compatible container definition and ignore file that serves the production `dist/` tree over HTTP.
-  Start from `ci/` only when the fitness notes above still hold after a Shade adaptation; otherwise replace or delete
-  that tree.
-- Document the image as the **dev-deployment** unit for Podman Compose with the backend: published port, healthcheck,
-  runtime-config injection, SPA fallback, and that the Compose file itself lives in the orchestrator (not this repo).
 - Update `README.md` so operators see **two** ways to interact with this project: **local development** (`make run`,
   Vite, already documented) and **deployed development** (build this Podman image and run it in Compose with the
-  backend). Lead with that distinction; keep the existing local-dev setup/`make run` path; add the image-build,
-  tags (`latest` and `package.json` `version`), runtime-config, CORS/origin, and compose-consumer notes this ticket
-  ships. Do not document the production tarball or production-host install here (FEAT-16). Do not present containerized
-  Vite / hot reload as a third path.
-- Inject public runtime configuration (`apiBaseUrl` and optional `diagnostics`) when the container starts so those
-  values can change without rebuilding the image. Do not inject application release through runtime config. Do not treat
-  a host-copied `config.js` baked into image layers as satisfying this.
-- Build the image from a production `make build` / `yarn build` (host-built then copied, or an equivalent in-image
-  build stage). `VITE_API_SECRET_KEY` is supplied at **build** time (host `.env` or a build secret), matching the
-  backend key the compose stack will run. Do not `COPY` `.env` into image layers. Do not log the token. Built JS may
-  contain the build-time secret (same as non-container production builds).
-- Serve client routes with an SPA fallback and the cache behavior above for every registered product path.
-- Add Make targets and documentation for image build, how compose should run it, configuration, and cleanup. Keep
-  existing host `make run` / `make preview` / `make build` working. If a staging directory under `ci/artifacts/` is
-  used, gitignore generated trees so `dist/` copies and secrets are not committed.
-- A successful image build must apply **two** tags to the same image: `latest` and the `version` field from
-  `package.json` (always read the current value; do not hard-code it). That version string is the same canonical
-  release as `APP_VERSION` / the footer `Release` label. Document the image name compose should pull; do not invent a
-  registry or FEAT-16 tarball naming here.
-- Add a container health/smoke check that does not require storing protected credentials in the image (frontend entry
-  and runtime config availability; do not call protected API routes from the healthcheck).
-- Document compose-published origin vs backend CORS (exact origin, or same-origin via the compose reverse proxy). Do
-  not rely on the Vite dev-server proxy.
-- Do not invent a production release tarball here; FEAT-16 owns that.
-- Do not add hot reload, bind-mounted source, or `yarn dev` to the image.
+  backend). Lead with that distinction; keep the existing local-dev setup/`make run` path; add Podman as a prerequisite
+  for the image path. Document:
+  - image name compose should pull: `shade-frontend`;
+  - dual tags (`latest` and the current `package.json` `version`);
+  - `make container-build` / `container-run` / `container-stop` / `container-clean`;
+  - published port 8080;
+  - start-time runtime config (`SHADE_API_BASE_URL`, `SHADE_DIAGNOSTICS_ENABLED`, `SHADE_DIAGNOSTICS_ENDPOINT`);
+  - that `VITE_API_SECRET_KEY` is supplied at **build** time (host `.env` or a build secret) and is not changed by
+    bind-mounting `.env` at container start;
+  - compose-published origin vs backend CORS (exact origin in `CORS_ORIGINS`, or same-origin via the compose reverse
+    proxy; default API CORS allows only the Vite origins; do not rely on the Vite dev-server proxy);
+  - healthcheck coverage (frontend entry and `config.js`; no protected API routes);
+  - that the Compose file itself lives in the orchestrator (not this repo);
+  - cleanup (`make container-stop` / `make container-clean`; startup and shutdown must not leave generated root-owned
+    repository files).
+- Do not document the production tarball or production-host install here (FEAT-16). Do not present containerized Vite /
+  hot reload as a third path.
+- If an unused `ci/artifacts/` tree is still present on disk, delete it. Do not revive a staging publish contract.
 
 ## Acceptance criteria
 
-- A clean checkout can build the image using documented prerequisites. The build produces one image tagged both
-  `latest` and `<package.json version>` (the `version` field; same string Vite injects as `APP_VERSION`).
-- The image serves the same optimized assets produced by the production build (not a Vite dev server).
-- Changing `apiBaseUrl` or optional diagnostics at startup requires no image rebuild. Application release remains
-  `package.json` `version` / `APP_VERSION` from the image build.
-- Direct navigation to every registered client route receives the application entry point.
-- Image layers, build arguments, runtime configuration templates, and logs do not embed or log the token value as a
-  dedicated secret file. Built JS may contain the build-time secret (same as non-container production builds).
-- The health/smoke check verifies that the frontend and runtime configuration are available without a live Bearer secret
-  in the image.
 - `README.md` specifies the two ways to interact with this project: local development (`make run`) and deployed
-  development (this Podman image in Compose with the backend). It does not treat hot-reload-in-Podman or the FEAT-16
-  production tarball as a FEAT-15 run path.
-- Container startup and shutdown do not leave generated root-owned repository files.
+  development (this Podman image in Compose with the backend). It documents the image name, tags, Make targets,
+  published port, runtime-config env vars, CORS/origin, healthcheck, and that Compose lives in the orchestrator. It does
+  not treat hot-reload-in-Podman or the FEAT-16 production tarball as a FEAT-15 run path.
 - `make check` passes from a clean checkout.
-- Foreign copy-paste leftovers are gone from the shipped definition: no TanStack Router comments, no `publish-local` /
-  `build-local` / `publish/` names unless they are real Shade targets, and no unused `ci/` files left "just in case".
 
 ## Plan coverage
 
