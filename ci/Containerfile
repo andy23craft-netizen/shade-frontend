@@ -4,7 +4,7 @@
 # publish-local / build-local). Does not compile the app; there is no Node/Yarn stage. Serve HTTP only--TLS is external.
 
 # Check for new versions at: https://hub.docker.com/_/nginx
-FROM docker.io/library/nginx:1.27-alpine
+FROM docker.io/library/nginx:1.31-alpine
 
 WORKDIR /usr/share/nginx/html
 EXPOSE 8080
