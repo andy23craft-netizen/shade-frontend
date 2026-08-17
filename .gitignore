@@ -47,3 +47,6 @@ coverage/
 .vite/
 playwright-report/
 test-results/
+
+# Versioned release artifacts
+ci/artifacts/

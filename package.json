@@ -11,6 +11,7 @@
     "dev": "vite",
     "build": "yarn typecheck && vite build",
     "bundle:check": "node scripts/checkBundleSize.mjs",
+    "release:pack": "node scripts/packRelease.ts",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -b",

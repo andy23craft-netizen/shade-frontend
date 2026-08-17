@@ -2,15 +2,19 @@
 
 The React frontend for the Shade library application.
 
-There are two ways to interact with this project:
+There are three ways to interact with this project:
 
 1. **Local development** -- run Vite on the host with hot reload (`make run`).
 2. **Deployed development** -- build this repository's Podman image and run it in
    Compose with the Shade backend.
+3. **Deployed production** -- pack the versioned static tarball (`make pack`) and
+   install it from the deployment repository. Production is not another Podman
+   image.
 
 Do not collapse those paths. Local development does not use Podman. The Podman
 image serves the optimized static `dist/` build; it does not run Vite, hot
-reload, or `make run` inside the container.
+reload, or `make run` inside the container. The production tarball is the same
+static `dist/` tree packaged for a host the deployment repository owns.
 
 ## Prerequisites
 
@@ -73,7 +77,9 @@ make build
 ```
 
 Production output is written to `dist/`. Host `make preview` can serve that
-directory locally; it is not the Compose deployment path.
+directory locally; it is not the Compose path and is not deployed production.
+Package `dist/` for the deployment repository with `make pack` (see Deployed
+production).
 
 ## API token
 
@@ -87,11 +93,15 @@ Copy `.env.example` to `.env`, set the value to match the backend
 reload env files. A missing or blank `VITE_API_SECRET_KEY` prevents the app
 from starting.
 
-For any production build -- including the Podman image, which copies host-built
-`dist/` -- set `VITE_API_SECRET_KEY` in the build environment before running
-`make build` (host `.env` or a build secret). Bind-mounting `.env` at container
-start does not change the baked token. Built static assets under `dist/` must
-not include the `.env` file itself. Dummy `test-api-token` is for CI only.
+For any production build -- including the Podman image and the production
+tarball, which copy or pack host-built `dist/` -- set `VITE_API_SECRET_KEY` in
+the build environment before running `make build` (host `.env` or a build
+secret). Bind-mounting `.env` at container start does not change the baked
+token. Built static assets under `dist/` and the release archive must not
+include the `.env` file itself. The Bearer value is embedded in hashed
+JavaScript by design; that is an accepted shared-secret risk for this trusted
+personal deployment, not a second authentication model. Dummy `test-api-token`
+is for CI only.
 
 ## Quality gate and continuous integration
 
@@ -188,6 +198,55 @@ Do not rely on the Vite `SHADE_API_PROXY=1` dev-server proxy for this path.
 The image healthcheck uses `wget` against `http://127.0.0.1:8080/` and
 `http://127.0.0.1:8080/config.js`. It does not call protected API routes.
 
+## Deployed production
+
+This is the versioned tarball path for the deployment repository. It is not
+`make run`, `make preview`, or the FEAT-15 Compose image. HTTPS, TLS, host
+install, supervision, and rollback stay with the deployment repository.
+
+```sh
+make pack
+```
+
+`make pack` runs `make build`, then writes gitignored files under
+`ci/artifacts/`:
+
+| File | Role |
+| ---- | ---- |
+| `shade-frontend-<package.json version>.tar.gz` | Deterministic archive of `dist/` |
+| `shade-frontend-<package.json version>.tar.gz.sha256` | SHA-256 of that archive |
+| `shade-frontend-<package.json version>.manifest.json` | Version, commit, build time, runtime-config shape, hosting requirements |
+
+The archive name includes the same `package.json` `version` string as
+`APP_VERSION` and the AppShell footer `Release` label. Repeated packs of
+identical `dist/` contents produce equivalent archive bytes and the same
+checksum. The sidecar manifest records build time and commit; those fields are
+not embedded in the tarball.
+
+Verify the checksum before and after transfer, then extract only the static
+site:
+
+```sh
+cd ci/artifacts
+sha256sum -c shade-frontend-<version>.tar.gz.sha256   # Linux
+# shasum -a 256 -c shade-frontend-<version>.tar.gz.sha256   # macOS
+tar -tzf shade-frontend-<version>.tar.gz
+tar -xzf shade-frontend-<version>.tar.gz -C /path/to/html
+```
+
+Extraction yields deployable static assets plus the public `config.js`
+template (`index.html`, hashed `/assets/`, `favicon.png`). It does not include
+source, `.env`, `node_modules/`, coverage, Playwright output, Podman/dev
+files, SQL dumps, or database files. Replace `config.js` with
+deployment-managed production values (`apiBaseUrl` and optional `diagnostics`);
+changing it does not require a JavaScript rebuild. Do not copy
+`ci/Containerfile` into the archive or treat the Compose image as production.
+
+Inspection tests in `make check` pack a temporary tree and reject
+non-deployable members. They do not fail because hashed JS contains the
+build-time Bearer token. Default CI does not upload `ci/artifacts/` or other
+secret-bearing archives.
+
 ## Production connectivity (release blocker)
 
 Production must choose and verify one connectivity arrangement before release:
@@ -203,36 +262,80 @@ CORS preflights, and JavaScript access to the backup response
 
 ## Production host security
 
-The frontend repository produces static application assets; the production
-deployment host is responsible for transport and browser security controls.
+The frontend repository produces the versioned static tarball; the production
+deployment host is responsible for transport, install, and browser security
+controls. `ci/nginx.conf` is the **dev-image** reference for SPA `try_files`,
+`Cache-Control: no-cache` on `index.html` / `config.js`, and long-lived hashed
+`/assets/`. Apply the same behaviors on the tarball host; do not ship that
+image as production.
 
 Before production release, the deployment environment must:
 
-- serve the frontend and production API traffic over HTTPS;
+- serve the extracted tarball and production API traffic over HTTPS;
 - apply a restrictive Content Security Policy compatible with the application's
   static assets, configured API origin, and camera access used by the ISBN
   scanner;
 - apply appropriate browser security headers, including HSTS where applicable;
-- provide SPA fallback routing to `index.html` for client-side routes; and
-- serve the deployment-managed runtime configuration with production values.
-- provision the production `.env` beside the deployed application `.DLL` files;
-  the frontend build and CI pipeline do not create, package, upload, or deploy that
-  file.
+- provide SPA fallback routing to `index.html` for client-side routes;
+- revalidate `index.html` and `config.js` (`Cache-Control: no-cache` or
+  equivalent) while allowing long-lived immutable caching for hashed `/assets/`;
+- serve deployment-managed `config.js` with production `apiBaseUrl` and
+  diagnostics values;
+- restrict network access because the baked browser Bearer token is a shared
+  secret;
+- provide atomic install, rollback, process/service supervision, and health
+  checks;
+- retain and verify the tarball SHA-256 checksum and release manifest before
+  and after transfer.
+
+The frontend build does not create, package, upload, or deploy a production
+`.env` file. The Bearer token is injected at `make build` time and is present
+in hashed JavaScript inside the archive. That is the accepted shared-secret
+design for this trusted personal deployment, not multi-user authentication. If
+the application becomes publicly reachable or supports untrusted users, release
+must be blocked until authentication is redesigned.
+
+Browser support for production smoke remains
+`docs/baselines/FEAT-12_browser-support.md`. Do not duplicate that matrix here.
+Scanner hardware checks remain `docs/baselines/FEAT-06_scanner-support.md`.
+
+These requirements are deployment assumptions, not frontend implementations.
+This repository documents them for handoff; the deployment repository owns
+concrete static-server, TLS, CSP, security-header, Ansible, systemd, and
+rollback configuration.
+
+### Production smoke checklist
+
+Confirm the extracted artifact against a production-like host (not Vite
+`make run` and not the Compose image). Reuse existing product coverage; this
+is host and config confirmation, not a second end-to-end stack.
+
+- [ ] Checksum and manifest match the archive; version equals `package.json` /
+      footer `Release`
+- [ ] Deployment-managed `config.js` points at the production API; diagnostics
+      values are intentional
+- [ ] Protected API access works with the baked Bearer token
+- [ ] CORS/preflight or same-origin proxy permits `Authorization` and
+      `Content-Type`; cookies are not used
+- [ ] Direct-route refresh uses SPA fallback; `index.html` / `config.js`
+      revalidate; hashed `/assets/` are long-lived
+- [ ] Dashboard, collection list, and create (including shelf selection)
+- [ ] Shelves catalog create / edit / delete
+- [ ] Checkout, check-in, mark-read, delete, and restore
+- [ ] Authenticated backup download: non-empty SQL attachment, safe filename
+      from `Content-Disposition`, recoverable generation `500`, and no bogus
+      download or retained/inspected SQL contents after failure
 
 ### CI artifacts and privacy
 
-The default CI workflow does not retain `dist/`, coverage output, Playwright
-reports, traces, screenshots, videos, `.env` files, database files, backup dumps,
-or other runtime data.
+The default CI workflow does not retain `dist/`, `ci/artifacts/`, coverage
+output, Playwright reports, traces, screenshots, videos, `.env` files,
+database files, backup dumps, or other runtime data.
 
 If CI artifact retention is added later, retained artifacts must be reviewed
 before upload and must exclude secrets and secret-bearing environment files,
 database or backup contents, runtime logs, diagnostic payloads, and other
 sensitive local data. Backup contents must never be uploaded as CI artifacts.
-
-These requirements are deployment assumptions, not frontend implementations.
-The deployment repository and FEAT-16 own the concrete web-server, TLS, CSP,
-security-header, artifact-installation, and rollback configuration.
 
 Production release must verify these host controls alongside the connectivity
 requirements above rather than assuming that a successful frontend build

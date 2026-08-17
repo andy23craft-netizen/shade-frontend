@@ -11,7 +11,7 @@ home-library FastAPI backend. The shared shell, runtime configuration, connectio
 React Query server-state layer are in place (FEAT-01 through FEAT-03). Most feature routes still render
 placeholders; product UI begins with FEAT-04 (active collection and book details).
 
-Remaining tickets are `FEAT-04` through `FEAT-16` under `docs/tickets/`. Broader delivery planning lives in
+Remaining tickets are `FEAT-17` through `FEAT-21` under `docs/tickets/`. Broader delivery planning lives in
 `docs/product-docs/PLAN.md`. Ticket completion status is tracked in `docs/ToDo.md`.
 
 The most useful commands are:
@@ -253,8 +253,10 @@ Keep the import order in `src/index.css`. Later layers rely on variables and def
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
   `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API.
-- `scripts/productionBuildTokenInspection.test.ts`: Production build with source maps; fails if known test tokens
-  appear in artifacts.
+- `scripts/productionBuildTokenInspection.test.ts`: Production build with source maps; fails if `.env` is copied into
+  `dist/` or the release tarball. Embedded build-time tokens in hashed JS are expected.
+- `scripts/packRelease.test.ts` / `scripts/productionLikeHost.test.ts`: Versioned tarball packing, checksum/manifest
+  agreement, forbidden-member rejection, and production-like host header/CORS/backup checks.
 
 Vitest discovers files named `*.test.ts` or `*.test.tsx`. Keep a component test near its component when practical.
 Prefer queries that reflect how a user or assistive technology finds an element, such as `getByRole()`. Route tests
@@ -278,7 +280,7 @@ yarn test
 - `yarn.lock`: Records exact dependency resolutions for repeatable installs. Yarn generates this file; do not edit
   it by hand.
 - `Makefile`: Provides short, consistent wrappers around Yarn commands. For example, `make run` calls `yarn dev`,
-  and `make check` calls `yarn check`.
+  `make check` calls `yarn check`, and `make pack` writes the versioned production tarball.
 - `.nvmrc`: Pins the project's Node.js version. `nvm use` reads this file.
 - `.yarnrc.yml`: Configures Yarn to install packages into `node_modules/` rather than use Plug'n'Play.
 
@@ -294,6 +296,8 @@ The available commands are:
 - `make build`: Type-checks and creates the optimized `dist/` output.
 - `make bundle-check`: Checks the built main JavaScript entry against the 120 kB gzip warning budget and 150 kB hard
   failure budget.
+- `make pack`: Type-checks, builds `dist/`, and writes `ci/artifacts/shade-frontend-<package.json version>.tar.gz`
+  plus SHA-256 and manifest sidecars. Opt-in; packing is not a default CI upload.
 - `make check`: Runs linting, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright
   browser/accessibility tests, the production build, and the bundle-size gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
@@ -304,10 +308,12 @@ but it is expected behavior rather than a failure. It then runs playwright check
 
 ### Runtime configuration, CORS, and token
 
-Runtime configuration lives in `public/config.js` as `window.__SHADE_CONFIG__` (`apiBaseUrl`, `release`, and optional diagnostic-reporting configuration). The Bearer
-token lives in the repository-root `.env` as `VITE_API_SECRET_KEY` and is injected at dev-server and build time. Copy
-`.env.example` to `.env`, set the value to match the backend `API_SECRET_KEY`, and restart after changes. Release
-artifacts must not include the `.env` file itself — only built static assets under `dist/`.
+Runtime configuration lives in `public/config.js` as `window.__SHADE_CONFIG__` (`apiBaseUrl` and optional
+diagnostic-reporting configuration). Application release comes from `package.json` `version` (`APP_VERSION`), not
+runtime config. The Bearer token lives in the repository-root `.env` as `VITE_API_SECRET_KEY` and is injected at
+dev-server and build time. Copy `.env.example` to `.env`, set the value to match the backend `API_SECRET_KEY`, and
+restart after changes. Release artifacts must not include the `.env` file itself -- only built static assets under
+`dist/`. Hashed JavaScript in those assets contains the build-time token; that is the accepted shared-secret design.
 
 Local API access:
 
@@ -330,20 +336,27 @@ Verification must cover authenticated requests, browser preflights, and JavaScri
 Production host security is owned by the deployment environment rather than this frontend repository. Before release,
 the production host must:
 
-- Serve the frontend and production API traffic over HTTPS.
+- Serve the extracted tarball and production API traffic over HTTPS.
 - Apply a restrictive Content Security Policy compatible with the frontend's static assets, configured API origin,
   and camera access used by the ISBN scanner.
 - Apply appropriate browser security headers, including HSTS where applicable.
 - Provide SPA fallback routing to `index.html` for client-side routes.
+- Revalidate `index.html` and `config.js` while allowing long-lived immutable caching for hashed `/assets/`.
 - Serve deployment-managed runtime configuration with the intended production values.
+- Restrict network access because the baked browser Bearer token is a shared secret.
+- Provide atomic install, rollback, process/service supervision, and health checks.
+- Retain and verify the tarball checksum and release manifest.
 
-These are deployment requirements, not frontend implementations. FEAT-16 and the deployment repository own the
-concrete static-server, TLS, CSP/security-header, artifact-installation, and rollback configuration. Production
-verification must confirm these controls rather than treating a successful frontend build as evidence that they are
-present.
+These are deployment requirements, not frontend implementations. `make pack` produces the versioned archive under
+`ci/artifacts/`; the deployment repository owns concrete static-server, TLS, CSP/security-header, Ansible, systemd,
+and rollback configuration. Production verification must confirm these controls rather than treating a successful
+frontend build as evidence that they are present. See `README.md` for artifact names, the smoke checklist, and
+browser-support pointers (`docs/baselines/FEAT-12_browser-support.md`).
 
-`scripts/productionBuildTokenInspection.test.ts` builds with a dummy `VITE_API_SECRET_KEY` and asserts the repository-root
-`.env` file is not copied into `dist/` (embedded build-time token in JS bundles is expected).
+`scripts/productionBuildTokenInspection.test.ts` builds with a dummy `VITE_API_SECRET_KEY` and asserts the
+repository-root `.env` file is not copied into `dist/` or the packed tarball (embedded build-time token in JS
+bundles is expected). `scripts/packRelease.test.ts` and `scripts/productionLikeHost.test.ts` cover deterministic
+archives, forbidden members, SPA fallback, cache headers, CORS/Bearer access, and backup `Content-Disposition`.
 
 ### Build, TypeScript, and Lint Configuration
 
@@ -354,7 +367,7 @@ present.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
 - `tsconfig.app.json`: Strict browser and React type checking for `src/`. It includes Vite, Vitest, and jest-dom
   types and emits no files.
-- `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts`. It emits no files.
+- `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts` and `scripts/**/*.ts`. It emits no files.
 
 The production build follows this path:
 
@@ -387,7 +400,8 @@ production build.
 
 When you need product or ticket detail, start with:
 
-- `docs/tickets/` for the current feature ticket and acceptance criteria (`FEAT-04` through `FEAT-16`).
+- `docs/tickets/` for the current feature ticket and acceptance criteria (`FEAT-17` through `FEAT-21`; FEAT-13
+  through FEAT-16 are complete).
 - `docs/ToDo.md` for ticket completion status.
 - `docs/product-docs/PLAN.md` for the overall frontend roadmap.
 - `docs/product-docs/UI_DESIGN_NOTES.MD` when visual design is in question.
@@ -438,9 +452,10 @@ before disabling it.
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
   mutations. There is no realtime API.
-- Never commit the API token, compile it into JS, put it in URLs, log Authorization headers, render API text as HTML,
-  or upload SQL backup contents to telemetry.
-- Do not commit `node_modules/`, `dist/`, `coverage/`, local databases, or secret files.
+- Never commit the API token, put it in URLs, log Authorization headers, render API text as HTML, or upload SQL
+  backup contents to telemetry. The build-time injection into JavaScript bundles is the accepted shared-secret
+  design; do not invent a second authentication model.
+- Do not commit `node_modules/`, `dist/`, `ci/artifacts/`, `coverage/`, local databases, or secret files.
 - Update this guide when adding, removing, or significantly changing project files or development workflows.
 
 ## When Adding New Architecture

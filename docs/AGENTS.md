@@ -60,12 +60,23 @@ FEAT-15 Podman compose/dev-deployment image (ticket file removed after completio
 `ci/container-entrypoint.sh` (start-time `config.js` from `SHADE_API_BASE_URL`, `SHADE_DIAGNOSTICS_ENABLED`,
 `SHADE_DIAGNOSTICS_ENDPOINT`), `.containerignore`, and Make `container-build` / `container-run` / `container-stop` /
 `container-clean` (image `shade-frontend`, tags `latest` and `package.json` `version`). This is **deployed
-development** (Compose with the backend), not host Vite and not production. `README.md` documents the two interaction
-paths. Do not add containerized Vite/HMR or pull FEAT-16 tarball work into this image.
+development** (Compose with the backend), not host Vite and not production. `README.md` documents the three
+interaction paths. Do not add containerized Vite/HMR or collapse production into this image.
 
-**Next:** Remaining tickets under `docs/tickets/` are versioned release artifacts (FEAT-16), About as homepage with
-relocated dashboard (FEAT-17), collection category filter UI (FEAT-18), wishlists (FEAT-19), dashboard report surfaces
-(FEAT-20), and display-only checkout alternate-copy UX (FEAT-21).
+FEAT-16 versioned release artifacts (ticket file removed after completion). Shipped `scripts/packRelease.ts` and
+Make `pack` (`yarn release:pack`) which packages host-built `dist/` as gitignored
+`ci/artifacts/shade-frontend-<package.json version>.tar.gz` plus a SHA-256 sidecar and a release manifest
+(version, commit, build time, runtime-config shape, hosting requirements). Packing is opt-in (not default CI
+upload). Inspection tests extend `scripts/productionBuildTokenInspection.test.ts` and add
+`scripts/packRelease.test.ts` / `scripts/productionLikeHost.test.ts` (deterministic archives, forbidden-member
+rejection, SPA fallback, cache headers, CORS/Bearer/backup `Content-Disposition`). Hashed JS may contain the
+build-time Bearer token; `.env` / SQL / source / dependency trees must not appear in the archive. Production is
+the tarball plus the deployment repository, not another Podman image. HTTPS/CSP, atomic install, supervision,
+and rollback remain host-owned (`README.md`).
+
+**Next:** Remaining tickets under `docs/tickets/` are About as homepage with relocated dashboard (FEAT-17),
+collection category filter UI (FEAT-18), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and
+display-only checkout alternate-copy UX (FEAT-21).
 
 Notable shipped behaviors agents should preserve:
 
@@ -704,7 +715,12 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
   `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API and a diagnostic reporter.
 - `scripts/productionBuildTokenInspection.test.ts`: Production build env inspection; asserts `.env` is not copied into
-  `dist/` and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
+  `dist/` or the release tarball and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles (accepted risk).
+- `scripts/packRelease.ts` / `packRelease.test.ts`: Deterministic `dist/` tarball, SHA-256 sidecar, and release
+  manifest (`make pack` / `yarn release:pack`; gitignored `ci/artifacts/shade-frontend-<version>.tar.gz`).
+- `scripts/productionLikeHost.ts` / `productionLikeHost.test.ts`: Production-like static host plus mock API checks
+  for SPA fallback, HTML/config revalidation, immutable `/assets/`, CORS preflight, Bearer access, and backup
+  `Content-Disposition`.
 
 Tests use a jsdom browser simulation for Vitest (except the Node-environment production-build inspection). Prefer
 semantic Testing Library queries such as `getByRole()` and test user-visible behavior instead of implementation
@@ -736,11 +752,12 @@ make check / yarn check
 ### Dependencies and Commands
 
 - `package.json`: Package metadata (canonical frontend `version` drives `APP_VERSION` and the footer `Release` label),
-  Node and Yarn requirements, scripts (including `api:generate` / `api:check`, `test:e2e`, `bundle:check`), runtime
-  dependencies, and development dependencies.
+  Node and Yarn requirements, scripts (including `api:generate` / `api:check`, `test:e2e`, `bundle:check`,
+  `release:pack`), runtime dependencies, and development dependencies.
 - `yarn.lock`: Yarn-generated exact dependency resolutions and checksums. Never edit it manually.
 - `Makefile`: Stable wrappers around Yarn scripts for installation, development, checks, tests, builds,
-  `bundle-check`, and Podman image targets (`container-build` / `container-run` / `container-stop` / `container-clean`).
+  `bundle-check`, Podman image targets (`container-build` / `container-run` / `container-stop` /
+  `container-clean`), and `pack` (versioned production tarball under `ci/artifacts/`).
 - `.nvmrc`: Exact Node.js version used by `nvm use`.
 - `.yarnrc.yml`: Configures Yarn to use the `node_modules` linker instead of Plug'n'Play.
 
@@ -759,11 +776,14 @@ make check / yarn check
 - `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts` and `scripts/**/*.ts`. It emits no files.
 - `scripts/checkBundleSize.mjs`: Main-entry gzip budget enforcement after `dist/` exists; warns above 120 kB and fails
   above 150 kB (`yarn bundle:check` / `make bundle-check`; also part of `make check`).
+- `scripts/packRelease.ts`: Opt-in production tarball from `dist/` (`yarn release:pack` / `make pack`). Writes
+  `ci/artifacts/shade-frontend-<package.json version>.tar.gz`, `.sha256`, and `.manifest.json`. Not part of default
+  CI artifact upload.
 
 ### Podman image (complete -- extend, do not replace)
 
-Deployed-development image for Compose with the backend. Not host Vite (`make run`) and not the FEAT-16 production
-tarball. Preserve (do not rebuild or regress):
+Deployed-development image for Compose with the backend. Not host Vite (`make run`) and not the production
+tarball (`make pack`). Preserve (do not rebuild or regress):
 
 - `ci/Containerfile`: Runtime-only `nginx:1.31-alpine`. HTTP on 8080. Copies host-built `dist/`. No Node/Yarn/Vite
   stage. Does not `COPY` `.env`. Healthcheck is `wget` against `http://127.0.0.1:8080/` and `/config.js` (no protected
@@ -774,26 +794,45 @@ tarball. Preserve (do not rebuild or regress):
   `SHADE_DIAGNOSTICS_ENABLED` (`true`/`false`), and `SHADE_DIAGNOSTICS_ENDPOINT` (empty → `null`). Changing those
   values does not require an image rebuild. Application release stays `package.json` `version` from the image build.
 - `.containerignore`: Build context is the repo root; only `dist/` and the `ci/` files above are included.
-- Make targets: `container-build` (runs `make build`, tags `shade-frontend:latest` and
+- Make targets:   `container-build` (runs `make build`, tags `shade-frontend:latest` and
   `shade-frontend:<package.json version>`), `container-run` (port 8080, `--rm`, the runtime-config env vars above),
   `container-stop`, `container-clean`. Compose should pull `shade-frontend`. The Compose file lives in the
   orchestrator, not this repo. Optional `SHADE_API_PROXY=1` remains host `make run` only.
 
+### Production tarball (complete -- extend, do not replace)
+
+Versioned static archive for the deployment repository. Not host Vite and not the FEAT-15 Compose image. Preserve:
+
+- `scripts/packRelease.ts`: Deterministic gzip/ustar of `dist/` (sorted members, zero mtime, portable gzip header).
+  Refuses `.env`, source trees, `node_modules/`, coverage, Playwright output, Podman/dev files, SQL dumps, and
+  database files. Requires `index.html` and `config.js`.
+- Make `pack` / `yarn release:pack`: runs `make build`, writes gitignored
+  `ci/artifacts/shade-frontend-<package.json version>.tar.gz`, `.sha256`, and `.manifest.json`.
+- Manifest fields: `version` / `appVersion` (same as `APP_VERSION`), `commit`, `buildTime`, `checksumSha256`,
+  runtime-config shape (`apiBaseUrl` plus optional `diagnostics`), hosting requirements (SPA fallback, HTML/config
+  revalidation, immutable hashed assets, HTTPS/CSP, network restriction, atomic install/rollback/supervision/health,
+  checksum retention).
+- Inspection: `scripts/packRelease.test.ts`, extended `scripts/productionBuildTokenInspection.test.ts`, and
+  `scripts/productionLikeHost.ts` (test-only static host; not a production server). Default CI does not upload
+  `ci/artifacts/`.
+
 ### Repository Guidance
 
-- `README.md`: Concise human onboarding for the two interaction paths -- **local development** (`make run`) and
-  **deployed development** (this Podman image in Compose) -- plus prerequisites (including Podman for the image path),
-  setup, local CORS-or-proxy options, `.env` token configuration (build-time for the image; bind-mounting `.env` at
-  container start does not change the baked token), checks, Playwright Chromium install, CI, image name/tags/Make
-  targets/port 8080/runtime-config env vars/CORS/healthcheck/cleanup, and production-host security boundary
-  (HTTPS/CSP / SPA fallback / production config serving owned by deployment / FEAT-16).
-- `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`. Uses the Node
+- `README.md`: Concise human onboarding for the three interaction paths -- **local development** (`make run`),
+  **deployed development** (this Podman image in Compose), and **deployed production** (versioned tarball plus the
+  deployment repository) -- plus prerequisites (including Podman for the image path), setup, local CORS-or-proxy
+  options, `.env` token configuration (build-time for the image and tarball; bind-mounting `.env` at container
+  start does not change the baked token), checks, Playwright Chromium install, CI, image name/tags/Make
+  targets/port 8080/runtime-config env vars/CORS/healthcheck/cleanup, `make pack` artifact names/checksum/manifest,
+  production-host HTTPS / CSP / SPA fallback / cache headers / network restriction / atomic install, and the
+  production smoke checklist. Browser support stays `docs/baselines/FEAT-12_browser-support.md`.
+-   `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`. Uses the Node
   version from `.nvmrc`, Corepack/Yarn, immutable `yarn install`, Playwright Chromium
   (`yarn playwright install --with-deps chromium`), `VITE_API_SECRET_KEY=test-api-token`, and `make check`. Does not
-  upload `dist/`, coverage, Playwright reports, or secrets as artifacts.
+  upload `dist/`, `ci/artifacts/`, coverage, Playwright reports, or secrets as artifacts.
 - `.env.example`: Committed template for `VITE_API_SECRET_KEY`; copy to gitignored `.env` for local dev and builds.
 - `.gitignore`: Excludes dependencies, generated output (`dist/`, `coverage/`, `.vite/`, `playwright-report/`,
-  `test-results/`), secrets, local data, editor files, and OS metadata.
+  `test-results/`, `ci/artifacts/`), secrets, local data, editor files, and OS metadata.
 - `.gitattributes`: Normalizes text files to LF line endings and marks common binary extensions.
 - `.cursor/rules/documentation-style.mdc`: Markdown punctuation, line-length, and newline rules for Cursor.
 - `.cursor/rules/grep-tool.mdc`: Requires `grep` rather than the `rg` shell command in this environment.
@@ -806,8 +845,8 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-16_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-15 are complete; those ticket files are removed). Prefer ticket presence under
+- `docs/tickets/FEAT-17_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-16 are complete; those ticket files are removed). Prefer ticket presence under
   `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
@@ -822,7 +861,7 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json`.
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
-  this baseline). Includes production-host security ownership notes.
+  this baseline). Includes production-host security ownership and tarball handoff notes.
 - `docs/full-project-context.md`: Optional slim always-on pack for chats without repo access (not required when
   this file is already loaded).
 
@@ -855,6 +894,8 @@ Common commands:
 - `make container-run`: Runs `shade-frontend:latest` on port 8080 with start-time runtime-config env vars (`--rm`).
 - `make container-stop`: Stops the `shade-frontend-dev` container.
 - `make container-clean`: Removes that container and both image tags.
+- `make pack`: Runs `make build`, then writes `ci/artifacts/shade-frontend-<package.json version>.tar.gz` plus
+  SHA-256 and manifest sidecars (`yarn release:pack`). Opt-in; not part of `make check` beyond inspection tests.
 - `make check`: Runs lint, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright e2e, the
   production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
@@ -918,8 +959,10 @@ make build
   `.github/workflows/check.yml` and `scripts/checkBundleSize.mjs` in the canonical gate; do not add secret-bearing CI
   artifacts. FEAT-15 Podman is complete: keep `ci/Containerfile`, `ci/nginx.conf`, `ci/container-entrypoint.sh`,
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
-  Do not pull FEAT-16 versioned release artifacts or deployment-owned HTTPS/CSP, or FEAT-17 through FEAT-21 product
-  work into unrelated changes. Never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`.
+  FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
+  the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
+  Compose image as production. Do not pull FEAT-17 through FEAT-21 product work into unrelated changes. Never simulate
+  restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after

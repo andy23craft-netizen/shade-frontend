@@ -1,7 +1,7 @@
 IMAGE_NAME := shade-frontend
 CONTAINER_NAME := shade-frontend-dev
 APP_VERSION := $(shell node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")
-.PHONY: install preview lint run typecheck test build bundle-check check container-build container-run container-stop container-clean
+.PHONY: install preview lint run typecheck test build bundle-check check pack container-build container-run container-stop container-clean
 
 install:
 	yarn install --immutable
@@ -23,6 +23,9 @@ test:
 
 build:
 	yarn build
+
+pack: build
+	yarn release:pack
 
 container-build: build
 	podman build \

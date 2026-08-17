@@ -1,10 +1,16 @@
 /** @vitest-environment node */
 
-import { readdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 import { afterAll, describe, expect, it } from 'vitest'
+import {
+    entryIsForbidden,
+    listGzipTarEntries,
+    packRelease,
+} from './packRelease'
 
 const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -103,6 +109,53 @@ describe('production build env inspection', () => {
             expect(embeddedTokenHits.length).toBeGreaterThan(
                 0,
             )
+
+            const artifactsDirectory = await mkdtemp(
+                path.join(
+                    os.tmpdir(),
+                    'shade-token-inspection-artifacts-',
+                ),
+            )
+
+            const packed = await packRelease({
+                repositoryRoot,
+                distDirectory: inspectionOutDir,
+                outputDirectory: artifactsDirectory,
+                version: '0.0.0-inspection',
+                commit: 'inspection',
+                buildTime: '2026-08-17T00:00:00.000Z',
+            })
+
+            const archiveMembers = listGzipTarEntries(
+                packed.archive,
+            )
+            const archiveNames = archiveMembers.map(
+                (member) => member.name,
+            )
+
+            expect(archiveNames).toContain('index.html')
+            expect(archiveNames).toContain('config.js')
+            expect(
+                archiveNames.some(
+                    (name) => entryIsForbidden(name),
+                ),
+            ).toBe(false)
+
+            const packedJsHits = archiveMembers.filter(
+                (member) =>
+                    (member.name.endsWith('.js') ||
+                        member.name.endsWith('.mjs')) &&
+                    member.content
+                        .toString('utf8')
+                        .includes(buildToken),
+            )
+
+            expect(packedJsHits.length).toBeGreaterThan(0)
+
+            await rm(artifactsDirectory, {
+                recursive: true,
+                force: true,
+            })
         },
         120_000,
     )

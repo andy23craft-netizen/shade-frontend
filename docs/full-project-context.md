@@ -52,9 +52,8 @@ If test/workflow/accessibility baseline behavior is relevant:
   - preserve the existing Vitest / Testing Library / renderAppTree and Playwright e2e architecture;
     do not invent a parallel fake-API stack
 
-If Podman (FEAT-15 complete) or release artifacts (FEAT-16):
-  - README.md (local development vs deployed-development image)
-  - the current ticket when working FEAT-16
+If Podman (FEAT-15 complete) or release artifacts (FEAT-16 complete):
+  - README.md (local development, deployed-development image, deployed-production tarball)
   - relevant sections of docs/product-docs/PLAN.md
 
 If browser-support or production-host security baselines are needed:
@@ -231,12 +230,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     explicit shelf; Add/Edit Book block the page when shelves fail to
     load). Loan helpers (`loansApi.list({ bookId })`, `loansApi.get` /
     `useLoan`, Check In deep-link, `booksApi.list({ isbn })` /
-    `useBooks({ isbn })`) remain in place.     Remaining tickets are `FEAT-16` through `FEAT-21` under
+    `useBooks({ isbn })`) remain in place.     Remaining tickets are `FEAT-17` through `FEAT-21` under
     `docs/tickets/`. FEAT-13 workflow and accessibility testing,
-    FEAT-14 CI packaging, and FEAT-15 Podman deployed development are
-    complete (those ticket files are removed). Prefer ticket presence
-    under `docs/tickets/` over `docs/ToDo.md` when judging what is
-    still open.
+    FEAT-14 CI packaging, FEAT-15 Podman deployed development, and
+    FEAT-16 versioned release artifacts are complete (those ticket files
+    are removed). Prefer ticket presence under `docs/tickets/` over
+    `docs/ToDo.md` when judging what is still open.
 -   Optional runtime-configured diagnostic reporting lives in
     `src/diagnostics/diagnosticReporter.ts`
     (`createDiagnosticReporter` from `RuntimeConfig.diagnostics` +
@@ -278,10 +277,11 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 -   Production-host ownership is documented in `README.md` and
     `docs/MAINTAINERS.md`: the frontend owns runtime config, safe
     diagnostics, and client behavior; the backend owns auth/CORS; the
-    deployment environment / FEAT-16 owns HTTPS, TLS, restrictive CSP,
+    deployment environment owns HTTPS, TLS, restrictive CSP,
     HSTS/security headers, SPA fallback, production runtime-config
-    serving, installation, and rollback. Do not implement
-    deployment-owned HTTPS/CSP rollout early.
+    serving, installation, and rollback. FEAT-16 shipped the versioned
+    tarball and documented that handoff in `README.md`. Do not
+    reimplement Ansible, systemd, or TLS in this repository.
 -   FEAT-13 workflow and accessibility testing is complete. The quality
     gate now includes lint, strict type checking, generated OpenAPI
     drift checking (`yarn api:check`), the Vitest suite with enforced
@@ -322,10 +322,13 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     `container-clean` (image `shade-frontend`, tags `latest` and
     `package.json` `version`). This is deployed development (Compose
     with the backend), not host Vite and not production. `README.md`
-    documents the two interaction paths. FEAT-16 owns release
-    artifacts and deployment-owned HTTPS/CSP rollout, and FEAT-17
-    through FEAT-21 remain product follow-ons. Do not implement those
-    future tickets early.
+    documents the three interaction paths. FEAT-16 versioned release
+    artifacts are complete (ticket file removed). Shipped
+    `scripts/packRelease.ts` / Make `pack` (`ci/artifacts/shade-frontend-<version>.tar.gz`
+    plus SHA-256 and manifest), inspection tests, and the production
+    tarball handoff in `README.md`. Production is not another Podman
+    image. FEAT-17 through FEAT-21 remain product follow-ons. Do not
+    implement those future tickets early.
 -   Dashboard `/` via `DashboardPage` + `useDashboard` /
     `dashboardApi.get` (FEAT-17 will move About to `/` and relocate the
     dashboard). Displays API-provided Collection, Circulation, and
@@ -753,8 +756,8 @@ index.html
     once per machine (`yarn playwright install --with-deps chromium`)
     before `yarn test:e2e` / `make check`. Production build inspection:
     `scripts/productionBuildTokenInspection.test.ts` asserts `.env` is
-    not copied into `dist/` and that `VITE_API_SECRET_KEY` is embedded
-    in generated JS bundles.
+    not copied into `dist/` or the release tarball and that
+    `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
 
 Typed transport/query/redaction, browse/detail, create/lookup,
 scanner capture, checkout (including Find-by-ISBN), check-in and loan
@@ -790,6 +793,7 @@ make run
 make check
 make build
 make bundle-check
+make pack
 yarn test:coverage
 yarn test:e2e
 yarn api:generate
@@ -959,11 +963,13 @@ merely to make a ticket pass.
     secret-bearing CI artifacts. FEAT-15 Podman is complete: keep
     `ci/Containerfile`, `ci/nginx.conf`, `ci/container-entrypoint.sh`,
     `.containerignore`, and Make `container-*` targets; do not add
-    containerized Vite/HMR or a Compose file in this repo. Do not pull
-    FEAT-16 versioned release artifacts or deployment-owned HTTPS/CSP,
-    or FEAT-17 through FEAT-21 product work into unrelated changes. Never
-    simulate restore, checkout, check-in, or initial mark-read with
-    generic `PATCH`.
+    containerized Vite/HMR or a Compose file in this repo. FEAT-16
+    release artifacts are complete: keep `scripts/packRelease.ts`, Make
+    `pack`, gitignored `ci/artifacts/`, and the production-like host
+    inspection tests; do not upload secret-bearing archives from
+    default CI. Do not pull FEAT-17 through FEAT-21 product work into
+    unrelated changes. Never simulate restore, checkout, check-in, or
+    initial mark-read with generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
     it.
 -   Reuse the typed client, query keys, mutation invalidation,
@@ -994,11 +1000,12 @@ when needed.
 Do not expand a ticket into out-of-scope features. Do not implement
 future tickets prematurely.
 
-FEAT-13 workflow and accessibility tests, FEAT-14 CI packaging, and
-FEAT-15 Podman deployed development are complete. Remaining tickets
-begin with `FEAT-16` and continue through `FEAT-21` under
-`docs/tickets/`. When no current ticket is supplied, do
-not guess which remaining ticket to implement; ask for the next ticket.
+FEAT-13 workflow and accessibility tests, FEAT-14 CI packaging,
+FEAT-15 Podman deployed development, and FEAT-16 versioned release
+artifacts are complete. Remaining tickets begin with `FEAT-17` and
+continue through `FEAT-21` under `docs/tickets/`. When no current
+ticket is supplied, do not guess which remaining ticket to implement;
+ask for the next ticket.
 The supplied ticket's acceptance criteria are authoritative unless they
 contradict the backend contract or established architecture.
 
@@ -1062,9 +1069,9 @@ repo before editing.
   Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,library.lifecycle}.spec.ts`, `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in `make check`)
 
   Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`,
-                `.github/workflows/check.yml`, `scripts/checkBundleSize.mjs`,
+                `.github/workflows/check.yml`, `scripts/checkBundleSize.mjs`, `scripts/packRelease.ts`,
                 `ci/{Containerfile,nginx.conf,container-entrypoint.sh}`, `.containerignore`
-                (FEAT-15 complete; image `shade-frontend`)
+                (FEAT-15 image `shade-frontend`; FEAT-16 `make pack` tarball)
 
   Baselines /   `docs/baselines/FEAT-06_scanner-support.md`, `docs/baselines/FEAT-12_browser-support.md`,
   smoke         `docs/baselines/FEAT-13_testing.md`, `scripts/contractSmoke.test.ts` 
@@ -1086,10 +1093,11 @@ notes); shelves catalog (`ShelvesPage` / `shelfDisplay` /
 (Vitest coverage thresholds, Playwright journeys, axe checks, and
 `make check` integration); FEAT-14 CI packaging (`.github/workflows/check.yml`
 and `scripts/checkBundleSize.mjs`); FEAT-15 Podman deployed-development
-image (`ci/Containerfile`, Make `container-*` targets). Remaining
-tickets begin with FEAT-16 (release artifacts). Later product tickets:
-FEAT-17 About homepage, FEAT-18 category filter UI, FEAT-19 wishlists,
-FEAT-20 dashboard reports, FEAT-21 display-only alternate-copy UX.
+image (`ci/Containerfile`, Make `container-*` targets); FEAT-16
+versioned release tarball (`scripts/packRelease.ts`, Make `pack`). Remaining
+tickets begin with FEAT-17 (About homepage). Later product tickets:
+FEAT-18 category filter UI, FEAT-19 wishlists, FEAT-20 dashboard reports,
+FEAT-21 display-only alternate-copy UX.
 
 ------------------------------------------------------------------------
 
@@ -1148,8 +1156,8 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining current tickets under
-                                  `docs/tickets/`: `FEAT-16_...` through
-                                  `FEAT-21_...`; FEAT-13 through FEAT-15
+                                  `docs/tickets/`: `FEAT-17_...` through
+                                  `FEAT-21_...`; FEAT-13 through FEAT-16
                                   are complete (those ticket files are
                                   removed)
 
