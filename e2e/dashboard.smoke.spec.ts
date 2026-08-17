@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 test('loads the dashboard through the real browser application', async ({
                                                                             page,
                                                                         }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
 
     await expect(
         page.getByRole('heading', {
@@ -33,7 +33,7 @@ test('loads the dashboard through the real browser application', async ({
 test('renders an all-zero dashboard as valid data', async ({
                                                                page,
                                                            }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
 
     await expect(
         page.getByRole('heading', {
@@ -52,7 +52,7 @@ test('renders an all-zero dashboard as valid data', async ({
 test('has no serious or critical automated accessibility violations', async ({
                                                                                  page,
                                                                              }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
 
     await expect(
         page.getByRole('heading', {

@@ -95,8 +95,9 @@ Completing this plan must let a user:
 
 Use client-side routing with these user-facing destinations:
 
-- `/` — dashboard.
-- `/books` — active collection.
+- `/` -- About landing page (library story, dedication, lending policy, and How to Use).
+- `/dashboard` -- read-only collection, circulation, and reading metrics.
+- `/books` -- active collection.
 - `/books/new` — ISBN-assisted or manual book creation.
 - `/books/:bookId` — book details and available lifecycle actions.
 - `/books/:bookId/edit` — editable metadata.
@@ -108,7 +109,8 @@ Use client-side routing with these user-facing destinations:
 - `/admin/backup` — authenticated SQL backup download.
 - A not-found route with a path back into the application.
 
-The application shell must provide persistent access to Dashboard, Books, Add Book, Check Out, Check In, and Loans.
+The application shell must provide persistent access to About, Dashboard, Books, Add Book, Check Out, Check In, and
+Loans.
 Administrative deletion/restore and connection settings may be visually separated, but there is no role-based
 authorization in the MVP.
 

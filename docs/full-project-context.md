@@ -61,10 +61,10 @@ If browser-support or production-host security baselines are needed:
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
   - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
-If later product tickets (FEAT-17 through FEAT-21):
+If later product tickets (FEAT-18 through FEAT-21):
   - the current ticket
   - docs/technical-reference/openapi.json and API-for-FE.md when the ticket touches new API surfaces
-  - docs/product-docs/UI_DESIGN_NOTES.MD when layout or About/homepage design is in question
+  - docs/product-docs/UI_DESIGN_NOTES.MD when layout or visual design is in question
 
 Do not paste PRODUCT_REQS.*, the full PLAN, or a re-synthesized API dump by default. Prefer the checked-in OpenAPI file
 over paraphrasing schemas into chat.
@@ -212,7 +212,8 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     server state; book create with ISBN lookup and camera/hardware
     scanning; checkout (with Find-by-ISBN via `useBooks({ isbn })`),
     check-in and loan history; reading flows; edit/delete/restore/backup;
-    dashboard; diagnostics; shelves catalog CRUD; infinite scroll on
+    About homepage at `/` with dashboard metrics at `/dashboard`;
+    diagnostics; shelves catalog CRUD; infinite scroll on
     `/books` and `/loans`; API contract sync (regenerated OpenAPI types
     for wishlist / dashboard-report paths; `booksApi` / query keys for
     `author` / `title` / `category`; collection `sortBy=shelf`; checkout
@@ -230,11 +231,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     explicit shelf; Add/Edit Book block the page when shelves fail to
     load). Loan helpers (`loansApi.list({ bookId })`, `loansApi.get` /
     `useLoan`, Check In deep-link, `booksApi.list({ isbn })` /
-    `useBooks({ isbn })`) remain in place.     Remaining tickets are `FEAT-17` through `FEAT-21` under
-    `docs/tickets/`. FEAT-13 workflow and accessibility testing,
-    FEAT-14 CI packaging, FEAT-15 Podman deployed development, and
-    FEAT-16 versioned release artifacts are complete (those ticket files
-    are removed). Prefer ticket presence under `docs/tickets/` over
+    `useBooks({ isbn })`) remain in place. Remaining tickets are
+    `FEAT-18` through `FEAT-21` under `docs/tickets/`. FEAT-13
+    workflow and accessibility testing, FEAT-14 CI packaging, FEAT-15
+    Podman deployed development, FEAT-16 versioned release artifacts,
+    and FEAT-17 About homepage are complete (those ticket files are
+    removed). Prefer ticket presence under `docs/tickets/` over
     `docs/ToDo.md` when judging what is still open.
 -   Optional runtime-configured diagnostic reporting lives in
     `src/diagnostics/diagnosticReporter.ts`
@@ -327,11 +329,16 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     `scripts/packRelease.ts` / Make `pack` (`ci/artifacts/shade-frontend-<version>.tar.gz`
     plus SHA-256 and manifest), inspection tests, and the production
     tarball handoff in `README.md`. Production is not another Podman
-    image. FEAT-17 through FEAT-21 remain product follow-ons. Do not
-    implement those future tickets early.
--   Dashboard `/` via `DashboardPage` + `useDashboard` /
-    `dashboardApi.get` (FEAT-17 will move About to `/` and relocate the
-    dashboard). Displays API-provided Collection, Circulation, and
+    image. FEAT-17 About homepage is complete (ticket file removed):
+    `/` is `AboutPage` + `CatalogGuide`; dashboard metrics live at
+    `/dashboard`. FEAT-18 through FEAT-21 remain product follow-ons.
+    Do not implement those future tickets early.
+-   About `/` via `AboutPage` + `CatalogGuide` (library background,
+    Charles Leewright dedication, lending policy, and accessible
+    card-catalog How to Use dialog with in-app workflow links). Does
+    not call `GET /dashboard` or any other API.
+-   Dashboard `/dashboard` via `DashboardPage` + `useDashboard` /
+    `dashboardApi.get`. Displays API-provided Collection, Circulation, and
     Reading Record metrics without recalculating business totals; null
     averages render as "Not enough data"; inconsistent `read` /
     `reading.books_read` (and unread counterparts) show a contract
@@ -522,12 +529,15 @@ index.html
     -   `src/features/loans/loansListModel.ts`: re-exports shared
         infinite-scroll constants and loan page flattening helper
 -   Live product UI (do not revert to placeholders):
-    -   `/` -- `DashboardPage` + `useDashboard` (FEAT-17 will relocate):
-        API Collection / Circulation / Reading
-        Record metrics; null averages as "Not enough data";
-        inconsistency warning without recalculation; Refresh plus
-        offline/stale status; `QueryErrorState` recovery. Styles in
-        `src/styles/components.css`.
+    -   `/` -- `AboutPage` + `CatalogGuide`: library background,
+        dedication, lending policy, and accessible card-catalog-style
+        How to Use dialog with in-app workflow links. Does not call
+        `GET /dashboard` or any other API.
+    -   `/dashboard` -- `DashboardPage` + `useDashboard`: API Collection
+        / Circulation / Reading Record metrics; null averages as "Not
+        enough data"; inconsistency warning without recalculation;
+        Refresh plus offline/stale status; `QueryErrorState` recovery.
+        Styles in `src/styles/components.css`.
     -   `/books` -- `BooksPage` via
         `useInfiniteBooks({ sortBy, sortOrder })` with URL search params
         (`sortBy`, `sortOrder` only); sort controls include Author,
@@ -764,10 +774,12 @@ scanner capture, checkout (including Find-by-ISBN), check-in and loan
 history, reading tracking (mark-read + reading edit),
 edit/delete/restore/backup, API contract sync (`author` / `title` /
 `category` list filters, `sortBy=shelf`, checkout `412` display-only
-messaging), dashboard, operational/browser hardening, shelves catalog
-writes, and infinite scroll on `/books` and `/loans` are done. Do not
+messaging), About homepage, dashboard, operational/browser
+hardening, shelves catalog writes, and infinite scroll on `/books`
+and `/loans` are done. Do not
 rebuild the typed client, invent parallel hooks, or replace
-`DashboardPage` / `NewBookPage` / `BookForm` / `bookEditModel` /
+`AboutPage` / `CatalogGuide` / `DashboardPage` / `NewBookPage` /
+`BookForm` / `bookEditModel` /
 `EditBookPage` / `DeleteBookPage` / `DeletedBooksPage` /
 `BackupLibraryPage` / `isbn.ts` / `src/features/scanning/` /
 `CheckoutPage` / `checkoutModel` (including ISBN Find and existing `412`
@@ -937,12 +949,14 @@ merely to make a ticket pass.
     Leave `/admin/deleted` under `DeletedBooksPage` and `/admin/backup`
     under `BackupLibraryPage` (programmatic `<a download>`, always
     `URL.revokeObjectURL`; do not inspect, log, cache, or upload dump
-    contents). Leave dashboard under `DashboardPage` / `useDashboard`
-    (display API stats only; null averages as "Not enough data"). Leave
-    reading flows under `MarkReadPage` / `markReadModel` /
-    `ReadingEditPage` / `readingEditModel`. Leave scanner code under
-    `src/features/scanning/` lazy-loaded from `/books/new` and
-    `/checkout`. Leave checkout under `CheckoutPage` / `checkoutModel`,
+    contents). Leave About under `AboutPage` / `CatalogGuide` at `/`.
+    Leave dashboard under `DashboardPage` / `useDashboard` at
+    `/dashboard` (display API stats only; null averages as "Not
+    enough data"). Leave reading flows under `MarkReadPage` /
+    `markReadModel` / `ReadingEditPage` / `readingEditModel`. Leave
+    scanner code under `src/features/scanning/` lazy-loaded from
+    `/books/new` and `/checkout`. Leave checkout under `CheckoutPage` /
+    `checkoutModel`,
     including ISBN Find via `useBooks({ isbn })` (not lookup) and
     existing `412` `display_only` handling. Leave check-in and loan
     history under `CheckinPage` / `checkinModel` / `checkinEligibility`
@@ -967,7 +981,7 @@ merely to make a ticket pass.
     release artifacts are complete: keep `scripts/packRelease.ts`, Make
     `pack`, gitignored `ci/artifacts/`, and the production-like host
     inspection tests; do not upload secret-bearing archives from
-    default CI. Do not pull FEAT-17 through FEAT-21 product work into
+    default CI. Do not pull FEAT-18 through FEAT-21 product work into
     unrelated changes. Never simulate restore, checkout, check-in, or
     initial mark-read with generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
@@ -984,10 +998,11 @@ merely to make a ticket pass.
 manual/ISBN/camera/scanner add flows, edit, checkout, check-in, loan
 history, shelves catalog, reading tracking, soft delete/restore, deleted
 admin, authenticated SQL backup, runtime API config, CI, Podman preview,
-versioned production artifacts. Ticketed follow-ons (implement only when
-working that ticket): About homepage (FEAT-17), collection category
-filter UI (FEAT-18), wishlists (FEAT-19), dashboard reports / incomplete
-metadata (FEAT-20), display-only alternate-copy checkout UX (FEAT-21).
+versioned production artifacts, and About homepage with the dashboard at
+`/dashboard`. Ticketed follow-ons (implement only when working that
+ticket): collection category filter UI (FEAT-18), wishlists (FEAT-19),
+dashboard reports / incomplete metadata (FEAT-20), display-only
+alternate-copy checkout UX (FEAT-21).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library
 tenancy, cover images, overdue notifications, Goodreads/StoryGraph, user
@@ -1001,11 +1016,11 @@ Do not expand a ticket into out-of-scope features. Do not implement
 future tickets prematurely.
 
 FEAT-13 workflow and accessibility tests, FEAT-14 CI packaging,
-FEAT-15 Podman deployed development, and FEAT-16 versioned release
-artifacts are complete. Remaining tickets begin with `FEAT-17` and
-continue through `FEAT-21` under `docs/tickets/`. When no current
-ticket is supplied, do not guess which remaining ticket to implement;
-ask for the next ticket.
+FEAT-15 Podman deployed development, FEAT-16 versioned release
+artifacts, and FEAT-17 About homepage are complete. Remaining tickets
+begin with `FEAT-18` and continue through `FEAT-21` under
+`docs/tickets/`. When no current ticket is supplied, do not guess which
+remaining ticket to implement; ask for the next ticket.
 The supplied ticket's acceptance criteria are authoritative unless they
 contradict the backend contract or established architecture.
 
@@ -1043,7 +1058,7 @@ repo before editing.
                 `Release ${APP_VERSION}` plus API version from
                 `useVersion` / `GET /version` when available)
 
-  Feature       `src/features/{dashboard,books,loans,shelves,connection,scanning,shared}/` (scanning is a feature module, not a top-level route)
+  Feature       `src/features/{about,dashboard,books,loans,shelves,connection,scanning,shared}/` (scanning is a feature module, not a top-level route)
   routes        
 
   Books UI      `src/features/books/routes/{BooksPage,BookDetailsPage,NewBookPage,EditBookPage,bookEditModel,DeleteBookPage,DeletedBooksPage,BackupLibraryPage,MarkReadPage,markReadModel,ReadingEditPage,readingEditModel}.{tsx,ts}`,
@@ -1052,7 +1067,9 @@ repo before editing.
 
   Shelves UI    `src/features/shelves/routes/ShelvesPage.tsx`, `shelfDisplay.ts`, `shelfFormModel.ts` (catalog CRUD complete)
 
-  Dashboard UI  `src/features/dashboard/routes/DashboardPage.tsx` (FEAT-17 will relocate)
+  About UI      `src/features/about/routes/AboutPage.tsx`, `src/features/about/components/CatalogGuide.tsx` (`/` homepage)
+
+  Dashboard UI  `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`)
 
   Loans UI      `src/features/loans/routes/CheckoutPage.tsx`, `checkoutModel.ts` (Find-by-ISBN + `412` display-only complete); `CheckinPage.tsx`, `checkinModel.ts`, `checkinEligibility.ts`, `LoansPage.tsx`,
                 `loanTemporal.ts`, `loansListModel.ts` (infinite scroll complete)
@@ -1084,7 +1101,8 @@ reading tracking (`MarkReadPage` / `markReadModel` /
 `ReadingEditPage` / `readingEditModel`); edit/delete/restore/backup
 (`EditBookPage` / `bookEditModel` / `DeleteBookPage` /
 `DeletedBooksPage` / `BackupLibraryPage`); API contract sync (list
-filters, shelf sort, checkout `412`); dashboard `/` (`DashboardPage`);
+filters, shelf sort, checkout `412`); About `/` (`AboutPage` +
+`CatalogGuide`); dashboard `/dashboard` (`DashboardPage`);
 operational/browser hardening (runtime diagnostics, cross-route
 accessibility/responsive hardening, browser-support documentation,
 performance/contract re-check, and production-host security ownership
@@ -1094,9 +1112,10 @@ notes); shelves catalog (`ShelvesPage` / `shelfDisplay` /
 `make check` integration); FEAT-14 CI packaging (`.github/workflows/check.yml`
 and `scripts/checkBundleSize.mjs`); FEAT-15 Podman deployed-development
 image (`ci/Containerfile`, Make `container-*` targets); FEAT-16
-versioned release tarball (`scripts/packRelease.ts`, Make `pack`). Remaining
-tickets begin with FEAT-17 (About homepage). Later product tickets:
-FEAT-18 category filter UI, FEAT-19 wishlists, FEAT-20 dashboard reports,
+versioned release tarball (`scripts/packRelease.ts`, Make `pack`);
+FEAT-17 About homepage (`AboutPage` at `/`, dashboard at `/dashboard`).
+Remaining tickets begin with FEAT-18 (collection category filter UI).
+Later product tickets: FEAT-19 wishlists, FEAT-20 dashboard reports,
 FEAT-21 display-only alternate-copy UX.
 
 ------------------------------------------------------------------------
@@ -1156,8 +1175,8 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining current tickets under
-                                  `docs/tickets/`: `FEAT-17_...` through
-                                  `FEAT-21_...`; FEAT-13 through FEAT-16
+                                  `docs/tickets/`: `FEAT-18_...` through
+                                  `FEAT-21_...`; FEAT-13 through FEAT-17
                                   are complete (those ticket files are
                                   removed)
 
