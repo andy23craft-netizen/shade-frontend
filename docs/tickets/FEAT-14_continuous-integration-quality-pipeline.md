@@ -54,7 +54,11 @@ representative running backend `/openapi.json` when locking or changing the gate
   `VITE_API_SECRET_KEY` the same way. Assert the repo-root `.env` file is **not** copied into `dist/` (covered today by
   `scripts/productionBuildTokenInspection.test.ts`). Embedded build-time token values in JS bundles are expected; do
   not fail the build solely because a dummy secret appears in compiled assets. CI fails when `.env` itself appears in
-  `dist/` or release artifacts.
+  `dist/` or CI-uploaded build artifacts.
+- Production packaging intentionally excludes `.env` and any other secrets. FEAT-16 owns the versioned release tarball,
+  but the same rule applies: the tarball must never include `.env` or secrets. Deployment is owned by a different
+  project; that project places a `.env` file next to the `.DLL` file(s) on production. Do not bake secrets into
+  frontend CI artifacts or the release tarball "for convenience."
 - If an optional live contract smoke job exists (against a representative API), supply credentials only through the CI
   secret store, never through the repository, workflow defaults, build args, or runtime-config templates committed for
   CI. Prefer public `GET /health` for reachability; use protected routes only when the smoke explicitly needs them.
@@ -85,11 +89,12 @@ denylist before upload.
 
 #### Bundle-size reporting
 
-`docs/baselines/FEAT-03_performance.md` records the FEAT-12 re-check (main JS entry **124.98 kB** gzip; soft-warning
-budget **120 kB**, hard-failure candidate **150 kB**). CI should record production build size and report material
-regressions against that baseline. Soft-warning exceedance is already accepted for the current product surface; treat
-further sustained growth of the main entry (or crossing the hard-failure candidate) as a CI signal, not a silent
-pass.
+`docs/baselines/FEAT-03_performance.md` currently records the FEAT-12 re-check (main JS entry **124.98 kB** gzip;
+soft-warning budget **120 kB**, hard-failure candidate **150 kB**). Encode those budgets into CI reporting/enforcement,
+then **delete** `docs/baselines/FEAT-03_performance.md` -- do not update it with new measurements or CI ownership notes.
+Soft-warning exceedance is already accepted for the current product surface; treat further sustained growth of the main
+entry (or crossing the hard-failure candidate) as a CI signal, not a silent pass. After deletion, CI (and any remaining
+docs that must mention budgets) is the source of truth for those numbers.
 
 ## Current baseline
 
@@ -107,8 +112,8 @@ Already in place and should be reused (not rebuilt):
 - No `.github/workflows/` yet in this repository. Sibling `shade-backend` has `.github/workflows/check.yml` (immutable
   install + `make check` pattern) and `ci/` build scripts -- adapt layout, pinning, caching, and privacy-safe
   diagnostics to Yarn/`make check` rather than copying wholesale.
-- Bundle-size baselines and suggested budgets: `docs/baselines/FEAT-03_performance.md` (reporting/enforcement still
-  owned by this ticket).
+- Bundle-size baselines and suggested budgets live temporarily in `docs/baselines/FEAT-03_performance.md`; this ticket
+  moves reporting/enforcement into CI and deletes that baseline file (do not update it).
 - README documents local `make check` / `make build` but does not yet document required branch checks or CI.
 
 ## Remaining scope
@@ -123,19 +128,23 @@ Already in place and should be reused (not rebuilt):
 - Keep `make check` as the single local quality gate and make CI invoke the same underlying commands.
 - Make the README, Make targets, package scripts, and CI use consistent command names; document required branch checks
   and whether any live-API smoke job is optional vs required.
-- Record production build size in CI and report material regressions against the FEAT-03 / FEAT-12 baseline budgets.
+- Record production build size in CI and report material regressions against the FEAT-03 / FEAT-12 baseline budgets
+  (soft-warning **120 kB** gzip / hard-failure candidate **150 kB** gzip for the main JS entry; current accepted size
+  **124.98 kB** gzip).
+- Delete `docs/baselines/FEAT-03_performance.md` once those budgets are encoded in CI; do not update that file.
 - Retain test and build diagnostics needed to investigate failures without publishing credentials or private library
   data (see denylist above).
 - Do not invent a production release tarball here: package only what CI needs for verification; FEAT-16 owns the
-  versioned tarball Make target and checksum/manifest. Still assert that CI-produced `dist/` (and any CI-uploaded
-  build artifact) never includes the repo-root `.env` file.
+  versioned tarball Make target and checksum/manifest. CI-produced `dist/` (and any CI-uploaded build artifact) must
+  never include the repo-root `.env` file or other secrets. The future release tarball follows the same rule:
+  deployment is a different project that places `.env` next to the `.DLL` file(s) on production.
 
 ## Acceptance criteria
 
 - A clean checkout runs the complete documented pipeline with pinned prerequisites and an unchanged lockfile.
 - CI fails on lockfile drift, lint warnings, type errors, tests, coverage-threshold regressions, OpenAPI/fixture
-  contract drift, accessibility/browser regressions, `.env` packaged into `dist/` or CI build artifacts, or build
-  failure.
+  contract drift, accessibility/browser regressions, `.env` or other secrets packaged into `dist/` or CI build
+  artifacts, or build failure.
 - CI and `make check` execute equivalent required checks and produce the same successful production build.
 - Dependency caching cannot bypass immutable installation or alter lockfile semantics.
 - Browser tests use isolated data and do not depend on execution order or a shared mutable backend library.
@@ -144,11 +153,14 @@ Already in place and should be reused (not rebuilt):
 - CI output and retained artifacts contain no token, Authorization header, borrower/notes/review/ISBN-draft content,
   SQL backup body, or full protected request/response payloads.
 - Required branch checks are documented, including any contract-smoke or live-API job status (required vs optional).
-- Production build size is recorded in CI and material regressions against the FEAT-03 baseline budgets are reported.
+- Production build size is recorded in CI and material regressions against the encoded FEAT-03 / FEAT-12 budgets are
+  reported; `docs/baselines/FEAT-03_performance.md` is deleted (not updated).
+- Documentation states that production packaging excludes `.env`/secrets and that a separate deployment project places
+  `.env` next to the `.DLL` file(s) on production.
 - `make check` passes from a clean checkout.
 
 ## Plan coverage
 
 The CI portion of Workstream 12; automated portions of the production quality and integration gates that belong in the
 reproducible pipeline (immutable install, `make check` equivalence, contract fixture agreement, privacy-safe
-diagnostics, bundle-size reporting).
+diagnostics, bundle-size reporting with deletion of `docs/baselines/FEAT-03_performance.md`).
