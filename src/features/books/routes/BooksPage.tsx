@@ -19,11 +19,17 @@ import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 import { BooksListControls } from '../components/BooksListControls'
 import {
     flattenInfiniteBookPages,
+    parseCategoryParam,
     parseSortByParam,
     parseSortOrderParam,
+    parseTextFilterParam,
     type BookSortBy,
     type BookSortOrder,
 } from '../booksListModel'
+import {
+    useEffect,
+    useState,
+} from 'react'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -72,11 +78,45 @@ function displayReadState(
 function updateListParams(
     searchParams: URLSearchParams,
     updates: {
+        category?: Category | undefined
+        author?: string | undefined
+        title?: string | undefined
         sortBy?: BookSortBy
         sortOrder?: BookSortOrder
     },
 ): URLSearchParams {
     const next = new URLSearchParams(searchParams)
+
+    if ('category' in updates) {
+        if (updates.category === undefined) {
+            next.delete('category')
+        } else {
+            next.set(
+                'category',
+                updates.category,
+            )
+        }
+    }
+
+    if ('author' in updates) {
+        const author = updates.author?.trim()
+
+        if (author) {
+            next.set('author', author)
+        } else {
+            next.delete('author')
+        }
+    }
+
+    if ('title' in updates) {
+        const title = updates.title?.trim()
+
+        if (title) {
+            next.set('title', title)
+        } else {
+            next.delete('title')
+        }
+    }
 
     if (updates.sortBy !== undefined) {
         if (updates.sortBy === 'author') {
@@ -117,8 +157,34 @@ export function BooksPage() {
     const sortOrder = parseSortOrderParam(
         searchParams.get('sortOrder'),
     )
+    const category = parseCategoryParam(
+        searchParams.get('category'),
+    )
+    const author = parseTextFilterParam(
+        searchParams.get('author'),
+    )
+    const title = parseTextFilterParam(
+        searchParams.get('title'),
+    )
+    const [authorDraft, setAuthorDraft] = useState(
+        author ?? '',
+    )
+    const [titleDraft, setTitleDraft] = useState(
+        title ?? '',
+    )
+
+    useEffect(() => {
+        setAuthorDraft(author ?? '')
+        setTitleDraft(title ?? '')
+    }, [
+        author,
+        title,
+    ])
 
     const booksQuery = useInfiniteBooks({
+        category,
+        author,
+        title,
         sortBy,
         sortOrder,
     })
@@ -201,8 +267,29 @@ export function BooksPage() {
             </div>
 
             <BooksListControls
+                category={category}
+                author={authorDraft}
+                title={titleDraft}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
+                onCategoryChange={(nextCategory) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                category: nextCategory,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+
+                onAuthorChange={setAuthorDraft}
+
+                onTitleChange={setTitleDraft}
+                
                 onSortByChange={(nextSortBy) => {
                     setSearchParams(
                         updateListParams(
@@ -224,6 +311,40 @@ export function BooksPage() {
                             searchParams,
                             {
                                 sortOrder: nextSortOrder,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+
+
+                onApply={() => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                author: authorDraft,
+                                title: titleDraft,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+                onClear={() => {
+                    setAuthorDraft('')
+                    setTitleDraft('')
+
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                category: undefined,
+                                author: undefined,
+                                title: undefined,
                             },
                         ),
                         {
