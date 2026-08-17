@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "check": "yarn lint && yarn typecheck && yarn test && yarn build",
+    "check": "yarn lint && yarn typecheck && yarn test:coverage && yarn test:e2e && yarn build",
     "api:generate": "openapi-typescript docs/technical-reference/openapi.json -o src/api/generated/openapi.ts",
     "api:check": "yarn api:generate && git diff --exit-code -- src/api/generated/openapi.ts"
   },

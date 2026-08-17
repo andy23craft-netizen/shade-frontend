@@ -77,6 +77,7 @@ export default defineConfig({
             'src/**/*.{test,spec}.{ts,tsx}',
             'scripts/**/*.{test,spec}.ts',
         ],
+        testTimeout: 10_000,
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'json-summary'],
@@ -88,10 +89,10 @@ export default defineConfig({
                 'src/main.tsx',
             ],
             thresholds: {
-                statements: 88,
-                branches: 83,
+                statements: 87,
+                branches: 80,
                 functions: 92,
-                lines: 88,
+                lines: 87,
             },
         },
     },

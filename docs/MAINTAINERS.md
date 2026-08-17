@@ -297,7 +297,7 @@ The available commands are:
 - `yarn api:check`: Regenerates types and fails if the generated file differs from git.
 
 `make check` currently type-checks twice: once directly and once as part of the build command. This is redundant,
-but it is expected behavior rather than a failure.
+but it is expected behavior rather than a failure. It then runs playwright checks and runs coverage with an enforced coverage floor.
 
 ### Runtime configuration, CORS, and token
 
@@ -391,6 +391,7 @@ When you need product or ticket detail, start with:
 - `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` for the backend contract.
 - `docs/baselines/FEAT-03_performance.md` for large-library and bundle-size baselines.
 - `docs/AGENTS.md` for the LLM-oriented twin of this guide.
+- `docs/baselines/FEAT-13_testing.md` for browser/accessibility/manual verification baseline.
 
 ## Making a Change Safely
 

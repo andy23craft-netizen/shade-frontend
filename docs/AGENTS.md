@@ -40,18 +40,21 @@ Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in
 `PATCH`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open (the
 checklist can lag). Do not invent undocumented routes, realtime channels, or lifecycle shortcuts.
 
-**Next / in progress:** `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` (automated accessibility checks,
-browser-level journeys for MVP routes and lifecycle endpoints, mock/fixture coverage of the documented status matrix,
-coverage thresholds, and folding those suites into `make check`). Scaffolding already present: `playwright.config.ts`,
-`e2e/` (dashboard smoke, mock API helper, axe helper), and `yarn test:e2e` -- not yet part of `make check`. Reuse
-existing typed helpers, page tests, redaction seams, and the checked-in scanner / browser-support baseline matrices.
-Do not pull FEAT-14 CI packaging, FEAT-15 Podman, FEAT-16 release artifacts, or FEAT-17 through FEAT-21 product work
-into FEAT-13. Product routes are fully implemented (no unfinished `RoutePlaceholder` feature pages remain). Later
-tickets under `docs/tickets/`: About as homepage with relocated dashboard (FEAT-17), collection category filter UI
-(FEAT-18), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX
-(FEAT-21). Host-owned HTTPS/CSP / SPA fallback / production config notes live in `README.md` and `docs/MAINTAINERS.md`
-(FEAT-16 owns rollout).
+**Completed:** `docs/tickets/FEAT-13_workflow-and-accessibility-tests.md` (automated accessibility checks,
+browser-level MVP and lifecycle journeys, mock/fixture coverage of the documented status and error families,
+enforced V8 coverage thresholds, and Playwright integration into the canonical `make check` gate). The completed
+test infrastructure includes `playwright.config.ts`, isolated stateful API fixtures under `e2e/support/`, automated
+axe accessibility checks across critical routes, manual book-creation and lifecycle browser journeys, and regression
+coverage thresholds. Verification and manual-gate ownership are documented in
+`docs/baselines/FEAT-13_testing.md`, with the existing FEAT-06 scanner-support and FEAT-12 browser-support baselines
+remaining authoritative for hardware- and browser-specific manual checks. Product routes are fully implemented
+(no unfinished `RoutePlaceholder` feature pages remain).
 
+**Next:** Later tickets under `docs/tickets/` cover About as homepage with relocated dashboard (FEAT-17), collection
+category filter UI (FEAT-18), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and display-only checkout
+alternate-copy UX (FEAT-21). FEAT-14 owns CI packaging, FEAT-15 owns Podman, and FEAT-16 owns release artifacts and
+rollout. Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in `README.md` and
+`docs/MAINTAINERS.md`.
 Notable shipped behaviors agents should preserve:
 
 - Diagnostics: `createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `APP_VERSION` (from
