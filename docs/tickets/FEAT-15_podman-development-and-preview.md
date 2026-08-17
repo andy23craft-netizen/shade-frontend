@@ -37,7 +37,8 @@ Treat these as complementary, not interchangeable:
 - `public/config.js` -- public runtime config assigned to `window.__SHADE_CONFIG__`: `apiBaseUrl` and optional
   `diagnostics: { enabled, endpoint }`. Not bundled. Omitted diagnostics default to disabled / null endpoint.
 - `package.json` `version` -- canonical application release (`APP_VERSION`, footer `Release` label). Injected at Vite
-  production-build time. It is **not** a runtime-config field; do not put `release` back into `config.js`.
+  production-build time. It is **not** a runtime-config field; do not put `release` back into `config.js`. The Podman
+  image build must also tag the image with this same string (plus `latest`; see Remaining scope).
 - Repository-root `.env` (`VITE_API_SECRET_KEY`) -- gitignored Bearer token. Vite injects it at **build** time into JS
   bundles. The container does not run Vite, so bind-mounting `.env` at container start does not change the baked token.
   `.env.example` is the committed template.
@@ -109,7 +110,8 @@ Still not ready-to-go:
   still without calling protected API routes.
 - **Cache headers are incomplete.** Revalidate `index.html` and `config.js`; the copied conf only special-cases
   `/assets/`.
-- **No Make targets or operator docs** for building the image that compose will consume.
+- **No Make targets or operator docs** for building the image that compose will consume, including dual tags
+  (`latest` and `package.json` `version`).
 - **Stale comments** (TanStack Router).
 
 If adapting costs more than a Shade-shaped Containerfile, delete `ci/` contents and replace them. Do not preserve a
@@ -133,6 +135,10 @@ foreign layout out of inertia. Do not expand the image into a second local-dev e
 - Add Make targets and documentation for image build, how compose should run it, configuration, and cleanup. Keep
   existing host `make run` / `make preview` / `make build` working. If a staging directory under `ci/artifacts/` is
   used, gitignore generated trees so `dist/` copies and secrets are not committed.
+- A successful image build must apply **two** tags to the same image: `latest` and the `version` field from
+  `package.json` (always read the current value; do not hard-code it). That version string is the same canonical
+  release as `APP_VERSION` / the footer `Release` label. Document the image name compose should pull; do not invent a
+  registry or FEAT-16 tarball naming here.
 - Add a container health/smoke check that does not require storing protected credentials in the image (frontend entry
   and runtime config availability; do not call protected API routes from the healthcheck).
 - Document compose-published origin vs backend CORS (exact origin, or same-origin via the compose reverse proxy). Do
@@ -142,7 +148,8 @@ foreign layout out of inertia. Do not expand the image into a second local-dev e
 
 ## Acceptance criteria
 
-- A clean checkout can build the image using documented prerequisites.
+- A clean checkout can build the image using documented prerequisites. The build produces one image tagged both
+  `latest` and `<package.json version>` (the `version` field; same string Vite injects as `APP_VERSION`).
 - The image serves the same optimized assets produced by the production build (not a Vite dev server).
 - Changing `apiBaseUrl` or optional diagnostics at startup requires no image rebuild. Application release remains
   `package.json` `version` / `APP_VERSION` from the image build.
