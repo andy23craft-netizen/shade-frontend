@@ -1,5 +1,0 @@
-# Podman context is ci/artifacts. Only the host publish tree and nginx.conf are copied.
-*
-!publish/
-!publish/**
-!nginx.conf

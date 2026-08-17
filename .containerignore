@@ -1,0 +1,15 @@
+# FEAT-15 Podman build context.
+#
+# The image consumes only the already-built static site and its container
+# configuration. Source, dependencies, repository metadata, and secrets must
+# not enter the build context.
+
+*
+
+!dist/
+!dist/**
+
+!ci/
+!ci/Containerfile
+!ci/nginx.conf
+!ci/container-entrypoint.sh
