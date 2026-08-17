@@ -92,7 +92,9 @@ Copied container starting material under `ci/` (present, not wired, not Shade-re
 These files were copy-pasted from another project. The runtime-only nginx shape matches this ticket's goal (static site
 in compose, no Vite in the image). They are still not a finished Shade definition: no Podman Make targets, no repo-root
 `.containerignore` / `.dockerignore`, and README does not document image build, compose-oriented config, or cleanup.
-Generated staging trees under `ci/artifacts/` are not gitignored.
+README today describes local Vite (`make run`) and production-host assumptions; it does not present **local
+development** and **deployed development** (Podman Compose) as the two ways to run this repo. Generated staging trees
+under `ci/artifacts/` are not gitignored.
 
 ### Copied `ci/` fitness (keep, adapt, or delete)
 
@@ -124,6 +126,12 @@ foreign layout out of inertia. Do not expand the image into a second local-dev e
   that tree.
 - Document the image as the **dev-deployment** unit for Podman Compose with the backend: published port, healthcheck,
   runtime-config injection, SPA fallback, and that the Compose file itself lives in the orchestrator (not this repo).
+- Update `README.md` so operators see **two** ways to interact with this project: **local development** (`make run`,
+  Vite, already documented) and **deployed development** (build this Podman image and run it in Compose with the
+  backend). Lead with that distinction; keep the existing local-dev setup/`make run` path; add the image-build,
+  tags (`latest` and `package.json` `version`), runtime-config, CORS/origin, and compose-consumer notes this ticket
+  ships. Do not document the production tarball or production-host install here (FEAT-16). Do not present containerized
+  Vite / hot reload as a third path.
 - Inject public runtime configuration (`apiBaseUrl` and optional `diagnostics`) when the container starts so those
   values can change without rebuilding the image. Do not inject application release through runtime config. Do not treat
   a host-copied `config.js` baked into image layers as satisfying this.
@@ -158,8 +166,9 @@ foreign layout out of inertia. Do not expand the image into a second local-dev e
   dedicated secret file. Built JS may contain the build-time secret (same as non-container production builds).
 - The health/smoke check verifies that the frontend and runtime configuration are available without a live Bearer secret
   in the image.
-- README (or equivalent) documents this image as compose/dev-deployment, not local `make run`, and not the production
-  tarball.
+- `README.md` specifies the two ways to interact with this project: local development (`make run`) and deployed
+  development (this Podman image in Compose with the backend). It does not treat hot-reload-in-Podman or the FEAT-16
+  production tarball as a FEAT-15 run path.
 - Container startup and shutdown do not leave generated root-owned repository files.
 - `make check` passes from a clean checkout.
 - Foreign copy-paste leftovers are gone from the shipped definition: no TanStack Router comments, no `publish-local` /
