@@ -8,7 +8,7 @@ export function NotFoundPage() {
 
             <p>The requested page was not found.</p>
 
-            <Link to="/">Return to the dashboard</Link>
+            <Link to="/">Return home</Link>
         </>
     )
 }

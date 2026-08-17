@@ -128,6 +128,7 @@ Organize code by responsibility without creating a global abstraction for every 
 - `src/features/scanning/` — camera and hardware-scanner input.
 - `src/features/loans/` — checkout, check-in, and loan history.
 - `src/features/reading/` — reading completion, rating, and review.
+- `src/features/about/` — About homepage and card-catalog How to Use presentation.
 - `src/features/dashboard/` — dashboard queries and presentation.
 - `src/config/` — validated runtime configuration.
 - `../../src/test` — shared test setup, API mocks, builders, and render helpers.

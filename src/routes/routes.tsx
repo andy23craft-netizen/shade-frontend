@@ -16,11 +16,19 @@ import { NotFoundPage } from './NotFoundPage'
 import { routeMetadata } from './routeMetadata'
 import { ReadingEditPage } from '../features/books/routes/ReadingEditPage'
 import { DeleteBookPage } from '../features/books/routes/DeleteBookPage'
+import { AboutPage } from '../features/about/routes/AboutPage'
 
 export const routeConfig = [
     {
         element: <AppShell />,
         children: [
+            {
+                path: routeMetadata.about.path,
+                handle: {
+                    title: routeMetadata.about.title,
+                },
+                element: <AboutPage />,
+            },
             {
                 path: routeMetadata.dashboard.path,
                 handle: {

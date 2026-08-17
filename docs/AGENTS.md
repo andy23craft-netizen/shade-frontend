@@ -14,8 +14,10 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
 
 - Application shell, shared UI primitives, runtime config, build-time Bearer auth, and typed OpenAPI + React Query
   server state (PLAN.md 7.5 invalidation).
-- Dashboard metrics on `/` (`DashboardPage` / `useDashboard`); Collection, Circulation, and Reading Record from the
-  API only (null averages as "Not enough data"; contract warnings without inventing totals).
+- About homepage on `/` (`AboutPage` + `CatalogGuide`) with library background, dedication, lending policy, and an
+  accessible card-catalog-style How to Use dialog; the dashboard lives at `/dashboard`.
+- Dashboard metrics on `/dashboard` (`DashboardPage` / `useDashboard`); Collection, Circulation, and Reading Record
+  from the API only (null averages as "Not enough data"; contract warnings without inventing totals).
 - Active collection and book details (`/books`, `/books/:bookId`) with infinite scroll, shelf sort, Read/Unread, and
   ratings; category filter UI is deferred to FEAT-18.
 - Book create/edit (`/books/new`, `/books/:bookId/edit`) via shared `BookForm` / `bookFormModel` / `bookEditModel`,
@@ -74,9 +76,14 @@ build-time Bearer token; `.env` / SQL / source / dependency trees must not appea
 the tarball plus the deployment repository, not another Podman image. HTTPS/CSP, atomic install, supervision,
 and rollback remain host-owned (`README.md`).
 
-**Next:** Remaining tickets under `docs/tickets/` are About as homepage with relocated dashboard (FEAT-17),
-collection category filter UI (FEAT-18), wishlists (FEAT-19), dashboard report surfaces (FEAT-20), and
-display-only checkout alternate-copy UX (FEAT-21).
+FEAT-17 About homepage (ticket file removed after completion). Shipped `AboutPage` at `/` with library background,
+Charles Leewright dedication, lending policy, and `CatalogGuide`, an accessible card-catalog-style How to Use dialog
+with keyboard focus management and in-app workflow links. `DashboardPage` moved from `/` to `/dashboard` without
+changing its FEAT-11 behavior or `GET /dashboard` API contract. Brand/home recovery continues to `/`, now landing on
+About, and primary navigation exposes both About and Dashboard.
+
+**Next:** Remaining tickets under `docs/tickets/` are collection category filter UI (FEAT-18), wishlists (FEAT-19),
+dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX (FEAT-21).
 
 Notable shipped behaviors agents should preserve:
 
@@ -85,8 +92,10 @@ Notable shipped behaviors agents should preserve:
   `RootErrorBoundary`, `AppProviders`, `ConnectionProvider`, and `apiClient` `onRequestFailure`; allowlisted/redacted
   via `assertSafeApiDiagnostic`; defaults disabled in `public/config.js`; never invent a second telemetry transport or
   fabricate correlation IDs.
-- Dashboard: explicit Refresh, offline/paused and stale status, `QueryErrorState` recovery; styles in
-  `src/styles/components.css`. FEAT-17 will move About to `/` and relocate the dashboard.
+- About: `/` is the homepage via `AboutPage`; `CatalogGuide` provides the accessible card-catalog-style How to Use
+  dialog and workflow links.
+- Dashboard: `/dashboard`; explicit Refresh, offline/paused and stale status, `QueryErrorState` recovery; styles in
+  `src/styles/components.css`.
 - Edit: minimal `BookUpdate` patch (blank ISBN → `null`; never send `status`, reading fields, or loan-driving values);
   Field-linked `422`; `404` refetch; no-op rejection; deleted warning; shelves load gate.
 - Delete/restore/backup: on-loan blocking via `status === 'on_loan'` or `findActiveLoan`; programmatic `<a download>`
@@ -201,9 +210,9 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 **In scope for MVP:** dashboard, active books, detail, manual/ISBN/camera/scanner add flows, edit, checkout, check-in,
 loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL backup, runtime API config, CI,
-Podman preview, versioned production artifacts. Ticketed follow-ons (implement only when working that ticket): About
-homepage (FEAT-17), collection category filter UI (FEAT-18), wishlists (FEAT-19), dashboard reports / incomplete
-metadata (FEAT-20), display-only alternate-copy checkout UX (FEAT-21).
+Podman preview, versioned production artifacts, and About homepage with the dashboard at `/dashboard`. Ticketed
+follow-ons (implement only when working that ticket): collection category filter UI (FEAT-18), wishlists (FEAT-19),
+dashboard reports / incomplete metadata (FEAT-20), display-only alternate-copy checkout UX (FEAT-21).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
@@ -275,7 +284,8 @@ and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeCo
 navigation (brand includes "est. 2026"), the main `Outlet`, footer (`Release` from `package.json` `version` via
 `APP_VERSION`, plus API version from public `GET /version` when available), and heading focus after client-side
 navigations.
-Live product UI today: `/` (`DashboardPage` + `useDashboard`), `/books` (`BooksPage`, including Read/Unread
+Live product UI today: `/` (`AboutPage` + `CatalogGuide`), `/dashboard` (`DashboardPage` + `useDashboard`), `/books`
+(`BooksPage`, including Read/Unread
 and rating on collection cards), `/books/:bookId` (`BookDetailsPage`, including reading-field display, gated Mark
 Read / Edit Reading / Edit Book / Delete Book), `/books/new` (`NewBookPage` + `BookForm` / `bookFormModel` with ISBN
 lookup plus camera/hardware scanner capture), `/books/:bookId/edit` (`EditBookPage` + `bookEditModel`),
@@ -461,7 +471,10 @@ Implemented (do not revert to placeholders):
 - `src/features/books/routes/BackupLibraryPage.tsx` (`/admin/backup`): authenticated SQL download via
   `backupApi.get` through `useConnection().apiClient`; programmatic `<a download>` with always-`URL.revokeObjectURL`;
   documented `403` / generation `500` / network failure messaging; never inspect, log, cache, or upload dump contents.
-- `src/features/dashboard/routes/DashboardPage.tsx` (`/`): `useDashboard` metrics for Collection, Circulation,
+- `src/features/about/routes/AboutPage.tsx` (`/`) + `src/features/about/components/CatalogGuide.tsx`: About homepage
+  with library background, dedication, lending policy, and accessible card-catalog-style How to Use dialog with
+  in-app workflow links.
+- `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`): `useDashboard` metrics for Collection, Circulation,
   and Reading Record; null averages as "Not enough data"; API inconsistency warning without recalculation; Refresh
   plus offline/stale status; `QueryErrorState` recovery. Styles in `src/styles/components.css`.
 - `src/features/books/routes/MarkReadPage.tsx` / `markReadModel.ts` (`/books/:bookId/mark-read`): initial

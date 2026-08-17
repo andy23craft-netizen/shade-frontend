@@ -1,6 +1,11 @@
 export const routeMetadata = {
-  dashboard: {
+  about: {
     path: '/',
+    title: 'Shade Library',
+    heading: 'Shade Library',
+  },
+  dashboard: {
+    path: '/dashboard',
     title: 'Dashboard',
     heading: 'Dashboard',
   },

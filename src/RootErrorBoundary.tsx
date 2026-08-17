@@ -45,7 +45,7 @@ export class RootErrorBoundary extends Component<
 
                     <p>
                         Shade could not display this page. You can try again or return
-                        to the dashboard.
+                        home.
                     </p>
 
                     <div>

@@ -80,6 +80,14 @@ export function AppShell() {
                                 to="/"
                                 end
                             >
+                                About
+                            </NavLink>
+
+                            <NavLink
+                                className="app-nav__link"
+                                to="/dashboard"
+                                end
+                            >
                                 Dashboard
                             </NavLink>
 

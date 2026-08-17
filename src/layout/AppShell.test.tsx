@@ -58,6 +58,7 @@ describe('AppShell layout and navigation', () => {
     })
 
     for (const label of [
+      'About',
       'Dashboard',
       'Books',
       'Add Book',
@@ -114,9 +115,9 @@ describe('AppShell layout and navigation', () => {
     ).toBeInTheDocument()
 
     expect(
-      screen.getByRole('link', {
-        name: 'Return to the dashboard',
-      }),
+        screen.getByRole('link', {
+          name: 'Return home',
+        }),
     ).toHaveAttribute('href', '/')
   })
 
@@ -145,5 +146,45 @@ describe('AppShell layout and navigation', () => {
     expect(
         window.history.length,
     ).toBe(historyLengthBefore)
+  })
+
+  it('marks About as the current primary navigation item on the homepage', () => {
+    renderAppTree(['/'])
+
+    const primaryNav = screen.getByRole('navigation', {
+      name: 'Primary navigation',
+    })
+
+    expect(
+        within(primaryNav).getByRole('link', {
+          name: 'About',
+        }),
+    ).toHaveAttribute('aria-current', 'page')
+
+    expect(
+        within(primaryNav).getByRole('link', {
+          name: 'Dashboard',
+        }),
+    ).not.toHaveAttribute('aria-current')
+  })
+
+  it('marks Dashboard as the current primary navigation item at /dashboard', () => {
+    renderAppTree(['/dashboard'])
+
+    const primaryNav = screen.getByRole('navigation', {
+      name: 'Primary navigation',
+    })
+
+    expect(
+        within(primaryNav).getByRole('link', {
+          name: 'Dashboard',
+        }),
+    ).toHaveAttribute('aria-current', 'page')
+
+    expect(
+        within(primaryNav).getByRole('link', {
+          name: 'About',
+        }),
+    ).not.toHaveAttribute('aria-current')
   })
 })
