@@ -7,7 +7,10 @@ suites from earlier tickets, without leaking API secrets or private library data
 
 ## Dependencies
 
-FEAT-13.
+FEAT-13 is complete. Reuse the existing `make check` gate (`yarn check`: lint, type-check, Vitest with V8 coverage
+thresholds, Playwright browser journeys and axe checks, production build). Do not reinvent those suites. Packaging the
+same commands in CI is this ticket; Podman remains FEAT-15 and versioned release tarballs remain FEAT-16. Do not pull
+FEAT-15 through FEAT-21 product or packaging work into FEAT-14.
 
 ## Contract references
 
@@ -29,28 +32,32 @@ representative running backend `/openapi.json` when locking or changing the gate
 #### What the gate must keep equivalent
 
 - `make check` remains the single local quality gate. CI invokes the same underlying commands (immutable Yarn install,
-  lint with zero warnings, type-check, unit/integration tests, accessibility checks, browser journeys, production
-  build) so a clean checkout and CI produce the same successful `dist/`.
+  lint with zero warnings, type-check, unit/integration tests with coverage thresholds, accessibility checks, browser
+  journeys, production build) so a clean checkout and CI produce the same successful `dist/`.
 - Contract fixtures and typed helpers from FEAT-03 are part of that gate: CI fails when they disagree with the
   checked-in OpenAPI (paths, methods, status families, schemas, enums, nullability, `204` empty body, and backup
-  `application/sql` + `Content-Disposition`).
-- Browser journeys and accessibility suites from FEAT-13 run in CI with isolated data. They must not depend on
-  execution order or a shared mutable live library. Responses they assert against stay aligned with OpenAPI success/
-  error shapes and `API-for-FE.md` semantics (including both `422` detail shapes, lookup `found: false`, dedicated
-  lifecycle endpoints, shelves CRUD status families, and backup generation `500`).
+  `application/sql` + `Content-Disposition`). `scripts/contractSmoke.test.ts` and `yarn api:check` are the existing
+  drift surfaces -- keep them green in CI (fold `api:check` into the gate if it is not already covered by the CI
+  command set).
+- Browser journeys and accessibility suites from FEAT-13 (`e2e/`, mocked API under `e2e/support/mockApi.ts`) run in CI
+  with isolated data. They must not depend on execution order or a shared mutable live library. Responses they assert
+  against stay aligned with OpenAPI success/error shapes and `API-for-FE.md` semantics (including both `422` detail
+  shapes, lookup `found: false`, dedicated lifecycle endpoints, shelves CRUD status families, and backup generation
+  `500`).
 
 #### Secrets, credentials, and CI environment
 
 - Auth is Bearer-only; there is no login/logout/session. The default PR/default-branch pipeline must not require a live
   protected API or a checked-in `API_SECRET_KEY`. Prefer mocks/fixtures that satisfy OpenAPI.
+- Playwright's webServer already injects a documented dummy `VITE_API_SECRET_KEY=test-api-token` for browser journeys.
+  Production-build steps (and any CI step that runs `vite build` / `make build`) must supply a documented dummy
+  `VITE_API_SECRET_KEY` the same way. Assert the repo-root `.env` file is **not** copied into `dist/` (covered today by
+  `scripts/productionBuildTokenInspection.test.ts`). Embedded build-time token values in JS bundles are expected; do
+  not fail the build solely because a dummy secret appears in compiled assets. CI fails when `.env` itself appears in
+  `dist/` or release artifacts.
 - If an optional live contract smoke job exists (against a representative API), supply credentials only through the CI
   secret store, never through the repository, workflow defaults, build args, or runtime-config templates committed for
   CI. Prefer public `GET /health` for reachability; use protected routes only when the smoke explicitly needs them.
-- Production-build inspection (build-time Bearer via `.env`): CI supplies a documented dummy
-  `VITE_API_SECRET_KEY` for any step that runs `vite build`. Assert the repo-root `.env` file is **not** copied into
-  `dist/` or packaged into the production release tarball. Embedded build-time token values in JS bundles are
-  expected; do not fail the build solely because a dummy secret appears in compiled assets. CI fails when `.env`
-  itself appears in `dist/` or release artifacts.
 
 #### Privacy denylist for logs and retained artifacts
 
@@ -64,39 +71,71 @@ diagnostics must never retain:
 - Full request/response bodies from protected routes
 
 Failure artifacts may keep redacted status codes, safe `detail` strings, and route/path identifiers needed to debug.
-Do not snapshot or upload backup blobs "for debugging."
+Do not snapshot or upload backup blobs "for debugging." Playwright already writes `playwright-report/` and
+`test-results/` (gitignored); retain them only when needed for failure investigation and scrub them against the
+denylist before upload.
 
 #### CORS and browser-test hosts
 
 - Default API CORS allows local Vite origins only. Browser-test hosts used in CI must either match an allowed exact
   origin (scheme, hostname, and port; no path or trailing slash) when hitting a real API, or use mocks so CORS is
-  irrelevant. Do not rely on credentialed CORS (cookies); it is disabled.
+  irrelevant (current FEAT-13 journeys use mocks). Do not rely on credentialed CORS (cookies); it is disabled.
 - When a CI browser job exercises authenticated backup against a real API, verify that `Content-Disposition` remains
   readable under the configured exact origin (or same-origin proxy). Do not invent undocumented response headers.
 
-## Scope
+#### Bundle-size reporting
 
-- Add pull-request and default-branch CI with immutable Yarn installation.
-- Follow patterns in `../shade-backend/ci/` where they fit this frontend (workflow layout, pinning, caching, and
-  privacy-safe diagnostics), adapted to Yarn/`make check` rather than copied wholesale.
-- Run lint, type-check, unit/integration tests (including OpenAPI/fixture contract checks), production build,
-  accessibility checks, and browser journeys from FEAT-13.
+`docs/baselines/FEAT-03_performance.md` records the FEAT-12 re-check (main JS entry **124.98 kB** gzip; soft-warning
+budget **120 kB**, hard-failure candidate **150 kB**). CI should record production build size and report material
+regressions against that baseline. Soft-warning exceedance is already accepted for the current product surface; treat
+further sustained growth of the main entry (or crossing the hard-failure candidate) as a CI signal, not a silent
+pass.
+
+## Current baseline
+
+Already in place and should be reused (not rebuilt):
+
+- Local quality gate: `make check` -> `yarn check` runs lint, type-check, `yarn test:coverage` (V8 thresholds:
+  statements 87%, branches 80%, functions 92%, lines 87%), `yarn test:e2e`, and `yarn build`. Documented in
+  `docs/baselines/FEAT-13_testing.md`.
+- Playwright: `playwright.config.ts` (Chromium; CI retries/workers; webServer with dummy `VITE_API_SECRET_KEY`),
+  `e2e/{accessibility,book.creation,dashboard.smoke,library.lifecycle}.spec.ts`, and
+  `e2e/support/{mockApi,accessibility}.ts`.
+- Contract smoke: `scripts/contractSmoke.test.ts` (part of Vitest) and `yarn api:check` (not yet a separate CI step).
+- Production build token inspection: `scripts/productionBuildTokenInspection.test.ts`.
+- Pinned toolchain: Node 26.7.0 (`.nvmrc` / `package.json` `engines`), Yarn 4.18.0 (`packageManager`), Corepack.
+- No `.github/workflows/` yet in this repository. Sibling `shade-backend` has `.github/workflows/check.yml` (immutable
+  install + `make check` pattern) and `ci/` build scripts -- adapt layout, pinning, caching, and privacy-safe
+  diagnostics to Yarn/`make check` rather than copying wholesale.
+- Bundle-size baselines and suggested budgets: `docs/baselines/FEAT-03_performance.md` (reporting/enforcement still
+  owned by this ticket).
+- README documents local `make check` / `make build` but does not yet document required branch checks or CI.
+
+## Remaining scope
+
+- Add pull-request and default-branch CI with immutable Yarn installation (`yarn install --immutable`).
+- Follow patterns in the sibling `shade-backend` GitHub Actions workflow and `ci/` scripts where they fit this
+  frontend, adapted to Yarn/`make check`.
+- Run the existing local gate in CI: lint, type-check, unit/integration tests (including OpenAPI/fixture contract
+  checks), coverage thresholds, accessibility checks, browser journeys, and production build.
 - Cache dependencies/build inputs without weakening lockfile semantics.
 - Use the repository-pinned Node 26.7.0 and Yarn 4.18.0 versions.
 - Keep `make check` as the single local quality gate and make CI invoke the same underlying commands.
-- Make the README, Make targets, package scripts, and CI use consistent command names.
-- Record production build size and report material regressions against the budget established in FEAT-03.
+- Make the README, Make targets, package scripts, and CI use consistent command names; document required branch checks
+  and whether any live-API smoke job is optional vs required.
+- Record production build size in CI and report material regressions against the FEAT-03 / FEAT-12 baseline budgets.
 - Retain test and build diagnostics needed to investigate failures without publishing credentials or private library
   data (see denylist above).
-- Package production release artifacts from `dist/` and deployable static assets only; **never** include the repo-root
-  `.env` file in the production tarball (FEAT-16 owns the versioned tarball Make target and checksum/manifest).
-- Document required branch checks and whether any live-API smoke job is optional vs required.
+- Do not invent a production release tarball here: package only what CI needs for verification; FEAT-16 owns the
+  versioned tarball Make target and checksum/manifest. Still assert that CI-produced `dist/` (and any CI-uploaded
+  build artifact) never includes the repo-root `.env` file.
 
 ## Acceptance criteria
 
 - A clean checkout runs the complete documented pipeline with pinned prerequisites and an unchanged lockfile.
-- CI fails on lockfile drift, lint warnings, type errors, tests, OpenAPI/fixture contract drift, accessibility/browser
-  regressions, `.env` packaged into `dist/` or the production tarball, or build failure.
+- CI fails on lockfile drift, lint warnings, type errors, tests, coverage-threshold regressions, OpenAPI/fixture
+  contract drift, accessibility/browser regressions, `.env` packaged into `dist/` or CI build artifacts, or build
+  failure.
 - CI and `make check` execute equivalent required checks and produce the same successful production build.
 - Dependency caching cannot bypass immutable installation or alter lockfile semantics.
 - Browser tests use isolated data and do not depend on execution order or a shared mutable backend library.
@@ -105,10 +144,11 @@ Do not snapshot or upload backup blobs "for debugging."
 - CI output and retained artifacts contain no token, Authorization header, borrower/notes/review/ISBN-draft content,
   SQL backup body, or full protected request/response payloads.
 - Required branch checks are documented, including any contract-smoke or live-API job status (required vs optional).
+- Production build size is recorded in CI and material regressions against the FEAT-03 baseline budgets are reported.
 - `make check` passes from a clean checkout.
 
 ## Plan coverage
 
 The CI portion of Workstream 12; automated portions of the production quality and integration gates that belong in the
 reproducible pipeline (immutable install, `make check` equivalence, contract fixture agreement, privacy-safe
-diagnostics).
+diagnostics, bundle-size reporting).
