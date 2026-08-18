@@ -1,0 +1,170 @@
+import type {
+    WishlistBookCreate,
+    WishlistBookList,
+    WishlistBookRead,
+    WishlistCreate,
+    WishlistList,
+    WishlistRead,
+    WishlistUpdate,
+} from './apiTypes'
+import type {
+    createApiClient,
+} from './apiClient'
+import type {
+    ApiCallOptions,
+} from './apiCallOptions'
+import {
+    pickWishlistBookCreate,
+    pickWishlistCreate,
+    pickWishlistUpdate,
+} from './requestFields'
+
+export interface ListWishlistsOptions
+    extends ApiCallOptions {
+    skip?: number
+    take?: number
+}
+
+export interface ListWishlistBooksOptions
+    extends ApiCallOptions {
+    skip?: number
+    take?: number
+}
+
+function withSignal(
+    signal: AbortSignal | undefined,
+): ApiCallOptions | undefined {
+    return signal === undefined
+        ? undefined
+        : {
+            signal,
+        }
+}
+
+function withPagination(
+    path: string,
+    skip: number | undefined,
+    take: number | undefined,
+): string {
+    const params = new URLSearchParams()
+
+    if (skip !== undefined) {
+        params.set('skip', String(skip))
+    }
+
+    if (take !== undefined) {
+        params.set('take', String(take))
+    }
+
+    const query = params.toString()
+
+    return query
+        ? `${path}?${query}`
+        : path
+}
+
+export function createWishlistsApi(
+    client: ReturnType<typeof createApiClient>,
+) {
+    return {
+        async list(
+            options: ListWishlistsOptions = {},
+        ): Promise<WishlistList> {
+            const path = withPagination(
+                '/wishlists',
+                options.skip,
+                options.take,
+            )
+            const signalOptions = withSignal(
+                options.signal,
+            )
+
+            return signalOptions === undefined
+                ? client.getJson<WishlistList>(path)
+                : client.getJson<WishlistList>(
+                    path,
+                    signalOptions,
+                )
+        },
+
+        async create(
+            wishlist: WishlistCreate,
+            options: ApiCallOptions = {},
+        ): Promise<WishlistRead> {
+            return client.requestJson<WishlistRead>(
+                '/wishlists',
+                {
+                    method: 'POST',
+                    body: pickWishlistCreate(wishlist),
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async update(
+            wishlistId: string,
+            wishlist: WishlistUpdate,
+            options: ApiCallOptions = {},
+        ): Promise<WishlistRead> {
+            return client.requestJson<WishlistRead>(
+                `/wishlists/${encodeURIComponent(wishlistId)}`,
+                {
+                    method: 'PATCH',
+                    body: pickWishlistUpdate(wishlist),
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async remove(
+            wishlistId: string,
+            options: ApiCallOptions = {},
+        ): Promise<void> {
+            await client.request(
+                `/wishlists/${encodeURIComponent(wishlistId)}`,
+                {
+                    method: 'DELETE',
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async listBooks(
+            wishlistId: string,
+            options: ListWishlistBooksOptions = {},
+        ): Promise<WishlistBookList> {
+            const path = withPagination(
+                `/wishlists/${encodeURIComponent(wishlistId)}/books`,
+                options.skip,
+                options.take,
+            )
+            const signalOptions = withSignal(
+                options.signal,
+            )
+
+            return signalOptions === undefined
+                ? client.getJson<WishlistBookList>(path)
+                : client.getJson<WishlistBookList>(
+                    path,
+                    signalOptions,
+                )
+        },
+
+        async addBook(
+            wishlistId: string,
+            wishlistBook: WishlistBookCreate,
+            options: ApiCallOptions = {},
+        ): Promise<WishlistBookRead> {
+            return client.requestJson<WishlistBookRead>(
+                `/wishlists/${encodeURIComponent(wishlistId)}/books`,
+                {
+                    method: 'POST',
+                    body: pickWishlistBookCreate(
+                        wishlistBook,
+                    ),
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+    }
+}

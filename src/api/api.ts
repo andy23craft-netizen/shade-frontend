@@ -30,6 +30,10 @@ import {
     createVersionApi,
 } from './versionApi'
 
+import {
+    createWishlistsApi,
+} from './wishlistsApi'
+
 export function createApi(
     options: Parameters<
         typeof createApiClient
@@ -48,5 +52,6 @@ export function createApi(
         health: createHealthApi(client),
         version: createVersionApi(client),
         backup: createBackupApi(client),
+        wishlists: createWishlistsApi(client),
     }
 }

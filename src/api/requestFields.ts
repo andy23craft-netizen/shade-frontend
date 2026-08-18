@@ -8,6 +8,9 @@ import type {
     MarkReadRequest,
     ShelfCreate,
     ShelfUpdate,
+    WishlistBookCreate,
+    WishlistCreate,
+    WishlistUpdate,
 } from './apiTypes'
 
 export const BOOK_CREATE_KEYS = [
@@ -80,6 +83,24 @@ export const SHELF_UPDATE_KEYS = [
     'description',
     'location',
 ] as const satisfies readonly (keyof ShelfUpdate)[]
+
+export const WISHLIST_CREATE_KEYS = [
+    'name',
+    'description',
+] as const satisfies readonly (keyof WishlistCreate)[]
+
+export const WISHLIST_UPDATE_KEYS = [
+    'name',
+    'description',
+] as const satisfies readonly (keyof WishlistUpdate)[]
+
+export const WISHLIST_BOOK_CREATE_KEYS = [
+    'book_id',
+    'status',
+    'priority',
+    'notes',
+    'url',
+] as const satisfies readonly (keyof WishlistBookCreate)[]
 
 export function pickDocumentedRequestFields<
     T extends object,
@@ -160,3 +181,31 @@ export function pickShelfUpdate(
         SHELF_UPDATE_KEYS,
     )
 }
+
+export function pickWishlistCreate(
+    wishlist: WishlistCreate,
+): WishlistCreate {
+    return pickDocumentedRequestFields(
+        wishlist,
+        WISHLIST_CREATE_KEYS,
+    )
+}
+
+export function pickWishlistUpdate(
+    wishlist: WishlistUpdate,
+): WishlistUpdate {
+    return pickDocumentedRequestFields(
+        wishlist,
+        WISHLIST_UPDATE_KEYS,
+    )
+}
+
+export function pickWishlistBookCreate(
+    wishlistBook: WishlistBookCreate,
+): WishlistBookCreate {
+    return pickDocumentedRequestFields(
+        wishlistBook,
+        WISHLIST_BOOK_CREATE_KEYS,
+    )
+}
+
