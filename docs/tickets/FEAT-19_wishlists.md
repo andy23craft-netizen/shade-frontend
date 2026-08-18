@@ -13,14 +13,17 @@ edit/remove endpoints the API does not expose.
 
 ## Dependencies
 
-Generated OpenAPI types and `scripts/contractSmoke.test.ts` already include wishlist paths after prior contract
-sync. Reuse the typed client, query keys, mutation invalidation, redaction helpers, shared components, shelves
-patterns (`ShelvesPage` create/edit/delete + confirmation), and PLAN.md 7.5-style cache invalidation. Do not invent
-membership PATCH/DELETE or soft-delete for wishlists. If wishlist types regress, regenerate and extend contract
-smoke here as a prerequisite rather than blocking.
+Generated OpenAPI types and `scripts/contractSmoke.test.ts` already include wishlist paths. `apiTypes.ts` does
+**not** yet export wishlist schema aliases. Reuse the typed client, query keys, mutation invalidation, redaction
+helpers, shared components, shelves patterns (`ShelvesPage` create/edit/delete + confirmation), and PLAN.md 7.5-style
+cache invalidation. Do not invent membership PATCH/DELETE or soft-delete for wishlists. If wishlist types regress,
+regenerate and extend contract smoke as a prerequisite rather than blocking.
 
-Do not pull journey automation, CI, Podman, release artifacts, FEAT-17 About/homepage routing, FEAT-18 collection
-filter UX, or dashboard-report UI into this ticket.
+FEAT-17 About homepage is complete (`/` is About; dashboard is `/dashboard`). FEAT-18 collection category / author /
+title filters and shelf sort are complete on `/books` (ticket file removed) -- do not regress those controls.
+
+Do not pull journey automation, CI, Podman, release artifacts, dashboard-report UI (FEAT-20), display-only
+alternate-copy UX (FEAT-21), or later tickets (FEAT-22+) into this ticket.
 
 ## Contract references
 
@@ -32,6 +35,8 @@ Treat these as complementary:
   - `GET` / `POST /wishlists/{wishlist_id}/books`
   - Schemas: `WishlistCreate`, `WishlistUpdate`, `WishlistRead`, `WishlistList`, `WishlistBookCreate`,
     `WishlistBookRead`, `WishlistBookList`, `WishlistBookStatus` (`wanted` | `ordered` | `owned` | `dropped`)
+  - `WishlistRead` has no membership-count field; use `GET .../books` `total` and/or visible rows.
+  - `WishlistBookCreate` requires `book_id` only; `status` defaults to `wanted`.
 - `../technical-reference/API-for-FE.md` -- behavioral rules OpenAPI does not fully express:
   - All wishlist routes are authenticated (Bearer).
   - No soft-delete for wishlists. `DELETE` permanently removes membership rows first, then the wishlist; catalog
@@ -42,6 +47,7 @@ Treat these as complementary:
   - `POST .../books` adds an existing catalog book; `status` defaults to `wanted`. Duplicate `(wishlist_id,
     book_id)` memberships are permitted. Soft-deleted catalog books may be referenced (existence, not active
     state).
+  - `PATCH /wishlists/{wishlist_id}` is partial and preserves omitted fields.
   - Path `wishlist_id` / membership `book_id`: **400** when empty or not a valid GUID; **404** when well-formed
     but unknown.
   - Unsupported membership `status` → **422**.
@@ -57,21 +63,24 @@ Already in place and should be reused (not rebuilt):
 
 - FEAT-03 / FEAT-04 patterns: typed `*Api.ts` helpers, `queryKeys`, React Query hooks, `createApi` aggregation,
   `pickDocumentedRequestFields` for request bodies, `enumDisplayValue` for unknown enums.
-- `/books` via `BooksPage` + `useInfiniteBooks` (cards link to detail; Read/Unread + rating; Title Case
-  `shelf_name`; no wishlist actions).
-- `/books/:bookId` via `BookDetailsPage` with gated lifecycle actions (checkout, check-in, mark-read, edit,
-  delete). No wishlist actions yet.
-- Primary nav in `AppShell` (Dashboard / Books / Add Book / Check Out / Check In / Loans / Shelves + admin). No
-  Wishlists link yet.
-- `/shelves` via `ShelvesPage` (CHORE-01) is a good pattern for catalog create + Field-linked errors +
-  `ConfirmationDialog` delete -- reuse patterns, not shelf domain logic.
+- `/books` via `BooksPage` + `useInfiniteBooks({ category, author, title, sortBy, sortOrder })` with URL-backed
+  filters and shelf sort; cards link to detail with Read/Unread, rating, and Title Case `shelf_name`. No wishlist
+  actions.
+- `/books/:bookId` via `BookDetailsPage` with gated lifecycle actions (checkout, check-in, mark-read, edit, delete).
+  No wishlist actions.
+- Primary nav in `AppShell`: About, Dashboard, Books, Add Book, Check Out, Check In, Loans, Shelves, plus admin
+  Deleted Books / Backup Library. No Wishlists link.
+- `/shelves` via `ShelvesPage` is a good pattern for catalog create + Field-linked errors + `ConfirmationDialog`
+  delete -- reuse patterns, not shelf domain logic.
 - `routeMetadata` / `routes.tsx` have no `/wishlists` entry.
 - Shared UI: `Button`, `AppLink`, `Field`, `EmptyState`, `LoadingState`, `QueryErrorState`, `ConfirmationDialog`,
   `Alert`, `useNotifications` toasts.
 - Loans join pattern on `LoansPage`: list domain rows, join catalog via `useBooks()` for title/authors, durable
   `Book {id}` fallback when the book is missing -- reuse this approach for membership rows.
-- Wishlist OpenAPI paths/schemas already exist in generated types and contract smoke; `createApi` does **not** yet
-  expose a `wishlists` aggregate.
+- Wishlist OpenAPI paths/schemas exist in `src/api/generated/openapi.ts` and `scripts/contractSmoke.test.ts`
+  (`/wishlists`, `/wishlists/{wishlist_id}`, `/wishlists/{wishlist_id}/books`). `apiTypes.ts` does not export
+  wishlist aliases. `createApi` does not expose a `wishlists` aggregate. `queryKeys` and `requestFields` have no
+  wishlist entries. There is no `wishlistsApi`, `wishlistsQueries`, or `src/features/wishlists/` module.
 
 ## Product intent
 
@@ -103,20 +112,18 @@ section. Do not invent a card-heavy dashboard of wishlists or cover-image grids 
 - Membership remove or status/priority edit (no API).
 - Creating catalog books from the wishlist page (memberships reference existing `book_id` only).
 - Cover images, Amazon/Goodreads sync, acquisition/"where did you get this?" flows.
-- Dashboard wishlist metrics or FEAT-18 filter work.
+- Dashboard wishlist metrics or regressing FEAT-18 `/books` filter/sort UX.
 - Soft-delete / restore for wishlists (API hard-deletes).
 - A separate `/wishlists/:wishlistId` route unless the single `/wishlists` page becomes unwieldy; prefer one page
   that lists wishlists and nested contents first.
 
 ## Remaining scope (file-level plan)
 
-### 1. OpenAPI types and schema aliases (prerequisite if types regress)
+### 1. Schema aliases
 
 | File | Change |
 | ---- | ------ |
-| `src/api/generated/openapi.ts` | Ensure regenerated via `yarn api:generate` from checked-in OpenAPI. Do not hand-edit. |
-| `scripts/contractSmoke.test.ts` | Ensure wishlist paths remain in `expectedPaths` (operations under `/wishlists` and `/wishlists/{wishlist_id}` / `.../books`). Do not regress shelves path coverage already present. |
-| `src/api/apiTypes.ts` | Export aliases: `WishlistCreate`, `WishlistUpdate`, `WishlistRead`, `WishlistList`, `WishlistBookCreate`, `WishlistBookRead`, `WishlistBookList`, `WishlistBookStatus`. |
+| `src/api/apiTypes.ts` | Export aliases: `WishlistCreate`, `WishlistUpdate`, `WishlistRead`, `WishlistList`, `WishlistBookCreate`, `WishlistBookRead`, `WishlistBookList`, `WishlistBookStatus`. Do not hand-edit `src/api/generated/openapi.ts`. |
 | `src/api/apiTypes.test.ts` | Cover new aliases if the file asserts exported schema names/shapes. |
 
 ### 2. Typed wishlist API helpers and request picking
@@ -161,7 +168,7 @@ Optional on the same page (include if it stays small):
 | File | Change |
 | ---- | ------ |
 | `src/features/wishlists/components/AddToWishlistControl.tsx` (recommended) | Shared control: loads wishlists, select target wishlist, optional status select defaulting to `wanted`, submit via `useAddWishlistBook`. Empty wishlists → inline create or link to `/wishlists`. Handle **404** (unknown wishlist/book) with refetch + clear message; **422** Field-linked when status/body invalid; disable while pending; success toast or polite status. Reuse from BooksPage and BookDetailsPage. |
-| `src/features/books/routes/BooksPage.tsx` | Per active book row/card, expose "Add to wishlist" that opens the shared control (inline expand, dialog, or compact form -- prefer existing `ConfirmationDialog` / disclosure patterns over a new modal library). Do not block navigation to detail. Soft-deleted books are not on this page; no special delete gating required beyond active collection. |
+| `src/features/books/routes/BooksPage.tsx` | Per active book row/card, expose "Add to wishlist" that opens the shared control (inline expand, dialog, or compact form -- prefer existing `ConfirmationDialog` / disclosure patterns over a new modal library). Do not block navigation to detail. Do not regress URL-backed category / author / title filters, shelf sort, or filtered vs unfiltered empty states. Soft-deleted books are not on this page; no special delete gating required beyond active collection. |
 | `src/features/books/routes/BookDetailsPage.tsx` | Add "Add to wishlist" for any book that exists (including soft-deleted if detail can show deleted books -- match API: existence is enough). Keep other action gates unchanged. |
 | `src/features/wishlists/components/AddToWishlistControl.test.tsx` | Select wishlist, default status, mutate payload `{ book_id, status? }`, empty-wishlist path, **404** / **422** / pending disable. |
 | `src/features/books/routes/BooksPage.test.tsx` | Assert add affordance present and wires book id into the control (mock mutation). |
@@ -188,7 +195,7 @@ Optional on the same page (include if it stays small):
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Document wishlist helpers, hooks, `/wishlists` route, Books/detail add affordances, and that memberships join catalog by `book_id`. Note wish lists are now in-scope product UI (update the "out of scope unless explicitly requested" line). Mark FEAT-19 complete or remove the ticket file per project convention when done. |
+| `docs/AGENTS.md` | Document wishlist helpers, hooks, `/wishlists` route, Books/detail add affordances, and that memberships join catalog by `book_id`. Note wish lists are now in-scope product UI (update the "out of scope unless explicitly requested" line and the "do not ship wishlist product UI" notes). Mark FEAT-19 complete or remove the ticket file per project convention when done. |
 | `docs/full-project-context.md` | Same wishlist inventory notes when that pack is kept current. |
 | `docs/ToDo.md` | Optional checklist line; prefer ticket presence under `docs/tickets/` as source of truth. |
 
@@ -212,5 +219,5 @@ Optional on the same page (include if it stays small):
 ## Plan coverage
 
 Wishlist browse + add-from-collection against the authenticated wishlist contract. Explicitly excludes acquisition
-workflows, membership mutation endpoints the backend does not provide, and unrelated FEAT-13..18 / shelves catalog
-work.
+workflows, membership mutation endpoints the backend does not provide, and unrelated shelves catalog or dashboard
+report work.
