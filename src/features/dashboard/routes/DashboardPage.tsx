@@ -1,4 +1,18 @@
-import { useDashboard } from '../../../api/dashboardQueries'
+import {
+    type CSSProperties,
+    useState,
+} from 'react'
+
+import {
+    useDashboard,
+    useDashboardBreakdowns,
+    useDashboardIncompleteMetadata,
+    useInfiniteIncompleteMetadataBooks,
+} from '../../../api/dashboardQueries'
+
+import {
+    useInfiniteScrollTrigger,
+} from '../../../hooks/useInfiniteScrollTrigger'
 import {
     Alert,
     AppLink,
@@ -6,7 +20,7 @@ import {
     LoadingState,
     QueryErrorState,
 } from '../../../components'
-import type { CSSProperties } from 'react'
+
 
 function displayAverage(
     value: number | null,
@@ -19,8 +33,95 @@ function displayAverage(
     return `${value.toFixed(1)}${suffix}`
 }
 
+function DashboardBreakdown({
+                                title,
+                                buckets,
+                            }: {
+    title: string
+    buckets: {
+        key: string
+        count: number
+    }[]
+}) {
+    return (
+        <section className="dashboard-breakdown">
+            <h3>{title}</h3>
+
+            {buckets.length === 0 ? (
+                <p className="dashboard-breakdown__empty">
+                    No data recorded.
+                </p>
+            ) : (
+                <dl className="dashboard-breakdown__list">
+                    {buckets.map((bucket) => (
+                        <div
+                            className="dashboard-breakdown__row"
+                            key={bucket.key}
+                        >
+                            <dt>{bucket.key}</dt>
+                            <dd>{bucket.count}</dd>
+                        </div>
+                    ))}
+                </dl>
+            )}
+        </section>
+    )
+}
+
 export function DashboardPage() {
     const dashboardQuery = useDashboard()
+    const breakdownsQuery =
+        useDashboardBreakdowns()
+    const incompleteMetadataQuery =
+        useDashboardIncompleteMetadata()
+    const [incompleteField, setIncompleteField] =
+        useState('')
+    const incompleteBooksQuery =
+        useInfiniteIncompleteMetadataBooks({
+            field:
+                incompleteField === ''
+                    ? undefined
+                    : incompleteField,
+            enabled:
+                incompleteMetadataQuery.data
+                    ?.total_incomplete !== 0,
+        })
+
+    const incompleteBooks =
+        incompleteBooksQuery.data?.pages.flatMap(
+            (page) => page.items,
+        ) ?? []
+
+    const {
+        getRowRef: getIncompleteBookRowRef,
+    } = useInfiniteScrollTrigger({
+        enabled:
+            incompleteBooksQuery.hasNextPage === true &&
+            !incompleteBooksQuery.isFetchingNextPage,
+        hasNextPage:
+        incompleteBooksQuery.hasNextPage,
+        isFetchingNextPage:
+        incompleteBooksQuery.isFetchingNextPage,
+        fetchNextPage: () => {
+            void incompleteBooksQuery.fetchNextPage()
+        },
+        itemCount: incompleteBooks.length,
+    })
+
+    const isDashboardRefreshing =
+        dashboardQuery.isFetching ||
+        breakdownsQuery.isFetching ||
+        incompleteMetadataQuery.isFetching ||
+        incompleteBooksQuery.isFetching
+
+    function refreshDashboard() {
+        void Promise.all([
+            dashboardQuery.refetch(),
+            breakdownsQuery.refetch(),
+            incompleteMetadataQuery.refetch(),
+            incompleteBooksQuery.refetch(),
+        ])
+    }
 
     if (
         dashboardQuery.isPending &&
@@ -108,12 +209,10 @@ export function DashboardPage() {
                 <Button
                     type="button"
                     variant="secondary"
-                    disabled={dashboardQuery.isFetching}
-                    onClick={() => {
-                        void dashboardQuery.refetch()
-                    }}
+                    disabled={isDashboardRefreshing}
+                    onClick={refreshDashboard}
                 >
-                    {dashboardQuery.isFetching
+                    {isDashboardRefreshing
                         ? 'Refreshing…'
                         : 'Refresh'}
                 </Button>
@@ -138,7 +237,7 @@ export function DashboardPage() {
                     Offline. Showing the last available dashboard
                     data.
                 </p>
-            ) : dashboardQuery.isFetching &&
+            ) : isDashboardRefreshing &&
             !dashboardQuery.isRefetchError ? (
                 <p
                     className="dashboard-page__refresh-status"
@@ -400,6 +499,316 @@ export function DashboardPage() {
                             </dd>
                         </div>
                     </dl>
+
+                    <div
+                        className="dashboard-drawer__pull"
+                        aria-hidden="true"
+                    />
+                </section>
+
+                <section
+                    className="dashboard-drawer"
+                    aria-labelledby="dashboard-basic-stats-heading"
+                >
+                    <header className="dashboard-drawer__heading">
+        <span
+            className="dashboard-drawer__index"
+            aria-hidden="true"
+        >
+            IV
+        </span>
+
+                        <h2 id="dashboard-basic-stats-heading">
+                            Basic Stats
+                        </h2>
+
+                        <p>
+                            How the active collection is distributed.
+                        </p>
+                    </header>
+
+                    {breakdownsQuery.isPending ? (
+                        <LoadingState label="Loading collection breakdowns…" />
+                    ) : breakdownsQuery.isLoadingError ? (
+                        <QueryErrorState
+                            title="Unable to load collection breakdowns"
+                            error={breakdownsQuery.error}
+                            onRetry={() => {
+                                void breakdownsQuery.refetch()
+                            }}
+                        />
+                    ) : (
+                        <div className="dashboard-breakdowns">
+                            <dl className="dashboard-breakdowns__summary">
+                                <div>
+                                    <dt>Total Books</dt>
+                                    <dd>
+                                        {breakdownsQuery.data.total_books}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt>On Loan</dt>
+                                    <dd>
+                                        {breakdownsQuery.data.on_loan}
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            <DashboardBreakdown
+                                title="By Category"
+                                buckets={
+                                    breakdownsQuery.data.by_category
+                                }
+                            />
+
+                            <DashboardBreakdown
+                                title="By Creation Year"
+                                buckets={
+                                    breakdownsQuery.data.by_creation_year
+                                }
+                            />
+                        </div>
+                    )}
+
+                    <div
+                        className="dashboard-drawer__pull"
+                        aria-hidden="true"
+                    />
+                </section>
+
+                <section
+                    className="dashboard-drawer"
+                    aria-labelledby="dashboard-healing-heading"
+                >
+                    <header className="dashboard-drawer__heading">
+        <span
+            className="dashboard-drawer__index"
+            aria-hidden="true"
+        >
+            V
+        </span>
+
+                        <h2 id="dashboard-healing-heading">
+                            Healing Metadata
+                        </h2>
+
+                        <p>
+                            Books with catalog information that still needs attention.
+                        </p>
+                    </header>
+
+                    {incompleteMetadataQuery.isPending ? (
+                        <LoadingState label="Loading metadata cleanup counts…" />
+                    ) : incompleteMetadataQuery.isLoadingError ? (
+                        <QueryErrorState
+                            title="Unable to load metadata cleanup counts"
+                            error={incompleteMetadataQuery.error}
+                            onRetry={() => {
+                                void incompleteMetadataQuery.refetch()
+                            }}
+                        />
+                    ) : incompleteMetadataQuery.data.total_incomplete === 0 ? (
+                        <div className="dashboard-healing__empty">
+                            <strong>Catalog metadata is complete.</strong>
+
+                            <p>
+                                No active books currently need metadata cleanup.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="dashboard-healing">
+                            <div className="dashboard-healing__total">
+                                <span>Books needing metadata</span>
+
+                                <strong>
+                                    {
+                                        incompleteMetadataQuery.data
+                                            .total_incomplete
+                                    }
+                                </strong>
+                            </div>
+
+                            <dl className="dashboard-healing__counts">
+                                <div>
+                                    <dt>Category</dt>
+                                    <dd>
+                                        {
+                                            incompleteMetadataQuery.data
+                                                .missing_category
+                                        }
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt>Shelf</dt>
+                                    <dd>
+                                        {
+                                            incompleteMetadataQuery.data
+                                                .missing_shelf
+                                        }
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt>Pages</dt>
+                                    <dd>
+                                        {
+                                            incompleteMetadataQuery.data
+                                                .missing_pages
+                                        }
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt>Publisher</dt>
+                                    <dd>
+                                        {
+                                            incompleteMetadataQuery.data
+                                                .missing_publisher
+                                        }
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt>Publication Year</dt>
+                                    <dd>
+                                        {
+                                            incompleteMetadataQuery.data
+                                                .missing_year
+                                        }
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt>ISBN</dt>
+                                    <dd>
+                                        {
+                                            incompleteMetadataQuery.data
+                                                .missing_isbn
+                                        }
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            <p className="dashboard-healing__note">
+                                A book can be missing more than one field, so these
+                                counts do not add up to the total above.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="dashboard-healing__books">
+                        <label
+                            className="dashboard-healing__filter"
+                            htmlFor="dashboard-incomplete-field"
+                        >
+                            <span>Show books missing</span>
+
+                            <select
+                                id="dashboard-incomplete-field"
+                                value={incompleteField}
+                                onChange={(event) => {
+                                    setIncompleteField(
+                                        event.currentTarget.value,
+                                    )
+                                }}
+                            >
+                                <option value="">
+                                    Any tracked field
+                                </option>
+                                <option value="category">
+                                    Category
+                                </option>
+                                <option value="shelf">
+                                    Shelf
+                                </option>
+                                <option value="pages">
+                                    Pages
+                                </option>
+                                <option value="publisher">
+                                    Publisher
+                                </option>
+                                <option value="year">
+                                    Publication Year
+                                </option>
+                                <option value="isbn">
+                                    ISBN
+                                </option>
+                            </select>
+                        </label>
+
+                        {incompleteBooksQuery.isPending ? (
+                            <LoadingState label="Loading books needing cleanup…" />
+                        ) : incompleteBooksQuery.isLoadingError ? (
+                            <QueryErrorState
+                                title="Unable to load books needing cleanup"
+                                error={incompleteBooksQuery.error}
+                                onRetry={() => {
+                                    void incompleteBooksQuery.refetch()
+                                }}
+                            />
+                        ) : incompleteBooks.length === 0 ? (
+                            <p className="dashboard-healing__books-empty">
+                                No books match this cleanup filter.
+                            </p>
+                        ) : (
+                            <ul className="dashboard-healing__book-list">
+                                {incompleteBooks.map(
+                                    (book, index) => (
+                                        <li
+                                            key={book.id}
+                                            ref={
+                                                getIncompleteBookRowRef(
+                                                    index,
+                                                )
+                                            }
+                                            className="dashboard-healing__book"
+                                        >
+                                            <div>
+                                                <AppLink
+                                                    to={`/books/${book.id}`}
+                                                >
+                                                    {book.title}
+                                                </AppLink>
+
+                                                <p>{book.authors}</p>
+                                            </div>
+
+                                            <AppLink
+                                                to={`/books/${book.id}/edit`}
+                                            >
+                                                Edit
+                                            </AppLink>
+                                        </li>
+                                    ),
+                                )}
+                            </ul>
+                        )}
+
+                        {incompleteBooksQuery.isFetchingNextPage ? (
+                            <div className="infinite-scroll__footer">
+                                <LoadingState label="Loading more books…" />
+                            </div>
+                        ) : null}
+
+                        {incompleteBooksQuery.isFetchNextPageError ? (
+                            <div className="infinite-scroll__footer">
+                                <Alert variant="error">
+                                    Unable to load more books.
+                                </Alert>
+
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => {
+                                        void incompleteBooksQuery.fetchNextPage()
+                                    }}
+                                >
+                                    Retry
+                                </Button>
+                            </div>
+                        ) : null}
+                    </div>
 
                     <div
                         className="dashboard-drawer__pull"

@@ -9,6 +9,6 @@
   * [x] Complete feature ticket `docs/tickets/FEAT-17_about-page.md`.
   * [x] Complete feature ticket `docs/tickets/FEAT-18_sorting-and-filtering.md` (category filter UI; shelf sort already in FEAT-10).
   * [x] Complete feature ticket `docs/tickets/FEAT-19_wishlists.md`.
-  * [ ] Complete feature ticket `docs/tickets/FEAT-20_dashboard-metrics.md`.
+  * [x] Complete feature ticket `docs/tickets/FEAT-20_dashboard-metrics.md`.
   * [ ] Complete feature ticket `docs/tickets/FEAT-21_display-only.md`.
   * [ ] Confirm that `product-docs/PLAN.md` is fully implemented.

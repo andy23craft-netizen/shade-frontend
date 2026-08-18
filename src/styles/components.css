@@ -943,6 +943,248 @@
   text-decoration: underline;
 }
 
+.dashboard-breakdowns {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.dashboard-breakdowns__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid rgb(113 84 52 / 18%);
+}
+
+.dashboard-breakdowns__summary > div {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  text-align: center;
+}
+
+.dashboard-breakdowns__summary dt,
+.dashboard-breakdown h3 {
+  margin: 0;
+  color: var(--color-surface-text);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.dashboard-breakdowns__summary dd {
+  margin: 0;
+  color: var(--color-wood-dark);
+  font-family: var(--font-family-heading);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dashboard-breakdown {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.dashboard-breakdown__list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.dashboard-breakdown__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid rgb(113 84 52 / 14%);
+}
+
+.dashboard-breakdown__row:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-breakdown__row dt {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-surface-text-muted);
+}
+
+.dashboard-breakdown__row dd {
+  margin: 0;
+  color: var(--color-wood-dark);
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+}
+
+.dashboard-breakdown__empty {
+  margin: 0;
+  color: var(--color-surface-text-muted);
+  font-size: var(--font-size-small);
+  font-style: italic;
+}
+
+.dashboard-healing {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.dashboard-healing__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid rgb(113 84 52 / 18%);
+}
+
+.dashboard-healing__total span {
+  color: var(--color-surface-text);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.dashboard-healing__total strong {
+  color: var(--color-wood-dark);
+  font-family: var(--font-family-heading);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.dashboard-healing__counts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.dashboard-healing__counts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2);
+  border-bottom: 1px solid rgb(113 84 52 / 14%);
+}
+
+.dashboard-healing__counts > div:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-healing__counts dt {
+  color: var(--color-surface-text-muted);
+}
+
+.dashboard-healing__counts dd {
+  margin: 0;
+  color: var(--color-wood-dark);
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+}
+
+.dashboard-healing__note,
+.dashboard-healing__empty p {
+  margin: 0;
+  color: var(--color-surface-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+}
+
+.dashboard-healing__empty {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-2);
+}
+
+.dashboard-healing__empty strong {
+  color: var(--color-surface-text);
+  font-family: var(--font-family-heading);
+}
+
+.dashboard-healing__books {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid rgb(113 84 52 / 18%);
+}
+
+.dashboard-healing__filter {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.dashboard-healing__filter span {
+  color: var(--color-surface-text);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.dashboard-healing__filter select {
+  min-height: 44px;
+}
+
+.dashboard-healing__book-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-healing__book {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  min-width: 0;
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid rgb(113 84 52 / 14%);
+}
+
+.dashboard-healing__book:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-healing__book > div {
+  min-width: 0;
+}
+
+.dashboard-healing__book p {
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+  color: var(--color-surface-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.dashboard-healing__book .app-link {
+  min-height: 44px;
+  color: var(--color-surface-text);
+}
+
+.dashboard-healing__book .app-link:hover {
+  color: var(--color-link-hover);
+}
+.dashboard-healing__books-empty {
+  margin: 0;
+  color: var(--color-surface-text-muted);
+  font-size: var(--font-size-small);
+  font-style: italic;
+}
+
+
+
 /*
  * Wooden drawer front.
  *
@@ -1091,12 +1333,20 @@
 
 @media (min-width: 64rem) {
   .dashboard-drawer-bank {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-5);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .dashboard-drawer {
+    grid-column: span 2;
     height: 100%;
+  }
+
+  .dashboard-drawer:nth-child(4) {
+    grid-column: 2 / span 2;
+  }
+
+  .dashboard-drawer:nth-child(5) {
+    grid-column: 4 / span 2;
   }
 
   .dashboard-metric dd {

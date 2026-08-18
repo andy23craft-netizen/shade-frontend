@@ -2,6 +2,7 @@ import {
     fireEvent,
     render,
     screen,
+    within,
 } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import {
@@ -16,6 +17,9 @@ import { DashboardPage } from './DashboardPage'
 
 import {
     useDashboard,
+    useDashboardBreakdowns,
+    useDashboardIncompleteMetadata,
+    useInfiniteIncompleteMetadataBooks,
 } from '../../../api/dashboardQueries'
 
 import type {
@@ -24,6 +28,9 @@ import type {
 
 vi.mock('../../../api/dashboardQueries', () => ({
     useDashboard: vi.fn(),
+    useDashboardBreakdowns: vi.fn(),
+    useDashboardIncompleteMetadata: vi.fn(),
+    useInfiniteIncompleteMetadataBooks: vi.fn(),
 }))
 
 const dashboardFixture: DashboardSummary = {
@@ -43,6 +50,91 @@ const dashboardFixture: DashboardSummary = {
         books_unread: 224,
         average_rating: 4.2,
     },
+}
+
+const breakdownsFixture = {
+    total_books: 542,
+    on_loan: 7,
+    by_category: [
+        {
+            key: 'fiction',
+            count: 120,
+        },
+        {
+            key: 'nonfiction',
+            count: 98,
+        },
+    ],
+    by_shelf: [
+        {
+            key: 'a1',
+            count: 54,
+        },
+        {
+            key: 'b2',
+            count: 43,
+        },
+    ],
+    by_creation_year: [
+        {
+            key: '2026',
+            count: 42,
+        },
+        {
+            key: '2025',
+            count: 31,
+        },
+    ],
+}
+
+const incompleteMetadataFixture = {
+    total_incomplete: 12,
+    missing_category: 2,
+    missing_shelf: 3,
+    missing_pages: 4,
+    missing_publisher: 5,
+    missing_year: 6,
+    missing_isbn: 7,
+}
+
+const incompleteBooksFixture = {
+    pages: [
+        {
+            items: [
+                {
+                    id: 'book-1',
+                    title: 'Incomplete Book',
+                    authors: 'Example Author',
+                },
+            ],
+            total: 1,
+        },
+    ],
+    pageParams: [
+        0,
+    ],
+}
+
+type IncompleteBooksQuery =
+    ReturnType<typeof useInfiniteIncompleteMetadataBooks>
+
+function mockIncompleteBooksQuery(
+    overrides: Partial<IncompleteBooksQuery> = {},
+) {
+    vi.mocked(
+        useInfiniteIncompleteMetadataBooks,
+    ).mockReturnValue({
+        data: incompleteBooksFixture,
+        error: null,
+        isPending: false,
+        isLoadingError: false,
+        isFetchingNextPage: false,
+        isFetchNextPageError: false,
+        hasNextPage: false,
+        fetchNextPage: vi.fn(),
+        refetch: vi.fn(),
+        ...overrides,
+    } as unknown as IncompleteBooksQuery)
 }
 
 type DashboardQuery =
@@ -65,6 +157,50 @@ function mockDashboardQuery(
     } as unknown as DashboardQuery)
 }
 
+type DashboardBreakdownsQuery =
+    ReturnType<typeof useDashboardBreakdowns>
+
+function mockDashboardBreakdownsQuery(
+    overrides: Partial<DashboardBreakdownsQuery> = {},
+) {
+    vi.mocked(
+        useDashboardBreakdowns,
+    ).mockReturnValue({
+        data: breakdownsFixture,
+        error: null,
+        isPending: false,
+        isLoadingError: false,
+        isFetching: false,
+        isRefetchError: false,
+        isStale: false,
+        fetchStatus: 'idle',
+        refetch: vi.fn(),
+        ...overrides,
+    } as unknown as DashboardBreakdownsQuery)
+}
+
+type DashboardIncompleteMetadataQuery =
+    ReturnType<typeof useDashboardIncompleteMetadata>
+
+function mockDashboardIncompleteMetadataQuery(
+    overrides: Partial<DashboardIncompleteMetadataQuery> = {},
+) {
+    vi.mocked(
+        useDashboardIncompleteMetadata,
+    ).mockReturnValue({
+        data: incompleteMetadataFixture,
+        error: null,
+        isPending: false,
+        isLoadingError: false,
+        isFetching: false,
+        isRefetchError: false,
+        isStale: false,
+        fetchStatus: 'idle',
+        refetch: vi.fn(),
+        ...overrides,
+    } as unknown as DashboardIncompleteMetadataQuery)
+}
+
 function renderDashboard() {
     return render(
         <MemoryRouter>
@@ -77,6 +213,9 @@ describe('DashboardPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         mockDashboardQuery()
+        mockDashboardBreakdownsQuery()
+        mockDashboardIncompleteMetadataQuery()
+        mockIncompleteBooksQuery()
     })
 
     it('displays every dashboard business statistic from the API', () => {
@@ -89,45 +228,71 @@ describe('DashboardPage', () => {
             }),
         ).toBeInTheDocument()
 
+        const collectionDrawer = screen
+            .getByRole('heading', {
+                name: 'Collection',
+            })
+            .closest('section')
+
+        expect(collectionDrawer).not.toBeNull()
+
         expect(
-            screen.getByText('Total Books'),
+            within(collectionDrawer!).getByText(
+                'Total Books',
+            ),
         ).toBeInTheDocument()
         expect(
-            screen.getByText('542'),
+            within(collectionDrawer!).getByText('542'),
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText('Checked Out Books'),
+            within(collectionDrawer!).getByText(
+                'Checked Out Books',
+            ),
         ).toBeInTheDocument()
         expect(
-            screen.getByText('7'),
+            within(collectionDrawer!).getByText('7'),
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText(
+            within(collectionDrawer!).getByText(
                 'Added in the last 30 days',
             ),
         ).toBeInTheDocument()
         expect(
-            screen.getByText('12'),
+            within(collectionDrawer!).getByText('12'),
+        ).toBeInTheDocument()
+
+        const circulationDrawer = screen
+            .getByRole('heading', {
+                name: 'Circulation',
+            })
+            .closest('section')
+
+        expect(circulationDrawer).not.toBeNull()
+
+        expect(
+            within(circulationDrawer!).getByText(
+                'Active Loan Records',
+            ),
+        ).toBeInTheDocument()
+        expect(
+            within(circulationDrawer!).getByText('6'),
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText('Active Loan Records'),
+            within(circulationDrawer!).getByText(
+                'Lifetime Loans',
+            ),
         ).toBeInTheDocument()
         expect(
-            screen.getByText('6'),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByText('Lifetime Loans'),
-        ).toBeInTheDocument()
-        expect(
-            screen.getByText('84'),
+            within(circulationDrawer!).getByText('84'),
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText('18.5 days'),
+            within(circulationDrawer!).getByText(
+                '18.5 days',
+            ),
         ).toBeInTheDocument()
 
         expect(
@@ -197,12 +362,23 @@ describe('DashboardPage', () => {
 
         renderDashboard()
 
-        expect(
-            screen.getByText('Total Books'),
-        ).toBeInTheDocument()
+        const collectionDrawer = screen
+            .getByRole('heading', {
+                name: 'Collection',
+            })
+            .closest('section')
+
+        expect(collectionDrawer).not.toBeNull()
 
         expect(
-            screen.getByText('Total Books').closest('.dashboard-metric'),
+            within(collectionDrawer!).getByText(
+                'Total Books',
+            ),
+        ).toBeInTheDocument()
+        expect(
+            within(collectionDrawer!)
+                .getByText('Total Books')
+                .closest('.dashboard-metric'),
         ).toHaveTextContent('0')
 
         expect(
@@ -413,8 +589,16 @@ describe('DashboardPage', () => {
             'Offline. Showing the last available dashboard data.',
         )
 
+        const collectionDrawer = screen
+            .getByRole('heading', {
+                name: 'Collection',
+            })
+            .closest('section')
+
+        expect(collectionDrawer).not.toBeNull()
+
         expect(
-            screen.getByText('542'),
+            within(collectionDrawer!).getByText('542'),
         ).toBeInTheDocument()
     })
 
@@ -431,8 +615,16 @@ describe('DashboardPage', () => {
             'Dashboard data may be out of date.',
         )
 
+        const collectionDrawer = screen
+            .getByRole('heading', {
+                name: 'Collection',
+            })
+            .closest('section')
+
+        expect(collectionDrawer).not.toBeNull()
+
         expect(
-            screen.getByText('542'),
+            within(collectionDrawer!).getByText('542'),
         ).toBeInTheDocument()
     })
 
@@ -486,8 +678,17 @@ describe('DashboardPage', () => {
             ),
         ).toBeInTheDocument()
 
+        const collectionDrawer = screen
+            .getByRole('heading', {
+                name: 'Collection',
+            })
+            .closest('section')
+
+        expect(collectionDrawer).not.toBeNull()
+
+
         expect(
-            screen.getByText('542'),
+            within(collectionDrawer!).getByText('542'),
         ).toBeInTheDocument()
 
         fireEvent.click(
@@ -499,11 +700,26 @@ describe('DashboardPage', () => {
         expect(refetch).toHaveBeenCalledOnce()
     })
 
-    it('allows the user to explicitly refresh the dashboard', () => {
-        const refetch = vi.fn()
+    it('allows the user to explicitly refresh all dashboard queries', () => {
+        const dashboardRefetch = vi.fn()
+        const breakdownsRefetch = vi.fn()
+        const incompleteMetadataRefetch = vi.fn()
+        const incompleteBooksRefetch = vi.fn()
 
         mockDashboardQuery({
-            refetch,
+            refetch: dashboardRefetch,
+        })
+
+        mockDashboardBreakdownsQuery({
+            refetch: breakdownsRefetch,
+        })
+
+        mockDashboardIncompleteMetadataQuery({
+            refetch: incompleteMetadataRefetch,
+        })
+
+        mockIncompleteBooksQuery({
+            refetch: incompleteBooksRefetch,
         })
 
         renderDashboard()
@@ -514,7 +730,21 @@ describe('DashboardPage', () => {
             }),
         )
 
-        expect(refetch).toHaveBeenCalledOnce()
+        expect(
+            dashboardRefetch,
+        ).toHaveBeenCalledOnce()
+
+        expect(
+            breakdownsRefetch,
+        ).toHaveBeenCalledOnce()
+
+        expect(
+            incompleteMetadataRefetch,
+        ).toHaveBeenCalledOnce()
+
+        expect(
+            incompleteBooksRefetch,
+        ).toHaveBeenCalledOnce()
     })
 
     it('disables explicit refresh while a request is already in progress', () => {
@@ -557,5 +787,518 @@ describe('DashboardPage', () => {
             'href',
             '/loans',
         )
+    })
+
+    it('renders dashboard breakdown totals and buckets from the API', () => {
+        renderDashboard()
+
+        const basicStatsDrawer = screen
+            .getByRole('heading', {
+                name: 'Basic Stats',
+            })
+            .closest('section')
+
+        expect(basicStatsDrawer).not.toBeNull()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                'Total Books',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText('542'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                'On Loan',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText('7'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                'By Category',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                'fiction',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                '120',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).queryByText(
+                'By Shelf',
+            ),
+        ).not.toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                '2026',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                '42',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('does not invent missing breakdown buckets', () => {
+        mockDashboardBreakdownsQuery({
+            data: {
+                total_books: 10,
+                on_loan: 1,
+                by_category: [
+                    {
+                        key: 'fiction',
+                        count: 10,
+                    },
+                ],
+                by_shelf: [],
+                by_creation_year: [],
+            },
+        })
+
+        renderDashboard()
+
+        const basicStatsDrawer = screen
+            .getByRole('heading', {
+                name: 'Basic Stats',
+            })
+            .closest('section')
+
+        expect(basicStatsDrawer).not.toBeNull()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                'fiction',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).queryByText(
+                'nonfiction',
+            ),
+        ).not.toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                'No data recorded.',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows a retryable drawer-level breakdown error without hiding summary statistics', () => {
+        const refetch = vi.fn()
+
+        mockDashboardBreakdownsQuery({
+            data: undefined,
+            error: new Error(
+                'Breakdowns failed',
+            ),
+            isPending: false,
+            isLoadingError: true,
+            refetch,
+        })
+
+        renderDashboard()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Collection',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Reading Record',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText(
+                'Unable to load collection breakdowns',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(refetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('renders incomplete metadata counts without summing them into the total', () => {
+        renderDashboard()
+
+        const healingDrawer = screen
+            .getByRole('heading', {
+                name: 'Healing Metadata',
+            })
+            .closest('section')
+
+        const healingCounts =
+            healingDrawer!.querySelector<HTMLElement>(
+                '.dashboard-healing__counts',
+            )
+
+        expect(healingCounts).not.toBeNull()
+
+        expect(
+            within(healingDrawer!).getByText(
+                'Books needing metadata',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingDrawer!).getByText('12'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText(
+                'Category',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText('2'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText(
+                'Shelf',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText('3'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText(
+                'Pages',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText('4'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText(
+                'Publisher',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText('5'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText(
+                'Publication Year',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText('6'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText(
+                'ISBN',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingCounts!).getByText('7'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingDrawer!).getByText(
+                /these counts do not add up to the total above/i,
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows a positive empty state when no active books need metadata cleanup', () => {
+        mockDashboardIncompleteMetadataQuery({
+            data: {
+                total_incomplete: 0,
+                missing_category: 0,
+                missing_shelf: 0,
+                missing_pages: 0,
+                missing_publisher: 0,
+                missing_year: 0,
+                missing_isbn: 0,
+            },
+        })
+
+        renderDashboard()
+
+        const healingDrawer = screen
+            .getByRole('heading', {
+                name: 'Healing Metadata',
+            })
+            .closest('section')
+
+        expect(healingDrawer).not.toBeNull()
+
+        expect(
+            within(healingDrawer!).getByText(
+                'Catalog metadata is complete.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(healingDrawer!).getByText(
+                'No active books currently need metadata cleanup.',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows a retryable drawer-level incomplete metadata error without hiding other dashboard drawers', () => {
+        const refetch = vi.fn()
+
+        mockDashboardIncompleteMetadataQuery({
+            data: undefined,
+            error: new Error(
+                'Incomplete metadata failed',
+            ),
+            isPending: false,
+            isLoadingError: true,
+            refetch,
+        })
+
+        renderDashboard()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Collection',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Basic Stats',
+            }),
+        ).toBeInTheDocument()
+
+        const healingDrawer = screen
+            .getByRole('heading', {
+                name: 'Healing Metadata',
+            })
+            .closest('section')
+
+        expect(healingDrawer).not.toBeNull()
+
+        expect(
+            within(healingDrawer!).getByText(
+                'Unable to load metadata cleanup counts',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            within(healingDrawer!).getByRole(
+                'button',
+                {
+                    name: 'Retry',
+                },
+            ),
+        )
+
+        expect(refetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows a loading state only inside the healing drawer while incomplete metadata loads', () => {
+        mockDashboardIncompleteMetadataQuery({
+            data: undefined,
+            isPending: true,
+        })
+
+        renderDashboard()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Collection',
+            }),
+        ).toBeInTheDocument()
+
+        const healingDrawer = screen
+            .getByRole('heading', {
+                name: 'Healing Metadata',
+            })
+            .closest('section')
+
+        expect(healingDrawer).not.toBeNull()
+
+        expect(
+            within(healingDrawer!).getByText(
+                'Loading metadata cleanup counts…',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('filters incomplete books by the selected metadata field', () => {
+        renderDashboard()
+
+        fireEvent.change(
+            screen.getByLabelText('Show books missing'),
+            {
+                target: {
+                    value: 'isbn',
+                },
+            },
+        )
+
+        expect(
+            useInfiniteIncompleteMetadataBooks,
+        ).toHaveBeenLastCalledWith({
+            field: 'isbn',
+            enabled: true,
+        })
+    })
+
+    it('omits the incomplete-book field filter when showing any tracked field', () => {
+        renderDashboard()
+
+        expect(
+            useInfiniteIncompleteMetadataBooks,
+        ).toHaveBeenLastCalledWith({
+            field: undefined,
+            enabled: true,
+        })
+
+        fireEvent.change(
+            screen.getByLabelText('Show books missing'),
+            {
+                target: {
+                    value: 'category',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Show books missing'),
+            {
+                target: {
+                    value: '',
+                },
+            },
+        )
+
+        expect(
+            useInfiniteIncompleteMetadataBooks,
+        ).toHaveBeenLastCalledWith({
+            field: undefined,
+            enabled: true,
+        })
+    })
+
+    it('links incomplete books to detail and edit routes', () => {
+        renderDashboard()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Incomplete Book',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books/book-1',
+        )
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Edit',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books/book-1/edit',
+        )
+
+        expect(
+            screen.getByText('Example Author'),
+        ).toBeInTheDocument()
+    })
+
+    it('shows an empty state when the active cleanup filter has no matching books', () => {
+        mockIncompleteBooksQuery({
+            data: {
+                pages: [
+                    {
+                        items: [],
+                        total: 0,
+                    },
+                ],
+                pageParams: [
+                    0,
+                ],
+            },
+        })
+
+        renderDashboard()
+
+        expect(
+            screen.getByText(
+                'No books match this cleanup filter.',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows next-page loading and retry states for incomplete books', () => {
+        const fetchNextPage = vi.fn()
+
+        mockIncompleteBooksQuery({
+            isFetchingNextPage: true,
+            fetchNextPage,
+        })
+
+        const { rerender } = renderDashboard()
+
+        expect(
+            screen.getByText('Loading more books…'),
+        ).toBeInTheDocument()
+
+        mockIncompleteBooksQuery({
+            isFetchingNextPage: false,
+            isFetchNextPageError: true,
+            fetchNextPage,
+        })
+
+        rerender(
+            <MemoryRouter>
+                <DashboardPage />
+            </MemoryRouter>,
+        )
+
+        expect(
+            screen.getByText(
+                'Unable to load more books.',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(fetchNextPage).toHaveBeenCalledTimes(1)
     })
 })

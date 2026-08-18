@@ -224,6 +224,55 @@ export const queryKeys = {
 
     dashboard: {
         all: ['dashboard'] as const,
+
+        breakdowns: () =>
+            [
+                'dashboard',
+                'breakdowns',
+            ] as const,
+
+        incompleteMetadata: () =>
+            [
+                'dashboard',
+                'incomplete-metadata',
+            ] as const,
+
+        incompleteMetadataBooks: (
+            options: {
+                field?: string
+                skip?: number
+                take?: number
+            } = {},
+        ) => {
+            const field = nonEmptyFilter(
+                options.field,
+            )
+
+            const key: {
+                field?: string
+                skip?: number
+                take?: number
+            } = {}
+
+            if (field !== undefined) {
+                key.field = field
+            }
+
+            if (
+                options.skip !== undefined &&
+                options.take !== undefined
+            ) {
+                key.skip = options.skip
+                key.take = options.take
+            }
+
+            return [
+                'dashboard',
+                'incomplete-metadata',
+                'books',
+                key,
+            ] as const
+        },
     },
 
     version: {
