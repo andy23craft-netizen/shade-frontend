@@ -54,7 +54,7 @@ can still reach the server, but browser JS cannot read the response.
 | Status | Meaning beyond the OpenAPI label |
 | ------ | -------------------------------- |
 | `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query); |
-|        | malformed or empty `wishlist_id` / membership `book_id` on wishlist routes; |
+|        | malformed or empty `wishlist_id` / membership `wishlist_book_id` / membership `book_id` on wishlist routes; |
 |        | malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on |
 |        | collection routes; malformed or empty `shelf_id` on shelf update/delete; |
 |        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; |
@@ -66,7 +66,7 @@ can still reach the server, but browser JS cannot read the response.
 | `403`  | Missing or invalid Bearer token |
 | `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / second delete; |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
-|        | unknown wishlist, or unknown book when adding a wishlist membership; |
+|        | unknown wishlist, unknown book when adding a wishlist membership, or unknown wishlist book on remove; |
 |        | unknown collection, unknown book when adding a collection membership, or unknown |
 |        | collection book on reorder/remove; unknown shelf for `PATCH` / `DELETE /shelves/{shelf_id}` |
 | `409`  | Restore an active book; checkout when already on loan; check-in with no active loan; |
@@ -139,7 +139,7 @@ changes on successful update). Do not send `null` for DB-required fields such as
 `category`, `is_read`, or `status`. `shelf_name` must not be JSON `null` on update (**422**); omit the field to leave
 membership unchanged. Assigning `shelf_name` on create or update returns **412**
 `{"detail": "The book must be removed from the wishlist before it can be placed on a shelf"}` when the book is on
-any wishlist; delete the wishlist first (there is no membership-level DELETE).
+any wishlist; remove the membership with `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` first.
 
 Books use `shelf_name` (maps to `shelves.common_name`), not a hard-coded shelf enum and not a book-level `shelf`
 column. Create may omit `shelf_name` to leave the book with no `books_shelves` membership (required for wishlist
@@ -327,11 +327,12 @@ OpenAPI). Duplicate `(wishlist_id, book_id)` memberships are permitted. A book t
 (including system shelves `unknown` and `removed`) is rejected with **412**
 `{"detail": "Existing books cannot be added to a wishlist"}`. Create the catalog row with omitted `shelf_name`, then
 add it to the wishlist. Soft-deleted books cannot be added because delete moves them to `removed`. The current API
-does not provide membership-level PATCH or DELETE endpoints; to place a wishlisted book on a shelf, delete the
-wishlist first, then `PATCH` `shelf_name`.
+does not provide membership-level PATCH. `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` removes one
+membership (**204**); the catalog book is not deleted. To place a wishlisted book on a shelf, remove its membership
+(or delete the whole wishlist), then `PATCH` `shelf_name`.
 
-For path `wishlist_id` and membership `book_id`: **400** when empty or not a valid GUID; **404** when the GUID is
-well-formed but unknown.
+For path `wishlist_id`, membership `wishlist_book_id`, and membership `book_id` on add: **400** when empty or not a
+valid GUID; **404** when the GUID is well-formed but unknown (`Wishlist book not found` for a missing membership row).
 
 ---
 
@@ -440,8 +441,8 @@ for updated `shelf_name` and `deletion_date`; do not assume the prior shelf is r
 Recommended wishlist add: `POST /books` without `shelf_name` → `POST /wishlists/{wishlist_id}/books` with
 `{ "book_id" }`. Adding a book that already has shelf membership returns **412**
 `"Existing books cannot be added to a wishlist"`. Join membership `book_id` to `GET /books/{id}` for title/authors
-(unshelved books are omitted from `GET /books`). Do not invent membership remove/edit; delete the wishlist to
-clear memberships.
+(unshelved books are omitted from `GET /books`). Remove one membership with
+`DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}`; delete the whole wishlist to clear all memberships at once.
 
 Recommended collection add: `POST /collections/{collection_id}/books` with `{ "book_id" }` (optional `order_num` and
 `notes`). Shelved and wishlisted books may be added without **412**. List memberships for `shelf_name` and

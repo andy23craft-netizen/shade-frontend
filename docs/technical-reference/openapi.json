@@ -4808,6 +4808,85 @@
           "wishlists"
         ]
       }
+    },
+    "/wishlists/{wishlist_id}/books/{wishlist_book_id}": {
+      "delete": {
+        "operationId": "delete_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "wishlist_book_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Wishlist Book",
+        "tags": [
+          "wishlists"
+        ]
+      }
     }
   }
 }
