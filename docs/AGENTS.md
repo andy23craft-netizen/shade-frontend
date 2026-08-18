@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-17 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-18 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -83,8 +83,16 @@ with keyboard focus management and in-app workflow links. `DashboardPage` moved 
 changing its FEAT-11 behavior or `GET /dashboard` API contract. Brand/home recovery continues to `/`, now landing on
 About, and primary navigation exposes both About and Dashboard.
 
-**Next:** Remaining tickets under `docs/tickets/` are wishlists (FEAT-19),
-dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX (FEAT-21).
+FEAT-18 collection sorting and filtering (ticket file removed after completion). Shipped URL-backed category /
+author / title filters and shelf sort on `/books` via `BooksPage`, `BooksListControls`, and `booksListModel`;
+`useInfiniteBooks` / `booksApi.list` accept `author`, `title`, and `category`; filter drafts apply explicitly and
+clear independently of sort state. Shelf sort (`sortBy=shelf`) was already in FEAT-10; this ticket added the
+filter UI and wired list queries.
+
+**Next:** Remaining tickets under `docs/tickets/` are wishlists (FEAT-19), dashboard report surfaces (FEAT-20),
+display-only checkout alternate-copy UX (FEAT-21), check-in consolidation onto `/loans` (FEAT-22), checkout
+consolidation onto book details (FEAT-23), hardware ISBN scan on Dashboard / Books / Loans (FEAT-24), and removal
+of the browser backup page (FEAT-25; gated on backend fetch-backup script).
 
 Notable shipped behaviors agents should preserve:
 
@@ -216,7 +224,8 @@ manual/ISBN/camera/scanner add flows, edit, checkout, check-in, loan history, re
 deleted admin, authenticated SQL backup, runtime API config, CI, Podman preview, versioned production artifacts, and
 About homepage with the dashboard at `/dashboard`. Ticketed follow-ons (implement only when working that ticket):
 wishlists (FEAT-19), dashboard reports / incomplete metadata (FEAT-20), display-only alternate-copy checkout UX
-(FEAT-21).
+(FEAT-21), check-in onto `/loans` (FEAT-22), checkout onto book details (FEAT-23), hardware ISBN scan on more
+pages (FEAT-24), and remove the browser backup page (FEAT-25).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
@@ -686,6 +695,10 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   restore success / `404`/`409` messaging, and pending disable
 - `src/features/books/routes/BackupLibraryPage.test.tsx`: Successful download filename handling, always-revoke object
   URL, and no download after `403` / generation `500` / network failure
+- `src/features/about/routes/AboutPage.test.tsx`: About homepage rendering, `CatalogGuide` dialog open/close and
+  focus management, in-app workflow links, and document title / heading focus
+- `src/features/about/components/CatalogGuide.test.tsx`: Catalog guide dialog open/close, labelled description,
+  keyboard focus trap and restoration, and in-app workflow links
 - `src/features/dashboard/routes/DashboardPage.test.tsx`: API metric rendering, null-average "Not enough data",
   inconsistency warning without recalculation, Refresh / offline / stale status, and `QueryErrorState` recovery
 - `src/features/books/routes/MarkReadPage.test.tsx` / `markReadModel.test.ts`: Mark-read eligibility (active unread
@@ -866,8 +879,8 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-18_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-17 are complete; those ticket files are removed). Prefer ticket presence under
+- `docs/tickets/FEAT-19_*.md` through `FEAT-25_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-18 are complete; those ticket files are removed). Prefer ticket presence under
   `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
@@ -982,7 +995,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-18 through FEAT-21 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-19 through FEAT-25 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
