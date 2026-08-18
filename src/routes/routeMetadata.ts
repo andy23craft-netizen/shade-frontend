@@ -14,6 +14,11 @@ export const routeMetadata = {
     title: 'Books',
     heading: 'Books',
   },
+  wishlists: {
+    path: '/wishlists',
+    title: 'Wishlists',
+    heading: 'Wishlists',
+  },
   manageCollection: {
     path: '/collection/manage',
     title: 'Manage Collection',

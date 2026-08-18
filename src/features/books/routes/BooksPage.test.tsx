@@ -943,6 +943,20 @@ describe('BooksPage', () => {
         expect(
             screen.getByText('Read'),
         ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Add to wishlist',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByLabelText('Add to wishlist'),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByText('Add to wishlist'),
+        ).not.toBeInTheDocument()
     })
 
     it('renders unknown enum values safely', () => {

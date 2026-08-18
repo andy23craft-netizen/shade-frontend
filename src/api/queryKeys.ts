@@ -241,4 +241,23 @@ export const queryKeys = {
                 },
             ] as const,
     },
+
+    wishlists: {
+        all: ['wishlists'] as const,
+
+        list: () =>
+            [
+                'wishlists',
+                {
+                    list: true,
+                },
+            ] as const,
+
+        books: (wishlistId: string) =>
+            [
+                'wishlists',
+                wishlistId,
+                'books',
+            ] as const,
+    },
 } as const

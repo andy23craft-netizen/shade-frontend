@@ -61,5 +61,29 @@ export type ShelfUpdate =
 export type ShelfRead =
     Schemas['ShelfRead']
 
+export type WishlistCreate =
+    Schemas['WishlistCreate']
+
+export type WishlistUpdate =
+    Schemas['WishlistUpdate']
+
+export type WishlistRead =
+    Schemas['WishlistRead']
+
+export type WishlistList =
+    Schemas['WishlistList']
+
+export type WishlistBookCreate =
+    Schemas['WishlistBookCreate']
+
+export type WishlistBookRead =
+    Schemas['WishlistBookRead']
+
+export type WishlistBookList =
+    Schemas['WishlistBookList']
+
+export type WishlistBookStatus =
+    Schemas['WishlistBookStatus']
+
 export type Status =
     Schemas['Status']

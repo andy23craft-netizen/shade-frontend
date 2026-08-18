@@ -32,9 +32,12 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   `/admin/backup`).
 - Shelves catalog CRUD on `/shelves` (`shelvesApi` / `useShelves` / write mutations) with system-shelf protection
   (`unknown` / `removed`); book payloads use `shelf_name` (string; no hard-coded `Shelf` enum).
-- Generated OpenAPI types know wishlist and dashboard-report paths; `booksApi` accepts `author` / `title` / `category`
-  list filters, now used by the `/books` collection browse UI. Do not ship wishlist or dashboard-report product UI
-  until FEAT-19 / FEAT-20.
+- Wishlists on `/wishlists` (`wishlistsApi` / `useWishlists` / `useWishlistBooks` / write mutations): Collection-drawer
+  link, nested memberships joined via `GET /books/{id}` (not `GET /books`), and add via unshelved `POST /books` (omit
+  `shelf_name`) then `POST /wishlists/{id}/books`. Shelf/wishlist exclusivity is enforced with documented **412**
+  responses.
+- Generated OpenAPI types know dashboard-report paths; `booksApi` accepts `author` / `title` / `category`
+  list filters, now used by the `/books` collection browse UI. Do not ship dashboard-report product UI until FEAT-20.
 
 Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic
 `PATCH`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open (the
@@ -95,7 +98,15 @@ author / title filters and shelf sort on `/books` via `BooksPage`, `BooksListCon
 clear independently of sort state. Shelf sort (`sortBy=shelf`) was already in FEAT-10; this ticket added the
 filter UI and wired list queries.
 
-**Next:** Remaining tickets under `docs/tickets/` are wishlists (FEAT-19), dashboard report surfaces (FEAT-20),
+FEAT-19 wishlists (ticket file removed after completion). Shipped typed `wishlistsApi` / `wishlistsQueries` /
+`queryKeys.wishlists`, `/wishlists` (`WishlistsPage`) reachable from the Collection drawer, nested memberships joined
+via `GET /books/{id}` (durable `Book {id}` fallback; not `GET /books`), create-wishlist Field-linked **422**, add via
+unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`, permanent wishlist delete with
+confirmation, and edit **412** when assigning `shelf_name` to a wishlisted book. Do not offer add-from-collection;
+`GET /books` inner-joins shelf membership and would **412**. Collection create on `/books/new` still requires an
+explicit shelf. Do not invent membership remove/edit.
+
+**Next:** Remaining tickets under `docs/tickets/` are dashboard report surfaces (FEAT-20),
 display-only checkout alternate-copy UX (FEAT-21), check-in consolidation onto `/loans` (FEAT-22), checkout
 consolidation onto book details (FEAT-23), hardware ISBN scan on Dashboard / Books / Loans (FEAT-24), and removal
 of the browser backup page (FEAT-25; gated on backend fetch-backup script).
@@ -110,8 +121,9 @@ Notable shipped behaviors agents should preserve:
 - About: `/` is the homepage via `AboutPage`; `CatalogGuide` provides the accessible card-catalog-style How to Use
   dialog and workflow links. Reach About via the brand link; it is not a separate primary-nav item.
 - Navigation: primary nav is Dashboard plus Collection and Circulation `DrawerNavMenu` drawers (`AppShell` /
-  `DrawerNavMenu`); `/collection/manage` links Add Book, Shelves, Deleted Books, and Backup Library. FEAT-22 / FEAT-23
-  / FEAT-25 will further consolidate circulation and backup surfaces.
+  `DrawerNavMenu`); Collection includes Browse, Manage, and Wishlists. `/collection/manage` links Add Book, Shelves,
+  Deleted Books, and Backup Library. FEAT-22 / FEAT-23 / FEAT-25 will further consolidate circulation and backup
+  surfaces.
 - Dashboard: `/dashboard`; explicit Refresh, offline/paused and stale status, `QueryErrorState` recovery; styles in
   `src/styles/components.css`.
 - Edit: minimal `BookUpdate` patch (blank ISBN → `null`; never send `status`, reading fields, or loan-driving values);
@@ -126,6 +138,9 @@ Notable shipped behaviors agents should preserve:
   Read/Unread plus rating (`N / 5`, or an em dash when null).
 - Shelves: Title Case `common_name` labels; `unknown` allowed on books; `removed` excluded except edit may surface
   current membership; Add/Edit Book block the page when shelves fail to load; no shelf CRUD on book forms.
+- Wishlists: `/wishlists` via Collection drawer; memberships joined through `GET /books/{id}` (not `GET /books`); add
+  via unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`; documented **412** shelf/wishlist
+  exclusivity; no add-from-collection or membership remove/edit.
 - Scanning: hands one ISBN into create lookup or checkout Find; never creates or checks out from scan success alone.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
@@ -218,8 +233,9 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 - Send normalized `YYYY-MM-DD` dates and UTC ISO 8601 timestamps.
 - Do not send `null` for required DB fields (title, authors, category, shelf_name on create, is_read, status).
 - Load shelves from `GET /shelves` for book placement; send selected `common_name` as `shelf_name` (never Title Case
-  display strings). Manage the catalog on `/shelves` with documented `POST` / `PATCH` / `DELETE` (do not invent shelf
-  CRUD on Add/Edit Book).
+  display strings). Collection create on `/books/new` requires an explicit shelf. Wishlist-only catalog rows omit
+  `shelf_name` on `POST /books`. Manage the catalog on `/shelves` with documented `POST` / `PATCH` / `DELETE` (do not
+  invent shelf CRUD on Add/Edit Book).
 - Prevent blank title, authors, borrower, and (on create) unselected shelf.
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Render unknown enum values safely (see `enumDisplayValue`).
@@ -230,11 +246,11 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 **In scope for MVP:** dashboard, active books with category / author / title filtering and URL-backed sorting, detail,
 manual/ISBN/camera/scanner add flows, edit, checkout, check-in, loan history, reading tracking, soft delete/restore,
-deleted admin, authenticated SQL backup, runtime API config, CI, Podman preview, versioned production artifacts, and
-About homepage with the dashboard at `/dashboard`. Ticketed follow-ons (implement only when working that ticket):
-wishlists (FEAT-19), dashboard reports / incomplete metadata (FEAT-20), display-only alternate-copy checkout UX
-(FEAT-21), check-in onto `/loans` (FEAT-22), checkout onto book details (FEAT-23), hardware ISBN scan on more
-pages (FEAT-24), and remove the browser backup page (FEAT-25).
+deleted admin, authenticated SQL backup, runtime API config, CI, Podman preview, versioned production artifacts, About
+homepage with the dashboard at `/dashboard`, and wishlists. Ticketed follow-ons (implement only when working that
+ticket): dashboard reports / incomplete metadata (FEAT-20), display-only alternate-copy checkout UX (FEAT-21),
+check-in onto `/loans` (FEAT-22), checkout onto book details (FEAT-23), hardware ISBN scan on more pages (FEAT-24),
+and remove the browser backup page (FEAT-25).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
@@ -303,7 +319,8 @@ valid, the bootstrap module creates a `DiagnosticReporter`, then renders `Router
 and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary navigation
-(Dashboard link; Collection and Circulation `DrawerNavMenu` drawers; brand link to About includes "est. 2026"), the main
+(Dashboard link; Collection and Circulation `DrawerNavMenu` drawers including
+Wishlists; brand link to About includes "est. 2026"), the main
 `Outlet`, footer (`Release` from `package.json` `version` via `APP_VERSION`, plus API version from public
 `GET /version` when available), and heading focus after client-side navigations.
 Live product UI today: `/` (`AboutPage` + `CatalogGuide`), `/dashboard` (`DashboardPage` + `useDashboard`), `/books`
@@ -316,8 +333,9 @@ lookup plus camera/hardware scanner capture), `/books/:bookId/edit` (`EditBookPa
 `/books/:bookId/reading` (`ReadingEditPage` + `readingEditModel`), `/checkout` (`CheckoutPage` + `checkoutModel`
 with ISBN Find via `useBooks({ isbn })`, confirmation, and `useCheckoutBook`), `/checkin` (`CheckinPage` +
 `checkinModel` + `checkinEligibility`), `/loans` (`LoansPage` + `loanTemporal`), `/shelves` (`ShelvesPage` +
-`useShelves` / write mutations), `/admin/deleted` (`DeletedBooksPage`), and `/admin/backup`
-(`BackupLibraryPage`). No feature routes still render `RoutePlaceholder` (`RoutePlaceholder.tsx` remains only as an
+`useShelves` / write mutations), `/admin/deleted` (`DeletedBooksPage`), `/admin/backup`
+(`BackupLibraryPage`), and `/wishlists` (`WishlistsPage` + `AddWishlistBookControl`; memberships via `useBook` /
+`GET /books/{id}`). No feature routes still render `RoutePlaceholder` (`RoutePlaceholder.tsx` remains only as an
 unused helper).
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
@@ -378,8 +396,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
-  dashboard, health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, validation/error schemas, enums). Book
-  payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
+  dashboard, health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, `WishlistCreate` / `WishlistUpdate` /
+  `WishlistRead` / `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`,
+  validation/error schemas, enums). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection on authenticated
@@ -401,10 +420,10 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `infiniteList({ includeDeleted, isbn?, author?, title?, category?, sortBy?, sortOrder?, take })`, `detail(id)`,
   `lookup(isbn)`), loans (`all`, `list(bookId?)`, `infiniteList({ bookId?, take })`, `detail(id)`), dashboard, version,
   and shelves (`all`, `list()` unpaginated). Blank/whitespace `isbn` / `author` / `title` / `category` are omitted from
-  keys (trimmed when present).
+  keys (trimmed when present). Wishlists: `all`, `list()` unpaginated, `books(wishlistId)`.
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `dashboard`, `health`, `version`,
-  `backup`) plus the underlying `client`. No wishlist aggregate yet (generated OpenAPI types include wishlist and
-  dashboard-report paths; product helpers wait for FEAT-19 / FEAT-20).
+  `backup`, `wishlists`) plus the underlying `client`. Generated OpenAPI types also include dashboard-report paths;
+  product helpers for those wait for FEAT-20.
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `author`, `title`, `category`, `skip`, `take`,
   `sortBy` including `shelf`, `sortOrder`; omit empty/whitespace `isbn` / `author` / `title` / `category`; send
   `skip`/`take` together when paginating), `create`, `lookup`, `get`, `update`, `remove`,
@@ -427,7 +446,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, author, title, category, skip, take, sortBy,
   sortOrder, enabled }`), `useInfiniteBooks` (optional `{ includeDeleted, isbn, author, title, category, sortBy,
   sortOrder, enabled }`; batch size 30 via shared config),
-  `useBook`, `useBookLookup`, plus mutations (including `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
+  `useBook`, `useBookLookup` (query), `useLookupBook` (lookup mutation for wishlist add), plus mutations (including
+  `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
   `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write returned `BookRead` into the
   detail cache (except delete) and invalidate per PLAN.md 7.5 (lists including `include_deleted` via the `['books']`
   prefix, detail, dashboard, and loans on checkout/check-in).
@@ -435,6 +455,13 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size 30 via shared config), `useLoan(id)` (disabled when
   falsy), `useDashboard`, `useShelves({ enabled? })`, plus `useCreateShelf` / `useUpdateShelf` / `useDeleteShelf`
   that invalidate `queryKeys.shelves.all` (and books/dashboard when a rename includes `common_name`).
+- `src/api/wishlistsApi.ts` / `wishlistsQueries.ts`: `list` / `create` (**201**) / `update` / `remove` (**204**) /
+  `listBooks` / `addBook`; optional `skip`/`take` together; documented fields only. Hooks: `useWishlists`,
+  `useWishlistBooks` (disabled when id is empty), `useCreateWishlist`, `useUpdateWishlist`, `useDeleteWishlist`,
+  `useAddWishlistBook`. Create/update/delete invalidate `queryKeys.wishlists.all`; add invalidates that wishlist's
+  books key. Add-to-wishlist creates an unshelved catalog row (`useCreateBook`, omit `shelf_name`) then
+  `useAddWishlistBook`. **412** `"Existing books cannot be added to a wishlist"` and edit **412**
+  `"The book must be removed from the wishlist before it can be placed on a shelf"` are surfaced honestly.
 
 ### Routing and Layout
 
@@ -442,13 +469,14 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
   `/`, `/dashboard`, `/books`, `/collection/manage`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`,
   `/books/:bookId/reading`, `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`,
-  `/shelves`, `/admin/deleted`, `/admin/backup`, and `*` (not found).
+  `/wishlists`, `/shelves`, `/admin/deleted`, `/admin/backup`, and `*` (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route-body helper (`h1` with `tabIndex={-1}`). Unused by current feature
   routes; keep only if a future ticket needs a temporary placeholder.
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back home (`/`).
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
 - `src/layout/AppShell.tsx`: Application frame with skip link, header (brand link to About plus "est. 2026"), primary
-  navigation (Dashboard link; Collection and Circulation `DrawerNavMenu` drawers), `Outlet` main region, footer
+  navigation (Dashboard link; Collection and Circulation `DrawerNavMenu` drawers; Collection items Browse, Manage,
+  Wishlists), `Outlet` main region, footer
   (`Release ${APP_VERSION}` from `package.json`, plus `API {version}` from `useVersion` / `GET /version` when
   available), document title, and heading focus on location change.
 - `src/layout/DrawerNavMenu.tsx`: Accessible drawer-style dropdown for grouped nav items (`aria-expanded`, outside click
@@ -577,6 +605,16 @@ Implemented (do not revert to placeholders):
   `useBooks()` joins; active vs returned sections from `returned_at`; due/overdue labels via `loanTemporal`; durable
   `Book {id}` fallback when the book is missing; empty / loading / retryable error states; bottom next-page loading and
   retry affordances. Colocated `LoansPage.test.tsx`
+- `src/features/wishlists/routes/WishlistsPage.tsx` (`/wishlists`): `useWishlists` plus nested `useWishlistBooks`;
+  membership catalog join via `useBook` / `GET /books/{id}` (not `useBooks()` / `GET /books`, which omits unshelved
+  rows) with durable `Book {id}` fallback; create form with Field-linked **422**; add via `AddWishlistBookControl`
+  (`POST /books` omitting `shelf_name`, then `useAddWishlistBook`); permanent delete via `ConfirmationDialog` +
+  `useDeleteWishlist` (memberships removed, catalog books remain). Status via `enumDisplayValue`. No membership
+  remove/edit. Collection `/books` has no add-to-wishlist control.
+- `src/features/wishlists/components/AddWishlistBookControl.tsx` /
+  `src/features/wishlists/wishlistFormModel.ts` / `src/features/wishlists/wishlistDisplay.ts`: unshelved catalog create
+  (title/authors required; optional ISBN lookup via `useLookupBook`) then membership add;
+  **404** refetch, **412** exclusivity, Field-linked **422**; safe http(s) URL rendering for membership links
 
 Scanning feature (complete -- extend, do not replace):
 
@@ -658,9 +696,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations (including drawer-menu
   hops) via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.
-- `src/layout/AppShell.test.tsx`: Landmarks, drawer navigation (Collection Browse/Manage, Circulation Check Out/Check
-  In/Loans, Dashboard current-page and trunk `data-active`), footer `Release` from `package.json` plus API version,
-  drawer-to-route navigation with heading focus, and not-found recovery.
+- `src/layout/AppShell.test.tsx`: Landmarks, drawer navigation (Collection Browse/Manage/Wishlists, Circulation Check
+  Out/Check In/Loans, Dashboard current-page and trunk `data-active` including `/wishlists`), footer `Release` from
+  `package.json` plus API version, drawer-to-route navigation with heading focus, and not-found recovery.
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
@@ -687,6 +725,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `category` omission of blank filters, `infiniteList` isolation, and shelves list isolation.
 - `src/api/shelvesApi.test.ts` / `shelvesQueries.test.tsx`: `GET` / `POST` / `PATCH` / `DELETE /shelves` helpers and
   `useShelves` / write mutation hooks (including rename invalidation of books/dashboard).
+- `src/api/wishlistsApi.test.ts` / `wishlistsQueries.test.tsx`: wishlist list/create/update/delete/listBooks/addBook
+  helpers including **400** / **404** / **412** / **422**, plus hook keys, disabled empty-id books query, and
+  create/add invalidation.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
   (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, wishlist and dashboard-report paths plus existing lifecycle
   routes).
@@ -735,7 +776,11 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `422`, documented `409` detail messaging, generic mutation errors, pending disable, and form conversion
 - `src/features/loans/routes/LoansPage.test.tsx` / `loanTemporal.test.ts`: Infinite loan pagination into active vs
   returned sections, due/overdue labels, durable missing-book fallback, empty / loading / retryable error states,
-  explicit empty active and returned sections, bottom loading/retry, and due-date display
+  explicit empty active and returned sections, bottom loading/retry, and   due-date display
+- `src/features/wishlists/routes/WishlistsPage.test.tsx` / `AddWishlistBookControl.test.tsx` /
+  `wishlistFormModel.test.ts` / `wishlistDisplay.test.ts`: wishlists loading/error/empty, create, nested
+  memberships with `GET /books/{id}` join and missing-book fallback, add omitting `shelf_name`, **412** exclusivity,
+  Field-linked **422**, pending disable, and no collection add-to-wishlist affordance
 - `src/features/books/components/BookForm.test.tsx` / `bookFormModel.test.ts`: Form field rendering, API-fed shelf
   options (Title Case labels; `removed` excluded; required shelf), gated create controls, initial values, empty
   title/authors and ISBN rejection, submit payload shaping via `formValuesToBookCreate` (`shelf_name`),
@@ -816,7 +861,7 @@ make check / yarn check
 - `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests (`src/**` and `scripts/**` test
   files), global test setup, V8 coverage thresholds, `__APP_VERSION__` from `package.json`, and an optional
   same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
-  `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, and `/openapi.json` only (not `/shelves` or
+  `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, and `/wishlists` (not `/shelves` or
   `/version`).
 - `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`, and
   `node_modules/` and treats warnings as failures through the package script.
@@ -895,8 +940,8 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-19_*.md` through `FEAT-25_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-18 are complete; those ticket files are removed). Prefer ticket presence under
+- `docs/tickets/FEAT-20_*.md` through `FEAT-25_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-19 are complete; those ticket files are removed). Prefer ticket presence under
   `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
@@ -989,8 +1034,8 @@ make build
   placeholders. Leave diagnostics under `src/diagnostics/diagnosticReporter.ts` wired through `RootErrorBoundary` /
   `AppProviders` / `ConnectionProvider` / `apiClient` `onRequestFailure` and optional runtime config
   (`public/config.js` / `RuntimeConfig.diagnostics`); never fabricate correlation IDs, invent a second telemetry
-  transport, or log denylisted fields. Leave primary navigation under `AppShell` / `DrawerNavMenu` (Dashboard link;
-  Collection Browse/Manage and Circulation drawers; brand link to About). Leave `/collection/manage` under
+  transport, or log denylisted fields.   Leave primary navigation under `AppShell` / `DrawerNavMenu` (Dashboard link;
+  Collection Browse/Manage/Wishlists and Circulation drawers; brand link to About). Leave `/collection/manage` under
   `ManageCollectionPage` until FEAT-25 removes Backup Library. Leave edit under `EditBookPage` /
   `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; never send `status=on_loan`, reading fields, or
   loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`; block when
@@ -1004,7 +1049,10 @@ make build
   `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Leave shelves under
   `ShelvesPage` / `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations (`/shelves` owns
   create/edit/delete with system-shelf protection; book forms use API-fed pickers with `shelf_name`, never shelf CRUD
-  on Add/Edit Book). FEAT-13 test infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
+  on Add/Edit Book). Leave wishlists under `WishlistsPage` / `AddWishlistBookControl` / `wishlistFormModel` /
+  `wishlistDisplay` / `wishlistsApi` / `wishlistsQueries` (`/wishlists` owns catalog CRUD and add; memberships via
+  `useBook` / `GET /books/{id}`; add via unshelved create then membership; no add-from-collection or membership
+  remove/edit). FEAT-13 test infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
   coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced coverage floors,
   and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites rather than
   inventing a parallel fake-API stack or removing them from the gate. FEAT-14 CI packaging is complete: keep
@@ -1013,7 +1061,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-19 through FEAT-25 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-20 through FEAT-25 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.

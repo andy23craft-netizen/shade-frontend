@@ -15,16 +15,17 @@ Record summary sections from `GET /dashboard`.
 
 FEAT-11 dashboard summary UI is complete (`DashboardPage` + `useDashboard` / `dashboardApi.get`). Prior API contract
 sync already regenerated OpenAPI types and `scripts/contractSmoke.test.ts` for the three dashboard-report paths and
-schemas; this ticket owns the typed helpers, query hooks, and product UI only. CHORE-01 shelves are complete --
-breakdown `by_shelf` keys and incomplete `missing_shelf` use shelf `common_name` / membership on `unknown`, not a
+schemas; this ticket owns the typed helpers, query hooks, and product UI only. Shelves catalog CRUD on `/shelves` is
+complete -- breakdown `by_shelf` keys and incomplete `missing_shelf` use shelf `common_name` / membership on `unknown`, not a
 hard-coded shelf enum. Book edit healing still uses API-fed shelf pickers from `GET /shelves`.
 
 Reuse the typed client, query keys, PLAN.md 7.5 invalidation, shared components, and existing dashboard layout/CSS.
 Do not invent a second metrics transport or recalculate aggregates from `GET /books`.
 
 Do not pull journey automation, CI, Podman, release artifacts, FEAT-17 About/homepage routing, FEAT-18 collection
-filters, or FEAT-19 wishlists into this ticket. FEAT-17 is complete: the dashboard lives at `/dashboard`; implement
-the new sections on that route (not on `/`, which is the About homepage).
+filters, or FEAT-19 wishlists into this ticket. FEAT-17 through FEAT-19 are complete (those ticket files are
+removed): the dashboard lives at `/dashboard` (not `/`, which is the About homepage); implement the new sections on
+`/dashboard` only.
 
 ## Contract references
 
@@ -67,12 +68,13 @@ blocker rather than inventing frontend semantics.
 
 Already in place and should be reused (not rebuilt):
 
-- `/dashboard` via `DashboardPage` + `useDashboard` / `dashboardApi.get` (`GET /dashboard` only): Collection,
-  Circulation, and Reading Record; null averages as "Not enough data"; read/unread contract warning without
-  recalculation; Refresh; offline/paused and stale status; `QueryErrorState` recovery. `/` is the About homepage
-  (`AboutPage`), not the dashboard.
-- Styles: `.dashboard-page`, `.dashboard-section`, `.dashboard-metric`, and related classes in
-  `src/styles/components.css`.
+- `/dashboard` via `DashboardPage` + `useDashboard` / `dashboardApi.get` (`GET /dashboard` only): three drawer
+  sections (roman numerals I--III) in a card-catalog `.dashboard-drawer-bank` -- Collection, Circulation, and Reading
+  Record (including a read/unread pie chart); null averages as "Not enough data"; read/unread contract warning
+  without recalculation; Refresh; offline/paused and stale status; `QueryErrorState` recovery. `/` is the About
+  homepage (`AboutPage`), not the dashboard.
+- Styles: `.dashboard-page`, `.dashboard-drawer-bank`, `.dashboard-drawer`, `.dashboard-metrics`, `.dashboard-metric`,
+  `.dashboard-reading-chart`, and related classes in `src/styles/components.css` (there is no `.dashboard-section`).
 - `queryKeys.dashboard.all` is `['dashboard']`; book lifecycle mutations and shelf renames that change `common_name`
   invalidate dashboard keys (React Query prefix matching will also cover nested dashboard keys if they stay under
   `['dashboard', ...]`).
@@ -91,12 +93,12 @@ Already in place and should be reused (not rebuilt):
 
 On `/dashboard`, an operator should be able to:
 
-1. **See basic catalog stats** -- a new Dashboard section that shows API breakdown totals (`total_books`, `on_loan`)
+1. **See basic catalog stats** -- a new dashboard drawer (IV) that shows API breakdown totals (`total_books`, `on_loan`)
    and composition lists by category, shelf, and creation year from `GET /dashboard/breakdowns`. Render each bucket's
    `key` and `count` as supplied; use `enumDisplayValue` for category keys and Title Case
    `formatShelfCommonNameForDisplay` for shelf `common_name` keys so unknown values stay safe. Empty bucket arrays
    are valid (show an honest empty line, not invented zero rows for every enum/shelf).
-2. **See healing / incomplete-metadata counts** -- a new section that shows `total_incomplete` and each
+2. **See healing / incomplete-metadata counts** -- a new drawer (V) that shows `total_incomplete` and each
    `missing_*` field count from `GET /dashboard/incomplete-metadata`, with short copy that these are cleanup targets
    (category `unknown`, shelf membership on `unknown`, blank publisher/year/ISBN, null pages). Do not sum the field
    counts into a "corrected" total.
@@ -109,9 +111,10 @@ On `/dashboard`, an operator should be able to:
    summary, breakdowns, and incomplete-metadata queries remain usable; prefer one Refresh control that refetches all
    dashboard queries rather than three disconnected buttons.
 
-Tone and layout: extend the existing numbered dashboard sections (I / II / III ...); do not turn the dashboard into a
-charting library, card grid of sparklines, or a second admin page. Prefer definition lists / compact tables
-consistent with current `.dashboard-metric` patterns.
+Tone and layout: add new drawers to the existing `.dashboard-drawer-bank` (continue roman numerals IV / V ...); do not
+turn the dashboard into a charting library beyond the existing read/unread pie, a card grid of sparklines, or a second
+admin page. Prefer definition lists / compact tables consistent with current `.dashboard-metric` patterns inside
+`.dashboard-drawer` sections.
 
 ## Remaining scope (file-level plan)
 
@@ -122,15 +125,13 @@ consistent with current `.dashboard-metric` patterns.
 | `src/api/apiTypes.ts` | Export aliases for `DashboardBreakdowns`, `DashboardCountBucket`, and `DashboardIncompleteMetadata` (and reuse existing `BookList` / `BookRead` for the books drill-down). |
 | `src/api/apiTypes.test.ts` | Fixture coverage for breakdown bucket shapes and incomplete-metadata required fields (including that `total_incomplete` is an independent integer). |
 
-Regenerate OpenAPI / extend contract smoke only if those paths/schemas regress; they are already present.
-
 ### 2. Typed dashboard helpers and query keys
 
 | File | Change |
 | ---- | ------ |
 | `src/api/dashboardApi.ts` | Keep `get()` for `GET /dashboard`. Add `getBreakdowns()`, `getIncompleteMetadata()`, and `listIncompleteMetadataBooks({ field?, skip?, take? })`. Omit `field` when `undefined` / blank / whitespace so the FE never triggers documented **400**. Send `skip`/`take` together when paginating (same rule as books/loans). Accept optional `AbortSignal` via `ApiCallOptions`. |
 | `src/api/queryKeys.ts` | Nest under the existing dashboard prefix, e.g. keep `all: ['dashboard']` for summary (or `['dashboard', 'summary']` only if callers and invalidation are updated together), plus `breakdowns`, `incompleteMetadata`, and `incompleteMetadataBooks({ field?, skip?, take? })` / infinite variant. Prefer keys that still start with `['dashboard']` so existing mutation invalidation of `queryKeys.dashboard.all` continues to refresh report data. |
-| `src/api/dashboardQueries.ts` | Add `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`, and `useIncompleteMetadataBooks` / `useInfiniteIncompleteMetadataBooks` (pick one list pattern; prefer infinite scroll when lists can be long, matching shared `INFINITE_SCROLL_BATCH_SIZE`). Thread `enabled` where useful (e.g., delay the books query until the healing section is visible only if that keeps the page light -- default to fetching with the page). |
+| `src/api/dashboardQueries.ts` | Add `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`, and `useIncompleteMetadataBooks` / `useInfiniteIncompleteMetadataBooks` (pick one list pattern; prefer infinite scroll when lists can be long, reusing shared `INFINITE_SCROLL_BATCH_SIZE` from `src/features/shared/infiniteScrollConfig.ts` and `useInfiniteScrollTrigger`). Thread `enabled` where useful (e.g., delay the books query until the healing drawer is visible only if that keeps the page light -- default to fetching with the page). |
 | `src/api/api.ts` | No structural change required if helpers stay on `createDashboardApi`; confirm `api.dashboard` still aggregates the expanded helper. |
 | `src/api/dashboardApi.test.ts` | Cover: breakdowns and incomplete-metadata GETs; incomplete books with/without `field`; blank `field` omission; paired pagination params; existing summary `get()` still passes. |
 | `src/api/serverStateQueries.test.tsx` (and/or colocated dashboard query tests) | Assert new hooks use the nested keys and call the matching helpers; optional: confirm invalidating `['dashboard']` marks report queries stale the same way as summary. |
@@ -148,9 +149,9 @@ Do not compute incomplete totals or breakdown buckets from `booksApi.list`.
 
 | File | Change |
 | ---- | ------ |
-| `src/features/dashboard/routes/DashboardPage.tsx` | Keep sections I--III on `useDashboard` data. Add **Basic stats** (or equivalent heading) driven by `useDashboardBreakdowns`: show `total_books` / `on_loan` and the three bucket lists (Title Case shelf keys). Add **Healing metadata** (or "Incomplete metadata") driven by `useDashboardIncompleteMetadata` counts plus the incomplete-books list/filter. Wire Refresh to refetch summary + breakdowns + incomplete metadata (+ active books query). Preserve offline/paused, stale, contract-warning, and `QueryErrorState` behavior; if one report query fails while summary succeeds, show a section-level error with retry rather than blanking the whole page when summary data is already visible. Link incomplete book rows to `/books/:bookId` (and optionally Edit, which already uses shelf pickers). When `total_incomplete === 0` and the unfiltered books list is empty, show a positive empty state (e.g., no cleanup needed) -- not the library-empty Add Book pattern. Implement on `/dashboard` only. |
-| `src/features/dashboard/routes/DashboardPage.test.tsx` | Cover: breakdown buckets render API keys/counts; omitted zero buckets are not invented; incomplete counts render without summing into `total_incomplete`; field filter updates the books query (`field=isbn` etc.); blank/all filter omits `field`; book rows link to detail; empty healing state; section-level error recovery; Refresh triggers the new queries; existing summary / null-average / inconsistency cases stay green. |
-| `src/styles/components.css` | Extend dashboard BEM classes for bucket lists and healing rows (e.g., `.dashboard-buckets`, `.dashboard-healing-list`) so new sections wrap cleanly at 320px, keep 44px targets, and reuse tokens. No new CSS framework. |
+| `src/features/dashboard/routes/DashboardPage.tsx` | Keep drawer sections I--III on `useDashboard` data inside `.dashboard-drawer-bank`. Add drawer **IV -- Basic stats** (or equivalent heading) driven by `useDashboardBreakdowns`: show `total_books` / `on_loan` and the three bucket lists (Title Case shelf keys). Add drawer **V -- Healing metadata** (or "Incomplete metadata") driven by `useDashboardIncompleteMetadata` counts plus the incomplete-books list/filter. Wire Refresh to refetch summary + breakdowns + incomplete metadata (+ active books query). Preserve offline/paused, stale, contract-warning, and `QueryErrorState` behavior; if one report query fails while summary succeeds, show a drawer-level error with retry rather than blanking the whole page when summary data is already visible. Link incomplete book rows to `/books/:bookId` (and optionally Edit, which already uses shelf pickers). When `total_incomplete === 0` and the unfiltered books list is empty, show a positive empty state (e.g., no cleanup needed) -- not the library-empty Add Book pattern. Implement on `/dashboard` only. |
+| `src/features/dashboard/routes/DashboardPage.test.tsx` | Cover: breakdown buckets render API keys/counts; omitted zero buckets are not invented; incomplete counts render without summing into `total_incomplete`; field filter updates the books query (`field=isbn` etc.); blank/all filter omits `field`; book rows link to detail; empty healing state; drawer-level error recovery; Refresh triggers the new queries; existing summary / null-average / inconsistency cases stay green. |
+| `src/styles/components.css` | Extend dashboard BEM classes for bucket lists and healing rows inside `.dashboard-drawer` (e.g., `.dashboard-buckets`, `.dashboard-healing-list`) so new drawers wrap cleanly at 320px, keep 44px targets, and reuse tokens. No new CSS framework. |
 
 ### 5. Invalidation hygiene
 
@@ -171,10 +172,10 @@ Do not compute incomplete totals or breakdown buckets from `booksApi.list`.
 
 Exact copy is implementer-owned; keep it accurate:
 
-1. **Basic stats** -- Total books and on loan from breakdowns (may duplicate summary figures; still display API values,
-   do not reconcile client-side). Then three subsections or lists: By category, By shelf, By year added
-   (`by_creation_year`).
-2. **Healing metadata** -- "Books needing metadata" with `total_incomplete`, then per-field counts. Optional field
+1. **Basic stats (drawer IV)** -- Total books and on loan from breakdowns (may duplicate summary figures; still
+   display API values, do not reconcile client-side). Then three subsections or lists: By category, By shelf, By year
+   added (`by_creation_year`).
+2. **Healing metadata (drawer V)** -- "Books needing metadata" with `total_incomplete`, then per-field counts. Optional field
    filter: All | Category | Shelf | Pages | Publisher | Publication year | ISBN (request values:
    omit / `category` / `shelf` / `pages` / `publisher` / `year` / `isbn`).
 3. **Books list** -- Title, authors, and a short hint of what is incomplete when easy from the row (optional; do not
@@ -208,8 +209,9 @@ dashboard reports.
 - Recalculating dashboard metrics from `GET /books` or loan lists.
 - Chart libraries, heatmaps, "on this day", weather/quote widgets, or other V2 vision dashboards from product drafts.
 - A dedicated `/admin/healing` route (keep healing on the dashboard route unless a later ticket relocates it).
-- Wishlist UI, collection category filter UI, cover images, or automated bulk metadata fills.
+- Wishlist changes, collection filter/sort changes, cover images, or automated bulk metadata fills.
 - Shelves catalog CRUD (already `/shelves`).
 - Inventing a `section` incomplete field or any query value not documented by the API.
 - Changing auth, runtime config, connection bootstrap, or packaging/hardening work.
-- Regenerating OpenAPI or extending contract smoke unless those paths/schemas regress (already shipped).
+- Regenerating OpenAPI or extending contract smoke unless those paths/schemas regress (OpenAPI types and
+  `scripts/contractSmoke.test.ts` already cover the three report paths).

@@ -13,6 +13,14 @@ import type {
     ShelfCreate,
     ShelfRead,
     ShelfUpdate,
+    WishlistBookCreate,
+    WishlistBookList,
+    WishlistBookRead,
+    WishlistBookStatus,
+    WishlistCreate,
+    WishlistList,
+    WishlistRead,
+    WishlistUpdate,
 } from './apiTypes'
 
 describe('API transport types', () => {
@@ -149,5 +157,64 @@ describe('API transport types', () => {
         expect(
             dashboard.reading.average_rating,
         ).toBeNull()
+    })
+
+    it('preserves wishlist transport field names', () => {
+        const create = {
+            name: 'TBR',
+            description: null,
+        } satisfies WishlistCreate
+
+        const update = {
+            name: 'Later',
+            description: 'Updated',
+        } satisfies WishlistUpdate
+
+        const wishlist = {
+            wishlist_id: 'wishlist-1',
+            name: 'TBR',
+            description: null,
+            created_date: '2026-08-01T00:00:00Z',
+            last_updated_date: '2026-08-01T00:00:00Z',
+        } satisfies WishlistRead
+
+        const list = {
+            items: [wishlist],
+            total: 1,
+        } satisfies WishlistList
+
+        expect(create.name).toBe('TBR')
+        expect(update.description).toBe('Updated')
+        expect(wishlist.wishlist_id).toBe('wishlist-1')
+        expect(list.total).toBe(1)
+    })
+
+    it('preserves wishlist membership transport field names', () => {
+        const status = 'wanted' satisfies WishlistBookStatus
+
+        const create = {
+            book_id: 'book-1',
+            status,
+        } satisfies WishlistBookCreate
+
+        const membership = {
+            wishlist_book_id: 'membership-1',
+            wishlist_id: 'wishlist-1',
+            book_id: 'book-1',
+            status,
+            priority: null,
+            notes: null,
+            url: null,
+            created_date: '2026-08-01T00:00:00Z',
+        } satisfies WishlistBookRead
+
+        const list = {
+            items: [membership],
+            total: 1,
+        } satisfies WishlistBookList
+
+        expect(create.book_id).toBe('book-1')
+        expect(membership.priority).toBeNull()
+        expect(list.total).toBe(1)
     })
 })
