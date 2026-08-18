@@ -2,7 +2,7 @@
 
 ## Objective
 
-Augment the existing FEAT-11 library dashboard (`/`) so it surfaces the backend's newer authenticated report
+Augment the existing FEAT-11 library dashboard (`/dashboard`) so it surfaces the backend's newer authenticated report
 endpoints: catalog composition ("basic stats") via `GET /dashboard/breakdowns`, and a healing / cleanup section via
 `GET /dashboard/incomplete-metadata` plus a drill-down list of books missing tracked fields via
 `GET /dashboard/incomplete-metadata/books`.
@@ -23,8 +23,8 @@ Reuse the typed client, query keys, PLAN.md 7.5 invalidation, shared components,
 Do not invent a second metrics transport or recalculate aggregates from `GET /books`.
 
 Do not pull journey automation, CI, Podman, release artifacts, FEAT-17 About/homepage routing, FEAT-18 collection
-filters, or FEAT-19 wishlists into this ticket. If FEAT-17 has already moved the dashboard to `/dashboard`, implement
-the new sections on that relocated route (not only `/`).
+filters, or FEAT-19 wishlists into this ticket. FEAT-17 is complete: the dashboard lives at `/dashboard`; implement
+the new sections on that route (not on `/`, which is the About homepage).
 
 ## Contract references
 
@@ -67,10 +67,10 @@ blocker rather than inventing frontend semantics.
 
 Already in place and should be reused (not rebuilt):
 
-- `/` via `DashboardPage` + `useDashboard` / `dashboardApi.get` (`GET /dashboard` only): Collection, Circulation, and
-  Reading Record; null averages as "Not enough data"; read/unread contract warning without recalculation; Refresh;
-  offline/paused and stale status; `QueryErrorState` recovery. (FEAT-17 may relocate this page to `/dashboard` --
-  implement against the live dashboard route.)
+- `/dashboard` via `DashboardPage` + `useDashboard` / `dashboardApi.get` (`GET /dashboard` only): Collection,
+  Circulation, and Reading Record; null averages as "Not enough data"; read/unread contract warning without
+  recalculation; Refresh; offline/paused and stale status; `QueryErrorState` recovery. `/` is the About homepage
+  (`AboutPage`), not the dashboard.
 - Styles: `.dashboard-page`, `.dashboard-section`, `.dashboard-metric`, and related classes in
   `src/styles/components.css`.
 - `queryKeys.dashboard.all` is `['dashboard']`; book lifecycle mutations and shelf renames that change `common_name`
@@ -89,7 +89,7 @@ Already in place and should be reused (not rebuilt):
 
 ## Product intent
 
-On the live dashboard route (`/` today, `/dashboard` after FEAT-17), an operator should be able to:
+On `/dashboard`, an operator should be able to:
 
 1. **See basic catalog stats** -- a new Dashboard section that shows API breakdown totals (`total_books`, `on_loan`)
    and composition lists by category, shelf, and creation year from `GET /dashboard/breakdowns`. Render each bucket's
@@ -148,7 +148,7 @@ Do not compute incomplete totals or breakdown buckets from `booksApi.list`.
 
 | File | Change |
 | ---- | ------ |
-| `src/features/dashboard/routes/DashboardPage.tsx` | Keep sections I--III on `useDashboard` data. Add **Basic stats** (or equivalent heading) driven by `useDashboardBreakdowns`: show `total_books` / `on_loan` and the three bucket lists (Title Case shelf keys). Add **Healing metadata** (or "Incomplete metadata") driven by `useDashboardIncompleteMetadata` counts plus the incomplete-books list/filter. Wire Refresh to refetch summary + breakdowns + incomplete metadata (+ active books query). Preserve offline/paused, stale, contract-warning, and `QueryErrorState` behavior; if one report query fails while summary succeeds, show a section-level error with retry rather than blanking the whole page when summary data is already visible. Link incomplete book rows to `/books/:bookId` (and optionally Edit, which already uses shelf pickers). When `total_incomplete === 0` and the unfiltered books list is empty, show a positive empty state (e.g., no cleanup needed) -- not the library-empty Add Book pattern. Implement on `/` or `/dashboard` according to the live route after FEAT-17. |
+| `src/features/dashboard/routes/DashboardPage.tsx` | Keep sections I--III on `useDashboard` data. Add **Basic stats** (or equivalent heading) driven by `useDashboardBreakdowns`: show `total_books` / `on_loan` and the three bucket lists (Title Case shelf keys). Add **Healing metadata** (or "Incomplete metadata") driven by `useDashboardIncompleteMetadata` counts plus the incomplete-books list/filter. Wire Refresh to refetch summary + breakdowns + incomplete metadata (+ active books query). Preserve offline/paused, stale, contract-warning, and `QueryErrorState` behavior; if one report query fails while summary succeeds, show a section-level error with retry rather than blanking the whole page when summary data is already visible. Link incomplete book rows to `/books/:bookId` (and optionally Edit, which already uses shelf pickers). When `total_incomplete === 0` and the unfiltered books list is empty, show a positive empty state (e.g., no cleanup needed) -- not the library-empty Add Book pattern. Implement on `/dashboard` only. |
 | `src/features/dashboard/routes/DashboardPage.test.tsx` | Cover: breakdown buckets render API keys/counts; omitted zero buckets are not invented; incomplete counts render without summing into `total_incomplete`; field filter updates the books query (`field=isbn` etc.); blank/all filter omits `field`; book rows link to detail; empty healing state; section-level error recovery; Refresh triggers the new queries; existing summary / null-average / inconsistency cases stay green. |
 | `src/styles/components.css` | Extend dashboard BEM classes for bucket lists and healing rows (e.g., `.dashboard-buckets`, `.dashboard-healing-list`) so new sections wrap cleanly at 320px, keep 44px targets, and reuse tokens. No new CSS framework. |
 

@@ -6,9 +6,9 @@ repository access).
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
 the dated codebase baseline. Start from this file alone; do not send
-the reader to another project prompt for more context. Attach the
-on-demand docs listed in section 8 only when the current ticket needs
-them; do not re-synthesize those sources here.
+the reader to `docs/AGENTS.md` or any other project prompt for more
+context. Attach the on-demand docs listed in section 8 only when the
+current ticket needs them; do not re-synthesize those sources here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
@@ -299,11 +299,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     Browser journeys cover manual book creation and the book lifecycle,
     including checkout, check-in, mark-read, delete, and restore through
     their dedicated endpoints. Automated accessibility coverage
-    exercises critical application routes and administrative/check-in
-    surfaces. The documented coverage thresholds are enforced rather
-    than treated as advisory (statements 87%, branches 80%, functions
-    92%, lines 87%). See `docs/baselines/FEAT-13_testing.md` for the
-    completed testing baseline.
+    exercises books list, add book, book detail, checkout, and loans
+    (`e2e/accessibility.spec.ts`); see `docs/baselines/FEAT-13_testing.md`
+    for broader manual accessibility ownership. The documented coverage
+    thresholds are enforced rather than treated as advisory (statements
+    87%, branches 80%, functions 92%, lines 87%). See
+    `docs/baselines/FEAT-13_testing.md` for the completed testing baseline.
 -   FEAT-14 continuous-integration quality pipeline is complete (ticket
     file removed). Shipped `.github/workflows/check.yml` for pull
     requests and pushes to `main` (Node from `.nvmrc`, Corepack/Yarn,
@@ -333,13 +334,28 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     tarball handoff in `README.md`. Production is not another Podman
     image. FEAT-17 About homepage is complete (ticket file removed):
     `/` is `AboutPage` + `CatalogGuide`; dashboard metrics live at
-    `/dashboard`. FEAT-18 collection filters are complete (ticket file
-    removed). FEAT-19 through FEAT-25 remain product follow-ons. Do not
-    implement those future tickets early.
+    `/dashboard`; Dashboard is a direct primary-nav link and About is
+    reachable via the brand link only. Primary navigation redesign
+    (merged without a standalone ticket): `DrawerNavMenu` drawers for
+    Collection (Browse → `/books`, Manage → `/collection/manage`) and
+    Circulation (Check Out, Check In, Loans); flat About, Shelves, and
+    admin/settings header links removed. Collection maintenance (Add
+    Book, Shelves, Deleted Books, Backup Library) lives on
+    `/collection/manage` (`ManageCollectionPage`) until FEAT-25 removes
+    Backup Library from the product UI. FEAT-18 collection filters are
+    complete (ticket file removed). FEAT-19 through FEAT-25 remain
+    product follow-ons. Do not implement those future tickets early.
 -   About `/` via `AboutPage` + `CatalogGuide` (library background,
     Charles Leewright dedication, lending policy, and accessible
     card-catalog How to Use dialog with in-app workflow links). Does
-    not call `GET /dashboard` or any other API.
+    not call `GET /dashboard` or any other API. Reach About via the
+    brand link; it is not a separate primary-nav item.
+-   Primary navigation via `AppShell` + `DrawerNavMenu`: Dashboard
+    link; Collection drawer (Browse, Manage); Circulation drawer (Check
+    Out, Check In, Loans). `/collection/manage` (`ManageCollectionPage`)
+    links Add Book, Shelves, Deleted Books, and Backup Library. FEAT-22
+    / FEAT-23 / FEAT-25 will further consolidate circulation and backup
+    surfaces.
 -   Dashboard `/dashboard` via `DashboardPage` + `useDashboard` /
     `dashboardApi.get`. Displays API-provided Collection, Circulation, and
     Reading Record metrics without recalculating business totals; null
@@ -545,6 +561,10 @@ index.html
         enough data"; inconsistency warning without recalculation;
         Refresh plus offline/stale status; `QueryErrorState` recovery.
         Styles in `src/styles/components.css`.
+    -   `/collection/manage` -- `ManageCollectionPage`: collection
+        maintenance hub with links to Add Book (`/books/new`), Shelves
+        (`/shelves`), Deleted Books (`/admin/deleted`), and Backup
+        Library (`/admin/backup`; interim until FEAT-25).
     -   `/books` -- `BooksPage` via
         `useInfiniteBooks({ category, author, title, sortBy, sortOrder })`
         with URL-backed category / author / title filters and sort
@@ -746,13 +766,13 @@ index.html
     -   Colocated scanning tests plus `NewBookPage` / `CheckoutPage`
         handoff tests for camera and hardware captures
 -   Registered product routes (all live -- do not revert to placeholders
-    or rebuild the typed client / hooks): `/`, `/books`, `/books/new`,
-    `/books/:bookId`, `/books/:bookId/mark-read`,
-    `/books/:bookId/reading`, `/books/:bookId/edit`,
-    `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`,
-    `/shelves`, `/admin/deleted`, `/admin/backup`, and `*`
-    (`NotFoundPage`). `RoutePlaceholder.tsx` remains only as an unused
-    helper.
+    or rebuild the typed client / hooks): `/`, `/dashboard`, `/books`,
+    `/collection/manage`, `/books/new`, `/books/:bookId`,
+    `/books/:bookId/mark-read`, `/books/:bookId/reading`,
+    `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`,
+    `/checkin`, `/loans`, `/shelves`, `/admin/deleted`, `/admin/backup`,
+    and `*` (`NotFoundPage`). `RoutePlaceholder.tsx` remains only as an
+    unused helper.
 -   Shared UI under `src/components/` (Alert, AppLink, Button,
     ConfirmationDialog, EmptyState, Field, LoadingState, Notifications,
     QueryErrorState) re-exports from `src/components/index.ts`.
@@ -764,7 +784,8 @@ index.html
     these primitives.
 -   CSS layers: `tokens` -\> `base` -\> `shell` -\> `components` via
     `src/index.css` (plain CSS; BEM-like component classes). Shell
-    footer shows `Release` from `package.json` `version` via
+    includes `.drawer-nav-menu` drawer panels for Collection and
+    Circulation. Footer shows `Release` from `package.json` `version` via
     `APP_VERSION`, plus API version from public `GET /version` /
     `useVersion` when available. Long-content wrapping lives in
     `components.css`.
@@ -800,7 +821,8 @@ handling) / `CheckinPage` / `checkinModel` / `checkinEligibility` /
 `ReadingEditPage` / `readingEditModel` / `ShelvesPage` / `shelfDisplay`
 / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations /
 `useInfiniteBooks` / `useInfiniteLoans` / `useInfiniteScrollTrigger` /
-`booksListModel` / `BooksListControls`. FEAT-14 CI packaging is
+`booksListModel` / `BooksListControls` / `AppShell` / `DrawerNavMenu` /
+`ManageCollectionPage`. FEAT-14 CI packaging is
 complete: keep `.github/workflows/check.yml` and
 `scripts/checkBundleSize.mjs` in the canonical `make check` gate; do
 not add secret-bearing CI artifacts. Prefer files and command output
@@ -965,8 +987,12 @@ merely to make a ticket pass.
     Leave `/admin/deleted` under `DeletedBooksPage` and `/admin/backup`
     under `BackupLibraryPage` (programmatic `<a download>`, always
     `URL.revokeObjectURL`; do not inspect, log, cache, or upload dump
-    contents). Leave About under `AboutPage` / `CatalogGuide` at `/`.
-    Leave dashboard under `DashboardPage` / `useDashboard` at
+    contents). Leave About under `AboutPage` / `CatalogGuide` at `/` (brand link
+    only; not a separate primary-nav item). Leave primary navigation under
+    `AppShell` / `DrawerNavMenu` (Dashboard link; Collection Browse/Manage
+    and Circulation drawers). Leave `/collection/manage` under
+    `ManageCollectionPage` until FEAT-25 removes Backup Library. Leave
+    dashboard under `DashboardPage` / `useDashboard` at
     `/dashboard` (display API stats only; null averages as "Not
     enough data"). Leave reading flows under `MarkReadPage` /
     `markReadModel` / `ReadingEditPage` / `readingEditModel`. Leave
@@ -1074,13 +1100,15 @@ repo before editing.
   Infinite      `src/features/shared/infiniteScrollConfig.ts`, `src/hooks/useInfiniteScrollTrigger.ts`
   scroll        
 
-  Routing /     `src/routes/*`, `src/layout/AppShell.tsx` (brand includes
-  shell         "est. 2026"; primary nav includes Shelves; footer shows
+  Routing /     `src/routes/*`, `src/layout/AppShell.tsx` (brand link to
+  shell         About plus "est. 2026"; Dashboard link; Collection and
+                Circulation `DrawerNavMenu` drawers; footer shows
                 `Release ${APP_VERSION}` plus API version from
-                `useVersion` / `GET /version` when available)
+                `useVersion` / `GET /version` when available),
+                `src/layout/DrawerNavMenu.tsx`
 
-  Feature       `src/features/{about,dashboard,books,loans,shelves,connection,scanning,shared}/` (scanning is a feature module, not a top-level route)
-  routes        
+  Feature       `src/features/{about,collection,dashboard,books,loans,shelves,connection,scanning,shared}/`
+  routes        (scanning is a feature module, not a top-level route)
 
   Books UI      `src/features/books/routes/{BooksPage,BookDetailsPage,NewBookPage,EditBookPage,bookEditModel,DeleteBookPage,DeletedBooksPage,BackupLibraryPage,MarkReadPage,markReadModel,ReadingEditPage,readingEditModel}.{tsx,ts}`,
                 `src/features/books/components/{BookForm,bookFormDefaults,bookFormModel,BooksListControls}.{tsx,ts}`, `src/features/books/booksListModel.ts` (sort: `author` \| `title` \| `creationDate` \| `shelf`; URL-backed category / author / title filters),
@@ -1089,6 +1117,8 @@ repo before editing.
   Shelves UI    `src/features/shelves/routes/ShelvesPage.tsx`, `shelfDisplay.ts`, `shelfFormModel.ts` (catalog CRUD complete)
 
   About UI      `src/features/about/routes/AboutPage.tsx`, `src/features/about/components/CatalogGuide.tsx` (`/` homepage)
+
+  Collection    `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage` hub)
 
   Dashboard UI  `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`)
 
@@ -1099,8 +1129,8 @@ repo before editing.
 
   Shared UI     `src/components/*` (import via `index.ts`; includes `QueryErrorState`)
 
-  Styles        `src/index.css`, `src/styles/{tokens,base,shell,components}.css` (dashboard classes and
-                long-content wrap in `components.css`)
+  Styles        `src/index.css`, `src/styles/{tokens,base,shell,components}.css` (`.drawer-nav-menu` in
+                `shell.css`; dashboard classes and long-content wrap in `components.css`)
 
   Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (includes diagnostic reporter)
 
@@ -1134,10 +1164,12 @@ notes); shelves catalog (`ShelvesPage` / `shelfDisplay` /
 and `scripts/checkBundleSize.mjs`); FEAT-15 Podman deployed-development
 image (`ci/Containerfile`, Make `container-*` targets); FEAT-16
 versioned release tarball (`scripts/packRelease.ts`, Make `pack`);
-FEAT-17 About homepage (`AboutPage` at `/`, dashboard at `/dashboard`);
-FEAT-18 collection filters (`BooksPage` / `BooksListControls` /
-`booksListModel` URL-backed category / author / title plus sort).
-Remaining tickets begin with FEAT-19 (wishlists). Later product
+FEAT-17 About homepage (`AboutPage` at `/`, dashboard at `/dashboard`,
+drawer primary nav via `DrawerNavMenu`); FEAT-18 collection filters
+(`BooksPage` / `BooksListControls` / `booksListModel` URL-backed
+category / author / title plus sort). Primary navigation redesign
+(`ManageCollectionPage` at `/collection/manage`) shipped without a
+standalone ticket. Remaining tickets begin with FEAT-19 (wishlists). Later product
 tickets: FEAT-20 dashboard reports, FEAT-21 display-only alternate-copy
 UX, FEAT-22 check-in onto `/loans`, FEAT-23 checkout onto book details,
 FEAT-24 hardware ISBN scan on more pages, FEAT-25 remove browser backup
@@ -1232,7 +1264,8 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
-baseline. Do not treat another project prompt as required reading.
+baseline. Do not treat `docs/AGENTS.md` or any other project prompt as
+required reading.
 
 ------------------------------------------------------------------------
 

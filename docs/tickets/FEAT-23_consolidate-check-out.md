@@ -12,9 +12,8 @@ not change the backend contract: checkout remains `POST /books/{id}/checkout`.
 FEAT-07 checkout is complete (`CheckoutPage`, `checkoutModel`, `useCheckoutBook`, ISBN Find, `412` `display_only`
 refetch/messaging). Book details already gates "Check Out" to active `available` books.
 
-Sibling tickets still describe `/checkout` as a live product page (FEAT-17 About links and nav,
-FEAT-19 primary nav, FEAT-21 alternate-copy UX, FEAT-22 check-in consolidation). Update those tickets in the same
-change so later work does not rebuild the page.
+Sibling tickets still describe `/checkout` as a live product page (FEAT-19 Collection drawer, FEAT-21 alternate-copy
+UX, FEAT-22 check-in consolidation). Update those tickets in the same change so later work does not rebuild the page.
 
 FEAT-22 (check-in onto `/loans`) is a sibling, not a blocker. If FEAT-22 is not done yet, still retarget checkout
 independently. If FEAT-22 is already written, drop its "Checkout stays on `/checkout`" / "Keep Check Out" nav notes
@@ -53,7 +52,8 @@ Already in place and should be reused (not rebuilt):
   due date stays date-only.
 - Detail "Check Out" on `BookDetailsPage` is an `AppLink` to `/checkout?bookId=...` when `canCheckout` (active and
   `status === 'available'`). Display-only and on-loan books do not get the link.
-- Primary nav in `AppShell` includes "Check Out" (`/checkout`).
+- Primary nav in `AppShell`: direct Dashboard link; Collection `DrawerNavMenu` (Browse, Manage); Circulation
+  `DrawerNavMenu` with Check Out, Check In, and Loans. Check Out is a drawer item, not a flat header link.
 - `LoansPage` empty state links "Check Out a Book" to `/checkout`.
 - `useCheckoutBook` already writes the returned `BookRead` into the detail cache and invalidates books, loans, and
   dashboard (PLAN.md 7.5). Do not change that invalidation.
@@ -157,8 +157,12 @@ reused.
 | `src/routes/routes.tsx` | Stop importing `CheckoutPage`. Remove the `routeMetadata.checkout` child. Add a compatibility child at path `/checkout` that replace-navigates to `/books` or, when `bookId` is in the search string, to `/books/{bookId}?checkout=1` (forward only `bookId`, as `checkout=1`). Do not give that redirect a "Check Out" `handle.title`. |
 | `src/features/loans/routes/CheckoutPage.tsx` | Delete after the dialog extract. |
 | `src/features/loans/routes/CheckoutPage.test.tsx` | Delete after cases live in `CheckoutDialog.test.tsx` / `BookDetailsPage.test.tsx`. Do not leave a suite that mounts `/checkout` as a real page. |
-| `src/layout/AppShell.tsx` | Remove the primary "Check Out" `NavLink`. Keep Books, Add Book, and Loans (and Check In until FEAT-22 removes it). |
-| `src/layout/AppShell.test.tsx` | Drop "Check Out" from the primary-nav label list. Assert there is no primary link to `/checkout`. Change the client-nav smoke that currently clicks Check Out and expects heading "Check Out Book" to use another remaining feature route (e.g., Loans). |
+| `src/layout/AppShell.tsx` | Remove the Check Out item from the Circulation `DrawerNavMenu` items. Keep Check In (until FEAT-22 removes
+  it) and Loans in that drawer. |
+| `src/layout/AppShell.test.tsx` | Open the Circulation drawer and assert Check Out is absent. Keep Check In → `/checkin` and Loans → `/loans`
+  until FEAT-22 lands. Change the client-nav smoke that currently opens the Circulation drawer and clicks Check Out
+  (expecting heading "Check Out Book") to use another remaining destination (e.g., Loans). Assert there is no drawer
+  or header link to `/checkout`. |
 | `src/features/loans/routes/LoansPage.tsx` | Empty-state "Check Out a Book" should go to `/books` (collection), not `/checkout`. |
 | `src/features/loans/routes/LoansPage.test.tsx` | Expect that empty-state link to `/books`. |
 
@@ -181,15 +185,25 @@ out of `routeMetadata`.
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Circulation checkout is a details dialog, not `/checkout`. Scanning lazy-load list is `/books/new` only. Inventory `CheckoutDialog` on `BookDetailsPage`; delete `CheckoutPage` / `/checkout`. Keep `checkoutModel` / `POST /books/{id}/checkout` / `412` handling. Nav: no Check Out item. Detail Check Out is a button that opens the dialog. Update "Next" remaining tickets to include FEAT-23 until the file is removed after completion. Preserve FEAT-21 as not done (alternate copies still deferred). |
+| `docs/AGENTS.md` | Circulation checkout is a details dialog, not `/checkout`. Scanning lazy-load list is `/books/new` only.
+  Inventory `CheckoutDialog` on `BookDetailsPage`; delete `CheckoutPage` / `/checkout`. Keep `checkoutModel` /
+  `POST /books/{id}/checkout` / `412` handling. Circulation drawer: Check In and Loans only (no Check Out item; after
+  FEAT-22, Loans only). Detail Check Out is a button that opens the dialog. Update "Next" remaining tickets to
+  include FEAT-23 until the file is removed after completion. Preserve FEAT-21 as not done (alternate copies still
+  deferred). |
 | `docs/full-project-context.md` | Same route, nav, and scanning notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
-| `docs/product-docs/PLAN.md` | Target IA: drop `/checkout` as a user-facing destination; checkout lives on book details. Shell persistent access: drop Check Out (Dashboard, Books, Add Book, Loans -- plus Check In only until FEAT-22). Workstream 6 deliverables: dialog on details, required borrower, optional notes, computed now + one-year due date; no available-book selection page. |
+| `docs/product-docs/PLAN.md` | Target IA: drop `/checkout` as a user-facing destination; checkout lives on book details. Shell persistent
+  access: Dashboard link; Collection drawer (Browse, Manage); Circulation drawer (Check In until FEAT-22, then Loans
+  only -- no Check Out). Workstream 6 deliverables: dialog on details, required borrower, optional notes, computed
+  now + one-year due date; no available-book selection page. |
 | `docs/MAINTAINERS.md` | Registered product routes: replace `/checkout` with the `/checkout` → `/books` (or details) compatibility redirect if maintainers still list paths. |
-| `docs/tickets/FEAT-17_about-page.md` | How-to links and nav: check out from a book's details page, not `/checkout`. Do not require a Check Out nav item. |
-| `docs/tickets/FEAT-19_wishlists.md` | Primary nav baseline: drop Check Out. |
-| `docs/tickets/FEAT-21_display-only.md` | Rebase the planned alternate-copy UX onto `CheckoutDialog` / book details (links to another eligible copy's `/books/{id}`), not `/checkout` or Find-by-ISBN. Keep **412** messaging. Do not implement substitutes in FEAT-23. |
-| `docs/tickets/FEAT-22_consolidate-check-in.md` | Delete "Checkout stays on `/checkout`". Nav: do not "Keep Check Out". About copy: check out from book details, return on `/loans`. |
+| `docs/tickets/FEAT-19_wishlists.md` | Circulation drawer baseline: no Check Out item (Check In and Loans until FEAT-22). |
+| `docs/tickets/FEAT-21_display-only.md` | Rebase the planned alternate-copy UX onto `CheckoutDialog` / book details (links to another eligible
+  copy's `/books/{id}`), not `/checkout` or Find-by-ISBN. Keep **412** messaging. Do not implement substitutes in
+  FEAT-23. |
+| `docs/tickets/FEAT-22_consolidate-check-in.md` | Delete "Checkout stays on `/checkout`". Circulation drawer: do not keep Check Out. About / CatalogGuide copy:
+  check out from book details, return on `/loans`. |
 
 `docs/product-docs/PRODUCT_REQS.V1.md` still requires a Check Out Book capability; satisfying it on book details is
 enough. Do not revive a separate page to match that heading.
@@ -198,7 +212,7 @@ enough. Do not revive a separate page to match that heading.
 
 - `/checkout` is not a product page. Visiting `/checkout` replace-navigates to `/books`. Visiting
   `/checkout?bookId={id}` replace-navigates to `/books/{id}?checkout=1`.
-- Primary navigation has no Check Out item.
+- Primary navigation: Circulation drawer has no Check Out item (Check In and Loans until FEAT-22 removes Check In).
 - Eligible book details show a Check Out **button** that opens a dialog with Borrower and Notes only (no checkout
   datetime, no due date, no book picker, no ISBN Find).
 - Ineligible books (deleted, not `available`, including `display_only`) do not offer Check Out.
