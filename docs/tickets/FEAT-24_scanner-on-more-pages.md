@@ -2,7 +2,7 @@
 
 ## Objective
 
-On Dashboard (`/`), Books (`/books`), and Loans (`/loans`), a hardware barcode scan (or equivalent keyboard-wedge
+On Dashboard (`/dashboard`), Books (`/books`), and Loans (`/loans`), a hardware barcode scan (or equivalent keyboard-wedge
 digit burst) should take the operator to the matching book. Navigate to `/books?isbn={compactedIsbn}`, filter the
 active collection with `GET /books?isbn=`, and if that filter returns exactly one book, open `/books/{bookId}`.
 
@@ -22,9 +22,10 @@ UI, FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only alternate
 consolidation, or FEAT-23 checkout-on-details into this implementation. Update sibling tickets that currently say
 ISBN list-filter lives only on checkout (FEAT-18) so later work does not fight this URL param.
 
-FEAT-17 relocates the dashboard off `/`. Capture belongs on `DashboardPage` (whatever path that page uses), not on a
-hard-coded `'/'` check. FEAT-18 will add author/title text fields on `/books`; this listener must ignore editable
-targets so those fields stay usable. FEAT-22 may add a return-time field on `/loans`; same ignore rule.
+FEAT-17 About homepage is complete: `/` is About; the dashboard is `/dashboard`. Capture belongs on `DashboardPage`
+at `/dashboard`, not on `/`. FEAT-18 category/author/title filter UI is complete on `/books`; this listener must
+ignore editable targets so those fields stay usable. FEAT-22 may add a return-time field on `/loans`; same ignore
+rule.
 
 ## Contract references
 
@@ -50,10 +51,12 @@ Already in place and should be reused (not rebuilt):
   inputs (a scan can fill the ISBN field) and do **not** `preventDefault` ("ordinary typing is not swallowed").
 - Camera capture stays lazy-loaded from `/books/new` and `/checkout` only (`IsbnCameraScanner`). Support matrix:
   `docs/baselines/FEAT-06_scanner-support.md`.
-- `/` `DashboardPage`: metrics, Refresh, no text fields. After client-side navigation, `AppShell` focuses the `h1`.
-- `/books` `BooksPage`: infinite active collection, sort `<select>`s, no ISBN (or other) text filter. URL search
-  today: `sortBy`, `sortOrder` only. `useInfiniteBooks` already accepts `isbn` but the page never passes it.
-  Unfiltered `total === 0` is "Your library is empty" + Add Book.
+- `/dashboard` `DashboardPage`: metrics, Refresh, no text fields. After client-side navigation, `AppShell` focuses
+  the `h1`. `/` is the About homepage, not the dashboard.
+- `/books` `BooksPage`: infinite active collection, sort `<select>`s, and URL-backed category / author / title filter
+  controls (`BooksListControls`). URL search today: `sortBy`, `sortOrder`, and filter params -- not `isbn`.
+  `useInfiniteBooks` already accepts `isbn` but the page never passes it. Unfiltered `total === 0` is "Your library
+  is empty" + Add Book (via Collection → Manage or direct `/books/new`).
 - `/loans` `LoansPage`: infinite active/returned loans, no text fields (until FEAT-22).
 - Checkout ISBN Find: checksum-gated `useBooks({ isbn })` with `compactIsbnForListFilter`; single eligible match
   auto-selects. That Find path stays on checkout; this ticket does not change checkout.
@@ -78,8 +81,8 @@ Check Out to use the scanner, which is the wrong destination when they already o
    keypresses. Reuse the existing parser: ISBN characters + Enter terminator + checksum. Invalid checksums are
    dropped silently, same as `/books/new` and `/checkout` hardware paths.
 4. **Do not steal typing from form controls** -- ignore `keydown` when the event target is an editable control
-   (`input`, `textarea`, `select`, or `contenteditable`). Books already has sort selects; FEAT-18 / FEAT-22 will add
-   real text fields. Modifier chords (`Ctrl` / `Meta` / `Alt`) must not start a scan.
+   (`input`, `textarea`, `select`, or `contenteditable`). Books already has sort selects and FEAT-18 filter fields;
+   FEAT-22 may add a return-time field on `/loans`. Modifier chords (`Ctrl` / `Meta` / `Alt`) must not start a scan.
 5. **Do not activate focused buttons** -- Dashboard Refresh and nav links can have focus. `preventDefault` consumed
    ISBN keys and a completing Enter so the scan does not click Refresh or follow a focused link. This preventDefault
    behavior is **opt-in** for this capture surface only; leave New Book / Checkout "ordinary typing is not
@@ -93,8 +96,8 @@ Suggested composition (implementer-owned layout; keep ISBN out of a typed search
 
 - Shared hook `useCollectionIsbnJump` called from `DashboardPage`, `BooksPage`, and `LoansPage` only.
 - On detect: compact the ISBN, set `/books?isbn=...`. If already on `/books`, keep `sortBy` / `sortOrder` and
-  replace the current entry. If coming from `/` or `/loans`, push `/books?isbn=...` (Back returns to the page they
-  scanned from).
+  replace the current entry. If coming from `/dashboard` or `/loans`, push `/books?isbn=...` (Back returns to the
+  page they scanned from).
 - `BooksPage` reads `isbn` from the URL, passes it to `useInfiniteBooks({ isbn, sortBy, sortOrder })`. When the
   query succeeds, `total === 1`, and the param is a checksum-valid ISBN, replace-navigate to that book's detail so
   Back skips the one-row list. Guard with a ref so refetch does not loop. Do not unique-open for a non-ISBN `isbn`
@@ -104,19 +107,19 @@ Suggested composition (implementer-owned layout; keep ISBN out of a typed search
 - Polite live region when the filter applies, so a screen reader hears that the collection changed.
 
 Tone: extend scanning and `BooksPage`; do not add a global AppShell listener (scanners stay local to feature pages,
-matching New Book / Checkout). Do not add an ISBN search box (FEAT-18 still owns typed author/title; this ticket
-owns scan-driven `isbn` only).
+matching New Book / Checkout). Do not add a typed ISBN search box (FEAT-18 owns typed author/title/category filters;
+this ticket owns scan-driven `isbn` URL param only).
 
 ## Out of scope
 
 - Camera capture on Dashboard, Books, or Loans.
 - `GET /books/lookup`, ISBN-10 → ISBN-13 conversion, or changing `compactIsbnForListFilter`.
 - Creating, checking out, or checking in from scan success.
-- Typed ISBN search box, author/title/category filter UI (FEAT-18), or `include_deleted` on `/books`.
+- Typed ISBN search box or changes to FEAT-18 author/title/category filter UI, or `include_deleted` on `/books`.
 - Listening on `/books/:bookId`, `/books/new`, `/checkout`, `/shelves`, admin, or other routes.
 - Changing New Book lookup or Checkout Find enablement (except sharing parser/hook option types).
-- FEAT-17 homepage move, FEAT-21 alternate copies, FEAT-22 / FEAT-23 circulation IA (beyond the ignore-editable
-  rule those tickets will need).
+- FEAT-21 alternate copies, FEAT-22 / FEAT-23 circulation IA (beyond the ignore-editable rule those tickets will
+  need).
 
 ## Remaining scope (file-level plan)
 
@@ -136,7 +139,10 @@ Do not replace the parser. Do not change camera code.
 | File | Change |
 | ---- | ------ |
 | `src/features/scanning/useCollectionIsbnJump.ts` (new) | Call `useNavigate` / `useLocation` and `useHardwareIsbnScanner` with `ignoreEditableTargets` and `preventDefaultWhenConsumed` true. `onDetected`: `compactIsbnForListFilter(isbn)`; build search params -- if `location.pathname === '/books'`, start from `location.search` and `set('isbn', compacted)` (preserve sort); otherwise `{ isbn: compacted }` only. `navigate({ pathname: '/books', search })` with `replace: location.pathname === '/books'`. Do not fetch here; `BooksPage` owns the list query and unique-open. |
-| `src/features/scanning/useCollectionIsbnJump.test.tsx` (new) | Memory-router harness: from `/` a valid ISBN+Enter navigates to `/books?isbn=9780441172719` (or the compacted form); from `/loans` same; from `/books?sortBy=title` replaces and keeps `sortBy`; hyphenated scan is compacted; invalid checksum does not navigate; focused input does not navigate. Do not require the full dashboard tree for these cases. |
+| `src/features/scanning/useCollectionIsbnJump.test.tsx` (new) | Memory-router harness: from `/dashboard` a valid ISBN+Enter navigates to `/books?isbn=9780441172719` (or the
+  compacted form); from `/loans` same; from `/books?sortBy=title` replaces and keeps `sortBy`; hyphenated scan is
+  compacted; invalid checksum does not navigate; focused input does not navigate. Do not require the full dashboard
+  tree for these cases. |
 | `src/features/dashboard/routes/DashboardPage.tsx` | Call `useCollectionIsbnJump()` unconditionally (all branches of the page, including loading / error, so a scan still works). |
 | `src/features/loans/routes/LoansPage.tsx` | Same: call `useCollectionIsbnJump()` on the page, including loading / error / empty. |
 | `src/features/books/routes/BooksPage.tsx` | Call `useCollectionIsbnJump()` in addition to the URL/query work in section 3. |
@@ -162,9 +168,15 @@ Use API `total === 1` (full matching count), not "first page has one row while `
 
 | File | Change |
 | ---- | ------ |
-| `src/features/dashboard/routes/DashboardPage.test.tsx` | Keep existing metric tests. Add (or share with the hook suite) one `renderAppTree(['/'])` journey: mock `GET /books?isbn=` to a single fixture book, fire ISBN-13 keydowns + Enter, expect `/books/{id}` (or the filtered list then detail). Spy `useCollectionIsbnJump` only if a full journey is too heavy -- prefer a real keydown through the mounted page so a missing hook call fails the test. |
+| `src/features/dashboard/routes/DashboardPage.test.tsx` | Keep existing metric tests. Add (or share with the hook suite) one `renderAppTree(['/dashboard'])` journey: mock
+  `GET /books?isbn=` to a single fixture book, fire ISBN-13 keydowns + Enter, expect `/books/{id}` (or the filtered
+  list then detail). Spy `useCollectionIsbnJump` only if a full journey is too heavy -- prefer a real keydown through
+  the mounted page so a missing hook call fails the test. |
 | `src/features/loans/routes/LoansPage.test.tsx` | Same wiring guarantee: scan from `/loans` reaches `/books?isbn=` / unique detail. Keep existing infinite-scroll tests. |
-| `e2e/isbn-collection-jump.spec.ts` (new) | Playwright: from `/`, type a fixture ISBN + Enter; with one matching `isbn13` in `mockApi`, land on that book's detail heading. Second case: two books sharing the ISBN stay on `/books` with both titles (extend `mockApi` seed if needed). Reuse `installMockApi`; do not invent a second fake API. Optional axe pass on the filtered many-match list. |
+| `e2e/isbn-collection-jump.spec.ts` (new) | Playwright: from `/dashboard`, type a fixture ISBN + Enter; with one matching `isbn13` in `mockApi`, land on that
+  book's detail heading. Second case: two books sharing the ISBN stay on `/books` with both titles (extend `mockApi`
+  seed if needed). Reuse `installMockApi`; do not invent a second fake API. Optional axe pass on the filtered
+  many-match list. |
 | `e2e/support/mockApi.ts` | List `isbn` today exact-matches `isbn13`. That is enough for full-ISBN e2e. Optional: substring `includes` to closer match the API; not required if tests send the full compacted ISBN. Do not add lookup calls. |
 | `e2e/dashboard.smoke.spec.ts` / `e2e/accessibility.spec.ts` | No required change unless the new spec is a better home for the dashboard scan journey. Do not add camera steps. |
 
@@ -175,14 +187,17 @@ Use API `total === 1` (full matching count), not "first page has one row while `
 | `docs/AGENTS.md` | Scanning also lives on Dashboard / Books / Loans via `useCollectionIsbnJump` (hardware only). `/books` URL may include `isbn`; unique-match opens detail. Still: scan never creates or checks out. Update "Next" remaining tickets to include FEAT-24 until the file is removed after completion. |
 | `docs/full-project-context.md` | Same capture and `/books?isbn=` notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
-| `docs/baselines/FEAT-06_scanner-support.md` | Third capture surface: Dashboard, Books, Loans hardware jump into `/books?isbn=` then unique detail. Camera still only `/books/new` and `/checkout`. Manual checklist: scan from `/`, `/books`, and `/loans`. Note ignore-editable + preventDefault on this surface only. |
-| `docs/tickets/FEAT-18_sorting-and-filtering.md` | Drop "ISBN filter UI on `/books` is out of scope / checkout-only". FEAT-24 owns scan-driven `isbn` URL + unique-open + filtered empty. FEAT-18 still must not add a typed ISBN box; author/title fields must remain usable (this ticket's ignore-editable rule). Filtered empty must compose if both tickets ship (`isbn` and category/author/title). |
-| `docs/tickets/FEAT-17_about-page.md` | Capture stays on `DashboardPage` when that page moves off `/`. Do not require the About homepage to listen unless product later asks; do not hard-code pathname `'/'` in the jump hook beyond "if already on `/books`, preserve sort". |
+| `docs/baselines/FEAT-06_scanner-support.md` | Third capture surface: Dashboard, Books, Loans hardware jump into `/books?isbn=` then unique detail. Camera still
+  only `/books/new` and `/checkout`. Manual checklist: scan from `/dashboard`, `/books`, and `/loans`. Note
+  ignore-editable + preventDefault on this surface only. |
+| `docs/tickets/FEAT-18_sorting-and-filtering.md` | Drop "ISBN filter UI on `/books` is out of scope / checkout-only". FEAT-24 owns scan-driven `isbn` URL +
+  unique-open + filtered empty. FEAT-18 still must not add a typed ISBN box; author/title fields must remain usable
+  (this ticket's ignore-editable rule). Filtered empty must compose if both ship (`isbn` with category/author/title). |
 
 ## Acceptance criteria
 
-- On `/`, `/books`, and `/loans`, a checksum-valid hardware ISBN (digits / `X` / hyphens, Enter terminator) navigates
-  to `/books?isbn={compactIsbnForListFilter(isbn)}`. Invalid checksums do not navigate.
+- On `/dashboard`, `/books`, and `/loans`, a checksum-valid hardware ISBN (digits / `X` / hyphens, Enter terminator)
+  navigates to `/books?isbn={compactIsbnForListFilter(isbn)}`. Invalid checksums do not navigate.
 - `/books` passes that `isbn` to `useInfiniteBooks` / `GET /books?isbn=` (active collection only; no
   `include_deleted`). Sort params are preserved when the scan happens on `/books`.
 - If the filtered result has `total === 1` and the `isbn` param is a valid ISBN, the app replace-navigates to
@@ -203,5 +218,5 @@ Use API `total === 1` (full matching count), not "first page has one row while `
 ## Plan coverage
 
 Extends FEAT-06 hardware capture beyond create/checkout Find, using the existing `GET /books?isbn=` substring filter
-as the collection jump. Explicitly excludes camera, lookup, mutations, and FEAT-17 through FEAT-23 product work
-except the sibling-doc and ignore-editable notes those tickets need.
+as the collection jump. Explicitly excludes camera, lookup, mutations, and FEAT-19 through FEAT-23 product work except
+the sibling-doc and ignore-editable notes those tickets need.

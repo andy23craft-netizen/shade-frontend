@@ -14,8 +14,8 @@ FEAT-08 check-in and loan history are complete (`CheckinPage`, `checkinModel`, `
 homepage, FEAT-18 collection filters, FEAT-19 wishlists, FEAT-20 dashboard reports, or FEAT-21 display-only alternate
 copies into this ticket.
 
-Sibling open tickets still mention `/checkin` in planned copy (FEAT-17 About links and nav,
-FEAT-19 primary nav). Update those tickets in the same change so later work does not reintroduce the route.
+Sibling open tickets still mention `/checkin` in planned copy (FEAT-19 Collection drawer). Update those tickets in
+the same change so later work does not reintroduce the route.
 
 ## Contract references
 
@@ -44,7 +44,8 @@ Already in place and should be reused (not rebuilt):
 - Eligibility is `findActiveLoan` / `isCheckinEligible` (active loan on a non-deleted book), not book `status` alone.
 - Blank return time → omitted body; supplied values as UTC ISO 8601 via `checkinFormValuesToRequest`.
 - Detail "Check In" on `BookDetailsPage` links to `/checkin?bookId=...` when `canCheckin`.
-- Primary nav in `AppShell` includes both "Check In" (`/checkin`) and "Loans" (`/loans`).
+- Primary nav in `AppShell`: direct Dashboard link; Collection `DrawerNavMenu` (Browse, Manage); Circulation
+  `DrawerNavMenu` with Check Out, Check In, and Loans. Check In is a drawer item, not a flat header link.
 - `useCheckinBook` already writes the returned `BookRead` into the detail cache and invalidates books, loans, and
   dashboard (PLAN.md 7.5). Do not change that invalidation.
 - Shared UI: `Alert`, `AppLink`, `Button`, `Field`, `LoadingState`, `QueryErrorState`, `EmptyState`,
@@ -125,8 +126,10 @@ Do not reimplement the no-`bookId` eligible-book picker from `CheckinPage`. Acti
 | `src/routes/routes.tsx` | Stop importing `CheckinPage`. Remove the `routeMetadata.checkin` child. Add a compatibility child at path `/checkin` that replace-navigates to `/loans` and forwards the current search string (`bookId` included). Do not give that redirect a "Check In" `handle.title`. |
 | `src/features/loans/routes/CheckinPage.tsx` | Delete after the form extract. |
 | `src/features/loans/routes/CheckinPage.test.tsx` | Delete after cases live in `CheckinForm.test.tsx` / `LoansPage.test.tsx`. Do not leave a suite that mounts `/checkin` as a real page. |
-| `src/layout/AppShell.tsx` | Remove the primary "Check In" `NavLink`. Keep "Check Out" and "Loans". |
-| `src/layout/AppShell.test.tsx` | Drop "Check In" from the primary-nav label list. Assert there is no primary link to `/checkin`. Keep Loans → `/loans`. |
+| `src/layout/AppShell.tsx` | Remove the Check In item from the Circulation `DrawerNavMenu` items. Keep Check Out and Loans in that
+  drawer. |
+| `src/layout/AppShell.test.tsx` | Open the Circulation drawer and assert Check In is absent. Keep Check Out → `/checkout` and Loans →
+  `/loans`. Assert there is no drawer or header link to `/checkin`. |
 | `src/features/books/routes/BookDetailsPage.tsx` | Change the gated "Check In" `AppLink` from `/checkin?bookId=` to `/loans?bookId=`. Eligibility gating stays `isCheckinEligible`. |
 | `src/features/books/routes/BookDetailsPage.test.tsx` | Expect `/loans?bookId=...` on the Check In link (today around the `canCheckin` cases). Assert `/checkin` is not used. |
 
@@ -146,13 +149,17 @@ out of `routeMetadata`.
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Circulation is `/checkout` and `/loans` only. Detail Check In → `/loans?bookId=`. Inventory `CheckinForm` on `LoansPage`; delete `CheckinPage` / `/checkin`. Keep `checkinModel` / `checkinEligibility` / `POST /books/{id}/checkin`. Update "Next" remaining tickets to include FEAT-22 until the file is removed after completion. Nav list: no Check In item. |
+| `docs/AGENTS.md` | Circulation is `/checkout` and `/loans` only. Detail Check In → `/loans?bookId=`. Inventory `CheckinForm`
+  on `LoansPage`; delete `CheckinPage` / `/checkin`. Keep `checkinModel` / `checkinEligibility` /
+  `POST /books/{id}/checkin`. Update "Next" remaining tickets to include FEAT-22 until the file is removed after
+  completion. Circulation drawer: Check Out and Loans only (no Check In item). |
 | `docs/full-project-context.md` | Same route and nav notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
-| `docs/product-docs/PLAN.md` | Target IA: drop `/checkin` as a user-facing destination; check-in lives on `/loans`. Shell persistent access: Dashboard, Books, Add Book, Check Out, Loans (no Check In). Workstream 7 deliverable becomes "check-in on loan history" rather than a separate check-in page. |
+| `docs/product-docs/PLAN.md` | Target IA: drop `/checkin` as a user-facing destination; check-in lives on `/loans`. Shell persistent
+  access: Dashboard link; Collection drawer (Browse, Manage); Circulation drawer (Check Out, Loans -- no Check In).
+  Workstream 7 deliverable becomes "check-in on loan history" rather than a separate check-in page. |
 | `docs/MAINTAINERS.md` | Registered product routes: replace `/checkin` with the `/checkin` → `/loans` compatibility redirect if maintainers still list paths; primary IA is `/loans`. |
-| `docs/tickets/FEAT-17_about-page.md` | How-to links and nav: check in via `/loans`, not `/checkin`. Do not require a Check In nav item. About copy can say check out on `/checkout` and return books on `/loans`. |
-| `docs/tickets/FEAT-19_wishlists.md` | Primary nav baseline: drop Check In. |
+| `docs/tickets/FEAT-19_wishlists.md` | Circulation drawer baseline: Check Out and Loans only (no Check In). |
 
 `docs/product-docs/PRODUCT_REQS.V1.md` still requires a Check In Book capability; satisfying it on `/loans` is enough.
 Do not revive a separate page to match that heading.
@@ -161,7 +168,7 @@ Do not revive a separate page to match that heading.
 
 - `/checkin` is not a product page. Visiting `/checkin` or `/checkin?bookId={id}` replace-navigates to `/loans` with
   the same search string.
-- Primary navigation has Check Out and Loans, and has no Check In item.
+- Primary navigation: Circulation drawer has Check Out and Loans, and has no Check In item.
 - `/loans` still shows infinite-scrolled Active and Returned sections with due/overdue labels and `Book {id}`
   fallback.
 - Eligible Active Loans rows offer Check In; returned rows and non-eligible (deleted / no active loan) rows do not.

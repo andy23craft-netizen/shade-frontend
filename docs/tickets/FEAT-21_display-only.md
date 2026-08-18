@@ -43,7 +43,8 @@ blocker rather than inventing frontend semantics.
 
 Already in place and should be reused (not rebuilt):
 
-- `/checkout` via `CheckoutPage` + `checkoutModel` + `useCheckoutBook` / `booksApi.checkout`.
+- `/checkout` via `CheckoutPage` + `checkoutModel` + `useCheckoutBook` / `booksApi.checkout`. Reachable from the
+  Circulation drawer (Check Out → `/checkout`) and book-detail deep links.
 - Eligibility: `deletion_date === null` and `status === 'available'` (`isCheckoutEligible`). Soft-deleted and
   non-available books (including `display_only`) are not offered in the selector.
 - Detail "Check Out" gated the same way on `BookDetailsPage` (no link when `display_only`).

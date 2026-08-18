@@ -68,8 +68,10 @@ Already in place and should be reused (not rebuilt):
   actions.
 - `/books/:bookId` via `BookDetailsPage` with gated lifecycle actions (checkout, check-in, mark-read, edit, delete).
   No wishlist actions.
-- Primary nav in `AppShell`: About, Dashboard, Books, Add Book, Check Out, Check In, Loans, Shelves, plus admin
-  Deleted Books / Backup Library. No Wishlists link.
+- Primary nav in `AppShell` (`DrawerNavMenu`): direct Dashboard link; Collection drawer (Browse → `/books`, Manage →
+  `/collection/manage`); Circulation drawer (Check Out, Check In, Loans). About is the brand link to `/`, not a
+  separate nav item. Add Book, Shelves, Deleted Books, and Backup Library live on `/collection/manage`
+  (`ManageCollectionPage`), not the header. No Wishlists link.
 - `/shelves` via `ShelvesPage` is a good pattern for catalog create + Field-linked errors + `ConfirmationDialog`
   delete -- reuse patterns, not shelf domain logic.
 - `routeMetadata` / `routes.tsx` have no `/wishlists` entry.
@@ -180,8 +182,11 @@ Optional on the same page (include if it stays small):
 | ---- | ------ |
 | `src/routes/routeMetadata.ts` | Add `wishlists: { path: '/wishlists', title: 'Wishlists', heading: 'Wishlists' }`. |
 | `src/routes/routes.tsx` | Register `WishlistsPage` at `routeMetadata.wishlists.path` under `AppShell`. |
-| `src/layout/AppShell.tsx` | Add primary nav `NavLink` to `/wishlists` (label "Wishlists"), near Books / Loans / Shelves -- not under admin. |
-| `src/layout/AppShell.test.tsx` | Expect Wishlists nav link and current-page behavior on `/wishlists`. |
+| `src/layout/AppShell.tsx` | Add `{ label: 'Wishlists', to: '/wishlists' }` to the Collection `DrawerNavMenu` items (after Manage). Add
+  `/wishlists` to that drawer's `activePrefixes`. Do not add a flat header link or park Wishlists under admin /
+  Manage Collection. |
+| `src/layout/AppShell.test.tsx` | Open the Collection drawer and expect a Wishlists link to `/wishlists`. Assert the Collection trunk is
+  `data-active` on `/wishlists`. |
 | `src/App.test.tsx` | Optional: document title / heading focus when navigating to `/wishlists`. |
 
 ### 7. Styling
@@ -189,7 +194,7 @@ Optional on the same page (include if it stays small):
 | File | Change |
 | ---- | ------ |
 | `src/styles/components.css` | Add BEM-like classes only as needed (e.g., `.wishlists-page`, `.wishlist`, `.wishlist__books`, `.wishlist-membership`) reusing existing list/section spacing tokens. Prefer extending `.books-page` / `.loans-page` patterns over new visual systems. |
-| `src/styles/shell.css` | Only if nav overflow needs adjustment for the extra primary link at narrow widths. |
+| `src/styles/shell.css` | Only if the Collection drawer needs adjustment for an extra item (Wishlists) at narrow widths. |
 
 ### 8. Docs hygiene (after implementation)
 
