@@ -3367,6 +3367,16 @@
             },
             "description": "Collection membership conflict (duplicate book or order number)"
           },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Soft-deleted books cannot be added to a collection"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -4785,7 +4795,7 @@
                 }
               }
             },
-            "description": "Existing books cannot be added to a wishlist"
+            "description": "Soft-deleted books cannot be added to a wishlist"
           },
           "422": {
             "content": {

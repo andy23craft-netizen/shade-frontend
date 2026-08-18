@@ -127,6 +127,8 @@ Soft-deleted books:
 * keep loan and reading data
 * have shelf membership moved to the system shelf `removed` on delete; restore moves membership to `unknown`
   (the pre-delete shelf is not restored)
+* are removed from all wishlists and collections on delete (collection order numbers are renumbered)
+* cannot be added to a wishlist or collection until restored (**412**)
 
 Deleting an on-loan book leaves its active loan open; restore the book before check-in will complete that loan.
 
@@ -325,14 +327,15 @@ permanently deletes its membership rows before deleting the wishlist itself; cat
 defaults to `wanted`; allowed values are `wanted`, `ordered`, `owned`, and `dropped` (see `WishlistBookStatus` in
 OpenAPI). Duplicate `(wishlist_id, book_id)` memberships are permitted. A book that is already on any shelf
 (including system shelves `unknown` and `removed`) is rejected with **412**
-`{"detail": "Existing books cannot be added to a wishlist"}`. Create the catalog row with omitted `shelf_name`, then
-add it to the wishlist. Soft-deleted books cannot be added because delete moves them to `removed`. The current API
-does not provide membership-level PATCH. `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` removes one
+`{"detail": "Existing books cannot be added to a wishlist"}`. Soft-deleted books are rejected with **412**
+`{"detail": "Soft-deleted books cannot be added to a wishlist"}`. Create the catalog row with omitted `shelf_name`, then
+add it to the wishlist. The current API does not provide membership-level PATCH. `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` removes one
 membership (**204**); the catalog book is not deleted. To place a wishlisted book on a shelf, remove its membership
 (or delete the whole wishlist), then `PATCH` `shelf_name`.
 
 For path `wishlist_id`, membership `wishlist_book_id`, and membership `book_id` on add: **400** when empty or not a
 valid GUID; **404** when the GUID is well-formed but unknown (`Wishlist book not found` for a missing membership row).
+Soft-deleting a catalog book removes all of its wishlist memberships.
 
 ---
 
@@ -370,7 +373,9 @@ together, `{ items, total }` wrapper).
 
 For path `collection_id`, membership `collection_book_id`, and membership `book_id`: **400** when empty or not a valid
 GUID; **404** when the GUID is well-formed but unknown (`"Collection not found"`, `"Book not found"`, or
-`"Collection book not found"` as appropriate). Soft-deleted catalog books can still be added to a collection.
+`"Collection book not found"` as appropriate). Soft-deleted catalog books are rejected with **412**
+`{"detail": "Soft-deleted books cannot be added to a collection"}`. Soft-deleting a catalog book removes all of its
+collection memberships and renumbers remaining rows in each affected collection.
 
 ---
 

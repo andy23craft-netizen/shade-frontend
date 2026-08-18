@@ -15,9 +15,10 @@ Wishlists. Reuse the wishlists page patterns where they fit, but follow the Coll
 
 - FEAT-19 wishlists are complete (`WishlistsPage`, `wishlistsApi` / `wishlistsQueries`, membership join via
   `GET /books/{id}`). Use that feature as a structural reference, not a copy-paste source.
-- Checked-in `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` already document
-  Collections routes and behavior. Regenerate `src/api/generated/openapi.ts` with `yarn api:generate` before
-  implementing transport helpers (`yarn api:check` must pass).
+- Checked-in `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` document Collections
+  routes and behavior, including soft-delete exclusion (**412** on add; memberships removed on book delete). Regenerate
+  `src/api/generated/openapi.ts` with `yarn api:generate` before implementing transport helpers (`yarn api:check` must
+  pass).
 - Book detail, collection browse (`/books`), shelves, and ISBN utilities are complete for add-book search/join flows.
 
 **Explicit non-dependencies:**
@@ -41,13 +42,18 @@ Treat these as complementary:
   - `GET /collections/{collection_id}/books` → **200** `CollectionBookList` (membership rows, not full `BookRead`).
   - `POST /collections/{collection_id}/books` → **201** `CollectionBookRead` with `{ book_id }` (optional `order_num`,
     `notes`); **404** unknown collection/book; **409** duplicate book or duplicate `order_num` in the same collection;
-    **422** non-positive `order_num`.
+    **412** `"Soft-deleted books cannot be added to a collection"`; **422** non-positive `order_num`.
   - `PATCH /collections/{collection_id}/books/{collection_book_id}` → **200** `CollectionBookRead` with
     `{ order_num }` (positive int; values above count clamp to last position; API renumbers contiguously).
   - `DELETE /collections/{collection_id}/books/{collection_book_id}` → **204** (remaining rows renumbered).
 - `../technical-reference/API-for-FE.md` -- behavioral rules OpenAPI does not fully express:
-  - Collections coexist with shelves and wishlists. Adding a shelved or wishlisted book succeeds; collection routes do
-    **not** return **412** for shelf/wishlist overlap (wishlist/shelf mutual exclusion elsewhere is unchanged).
+  - Collections coexist with shelves and wishlists. Adding a shelved or wishlisted active book succeeds; collection
+    routes do **not** return **412** for shelf/wishlist overlap (wishlist/shelf mutual exclusion elsewhere is
+    unchanged). Soft-deleted catalog books are rejected on add with **412**
+    `"Soft-deleted books cannot be added to a collection"`.
+  - Soft-deleting a catalog book (`DELETE /books/{id}`) removes all of its collection memberships server-side and
+    renumbers remaining rows in each affected collection. Restore does not rejoin prior collections; re-add manually
+    after restore if needed.
   - Membership list rows include enriched `shelf_name` and `on_wishlist`; join `book_id` to `GET /books/{id}` for
     title and authors (same durable `Book {id}` fallback as wishlists).
   - Default membership order is `order_num` ascending. Omit `order_num` on add to append (`max + 1`, or `1` when
@@ -78,14 +84,20 @@ These decisions close open UX questions for this ticket:
    - **Acceptable alternative:** a prominent wishlist-only label or badge on wishlisted rows instead of (or in addition
      to) the Wishlist location label. Pick one approach consistently across rows; do not leave wishlisted memberships
      visually identical to shelved ones.
-4. **Library delete removes collection memberships.** When a book is soft-deleted from the library (`DELETE /books/{id}`),
-   it is removed from all collections. The frontend must not surface soft-deleted books in collection membership lists.
-   Invalidate `queryKeys.collections.all` (and affected `collections.books` keys) when `useDeleteBook` succeeds so
-   collection views refetch without stale rows. If a membership row's `GET /books/{id}` join fails or the book is
-   soft-deleted, omit the row or show recovery consistent with other features (do not link to a deleted detail page).
-   Do **not** offer soft-deleted books in add search. Confirm the running backend removes `collection_books` rows on
-   book soft-delete; if checked-in `API-for-FE.md` still says soft-deleted books can be added to collections, treat this
-   product rule as authoritative for frontend behavior and record backend/doc drift as a blocker.
+4. **Soft-deleted books are excluded from collections.** Checked-in `openapi.json` and `API-for-FE.md` document this
+   behavior:
+   - **Add:** `POST /collections/{collection_id}/books` returns **412**
+     `"Soft-deleted books cannot be added to a collection"` for soft-deleted catalog books. Add search uses `GET /books`
+     without `include_deleted`, so deleted rows should not appear in normal find flows; surface **412** honestly on
+     stale-state add attempts (e.g., book deleted after search).
+   - **Library delete:** `DELETE /books/{id}` removes all collection memberships server-side and renumbers each
+     affected collection. Invalidate `queryKeys.collections.all` (and affected `collections.books` keys) when
+     `useDeleteBook` succeeds so collection views refetch without stale rows.
+   - **Lists:** Do not surface soft-deleted books in membership lists. After refetch, removed memberships should be
+     absent. If a join still resolves a soft-deleted book (`deletion_date !== null`), omit the row (do not link to
+     detail).
+   - **Restore:** `POST /books/{id}/restore` does not rejoin prior collections; operators re-add the book manually if
+     needed.
 
 ## How Collections differ from Wishlists
 
@@ -95,7 +107,8 @@ These decisions close open UX questions for this ticket:
 | Add flow | Unshelved `POST /books` (omit `shelf_name`), then membership `POST` | Shelved-only `GET /books` search, then membership `POST` with `book_id` |
 | Shelved books | **412** if the book has shelf membership | Allowed via add search |
 | Wishlisted books | Primary surface on `/wishlists` | May appear in membership lists; add search does not find unshelved rows; list shows **Wishlist** location (or equivalent label) |
-| Library delete | Catalog row remains (soft delete) | Membership rows removed from all collections; frontend invalidates collection queries on book delete |
+| Library delete | Catalog row remains; wishlist memberships removed | Catalog row remains; collection memberships removed server-side; frontend invalidates collection queries on book delete |
+| Soft-deleted add | **412** `"Soft-deleted books cannot be added to a wishlist"` | **412** `"Soft-deleted books cannot be added to a collection"` |
 | Membership order | Priority (display only; no reorder API in FEAT-19) | Explicit `order_num`; reorder `PATCH` and renumber on remove |
 | Membership remove | FEAT-26 only (wishlist-specific move-to-shelf exit) | `DELETE` membership (no shelf patch) |
 | Membership fields | `status`, `priority`, `notes`, `url` | `order_num`, `notes`; enriched `shelf_name`, `on_wishlist` |
@@ -131,11 +144,12 @@ On `/collections`, an operator should be able to:
 4. **View ordered memberships** -- for each collection, list memberships sorted by `order_num`. Each row shows position,
    title/authors (via `useBook` / `GET /books/{id}`), optional membership `notes`, and a location label: Title Case
    shelf for shelved books (`formatShelfCommonNameForDisplay(shelf_name)`), or **Wishlist** for wishlisted books
-   (`on_wishlist === true`; see Product clarifications). Omit or recover rows whose book is soft-deleted. Link active
-   titles to `/books/{bookId}`.
+   (`on_wishlist === true`; see Product clarifications). Omit rows whose joined book is soft-deleted. Link active
+   (non-deleted) titles to `/books/{bookId}`.
 5. **Add a shelved catalog book** -- pick a target collection, find a book via `useBooks({ isbn })` and/or
    `useBooks({ title, author })` only (shelved rows; not lookup/create; not wishlist-only rows). Select a match,
-   optionally add notes, then `POST` membership. Surface **409** duplicate and **404** stale-state honestly. Do **not**
+   optionally add notes, then `POST` membership. Surface **409** duplicate, **412** soft-deleted, and **404** stale-state
+   honestly. Do **not**
    create unshelved catalog rows (that is the wishlist add path). Help copy points operators to `/wishlists` for books
    not yet on a shelf.
 6. **Reorder memberships** -- per-row move earlier/later (or equivalent) controls that call membership `PATCH` with a
@@ -174,7 +188,7 @@ curated groups of catalog books; acquisition planning stays on `/wishlists`.
 | `src/api/apiTypes.ts` | Export aliases: `CollectionCreate`, `CollectionUpdate`, `CollectionRead`, `CollectionList`, `CollectionBookCreate`, `CollectionBookRead`, `CollectionBookList`, `CollectionBookReorder`. |
 | `src/api/requestFields.ts` | Add `COLLECTION_CREATE_FIELDS`, `COLLECTION_UPDATE_FIELDS`, `COLLECTION_BOOK_CREATE_FIELDS`, `COLLECTION_BOOK_REORDER_FIELDS` and `pickCollectionCreate`, `pickCollectionUpdate`, `pickCollectionBookCreate`, `pickCollectionBookReorder`. Colocated tests in `requestFields.test.ts`. |
 | `src/api/collectionsApi.ts` (new) | `createCollectionsApi(client)` with `list`, `create` (**201**), `update`, `remove` (**204**), `listBooks`, `addBook` (**201**), `reorderBook` (**200**), `removeBook` (**204**). Mirror `wishlistsApi` pagination/signal helpers; encode path segments; serialize documented fields only. |
-| `src/api/collectionsApi.test.ts` (new) | Happy paths and **400** / **404** / **409** / **422** wiring for list/create/add/reorder/remove. |
+| `src/api/collectionsApi.test.ts` (new) | Happy paths and **400** / **404** / **409** / **412** / **422** wiring for list/create/add/reorder/remove. |
 | `src/api/queryKeys.ts` | Add `collections.all`, `collections.list()`, `collections.books(collectionId)`. |
 | `src/api/queryKeys.test.ts` | Key shape coverage for collections list/books isolation. |
 | `src/api/collectionsQueries.ts` (new) | `useCollections`, `useCollectionBooks` (disabled when id empty), `useCreateCollection`, `useUpdateCollection`, `useDeleteCollection`, `useAddCollectionBook`, `useReorderCollectionBook`, `useRemoveCollectionBook`. Invalidation: writes invalidate `queryKeys.collections.all`; membership writes invalidate `queryKeys.collections.books(collectionId)`. Extend `useDeleteBook` invalidation (or equivalent PLAN.md 7.5 hook) to also invalidate `queryKeys.collections.all` so library delete drops stale membership rows. No dashboard/books-list invalidation required on other collection-only mutations unless a future surface joins them. |
@@ -198,10 +212,10 @@ Keep collection-specific logic out of `wishlistFormModel` / `wishlistDisplay`.
 
 | File | Change |
 | ---- | ------ |
-| `src/features/collections/components/AddCollectionBookControl.tsx` (new) | Collection picker; shelved-only book find via `useBooks({ isbn })` and/or `useBooks({ title, author })` (checksum-gate ISBN like checkout/create; no `include_deleted`); match chooser when multiple hits; optional notes field; `useAddCollectionBook`. Copy explains this adds a **shelved** catalog book and links to `/wishlists` for books not yet on a shelf. Handle **409** / **404** / **422** with Field-linked errors and refetch. No `useCreateBook`, no lookup-to-create path, no wishlist membership search. |
-| `src/features/collections/components/AddCollectionBookControl.test.tsx` (new) | Collection required, shelved find/select flow, duplicate **409**, pending disable, success notice, wishlist redirect copy. |
-| `src/features/collections/components/CollectionMembershipRow.tsx` (new) | Props: collection id, membership row, reorder bounds, pending flags, callbacks. Render title/authors join (`useBook`); omit or recover soft-deleted books; location via `displayCollectionBookLocation` (**Wishlist** vs Title Case shelf); optional wishlist emphasis styling; `notes`; link active titles to detail; Move up / Move down (or equivalent) calling `useReorderCollectionBook`; Remove opening confirm. Disable controls while mutations pending. |
-| `src/features/collections/components/CollectionMembershipRow.test.tsx` (new) | Row rendering (shelved shelf vs **Wishlist** location), reorder button enablement at list ends, remove confirm wiring, soft-deleted book omitted/recovered. |
+| `src/features/collections/components/AddCollectionBookControl.tsx` (new) | Collection picker; shelved-only book find via `useBooks({ isbn })` and/or `useBooks({ title, author })` (checksum-gate ISBN like checkout/create; no `include_deleted`); match chooser when multiple hits; optional notes field; `useAddCollectionBook`. Copy explains this adds a **shelved** catalog book and links to `/wishlists` for books not yet on a shelf. Handle **409** / **412** / **404** / **422** with Field-linked errors and refetch. No `useCreateBook`, no lookup-to-create path, no wishlist membership search. |
+| `src/features/collections/components/AddCollectionBookControl.test.tsx` (new) | Collection required, shelved find/select flow, duplicate **409**, soft-deleted **412**, pending disable, success notice, wishlist redirect copy. |
+| `src/features/collections/components/CollectionMembershipRow.tsx` (new) | Props: collection id, membership row, reorder bounds, pending flags, callbacks. Render title/authors join (`useBook`); omit soft-deleted books; location via `displayCollectionBookLocation` (**Wishlist** vs Title Case shelf); optional wishlist emphasis styling; `notes`; link active (non-deleted) titles to detail; Move up / Move down (or equivalent) calling `useReorderCollectionBook`; Remove opening confirm. Disable controls while mutations pending. |
+| `src/features/collections/components/CollectionMembershipRow.test.tsx` (new) | Row rendering (shelved shelf vs **Wishlist** location), reorder button enablement at list ends, remove confirm wiring, soft-deleted book omitted. |
 | `src/features/collections/routes/CollectionsPage.tsx` (new) | Top-level page: `useCollections`; loading/error/empty states; `CreateCollectionForm`; `AddCollectionBookControl`; nested `CollectionSection` per collection with `useCollectionBooks`, ordered membership list, delete collection with `ConfirmationDialog`. Page intro: curated lists vs wishlists (acquisition) vs browse (full shelved catalog). **Do not** render shelf pickers or FEAT-26 move controls. |
 | `src/features/collections/routes/CollectionsPage.test.tsx` (new) | Loading/error/empty, create, nested memberships with book join fallback, shelved and wishlisted row location labels, add shelved book, reorder, remove, delete collection, updated intro copy. |
 
@@ -228,9 +242,9 @@ Do not rename the existing Collection drawer or `/collection/manage` hub; `/coll
 
 | File | Change |
 | ---- | ------ |
-| `e2e/support/mockApi.ts` | Stateful fixtures for collections list/create/delete, membership add/reorder/remove, enriched `shelf_name` / `on_wishlist`, **409** duplicate handling, and removal of collection memberships when a book is soft-deleted. Keeps Playwright mocks aligned with OpenAPI and Product clarifications. |
+| `e2e/support/mockApi.ts` | Stateful fixtures for collections list/create/delete, membership add/reorder/remove, enriched `shelf_name` / `on_wishlist`, **409** duplicate and **412** soft-deleted add handling, and server-side removal of collection memberships when a book is soft-deleted (with per-collection renumbering). Keeps Playwright mocks aligned with OpenAPI and Product clarifications. |
 | `e2e/accessibility.spec.ts` | Optional: add `/collections` axe scan once the route ships (follow FEAT-13 pattern). |
-| `docs/AGENTS.md` | After completion: inventory collections feature files/hooks/routes; nav drawer includes Collections; update "Next" / completed lists; note Collections differ from wishlists (shelved-only add search, **Wishlist** location labels, reorder/remove, library delete drops memberships, no **412**, no FEAT-26 shelf move). |
+| `docs/AGENTS.md` | After completion: inventory collections feature files/hooks/routes; nav drawer includes Collections; update "Next" / completed lists; note Collections differ from wishlists (shelved-only add search, **Wishlist** location labels, reorder/remove, library delete drops memberships server-side, **412** for soft-deleted add only, no shelf/wishlist overlap **412**, no FEAT-26 shelf move). |
 | `docs/ToDo.md` | Add checklist line for FEAT-27. |
 
 ## Acceptance criteria
@@ -244,13 +258,14 @@ Do not rename the existing Collection drawer or `/collection/manage` hub; `/coll
 - Add-book flow finds **shelved** books via `GET /books` search only and calls `POST /collections/{id}/books`; it does
   not call unshelved `POST /books`, does not search wishlist memberships, and help copy links to `/wishlists` for
   unshelved books.
-- Duplicate add surfaces **409** honestly.
-- Soft-deleting a book invalidates collection queries; its memberships no longer appear in collection lists.
+- Duplicate add surfaces **409** honestly; add of a soft-deleted book surfaces **412** honestly.
+- Soft-deleting a book invalidates collection queries; the API removes its memberships and they no longer appear in
+  collection lists after refetch.
 - Operators can reorder memberships via `PATCH` `{ order_num }` and remove memberships via `DELETE` with
   confirmation.
 - Collection membership rows do **not** offer FEAT-26 move-to-shelf controls or shelf assignment patches.
-- Loading, empty, retryable error, Field-linked **422**, **404** refetch, and pending-disable patterns match existing
-  feature pages.
+- Loading, empty, retryable error, Field-linked **422**, **404** / **412** stale-state refetch, and pending-disable
+  patterns match existing feature pages.
 - Colocated unit tests cover API helpers, query hooks, form/display models, components, page wiring, and nav updates.
 - `yarn api:check` passes; `make check` passes.
 - Intro copy distinguishes Collections (curated lists mixing shelved and wishlisted catalog books) from Wishlists
@@ -260,5 +275,6 @@ Do not rename the existing Collection drawer or `/collection/manage` hub; `/coll
 
 Delivers the backend Collections contract as a first-class frontend feature, parallel to but distinct from FEAT-19
 wishlists, with navigation integration, Product clarifications (shelved-only add search, **Wishlist** location labels,
-library delete drops memberships), and explicit exclusion of FEAT-26 shelf-move semantics. Defers homepage featured
-collections, book-detail membership management, and collection-level inline edit unless added in a follow-on ticket.
+soft-deleted books excluded from add/lists, library delete removes memberships server-side), and explicit exclusion of
+FEAT-26 shelf-move semantics. Defers homepage featured collections, book-detail membership management, and
+collection-level inline edit unless added in a follow-on ticket.
