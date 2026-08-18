@@ -1958,6 +1958,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Soft-deleted books cannot be added to a collection */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -2941,7 +2950,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
-            /** @description Existing books cannot be added to a wishlist */
+            /** @description Soft-deleted books cannot be added to a wishlist */
             412: {
                 headers: {
                     [name: string]: unknown;
