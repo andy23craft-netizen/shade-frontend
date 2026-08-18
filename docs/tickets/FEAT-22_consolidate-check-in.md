@@ -10,11 +10,13 @@ keep `/loans` as the single circulation surface. Operators check a book back in 
 ## Dependencies
 
 FEAT-08 check-in and loan history are complete (`CheckinPage`, `checkinModel`, `checkinEligibility`, `LoansPage`,
-`loanTemporal`, infinite loan pagination). Do not pull FEAT-15 Podman, FEAT-16 release artifacts, FEAT-17 About /
-homepage, FEAT-18 collection filters, FEAT-20 dashboard reports, or FEAT-21 display-only alternate copies into this
-ticket.
+`loanTemporal`, infinite loan pagination).
 
-FEAT-19 wishlists is complete; do not reference the removed FEAT-19 ticket file.
+FEAT-19 wishlists and FEAT-21 display-only alternate-copy UX are complete; do not reference their removed ticket
+files. Checkout on `/checkout` already offers substitutes after display-only blocks; do not rebuild that here.
+
+Do not pull FEAT-15 Podman, FEAT-16 release artifacts, FEAT-17 About / homepage, FEAT-18 collection filters, or
+FEAT-20 dashboard reports into this ticket.
 
 This ticket may ship in a separate PR from FEAT-23 (checkout consolidation). No FEAT-23 work is required here.
 
@@ -104,7 +106,7 @@ field. Checkout stays on `/checkout` until FEAT-23 lands separately.
 
 - Changing `booksApi.checkin`, `useCheckinBook`, OpenAPI types, or PLAN.md 7.5 invalidation.
 - Simulating check-in with generic `PATCH`, or adding loan CRUD.
-- Checkout ISBN Find, camera/hardware scanning, or FEAT-21 alternate-copy UX.
+- Checkout ISBN Find, camera/hardware scanning, or rebuilding shipped display-only alternate-copy UX.
 - FEAT-23 checkout consolidation (may land in another PR).
 - Loan filters, sort controls, or changing infinite-scroll batch size.
 - Relocating dashboard / About (FEAT-17) beyond retargeting workflow links away from `/checkin`.
@@ -196,5 +198,5 @@ Do not revive a separate page to match that heading.
 ## Plan coverage
 
 Workstream 7 already shipped check-in and loan history as two routes. This ticket is IA cleanup: one circulation
-page, same lifecycle endpoint. Explicitly excludes checkout changes (FEAT-23 may land separately) and FEAT-15 through
-FEAT-21 product work except doc/nav mentions of `/checkin`.
+page, same lifecycle endpoint. Explicitly excludes checkout changes (FEAT-23 may land separately) and already-shipped
+FEAT-15 through FEAT-21 product work except doc/nav mentions of `/checkin`.
