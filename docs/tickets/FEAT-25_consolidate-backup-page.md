@@ -3,8 +3,8 @@
 ## Objective
 
 `/admin/backup` is a browser download of `GET /backup`. Nightly SQL backups belong on the API host, not in the SPA.
-Remove the Backup Library page, its admin nav item, and the unused frontend backup client. Do not change the backend
-contract: `GET /backup` stays for the operational fetch script.
+Remove the Backup Library page, its Manage Collection link, and the unused frontend backup client. Do not change the
+backend contract: `GET /backup` stays for the operational fetch script.
 
 ## Dependencies
 
@@ -17,9 +17,8 @@ host cron). Today the browser page is the only operator backup path; removing it
 FEAT-10 backup download is complete (`BackupLibraryPage`, `backupApi.get`, programmatic `<a download>`, always
 `URL.revokeObjectURL`). Deleted-books admin on `/admin/deleted` is independent and stays.
 
-Sibling open tickets still mention `/admin/backup` or a browser backup download (FEAT-16
-production smoke and `Content-Disposition` access, FEAT-17 About links). Update those tickets in the same change so
-later work does not rebuild the page.
+Sibling open tickets still mention `/admin/backup` or a browser backup download (FEAT-16 production smoke and
+`Content-Disposition` access). Update those tickets in the same change so later work does not rebuild the page.
 
 Do not pull FEAT-15 Podman, FEAT-16 release artifacts, FEAT-17 About / homepage, FEAT-18 collection filters,
 FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only alternate copies, FEAT-22 check-in consolidation,
@@ -47,7 +46,10 @@ Already in place:
   fetches the SQL blob, parses UTF-8 `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback,
   triggers a programmatic `<a download>`, and always `URL.revokeObjectURL`. Documented **403** / generation **500** /
   timeout / unreachable messaging. Warning copy: the file contains complete library history.
-- Admin nav in `AppShell`: "Deleted Books" (`/admin/deleted`) and "Backup Library" (`/admin/backup`).
+- Primary nav in `AppShell`: direct Dashboard link; Collection `DrawerNavMenu` (Browse, Manage); Circulation
+  `DrawerNavMenu` (Check Out, Check In, Loans). There is no Administration group in the header. Backup Library is linked
+  from `/collection/manage` (`ManageCollectionPage`) alongside Add Book, Shelves, and Deleted Books. Collection drawer
+  `activePrefixes` includes `/admin/backup` and `/admin/deleted`.
 - `createApi` exposes `backup: createBackupApi(client)`. Nothing else in product UI calls it.
 - `apiClient.get` already returns raw `Response` for non-JSON bodies. Colocated `apiClient.test.ts` uses `/backup` as
   the binary-success example path.
@@ -66,8 +68,8 @@ on whatever device opened the SPA.
 1. **Backups are operational, not a product page** -- operators do not download SQL from Shade in the browser. Nightly
    fetch + content dedup lives on the API (backend FEAT-01). Emergency/local dumps remain `make backup` /
    `scripts/backup_db.py` in the backend repo.
-2. **Remove `/admin/backup`** -- no Backup Library heading, no Download Backup control, no admin nav item. Deleted
-   Books remains the only Administration destination.
+2. **Remove `/admin/backup`** -- no Backup Library heading, no Download Backup control, no link from Manage Collection.
+   Deleted Books remains reachable via Collection → Manage → Deleted Books (`/admin/deleted`).
 3. **Do not keep a dead API helper** -- once the page is gone, `backupApi` has no callers. Delete it and drop `backup`
    from `createApi`. Do not leave an unused blob downloader "in case."
 4. **Do not call `GET /backup` from the SPA** -- generated OpenAPI may still list the path; the frontend must not
@@ -103,9 +105,15 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
 | `src/features/books/routes/BackupLibraryPage.tsx` | Delete. |
 | `src/features/books/routes/BackupLibraryPage.test.tsx` | Delete. Do not leave a suite that mounts `/admin/backup` as a real page. |
 | `src/routes/routeMetadata.ts` | Delete `backup`. Keep `deletedBooks` title/heading "Deleted Books". |
-| `src/routes/routes.tsx` | Stop importing `BackupLibraryPage`. Remove the `routeMetadata.backup` child. Do not add a named redirect; `*` already covers unknown paths. |
-| `src/layout/AppShell.tsx` | Remove the admin "Backup Library" `NavLink`. Keep "Deleted Books". |
-| `src/layout/AppShell.test.tsx` | Drop "Backup Library" from the nav label list. Assert there is no link to `/admin/backup`. Keep Deleted Books → `/admin/deleted`. |
+| `src/routes/routes.tsx` | Stop importing `BackupLibraryPage`. Remove the `routeMetadata.backup` child. Do not add a named redirect; `*`
+  already covers unknown paths. |
+| `src/features/collection/routes/ManageCollectionPage.tsx` | Remove the Backup Library `AppLink`. Keep Add Book, Shelves, and Deleted Books. |
+| `src/features/collection/routes/ManageCollectionPage.test.tsx` (new) | Assert Manage Collection offers Add Book, Shelves, and Deleted Books only; no Backup Library link to
+  `/admin/backup`. |
+| `src/layout/AppShell.tsx` | Remove `/admin/backup` from the Collection drawer `activePrefixes` (keep `/admin/deleted` if Deleted Books
+  remains under that prefix). No header nav item to remove -- Backup Library was never in the header. |
+| `src/layout/AppShell.test.tsx` | Assert the Collection drawer Manage link still points to `/collection/manage`. Assert there is no header or
+  drawer link to `/admin/backup`. |
 
 ### 2. Remove the unused backup client
 
@@ -135,14 +143,24 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Shipped capabilities: soft delete/restore and deleted admin only -- no `/admin/backup`. Drop Backup Library from live product UI, route inventory, and "leave `/admin/backup` under `BackupLibraryPage`." Remove `backupApi` from the API layer inventory and `createApi` aggregate. Lifecycle table: `GET /backup` is backend/operational, not a frontend caller; do not list it as an SPA lifecycle action. Preserve "never inspect/log/cache/upload dump contents." Nav: Administration is Deleted Books only. Update "Next" remaining tickets to include FEAT-25 until this file is removed after completion. MVP in-scope prose can still say the *library* has authenticated SQL backup; it must not say the *browser* downloads it. |
+| `docs/AGENTS.md` | Shipped capabilities: soft delete/restore and deleted admin only -- no `/admin/backup`. Drop Backup Library from
+  live product UI, `/collection/manage`, route inventory, and "leave `/admin/backup` under `BackupLibraryPage`." Remove
+  `backupApi` from the API layer inventory and `createApi` aggregate. Lifecycle table: `GET /backup` is
+  backend/operational, not a frontend caller; do not list it as an SPA lifecycle action. Preserve "never
+  inspect/log/cache/upload dump contents." Collection maintenance on Manage Collection: Add Book, Shelves, Deleted
+  Books only (no Backup Library). Update "Next" remaining tickets to include FEAT-25 until this file is removed after
+  completion. MVP in-scope prose can still say the *library* has authenticated SQL backup; it must not say the
+  *browser* downloads it. |
 | `docs/full-project-context.md` | Same route, nav, and API-helper notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 | `docs/product-docs/PLAN.md` | Target IA: drop `/admin/backup` (the duplicate bullet too). Workstream 9 already shipped FEAT-10; record that browser download is withdrawn in favor of backend FEAT-01 nightly fetch. Release-blocker / CORS notes that require JavaScript to read backup `Content-Disposition` should stop treating a browser download as a frontend deliverable (host CORS may still expose the header; the SPA does not consume it). |
-| `docs/MAINTAINERS.md` | Registered product routes: drop `/admin/backup`. Inventory: drop `backupApi` / `BackupLibraryPage`. Keep OpenAPI `/backup` as a backend path. |
+| `docs/MAINTAINERS.md` | Registered product routes: drop `/admin/backup`. Inventory: drop `backupApi` / `BackupLibraryPage`. Keep OpenAPI
+  `/backup` as a backend path. Manage Collection links: Add Book, Shelves, Deleted Books only. |
 | `README.md` | Production connectivity: do not require "JavaScript access to the backup response `Content-Disposition` filename" as a frontend release blocker. Authenticated API access and CORS/preflight (or same-origin proxy) stay. Artifact/gitignore notes that mention backup dumps as non-deployable files can stay. |
-| `docs/tickets/FEAT-16_versioned-release-artifacts.md` | Smoke checklist: drop "authenticated backup download" and backup-generation `500` / filename handling as *frontend* browser checks. Keep rejecting SQL dumps inside the static tarball. CORS `Content-Disposition` exposure is not a SPA requirement after this ticket. |
-| `docs/tickets/FEAT-17_about-page.md` | How-to links: restore under `/admin/deleted` only. Do not link `/admin/backup` or promise an in-app SQL download. Optional one-liner that library backups run on the API host is enough; do not document cron internals in About. |
+| `docs/tickets/FEAT-16_versioned-release-artifacts.md` | Smoke checklist: drop "authenticated backup download" and backup-generation `500` / filename handling as *frontend*
+  browser checks. Keep rejecting SQL dumps inside the static tarball. CORS `Content-Disposition` exposure is not a
+  SPA requirement after this ticket. |
+| `docs/tickets/FEAT-19_wishlists.md` | Manage Collection baseline: no Backup Library link after this ticket. |
 
 `docs/product-docs/PRODUCT_REQS.V1.md` has no Backup Library heading to revive. Do not add a browser backup page to
 match PLAN.md Workstream 9 after this withdrawal.
@@ -150,15 +168,15 @@ match PLAN.md Workstream 9 after this withdrawal.
 ## Acceptance criteria
 
 - `/admin/backup` is not a product page. Visiting it shows the existing not-found route, not "Backup Library."
-- Administration navigation has Deleted Books and has no Backup Library item and no link to `/admin/backup`.
+- `/collection/manage` lists Add Book, Shelves, and Deleted Books only; no Backup Library link to `/admin/backup`.
 - `BackupLibraryPage` and `backupApi` are gone. `createApi` has no `backup` helper. No application module calls
   `GET /backup`.
 - Generated OpenAPI still documents `/backup`; `yarn api:check` / contract smoke still see that path. This ticket does
   not edit `docs/technical-reference/openapi.json`.
 - `apiClient` still handles non-JSON success bodies. Redaction still denylists backup contents.
 - Optional Vite API proxy may still forward `/backup`. That is not a product route.
-- Colocated tests cover nav and `createApi` without a backup aggregate. No leftover suite mounts `/admin/backup`.
-  `make check` passes.
+- Colocated tests cover Manage Collection, drawer prefixes, and `createApi` without a backup aggregate. No leftover
+  suite mounts `/admin/backup`. `make check` passes.
 - `docs/AGENTS.md` (and PLAN / ToDo / README / sibling tickets as listed) no longer describe `/admin/backup` as a live
   feature route or a required browser download.
 - Implementation did not start before backend FEAT-01 (`scripts/fetch_backup.py` and nightly cron) shipped.

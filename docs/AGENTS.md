@@ -81,7 +81,13 @@ FEAT-17 About homepage (ticket file removed after completion). Shipped `AboutPag
 Charles Leewright dedication, lending policy, and `CatalogGuide`, an accessible card-catalog-style How to Use dialog
 with keyboard focus management and in-app workflow links. `DashboardPage` moved from `/` to `/dashboard` without
 changing its FEAT-11 behavior or `GET /dashboard` API contract. Brand/home recovery continues to `/`, now landing on
-About, and primary navigation exposes both About and Dashboard.
+About; Dashboard is a direct primary-nav link. About is reachable via the brand link, not a separate nav item.
+
+Primary navigation redesign (merged without a standalone ticket). Shipped `DrawerNavMenu` drawer menus for Collection
+(Browse → `/books`, Manage → `/collection/manage`) and Circulation (Check Out, Check In, Loans), plus a direct Dashboard
+link. Removed the flat About link, Shelves link, and admin/settings group from the header. Collection maintenance
+actions (Add Book, Shelves, Deleted Books, Backup Library) live on `/collection/manage` (`ManageCollectionPage`) until
+FEAT-25 removes Backup Library from the product UI.
 
 FEAT-18 collection sorting and filtering (ticket file removed after completion). Shipped URL-backed category /
 author / title filters and shelf sort on `/books` via `BooksPage`, `BooksListControls`, and `booksListModel`;
@@ -102,7 +108,10 @@ Notable shipped behaviors agents should preserve:
   via `assertSafeApiDiagnostic`; defaults disabled in `public/config.js`; never invent a second telemetry transport or
   fabricate correlation IDs.
 - About: `/` is the homepage via `AboutPage`; `CatalogGuide` provides the accessible card-catalog-style How to Use
-  dialog and workflow links.
+  dialog and workflow links. Reach About via the brand link; it is not a separate primary-nav item.
+- Navigation: primary nav is Dashboard plus Collection and Circulation `DrawerNavMenu` drawers (`AppShell` /
+  `DrawerNavMenu`); `/collection/manage` links Add Book, Shelves, Deleted Books, and Backup Library. FEAT-22 / FEAT-23
+  / FEAT-25 will further consolidate circulation and backup surfaces.
 - Dashboard: `/dashboard`; explicit Refresh, offline/paused and stale status, `QueryErrorState` recovery; styles in
   `src/styles/components.css`.
 - Edit: minimal `BookUpdate` patch (blank ISBN → `null`; never send `status`, reading fields, or loan-driving values);
@@ -293,13 +302,14 @@ index.html
 valid, the bootstrap module creates a `DiagnosticReporter`, then renders `RouterProvider` inside `RootErrorBoundary`
 and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
 
-`AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary and admin
-navigation (brand includes "est. 2026"), the main `Outlet`, footer (`Release` from `package.json` `version` via
-`APP_VERSION`, plus API version from public `GET /version` when available), and heading focus after client-side
-navigations.
+`AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary navigation
+(Dashboard link; Collection and Circulation `DrawerNavMenu` drawers; brand link to About includes "est. 2026"), the main
+`Outlet`, footer (`Release` from `package.json` `version` via `APP_VERSION`, plus API version from public
+`GET /version` when available), and heading focus after client-side navigations.
 Live product UI today: `/` (`AboutPage` + `CatalogGuide`), `/dashboard` (`DashboardPage` + `useDashboard`), `/books`
-(`BooksPage`, including Read/Unread
-and rating on collection cards), `/books/:bookId` (`BookDetailsPage`, including reading-field display, gated Mark
+(`BooksPage`, including Read/Unread and rating on collection cards), `/collection/manage` (`ManageCollectionPage` hub
+for Add Book / Shelves / Deleted Books / Backup Library), `/books/:bookId` (`BookDetailsPage`, including reading-field
+display, gated Mark
 Read / Edit Reading / Edit Book / Delete Book), `/books/new` (`NewBookPage` + `BookForm` / `bookFormModel` with ISBN
 lookup plus camera/hardware scanner capture), `/books/:bookId/edit` (`EditBookPage` + `bookEditModel`),
 `/books/:bookId/delete` (`DeleteBookPage`), `/books/:bookId/mark-read` (`MarkReadPage` + `markReadModel`),
@@ -430,17 +440,19 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
-  `/`, `/dashboard`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`,
-  `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`, `/shelves`, `/admin/deleted`,
-  `/admin/backup`, and `*` (not found).
+  `/`, `/dashboard`, `/books`, `/collection/manage`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`,
+  `/books/:bookId/reading`, `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`,
+  `/shelves`, `/admin/deleted`, `/admin/backup`, and `*` (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route-body helper (`h1` with `tabIndex={-1}`). Unused by current feature
   routes; keep only if a future ticket needs a temporary placeholder.
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back home (`/`).
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
-- `src/layout/AppShell.tsx`: Application frame with skip link, header (brand name plus "est. 2026"), primary
-  navigation (including Shelves), admin/settings group, `Outlet` main region, footer (`Release ${APP_VERSION}` from
-  `package.json`, plus `API {version}` from `useVersion` / `GET /version` when available), document title, and heading
-  focus on location change.
+- `src/layout/AppShell.tsx`: Application frame with skip link, header (brand link to About plus "est. 2026"), primary
+  navigation (Dashboard link; Collection and Circulation `DrawerNavMenu` drawers), `Outlet` main region, footer
+  (`Release ${APP_VERSION}` from `package.json`, plus `API {version}` from `useVersion` / `GET /version` when
+  available), document title, and heading focus on location change.
+- `src/layout/DrawerNavMenu.tsx`: Accessible drawer-style dropdown for grouped nav items (`aria-expanded`, outside click
+  and Escape dismiss, `data-active` when a child route prefix matches). Used for Collection and Circulation menus.
 - `src/layout/package.json`: Nested npm manifest next to `AppShell`; not a Yarn workspace and not imported by the
   application. Ignore it.
 
@@ -488,6 +500,8 @@ Implemented (do not revert to placeholders):
 - `src/features/about/routes/AboutPage.tsx` (`/`) + `src/features/about/components/CatalogGuide.tsx`: About homepage
   with library background, dedication, lending policy, and accessible card-catalog-style How to Use dialog with
   in-app workflow links.
+- `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage`): collection maintenance hub with
+  links to Add Book, Shelves, Deleted Books, and Backup Library (interim until FEAT-25 removes the backup page).
 - `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`): `useDashboard` metrics for Collection, Circulation,
   and Reading Record; null averages as "Not enough data"; API inconsistency warning without recalculation; Refresh
   plus offline/stale status; `QueryErrorState` recovery. Styles in `src/styles/components.css`.
@@ -621,8 +635,8 @@ keep reusing these primitives.
 - `src/styles/tokens.css`: Design tokens for typography, spacing, sizing, colors, borders, focus, shadows, and motion.
 - `src/styles/base.css`: Element defaults and accessibility foundations, including box sizing, controls, links, focus
   visibility, page typography, skip links, and reduced motion.
-- `src/styles/shell.css`: Application-frame classes for header, navigation, main content, footer, route pages, and
-  responsive layouts.
+- `src/styles/shell.css`: Application-frame classes for header, navigation (including `.drawer-nav-menu` drawer panels),
+  main content, footer, route pages, and responsive layouts.
 - `src/styles/components.css`: Shared class-based primitives for buttons, links, forms, alerts, status views, dialogs,
   notifications, and dashboard layout (`.dashboard-page`, `.dashboard-section`, `.dashboard-metric`, and related). They
   use BEM-like naming and are referenced by the shared component modules and `DashboardPage`. Long-content
@@ -641,10 +655,12 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 ### Tests
 
-- `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations via `renderAppTree`.
+- `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations (including drawer-menu
+  hops) via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.
-- `src/layout/AppShell.test.tsx`: Landmarks, navigation labels (including Shelves), footer `Release` from
-  `package.json` plus API version, current-page state, and not-found recovery.
+- `src/layout/AppShell.test.tsx`: Landmarks, drawer navigation (Collection Browse/Manage, Circulation Check Out/Check
+  In/Loans, Dashboard current-page and trunk `data-active`), footer `Release` from `package.json` plus API version,
+  drawer-to-route navigation with heading focus, and not-found recovery.
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
@@ -740,8 +756,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `e2e/book.creation.spec.ts`: Manual book-creation journey through `/books/new` into the created detail page
 - `e2e/library.lifecycle.spec.ts`: Checkout/check-in, mark-read, and delete/restore browser journeys against the
   stateful mock API (dedicated lifecycle endpoints, not generic `PATCH`)
-- `e2e/accessibility.spec.ts`: Per-route axe serious/critical scans for critical surfaces plus check-in and deleted
-  admin
+- `e2e/accessibility.spec.ts`: Per-route axe serious/critical scans for books list, add book, book detail, checkout, and
+  loans (see `docs/baselines/FEAT-13_testing.md` for broader manual accessibility ownership)
 - `e2e/support/mockApi.ts`: Stateful Playwright route mock for `http://127.0.0.1:8000/**` (health, version, shelves,
   books, loans, dashboard, lookup, lifecycle mutations, and backup fixtures)
 - `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
@@ -973,7 +989,9 @@ make build
   placeholders. Leave diagnostics under `src/diagnostics/diagnosticReporter.ts` wired through `RootErrorBoundary` /
   `AppProviders` / `ConnectionProvider` / `apiClient` `onRequestFailure` and optional runtime config
   (`public/config.js` / `RuntimeConfig.diagnostics`); never fabricate correlation IDs, invent a second telemetry
-  transport, or log denylisted fields. Leave edit under `EditBookPage` /
+  transport, or log denylisted fields. Leave primary navigation under `AppShell` / `DrawerNavMenu` (Dashboard link;
+  Collection Browse/Manage and Circulation drawers; brand link to About). Leave `/collection/manage` under
+  `ManageCollectionPage` until FEAT-25 removes Backup Library. Leave edit under `EditBookPage` /
   `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; never send `status=on_loan`, reading fields, or
   loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`; block when
   `status === 'on_loan'` or `findActiveLoan` is present). Leave `/admin/deleted` under `DeletedBooksPage` and

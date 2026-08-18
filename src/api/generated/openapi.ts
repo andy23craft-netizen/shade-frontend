@@ -412,8 +412,11 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
-            /** Shelf Name */
-            shelf_name: string;
+            /**
+             * Shelf Name
+             * @description Optional. Omit or send JSON null to create a catalog row with no shelf membership. A book must have no shelf membership before it can be added to a wishlist.
+             */
+            shelf_name?: string | null;
             /** @default available */
             status: components["schemas"]["Status"];
             /** Tags */
@@ -972,6 +975,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1181,6 +1193,15 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2279,6 +2300,15 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Existing books cannot be added to a wishlist */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };

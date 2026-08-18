@@ -144,9 +144,17 @@
             "title": "Review"
           },
           "shelf_name": {
-            "maxLength": 32,
-            "title": "Shelf Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional. Omit or send JSON null to create a catalog row with no shelf membership. A book must have no shelf membership before it can be added to a wishlist.",
+            "title": "Shelf Name"
           },
           "status": {
             "$ref": "#/components/schemas/Status",
@@ -174,8 +182,7 @@
         },
         "required": [
           "title",
-          "authors",
-          "shelf_name"
+          "authors"
         ],
         "title": "BookCreate",
         "type": "object"
@@ -1661,7 +1668,7 @@
   "info": {
     "description": "Home library management API for books, loans, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "0.2.1"
+    "version": "0.2.3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1958,6 +1965,16 @@
             },
             "description": "Authentication failure"
           },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "The book must be removed from the wishlist before it can be placed on a shelf"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2244,6 +2261,16 @@
               }
             },
             "description": "Resource not found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "The book must be removed from the wishlist before it can be placed on a shelf"
           },
           "422": {
             "content": {
@@ -3816,6 +3843,16 @@
               }
             },
             "description": "Resource not found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Existing books cannot be added to a wishlist"
           },
           "422": {
             "content": {
