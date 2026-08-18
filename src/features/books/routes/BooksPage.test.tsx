@@ -506,6 +506,169 @@ describe('BooksPage', () => {
         })
     })
 
+    it('applies trimmed author and title filters', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook(),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage('/books?category=fiction')
+
+        fireEvent.change(
+            screen.getByLabelText('Author'),
+            {
+                target: {
+                    value: '  Le Guin  ',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Title'),
+            {
+                target: {
+                    value: '  Left Hand  ',
+                },
+            },
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenLastCalledWith({
+            category: 'fiction',
+            author: undefined,
+            title: undefined,
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Apply',
+            }),
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenLastCalledWith({
+            category: 'fiction',
+            author: 'Le Guin',
+            title: 'Left Hand',
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+    })
+
+    it('shows a filtered empty state and clears filters', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 0,
+                    items: [],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?category=fiction&author=Le%20Guin',
+        )
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'No books match these filters.',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Your library is empty.',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('Category'),
+        ).toHaveValue('fiction')
+
+        expect(
+            screen.getByLabelText('Author'),
+        ).toHaveValue('Le Guin')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Clear filters',
+            }),
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenLastCalledWith({
+            category: undefined,
+            author: undefined,
+            title: undefined,
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+    })
+
+    it('clears catalog filters while preserving sort', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook(),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?category=fiction&author=Le%20Guin&title=Left%20Hand&sortBy=shelf&sortOrder=desc',
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Clear',
+            }),
+        )
+
+        expect(
+            screen.getByLabelText('Category'),
+        ).toHaveValue('')
+
+        expect(
+            screen.getByLabelText('Author'),
+        ).toHaveValue('')
+
+        expect(
+            screen.getByLabelText('Title'),
+        ).toHaveValue('')
+
+        expect(
+            screen.getByLabelText('Sort by'),
+        ).toHaveValue('shelf')
+
+        expect(
+            screen.getByLabelText('Sort direction'),
+        ).toHaveValue('desc')
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenLastCalledWith({
+            category: undefined,
+            author: undefined,
+            title: undefined,
+            sortBy: 'shelf',
+            sortOrder: 'desc',
+        })
+    })
+
     it('issues a fresh first batch when sort field changes', () => {
         mockUseInfiniteBooks.mockReturnValue(
             makeInfiniteBooksResult([

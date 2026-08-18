@@ -11,6 +11,7 @@ import {
     sortOrderLabel,
 } from '../booksListModel'
 import { Button } from '../../../components/Button'
+import { useState } from 'react'
 
 const SORT_BY_OPTIONS: readonly BookSortBy[] = [
     'author',
@@ -48,9 +49,10 @@ export interface BooksListControlsProps {
     onCategoryChange: (
         category: Category | undefined,
     ) => void
-    onAuthorChange: (author: string) => void
-    onTitleChange: (title: string) => void
-    onApply: () => void
+    onApply: (
+        author: string,
+        title: string,
+    ) => void
     onClear: () => void
     onSortByChange: (sortBy: BookSortBy) => void
     onSortOrderChange: (sortOrder: BookSortOrder) => void
@@ -63,13 +65,13 @@ export function BooksListControls({
                                       sortBy,
                                       sortOrder,
                                       onCategoryChange,
-                                      onAuthorChange,
-                                      onTitleChange,
                                       onApply,
                                       onClear,
                                       onSortByChange,
                                       onSortOrderChange,
                                   }: BooksListControlsProps) {
+    const [authorDraft, setAuthorDraft] = useState(author)
+    const [titleDraft, setTitleDraft] = useState(title)
     return (
         <div className="books-page__controls">
             <div className="books-page__filters">
@@ -109,9 +111,9 @@ export function BooksListControls({
                     <input
                         className="field__control"
                         type="search"
-                        value={author}
+                        value={authorDraft}
                         onChange={(event) => {
-                            onAuthorChange(
+                            setAuthorDraft(
                                 event.target.value,
                             )
                         }}
@@ -122,9 +124,9 @@ export function BooksListControls({
                     <input
                         className="field__control"
                         type="search"
-                        value={title}
+                        value={titleDraft}
                         onChange={(event) => {
-                            onTitleChange(
+                            setTitleDraft(
                                 event.target.value,
                             )
                         }}
@@ -136,7 +138,12 @@ export function BooksListControls({
                 <Button
                     type="button"
                     variant="primary"
-                    onClick={onApply}
+                    onClick={() => {
+                        onApply(
+                            authorDraft,
+                            titleDraft,
+                        )
+                    }}
                 >
                     Apply
                 </Button>
@@ -144,7 +151,11 @@ export function BooksListControls({
                 <Button
                     type="button"
                     variant="secondary"
-                    onClick={onClear}
+                    onClick={() => {
+                        setAuthorDraft('')
+                        setTitleDraft('')
+                        onClear()
+                    }}
                 >
                     Clear
                 </Button>

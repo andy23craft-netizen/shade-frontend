@@ -26,10 +26,6 @@ import {
     type BookSortBy,
     type BookSortOrder,
 } from '../booksListModel'
-import {
-    useEffect,
-    useState,
-} from 'react'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -166,20 +162,6 @@ export function BooksPage() {
     const title = parseTextFilterParam(
         searchParams.get('title'),
     )
-    const [authorDraft, setAuthorDraft] = useState(
-        author ?? '',
-    )
-    const [titleDraft, setTitleDraft] = useState(
-        title ?? '',
-    )
-
-    useEffect(() => {
-        setAuthorDraft(author ?? '')
-        setTitleDraft(title ?? '')
-    }, [
-        author,
-        title,
-    ])
 
     const booksQuery = useInfiniteBooks({
         category,
@@ -197,6 +179,10 @@ export function BooksPage() {
     )
     const total =
         booksQuery.data?.pages[0]?.total ?? 0
+    const hasActiveFilters =
+        category !== undefined ||
+        author !== undefined ||
+        title !== undefined
 
     const {
         getRowRef,
@@ -235,7 +221,7 @@ export function BooksPage() {
         )
     }
 
-    if (total === 0) {
+    if (total === 0 && !hasActiveFilters) {
         return (
             <section className="route-page">
                 <h1 tabIndex={-1}>Books</h1>
@@ -267,9 +253,10 @@ export function BooksPage() {
             </div>
 
             <BooksListControls
+                key={`${author ?? ''}:${title ?? ''}`}
                 category={category}
-                author={authorDraft}
-                title={titleDraft}
+                author={author ?? ''}
+                title={title ?? ''}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onCategoryChange={(nextCategory) => {
@@ -286,9 +273,6 @@ export function BooksPage() {
                     )
                 }}
 
-                onAuthorChange={setAuthorDraft}
-
-                onTitleChange={setTitleDraft}
                 
                 onSortByChange={(nextSortBy) => {
                     setSearchParams(
@@ -320,13 +304,13 @@ export function BooksPage() {
                 }}
 
 
-                onApply={() => {
+                onApply={(nextAuthor, nextTitle) => {
                     setSearchParams(
                         updateListParams(
                             searchParams,
                             {
-                                author: authorDraft,
-                                title: titleDraft,
+                                author: nextAuthor,
+                                title: nextTitle,
                             },
                         ),
                         {
@@ -335,9 +319,6 @@ export function BooksPage() {
                     )
                 }}
                 onClear={() => {
-                    setAuthorDraft('')
-                    setTitleDraft('')
-
                     setSearchParams(
                         updateListParams(
                             searchParams,
@@ -354,86 +335,119 @@ export function BooksPage() {
                 }}
             />
 
-            <ul
-                className="books-list"
-                aria-label="Library books"
-            >
-                {books.map((book, index) => {
-                    const status = displayEnum(
-                        book.status,
-                        STATUS_VALUES,
-                    )
+            {total === 0 ? (
+                <EmptyState title="No books match these filters.">
+                    <p>
+                        Try changing or clearing the current
+                        filters.
+                    </p>
 
-                    const category = displayEnum(
-                        book.category,
-                        CATEGORY_VALUES,
-                    )
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setSearchParams(
+                                updateListParams(
+                                    searchParams,
+                                    {
+                                        category: undefined,
+                                        author: undefined,
+                                        title: undefined,
+                                    },
+                                ),
+                                {
+                                    replace: true,
+                                },
+                            )
+                        }}
+                    >
+                        Clear filters
+                    </Button>
+                </EmptyState>
+            ) : null}
 
-                    const shelf =
-                        formatShelfCommonNameForDisplay(
-                            book.shelf_name,
+            {total > 0 ? (
+                <ul
+                    className="books-list"
+                    aria-label="Library books"
+                >
+                    {books.map((book, index) => {
+                        const status = displayEnum(
+                            book.status,
+                            STATUS_VALUES,
                         )
 
-                    return (
-                        <li
-                            key={book.id}
-                            ref={getRowRef(index)}
-                            className="books-list__item"
-                        >
-                            <article className="book-card">
-                                <div className="book-card__heading">
-                                    <h2 className="book-card__title">
-                                        <AppLink
-                                            to={`/books/${book.id}`}
-                                        >
-                                            {book.title}
-                                        </AppLink>
-                                    </h2>
+                        const category = displayEnum(
+                            book.category,
+                            CATEGORY_VALUES,
+                        )
 
-                                    <p className="book-card__author">
-                                        {book.authors}
-                                    </p>
-                                </div>
+                        const shelf =
+                            formatShelfCommonNameForDisplay(
+                                book.shelf_name,
+                            )
 
-                                <dl className="book-card__metadata">
-                                    <div className="book-card__field">
-                                        <dt>Status</dt>
-                                        <dd>{status}</dd>
+                        return (
+                            <li
+                                key={book.id}
+                                ref={getRowRef(index)}
+                                className="books-list__item"
+                            >
+                                <article className="book-card">
+                                    <div className="book-card__heading">
+                                        <h2 className="book-card__title">
+                                            <AppLink
+                                                to={`/books/${book.id}`}
+                                            >
+                                                {book.title}
+                                            </AppLink>
+                                        </h2>
+
+                                        <p className="book-card__author">
+                                            {book.authors}
+                                        </p>
                                     </div>
 
-                                    <div className="book-card__field">
-                                        <dt>Reading</dt>
-                                        <dd>
-                                            {displayReadState(
-                                                book.is_read,
-                                            )}
-                                        </dd>
-                                    </div>
+                                    <dl className="book-card__metadata">
+                                        <div className="book-card__field">
+                                            <dt>Status</dt>
+                                            <dd>{status}</dd>
+                                        </div>
 
-                                    <div className="book-card__field">
-                                        <dt>Rating</dt>
-                                        <dd>
-                                            {book.rating === null
-                                                ? '—'
-                                                : `${book.rating} / 5`}
-                                        </dd>
-                                    </div>
+                                        <div className="book-card__field">
+                                            <dt>Reading</dt>
+                                            <dd>
+                                                {displayReadState(
+                                                    book.is_read,
+                                                )}
+                                            </dd>
+                                        </div>
 
-                                    <div className="book-card__field">
-                                        <dt>Category</dt>
-                                        <dd>{category}</dd>
-                                    </div>
+                                        <div className="book-card__field">
+                                            <dt>Rating</dt>
+                                            <dd>
+                                                {book.rating === null
+                                                    ? '—'
+                                                    : `${book.rating} / 5`}
+                                            </dd>
+                                        </div>
 
-                                    <div className="book-card__field">
-                                        <dt>Shelf</dt>
-                                        <dd>{shelf}</dd>
-                                    </div>
-                                </dl>
-                            </article>
-                        </li>
-                    )
-                })}
-            </ul>
+                                        <div className="book-card__field">
+                                            <dt>Category</dt>
+                                            <dd>{category}</dd>
+                                        </div>
+
+                                        <div className="book-card__field">
+                                            <dt>Shelf</dt>
+                                            <dd>{shelf}</dd>
+                                        </div>
+                                    </dl>
+                                </article>
+                            </li>
+                        )
+                    })}
+                </ul>
+            ) : null}
 
             {booksQuery.isFetchingNextPage ? (
                 <div className="infinite-scroll__footer">
