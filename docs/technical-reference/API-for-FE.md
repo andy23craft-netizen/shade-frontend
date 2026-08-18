@@ -13,21 +13,17 @@ or route tables here.
 
 # Auth
 
-Protected routes use a shared secret plus a library username header:
+Protected routes use a shared secret:
 
 ```http
 Authorization: Bearer <API_SECRET_KEY>
-Library-Username: shade
 ```
 
-The frontend sends `Library-Username: shade` on every authenticated request (the same calls that carry the Bearer
-token). The backend may not require this header yet; sending it keeps the client ready when that requirement is
-added. There is no login, logout, or session system. Missing or invalid credentials return **403** with
+There is no login, logout, or session system. Missing or invalid credentials return **403** with
 `{"detail": "Invalid authentication credentials"}`.
 
 Public routes: `GET /health`, `GET /version`, and FastAPI's generated docs/OpenAPI routes (`/docs`, `/redoc`,
-`/openapi.json`, `/docs/oauth2-redirect`). Those routes do not receive `Authorization` or `Library-Username`. Every
-other business route requires the Bearer token (and should be sent with `Library-Username`).
+`/openapi.json`, `/docs/oauth2-redirect`). Every other business route requires the Bearer token.
 
 There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated).
 Use `GET /version` when the UI needs the running API release string (same value as `ci/VERSION` and OpenAPI
@@ -47,9 +43,9 @@ CORS_ORIGINS=["https://library.john-shade.spir.es"]
 ```
 
 CORS does not replace authentication. The middleware handles browser preflight; frontend code should not send
-`OPTIONS` manually. `Authorization`, `Content-Type`, and `Library-Username` may be sent cross-origin.
-`Content-Disposition` is exposed so download filenames are readable from JavaScript. Credentialed CORS (cookies) is
-disabled. A disallowed origin can still reach the server, but browser JS cannot read the response.
+`OPTIONS` manually. `Authorization` and `Content-Type` may be sent cross-origin. `Content-Disposition` is exposed
+so download filenames are readable from JavaScript. Credentialed CORS (cookies) is disabled. A disallowed origin
+can still reach the server, but browser JS cannot read the response.
 
 ---
 
@@ -73,9 +69,14 @@ disabled. A disallowed origin can still reach the server, but browser JS cannot 
 |        | unknown shelf for `PATCH` / `DELETE /shelves/{shelf_id}` |
 | `409`  | Restore an active book; checkout when already on loan; check-in with no active loan; |
 |        | duplicate shelf `common_name` on create/rename; delete shelf while books remain |
-| `412`  | Checkout when the book has `status=display_only` |
+| `412`  | Checkout when the book has `status=display_only` (`"Book is display only"`); |
+|        | add a book with any shelf membership, including `unknown` / `removed`, to a wishlist |
+|        | (`"Existing books cannot be added to a wishlist"`); |
+|        | assign `shelf_name` on book create/update when the book is on any wishlist |
+|        | (`"The book must be removed from the wishlist before it can be placed on a shelf"`) |
 | `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body; |
-|        | unsupported wishlist membership `status`; null or blank `shelf_name` on book create/update; |
+|        | unsupported wishlist membership `status`; blank `shelf_name` on book create; |
+|        | null or blank `shelf_name` on book update; |
 |        | null or blank shelf `common_name` on shelf create/update |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
@@ -131,12 +132,16 @@ Prefer dedicated endpoints over reproducing their effects with `PATCH`:
 `PATCH` bumps `updated_date` via a SQLite trigger when the handler does not set it explicitly (the column still
 changes on successful update). Do not send `null` for DB-required fields such as `title`, `authors`,
 `category`, `is_read`, or `status`. `shelf_name` must not be JSON `null` on update (**422**); omit the field to leave
-membership unchanged.
+membership unchanged. Assigning `shelf_name` on create or update returns **412**
+`{"detail": "The book must be removed from the wishlist before it can be placed on a shelf"}` when the book is on
+any wishlist; delete the wishlist first (there is no membership-level DELETE).
 
 Books use `shelf_name` (maps to `shelves.common_name`), not a hard-coded shelf enum and not a book-level `shelf`
-column. Create requires `shelf_name`. Incoming names are trimmed then lowercased (max length 32 after trim). Unknown
-names and names that normalize to `removed` return **400** on create/update -- only `DELETE /books/{id}` assigns
-`removed`. See Shelves for list and catalog CRUD behavior.
+column. Create may omit `shelf_name` to leave the book with no `books_shelves` membership (required for wishlist
+add). Incoming names are trimmed then lowercased (max length 32 after trim). Unknown names and names that
+normalize to `removed` return **400** on create/update -- only `DELETE /books/{id}` assigns `removed`. JSON `null`
+`shelf_name` on create is treated as omitted. `shelf_name` must not be JSON `null` on update (**422**); omit the
+field to leave membership unchanged. See Shelves for list and catalog CRUD behavior.
 
 Books default to author ascending (`sortBy=author`, `sortOrder=asc` when omitted). Allowed `sortBy` values:
 `author`, `title`, `creationDate`, `shelf`. Shelf sorting is lexical on `shelves.common_name`. Allowed `sortOrder`
@@ -194,9 +199,13 @@ Refresh `GET /shelves` after create/update/delete so pickers stay current. New `
 immediately assignable on book create/update via `shelf_name`.
 
 For book forms: load `GET /shelves`, present `common_name` values (exclude `removed` for create/update), and
-submit the chosen name as `shelf_name`. Omit `shelf_name` on `PATCH` when membership should not change. After
-soft-delete, expect `shelf_name: "removed"` and a non-null `deletion_date`; after restore, expect
-`shelf_name: "unknown"` and `deletion_date: null`.
+submit the chosen name as `shelf_name`. Omit `shelf_name` on `POST /books` when creating a wishlist-only catalog
+row (no membership). Omit `shelf_name` on `PATCH` when membership should not change. Assigning `shelf_name` while
+the book is on any wishlist returns **412**. After soft-delete, expect `shelf_name: "removed"` and a non-null
+`deletion_date`; after restore, expect `shelf_name: "unknown"` and `deletion_date: null`.
+
+`GET /books` inner-joins shelf membership, so unshelved (wishlist-only) books are omitted from the list. Fetch them
+with `GET /books/{id}` (response `shelf_name` is `unknown` when membership is missing).
 
 Dashboard incomplete-shelf / `missing_shelf` means membership on `unknown` (not `removed`).
 
@@ -221,7 +230,9 @@ Current limitations:
   surface as unhandled **500**.
 
 Recommended add-book flow: FE captures ISBN → `GET /books/lookup` → editable draft → user confirms →
-`POST /books`. Lookup is optional; manual create without lookup is fine.
+`POST /books`. Include `shelf_name` when placing the book in the collection. Omit `shelf_name` (or send JSON
+`null`) when creating a wishlist-only catalog row, then `POST /wishlists/{wishlist_id}/books`. Lookup is optional;
+manual create without lookup is fine.
 
 ---
 
@@ -303,10 +314,14 @@ existing catalog books by `book_id`. The default order is priority ascending wit
 `last_updated_date` is bumped by a SQLite trigger when the handler does not set it. `DELETE /wishlists/{wishlist_id}`
 permanently deletes its membership rows before deleting the wishlist itself; catalog books are not deleted.
 
-`POST /wishlists/{wishlist_id}/books` adds an existing catalog book to a wishlist. `status` defaults to `wanted`;
-allowed values are `wanted`, `ordered`, `owned`, and `dropped` (see `WishlistBookStatus` in OpenAPI). Duplicate
-`(wishlist_id, book_id)` memberships are permitted. Soft-deleted catalog books may be referenced because existence,
-not active/deleted state, is the rule. The current API does not provide membership-level PATCH or DELETE endpoints.
+`POST /wishlists/{wishlist_id}/books` adds a catalog book that has **no** `books_shelves` membership. `status`
+defaults to `wanted`; allowed values are `wanted`, `ordered`, `owned`, and `dropped` (see `WishlistBookStatus` in
+OpenAPI). Duplicate `(wishlist_id, book_id)` memberships are permitted. A book that is already on any shelf
+(including system shelves `unknown` and `removed`) is rejected with **412**
+`{"detail": "Existing books cannot be added to a wishlist"}`. Create the catalog row with omitted `shelf_name`, then
+add it to the wishlist. Soft-deleted books cannot be added because delete moves them to `removed`. The current API
+does not provide membership-level PATCH or DELETE endpoints; to place a wishlisted book on a shelf, delete the
+wishlist first, then `PATCH` `shelf_name`.
 
 For path `wishlist_id` and membership `book_id`: **400** when empty or not a valid GUID; **404** when the GUID is
 well-formed but unknown.
@@ -356,10 +371,12 @@ URL.revokeObjectURL(objectUrl);
 | Display of API release/version from `GET /version` | Frontend |
 | Shelf picker UI from `GET /shelves`; submit chosen `common_name` as `shelf_name` | Frontend |
 | Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
+| Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
 | Canonical project version (`ci/VERSION` via `GET /version`) | API |
 | Soft delete/restore, loan records, checkout/check-in, reading state | API |
 | Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
+| Wishlist/shelf mutual exclusion (**412** when both would apply) | API |
 | Borrowing and dashboard statistics | API |
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/book) → `POST .../checkout` or
@@ -367,6 +384,14 @@ Recommended borrowing/returning: FE collects borrower (or selects loan/book) →
 `BookRead` status. Do not drive loan state through generic `PATCH`.
 
 Recommended shelf assignment: FE loads `GET /shelves` → user picks a `common_name` (not `removed` for create/update)
-→ send as `shelf_name` on `POST /books` or `PATCH /books/{id}`. Manage the catalog with `POST` / `PATCH` /
-`DELETE /shelves`, then refresh `GET /shelves`. After delete/restore, re-read the book (or list) for updated
-`shelf_name` and `deletion_date`; do not assume the prior shelf is restored.
+→ send as `shelf_name` on `POST /books` or `PATCH /books/{id}`. Omit `shelf_name` on create for a wishlist-only
+row. If assign returns **412** `"The book must be removed from the wishlist before it can be placed on a shelf"`,
+the book is still on a wishlist; delete that wishlist before placing it on a shelf. Manage the catalog with
+`POST` / `PATCH` / `DELETE /shelves`, then refresh `GET /shelves`. After delete/restore, re-read the book (or list)
+for updated `shelf_name` and `deletion_date`; do not assume the prior shelf is restored.
+
+Recommended wishlist add: `POST /books` without `shelf_name` → `POST /wishlists/{wishlist_id}/books` with
+`{ "book_id" }`. Adding a book that already has shelf membership returns **412**
+`"Existing books cannot be added to a wishlist"`. Join membership `book_id` to `GET /books/{id}` for title/authors
+(unshelved books are omitted from `GET /books`). Do not invent membership remove/edit; delete the wishlist to
+clear memberships.
