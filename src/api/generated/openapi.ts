@@ -143,6 +143,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Collections */
+        get: operations["list_collections_collections_get"];
+        put?: never;
+        /** Create Collection */
+        post: operations["create_collection_collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Collection */
+        delete: operations["delete_collection_collections__collection_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Collection */
+        patch: operations["update_collection_collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/collections/{collection_id}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Collection Books */
+        get: operations["list_collection_books_collections__collection_id__books_get"];
+        put?: never;
+        /** Add Collection Book Route */
+        post: operations["add_collection_book_route_collections__collection_id__books_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collection_id}/books/{collection_book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Collection Book Route */
+        delete: operations["delete_collection_book_route_collections__collection_id__books__collection_book_id__delete"];
+        options?: never;
+        head?: never;
+        /** Reorder Collection Book Route */
+        patch: operations["reorder_collection_book_route_collections__collection_id__books__collection_book_id__patch"];
+        trace?: never;
+    };
     "/dashboard": {
         parameters: {
             query?: never;
@@ -375,6 +447,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/wishlists/{wishlist_id}/books/{wishlist_book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Wishlist Book */
+        delete: operations["delete_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -565,6 +654,80 @@ export interface components {
             due_at?: string | null;
             /** Notes */
             notes?: string | null;
+        };
+        /** CollectionBookCreate */
+        CollectionBookCreate: {
+            /** Book Id */
+            book_id: string;
+            /** Notes */
+            notes?: string | null;
+            /** Order Num */
+            order_num?: number | null;
+        };
+        /** CollectionBookList */
+        CollectionBookList: {
+            /** Items */
+            items: components["schemas"]["CollectionBookRead"][];
+            /** Total */
+            total: number;
+        };
+        /** CollectionBookRead */
+        CollectionBookRead: {
+            /** Book Id */
+            book_id: string;
+            /** Collection Book Id */
+            collection_book_id: string;
+            /** Collection Id */
+            collection_id: string;
+            /** Created Date */
+            created_date: string;
+            /** Notes */
+            notes?: string | null;
+            /** On Wishlist */
+            on_wishlist: boolean;
+            /** Order Num */
+            order_num: number;
+            /** Shelf Name */
+            shelf_name?: string | null;
+        };
+        /** CollectionBookReorder */
+        CollectionBookReorder: {
+            /** Order Num */
+            order_num: number;
+        };
+        /** CollectionCreate */
+        CollectionCreate: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+        };
+        /** CollectionList */
+        CollectionList: {
+            /** Items */
+            items: components["schemas"]["CollectionRead"][];
+            /** Total */
+            total: number;
+        };
+        /** CollectionRead */
+        CollectionRead: {
+            /** Collection Id */
+            collection_id: string;
+            /** Created Date */
+            created_date: string;
+            /** Description */
+            description?: string | null;
+            /** Last Updated Date */
+            last_updated_date: string;
+            /** Name */
+            name: string;
+        };
+        /** CollectionUpdate */
+        CollectionUpdate: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string | null;
         };
         /** DashboardBorrowing */
         DashboardBorrowing: {
@@ -1464,6 +1627,477 @@ export interface operations {
             };
         };
     };
+    list_collections_collections_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_collection_collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_collection_collections__collection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_collection_collections__collection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_collection_books_collections__collection_id__books_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionBookList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_collection_book_route_collections__collection_id__books_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionBookCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionBookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Collection membership conflict (duplicate book or order number) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_collection_book_route_collections__collection_id__books__collection_book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                collection_book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_collection_book_route_collections__collection_id__books__collection_book_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                collection_book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionBookReorder"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionBookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Collection membership conflict (duplicate book or order number) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_dashboard_dashboard_get: {
         parameters: {
             query?: never;
@@ -2309,6 +2943,63 @@ export interface operations {
             };
             /** @description Existing books cannot be added to a wishlist */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wishlist_id: string;
+                wishlist_book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
