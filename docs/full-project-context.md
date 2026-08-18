@@ -5,10 +5,10 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline. Start from this file alone; do not redirect the reader to another agents guide or
-project prompt for baseline context. Attach the on-demand docs listed in
-section 8 only when the current ticket needs them; do not re-synthesize
-those sources here.
+the dated codebase baseline. Start from this file alone for that baseline.
+Attach the on-demand docs listed in section 8 only when the current ticket
+needs them; do not re-synthesize those sources here. A user's explicit
+request takes precedence over general guidance here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
@@ -216,8 +216,8 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     diagnostics; shelves catalog CRUD; infinite scroll on
     `/books` and `/loans`; API contract sync (regenerated OpenAPI types for wishlist / dashboard-report and
     Collections paths; `booksApi` / query keys for `author` / `title` / `category`, used by the `/books` collection
-    browse UI; collection `sortBy=shelf`; checkout `412` `display_only` refetch/messaging -- alternate-copy offers
-    wait for FEAT-21). Dashboard reports on `/dashboard`: summary plus breakdowns and incomplete-metadata healing
+    browse UI and (when FEAT-21 lands) display-only checkout alternate-copy lookup on `/checkout`; collection
+    `sortBy=shelf`; checkout `412` `display_only` refetch/messaging -- alternate-copy offers wait for FEAT-21). Dashboard reports on `/dashboard`: summary plus breakdowns and incomplete-metadata healing
     (`dashboardApi`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`, `useInfiniteIncompleteMetadataBooks`;
     Basic Stats and Healing Metadata drawers). Wishlists: `/wishlists` via Collection drawer;
     memberships join catalog with `GET /books/{id}` (not `GET /books`);
@@ -240,7 +240,9 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     `docs/tickets/`. FEAT-13 workflow and accessibility testing, FEAT-14 CI packaging, FEAT-15 Podman deployed
     development, FEAT-16 versioned release artifacts, FEAT-17 About homepage, FEAT-18 collection category / author /
     title filters, FEAT-19 wishlists, and FEAT-20 dashboard reports are complete (those ticket files are removed).
-    Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
+    Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Prefer dedicated
+    lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`. Do not
+    invent undocumented routes, realtime channels, or lifecycle shortcuts.
 -   Optional runtime-configured diagnostic reporting lives in
     `src/diagnostics/diagnosticReporter.ts`
     (`createDiagnosticReporter` from `RuntimeConfig.diagnostics` +
@@ -363,9 +365,11 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     incomplete-metadata healing (`useDashboardIncompleteMetadata`, `useInfiniteIncompleteMetadataBooks` /
     `GET /dashboard/incomplete-metadata` and `/books`). Five card-catalog drawers (summary I--III, Basic Stats IV,
     Healing Metadata V). Display API numbers only; null averages as "Not enough data"; inconsistent read/unread
-    totals show a contract warning without recalculation. Unified Refresh refetches summary and report queries;
-    offline/paused and stale status; drawer-level `QueryErrorState` recovery. Basic Stats shows totals plus category
-    and creation-year buckets (API `by_shelf` is not rendered). Styles in `src/styles/components.css`.
+    totals show a contract warning without recalculation; do not recalculate metrics from `GET /books`. Unified Refresh
+    refetches summary and report queries; offline/paused and stale status; drawer-level `QueryErrorState` recovery;
+    drawer-level errors do not blank summary drawers. Basic Stats shows totals plus category and creation-year buckets
+    (API `by_shelf` is not rendered). Styles in `src/styles/components.css` (`.dashboard-page`,
+    `.dashboard-drawer-bank`, `.dashboard-drawer`, `.dashboard-metric`, `.dashboard-breakdowns`, `.dashboard-healing`).
 -   Edit/delete/restore/backup: `/books/:bookId/edit` via `EditBookPage`
     + `bookEditModel` (`bookFormValuesFromBook`,
     `bookFormValuesToUpdate` minimal `BookUpdate` patch; blank ISBN -\>
@@ -583,15 +587,14 @@ index.html
         dedication, lending policy, and accessible card-catalog-style
         How to Use dialog with in-app workflow links. Does not call
         `GET /dashboard` or any other API.
-    -   `/dashboard` -- `DashboardPage`: summary drawers (Collection,
-        Circulation, Reading Record); Basic Stats via `useDashboardBreakdowns`
-        (totals plus category and creation-year buckets; API `by_shelf` is not
-        rendered); Healing Metadata via `useDashboardIncompleteMetadata` and
-        `useInfiniteIncompleteMetadataBooks` (per-field counts, field filter,
-        infinite-scroll cleanup list with detail/edit links). Null averages as
-        "Not enough data"; inconsistency warning without recalculation; unified
-        Refresh; offline/stale status; drawer-level `QueryErrorState` recovery.
-        Styles in `src/styles/components.css`.
+    -   `/dashboard` -- `DashboardPage`: five card-catalog drawers (summary I--III, Basic Stats IV, Healing Metadata
+        V); summary metrics via `useDashboard`; Basic Stats via `useDashboardBreakdowns` (totals plus category and
+        creation-year buckets; API `by_shelf` is not rendered); Healing Metadata via `useDashboardIncompleteMetadata`
+        and `useInfiniteIncompleteMetadataBooks` (per-field counts, field filter, infinite-scroll cleanup list with
+        detail/edit links). Display API numbers only; null averages as "Not enough data"; inconsistency warning without
+        recalculation; do not recalculate metrics from `GET /books`. Unified Refresh refetches summary and report
+        queries; offline/stale status; drawer-level `QueryErrorState` recovery; drawer-level errors do not blank
+        summary drawers. Styles in `src/styles/components.css`.
     -   `/collection/manage` -- `ManageCollectionPage`: collection
         maintenance hub with links to Add Book (`/books/new`), Shelves
         (`/shelves`), Deleted Books (`/admin/deleted`), and Backup
@@ -830,8 +833,9 @@ index.html
     includes `.drawer-nav-menu` drawer panels for Collection and
     Circulation. Footer shows `Release` from `package.json` `version` via
     `APP_VERSION`, plus API version from public `GET /version` /
-    `useVersion` when available. Long-content wrapping lives in
-    `components.css`.
+    `useVersion` when available. Dashboard layout classes (`.dashboard-page`, `.dashboard-drawer-bank`,
+    `.dashboard-drawer`, `.dashboard-metric`, `.dashboard-breakdowns`, `.dashboard-healing`) and long-content wrapping
+    live in `components.css`.
 -   Local setup: copy `.env.example` to `.env` and set
     `VITE_API_SECRET_KEY` to match the backend `API_SECRET_KEY`; restart
     the dev server after changing `.env`. Optional same-origin proxy:
@@ -993,6 +997,13 @@ API text as HTML, or upload SQL backup contents to telemetry. SQL
 backups are sensitive. Prefer `apiRedaction` helpers for any diagnostic
 logging.
 
+### Product sequencing
+
+Product intent, sequencing, and acceptance criteria live under `docs/`.
+When deciding what to build next, prefer the current ticket, then
+`docs/product-docs/PLAN.md`, then the product requirements docs. Do not
+implement future tickets prematurely.
+
 ### Accessibility baseline
 
 Semantic HTML, landmarks, visible focus, labels linked to errors, skip
@@ -1050,14 +1061,12 @@ merely to make a ticket pass.
     `wishlistsQueries` (`/wishlists` owns catalog CRUD and add;
     memberships via `useBook` / `GET /books/{id}`; add via unshelved
     create then membership; no add-from-collection or membership
-    remove/edit). Leave scanner code under `src/features/scanning/`
-    lazy-loaded from `/books/new` and `/checkout`. Leave checkout under
-    `CheckoutPage` / `checkoutModel`,
-    including ISBN Find via `useBooks({ isbn })` (not lookup) and existing
-    `412` `display_only` refetch/messaging (alternate-copy offers wait for FEAT-21).
-    Leave check-in and loan
-    history under `CheckinPage` / `checkinModel` / `checkinEligibility`
-    / `LoansPage` / `loanTemporal`. Leave shelves under `ShelvesPage` /
+    remove/edit). Leave scanner code under `src/features/scanning/` lazy-loaded from `/books/new` and
+    `/checkout` (hands one ISBN into create lookup or checkout Find; never creates or checks out from scan success
+    alone). Leave checkout under `CheckoutPage` / `checkoutModel`, including ISBN Find via `useBooks({ isbn })`
+    (not lookup) and existing `412` `display_only` refetch/messaging (alternate-copy offers wait for FEAT-21). Leave
+    check-in and loan history under `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` /
+    `loanTemporal`. Leave shelves under `ShelvesPage` /
     `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` /
     write mutations (`/shelves` owns create/edit/delete with system-shelf
     protection; book forms use API-fed pickers with `shelf_name`, never
@@ -1187,7 +1196,8 @@ repo before editing.
   Shared UI     `src/components/*` (import via `index.ts`; includes `QueryErrorState`)
 
   Styles        `src/index.css`, `src/styles/{tokens,base,shell,components}.css` (`.drawer-nav-menu` in
-                `shell.css`; dashboard classes and long-content wrap in `components.css`)
+                `shell.css`; `.dashboard-page`, `.dashboard-drawer-bank`, `.dashboard-drawer`, `.dashboard-metric`,
+                `.dashboard-breakdowns`, `.dashboard-healing`, and long-content wrap in `components.css`)
 
   Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (includes diagnostic reporter and dashboard
                 report route mocks)
