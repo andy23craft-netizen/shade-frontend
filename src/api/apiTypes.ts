@@ -34,6 +34,15 @@ export type DashboardReading =
 export type DashboardSummary =
     Schemas['DashboardSummary']
 
+export type DashboardBreakdowns =
+    Schemas['DashboardBreakdowns']
+
+export type DashboardCountBucket =
+    Schemas['DashboardCountBucket']
+
+export type DashboardIncompleteMetadata =
+    Schemas['DashboardIncompleteMetadata']
+
 export type HealthResponse =
     Schemas['HealthResponse']
 

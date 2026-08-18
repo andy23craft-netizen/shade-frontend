@@ -70,6 +70,70 @@ export function mockReachableApi() {
                     )
                 }
 
+                if (
+                    pathname === '/dashboard/breakdowns'
+                ) {
+                    return new Response(
+                        JSON.stringify({
+                            total_books: 0,
+                            on_loan: 0,
+                            by_category: [],
+                            by_shelf: [],
+                            by_creation_year: [],
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
+                if (
+                    pathname ===
+                    '/dashboard/incomplete-metadata'
+                ) {
+                    return new Response(
+                        JSON.stringify({
+                            total_incomplete: 0,
+                            missing_category: 0,
+                            missing_shelf: 0,
+                            missing_pages: 0,
+                            missing_publisher: 0,
+                            missing_year: 0,
+                            missing_isbn: 0,
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
+                if (
+                    pathname ===
+                    '/dashboard/incomplete-metadata/books'
+                ) {
+                    return new Response(
+                        JSON.stringify({
+                            items: [],
+                            total: 0,
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
                 if (pathname === '/dashboard') {
                     return new Response(
                         JSON.stringify({

@@ -17,12 +17,18 @@ import {
 } from 'vitest'
 
 import type {
+    BookList,
+    DashboardBreakdowns,
+    DashboardIncompleteMetadata,
     DashboardSummary,
     LoanList,
     LoanRead,
 } from './apiTypes'
 import {
     useDashboard,
+    useDashboardBreakdowns,
+    useDashboardIncompleteMetadata,
+    useInfiniteIncompleteMetadataBooks,
 } from './dashboardQueries'
 import {
     useLoan,
@@ -36,6 +42,9 @@ import {
 const mockListLoans = vi.fn()
 const mockGetLoan = vi.fn()
 const mockGetDashboard = vi.fn()
+const mockGetDashboardBreakdowns = vi.fn()
+const mockGetIncompleteMetadata = vi.fn()
+const mockListIncompleteMetadataBooks = vi.fn()
 
 vi.mock('./loansApi', () => ({
     createLoansApi: () => ({
@@ -47,6 +56,11 @@ vi.mock('./loansApi', () => ({
 vi.mock('./dashboardApi', () => ({
     createDashboardApi: () => ({
         get: mockGetDashboard,
+        getBreakdowns: mockGetDashboardBreakdowns,
+        getIncompleteMetadata:
+        mockGetIncompleteMetadata,
+        listIncompleteMetadataBooks:
+        mockListIncompleteMetadataBooks,
     }),
 }))
 
@@ -458,6 +472,357 @@ describe('loans and dashboard queries', () => {
                 queryKeys.dashboard.all,
             ),
         ).toEqual(dashboard)
+
+        queryClient.clear()
+    })
+
+    it('loads dashboard breakdowns with the shared breakdowns query key', async () => {
+        const breakdowns: DashboardBreakdowns = {
+            total_books: 542,
+            on_loan: 7,
+            by_category: [
+                {
+                    key: 'fiction',
+                    count: 120,
+                },
+            ],
+            by_shelf: [
+                {
+                    key: 'living_room',
+                    count: 85,
+                },
+            ],
+            by_creation_year: [
+                {
+                    key: '2026',
+                    count: 42,
+                },
+            ],
+        }
+
+        mockGetDashboardBreakdowns
+            .mockResolvedValueOnce(breakdowns)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () => useDashboardBreakdowns(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockGetDashboardBreakdowns,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
+        )
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.dashboard.breakdowns(),
+            ),
+        ).toEqual(breakdowns)
+
+        queryClient.clear()
+    })
+
+    it('loads incomplete metadata with the shared query key', async () => {
+        const incomplete:
+            DashboardIncompleteMetadata = {
+            total_incomplete: 12,
+            missing_category: 2,
+            missing_shelf: 3,
+            missing_pages: 4,
+            missing_publisher: 5,
+            missing_year: 6,
+            missing_isbn: 7,
+        }
+
+        mockGetIncompleteMetadata
+            .mockResolvedValueOnce(incomplete)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useDashboardIncompleteMetadata(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockGetIncompleteMetadata,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
+        )
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.dashboard
+                    .incompleteMetadata(),
+            ),
+        ).toEqual(incomplete)
+
+        queryClient.clear()
+    })
+
+    it('loads all incomplete metadata books without a field filter', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        mockListIncompleteMetadataBooks
+            .mockResolvedValueOnce(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useInfiniteIncompleteMetadataBooks(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockListIncompleteMetadataBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                field: undefined,
+                skip: 0,
+                take: 30,
+            }),
+            expect.objectContaining({
+                signal: expect.any(
+                    AbortSignal,
+                ),
+            }),
+        )
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.dashboard
+                    .incompleteMetadataBooks({
+                        take: 30,
+                    }),
+            ),
+        ).toBeDefined()
+
+        queryClient.clear()
+    })
+
+    it('uses a distinct incomplete-books query when filtered by field', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        mockListIncompleteMetadataBooks
+            .mockResolvedValue(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const allBooks = renderHook(
+            () =>
+                useInfiniteIncompleteMetadataBooks(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        const isbnBooks = renderHook(
+            () =>
+                useInfiniteIncompleteMetadataBooks({
+                    field: 'isbn',
+                }),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                allBooks.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                isbnBooks.result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockListIncompleteMetadataBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                field: 'isbn',
+                skip: 0,
+                take: 30,
+            }),
+            expect.any(Object),
+        )
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.dashboard
+                    .incompleteMetadataBooks({
+                        take: 30,
+                    }),
+            ),
+        ).toBeDefined()
+
+        expect(
+            queryClient.getQueryData(
+                queryKeys.dashboard
+                    .incompleteMetadataBooks({
+                        field: 'isbn',
+                        take: 30,
+                    }),
+            ),
+        ).toBeDefined()
+
+        queryClient.clear()
+    })
+
+    it('loads additional incomplete-book pages with chained skip values', async () => {
+        const firstPage: BookList = {
+            items: Array.from(
+                {
+                    length: 30,
+                },
+                (_, index) => ({
+                    id: `book-${index}`,
+                }),
+            ) as BookList['items'],
+            total: 40,
+        }
+
+        const secondPage: BookList = {
+            items: Array.from(
+                {
+                    length: 10,
+                },
+                (_, index) => ({
+                    id: `book-${index + 30}`,
+                }),
+            ) as BookList['items'],
+            total: 40,
+        }
+
+        mockListIncompleteMetadataBooks
+            .mockReset()
+
+        mockListIncompleteMetadataBooks
+            .mockImplementation(
+                async (options) => {
+                    if (options.skip === 0) {
+                        return firstPage
+                    }
+
+                    if (options.skip === 30) {
+                        return secondPage
+                    }
+
+                    throw new Error(
+                        `Unexpected incomplete books skip: ${String(options.skip)}`,
+                    )
+                },
+            )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useInfiniteIncompleteMetadataBooks(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.hasNextPage,
+            ).toBe(true),
+        )
+
+        await result.current.fetchNextPage()
+
+        await waitFor(() =>
+            expect(
+                result.current.data?.pages,
+            ).toHaveLength(2),
+        )
+
+        expect(
+            mockListIncompleteMetadataBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 0,
+                take: 30,
+            }),
+            expect.any(Object),
+        )
+
+        expect(
+            mockListIncompleteMetadataBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 30,
+                take: 30,
+            }),
+            expect.any(Object),
+        )
 
         queryClient.clear()
     })
