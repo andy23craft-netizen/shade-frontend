@@ -138,6 +138,9 @@ Notable shipped behaviors agents should preserve:
   Read/Unread plus rating (`N / 5`, or an em dash when null).
 - Shelves: Title Case `common_name` labels; `unknown` allowed on books; `removed` excluded except edit may surface
   current membership; Add/Edit Book block the page when shelves fail to load; no shelf CRUD on book forms.
+- Wishlists: `/wishlists` via Collection drawer; memberships joined through `GET /books/{id}` (not `GET /books`); add
+  via unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`; documented **412** shelf/wishlist
+  exclusivity; no add-from-collection or membership remove/edit.
 - Scanning: hands one ISBN into create lookup or checkout Find; never creates or checks out from scan success alone.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
@@ -393,8 +396,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
-  dashboard, health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, validation/error schemas, enums). Book
-  payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
+  dashboard, health, version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, `WishlistCreate` / `WishlistUpdate` /
+  `WishlistRead` / `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`,
+  validation/error schemas, enums). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection on authenticated
@@ -442,7 +446,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, author, title, category, skip, take, sortBy,
   sortOrder, enabled }`), `useInfiniteBooks` (optional `{ includeDeleted, isbn, author, title, category, sortBy,
   sortOrder, enabled }`; batch size 30 via shared config),
-  `useBook`, `useBookLookup`, plus mutations (including `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
+  `useBook`, `useBookLookup` (query), `useLookupBook` (lookup mutation for wishlist add), plus mutations (including
+  `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
   `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write returned `BookRead` into the
   detail cache (except delete) and invalidate per PLAN.md 7.5 (lists including `include_deleted` via the `['books']`
   prefix, detail, dashboard, and loans on checkout/check-in).
@@ -606,8 +611,9 @@ Implemented (do not revert to placeholders):
   (`POST /books` omitting `shelf_name`, then `useAddWishlistBook`); permanent delete via `ConfirmationDialog` +
   `useDeleteWishlist` (memberships removed, catalog books remain). Status via `enumDisplayValue`. No membership
   remove/edit. Collection `/books` has no add-to-wishlist control.
-- `src/features/wishlists/components/AddWishlistBookControl.tsx` / `wishlistFormModel.ts` / `wishlistDisplay.ts`:
-  unshelved catalog create (title/authors required; optional ISBN lookup via `useLookupBook`) then membership add;
+- `src/features/wishlists/components/AddWishlistBookControl.tsx` /
+  `src/features/wishlists/wishlistFormModel.ts` / `src/features/wishlists/wishlistDisplay.ts`: unshelved catalog create
+  (title/authors required; optional ISBN lookup via `useLookupBook`) then membership add;
   **404** refetch, **412** exclusivity, Field-linked **422**; safe http(s) URL rendering for membership links
 
 Scanning feature (complete -- extend, do not replace):
@@ -1043,7 +1049,10 @@ make build
   `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Leave shelves under
   `ShelvesPage` / `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations (`/shelves` owns
   create/edit/delete with system-shelf protection; book forms use API-fed pickers with `shelf_name`, never shelf CRUD
-  on Add/Edit Book). FEAT-13 test infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
+  on Add/Edit Book). Leave wishlists under `WishlistsPage` / `AddWishlistBookControl` / `wishlistFormModel` /
+  `wishlistDisplay` / `wishlistsApi` / `wishlistsQueries` (`/wishlists` owns catalog CRUD and add; memberships via
+  `useBook` / `GET /books/{id}`; add via unshelved create then membership; no add-from-collection or membership
+  remove/edit). FEAT-13 test infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
   coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced coverage floors,
   and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites rather than
   inventing a parallel fake-API stack or removing them from the gate. FEAT-14 CI packaging is complete: keep
