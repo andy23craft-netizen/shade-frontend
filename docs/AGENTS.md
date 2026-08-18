@@ -18,8 +18,8 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   accessible card-catalog-style How to Use dialog; the dashboard lives at `/dashboard`.
 - Dashboard metrics on `/dashboard` (`DashboardPage` / `useDashboard`); Collection, Circulation, and Reading Record
   from the API only (null averages as "Not enough data"; contract warnings without inventing totals).
-- Active collection and book details (`/books`, `/books/:bookId`) with infinite scroll, shelf sort, Read/Unread, and
-  ratings; category filter UI is deferred to FEAT-18.
+- Active collection and book details (`/books`, `/books/:bookId`) with infinite scroll, URL-backed category / author /
+  title filtering, shelf sort, Read/Unread, and ratings.
 - Book create/edit (`/books/new`, `/books/:bookId/edit`) via shared `BookForm` / `bookFormModel` / `bookEditModel`,
   ISBN lookup on create, and API-fed shelf pickers (`shelf_name`; create requires an explicit shelf).
 - ISBN camera and hardware-scanner capture under `src/features/scanning/` (lazy-loaded from `/books/new` and
@@ -32,8 +32,9 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   `/admin/backup`).
 - Shelves catalog CRUD on `/shelves` (`shelvesApi` / `useShelves` / write mutations) with system-shelf protection
   (`unknown` / `removed`); book payloads use `shelf_name` (string; no hard-coded `Shelf` enum).
-- Generated OpenAPI types already know wishlist and dashboard-report paths; `booksApi` accepts `author` / `title` /
-  `category` list filters -- do not call those product APIs or ship those UIs until FEAT-19 / FEAT-20.
+- Generated OpenAPI types know wishlist and dashboard-report paths; `booksApi` accepts `author` / `title` / `category`
+  list filters, now used by the `/books` collection browse UI. Do not ship wishlist or dashboard-report product UI
+  until FEAT-19 / FEAT-20.
 
 Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic
 `PATCH`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open (the
@@ -82,7 +83,7 @@ with keyboard focus management and in-app workflow links. `DashboardPage` moved 
 changing its FEAT-11 behavior or `GET /dashboard` API contract. Brand/home recovery continues to `/`, now landing on
 About, and primary navigation exposes both About and Dashboard.
 
-**Next:** Remaining tickets under `docs/tickets/` are collection category filter UI (FEAT-18), wishlists (FEAT-19),
+**Next:** Remaining tickets under `docs/tickets/` are wishlists (FEAT-19),
 dashboard report surfaces (FEAT-20), and display-only checkout alternate-copy UX (FEAT-21).
 
 Notable shipped behaviors agents should preserve:
@@ -208,11 +209,12 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 ### Scope
 
-**In scope for MVP:** dashboard, active books, detail, manual/ISBN/camera/scanner add flows, edit, checkout, check-in,
-loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL backup, runtime API config, CI,
-Podman preview, versioned production artifacts, and About homepage with the dashboard at `/dashboard`. Ticketed
-follow-ons (implement only when working that ticket): collection category filter UI (FEAT-18), wishlists (FEAT-19),
-dashboard reports / incomplete metadata (FEAT-20), display-only alternate-copy checkout UX (FEAT-21).
+**In scope for MVP:** dashboard, active books with category / author / title filtering and URL-backed sorting, detail,
+manual/ISBN/camera/scanner add flows, edit, checkout, check-in, loan history, reading tracking, soft delete/restore,
+deleted admin, authenticated SQL backup, runtime API config, CI, Podman preview, versioned production artifacts, and
+About homepage with the dashboard at `/dashboard`. Ticketed follow-ons (implement only when working that ticket):
+wishlists (FEAT-19), dashboard reports / incomplete metadata (FEAT-20), display-only alternate-copy checkout UX
+(FEAT-21).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
@@ -441,11 +443,11 @@ Implemented (do not revert to placeholders):
 - `src/hooks/useInfiniteScrollTrigger.ts`: shared `IntersectionObserver` hook for prefetching the next batch near the
   bottom of loaded rows; colocated `useInfiniteScrollTrigger.test.ts`
 - `src/features/books/routes/BooksPage.tsx` (`/books`, infinite scroll + ratings): active collection
-  via `useInfiniteBooks({ sortBy, sortOrder })` with URL search params (`sortBy`, `sortOrder` only); sort controls
-  include Author, Title, Date added, and Shelf (default author ascending); category filter UI is deferred to FEAT-18;
-  loading, error+retry, empty state with link to `/books/new`, and list rows linking to detail with safe enum display
-  for category/status, Title Case `shelf_name` via `formatShelfCommonNameForDisplay`, Read/Unread state, and rating
-  (`N / 5`, or an em dash when null); bottom next-page loading and retry affordances
+  via `useInfiniteBooks({ category, author, title, sortBy, sortOrder })` with URL-backed category / author / title
+  filters and sort state; sort controls include Author, Title, Date added, and Shelf (default author ascending);
+  filtered and unfiltered empty states remain distinct; loading, error+retry, and list rows link to detail with safe
+  enum display for category/status, Title Case `shelf_name` via `formatShelfCommonNameForDisplay`, Read/Unread state,
+  and rating (`N / 5`, or an em dash when null); bottom next-page loading and retry affordances.
 - `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`): detail via `useBook`;
   loading, not-found / error recovery, and field presentation with safe enum display, including Title Case
   `shelf_name`, `is_read`, `completion_date`, `rating`, and `review`. "Edit Book" links to `/books/:bookId/edit` when
@@ -515,9 +517,11 @@ Implemented (do not revert to placeholders):
   `ConfirmationDialog` for delete; Field-linked **422** plus **400** / **404** / **409** mapping; loading /
   `QueryErrorState` / empty states. Book forms do not create or edit shelves.
 - `src/features/books/booksListModel.ts`: `BOOKS_BATCH_SIZE` (from shared infinite-scroll config), sort types
-  (`author` | `title` | `creationDate` | `shelf`), sort URL parsing/labels, and page flattening helper; colocated
-  `booksListModel.test.ts`
-- `src/features/books/components/BooksListControls.tsx`: labelled sort selects for `BooksPage` (includes Shelf)
+  (`author` | `title` | `creationDate` | `shelf`), sort and category/text-filter URL parsing, labels, category filter
+  values, and page flattening helper; colocated `booksListModel.test.ts`
+- `src/features/books/components/BooksListControls.tsx`: labelled category / author / title filter controls plus sort
+  selects for `BooksPage` (including Shelf); author/title drafts apply explicitly and can be cleared independently of
+  sort state
 - `src/features/books/utils/isbn.ts`: ISBN-10 / ISBN-13 checksum helpers plus `compactIsbnForListFilter` (punctuation
   strip only for `GET /books?isbn=`); used by lookup, create, scanner capture, and checkout ISBN Find; colocated unit
   tests
