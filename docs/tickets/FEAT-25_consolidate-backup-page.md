@@ -17,12 +17,12 @@ host cron). Today the browser page is the only operator backup path; removing it
 FEAT-10 backup download is complete (`BackupLibraryPage`, `backupApi.get`, programmatic `<a download>`, always
 `URL.revokeObjectURL`). Deleted-books admin on `/admin/deleted` is independent and stays.
 
-Sibling open tickets still mention `/admin/backup` or a browser backup download (FEAT-16 production smoke and
-`Content-Disposition` access). Update those tickets in the same change so later work does not rebuild the page.
+FEAT-16 release artifacts, FEAT-17 About / homepage, and FEAT-19 wishlists are complete; do not reference their removed
+ticket files.
 
-Do not pull FEAT-15 Podman, FEAT-16 release artifacts, FEAT-17 About / homepage, FEAT-18 collection filters,
-FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only alternate copies, FEAT-22 check-in consolidation,
-FEAT-23 checkout-on-details, or FEAT-24 extra scanner surfaces into this implementation.
+Do not pull FEAT-15 Podman, FEAT-18 collection filters, FEAT-20 dashboard reports, FEAT-21 display-only alternate
+copies, FEAT-22 check-in consolidation, FEAT-23 checkout-on-details, or FEAT-24 extra scanner surfaces into this
+implementation.
 
 ## Contract references
 
@@ -46,10 +46,10 @@ Already in place:
   fetches the SQL blob, parses UTF-8 `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback,
   triggers a programmatic `<a download>`, and always `URL.revokeObjectURL`. Documented **403** / generation **500** /
   timeout / unreachable messaging. Warning copy: the file contains complete library history.
-- Primary nav in `AppShell`: direct Dashboard link; Collection `DrawerNavMenu` (Browse, Manage); Circulation
-  `DrawerNavMenu` (Check Out, Check In, Loans). There is no Administration group in the header. Backup Library is linked
-  from `/collection/manage` (`ManageCollectionPage`) alongside Add Book, Shelves, and Deleted Books. Collection drawer
-  `activePrefixes` includes `/admin/backup` and `/admin/deleted`.
+- Primary nav in `AppShell`: direct Dashboard link; Collection `DrawerNavMenu` (Browse, Manage, Wishlists);
+  Circulation `DrawerNavMenu` (Check Out, Check In, Loans). There is no Administration group in the header. Backup
+  Library is linked from `/collection/manage` (`ManageCollectionPage`) alongside Add Book, Shelves, and Deleted Books.
+  Collection drawer `activePrefixes` includes `/admin/backup` and `/admin/deleted`.
 - `createApi` exposes `backup: createBackupApi(client)`. Nothing else in product UI calls it.
 - `apiClient.get` already returns raw `Response` for non-JSON bodies. Colocated `apiClient.test.ts` uses `/backup` as
   the binary-success example path.
@@ -58,6 +58,8 @@ Already in place:
 - Playwright `e2e/` has no backup journey and `e2e/support/mockApi.ts` has no `/backup` handler. Accessibility scans
   do not include `/admin/backup`.
 - No backup-specific CSS in `src/styles/`.
+- `README.md` treats JavaScript access to backup `Content-Disposition` and an authenticated browser backup download as
+  production release-blocker / smoke-checklist items.
 
 The overlap: backend FEAT-01 already calls the same authenticated `GET /backup`, writes to `data/backups/`, and
 discards unchanged dumps. A second, manual browser download does not add operational coverage and puts a full SQL dump
@@ -92,9 +94,8 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
   orchestrator).
 - Replacing `scripts/backup_db.py` / `make backup`.
 - A frontend backup list, restore-from-dump, encryption, or off-box copy UI.
-- Relocating dashboard / About (FEAT-17) beyond dropping `/admin/backup` from that ticket's planned links.
-- FEAT-15 Podman image work, FEAT-16 tarball packaging, or changing Vite's optional `/backup` proxy prefix (that
-  prefix proxies the API, not the SPA route).
+- FEAT-15 Podman image work or changing Vite's optional `/backup` proxy prefix (that prefix proxies the API, not the
+  SPA route).
 
 ## Remaining scope (file-level plan)
 
@@ -148,19 +149,19 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
   `backupApi` from the API layer inventory and `createApi` aggregate. Lifecycle table: `GET /backup` is
   backend/operational, not a frontend caller; do not list it as an SPA lifecycle action. Preserve "never
   inspect/log/cache/upload dump contents." Collection maintenance on Manage Collection: Add Book, Shelves, Deleted
-  Books only (no Backup Library). Update "Next" remaining tickets to include FEAT-25 until this file is removed after
-  completion. MVP in-scope prose can still say the *library* has authenticated SQL backup; it must not say the
-  *browser* downloads it. |
+  Books only (no Backup Library). MVP in-scope prose can still say the *library* has authenticated SQL backup; it must
+  not say the *browser* downloads it. |
 | `docs/full-project-context.md` | Same route, nav, and API-helper notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 | `docs/product-docs/PLAN.md` | Target IA: drop `/admin/backup` (the duplicate bullet too). Workstream 9 already shipped FEAT-10; record that browser download is withdrawn in favor of backend FEAT-01 nightly fetch. Release-blocker / CORS notes that require JavaScript to read backup `Content-Disposition` should stop treating a browser download as a frontend deliverable (host CORS may still expose the header; the SPA does not consume it). |
 | `docs/MAINTAINERS.md` | Registered product routes: drop `/admin/backup`. Inventory: drop `backupApi` / `BackupLibraryPage`. Keep OpenAPI
   `/backup` as a backend path. Manage Collection links: Add Book, Shelves, Deleted Books only. |
-| `README.md` | Production connectivity: do not require "JavaScript access to the backup response `Content-Disposition` filename" as a frontend release blocker. Authenticated API access and CORS/preflight (or same-origin proxy) stay. Artifact/gitignore notes that mention backup dumps as non-deployable files can stay. |
-| `docs/tickets/FEAT-16_versioned-release-artifacts.md` | Smoke checklist: drop "authenticated backup download" and backup-generation `500` / filename handling as *frontend*
-  browser checks. Keep rejecting SQL dumps inside the static tarball. CORS `Content-Disposition` exposure is not a
-  SPA requirement after this ticket. |
-| `docs/tickets/FEAT-19_wishlists.md` | Manage Collection baseline: no Backup Library link after this ticket. |
+| `README.md` | Update onboarding and production handoff for the withdrawn browser backup page. Production connectivity: drop
+  "JavaScript access to the backup response `Content-Disposition` filename" as a frontend release blocker; authenticated
+  API access and CORS/preflight (or same-origin proxy) stay. Production smoke checklist: remove the authenticated
+  backup download item (non-empty SQL attachment, `Content-Disposition` filename, generation `500`, object-URL cleanup).
+  Keep CI/privacy notes that backup dumps must not appear in artifacts or be inspected/logged by the SPA. Point
+  operators at backend FEAT-01 nightly fetch / `make fetch-backup` for operational backups instead of the removed page. |
 
 `docs/product-docs/PRODUCT_REQS.V1.md` has no Backup Library heading to revive. Do not add a browser backup page to
 match PLAN.md Workstream 9 after this withdrawal.
@@ -177,8 +178,10 @@ match PLAN.md Workstream 9 after this withdrawal.
 - Optional Vite API proxy may still forward `/backup`. That is not a product route.
 - Colocated tests cover Manage Collection, drawer prefixes, and `createApi` without a backup aggregate. No leftover
   suite mounts `/admin/backup`. `make check` passes.
-- `docs/AGENTS.md` (and PLAN / ToDo / README / sibling tickets as listed) no longer describe `/admin/backup` as a live
-  feature route or a required browser download.
+- `README.md` no longer treats a browser backup download or backup `Content-Disposition` access as a frontend release
+  blocker or production smoke step; it documents operational backup via the backend fetch script instead.
+- `docs/AGENTS.md` (and PLAN / ToDo / MAINTAINERS as listed) no longer describe `/admin/backup` as a live feature route
+  or a required browser download.
 - Implementation did not start before backend FEAT-01 (`scripts/fetch_backup.py` and nightly cron) shipped.
 
 ## Plan coverage

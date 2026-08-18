@@ -40,6 +40,10 @@ const expectedPaths = [
     '/books/{id}/checkout',
     '/books/{id}/mark-read',
     '/books/{id}/restore',
+    '/collections',
+    '/collections/{collection_id}',
+    '/collections/{collection_id}/books',
+    '/collections/{collection_id}/books/{collection_book_id}',
     '/dashboard',
     '/dashboard/breakdowns',
     '/dashboard/incomplete-metadata',
@@ -53,6 +57,7 @@ const expectedPaths = [
     '/wishlists',
     '/wishlists/{wishlist_id}',
     '/wishlists/{wishlist_id}/books',
+    '/wishlists/{wishlist_id}/books/{wishlist_book_id}',
 ] as const
 
 describe('OpenAPI contract smoke', () => {

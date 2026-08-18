@@ -5,14 +5,14 @@
 When checkout is blocked because a book is `status=display_only` (**412**), offer another copy or edition that
 **can** be checked out by querying `GET /books` with `isbn` and/or `author` + `title` filters.
 
-Defensive **412** refetch/messaging and typed `author` / `title` list helpers are already shipped. This ticket owns
-the **alternate-copy offer UX** on `/checkout`.
+Defensive **412** refetch/messaging, typed list filters, detail/checkout gating, and pre-mutate display-only warnings
+are already shipped. This ticket owns the **alternate-copy offer UX** on `/checkout`.
 
 ## Dependencies
 
 FEAT-07 checkout, checkout Find-by-ISBN (`useBooks({ isbn })`), and API list filters (`author` / `title` / `isbn`)
-are complete. CHORE-01 shelves catalog CRUD is complete -- alternate choosers may show Title Case `shelf_name`, but
-do not invent shelf-based alternate search (API has no `shelf=` filter).
+are complete. Shelves catalog CRUD on `/shelves` is complete -- alternate choosers may show Title Case `shelf_name`,
+but do not invent shelf-based alternate search (API has no `shelf=` filter).
 
 Do not pull journey automation, CI, Podman, release artifacts, FEAT-17 About/homepage, FEAT-18 collection
 filter/sort UX, FEAT-19 wishlists, or FEAT-20 dashboard reports into this ticket. Do not invent a dedicated
@@ -39,33 +39,33 @@ Treat these as complementary:
 Confirm against a representative running backend `/openapi.json` before locking transport types; record drift as a
 blocker rather than inventing frontend semantics.
 
-## Current baseline
-
-Already in place and should be reused (not rebuilt):
+## Shipped baseline (reuse, do not rebuild)
 
 - `/checkout` via `CheckoutPage` + `checkoutModel` + `useCheckoutBook` / `booksApi.checkout`. Reachable from the
-  Circulation drawer (Check Out → `/checkout`) and book-detail deep links.
-- Eligibility: `deletion_date === null` and `status === 'available'` (`isCheckoutEligible`). Soft-deleted and
-  non-available books (including `display_only`) are not offered in the selector.
-- Detail "Check Out" gated the same way on `BookDetailsPage` (no link when `display_only`).
+  Circulation drawer and book-detail deep links.
+- Eligibility: `deletion_date === null` and `status === 'available'` (`isCheckoutEligible` in `CheckoutPage`).
+  Soft-deleted and non-available books (including `display_only`) are not offered in the main selector.
+- Detail "Check Out" gated to active + `available` only on `BookDetailsPage` (tested; no link for `display_only`).
 - ISBN Find on `/checkout` via checksum-gated `useBooks({ isbn })` / `compactIsbnForListFilter` (never
   `GET /books/lookup` for library selection).
-- `handleCheckoutError` already special-cases **412**: stale-state refetch (books + loans), preserved form input,
-  surfaces `Book is display only`, and points the operator at Find by ISBN for another copy. It does **not** yet
-  run author+title alternate queries or present an automatic substitute chooser.
+- `handleCheckoutError` special-cases **412**: stale-state refetch (books + loans), preserved form input, and surfaces
+  `Book is display only` with a pointer to Find by ISBN. It does **not** yet run author+title alternate queries or
+  present an automatic substitute chooser.
+- Pre-mutate deep links to `display_only` books show a warning that names display-only and points at Find by ISBN;
+  they do **not** yet run automatic alternate lookup.
 - `booksApi.list` / `useBooks` / `queryKeys.books.list`: optional `isbn`, `author`, `title`, `category`, pagination,
-  and `sortBy` including `shelf` are wired; blank filters are omitted.
+  and `sortBy` including `shelf` are wired; blank filters are omitted (covered in `booksApi.test.ts` and
+  `booksApi.conflicts.test.ts` including checkout **412**).
 - Shared UI: `Alert`, `AppLink`, `Button`, `Field`, `LoadingState`, `QueryErrorState`, `ConfirmationDialog`.
-- Status display already includes `display_only` in `BookDetailsPage` / `enumDisplayValue`. Shelf labels use Title
-  Case `formatShelfCommonNameForDisplay` elsewhere -- reuse when showing alternate rows.
+  Status display includes `display_only` via `enumDisplayValue`; reuse `formatShelfCommonNameForDisplay` when showing
+  alternate rows.
 
 ## Product intent
 
 When checkout is blocked because the selected book is display-only, the operator should:
 
-1. **Understand why** -- see a clear message that this copy is display-only and cannot be checked out (server detail
-   `Book is display only` is acceptable; do not invent a different status code or invent loan creation). Existing
-   messaging may remain; extend it with substitutes rather than replacing the **412** path.
+1. **Understand why** -- keep the existing **412** message and pre-mutate warning; extend with substitutes rather
+   than replacing the **412** path.
 2. **Keep their form** -- borrower and optional checkout fields stay filled after the **412** (same preservation
    pattern as **404** / **409**).
 3. **See alternate copies/editions that can be checked out** -- the UI queries:
@@ -81,9 +81,8 @@ When checkout is blocked because the selected book is display-only, the operator
 5. **Get an honest empty outcome** -- if no eligible alternate exists, say so without implying checkout succeeded or
    inventing a second catalog search product.
 
-Also cover the pre-mutate path: a deep-linked or stale-selected `display_only` book should use the existing
-non-eligible warning UI, mention display-only explicitly, and may run the same alternate lookup without requiring a
-failed mutate first.
+Also cover the pre-mutate path: a deep-linked or stale-selected `display_only` book should run the same alternate
+lookup without requiring a failed mutate first.
 
 Tone and layout: extend the existing checkout page (alerts + short chooser, same spirit as ISBN Find multi-match).
 Do not build a general catalog search UI, modal library, or `/books` filter surface (that is FEAT-18). Do not
@@ -95,22 +94,12 @@ route operators through `/shelves` for this recovery path.
 - Allowing checkout of `display_only` books, or simulating checkout with generic `PATCH`.
 - Collection browse filters/sort on `/books` (FEAT-18).
 - Shelves catalog CRUD (already `/shelves`).
-- Wishlists, dashboard reports, editing a book's status to/from `display_only` as a dedicated admin tool (do not
-  expand edit status handling here).
+- Wishlists, dashboard reports, editing a book's status to/from `display_only` as a dedicated admin tool.
 - Multi-library / multi-copy product features beyond "offer another matching row from `GET /books`".
 
 ## Remaining scope (file-level plan)
 
-### 1. Prerequisite -- list filters and **412** contract (verify only)
-
-| File | Change |
-| ---- | ------ |
-| `src/api/booksApi.ts` / `queryKeys.ts` / `booksQueries.ts` | Confirm `author` / `title` serialize and omit blanks; **412** surfaces as `ApiError` with detail `Book is display only`. Do not rebuild. |
-| Colocated API tests | Already cover **412** and list filters; extend only if alternate helpers need new fixtures. |
-
-Skip re-implementing these pieces; verify in-repo before duplicating.
-
-### 2. Alternate-copy lookup model (pure helpers)
+### 1. Alternate-copy lookup model (pure helpers)
 
 | File | Change |
 | ---- | ------ |
@@ -119,40 +108,24 @@ Skip re-implementing these pieces; verify in-repo before duplicating.
 
 Do not call the network from these helpers; pages/hooks own fetching.
 
-### 3. Checkout page -- alternate offer UI on top of existing **412** handling
+### 2. Checkout page -- alternate offer UI on top of existing **412** handling
 
 | File | Change |
 | ---- | ------ |
-| `src/features/loans/routes/CheckoutPage.tsx` | Keep existing **412** refetch + messaging. Extend the display-only recovery path to enable alternate lookup for the blocked `bookId` (from detail cache / selected book): when isbn query is available, `useBooks({ isbn, enabled })`; when author+title query is available, `useBooks({ author, title, enabled })` (two queries or sequential -- prefer enabled flags driven by "blocked display-only" state so idle checkout does not spam filters). Present eligible alternatives in a short chooser (title / authors / status / Title Case shelf as needed); selecting one updates selection / `?bookId=` without clearing borrower fields. If both queries return zero eligible rows, show an explicit "no other available copy" message (stronger than only pointing at Find by ISBN). For pre-mutate deep-link / selected `display_only`, reuse non-eligible warning copy that names display-only and may run the same alternate path. |
-| `src/features/loans/routes/CheckoutPage.test.tsx` | Cover: mutate **412** preserves form, refreshes state, shows display-only messaging; alternate ISBN query offers an available sibling and selection switches book; author+title fallback when isbn absent or ISBN query has no eligible rows; zero alternatives messaging; `display_only` never appears in the main eligible list; existing **404** / **409** / **422** / ISBN Find cases remain green. |
+| `src/features/loans/routes/CheckoutPage.tsx` | Keep existing **412** refetch + messaging. Extend the display-only recovery path to enable alternate lookup for the blocked `bookId` (from detail cache / selected book): when isbn query is available, `useBooks({ isbn, enabled })`; when author+title query is available, `useBooks({ author, title, enabled })` (two queries or sequential -- prefer enabled flags driven by "blocked display-only" state so idle checkout does not spam filters). Present eligible alternatives in a short chooser (title / authors / status / Title Case shelf as needed); selecting one updates selection / `?bookId=` without clearing borrower fields. If both queries return zero eligible rows, show an explicit "no other available copy" message (stronger than only pointing at Find by ISBN). For pre-mutate deep-link / selected `display_only`, reuse non-eligible warning copy that names display-only and run the same alternate path. |
+| `src/features/loans/routes/CheckoutPage.test.tsx` | Cover: mutate **412** preserves form, refreshes state, shows display-only messaging; alternate ISBN query offers an available sibling and selection switches book; author+title fallback when isbn absent or ISBN query has no eligible rows; zero alternatives messaging; pre-mutate `display_only` deep link runs alternate lookup; `display_only` never appears in the main eligible list; existing **404** / **409** / **422** / ISBN Find cases remain green. |
 | `src/features/loans/checkoutEligibility.ts` (optional extract) | If extracting `isCheckoutEligible` from `CheckoutPage`, move it here with a colocated test and import from both the page and `displayOnlyAlternatives`. |
 
-### 4. Detail page gating (confirm-only unless copy is wrong)
+### 3. Documentation (when the feature lands)
 
 | File | Change |
 | ---- | ------ |
-| `src/features/books/routes/BookDetailsPage.tsx` | Confirm "Check Out" remains gated to active + `available` only (no link for `display_only`). Update nearby copy only if the page currently implies every non-loaned book can be checked out. Optional: short status note that display-only copies stay in the library but cannot be loaned -- keep minimal. |
-| `src/features/books/routes/BookDetailsPage.test.tsx` | Assert no Check Out action when `status === 'display_only'` (add if missing). |
-
-### 5. Error presentation
-
-| File | Change |
-| ---- | ------ |
-| `src/api/apiErrors.ts` | No new `ApiErrorKind` required for **412** (keep `http`). Prefer page-level copy in `CheckoutPage` over changing `formatApiQueryError` globally. |
-| `src/api/apiClient.test.ts` | Optional: one assertion that a **412** JSON body maps to `ApiError` kind `http` with detail preserved. |
-
-### 6. Docs hygiene (after implementation)
-
-| File | Change |
-| ---- | ------ |
-| `docs/AGENTS.md` | Document that `/checkout` offers substitutes via `isbn` and `author`+`title` list filters after display-only blocks. Note `displayOnlyAlternatives` (and any eligibility extract). Mark this ticket complete or remove the file per project convention when done. |
+| `docs/AGENTS.md` | Document that `/checkout` offers substitutes via `isbn` and `author`+`title` list filters after display-only blocks. Note `displayOnlyAlternatives` (and any eligibility extract). Remove this ticket file per project convention when done. |
 | `docs/full-project-context.md` | Same alternate-copy notes when that pack is kept current. |
-| `docs/ToDo.md` | Optional checklist line; prefer ticket presence under `docs/tickets/` as the source of truth. |
+| `docs/ToDo.md` | Mark the FEAT-21 checklist item done when maintainers still use that file. |
 
 ## Acceptance criteria
 
-- Checkout mutate **412** with detail `Book is display only` remains handled explicitly: form input preserved,
-  eligible books/loans refreshed, and an understandable display-only message is shown.
 - After a display-only block (mutate **412** and/or selected/deep-linked `display_only` book), the UI queries
   `GET /books?isbn=...` when `isbn13` is usable and/or `GET /books?author=...&title=...` using the blocked book's
   authors and title.
@@ -160,9 +133,10 @@ Do not call the network from these helpers; pages/hooks own fetching.
 - Alternate results exclude the blocked book and only offer checkout-eligible (`available`, not deleted) rows.
 - Selecting an alternate updates checkout selection without clearing borrower/optional fields.
 - Zero eligible alternates produces an honest empty message (no invented success).
-- Main eligible selector and detail "Check Out" still never offer `display_only` as check-out-ready.
+- Existing **412** handling (form preservation, refetch, display-only messaging), main eligible selector gating, and
+  detail "Check Out" gating remain intact.
 - Never simulate checkout with generic `PATCH`; never use `GET /books/lookup` for alternate selection.
-- Colocated tests cover helpers, **412** handling, ISBN and author+title alternate paths, and empty alternates.
+- Colocated tests cover helpers, alternate ISBN and author+title paths, zero alternates, and pre-mutate lookup.
 - `make check` passes.
 
 ## Plan coverage
