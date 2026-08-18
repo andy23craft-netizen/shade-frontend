@@ -9,6 +9,8 @@ import {
 
 import {
     createApiClient,
+    LIBRARY_USERNAME,
+    LIBRARY_USERNAME_HEADER,
 } from './apiClient'
 
 describe('createApiClient', () => {
@@ -17,7 +19,7 @@ describe('createApiClient', () => {
     })
 
     it(
-        'adds the current bearer token to authenticated requests',
+        'adds the current bearer token and library username to authenticated requests',
         async () => {
             const fetchMock =
                 vi.spyOn(
@@ -73,11 +75,19 @@ describe('createApiClient', () => {
             ).toBe(
                 'Bearer secret-token',
             )
+
+            expect(
+                headers.get(
+                    LIBRARY_USERNAME_HEADER,
+                ),
+            ).toBe(
+                LIBRARY_USERNAME,
+            )
         },
     )
 
     it(
-        'does not add a bearer token to public requests',
+        'does not add a bearer token or library username to public requests',
         async () => {
             const fetchMock =
                 vi.spyOn(
@@ -121,6 +131,12 @@ describe('createApiClient', () => {
             expect(
                 headers.get(
                     'Authorization',
+                ),
+            ).toBeNull()
+
+            expect(
+                headers.get(
+                    LIBRARY_USERNAME_HEADER,
                 ),
             ).toBeNull()
         },

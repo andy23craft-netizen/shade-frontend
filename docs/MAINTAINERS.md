@@ -84,7 +84,8 @@ Treat these as complementary sources of truth:
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express
 
-Authentication uses a shared Bearer token (`Authorization: Bearer <API_SECRET_KEY>`). There are no user accounts.
+Authentication uses a shared Bearer token (`Authorization: Bearer <API_SECRET_KEY>`) plus
+`Library-Username: shade` on protected requests. There are no user accounts.
 Missing or invalid credentials return `403` (describe generically as "API access was rejected"). The token is read
 from the repository-root `.env` file as `VITE_API_SECRET_KEY` and injected at dev-server and build time (embedded in
 JS bundles). Missing or blank env values throw at bootstrap. Confirmed `403` shows a page-level error without clearing
@@ -128,7 +129,8 @@ recreate them.
   dashboard, health, validation/error schemas, enums).
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
-- `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
+- `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection, path joining at the
+  configured base URL (no `/api`
   prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
   handling, invalid-JSON errors, and `403` via `onUnauthorized`.
 - `src/api/apiErrors.ts`: `ApiError` kinds (`unreachable`, `timeout`, `cancelled`, `unauthorized`, `validation`,
@@ -237,7 +239,8 @@ Keep the import order in `src/index.css`. Later layers rely on variables and def
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
 - `src/config/runtimeConfig.test.ts` / `runtimeConfigState.test.ts`: Config validation and read helpers.
-- `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes,
+- `src/api/apiClient.test.ts`: Bearer and `Library-Username` injection, public requests, `403`, `404`, `409`, both
+  `422` detail shapes,
   `5xx`, network failure, timeout, cancellation, invalid JSON, binary backup success, and `204`.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
@@ -322,8 +325,8 @@ Local API access:
 - Optional same-origin proxy: set `apiBaseUrl` to the Vite origin and start with `SHADE_API_PROXY=1`
   (`SHADE_API_PROXY_TARGET` defaults to `http://127.0.0.1:8000`).
 
-Cross-origin production requests may send `Authorization` and `Content-Type`. Cookies and credentialed CORS are not
-used. Frontend JavaScript may read the exposed backup `Content-Disposition` filename.
+Cross-origin production requests may send `Authorization`, `Content-Type`, and `Library-Username`. Cookies and
+credentialed CORS are not used. Frontend JavaScript may read the exposed backup `Content-Disposition` filename.
 
 Production connectivity remains a release blocker until one arrangement is chosen and verified:
 

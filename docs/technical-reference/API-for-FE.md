@@ -13,17 +13,21 @@ or route tables here.
 
 # Auth
 
-Protected routes use a shared secret:
+Protected routes use a shared secret plus a library username header:
 
 ```http
 Authorization: Bearer <API_SECRET_KEY>
+Library-Username: shade
 ```
 
-There is no login, logout, or session system. Missing or invalid credentials return **403** with
+The frontend sends `Library-Username: shade` on every authenticated request (the same calls that carry the Bearer
+token). The backend may not require this header yet; sending it keeps the client ready when that requirement is
+added. There is no login, logout, or session system. Missing or invalid credentials return **403** with
 `{"detail": "Invalid authentication credentials"}`.
 
 Public routes: `GET /health`, `GET /version`, and FastAPI's generated docs/OpenAPI routes (`/docs`, `/redoc`,
-`/openapi.json`, `/docs/oauth2-redirect`). Every other business route requires the Bearer token.
+`/openapi.json`, `/docs/oauth2-redirect`). Those routes do not receive `Authorization` or `Library-Username`. Every
+other business route requires the Bearer token (and should be sent with `Library-Username`).
 
 There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated).
 Use `GET /version` when the UI needs the running API release string (same value as `ci/VERSION` and OpenAPI
@@ -43,9 +47,9 @@ CORS_ORIGINS=["https://library.john-shade.spir.es"]
 ```
 
 CORS does not replace authentication. The middleware handles browser preflight; frontend code should not send
-`OPTIONS` manually. `Authorization` and `Content-Type` may be sent cross-origin. `Content-Disposition` is exposed
-so download filenames are readable from JavaScript. Credentialed CORS (cookies) is disabled. A disallowed origin
-can still reach the server, but browser JS cannot read the response.
+`OPTIONS` manually. `Authorization`, `Content-Type`, and `Library-Username` may be sent cross-origin.
+`Content-Disposition` is exposed so download filenames are readable from JavaScript. Credentialed CORS (cookies) is
+disabled. A disallowed origin can still reach the server, but browser JS cannot read the response.
 
 ---
 

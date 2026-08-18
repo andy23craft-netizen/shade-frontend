@@ -163,6 +163,8 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 ### Authentication
 
 - Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
+- Protected requests also send `Library-Username: shade` (injected by `apiClient` with the Bearer token)
+- Public `GET /health` and `GET /version` omit both headers (`authenticated: false`)
 - No login, logout, user accounts, sessions, or roles
 - Token comes from a repository-root `.env` file via `VITE_API_SECRET_KEY`; Vite injects it at dev-server and
   production build time into JS bundles (`.env` stays gitignored; `.env.example` is committed)
@@ -359,7 +361,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
-- `src/api/apiClient.ts`: `createApiClient` with Bearer injection, path joining at the configured base URL (no `/api`
+- `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection on authenticated
+  requests, path joining at the configured base URL (no `/api`
   prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
   handling, invalid-JSON errors, `403` via `onUnauthorized`, and optional `onRequestFailure` for allowlisted/redacted
   diagnostic reporting of request failures.
@@ -416,12 +419,12 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
-  `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`,
+  `/`, `/dashboard`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`,
   `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`, `/shelves`, `/admin/deleted`,
   `/admin/backup`, and `*` (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route-body helper (`h1` with `tabIndex={-1}`). Unused by current feature
   routes; keep only if a future ticket needs a temporary placeholder.
-- `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
+- `src/routes/NotFoundPage.tsx`: Not-found message plus a link back home (`/`).
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
 - `src/layout/AppShell.tsx`: Application frame with skip link, header (brand name plus "est. 2026"), primary
   navigation (including Shelves), admin/settings group, `Outlet` main region, footer (`Release ${APP_VERSION}` from
@@ -638,7 +641,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/appVersionConsistency.test.ts`: Asserts `APP_VERSION` matches `package.json` `version`.
 - `src/diagnostics/diagnosticReporter.test.ts`: Disabled/enabled reporters, allowlisted payloads, redaction
   assertions, and swallowed transport failures.
-- `src/api/apiClient.test.ts`: Bearer injection, public requests, `403`, `404`, `409`, both `422` detail shapes, `5xx`
+- `src/api/apiClient.test.ts`: Bearer and `Library-Username` injection, public requests omitting both headers, `403`,
+  `404`, `409`, both `422` detail shapes, `5xx`
   (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success,
   `204`, and `onRequestFailure` diagnostic hooks.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
@@ -714,8 +718,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `playwright.config.ts`: Playwright browser-journey config (Chromium; Vite `yarn dev` webServer on `127.0.0.1:4173`
   with `VITE_API_SECRET_KEY=test-api-token`; list + HTML reporters; CI retries and a single CI worker). Included in
   `make check` via `yarn test:e2e`.
-- `e2e/dashboard.smoke.spec.ts`: Dashboard browser smoke (heading/title, null-average and populated fixtures, axe
-  serious/critical gate) via mocked API
+- `e2e/dashboard.smoke.spec.ts`: Dashboard browser smoke at `/dashboard` (heading/title, null-average and populated
+  fixtures, axe serious/critical gate) via mocked API
 - `e2e/book.creation.spec.ts`: Manual book-creation journey through `/books/new` into the created detail page
 - `e2e/library.lifecycle.spec.ts`: Checkout/check-in, mark-read, and delete/restore browser journeys against the
   stateful mock API (dedicated lifecycle endpoints, not generic `PATCH`)
@@ -858,8 +862,8 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-17_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-16 are complete; those ticket files are removed). Prefer ticket presence under
+- `docs/tickets/FEAT-18_*.md` through `FEAT-21_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-17 are complete; those ticket files are removed). Prefer ticket presence under
   `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
@@ -974,7 +978,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-17 through FEAT-21 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-18 through FEAT-21 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.

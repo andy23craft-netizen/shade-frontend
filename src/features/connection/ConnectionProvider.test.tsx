@@ -154,14 +154,25 @@ describe('ConnectionProvider', () => {
                         }
 
                         if (url.endsWith('/books')) {
-                            expect(
+                            const headers =
                                 new Headers(
                                     init?.headers,
-                                ).get(
+                                )
+
+                            expect(
+                                headers.get(
                                     'Authorization',
                                 ),
                             ).toBe(
                                 'Bearer test-api-token',
+                            )
+
+                            expect(
+                                headers.get(
+                                    'Library-Username',
+                                ),
+                            ).toBe(
+                                'shade',
                             )
 
                             return new Response('{}', {
@@ -183,12 +194,42 @@ describe('ConnectionProvider', () => {
                 ).toHaveTextContent('connected')
             })
 
-            expect(fetchMock).toHaveBeenCalledWith(
+            const healthCall =
+                fetchMock.mock.calls.find(
+                    ([input]) =>
+                        String(input).endsWith(
+                            '/health',
+                        ),
+                )
+
+            expect(healthCall?.[0]).toBe(
                 'https://library.example.com/health',
+            )
+
+            expect(
+                healthCall?.[1],
+            ).toEqual(
                 expect.objectContaining({
                     method: 'GET',
                 }),
             )
+
+            const healthHeaders =
+                new Headers(
+                    healthCall?.[1]?.headers,
+                )
+
+            expect(
+                healthHeaders.get(
+                    'Authorization',
+                ),
+            ).toBeNull()
+
+            expect(
+                healthHeaders.get(
+                    'Library-Username',
+                ),
+            ).toBeNull()
 
             expect(
                 fetchMock.mock.calls.some(

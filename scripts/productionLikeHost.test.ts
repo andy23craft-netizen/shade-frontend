@@ -175,7 +175,7 @@ describe('production-like tarball host', () => {
                     Origin: frontend.url,
                     'Access-Control-Request-Method': 'GET',
                     'Access-Control-Request-Headers':
-                        'authorization,content-type',
+                        'authorization,content-type,library-username',
                 },
             },
         )
@@ -196,6 +196,11 @@ describe('production-like tarball host', () => {
                 'access-control-allow-headers',
             )?.toLowerCase(),
         ).toContain('content-type')
+        expect(
+            preflight.headers.get(
+                'access-control-allow-headers',
+            )?.toLowerCase(),
+        ).toContain('library-username')
         expect(
             preflight.headers.get(
                 'access-control-allow-credentials',
@@ -219,6 +224,7 @@ describe('production-like tarball host', () => {
                 headers: {
                     Origin: frontend.url,
                     Authorization: `Bearer ${token}`,
+                    'Library-Username': 'shade',
                     'Content-Type': 'application/json',
                 },
             },
@@ -232,6 +238,7 @@ describe('production-like tarball host', () => {
                 headers: {
                     Origin: frontend.url,
                     Authorization: `Bearer ${token}`,
+                    'Library-Username': 'shade',
                 },
             },
         )
