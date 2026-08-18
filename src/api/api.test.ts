@@ -28,5 +28,15 @@ describe('createApi', () => {
         expect(api.health).toBeDefined()
         expect(api.version).toBeDefined()
         expect(api.backup).toBeDefined()
+        expect(api.wishlists).toBeDefined()
+        expect(api.wishlists.list).toBeTypeOf(
+            'function',
+        )
+        expect(api.wishlists.create).toBeTypeOf(
+            'function',
+        )
+        expect(api.wishlists.addBook).toBeTypeOf(
+            'function',
+        )
     })
 })

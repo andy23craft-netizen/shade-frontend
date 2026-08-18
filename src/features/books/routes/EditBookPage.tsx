@@ -245,6 +245,21 @@ export function EditBookPage() {
 
                     if (
                         isApiError(error) &&
+                        error.status === 412
+                    ) {
+                        const message =
+                            error.detail ??
+                            'The book must be removed from the wishlist before it can be placed on a shelf.'
+
+                        setServerFieldErrors({
+                            shelfId: message,
+                        })
+                        setFormError(message)
+                        return
+                    }
+
+                    if (
+                        isApiError(error) &&
                         error.status === 404
                     ) {
                         setFormError(

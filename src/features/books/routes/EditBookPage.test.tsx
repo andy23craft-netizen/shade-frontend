@@ -636,6 +636,66 @@ describe('EditBookPage', () => {
         )
     })
 
+    it('maps 412 shelf-vs-wishlist exclusivity onto the shelf field', async () => {
+        const mutate = vi.fn(
+            (
+                _variables: unknown,
+                options: {
+                    onError?: (
+                        error: unknown,
+                    ) => void
+                },
+            ) => {
+                options.onError?.(
+                    new ApiError({
+                        kind: 'http',
+                        status: 412,
+                        message:
+                            'The book must be removed from the wishlist before it can be placed on a shelf',
+                        detail:
+                            'The book must be removed from the wishlist before it can be placed on a shelf',
+                    }),
+                )
+            },
+        )
+
+        mockUseUpdateBook.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useUpdateBook
+        >)
+
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Shelf'),
+            {
+                target: {
+                    value: 'id-a2',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Book',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('alert'),
+            ).toHaveTextContent(
+                'The book must be removed from the wishlist before it can be placed on a shelf',
+            )
+        })
+
+        expect(
+            screen.getByLabelText('Shelf'),
+        ).toHaveAttribute('aria-invalid', 'true')
+    })
+
     it('disables submission while an update is pending', () => {
         mockUseUpdateBook.mockReturnValue({
             mutate: vi.fn(),

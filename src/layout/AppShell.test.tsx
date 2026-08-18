@@ -103,6 +103,12 @@ describe('AppShell layout and navigation', () => {
             'href',
             '/collection/manage',
         )
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Wishlists',
+            }),
+        ).toHaveAttribute('href', '/wishlists')
     })
 
     it('opens the Circulation menu with lending destinations', () => {
@@ -161,6 +167,22 @@ describe('AppShell layout and navigation', () => {
                 name: 'Dashboard',
             }),
         ).not.toHaveAttribute('aria-current')
+    })
+
+    it('marks the Collection trunk as active on /wishlists', () => {
+        renderAppTree(['/wishlists'])
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Collection',
+            }),
+        ).toHaveAttribute('data-active', 'true')
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Circulation',
+            }),
+        ).not.toHaveAttribute('data-active')
     })
 
     it('marks Dashboard as current at /dashboard', () => {

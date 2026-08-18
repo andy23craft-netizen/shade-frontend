@@ -1,79 +1,215 @@
 import {
+    useEffect,
+    useId,
+    useRef,
     useState,
     type FormEvent,
 } from 'react'
 
 import {
     Alert,
+    AppLink,
     Button,
+    ConfirmationDialog,
     EmptyState,
     Field,
     LoadingState,
     QueryErrorState,
 } from '../../../components'
 import {
-    useBooks,
-} from '../../../api/booksQueries'
-import {
     isApiError,
+    type ApiFieldError,
 } from '../../../api/apiErrors'
 import type {
-    BookRead,
     WishlistRead,
 } from '../../../api/apiTypes'
 import {
-    enumDisplayValue,
-} from '../../../api/enumDisplay'
+    useBook,
+} from '../../../api/booksQueries'
 import {
     useCreateWishlist,
+    useDeleteWishlist,
     useWishlistBooks,
     useWishlists,
 } from '../../../api/wishlistsQueries'
+import {
+    AddWishlistBookControl,
+} from '../components/AddWishlistBookControl'
+import {
+    displayWishlistBookStatus,
+    displayWishlistPriority,
+    safeHttpUrl,
+} from '../wishlistDisplay'
+import {
+    emptyWishlistCreateFormValues,
+    formValuesToWishlistCreate,
+    validateWishlistCreateFormValues,
+    type WishlistCreateField,
+    type WishlistCreateFieldErrors,
+    type WishlistCreateFormValues,
+} from '../wishlistFormModel'
 
-const WISHLIST_STATUS_VALUES = [
-    'wanted',
-    'ordered',
-    'owned',
-    'dropped',
-] as const
+const CREATE_FIELDS = new Set<string>([
+    'name',
+    'description',
+])
 
-function displayStatus(
-    value: string,
-): string {
-    const status = enumDisplayValue(
-        value,
-        WISHLIST_STATUS_VALUES,
-    )
+function mapCreateFieldErrors(
+    fieldErrors: readonly ApiFieldError[],
+): WishlistCreateFieldErrors {
+    const mapped: WishlistCreateFieldErrors = {}
 
-    if (!status.known) {
-        return `${status.value} (unknown)`
+    for (const entry of fieldErrors) {
+        const field = entry.field.split('.')[0]
+
+        if (
+            !field ||
+            !CREATE_FIELDS.has(field) ||
+            mapped[field as WishlistCreateField]
+        ) {
+            continue
+        }
+
+        mapped[field as WishlistCreateField] =
+            entry.message
     }
 
-    return status.value
-        .replaceAll('_', ' ')
-        .replace(/\b\w/g, (character) =>
-            character.toUpperCase(),
-        )
+    return mapped
+}
+
+function focusSummary(
+    node: HTMLDivElement | null,
+) {
+    node?.focus()
+}
+
+function WishlistMembershipRow({
+    bookId,
+    status,
+    priority,
+    notes,
+    url,
+    membershipId,
+}: {
+    bookId: string
+    status: string
+    priority: number | null
+    notes: string | null | undefined
+    url: string | null | undefined
+    membershipId: string
+}) {
+    const bookQuery = useBook(bookId)
+    const book = bookQuery.data
+    const title = book?.title ?? `Book ${bookId}`
+    const href = `/books/${encodeURIComponent(bookId)}`
+    const safeUrl = safeHttpUrl(url)
+
+    return (
+        <li
+            className="wishlist-membership"
+            data-membership-id={membershipId}
+        >
+            <div>
+                <strong>
+                    <AppLink to={href}>
+                        {title}
+                    </AppLink>
+                </strong>
+
+                {book?.authors ? (
+                    <p>{book.authors}</p>
+                ) : null}
+            </div>
+
+            <dl>
+                <div>
+                    <dt>Status</dt>
+                    <dd>
+                        {displayWishlistBookStatus(
+                            status,
+                        )}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Priority</dt>
+                    <dd>
+                        {displayWishlistPriority(
+                            priority,
+                        )}
+                    </dd>
+                </div>
+
+                {notes ? (
+                    <div>
+                        <dt>Notes</dt>
+                        <dd>{notes}</dd>
+                    </div>
+                ) : null}
+
+                {safeUrl ? (
+                    <div>
+                        <dt>URL</dt>
+                        <dd>
+                            <a
+                                href={safeUrl}
+                                rel="noreferrer"
+                                target="_blank"
+                            >
+                                {safeUrl}
+                            </a>
+                        </dd>
+                    </div>
+                ) : null}
+            </dl>
+        </li>
+    )
 }
 
 function WishlistSection({
-                             wishlist,
-                             booksById,
-                         }: {
+    wishlist,
+    onDelete,
+    deletePending,
+}: {
     wishlist: WishlistRead
-    booksById: ReadonlyMap<string, BookRead>
+    onDelete: (wishlist: WishlistRead) => void
+    deletePending: boolean
 }) {
-    const membershipsQuery =
-        useWishlistBooks(wishlist.wishlist_id)
+    const membershipsQuery = useWishlistBooks(
+        wishlist.wishlist_id,
+    )
+    const total = membershipsQuery.data?.total
+    const items = membershipsQuery.data?.items ?? []
 
     return (
         <article className="wishlist-card">
-            <header>
-                <h2>{wishlist.name}</h2>
+            <header className="wishlist-card__header">
+                <div>
+                    <h2>{wishlist.name}</h2>
 
-                {wishlist.description ? (
-                    <p>{wishlist.description}</p>
-                ) : null}
+                    {wishlist.description ? (
+                        <p>{wishlist.description}</p>
+                    ) : null}
+
+                    {membershipsQuery.isSuccess ? (
+                        <p>
+                            {total === 1
+                                ? '1 book'
+                                : `${total ?? 0} books`}
+                        </p>
+                    ) : null}
+                </div>
+
+                <Button
+                    type="button"
+                    variant="danger"
+                    disabled={deletePending}
+                    onClick={() => {
+                        onDelete(wishlist)
+                    }}
+                >
+                    Delete Wishlist
+                </Button>
             </header>
 
             {membershipsQuery.isPending ? (
@@ -93,7 +229,7 @@ function WishlistSection({
             ) : null}
 
             {membershipsQuery.isSuccess &&
-            membershipsQuery.data.items.length === 0 ? (
+            items.length === 0 ? (
                 <p>
                     No books have been added to this
                     wishlist yet.
@@ -101,120 +237,251 @@ function WishlistSection({
             ) : null}
 
             {membershipsQuery.isSuccess &&
-            membershipsQuery.data.items.length > 0 ? (
+            items.length > 0 ? (
                 <ul
                     className="wishlist-memberships"
                     aria-label={`${wishlist.name} books`}
                 >
-                    {membershipsQuery.data.items.map(
-                        (membership) => {
-                            const book =
-                                booksById.get(
-                                    membership.book_id,
-                                )
-
-                            return (
-                                <li
-                                    key={
-                                        membership.wishlist_book_id
-                                    }
-                                    className="wishlist-membership"
-                                >
-                                    <div>
-                                        <strong>
-                                            {book?.title ??
-                                                `Book ${membership.book_id}`}
-                                        </strong>
-
-                                        {book?.authors ? (
-                                            <p>
-                                                {
-                                                    book.authors
-                                                }
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <dl>
-                                        <div>
-                                            <dt>Status</dt>
-                                            <dd>
-                                                {displayStatus(
-                                                    membership.status,
-                                                )}
-                                            </dd>
-                                        </div>
-
-                                        <div>
-                                            <dt>Priority</dt>
-                                            <dd>
-                                                {membership.priority ??
-                                                    '—'}
-                                            </dd>
-                                        </div>
-                                    </dl>
-                                </li>
-                            )
-                        },
-                    )}
+                    {items.map((membership) => (
+                        <WishlistMembershipRow
+                            key={
+                                membership.wishlist_book_id
+                            }
+                            membershipId={
+                                membership.wishlist_book_id
+                            }
+                            bookId={membership.book_id}
+                            status={membership.status}
+                            priority={
+                                membership.priority ??
+                                null
+                            }
+                            notes={membership.notes}
+                            url={membership.url}
+                        />
+                    ))}
                 </ul>
             ) : null}
         </article>
     )
 }
 
-export function WishlistsPage() {
-    const wishlistsQuery = useWishlists()
-    const booksQuery = useBooks()
-
+function CreateWishlistForm() {
     const createWishlist = useCreateWishlist()
+    const formId = useId()
+    const summaryRef = useRef<HTMLDivElement | null>(
+        null,
+    )
 
-    const [name, setName] = useState('')
-    const [description, setDescription] =
-        useState('')
-    const [formError, setFormError] =
-        useState<string | null>(null)
+    const [
+        values,
+        setValues,
+    ] = useState<WishlistCreateFormValues>(
+        emptyWishlistCreateFormValues,
+    )
+
+    const [
+        fieldErrors,
+        setFieldErrors,
+    ] = useState<WishlistCreateFieldErrors>({})
+
+    const [
+        formError,
+        setFormError,
+    ] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (
+            formError !== null ||
+            Object.keys(fieldErrors).length > 0
+        ) {
+            focusSummary(summaryRef.current)
+        }
+    }, [
+        formError,
+        fieldErrors,
+    ])
 
     function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ) {
         event.preventDefault()
 
-        const trimmedName = name.trim()
-        const trimmedDescription =
-            description.trim()
+        if (createWishlist.isPending) {
+            return
+        }
 
-        if (trimmedName === '') {
+        setFieldErrors({})
+        setFormError(null)
+
+        const clientErrors =
+            validateWishlistCreateFormValues(values)
+
+        if (Object.keys(clientErrors).length > 0) {
+            setFieldErrors(clientErrors)
             setFormError(
-                'Enter a name for the wishlist.',
+                'Fix the highlighted fields and try again.',
             )
             return
         }
 
-        setFormError(null)
-
         createWishlist.mutate(
-            {
-                name: trimmedName,
-                description:
-                    trimmedDescription === ''
-                        ? null
-                        : trimmedDescription,
-            },
+            formValuesToWishlistCreate(values),
             {
                 onSuccess: () => {
-                    setName('')
-                    setDescription('')
+                    setValues(
+                        emptyWishlistCreateFormValues,
+                    )
+                    setFieldErrors({})
                     setFormError(null)
                 },
                 onError: (error) => {
+                    if (
+                        isApiError(error) &&
+                        error.status === 422 &&
+                        error.fieldErrors.length > 0
+                    ) {
+                        setFieldErrors(
+                            mapCreateFieldErrors(
+                                error.fieldErrors,
+                            ),
+                        )
+                        setFormError(
+                            'Correct the marked fields and try again.',
+                        )
+                        return
+                    }
+
                     setFormError(
                         isApiError(error)
                             ? error.detail ??
-                            error.message
+                                error.message
                             : error instanceof Error
                                 ? error.message
                                 : 'The wishlist could not be created.',
+                    )
+                },
+            },
+        )
+    }
+
+    return (
+        <form
+            id="create-wishlist"
+            className="wishlist-form"
+            aria-labelledby={`${formId}-heading`}
+            onSubmit={handleSubmit}
+            noValidate
+        >
+            <h2 id={`${formId}-heading`}>
+                Create a wishlist
+            </h2>
+
+            {formError ? (
+                <div
+                    ref={summaryRef}
+                    className="alert alert--error"
+                    tabIndex={-1}
+                    role="alert"
+                >
+                    <p>{formError}</p>
+                </div>
+            ) : null}
+
+            <Field
+                id={`${formId}-name`}
+                label="Name"
+                error={fieldErrors.name}
+            >
+                <input
+                    id={`${formId}-name`}
+                    name="name"
+                    type="text"
+                    value={values.name}
+                    onChange={(event) => {
+                        setValues((current) => ({
+                            ...current,
+                            name: event.target.value,
+                        }))
+                    }}
+                    disabled={createWishlist.isPending}
+                    maxLength={255}
+                    autoComplete="off"
+                />
+            </Field>
+
+            <Field
+                id={`${formId}-description`}
+                label="Description"
+                error={fieldErrors.description}
+            >
+                <textarea
+                    id={`${formId}-description`}
+                    name="description"
+                    value={values.description}
+                    onChange={(event) => {
+                        setValues((current) => ({
+                            ...current,
+                            description:
+                                event.target.value,
+                        }))
+                    }}
+                    disabled={createWishlist.isPending}
+                    rows={3}
+                />
+            </Field>
+
+            <Button
+                type="submit"
+                variant="primary"
+                disabled={createWishlist.isPending}
+            >
+                {createWishlist.isPending
+                    ? 'Creating…'
+                    : 'Create Wishlist'}
+            </Button>
+        </form>
+    )
+}
+
+export function WishlistsPage() {
+    const wishlistsQuery = useWishlists()
+    const deleteWishlist = useDeleteWishlist()
+
+    const [
+        pendingDelete,
+        setPendingDelete,
+    ] = useState<WishlistRead | null>(null)
+
+    const [
+        deleteError,
+        setDeleteError,
+    ] = useState<string | null>(null)
+
+    function handleConfirmDelete() {
+        if (
+            pendingDelete === null ||
+            deleteWishlist.isPending
+        ) {
+            return
+        }
+
+        setDeleteError(null)
+
+        deleteWishlist.mutate(
+            pendingDelete.wishlist_id,
+            {
+                onSuccess: () => {
+                    setPendingDelete(null)
+                },
+                onError: (error) => {
+                    setDeleteError(
+                        isApiError(error)
+                            ? error.detail ??
+                                error.message
+                            : error instanceof Error
+                                ? error.message
+                                : 'The wishlist could not be deleted.',
                     )
                 },
             },
@@ -251,47 +518,8 @@ export function WishlistsPage() {
         )
     }
 
-    if (booksQuery.isPending) {
-        return (
-            <section className="route-page wishlists-page">
-                <h1 tabIndex={-1}>
-                    Wishlists
-                </h1>
-
-                <LoadingState label="Loading catalog…" />
-            </section>
-        )
-    }
-
-    if (booksQuery.isError) {
-        return (
-            <section className="route-page wishlists-page">
-                <h1 tabIndex={-1}>
-                    Wishlists
-                </h1>
-
-                <QueryErrorState
-                    title="Unable to load catalog"
-                    error={booksQuery.error}
-                    onRetry={() => {
-                        void booksQuery.refetch()
-                    }}
-                />
-            </section>
-        )
-    }
-
     const wishlists =
         wishlistsQuery.data?.items ?? []
-
-    const booksById = new Map(
-        (booksQuery.data?.items ?? []).map(
-            (book) => [
-                book.id,
-                book,
-            ],
-        ),
-    )
 
     return (
         <section className="route-page wishlists-page">
@@ -302,77 +530,21 @@ export function WishlistsPage() {
 
                 <p>
                     Keep track of books you want to add
-                    to the collection.
+                    to the collection. A book cannot be
+                    on a shelf and a wishlist at the
+                    same time.
                 </p>
             </header>
 
-            <form
-                className="wishlist-form"
-                onSubmit={handleSubmit}
-                noValidate
-            >
-                <h2>Create a wishlist</h2>
+            <CreateWishlistForm />
 
-                {formError ? (
-                    <Alert variant="error">
-                        {formError}
-                    </Alert>
-                ) : null}
+            <AddWishlistBookControl />
 
-                <Field
-                    id="wishlist-name"
-                    label="Name"
-                >
-                    <input
-                        id="wishlist-name"
-                        name="name"
-                        type="text"
-                        value={name}
-                        onChange={(event) => {
-                            setName(
-                                event.target.value,
-                            )
-                        }}
-                        disabled={
-                            createWishlist.isPending
-                        }
-                        maxLength={255}
-                        autoComplete="off"
-                    />
-                </Field>
-
-                <Field
-                    id="wishlist-description"
-                    label="Description"
-                >
-                    <textarea
-                        id="wishlist-description"
-                        name="description"
-                        value={description}
-                        onChange={(event) => {
-                            setDescription(
-                                event.target.value,
-                            )
-                        }}
-                        disabled={
-                            createWishlist.isPending
-                        }
-                        rows={3}
-                    />
-                </Field>
-
-                <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={
-                        createWishlist.isPending
-                    }
-                >
-                    {createWishlist.isPending
-                        ? 'Creating…'
-                        : 'Create Wishlist'}
-                </Button>
-            </form>
+            {deleteError ? (
+                <Alert variant="error">
+                    {deleteError}
+                </Alert>
+            ) : null}
 
             {wishlists.length === 0 ? (
                 <EmptyState title="No wishlists yet">
@@ -386,19 +558,62 @@ export function WishlistsPage() {
                 >
                     {wishlists.map((wishlist) => (
                         <li
-                            key={
-                                wishlist.wishlist_id
-                            }
+                            key={wishlist.wishlist_id}
                             className="wishlists-list__item"
                         >
                             <WishlistSection
                                 wishlist={wishlist}
-                                booksById={booksById}
+                                onDelete={
+                                    setPendingDelete
+                                }
+                                deletePending={
+                                    deleteWishlist.isPending
+                                }
                             />
                         </li>
                     ))}
                 </ul>
             )}
+
+            <ConfirmationDialog
+                open={pendingDelete !== null}
+                title="Delete wishlist?"
+                confirmLabel={
+                    deleteWishlist.isPending
+                        ? 'Deleting…'
+                        : 'Delete Wishlist'
+                }
+                cancelLabel="Cancel"
+                confirmVariant="danger"
+                onConfirm={handleConfirmDelete}
+                onCancel={() => {
+                    if (deleteWishlist.isPending) {
+                        return
+                    }
+
+                    setPendingDelete(null)
+                    setDeleteError(null)
+                }}
+            >
+                {pendingDelete ? (
+                    <p>
+                        Delete{' '}
+                        <strong>
+                            {pendingDelete.name}
+                        </strong>
+                        ? Memberships on this wishlist
+                        are removed permanently, but
+                        catalog books remain. A
+                        wishlisted book cannot be
+                        placed on a shelf until its
+                        wishlist is deleted.
+                    </p>
+                ) : (
+                    <p>
+                        Delete this wishlist?
+                    </p>
+                )}
+            </ConfirmationDialog>
         </section>
     )
 }

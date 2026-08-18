@@ -11,6 +11,9 @@ import {
     pickMarkReadRequest,
     pickShelfCreate,
     pickShelfUpdate,
+    pickWishlistBookCreate,
+    pickWishlistCreate,
+    pickWishlistUpdate,
 } from './requestFields'
 import type {
     BookCreate,
@@ -18,6 +21,9 @@ import type {
     MarkReadRequest,
     ShelfCreate,
     ShelfUpdate,
+    WishlistBookCreate,
+    WishlistCreate,
+    WishlistUpdate,
 } from './apiTypes'
 
 describe('requestFields', () => {
@@ -113,6 +119,55 @@ describe('requestFields', () => {
             }),
         ).toEqual({
             description: null,
+        })
+    })
+
+    it('keeps documented wishlist create, update, and add-book fields only', () => {
+        expect(
+            pickWishlistCreate({
+                name: 'TBR',
+                description: 'Later',
+                mystery: true,
+            } as WishlistCreate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            name: 'TBR',
+            description: 'Later',
+        })
+
+        expect(
+            pickWishlistUpdate({
+                name: 'Later',
+                mystery: true,
+            } as WishlistUpdate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            name: 'Later',
+        })
+
+        expect(
+            pickWishlistBookCreate({
+                book_id: 'book-1',
+                status: 'wanted',
+                mystery: true,
+            } as WishlistBookCreate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            book_id: 'book-1',
+            status: 'wanted',
+        })
+    })
+
+    it('omits wishlist add-book keys that are not present on the payload', () => {
+        expect(
+            pickWishlistBookCreate({
+                book_id: 'book-1',
+            } as WishlistBookCreate),
+        ).toEqual({
+            book_id: 'book-1',
         })
     })
 })

@@ -26,7 +26,6 @@ import {
     type BookSortBy,
     type BookSortOrder,
 } from '../booksListModel'
-import { AddToWishlistControl } from '../../wishlists/components/AddToWishlistControl'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',

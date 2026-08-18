@@ -61,7 +61,7 @@ If browser-support or production-host security baselines are needed:
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
   - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
-If later product tickets (FEAT-19 through FEAT-25):
+If later product tickets (FEAT-20 through FEAT-25):
   - the current ticket
   - docs/technical-reference/openapi.json and API-for-FE.md when the ticket touches new API surfaces
   - docs/product-docs/UI_DESIGN_NOTES.MD when layout or visual design is in question
@@ -218,8 +218,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     for wishlist / dashboard-report paths; `booksApi` / query keys for
     `author` / `title` / `category`, now used by the `/books` collection
     browse UI; collection `sortBy=shelf`; checkout `412` `display_only`
-    refetch/messaging -- no alternate-copy offers, wishlist, or
-    incomplete-metadata product UI). Shelves: `GET` /
+    refetch/messaging -- no alternate-copy offers or incomplete-metadata
+    product UI). Wishlists: `/wishlists` via Collection drawer;
+    memberships join catalog with `GET /books/{id}` (not `GET /books`);
+    add creates an unshelved catalog row (`POST /books` omitting
+    `shelf_name`) then `POST /wishlists/{id}/books`; **412** shelf/
+    wishlist exclusivity. Shelves: `GET` /
     `POST` / `PATCH` / `DELETE /shelves` via `shelvesApi` (`list` /
     `create` / `update` / `remove`) and `useShelves` / `useCreateShelf` /
     `useUpdateShelf` / `useDeleteShelf`; book payloads use `shelf_name`
@@ -233,11 +237,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     load). Loan helpers (`loansApi.list({ bookId })`, `loansApi.get` /
     `useLoan`, Check In deep-link, `booksApi.list({ isbn })` /
     `useBooks({ isbn })`) remain in place. Remaining tickets are
-    `FEAT-19` through `FEAT-25` under `docs/tickets/`. FEAT-13
+    `FEAT-20` through `FEAT-25` under `docs/tickets/`. FEAT-13
     workflow and accessibility testing, FEAT-14 CI packaging, FEAT-15
     Podman deployed development, FEAT-16 versioned release artifacts,
-    FEAT-17 About homepage, and FEAT-18 collection category / author /
-    title filters are complete (those ticket files are removed). Prefer
+    FEAT-17 About homepage, FEAT-18 collection category / author /
+    title filters, and FEAT-19 wishlists are complete (those ticket files
+    are removed). Prefer
     ticket presence under `docs/tickets/` over `docs/ToDo.md` when
     judging what is still open.
 -   Optional runtime-configured diagnostic reporting lives in
@@ -342,9 +347,10 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     admin/settings header links removed. Collection maintenance (Add
     Book, Shelves, Deleted Books, Backup Library) lives on
     `/collection/manage` (`ManageCollectionPage`) until FEAT-25 removes
-    Backup Library from the product UI. FEAT-18 collection filters are
-    complete (ticket file removed). FEAT-19 through FEAT-25 remain
-    product follow-ons. Do not implement those future tickets early.
+    Backup Library from the product UI. FEAT-18 collection filters and
+    FEAT-19 wishlists are complete (ticket files removed). FEAT-20 through
+    FEAT-25 remain product follow-ons. Do not implement those future tickets
+    early.
 -   About `/` via `AboutPage` + `CatalogGuide` (library background,
     Charles Leewright dedication, lending policy, and accessible
     card-catalog How to Use dialog with in-app workflow links). Does
@@ -464,14 +470,15 @@ index.html
         category?, sortBy?, sortOrder?, take })`, `detail(id)`,
         `lookup(isbn)`), loans (`all`, `list(bookId?)`,
         `infiniteList({ bookId?, take })`, `detail(id)`), dashboard,
-        version, and shelves (`all`, `list()` unpaginated).
+        version, and shelves (`all`, `list()` unpaginated). Wishlists:
+        `all`, `list()` unpaginated, `books(wishlistId)`.
         Blank/whitespace `isbn` / `author` / `title` / `category` are
         omitted from keys (trimmed when present).
     -   `src/api/api.ts` `createApi` aggregates typed helpers: `books`,
         `loans`, `shelves`, `dashboard`, `health`, `version`, `backup`,
-        plus the underlying `client`. No wishlist aggregate yet
-        (generated OpenAPI types include wishlist and dashboard-report
-        paths; product helpers wait for FEAT-19 / FEAT-20).
+        `wishlists`, plus the underlying `client`. Generated OpenAPI
+        types also include dashboard-report paths; product helpers for
+        those wait for FEAT-20.
     -   `booksApi`: `list` (optional `includeDeleted`, `isbn`, `author`,
         `title`, `category`, `skip`, `take`, `sortBy` including `shelf`,
         `sortOrder`; omit empty/whitespace `isbn` / `author` / `title` /
@@ -1025,7 +1032,7 @@ merely to make a ticket pass.
     keep `scripts/packRelease.ts`, Make `pack`, gitignored
     `ci/artifacts/`, and the production-like host inspection tests; do
     not upload secret-bearing archives from default CI. Do not pull
-    FEAT-19 through FEAT-25 product work into unrelated changes. Never
+    FEAT-20 through FEAT-25 product work into unrelated changes. Never
     simulate restore, checkout, check-in, or initial mark-read with
     generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
@@ -1043,9 +1050,9 @@ title filtering and URL-backed sorting, detail, manual/ISBN/camera/
 scanner add flows, edit, checkout, check-in, loan history, shelves
 catalog, reading tracking, soft delete/restore, deleted admin,
 authenticated SQL backup, runtime API config, CI, Podman preview,
-versioned production artifacts, and About homepage with the dashboard at
-`/dashboard`. Ticketed follow-ons (implement only when working that
-ticket): wishlists (FEAT-19), dashboard reports / incomplete metadata
+versioned production artifacts, About homepage with the dashboard at
+`/dashboard`, and wishlists. Ticketed follow-ons (implement only when
+working that ticket): dashboard reports / incomplete metadata
 (FEAT-20), display-only alternate-copy checkout UX (FEAT-21), check-in
 onto `/loans` (FEAT-22), checkout onto book details (FEAT-23), hardware
 ISBN scan on more pages (FEAT-24), remove the browser backup page
@@ -1064,8 +1071,9 @@ future tickets prematurely.
 
 FEAT-13 workflow and accessibility tests, FEAT-14 CI packaging,
 FEAT-15 Podman deployed development, FEAT-16 versioned release
-artifacts, FEAT-17 About homepage, and FEAT-18 collection filters are
-complete. Remaining tickets begin with `FEAT-19` and continue through
+artifacts, FEAT-17 About homepage, FEAT-18 collection filters, and
+FEAT-19 wishlists are complete. Remaining tickets begin with `FEAT-20`
+and continue through
 `FEAT-25` under `docs/tickets/`. When no current ticket is supplied, do
 not guess which remaining ticket to implement; ask for the next ticket.
 The supplied ticket's acceptance criteria are authoritative unless they
@@ -1167,10 +1175,13 @@ versioned release tarball (`scripts/packRelease.ts`, Make `pack`);
 FEAT-17 About homepage (`AboutPage` at `/`, dashboard at `/dashboard`,
 drawer primary nav via `DrawerNavMenu`); FEAT-18 collection filters
 (`BooksPage` / `BooksListControls` / `booksListModel` URL-backed
-category / author / title plus sort). Primary navigation redesign
+category / author / title plus sort); FEAT-19 wishlists (`WishlistsPage`
+at `/wishlists`, Collection-drawer link, unshelved `POST /books` then
+add). Primary navigation redesign
 (`ManageCollectionPage` at `/collection/manage`) shipped without a
-standalone ticket. Remaining tickets begin with FEAT-19 (wishlists). Later product
-tickets: FEAT-20 dashboard reports, FEAT-21 display-only alternate-copy
+standalone ticket. Remaining tickets begin with FEAT-20 (dashboard
+reports). Later product
+tickets: FEAT-21 display-only alternate-copy
 UX, FEAT-22 check-in onto `/loans`, FEAT-23 checkout onto book details,
 FEAT-24 hardware ISBN scan on more pages, FEAT-25 remove browser backup
 page.
@@ -1232,8 +1243,8 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining current tickets under
-                                  `docs/tickets/`: `FEAT-19_...` through
-                                  `FEAT-25_...`; FEAT-13 through FEAT-18
+                                  `docs/tickets/`: `FEAT-20_...` through
+                                  `FEAT-25_...`; FEAT-13 through FEAT-19
                                   are complete (those ticket files are
                                   removed)
 

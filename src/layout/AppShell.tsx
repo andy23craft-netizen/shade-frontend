@@ -96,6 +96,7 @@ export function AppShell() {
                                 '/admin/deleted',
                                 '/admin/backup',
                                 '/collection',
+                                '/wishlists',
                             ]}
                             items={[
                                 {
@@ -105,6 +106,10 @@ export function AppShell() {
                                 {
                                     label: 'Manage',
                                     to: '/collection/manage',
+                                },
+                                {
+                                    label: 'Wishlists',
+                                    to: '/wishlists',
                                 },
                             ]}
                         />
