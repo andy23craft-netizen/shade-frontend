@@ -2,27 +2,30 @@
 
 ## Objective
 
-Ship product UI for authenticated wishlist APIs already described in the backend contract: list and create
-wishlists, list memberships, and add a catalog book that has **no** shelf membership. Add a top-level `/wishlists`
-page that shows every wishlist and its membership contents (joined to catalog book display fields via
-`GET /books/{id}`).
+Finish product UI for authenticated wishlist APIs already described in the backend contract: list and create
+wishlists, list memberships, and add a catalog book that has **no** shelf membership. `/wishlists` already exists
+and should keep showing every wishlist and its membership contents. Join memberships to catalog display fields via
+`GET /books/{id}` -- not `GET /books`.
 
 A book must not be on both a shelf and a wishlist. Adding to a wishlist is `POST /books` **without** `shelf_name`,
 then `POST /wishlists/{wishlist_id}/books`. Do **not** add books from `/books`: that list inner-joins shelf
 membership, so every row already has a shelf and the add API returns **412**.
 
-This ticket is the product surface that earlier API contract sync explicitly deferred (OpenAPI already includes
-wishlist paths/schemas). It does **not** add cover images, acquisition/purchase workflows, or membership
-edit/remove endpoints the API does not expose.
+A first pass on this ticket shipped typed helpers, React Query hooks, the `/wishlists` route, and a create-wishlist
+form, but it still follows the **old** add-from-collection intent (existing `book_id`). Remaining work is to align
+that pass with this exclusivity rule, add the unshelved create+add flow, wire navigation, map **412**, and cover
+it with tests. It does **not** add cover images, acquisition/purchase workflows, or membership edit/remove
+endpoints the API does not expose.
 
 ## Dependencies
 
-Generated OpenAPI types and `scripts/contractSmoke.test.ts` already include wishlist paths. `apiTypes.ts` does
-**not** yet export wishlist schema aliases. Reuse the typed client, query keys, mutation invalidation, redaction
-helpers, shared components, shelves patterns (`ShelvesPage` create/edit/delete + confirmation), create/lookup
-patterns from `NewBookPage` / `BookForm` (ISBN lookup optional), and PLAN.md 7.5-style cache invalidation. Do not
-invent membership PATCH/DELETE or soft-delete for wishlists. If wishlist types regress, regenerate and extend
-contract smoke as a prerequisite rather than blocking.
+Generated OpenAPI types and `scripts/contractSmoke.test.ts` already include wishlist paths. `apiTypes.ts` **does**
+export wishlist schema aliases. Typed `wishlistsApi` / `wishlistsQueries` / `queryKeys.wishlists` / `createApi`
+aggregation already exist -- extend and test them; do not rebuild. Reuse the typed client, redaction helpers,
+shared components, shelves patterns (`ShelvesPage` create/edit/delete + confirmation), create/lookup patterns from
+`NewBookPage` / `BookForm` (ISBN lookup optional), and PLAN.md 7.5-style cache invalidation. Do not invent
+membership PATCH/DELETE or soft-delete for wishlists. If wishlist types regress, regenerate and extend contract
+smoke as a prerequisite rather than blocking.
 
 FEAT-17 About homepage is complete (`/` is About; dashboard is `/dashboard`). FEAT-18 collection category / author /
 title filters and shelf sort are complete on `/books` (ticket file removed) -- do not regress those controls.
@@ -76,13 +79,13 @@ blocker rather than inventing frontend semantics.
 
 ## Current baseline
 
-Already in place and should be reused (not rebuilt):
+Already in place from prior tickets and should be reused (not rebuilt):
 
 - FEAT-03 / FEAT-04 patterns: typed `*Api.ts` helpers, `queryKeys`, React Query hooks, `createApi` aggregation,
   `pickDocumentedRequestFields` for request bodies, `enumDisplayValue` for unknown enums.
 - `/books` via `BooksPage` + `useInfiniteBooks({ category, author, title, sortBy, sortOrder })` with URL-backed
-  filters and shelf sort; cards link to detail with Read/Unread, rating, and Title Case `shelf_name`. No wishlist
-  actions -- keep it that way; every row on this page has shelf membership and cannot be added to a wishlist.
+  filters and shelf sort; cards link to detail with Read/Unread, rating, and Title Case `shelf_name`. Keep it that
+  way for wishlist actions: every row on this page has shelf membership and cannot be added to a wishlist.
 - `/books/new` via `NewBookPage` + `BookForm`: collection create requires an explicit shelf (`shelfId` →
   `shelf_name`). Do not regress that. Wishlist add is a separate create that **omits** `shelf_name`.
 - `/books/:bookId` via `BookDetailsPage` with gated lifecycle actions (checkout, check-in, mark-read, edit, delete).
@@ -91,29 +94,76 @@ Already in place and should be reused (not rebuilt):
 - Primary nav in `AppShell` (`DrawerNavMenu`): direct Dashboard link; Collection drawer (Browse → `/books`, Manage →
   `/collection/manage`); Circulation drawer (Check Out, Check In, Loans). About is the brand link to `/`, not a
   separate nav item. Add Book, Shelves, Deleted Books, and Backup Library live on `/collection/manage`
-  (`ManageCollectionPage`), not the header. No Wishlists link.
+  (`ManageCollectionPage`), not the header. No Wishlists link yet.
 - `/shelves` via `ShelvesPage` is a good pattern for catalog create + Field-linked errors + `ConfirmationDialog`
   delete -- reuse patterns, not shelf domain logic.
-- `routeMetadata` / `routes.tsx` have no `/wishlists` entry.
 - Shared UI: `Button`, `AppLink`, `Field`, `EmptyState`, `LoadingState`, `QueryErrorState`, `ConfirmationDialog`,
   `Alert`, `useNotifications` toasts.
 - Loans join pattern on `LoansPage` lists domain rows then joins catalog via `useBooks()`. **Do not copy that join
   for wishlists:** `GET /books` omits unshelved rows. Join each membership `book_id` with `useBook` / `GET /books/{id}`
   and use a durable `Book {id}` fallback when the book is missing.
 - Wishlist OpenAPI paths/schemas exist in `src/api/generated/openapi.ts` and `scripts/contractSmoke.test.ts`
-  (`/wishlists`, `/wishlists/{wishlist_id}`, `/wishlists/{wishlist_id}/books`). `apiTypes.ts` does not export
-  wishlist aliases. `createApi` does not expose a `wishlists` aggregate. `queryKeys` and `requestFields` have no
-  wishlist entries. There is no `wishlistsApi`, `wishlistsQueries`, or `src/features/wishlists/` module.
+  (`/wishlists`, `/wishlists/{wishlist_id}`, `/wishlists/{wishlist_id}/books`).
+- Optional `SHADE_API_PROXY=1` in `vite.config.ts` still forwards only
+  `/health|/books|/loans|/dashboard|/backup|/docs|/redoc|/openapi.json` (not `/wishlists`, `/shelves`, or `/version`).
+  Default local CORS does not need the proxy; extend the allowlist only if this ticket otherwise touches it.
+
+### First-pass implementation (keep)
+
+These already exist on the current tree. Extend them; do not start over:
+
+| Area | What shipped |
+| ---- | ------------ |
+| Schema aliases | `src/api/apiTypes.ts` exports `WishlistCreate`, `WishlistUpdate`, `WishlistRead`, `WishlistList`, `WishlistBookCreate`, `WishlistBookRead`, `WishlistBookList`, `WishlistBookStatus`. |
+| Request picking | `src/api/requestFields.ts`: `WISHLIST_CREATE_KEYS`, `WISHLIST_UPDATE_KEYS`, `WISHLIST_BOOK_CREATE_KEYS` and `pickWishlistCreate` / `pickWishlistUpdate` / `pickWishlistBookCreate`. |
+| Typed API | `src/api/wishlistsApi.ts`: `list`, `create` (**201**), `update`, `remove` (**204**), `listBooks`, `addBook`. Optional `skip`/`take` (omit when unused); optional `AbortSignal`; documented fields only. |
+| Aggregate | `createApi` exposes `wishlists: createWishlistsApi(client)`. |
+| Query keys | `queryKeys.wishlists.all`, `wishlists.list()` (unpaginated), `wishlists.books(wishlistId)`. V1 unpaginated keys are acceptable; do not invent a second pagination system. |
+| Hooks | `src/api/wishlistsQueries.ts`: `useWishlists`, `useWishlistBooks` (disabled when id is empty), `useCreateWishlist`, `useUpdateWishlist`, `useDeleteWishlist`, `useAddWishlistBook`. Create/update/delete invalidate `queryKeys.wishlists.all`; add invalidates that wishlist's books key. |
+| Routing | `routeMetadata.wishlists` (`/wishlists`, title/heading `Wishlists`) and `WishlistsPage` registered under `AppShell` in `src/routes/routes.tsx`. |
+| Browse + create | `WishlistsPage` loads wishlists, shows empty vs populated lists, nested memberships with `status` via `enumDisplayValue` and `priority` (null as an em dash), and a create form (`name` required, `description` optional) that disables while pending. |
+| Update/delete helpers | `useUpdateWishlist` / `useDeleteWishlist` exist but have **no** product UI yet (still optional). |
+
+Wishlist catalog create should reuse existing `booksApi.create` / `useCreateBook`. That helper omits keys that are
+not present on the payload (`pickBookCreate` uses `Object.hasOwn`), so the wishlist path can omit `shelf_name`
+without changing collection create on `/books/new`.
+
+### First-pass mismatches (must change)
+
+The first pass was written against the old add-from-collection ticket. These pieces contradict shelf/wishlist
+exclusivity and will **412** or hide unshelved titles if left as-is:
+
+- `src/features/wishlists/components/AddToWishlistControl.tsx` posts an **existing** `book_id` to
+  `POST /wishlists/{id}/books`. That is valid only for unshelved catalog rows. It must not be offered for books
+  that already have a shelf, including every row on `/books`.
+- `src/features/books/routes/BooksPage.tsx` imports `AddToWishlistControl` but does not render it. Remove the unused
+  import (it will fail lint). Do **not** mount the control on collection cards.
+- `WishlistsPage` joins memberships with unpaginated `useBooks()` (`GET /books`). That list inner-joins shelf
+  membership, so **wishlist-only (unshelved) books never appear**. The page also blocks on the catalog list
+  pending/error before showing wishlists. Join each `book_id` with `useBook` / `GET /books/{id}` and keep a durable
+  `Book {id}` fallback.
+- Membership rows do not link to `/books/:bookId` (allowed, not required).
+- Create-wishlist errors are a page `Alert` from `error.detail`, not Field-linked **422**.
+- No add-book UI on `/wishlists` that creates an unshelved catalog row, then adds membership.
+- Collection drawer has no Wishlists item and does not include `/wishlists` in `activePrefixes`, so the route is
+  registered but not reachable from primary nav.
+- No wishlist CSS in `src/styles/components.css` (the page already uses class names such as `.wishlists-page`,
+  `.wishlist-card`, `.wishlist-membership`).
+- No colocated tests for helpers, hooks, `WishlistsPage`, add control, nav, or edit **412**. `api.test.ts` does not
+  yet assert `createApi().wishlists`. `requestFields.test.ts` / `queryKeys.test.ts` / `apiTypes.test.ts` do not cover
+  wishlist aliases, pickers, or keys.
 
 ## Product intent
 
 An operator should be able to:
 
-1. **Browse wishlists** -- open `/wishlists` and see every wishlist (name, optional description, membership count
-   and/or visible rows) with each wishlist's books shown underneath (title/authors via `GET /books/{id}`, membership
-   `status`, optional `priority` / `notes` / `url`). Membership rows may link to `/books/:bookId`.
+1. **Browse wishlists** -- open `/wishlists` from the Collection drawer and see every wishlist (name, optional
+   description, membership count and/or visible rows) with each wishlist's books shown underneath (title/authors via
+   `GET /books/{id}`, membership `status`, optional `priority` / `notes` / `url`). Membership rows may link to
+   `/books/:bookId`.
 2. **Create a wishlist when needed** -- from `/wishlists` (and/or from the add-book flow when the list is empty) so
-   "add book to wishlist" is never a dead end. Required field: `name` (1..255). Optional `description`.
+   "add book to wishlist" is never a dead end. Required field: `name` (1..255). Optional `description`. The create
+   form on `WishlistsPage` already covers this; keep it.
 3. **Add a book to a wishlist from `/wishlists`** -- choose a target wishlist, capture catalog fields (title and
    authors required; optional ISBN lookup like `/books/new`), `POST /books` **omitting** `shelf_name`, then
    `POST /wishlists/{wishlist_id}/books` with at least `{ book_id }`. Default membership `status` may be omitted
@@ -124,8 +174,8 @@ An operator should be able to:
    endpoints do not exist. Do not offer "Add to wishlist" on `/books` or for any book that already has shelf
    membership (would **412**). Do not invent a move-to-shelf / acquire flow; placing a wishlisted book on a shelf
    requires deleting the wishlist first. Optional wishlist rename (`PATCH`) and permanent delete (`DELETE` +
-   `ConfirmationDialog`) may ship on `/wishlists` if they stay small; otherwise leave rename/delete for a follow-up
-   and document the gap.
+   `ConfirmationDialog`) may ship on `/wishlists` if they stay small (`useUpdateWishlist` / `useDeleteWishlist`
+   already exist); otherwise leave rename/delete for a follow-up and document the gap.
 
 If a wishlisted book is opened on `BookDetailsPage`, keep existing action gates. Map edit **412** when the operator
 assigns `shelf_name` while the book is still on a wishlist. Do not add an "Add to wishlist" control on collection
@@ -145,107 +195,87 @@ section. Do not invent a card-heavy dashboard of wishlists or cover-image grids 
 - Soft-delete / restore for wishlists (API hard-deletes).
 - A separate `/wishlists/:wishlistId` route unless the single `/wishlists` page becomes unwieldy; prefer one page
   that lists wishlists and nested contents first.
+- Rebuilding `wishlistsApi` / `wishlistsQueries` / schema aliases that already exist.
 
 ## Remaining scope (file-level plan)
 
-### 1. Schema aliases
+Do not redo shipped helpers, keys, or the create-wishlist form. Remaining work is tests, exclusivity-aligned add,
+join/nav/412 fixes, and leftover-control removal.
+
+### 1. Tests for the existing API layer
 
 | File | Change |
 | ---- | ------ |
-| `src/api/apiTypes.ts` | Export aliases: `WishlistCreate`, `WishlistUpdate`, `WishlistRead`, `WishlistList`, `WishlistBookCreate`, `WishlistBookRead`, `WishlistBookList`, `WishlistBookStatus`. Do not hand-edit `src/api/generated/openapi.ts`. |
 | `src/api/apiTypes.test.ts` | Cover new aliases if the file asserts exported schema names/shapes. |
-
-### 2. Typed wishlist API helpers and request picking
-
-| File | Change |
-| ---- | ------ |
-| `src/api/wishlistsApi.ts` | New module mirroring `loansApi` / `booksApi`: `list({ skip?, take? })` → `GET /wishlists`; `create(body)` → `POST /wishlists` (**201**); `update(id, body)` → `PATCH /wishlists/{id}`; `remove(id)` → `DELETE /wishlists/{id}` (**204**); `listBooks(wishlistId, { skip?, take? })` → `GET .../books`; `addBook(wishlistId, body)` → `POST .../books` (**201**, **412** when the book has shelf membership). Send `skip`/`take` together when paginating; omit when unused. Accept optional `AbortSignal`. Serialize only documented fields. |
-| `src/api/requestFields.ts` | Add `WISHLIST_CREATE_KEYS`, `WISHLIST_UPDATE_KEYS`, `WISHLIST_BOOK_CREATE_KEYS` and `pickWishlistCreate` / `pickWishlistUpdate` / `pickWishlistBookCreate` using `pickDocumentedRequestFields`. |
 | `src/api/requestFields.test.ts` | Cover picking documented keys and omitting undocumented extras for the three wishlist bodies. |
-| `src/api/api.ts` | Aggregate `wishlists: createWishlistsApi(client)` on `createApi`. |
 | `src/api/api.test.ts` | Assert `createApi` exposes `wishlists` helpers. |
 | `src/api/wishlistsApi.test.ts` | New colocated tests: list query params; create/update bodies; delete **204**; listBooks path + pagination; addBook path/body; **400** / **404** / **412** / **422** surface as `ApiError` with preserved detail where applicable. |
+| `src/api/queryKeys.test.ts` | Cover `wishlists.all` / `list()` / `books(id)` isolation from books/loans/shelves. |
+| `src/api/wishlistsQueries.test.tsx` (and/or extend `serverStateQueries.test.tsx`) | Assert keys, enabled/disabled books hook, and that add/create mutations invalidate wishlist queries. |
 
-Wishlist catalog create reuses existing `booksApi.create` / `useCreateBook`. That helper must omit `shelf_name`
-entirely on this path (do not send `null` unless the documented picker already treats omitted and JSON `null` the
-same; prefer omitting the key). Do not change collection create on `/books/new`.
-
-### 3. Query keys, hooks, and invalidation
+### 2. Fix `/wishlists` catalog join (and small page gaps)
 
 | File | Change |
 | ---- | ------ |
-| `src/api/queryKeys.ts` | Add `wishlists.all`, `wishlists.list({ skip?, take? })`, `wishlists.books(wishlistId, { skip?, take? })` (and optional infinite-list keys if infinite scroll is used). Keep keys stable and omit unused pagination fields the same way books/loans do. |
-| `src/api/wishlistsQueries.ts` | New hooks: `useWishlists`, `useWishlistBooks(wishlistId)` (disabled when falsy), `useCreateWishlist`, `useUpdateWishlist` (if UI ships PATCH), `useDeleteWishlist` (if UI ships DELETE), `useAddWishlistBook`. On success: invalidate `queryKeys.wishlists.all` (and specific list/books keys as needed). After add, `useBook(book_id)` / books detail is the catalog join -- do not invent book-detail rewrites from membership responses. |
-| `src/api/wishlistsQueries.test.tsx` (and/or extend `serverStateQueries.test.tsx`) | Assert keys, enabled/disabled detail/books hooks, and that add/create mutations invalidate wishlist queries. |
-
-For v1 list sizes, unpaginated `useWishlists()` / per-wishlist `useWishlistBooks(id)` (full list, no `skip`/`take`) is
-acceptable and matches early loans/books callers. If wishlist memberships grow large, prefer infinite scroll using
-shared `INFINITE_SCROLL_BATCH_SIZE` -- do not invent a second pagination system.
-
-### 4. Feature module -- `/wishlists` page
-
-| File | Change |
-| ---- | ------ |
-| `src/features/wishlists/routes/WishlistsPage.tsx` | New route page. Load wishlists via `useWishlists`. For each wishlist, load memberships via `useWishlistBooks(wishlist_id)` (parallel per-wishlist queries are fine for a small personal library). Join each membership `book_id` via `useBook` / `GET /books/{id}` -- **not** `useBooks()` -- and show title/authors when found, durable `Book {id}` fallback when missing. Render `status` with `enumDisplayValue` against `WishlistBookStatus`. Show empty wishlist messaging distinctly from empty membership lists. Create-wishlist form: `name` required, `description` optional; `Field`-linked **422**; disable while pending; success refreshes list (toast optional via `useNotifications`). |
-| `src/features/wishlists/wishlistDisplay.ts` (optional) | Small helpers: status labels, priority display (`null` → em dash or "No priority"), safe URL rendering (`<a>` only for absolute http(s) URLs; never `javascript:`). Colocate unit tests if non-trivial. |
+| `src/features/wishlists/routes/WishlistsPage.tsx` | Stop joining with `useBooks()`. For each membership, load `useBook(book_id)` / `GET /books/{id}` -- **not** `useBooks()` -- and show title/authors when found, durable `Book {id}` fallback when missing. Do not block the whole page on the collection list. Keep distinct empty-wishlist vs empty-membership copy. Prefer Field-linked **422** on create. Membership rows may link to `/books/:bookId`. |
+| `src/features/wishlists/wishlistDisplay.ts` (optional) | Small helpers: status labels, priority display (`null` → em dash or "No priority"), safe URL rendering (`<a>` only for absolute http(s) URLs; never `javascript:`). Colocate unit tests if non-trivial. Status Title Case currently lives inline on the page; extracting is optional. |
 | `src/features/wishlists/routes/WishlistsPage.test.tsx` | Loading / error+retry / empty wishlists; create success; nested memberships with `GET /books/{id}` join and missing-book fallback; status display; no network invention of membership delete; add-book create omits `shelf_name`. |
 
-Optional on the same page (include if it stays small):
+Optional on the same page (include if it stays small; hooks already exist):
 
 | File | Change |
 | ---- | ------ |
 | `WishlistsPage.tsx` | Rename via `useUpdateWishlist` + confirmation; permanent delete via `ConfirmationDialog` + `useDeleteWishlist` with copy that memberships are removed but catalog books remain, and that a wishlisted book cannot be placed on a shelf until its wishlist is deleted. |
 
-### 5. Add-to-wishlist (unshelved create, not collection)
+### 3. Add-to-wishlist (unshelved create, not collection)
 
 | File | Change |
 | ---- | ------ |
-| `src/features/wishlists/components/AddWishlistBookControl.tsx` (recommended) | Shared control on `/wishlists`: select target wishlist (empty list → inline create or link to the create form), capture title/authors (required) plus optional ISBN lookup, omit `shelf_name` on `POST /books`, then `useAddWishlistBook` with `{ book_id, status? }`. Optional status select defaulting to `wanted`. Handle **404** (unknown wishlist/book) with refetch + clear message; **412** `"Existing books cannot be added to a wishlist"` with a clear exclusivity message (do not retry by sending a shelf); **422** Field-linked when status/body invalid; disable while pending; success toast or polite status. If create succeeds and add fails, surface the add error honestly -- do not invent a compensating `DELETE /books/{id}`. Reuse `BookForm` only if it can omit the shelf picker without regressing `/books/new`; otherwise a slimmer wishlist create form is fine. |
-| `src/features/books/routes/BooksPage.tsx` | **No change** for wishlist actions. Do not add per-card "Add to wishlist". Do not regress URL-backed category / author / title filters, shelf sort, or filtered vs unfiltered empty states. |
+| `AddToWishlistControl.tsx` and/or `AddWishlistBookControl.tsx` | Replace the existing-`book_id` control (or rewrite it in place) so the only add path is on `/wishlists`: select target wishlist (empty list → inline create or link to the create form already on the page), capture title/authors (required) plus optional ISBN lookup, omit `shelf_name` on `POST /books`, then `useAddWishlistBook` with `{ book_id, status? }`. Optional status select defaulting to `wanted`. Handle **404** (unknown wishlist/book) with refetch + clear message; **412** `"Existing books cannot be added to a wishlist"` with a clear exclusivity message (do not retry by sending a shelf); **422** Field-linked when status/body invalid; disable while pending; success toast or polite status. If create succeeds and add fails, surface the add error honestly -- do not invent a compensating `DELETE /books/{id}`. Reuse `BookForm` only if it can omit the shelf picker without regressing `/books/new`; otherwise a slimmer wishlist create form is fine. |
+| `src/features/books/routes/BooksPage.tsx` | **Remove** the unused `AddToWishlistControl` import. Do not add per-card "Add to wishlist". Do not regress URL-backed category / author / title filters, shelf sort, or filtered vs unfiltered empty states. |
 | `src/features/books/routes/BookDetailsPage.tsx` | Do not add "Add to wishlist" for shelved books. Membership rows may link here; keep other action gates unchanged. |
 | `src/features/books/routes/EditBookPage.tsx` / `bookEditModel` as needed | Map **412** `"The book must be removed from the wishlist before it can be placed on a shelf"` when assigning `shelf_name` (Field-linked or page alert). Do not invent membership delete from the edit form. |
-| `src/features/wishlists/components/AddWishlistBookControl.test.tsx` | Create omits `shelf_name`; mutate add payload `{ book_id, status? }`; empty-wishlist path; **404** / **412** / **422** / pending disable. |
+| Colocated add-control tests | Create omits `shelf_name`; mutate add payload `{ book_id, status? }`; empty-wishlist path; **404** / **412** / **422** / pending disable. |
 | `src/features/books/routes/BooksPage.test.tsx` | Assert there is still **no** add-to-wishlist affordance on collection cards. |
 | `src/features/books/routes/EditBookPage.test.tsx` | Assert documented **412** shelf-vs-wishlist messaging when the API rejects `shelf_name`. |
 
-### 6. Routing, navigation, and metadata
+### 4. Routing, navigation, and metadata
+
+Route registration is done. Remaining:
 
 | File | Change |
 | ---- | ------ |
-| `src/routes/routeMetadata.ts` | Add `wishlists: { path: '/wishlists', title: 'Wishlists', heading: 'Wishlists' }`. |
-| `src/routes/routes.tsx` | Register `WishlistsPage` at `routeMetadata.wishlists.path` under `AppShell`. |
-| `src/layout/AppShell.tsx` | Add `{ label: 'Wishlists', to: '/wishlists' }` to the Collection `DrawerNavMenu` items (after Manage). Add
-  `/wishlists` to that drawer's `activePrefixes`. Do not add a flat header link or park Wishlists under admin /
-  Manage Collection. |
-| `src/layout/AppShell.test.tsx` | Open the Collection drawer and expect a Wishlists link to `/wishlists`. Assert the Collection trunk is
-  `data-active` on `/wishlists`. |
+| `src/layout/AppShell.tsx` | Add `{ label: 'Wishlists', to: '/wishlists' }` to the Collection `DrawerNavMenu` items (after Manage). Add `/wishlists` to that drawer's `activePrefixes`. Do not add a flat header link or park Wishlists under admin / Manage Collection. |
+| `src/layout/AppShell.test.tsx` | Open the Collection drawer and expect a Wishlists link to `/wishlists`. Assert the Collection trunk is `data-active` on `/wishlists`. |
 | `src/App.test.tsx` | Optional: document title / heading focus when navigating to `/wishlists`. |
+| `vite.config.ts` | Optional: add `/wishlists` to the `SHADE_API_PROXY=1` path allowlist so proxy users can reach the new routes. Do not treat the proxy as required (default CORS still works). |
 
-### 7. Styling
+### 5. Styling
 
 | File | Change |
 | ---- | ------ |
-| `src/styles/components.css` | Add BEM-like classes only as needed (e.g., `.wishlists-page`, `.wishlist`, `.wishlist__books`, `.wishlist-membership`) reusing existing list/section spacing tokens. Prefer extending `.books-page` / `.loans-page` patterns over new visual systems. |
+| `src/styles/components.css` | Add BEM-like classes only as needed (the page already names `.wishlists-page`, `.wishlist-card`, `.wishlist-membership`; add `.wishlist`, `.wishlist__books`, `.wishlist-form`, `.add-to-wishlist` if used) reusing existing list/section spacing tokens. Prefer extending `.books-page` / `.loans-page` patterns over new visual systems. |
 | `src/styles/shell.css` | Only if the Collection drawer needs adjustment for an extra item (Wishlists) at narrow widths. |
 
-### 8. Docs hygiene (after implementation)
+### 6. Docs hygiene (after implementation)
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Document wishlist helpers, hooks, `/wishlists` route, unshelved `POST /books` (omit `shelf_name`) before add, **412** shelf/wishlist exclusivity, and that memberships join catalog via `GET /books/{id}` because `GET /books` omits unshelved rows. Note wishlists are now in-scope product UI (update the "out of scope unless explicitly requested" line and the "do not ship wishlist product UI" notes). Update the "shelf_name on create" compensation: required for collection create, omitted for wishlist-only rows. Mark FEAT-19 complete or remove the ticket file per project convention when done. |
+| `docs/AGENTS.md` | Document wishlist helpers, hooks, `/wishlists` route, Collection-drawer Wishlists link, unshelved `POST /books` (omit `shelf_name`) before add, **412** shelf/wishlist exclusivity, and that memberships join catalog via `GET /books/{id}` because `GET /books` omits unshelved rows. Note wishlists are now in-scope product UI (update the "out of scope unless explicitly requested" line and the "do not ship wishlist product UI" notes). Update the "shelf_name on create" compensation: required for collection create, omitted for wishlist-only rows. Mark FEAT-19 complete or remove the ticket file per project convention when done. |
 | `docs/full-project-context.md` | Same wishlist inventory notes when that pack is kept current. |
 | `docs/ToDo.md` | Optional checklist line; prefer ticket presence under `docs/tickets/` as source of truth. |
 
 ## Acceptance criteria
 
 - Typed `wishlistsApi` + React Query hooks cover list/create wishlists, list memberships, and add-book; optional
-  update/delete only if the UI ships them.
+  update/delete only if the UI ships them. Existing helpers are kept and tested rather than rewritten.
 - `yarn api:check` remains clean against `docs/technical-reference/openapi.json`.
-- `/wishlists` lists all wishlists and shows each wishlist's membership contents with catalog title/authors from
-  `GET /books/{id}` when available and a durable id fallback when not.
+- `/wishlists` is reachable from the Collection drawer, lists all wishlists, and shows each wishlist's membership
+  contents with catalog title/authors from `GET /books/{id}` when available and a durable id fallback when not
+  (`useBooks()` is not the join).
 - Operators can create a named wishlist from the wishlists page (or from the add flow when none exist).
 - Operators can add a book from `/wishlists` by creating an unshelved catalog row (`POST /books` with no
-  `shelf_name`) then `POST .../books`. `/books` has no add-to-wishlist action.
+  `shelf_name`) then `POST .../books`. `/books` has no add-to-wishlist action or leftover import of one.
 - Collection create on `/books/new` still requires an explicit shelf.
 - Membership `status` uses the OpenAPI enum; unknown values render safely via `enumDisplayValue`.
 - Duplicate memberships are allowed by the API; the UI must not invent a uniqueness error.
@@ -261,5 +291,7 @@ Optional on the same page (include if it stays small):
 ## Plan coverage
 
 Wishlist browse + add via unshelved catalog create against the authenticated wishlist contract, including
-shelf/wishlist mutual exclusion. Explicitly excludes add-from-collection, acquisition workflows, membership
+shelf/wishlist mutual exclusion. The first pass left helpers, `/wishlists` browse/create, and an existing-`book_id`
+add control; remaining work is to drop add-from-collection, join via `GET /books/{id}`, add unshelved create+add,
+nav, **412** mapping, and tests. Explicitly excludes add-from-collection, acquisition workflows, membership
 mutation endpoints the backend does not provide, and unrelated shelves catalog or dashboard report work.
