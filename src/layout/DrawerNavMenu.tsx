@@ -24,17 +24,15 @@ export function DrawerNavMenu({
     items,
     activePrefixes = [],
 }: DrawerNavMenuProps) {
-    const [open, setOpen] = useState(false)
+    const [openedAtPathname, setOpenedAtPathname] =
+        useState<string | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const location = useLocation()
 
     const isActive = activePrefixes.some((prefix) =>
         location.pathname.startsWith(prefix),
     )
-
-    useEffect(() => {
-        setOpen(false)
-    }, [location.pathname])
+    const open = openedAtPathname === location.pathname
 
     useEffect(() => {
         function handlePointerDown(event: PointerEvent) {
@@ -44,13 +42,13 @@ export function DrawerNavMenu({
                 target instanceof Node &&
                 !containerRef.current?.contains(target)
             ) {
-                setOpen(false)
+                setOpenedAtPathname(null)
             }
         }
 
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key === 'Escape') {
-                setOpen(false)
+                setOpenedAtPathname(null)
             }
         }
 
@@ -86,7 +84,13 @@ export function DrawerNavMenu({
                 aria-expanded={open}
                 aria-haspopup="true"
                 data-active={isActive ? 'true' : undefined}
-                onClick={() => setOpen((current) => !current)}
+                onClick={() =>
+                    setOpenedAtPathname((current) =>
+                        current === location.pathname
+                            ? null
+                            : location.pathname,
+                    )
+                }
             >
     <span className="drawer-nav-menu__label-holder">
         <span className="drawer-nav-menu__label">
