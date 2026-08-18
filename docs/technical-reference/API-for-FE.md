@@ -55,7 +55,8 @@ can still reach the server, but browser JS cannot read the response.
 | ------ | -------------------------------- |
 | `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query); |
 |        | malformed or empty `wishlist_id` / membership `book_id` on wishlist routes; |
-|        | malformed or empty `shelf_id` on shelf update/delete; |
+|        | malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on |
+|        | collection routes; malformed or empty `shelf_id` on shelf update/delete; |
 |        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; |
 |        | partial or invalid `skip`/`take` on list endpoints; |
 |        | invalid `sortBy` or `sortOrder` on `GET /books`; invalid or blank `field` on |
@@ -66,9 +67,11 @@ can still reach the server, but browser JS cannot read the response.
 | `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / second delete; |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
 |        | unknown wishlist, or unknown book when adding a wishlist membership; |
-|        | unknown shelf for `PATCH` / `DELETE /shelves/{shelf_id}` |
+|        | unknown collection, unknown book when adding a collection membership, or unknown |
+|        | collection book on reorder/remove; unknown shelf for `PATCH` / `DELETE /shelves/{shelf_id}` |
 | `409`  | Restore an active book; checkout when already on loan; check-in with no active loan; |
-|        | duplicate shelf `common_name` on create/rename; delete shelf while books remain |
+|        | duplicate shelf `common_name` on create/rename; delete shelf while books remain; |
+|        | duplicate book or `order_num` in the same collection |
 | `412`  | Checkout when the book has `status=display_only` (`"Book is display only"`); |
 |        | add a book with any shelf membership, including `unknown` / `removed`, to a wishlist |
 |        | (`"Existing books cannot be added to a wishlist"`); |
@@ -77,7 +80,8 @@ can still reach the server, but browser JS cannot read the response.
 | `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body; |
 |        | unsupported wishlist membership `status`; blank `shelf_name` on book create; |
 |        | null or blank `shelf_name` on book update; |
-|        | null or blank shelf `common_name` on shelf create/update |
+|        | null or blank shelf `common_name` on shelf create/update; |
+|        | blank collection `name` on create/update; non-positive `order_num` on collection add/reorder |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
 | `504`  | ISBN metadata provider timeout |
@@ -93,8 +97,9 @@ Malformed stored loan timestamps can later cause an unhandled **500** when those
 There are no WebSocket, SSE, subscription, or push endpoints. `GET /backup` is the only streaming response (a finite
 SQL attachment).
 
-List endpoints (`GET /books`, `GET /loans`, `GET /wishlists`, `GET /wishlists/{wishlist_id}/books`, and
-`GET /dashboard/incomplete-metadata/books`) support optional offset/limit pagination. Send both `skip` and `take`
+List endpoints (`GET /books`, `GET /loans`, `GET /wishlists`, `GET /wishlists/{wishlist_id}/books`,
+`GET /collections`, `GET /collections/{collection_id}/books`, and `GET /dashboard/incomplete-metadata/books`) support
+optional offset/limit pagination. Send both `skip` and `take`
 together, or omit both for the full filtered result set. When paginated, `total` is still the count of all rows
 matching filters (not the page size). Partial params (`skip` only or `take` only), negative `skip`, or non-positive
 `take` return **400**.
@@ -163,8 +168,10 @@ For alternate-copy lookup, use the existing `isbn` filter to find copies sharing
 edition of the same work, use `author` and `title`; the API has no dedicated alternate-edition or work resource.
 The frontend should exclude the current book and prefer `status=available` when presenting a checkout substitute.
 
-Optional `category` on `GET /books` filters by exact `Category` enum value. This is the API surface used when the
-frontend needs to narrow the catalog by collection/category; there is no separate `collection` query parameter.
+Optional `category` on `GET /books` filters by exact `Category` enum value (`unknown`, `religion`, `philosophy`,
+`fiction`, `nonfiction`). This is distinct from curated `/collections` lists; there is no `collection` query parameter
+on `GET /books`.
+
 Invalid category values are rejected by FastAPI validation with **422**. A valid category with no matches returns
 an empty `BookList` (`items: []`, `total: 0`), not **404**. The category filter composes with `isbn`, `author`,
 `title`, `include_deleted`, pagination, and sorting; when paginated, `total` remains the count of all matching rows
@@ -328,6 +335,44 @@ well-formed but unknown.
 
 ---
 
+# Collections
+
+Collection routes are authenticated. There is no soft-delete for collections. `GET /collections` returns collections
+newest first by `created_date`, then `collection_id`, both descending.
+
+`GET /collections/{collection_id}/books` returns membership rows enriched with `shelf_name` and `on_wishlist`, not
+full `BookRead` objects. Memberships reference existing catalog books by `book_id`. The default order is `order_num`
+ascending, then `collection_book_id` ascending.
+
+Collections coexist with shelves and wishlists. Adding a shelved or wishlisted book to a collection succeeds; collection
+routes do not return **412** for shelf or wishlist overlap. Wishlist/shelf mutual exclusion elsewhere is unchanged.
+
+`POST /collections` creates a collection (**201** `CollectionRead`). `PATCH /collections/{collection_id}` is partial and
+preserves omitted fields; explicit JSON `null` clears `description`. `last_updated_date` is bumped by a SQLite trigger
+when the handler does not set it. `DELETE /collections/{collection_id}` permanently deletes its membership rows before
+deleting the collection itself (**204**); catalog books are not deleted.
+
+`POST /collections/{collection_id}/books` adds a catalog book. Omit `order_num` to append at the end (`max(order_num) + 1`,
+or `1` when empty). Duplicate `(collection_id, book_id)` returns **409**
+`{"detail": "Book is already in this collection"}`. Duplicate `(collection_id, order_num)` returns **409**
+`{"detail": "Order number is already used in this collection"}`.
+
+`PATCH /collections/{collection_id}/books/{collection_book_id}` accepts `{ "order_num": <positive int> }` to move a
+membership within the collection (**200** `CollectionBookRead`). Reorder renumbers all memberships to contiguous
+positions. Requested `order_num` values above the membership count are clamped to the last position.
+
+`DELETE /collections/{collection_id}/books/{collection_book_id}` removes one membership and renumbers remaining rows
+(**204**).
+
+Join membership `book_id` to `GET /books/{id}` for title and authors. Pagination matches wishlists (`skip`/`take`
+together, `{ items, total }` wrapper).
+
+For path `collection_id`, membership `collection_book_id`, and membership `book_id`: **400** when empty or not a valid
+GUID; **404** when the GUID is well-formed but unknown (`"Collection not found"`, `"Book not found"`, or
+`"Collection book not found"` as appropriate). Soft-deleted catalog books can still be added to a collection.
+
+---
+
 # Backup download (browser)
 
 `GET /backup` returns an `application/sql` attachment (not JSON), including soft-deleted books and historical loans.
@@ -372,11 +417,13 @@ URL.revokeObjectURL(objectUrl);
 | Shelf picker UI from `GET /shelves`; submit chosen `common_name` as `shelf_name` | Frontend |
 | Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
 | Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist | Frontend |
+| Collection list/create/add/reorder UI | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
 | Canonical project version (`ci/VERSION` via `GET /version`) | API |
 | Soft delete/restore, loan records, checkout/check-in, reading state | API |
 | Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
 | Wishlist/shelf mutual exclusion (**412** when both would apply) | API |
+| Collections CRUD and ordered membership (`/collections`) | API |
 | Borrowing and dashboard statistics | API |
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/book) → `POST .../checkout` or
@@ -395,3 +442,9 @@ Recommended wishlist add: `POST /books` without `shelf_name` → `POST /wishlist
 `"Existing books cannot be added to a wishlist"`. Join membership `book_id` to `GET /books/{id}` for title/authors
 (unshelved books are omitted from `GET /books`). Do not invent membership remove/edit; delete the wishlist to
 clear memberships.
+
+Recommended collection add: `POST /collections/{collection_id}/books` with `{ "book_id" }` (optional `order_num` and
+`notes`). Shelved and wishlisted books may be added without **412**. List memberships for `shelf_name` and
+`on_wishlist`; join `book_id` to `GET /books/{id}` for title/authors. Reorder with
+`PATCH /collections/{collection_id}/books/{collection_book_id}` and `{ "order_num" }`; remove with membership
+`DELETE`.
