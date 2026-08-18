@@ -38,6 +38,17 @@ import {
     type CheckoutFormFieldErrors,
     type CheckoutFormValues,
 } from '../checkoutModel'
+import {
+    isCheckoutEligible,
+} from '../checkoutEligibility'
+import {
+    buildAuthorTitleAlternateQuery,
+    buildIsbnAlternateQuery,
+    mergeCheckoutAlternatives,
+} from '../displayOnlyAlternatives'
+import {
+    formatShelfCommonNameForDisplay,
+} from '../../shelves/shelfDisplay'
 
 const CHECKOUT_FORM_FIELDS = new Set<string>([
     'borrower',
@@ -80,15 +91,6 @@ const IsbnCameraScanner = lazy(
             }),
         ),
 )
-
-function isCheckoutEligible(
-    book: BookRead,
-): boolean {
-    return (
-        book.deletion_date === null &&
-        book.status === 'available'
-    )
-}
 
 function mapCheckoutFieldErrors(
     fieldErrors: readonly ApiFieldError[],
@@ -170,6 +172,11 @@ export function CheckoutPage() {
     ] = useState('')
 
     const [
+        blockedDisplayOnlyBook,
+        setBlockedDisplayOnlyBook,
+    ] = useState<BookRead | null>(null)
+
+    const [
         isbnClientError,
         setIsbnClientError,
     ] = useState<string | null>(null)
@@ -201,6 +208,76 @@ export function CheckoutPage() {
     const selectedBookIsEligible =
         selectedBook !== null &&
         isCheckoutEligible(selectedBook)
+
+    const displayOnlyRecoveryBook =
+        selectedBook?.status === 'display_only'
+            ? selectedBook
+            : blockedDisplayOnlyBook
+
+    const alternateIsbn = displayOnlyRecoveryBook
+        ? buildIsbnAlternateQuery(
+            displayOnlyRecoveryBook,
+        )
+        : null
+
+    const alternateAuthorTitle =
+        displayOnlyRecoveryBook
+            ? buildAuthorTitleAlternateQuery(
+                displayOnlyRecoveryBook,
+            )
+            : null
+
+    const alternateIsbnQuery = useBooks({
+        isbn: alternateIsbn ?? undefined,
+        enabled: Boolean(
+            displayOnlyRecoveryBook &&
+            alternateIsbn,
+        ),
+    })
+
+    const alternateAuthorTitleQuery = useBooks({
+        author:
+        alternateAuthorTitle?.author,
+        title:
+        alternateAuthorTitle?.title,
+        enabled: Boolean(
+            displayOnlyRecoveryBook &&
+            alternateAuthorTitle,
+        ),
+    })
+
+    const checkoutAlternatives =
+        displayOnlyRecoveryBook
+            ? mergeCheckoutAlternatives(
+                alternateIsbnQuery.data?.items ?? [],
+                alternateAuthorTitleQuery.data
+                    ?.items ?? [],
+                displayOnlyRecoveryBook.id,
+            )
+            : []
+
+    const alternateLookupEnabled =
+        Boolean(alternateIsbn) ||
+        Boolean(alternateAuthorTitle)
+
+    const alternateLookupPending =
+        (Boolean(alternateIsbn) &&
+            alternateIsbnQuery.isFetching) ||
+        (Boolean(alternateAuthorTitle) &&
+            alternateAuthorTitleQuery.isFetching)
+
+    const alternateLookupError =
+        (alternateIsbnQuery.isError
+            ? alternateIsbnQuery.error
+            : null) ??
+        (alternateAuthorTitleQuery.isError
+            ? alternateAuthorTitleQuery.error
+            : null)
+
+    const alternateLookupComplete =
+        Boolean(displayOnlyRecoveryBook) &&
+        alternateLookupEnabled &&
+        !alternateLookupPending
 
     const isbnSearchPending =
         Boolean(activeSearchIsbn) &&
@@ -279,6 +356,7 @@ export function CheckoutPage() {
         setSearchParams(
             id ? { bookId: id } : {},
         )
+        setBlockedDisplayOnlyBook(null)
         setFormError(null)
     }
 
@@ -466,14 +544,28 @@ export function CheckoutPage() {
             isApiError(error) &&
             error.status === 412
         ) {
+            const blockedBook =
+                books.find(
+                    (book) => book.id === bookId,
+                ) ?? null
+
+            if (blockedBook) {
+                setBlockedDisplayOnlyBook(
+                    blockedBook,
+                )
+            }
+
             await refetchStaleLoanState(bookId)
+
             const detail =
                 error.detail ??
                 error.message ??
                 DISPLAY_ONLY_DETAIL
+
             setFormError(
-                `${detail}. Eligible books and loans were refreshed; your borrower and optional fields were kept. Use Find by ISBN if another copy is available.`,
+                `${detail}. Eligible books and loans were refreshed; your borrower and optional fields were kept. Available alternate copies or editions are shown below when found.`,
             )
+
             return
         }
 
@@ -600,10 +692,9 @@ export function CheckoutPage() {
                         <p>
                             {selectedBook.title} is marked
                             display only and cannot be
-                            checked out. Use Find by ISBN if
-                            another copy or edition is in the
-                            library, or select a different
-                            book.
+                            checked out. The library is
+                            checking for another available
+                            copy or edition.
                         </p>
                     ) : (
                         <p>
@@ -648,6 +739,100 @@ export function CheckoutPage() {
                         Refresh eligible books
                     </Button>
                 </Alert>
+            ) : null}
+
+            {displayOnlyRecoveryBook ? (
+                <section
+                    aria-labelledby="checkout-alternatives-heading"
+                >
+                    <h2 id="checkout-alternatives-heading">
+                        Other available copies
+                    </h2>
+
+                    {alternateLookupPending ? (
+                        <LoadingState label="Looking for another available copy or edition…" />
+                    ) : null}
+
+                    {!alternateLookupPending &&
+                    alternateLookupError ? (
+                        <QueryErrorState
+                            title="Could not look for alternate copies"
+                            error={alternateLookupError}
+                            onRetry={() => {
+                                if (alternateIsbn) {
+                                    void alternateIsbnQuery.refetch()
+                                }
+
+                                if (alternateAuthorTitle) {
+                                    void alternateAuthorTitleQuery.refetch()
+                                }
+                            }}
+                        />
+                    ) : null}
+
+                    {alternateLookupComplete &&
+                    !alternateLookupError &&
+                    checkoutAlternatives.length > 0 ? (
+                        <Alert
+                            variant="info"
+                            title="Available alternatives"
+                        >
+                            <p>
+                                This copy is display only. You can
+                                check out one of these matching
+                                books instead:
+                            </p>
+
+                            <ul>
+                                {checkoutAlternatives.map(
+                                    (book) => (
+                                        <li key={book.id}>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                onClick={() =>
+                                                    applyEligibleMatch(
+                                                        book,
+                                                    )
+                                                }
+                                            >
+                                                {book.title}
+                                                {' — '}
+                                                {book.authors}
+                                                {book.shelf_name
+                                                    ? ` — ${formatShelfCommonNameForDisplay(
+                                                        book.shelf_name,
+                                                    )}`
+                                                    : ''}
+                                            </Button>
+                                        </li>
+                                    ),
+                                )}
+                            </ul>
+                        </Alert>
+                    ) : null}
+
+                    {alternateLookupComplete &&
+                    !alternateLookupError &&
+                    checkoutAlternatives.length === 0 ? (
+                        <Alert variant="info">
+                            <p>
+                                No other available copy or edition
+                                was found in the library.
+                            </p>
+                        </Alert>
+                    ) : null}
+
+                    {!alternateLookupEnabled ? (
+                        <Alert variant="info">
+                            <p>
+                                This book does not have enough ISBN,
+                                author, or title information to look
+                                for another copy automatically.
+                            </p>
+                        </Alert>
+                    ) : null}
+                </section>
             ) : null}
 
             <section aria-labelledby="isbn-find-heading">

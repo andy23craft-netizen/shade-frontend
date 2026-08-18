@@ -23,6 +23,8 @@ const mockMutate = vi.fn()
 const mockInvalidateQueries = vi.fn()
 const mockRefetchBooks = vi.fn()
 const mockRefetchIsbnSearch = vi.fn()
+const mockRefetchAlternateIsbn = vi.fn()
+const mockRefetchAlternateAuthorTitle = vi.fn()
 
 type MockBook = {
     id: string
@@ -43,6 +45,23 @@ let mockIsbnSearchResponse:
       }
     | undefined
 
+let mockAlternateIsbnResponse:
+    | {
+    items: MockBook[]
+}
+    | undefined
+
+let mockAlternateAuthorTitleResponse:
+    | {
+    items: MockBook[]
+}
+    | undefined
+
+let mockAlternateIsbnFetching = false
+let mockAlternateAuthorTitleFetching = false
+let mockAlternateIsbnError = false
+let mockAlternateAuthorTitleError = false
+
 let mockBooksPending = false
 let mockBooksError = false
 let mockCheckoutPending = false
@@ -50,12 +69,25 @@ let mockIsbnSearchFetching = false
 let mockIsbnSearchError = false
 let mockIsbnSearchErrorMessage =
     'ISBN search failed'
+type MockBooksOptions = {
+    isbn?: string
+    author?: string
+    title?: string
+    enabled?: boolean
+}
+
 let lastIsbnSearchOptions:
-    | {
-          isbn?: string
-          enabled?: boolean
-      }
+    | MockBooksOptions
     | undefined
+
+let lastAlternateIsbnOptions:
+    | MockBooksOptions
+    | undefined
+
+let lastAlternateAuthorTitleOptions:
+    | MockBooksOptions
+    | undefined
+let useBooksCallIndex = 0
 
 vi.mock('react-router-dom', async () => {
     const actual =
@@ -91,12 +123,28 @@ vi.mock('@tanstack/react-query', async () => {
 
 vi.mock('../../../api/booksQueries', () => ({
     useBooks: (
-        options: {
-            isbn?: string
-            enabled?: boolean
-        } = {},
+        options: MockBooksOptions = {},
     ) => {
-        if (options.enabled !== undefined) {
+        const callIndex =
+            useBooksCallIndex % 4
+
+        useBooksCallIndex += 1
+
+        if (callIndex === 0) {
+            return {
+                data: mockBooksResponse,
+                isPending: mockBooksPending,
+                isError: mockBooksError,
+                error: mockBooksError
+                    ? new Error(
+                        'The available books could not be loaded.',
+                    )
+                    : null,
+                refetch: mockRefetchBooks,
+            }
+        }
+
+        if (callIndex === 1) {
             lastIsbnSearchOptions = options
 
             return {
@@ -105,27 +153,67 @@ vi.mock('../../../api/booksQueries', () => ({
                         ? mockIsbnSearchResponse
                         : undefined,
                 isPending: false,
-                isFetching: mockIsbnSearchFetching,
-                isError: mockIsbnSearchError,
-                error: mockIsbnSearchError
-                    ? new Error(
-                          mockIsbnSearchErrorMessage,
-                      )
-                    : null,
-                refetch: mockRefetchIsbnSearch,
+                isFetching:
+                mockIsbnSearchFetching,
+                isError:
+                mockIsbnSearchError,
+                error:
+                    mockIsbnSearchError
+                        ? new Error(
+                            mockIsbnSearchErrorMessage,
+                        )
+                        : null,
+                refetch:
+                mockRefetchIsbnSearch,
             }
         }
 
+        if (callIndex === 2) {
+            lastAlternateIsbnOptions =
+                options
+
+            return {
+                data:
+                    options.enabled
+                        ? mockAlternateIsbnResponse
+                        : undefined,
+                isPending: false,
+                isFetching:
+                mockAlternateIsbnFetching,
+                isError:
+                mockAlternateIsbnError,
+                error:
+                    mockAlternateIsbnError
+                        ? new Error(
+                            'Alternate ISBN search failed',
+                        )
+                        : null,
+                refetch:
+                mockRefetchAlternateIsbn,
+            }
+        }
+
+        lastAlternateAuthorTitleOptions =
+            options
+
         return {
-            data: mockBooksResponse,
-            isPending: mockBooksPending,
-            isError: mockBooksError,
-            error: mockBooksError
-                ? new Error(
-                      'The available books could not be loaded.',
-                  )
-                : null,
-            refetch: mockRefetchBooks,
+            data:
+                options.enabled
+                    ? mockAlternateAuthorTitleResponse
+                    : undefined,
+            isPending: false,
+            isFetching:
+            mockAlternateAuthorTitleFetching,
+            isError:
+            mockAlternateAuthorTitleError,
+            error:
+                mockAlternateAuthorTitleError
+                    ? new Error(
+                        'Author/title alternate search failed',
+                    )
+                    : null,
+            refetch:
+            mockRefetchAlternateAuthorTitle,
         }
     },
 
@@ -222,6 +310,7 @@ const deletedBook = {
     status: 'available',
     deletion_date: '2026-08-01T00:00:00Z',
 }
+const VALID_ISBN_13 = '9780441172719'
 
 const displayOnlyBook = {
     id: 'book-4',
@@ -229,9 +318,10 @@ const displayOnlyBook = {
     authors: 'Cartographer',
     status: 'display_only',
     deletion_date: null,
+    isbn13: VALID_ISBN_13,
 }
 
-const VALID_ISBN_13 = '9780441172719'
+
 
 describe('CheckoutPage', () => {
     beforeEach(() => {
@@ -265,6 +355,25 @@ describe('CheckoutPage', () => {
         mockIsbnSearchErrorMessage =
             'ISBN search failed'
         lastIsbnSearchOptions = undefined
+        useBooksCallIndex = 0
+
+        mockRefetchAlternateIsbn.mockResolvedValue(
+            undefined,
+        )
+        mockRefetchAlternateAuthorTitle.mockResolvedValue(
+            undefined,
+        )
+
+        mockAlternateIsbnResponse = undefined
+        mockAlternateAuthorTitleResponse = undefined
+
+        mockAlternateIsbnFetching = false
+        mockAlternateAuthorTitleFetching = false
+        mockAlternateIsbnError = false
+        mockAlternateAuthorTitleError = false
+
+        lastAlternateIsbnOptions = undefined
+        lastAlternateAuthorTitleOptions = undefined
     })
 
     it('renders the checkout page', () => {
@@ -913,7 +1022,246 @@ describe('CheckoutPage', () => {
         ).toBeDisabled()
     })
 
+    it('looks for alternates for a display-only deep link', async () => {
+        mockAlternateIsbnResponse = {
+            items: [],
+        }
+
+        mockAlternateAuthorTitleResponse = {
+            items: [],
+        }
+
+        renderPage(
+            '/checkout?bookId=book-4',
+        )
+
+        await waitFor(() => {
+            expect(
+                lastAlternateIsbnOptions,
+            ).toEqual({
+                isbn: VALID_ISBN_13,
+                enabled: true,
+            })
+        })
+
+        expect(
+            lastAlternateAuthorTitleOptions,
+        ).toEqual({
+            author: 'Cartographer',
+            title: 'Display Only Atlas',
+            enabled: true,
+        })
+
+        expect(
+            screen.getByText(
+                'No other available copy or edition was found in the library.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Check Out Book',
+            }),
+        ).toBeDisabled()
+    })
+
+    it('offers an available ISBN alternate for a display-only book', async () => {
+        const alternate = {
+            ...availableBook,
+            id: 'alternate-copy',
+            title: 'Display Only Atlas',
+            authors: 'Cartographer',
+            isbn13: VALID_ISBN_13,
+            shelf_name: 'a1',
+        }
+
+        mockAlternateIsbnResponse = {
+            items: [
+                displayOnlyBook,
+                alternate,
+            ],
+        }
+
+        mockAlternateAuthorTitleResponse = {
+            items: [],
+        }
+
+        renderPage(
+            '/checkout?bookId=book-4',
+        )
+
+        expect(
+            await screen.findByText(
+                'Available alternatives',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: /Display Only Atlas — Cartographer — A1/,
+            }),
+        )
+
+        expect(
+            mockSetSearchParams,
+        ).toHaveBeenCalledWith({
+            bookId: 'alternate-copy',
+        })
+    })
+
+    it('keeps checkout form values when selecting an alternate', async () => {
+        const alternate = {
+            ...availableBook,
+            id: 'alternate-copy',
+            title: 'Display Only Atlas',
+            authors: 'Cartographer',
+            isbn13: VALID_ISBN_13,
+        }
+
+        mockAlternateIsbnResponse = {
+            items: [alternate],
+        }
+
+        mockAlternateAuthorTitleResponse = {
+            items: [],
+        }
+
+        renderPage(
+            '/checkout?bookId=book-4',
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Borrower'),
+            {
+                target: {
+                    value: 'Pat',
+                },
+            },
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Notes'),
+            {
+                target: {
+                    value: 'Keep these notes',
+                },
+            },
+        )
+
+        const alternateButton =
+            await screen.findByRole(
+                'button',
+                {
+                    name: /Display Only Atlas — Cartographer/,
+                },
+            )
+
+        fireEvent.click(alternateButton)
+
+        expect(
+            screen.getByLabelText('Borrower'),
+        ).toHaveValue('Pat')
+
+        expect(
+            screen.getByLabelText('Notes'),
+        ).toHaveValue('Keep these notes')
+
+        expect(
+            mockSetSearchParams,
+        ).toHaveBeenCalledWith({
+            bookId: 'alternate-copy',
+        })
+    })
+
+    it('offers an author and title alternate when ISBN has no eligible result', async () => {
+        const otherEdition = {
+            ...availableBook,
+            id: 'other-edition',
+            title: 'Display Only Atlas',
+            authors: 'Cartographer',
+            isbn13: '9780000000002',
+        }
+
+        mockAlternateIsbnResponse = {
+            items: [],
+        }
+
+        mockAlternateAuthorTitleResponse = {
+            items: [otherEdition],
+        }
+
+        renderPage(
+            '/checkout?bookId=book-4',
+        )
+
+        await waitFor(() => {
+            expect(
+                lastAlternateAuthorTitleOptions,
+            ).toEqual({
+                author: 'Cartographer',
+                title: 'Display Only Atlas',
+                enabled: true,
+            })
+        })
+
+        expect(
+            screen.getByRole('button', {
+                name: /Display Only Atlas — Cartographer/,
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('prefers ISBN alternates and does not duplicate overlapping matches', async () => {
+        const shared = {
+            ...availableBook,
+            id: 'shared-match',
+            title: 'Display Only Atlas',
+            authors: 'Cartographer',
+            isbn13: VALID_ISBN_13,
+        }
+
+        const otherEdition = {
+            ...availableBook,
+            id: 'other-edition',
+            title: 'Display Only Atlas',
+            authors: 'Cartographer',
+            isbn13: '9780000000002',
+        }
+
+        mockAlternateIsbnResponse = {
+            items: [shared],
+        }
+
+        mockAlternateAuthorTitleResponse = {
+            items: [
+                shared,
+                otherEdition,
+            ],
+        }
+
+        renderPage(
+            '/checkout?bookId=book-4',
+        )
+
+        const buttons =
+            await screen.findAllByRole(
+                'button',
+                {
+                    name: /Display Only Atlas — Cartographer/,
+                },
+            )
+
+        expect(buttons).toHaveLength(2)
+    })
+
     it('explains 412 when the book is display only and refetches', async () => {
+        mockAlternateIsbnResponse = {
+            items: [],
+        }
+
+        mockAlternateAuthorTitleResponse = {
+            items: [],
+        }
         renderPage('/checkout?bookId=book-1')
 
         fireEvent.change(
@@ -956,6 +1304,18 @@ describe('CheckoutPage', () => {
                     /Book is display only/,
                 ),
             ).toBeInTheDocument()
+        })
+
+        await waitFor(() => {
+            expect(
+                lastAlternateAuthorTitleOptions,
+            ).toEqual({
+                author:
+                availableBook.authors,
+                title:
+                availableBook.title,
+                enabled: true,
+            })
         })
 
         expect(
