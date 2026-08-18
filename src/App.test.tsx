@@ -48,20 +48,30 @@ describe('application routing effects', () => {
   it('updates the title and focuses the heading after client-side navigation', async () => {
     renderAppTree(['/books'])
 
+    const circulationButton = screen.getByRole('button', {
+      name: 'Circulation',
+    })
+
+    fireEvent.click(circulationButton)
+
     const loansLink = screen.getByRole('link', {
       name: 'Loans',
     })
 
     fireEvent.click(loansLink)
 
-    const heading = await screen.findByRole('heading', {
-      level: 1,
-      name: 'Loans',
-    })
+    expect(
+        screen.getByRole('heading', {
+          level: 1,
+          name: 'Loans',
+        }),
+    ).toBeInTheDocument()
 
     await waitFor(() => {
       expect(document.title).toBe('Loans — Shade')
-      expect(document.activeElement).toBe(heading)
+      expect(document.activeElement).toBe(
+          screen.getByRole('main'),
+      )
     })
   })
 

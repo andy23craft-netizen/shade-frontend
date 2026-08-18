@@ -17,6 +17,7 @@ import { routeMetadata } from './routeMetadata'
 import { ReadingEditPage } from '../features/books/routes/ReadingEditPage'
 import { DeleteBookPage } from '../features/books/routes/DeleteBookPage'
 import { AboutPage } from '../features/about/routes/AboutPage'
+import { ManageCollectionPage } from '../features/collection/routes/ManageCollectionPage'
 
 export const routeConfig = [
     {
@@ -42,6 +43,13 @@ export const routeConfig = [
                     title: routeMetadata.books.title,
                 },
                 element: <BooksPage />,
+            },
+            {
+                path: routeMetadata.manageCollection.path,
+                handle: {
+                    title: routeMetadata.manageCollection.title,
+                },
+                element: <ManageCollectionPage />,
             },
             {
                 path: routeMetadata.newBook.path,

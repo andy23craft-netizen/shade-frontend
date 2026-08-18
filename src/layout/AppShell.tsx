@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom'
 import { useVersion } from '../api/versionQueries'
 import { APP_VERSION } from '../config/appVersion'
+import { DrawerNavMenu } from './DrawerNavMenu'
 
 interface RouteHandle {
     title?: string
@@ -45,11 +46,7 @@ export function AppShell() {
             return
         }
 
-        const heading = mainRef.current?.querySelector('h1')
-
-        if (heading instanceof HTMLElement) {
-            heading.focus()
-        }
+        mainRef.current?.focus()
     }, [location.pathname])
 
     return (
@@ -74,92 +71,66 @@ export function AppShell() {
                         className="app-nav"
                         aria-label="Primary navigation"
                     >
-                        <div className="app-nav__group">
-                            <NavLink
-                                className="app-nav__link"
-                                to="/"
-                                end
-                            >
-                                About
-                            </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/dashboard"
-                                end
-                            >
-                                Dashboard
-                            </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/books"
-                                end
-                            >
-                                Books
-                            </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/books/new"
-                                end
-                            >
-                                Add Book
-                            </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/checkout"
-                                end
-                            >
-                                Check Out
-                            </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/checkin"
-                                end
-                            >
-                                Check In
-                            </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/loans"
-                                end
-                            >
-                                Loans
-                            </NavLink>
-
-                            <NavLink
-                                className="app-nav__link"
-                                to="/shelves"
-                                end
-                            >
-                                Shelves
-                            </NavLink>
-                        </div>
-
-                        <div
-                            className="app-nav__group app-nav__group--admin"
-                            aria-label="Administration and settings"
+                        <NavLink
+                            className="app-nav__link"
+                            to="/dashboard"
+                            end
                         >
-                            <NavLink
-                                className="app-nav__link"
-                                to="/admin/deleted"
-                                end
-                            >
-                                Deleted Books
-                            </NavLink>
+    <span className="drawer-nav-menu__label-holder">
+        <span className="drawer-nav-menu__label">
+            Dashboard
+        </span>
+    </span>
 
-                            <NavLink
-                                className="app-nav__link"
-                                to="/admin/backup"
-                                end
-                            >
-                                Backup Library
-                            </NavLink>
-                        </div>
+                            <span
+                                className="drawer-nav-menu__pull"
+                                aria-hidden="true"
+                            />
+                        </NavLink>
+
+                        <DrawerNavMenu
+                            label="Collection"
+                            activePrefixes={[
+                                '/books',
+                                '/shelves',
+                                '/admin/deleted',
+                                '/admin/backup',
+                                '/collection',
+                            ]}
+                            items={[
+                                {
+                                    label: 'Browse',
+                                    to: '/books',
+                                },
+                                {
+                                    label: 'Manage',
+                                    to: '/collection/manage',
+                                },
+                            ]}
+                        />
+
+                        <DrawerNavMenu
+                            label="Circulation"
+                            activePrefixes={[
+                                '/checkout',
+                                '/checkin',
+                                '/loans',
+                            ]}
+                            items={[
+                                {
+                                    label: 'Check Out',
+                                    to: '/checkout',
+                                },
+                                {
+                                    label: 'Check In',
+                                    to: '/checkin',
+                                },
+                                {
+                                    label: 'Loans',
+                                    to: '/loans',
+                                },
+                            ]}
+                        />
                     </nav>
                 </div>
             </header>
@@ -168,6 +139,7 @@ export function AppShell() {
                 ref={mainRef}
                 id="main-content"
                 className="app-main"
+                tabIndex={-1}
             >
                 <Outlet />
             </main>
