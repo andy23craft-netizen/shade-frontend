@@ -609,6 +609,13 @@
           var(--radius-card)
           var(--radius-card);
 
+  clip-path: polygon(
+          4% 0,
+          96% 0,
+          100% 100%,
+          0 100%
+  );
+
   background:
           repeating-linear-gradient(
                   3deg,
@@ -653,9 +660,9 @@
   position: absolute;
   z-index: 1;
   top: 1rem;
-  right: 0.7rem;
+  right: 1.05rem;
   bottom: 4.1rem;
-  left: 0.7rem;
+  left: 1.05rem;
 
   border: 1px solid rgb(111 83 53 / 55%);
   border-radius:
@@ -691,6 +698,9 @@
           var(--color-card);
 
   box-shadow:
+          0 0.35rem 0.55rem rgb(10 8 6 / 28%),
+          -0.3rem 0 0.45rem rgb(10 8 6 / 14%),
+          0.3rem 0 0.45rem rgb(10 8 6 / 14%),
           inset 0 0 2rem rgb(104 71 41 / 6%),
           inset 0 0 0.4rem rgb(60 39 23 / 12%);
 }
@@ -703,12 +713,21 @@
   content: "";
   position: absolute;
   z-index: 3;
-  top: -0.28rem;
-  right: 0.35rem;
-  left: 0.35rem;
-  height: 0.28rem;
-  background: rgb(37 24 16 / 65%);
-  box-shadow: 0 0.2rem 0.25rem rgb(10 8 6 / 20%);
+  top: 0;
+  right: 4%;
+  left: 4%;
+  height: 0.55rem;
+
+  background:
+          linear-gradient(
+                  180deg,
+                  rgb(17 11 8 / 82%),
+                  rgb(57 35 22 / 58%)
+          );
+
+  box-shadow:
+          inset 0 0.15rem 0.25rem rgb(0 0 0 / 45%),
+          0 0.2rem 0.3rem rgb(10 8 6 / 24%);
 }
 
 .dashboard-drawer__heading {

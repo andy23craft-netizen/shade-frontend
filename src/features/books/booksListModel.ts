@@ -1,3 +1,5 @@
+import type { Category } from '../../api/apiTypes'
+
 export {
     INFINITE_SCROLL_BATCH_SIZE as BOOKS_BATCH_SIZE,
 } from '../shared/infiniteScrollConfig'
@@ -14,6 +16,14 @@ export type BookSortOrder =
 
 export const DEFAULT_SORT_BY: BookSortBy = 'author'
 export const DEFAULT_SORT_ORDER: BookSortOrder = 'asc'
+
+export const CATEGORY_FILTER_VALUES: readonly Category[] = [
+    'unknown',
+    'religion',
+    'philosophy',
+    'fiction',
+    'nonfiction',
+]
 
 const SORT_BY_VALUES: readonly BookSortBy[] = [
     'author',
@@ -57,6 +67,29 @@ export function parseSortOrderParam(
     return DEFAULT_SORT_ORDER
 }
 
+export function parseCategoryParam(
+    value: string | null,
+): Category | undefined {
+    if (
+        value !== null &&
+        CATEGORY_FILTER_VALUES.includes(
+            value as Category,
+        )
+    ) {
+        return value as Category
+    }
+
+    return undefined
+}
+
+export function parseTextFilterParam(
+    value: string | null,
+): string | undefined {
+    const trimmed = value?.trim()
+
+    return trimmed ? trimmed : undefined
+}
+
 export function sortByLabel(
     sortBy: BookSortBy,
 ): string {
@@ -85,9 +118,9 @@ export function flattenInfiniteBookPages<
 >(
     pages:
         | Array<{
-            items: TItem[]
-            total: number
-        }>
+        items: TItem[]
+        total: number
+    }>
         | undefined,
 ): TItem[] {
     return pages?.flatMap(
