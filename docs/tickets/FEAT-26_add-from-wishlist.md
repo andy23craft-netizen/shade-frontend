@@ -15,17 +15,10 @@ FEAT-19 wishlists are complete (`WishlistsPage`, `AddWishlistBookControl`, `wish
 membership join via `GET /books/{id}`). Shelves catalog CRUD and book-form shelf pickers are complete (`useShelves`,
 `shelfDisplay`, `BookForm`).
 
-**Backend prerequisite:** the checked-in OpenAPI document does not yet expose membership-level wishlist removal.
-`API-for-FE.md` currently says there is no membership DELETE and that operators must delete the whole wishlist before
-assigning `shelf_name`. This ticket assumes the backend adds a route modeled on collections membership removal:
-
-- `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` → **204**; **400** malformed GUID; **404** unknown
-  wishlist, unknown membership, or membership not on that wishlist; **403** auth.
-
-Confirm the path, status codes, and identifier (`wishlist_book_id` vs `book_id`) against a running backend
-`/openapi.json` before locking transport types. Regenerate `src/api/generated/openapi.ts` with `yarn api:generate` and
-update `docs/technical-reference/openapi.json` when the contract lands. Record drift as a blocker rather than
-inventing frontend semantics.
+Checked-in `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` already document
+wishlist membership removal and the recommended move-to-shelf flow. Regenerate `src/api/generated/openapi.ts` with
+`yarn api:generate` before implementing transport helpers (`yarn api:check` must pass). Compare with a running backend
+`/openapi.json` if drift is suspected; record mismatches as a blocker rather than inventing frontend semantics.
 
 Do not pull FEAT-20 dashboard reports, FEAT-21 display-only checkout, FEAT-22 / FEAT-23 circulation consolidation,
 FEAT-24 scanner expansion, or FEAT-25 backup removal into this ticket.
@@ -34,14 +27,18 @@ FEAT-24 scanner expansion, or FEAT-25 backup removal into this ticket.
 
 Treat these as complementary:
 
-- `../technical-reference/openapi.json` (after backend update) -- new wishlist membership `DELETE`; existing
-  `PATCH /books/{id}` with `{ "shelf_name": "<common_name>" }` → **200** `BookRead`; **400** unknown shelf name;
-  **404** missing/soft-deleted book; **412**
-  `{"detail": "The book must be removed from the wishlist before it can be placed on a shelf"}` when membership still
-  exists; **422** null/blank `shelf_name` on update.
-- `../technical-reference/API-for-FE.md` -- shelf/wishlist mutual exclusion (**412**); load assignable shelves from
-  `GET /shelves` and submit `common_name` as `shelf_name` (never Title Case display strings); unshelved wishlist-only
-  books are omitted from `GET /books` but readable via `GET /books/{id}`; `unknown` is assignable, `removed` is not.
+- `../technical-reference/openapi.json` -- membership
+  `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` → **204**; **400** malformed or missing identifier;
+  **404** unknown wishlist or membership; **403** auth; **422** validation error. Path identifier is
+  `wishlist_book_id` (membership row id), not `book_id`. Existing `PATCH /books/{id}` with
+  `{ "shelf_name": "<common_name>" }` → **200** `BookRead`; **400** unknown shelf name; **404** missing/soft-deleted
+  book; **412** `{"detail": "The book must be removed from the wishlist before it can be placed on a shelf"}` when
+  membership still exists; **422** null/blank `shelf_name` on update.
+- `../technical-reference/API-for-FE.md` -- recommended move flow: membership `DELETE`, then `PATCH` `shelf_name`
+  (deleting the whole wishlist also clears memberships but is not required); shelf/wishlist mutual exclusion (**412**);
+  load assignable shelves from `GET /shelves` and submit `common_name` as `shelf_name` (never Title Case display
+  strings); unshelved wishlist-only books are omitted from `GET /books` but readable via `GET /books/{id}`; `unknown`
+  is assignable, `removed` is not.
 
 **Required call order (non-negotiable):**
 
@@ -105,7 +102,6 @@ Stale copy to replace during implementation:
 - Full book metadata edit, acquisition-source prompt, purchase date/price capture, or ISBN lookup on move.
 - Automatic shelf suggestion, default shelf memory, or "create shelf" inline on the wishlist row.
 - Changing wishlist add flow (`AddWishlistBookControl`) or whole-wishlist delete behavior beyond copy updates.
-- Backend implementation of the membership DELETE route (separate backend ticket; frontend blocked until OpenAPI exists).
 
 ## Remaining scope (file-level plan)
 
@@ -113,13 +109,12 @@ Stale copy to replace during implementation:
 
 | File | Change |
 | ---- | ------ |
-| `docs/technical-reference/openapi.json` | Import updated spec when backend ships membership DELETE (do not hand-edit paths). |
-| `src/api/generated/openapi.ts` | Regenerate via `yarn api:generate` / `yarn api:check`. |
+| `src/api/generated/openapi.ts` | Regenerate from checked-in `docs/technical-reference/openapi.json` via `yarn api:generate` / `yarn api:check` (membership DELETE is already in the spec; do not hand-edit generated paths). |
 | `src/api/wishlistsApi.ts` | Add `removeBook(wishlistId, wishlistBookId)` → `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` (**204**). Accept optional `AbortSignal`. Use encoded path segments. |
 | `src/api/wishlistsQueries.ts` | Add `useRemoveWishlistBook()` mutation; `onSuccess` invalidates `queryKeys.wishlists.books(wishlistId)`. Add `useMoveWishlistBookToShelf()` (or equivalent exported orchestrator) that sequentially calls `removeBook` then `booksApi.update` with `{ shelf_name }` only. On full success: write returned `BookRead` to detail cache; invalidate `queryKeys.wishlists.books(wishlistId)`, `queryKeys.books.all`, `queryKeys.books.detail(bookId)`, and `queryKeys.dashboard.all`. Do not retry failed mutations automatically (`mutations.retry: false` already global). Expose pending/error state for the combined operation. |
 | `src/api/wishlistsApi.test.ts` | Cover `removeBook`: happy **204**, **400**, **404**, auth path wiring. |
 | `src/api/wishlistsQueries.test.tsx` | Cover `useRemoveWishlistBook` invalidation key; orchestrator calls remove then update in order; success invalidates books + wishlist books + dashboard; shelf-only update body. |
-| `scripts/contractSmoke.test.ts` | Assert new DELETE path exists in checked-in OpenAPI once imported. |
+| `scripts/contractSmoke.test.ts` | Assert `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` exists in checked-in OpenAPI. |
 
 Reuse `createBooksApi` inside the orchestrator hook (same pattern as add-to-wishlist using `useCreateBook` +
 `useAddWishlistBook` in the UI layer, or colocate sequential calls in one mutationFn for atomic UX).
@@ -161,7 +156,6 @@ Do not reuse full `BookForm` for a single shelf field -- a focused control keeps
 | ---- | ------ |
 | `e2e/support/mockApi.ts` | Implement membership DELETE and honor shelf assign after delete (update in-memory wishlist + book shelf state). Enables a future wishlist journey spec; optional in this ticket if timeboxed, but mock must stay aligned once e2e covers move. |
 | `docs/AGENTS.md` | After completion: wishlists support membership remove + move-to-shelf; update "no membership remove/edit" wording; add inventory entries for new files/hooks; list FEAT-26 under completed / remove from Next. |
-| `docs/technical-reference/API-for-FE.md` | After backend ships: document membership DELETE and recommended move flow (DELETE membership → PATCH `shelf_name`). Remove "delete the wishlist first" as the only path. |
 | `docs/ToDo.md` | Add checklist line for FEAT-26. |
 
 ## Acceptance criteria
@@ -180,11 +174,11 @@ Do not reuse full `BookForm` for a single shelf field -- a focused control keeps
 - Shelves load failure blocks move controls with recovery consistent with `NewBookPage` / `EditBookPage`.
 - Controls disable while the combined mutation is pending.
 - Colocated unit tests cover API helper, query orchestration, form model, component, and page wiring.
-- `yarn api:check` passes after OpenAPI import; `make check` passes.
+- `yarn api:check` passes after regenerating types from checked-in OpenAPI; `make check` passes.
 - Stale copy about needing to delete the whole wishlist to shelve a book is removed from the wishlists UI.
 
 ## Plan coverage
 
 Extends FEAT-19 wishlists with the natural "purchased / add to collection" exit path described in product design
 notes, without expanding into acquisition-metadata prompts or collection add-from-shelf flows. Explicitly excludes
-FEAT-20 through FEAT-25 and backend route implementation.
+FEAT-20 through FEAT-25.
