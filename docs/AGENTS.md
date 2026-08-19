@@ -27,9 +27,10 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   ISBN lookup on create, and API-fed shelf pickers (`shelf_name`; create requires an explicit shelf).
 - ISBN camera and hardware-scanner capture under `src/features/scanning/` (lazy-loaded from `/books/new` and
   `/checkout`; support matrix in `docs/baselines/FEAT-06_scanner-support.md`).
-- Checkout, check-in, and loan history (`/checkout`, `/checkin`, `/loans`), including checkout Find-by-ISBN via
+- Checkout, check-in, and loan history (`/checkout`, `/loans`), including checkout Find-by-ISBN via
   `useBooks({ isbn })` (not lookup), `412` `display_only` refetch/messaging, and display-only alternate-copy offers
-  (`displayOnlyAlternatives` / `isbn` and `author`+`title` list filters).
+  (`displayOnlyAlternatives` / `isbn` and `author`+`title` list filters). Check-in is `CheckinForm` on `/loans`
+  (`POST /books/{id}/checkin`); `/checkin` is a compatibility redirect, not a product page.
 - Reading completion and later edits (`/books/:bookId/mark-read`, `/books/:bookId/reading`); no mark-unread.
 - Soft delete/restore, deleted admin, and authenticated SQL backup (`/books/:bookId/delete`, `/admin/deleted`,
   `/admin/backup`).
@@ -90,7 +91,7 @@ changing its FEAT-11 behavior or `GET /dashboard` API contract. Brand/home recov
 About; Dashboard is a direct primary-nav link. About is reachable via the brand link, not a separate nav item.
 
 Primary navigation redesign (merged without a standalone ticket). Shipped `DrawerNavMenu` drawer menus for Collection
-(Browse → `/books`, Manage → `/collection/manage`) and Circulation (Check Out, Check In, Loans), plus a direct Dashboard
+(Browse → `/books`, Manage → `/collection/manage`) and Circulation (Check Out, Loans), plus a direct Dashboard
 link. Removed the flat About link, Shelves link, and admin/settings group from the header. Collection maintenance
 actions (Add Book, Shelves, Deleted Books, Backup Library) live on `/collection/manage` (`ManageCollectionPage`) until
 FEAT-25 removes Backup Library from the product UI.
@@ -125,10 +126,15 @@ and non-`available` / deleted rows; ISBN matches are listed first; selecting one
 borrower fields. Zero matches show an honest empty message. Never use `GET /books/lookup` for alternate selection.
 The main eligible selector still offers `available` books only.
 
-**Next:** Remaining tickets under `docs/tickets/` are check-in consolidation onto `/loans` (FEAT-22), checkout
-consolidation onto book details (FEAT-23), hardware ISBN scan on Dashboard / Books / Loans (FEAT-24), removal of the
-browser backup page (FEAT-25; gated on backend fetch-backup script), wishlist move-to-shelf (FEAT-26), and curated
-Collections (FEAT-27).
+FEAT-22 check-in consolidation onto `/loans` (ticket file removed after completion). Product check-in lives on
+`/loans` via `CheckinForm` (`checkinModel`, `checkinEligibility`, `useCheckinBook`). Eligible Active Loans rows and
+detail "Check In" use `/loans?bookId=`. Circulation drawer is Check Out and Loans only (no Check In item). `/checkin`
+is `LegacyCheckinRedirect` (replace-navigate to `/loans`, forward search), not a product page. Lifecycle remains
+`POST /books/{id}/checkin`; never simulate check-in with generic `PATCH`.
+
+**Next:** Remaining tickets under `docs/tickets/` are checkout consolidation onto book details (FEAT-23), hardware ISBN
+scan on Dashboard / Books / Loans (FEAT-24), removal of the browser backup page (FEAT-25; gated on backend fetch-backup
+script), wishlist move-to-shelf (FEAT-26), and curated Collections (FEAT-27).
 
 Notable shipped behaviors agents should preserve:
 
@@ -140,9 +146,9 @@ Notable shipped behaviors agents should preserve:
 - About: `/` is the homepage via `AboutPage`; `CatalogGuide` provides the accessible card-catalog-style How to Use
   dialog and workflow links. Reach About via the brand link; it is not a separate primary-nav item.
 - Navigation: primary nav is Dashboard plus Collection and Circulation `DrawerNavMenu` drawers (`AppShell` /
-  `DrawerNavMenu`); Collection includes Browse, Manage, and Wishlists. `/collection/manage` links Add Book, Shelves,
-  Deleted Books, and Backup Library. FEAT-22 / FEAT-23 / FEAT-25 will further consolidate circulation and backup
-  surfaces.
+  `DrawerNavMenu`); Collection includes Browse, Manage, and Wishlists; Circulation includes Check Out and Loans only
+  (no Check In item). `/collection/manage` links Add Book, Shelves, Deleted Books, and Backup Library. FEAT-23 /
+  FEAT-25 will further consolidate checkout and backup surfaces.
 - Dashboard: `/dashboard`; five card-catalog drawers (summary I--III, Basic Stats IV, Healing Metadata V); explicit
   Refresh across summary and report queries; offline/paused and stale status; drawer-level `QueryErrorState` recovery;
   styles in `src/styles/components.css`.
@@ -154,8 +160,9 @@ Notable shipped behaviors agents should preserve:
   confirmation; Field-linked `422`; `404`/`409`/`412` stale-state refetch with preserved form input. After a
   display-only block (mutate **412** or selected/deep-linked `display_only`), offer checkout-eligible alternates from
   `isbn` and `author`+`title` list filters (`displayOnlyAlternatives`); do not use lookup.
-- Check-in / loans: eligibility via `findActiveLoan` / `isCheckinEligible` (not book `status` alone); blank return time
-  omits body; active vs returned sections with due/overdue labels and durable `Book {id}` fallback.
+- Check-in / loans: product check-in on `/loans` via `CheckinForm`; eligibility via `findActiveLoan` /
+  `isCheckinEligible` (not book `status` alone); blank return time omits body; active vs returned sections with
+  due/overdue labels and durable `Book {id}` fallback. `/checkin` is a compatibility redirect to `/loans`.
 - Reading: initial unread-to-read via `POST /books/{id}/mark-read` only; later edits via `PATCH`; collection cards show
   Read/Unread plus rating (`N / 5`, or an em dash when null).
 - Shelves: Title Case `common_name` labels; `unknown` allowed on books; `removed` excluded except edit may surface
@@ -271,9 +278,8 @@ author / title filtering and URL-backed sorting, detail, manual/ISBN/camera/scan
 (including display-only alternate-copy offers), check-in, loan history, reading tracking, soft delete/restore, deleted
 admin, authenticated SQL backup, runtime API config, CI, Podman preview, versioned production artifacts, About
 homepage with the dashboard at `/dashboard`, and wishlists. Ticketed follow-ons (implement only when working that
-ticket): check-in onto `/loans` (FEAT-22), checkout onto book details (FEAT-23), hardware ISBN scan on more pages
-(FEAT-24), remove the browser backup page (FEAT-25), wishlist move-to-shelf (FEAT-26), and curated Collections
-(FEAT-27).
+ticket): checkout onto book details (FEAT-23), hardware ISBN scan on more pages (FEAT-24), remove the browser backup
+page (FEAT-25), wishlist move-to-shelf (FEAT-26), and curated Collections (FEAT-27).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
@@ -356,8 +362,8 @@ lookup plus camera/hardware scanner capture), `/books/:bookId/edit` (`EditBookPa
 `/books/:bookId/delete` (`DeleteBookPage`), `/books/:bookId/mark-read` (`MarkReadPage` + `markReadModel`),
 `/books/:bookId/reading` (`ReadingEditPage` + `readingEditModel`), `/checkout` (`CheckoutPage` + `checkoutModel` +
 `displayOnlyAlternatives` / `checkoutEligibility` with ISBN Find via `useBooks({ isbn })`, display-only alternate
-offers, confirmation, and `useCheckoutBook`), `/checkin` (`CheckinPage` +
-`checkinModel` + `checkinEligibility`), `/loans` (`LoansPage` + `loanTemporal`), `/shelves` (`ShelvesPage` +
+offers, confirmation, and `useCheckoutBook`), `/checkin` (`LegacyCheckinRedirect` to `/loans`, forwards search),
+`/loans` (`LoansPage` + `CheckinForm` + `loanTemporal`), `/shelves` (`ShelvesPage` +
 `useShelves` / write mutations), `/admin/deleted` (`DeletedBooksPage`), `/admin/backup`
 (`BackupLibraryPage`), and `/wishlists` (`WishlistsPage` + `AddWishlistBookControl`; memberships via `useBook` /
 `GET /books/{id}`). No feature routes still render `RoutePlaceholder` (`RoutePlaceholder.tsx` remains only as an
@@ -501,15 +507,18 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
   `/`, `/dashboard`, `/books`, `/collection/manage`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`,
-  `/books/:bookId/reading`, `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`, `/loans`,
-  `/wishlists`, `/shelves`, `/admin/deleted`, `/admin/backup`, and `*` (not found).
+  `/books/:bookId/reading`, `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`, `/checkin`
+  (`LegacyCheckinRedirect` to `/loans`), `/loans`, `/wishlists`, `/shelves`, `/admin/deleted`, `/admin/backup`, and
+  `*` (not found).
+- `src/routes/LegacyCheckinRedirect.tsx`: Compatibility path only. Replace-navigates `/checkin` to `/loans` and
+  forwards the current search string. `routeMetadata.checkin` is path-only (no title/heading).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route-body helper (`h1` with `tabIndex={-1}`). Unused by current feature
   routes; keep only if a future ticket needs a temporary placeholder.
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back home (`/`).
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
 - `src/layout/AppShell.tsx`: Application frame with skip link, header (brand link to About plus "est. 2026"), primary
-  navigation (Dashboard link; Collection and Circulation `DrawerNavMenu` drawers; Collection items Browse, Manage,
-  Wishlists), `Outlet` main region, footer
+  navigation (Dashboard link; Collection `DrawerNavMenu` Browse/Manage/Wishlists; Circulation `DrawerNavMenu` Check Out
+  and Loans only), `Outlet` main region, footer
   (`Release ${APP_VERSION}` from `package.json`, plus `API {version}` from `useVersion` / `GET /version` when
   available), document title, and heading focus on location change.
 - `src/layout/DrawerNavMenu.tsx`: Accessible drawer-style dropdown for grouped nav items (`aria-expanded`, outside click
@@ -537,7 +546,7 @@ Implemented (do not revert to placeholders):
   loading, not-found / error recovery, and field presentation with safe enum display, including Title Case
   `shelf_name`, `is_read`, `completion_date`, `rating`, and `review`. "Edit Book" links to `/books/:bookId/edit` when
   active. "Check Out" links to `/checkout?bookId=` when active and available. "Check In" links to
-  `/checkin?bookId=...` when active and check-in eligible via `isCheckinEligible` (active loan present, not deleted).
+  `/loans?bookId=...` when active and check-in eligible via `isCheckinEligible` (active loan present, not deleted).
   "Mark Read" links to `/books/:bookId/mark-read` when active and unread. "Edit Reading" links to
   `/books/:bookId/reading` when active and already read. "Delete Book" links to `/books/:bookId/delete` when
   active and not on loan (`status !== 'on_loan'` and no `findActiveLoan`).
@@ -638,17 +647,20 @@ Implemented (do not revert to placeholders):
   validation; colocated `checkinModel.test.ts`
 - `src/features/loans/loanTemporal.ts`: `displayLoanDate`, `getLoanDueState`, and `LoanDueState` for due/overdue
   presentation on loan history; colocated `loanTemporal.test.ts`
-- `src/features/loans/routes/CheckinPage.tsx` (`/checkin`): `?bookId=` deep-link via `useBook` +
-  `useLoans({ bookId })`; without `bookId`, lists eligible books via `useBooks` + `isCheckinEligible`; shows
-  borrower / checked-out from `findActiveLoan`; blank return time omits body / supplied values as UTC ISO 8601;
-  `ConfirmationDialog` before mutate; Field-linked `422`; documented `409` detail messaging (`Book is not checked out`);
-  in-flight disable via `useCheckinBook`; success navigates to detail; soft-deleted / non-eligible warning UI;
-  `404`/`409` refetch with preserved return-time input. Colocated `CheckinPage.test.tsx`
+- `src/features/loans/components/CheckinForm.tsx` (Return Card on `/loans`): check-in via `useCheckinBook` /
+  `checkinModel` / `checkinEligibility`. Shows borrower / checked-out from `findActiveLoan`; blank return time omits
+  body / supplied values as UTC ISO 8601; `ConfirmationDialog` before mutate; Field-linked `422`; documented `409`
+  detail messaging (`Book is not checked out`); in-flight disable; success clears `bookId` and stays on `/loans`;
+  soft-deleted / non-eligible warning UI; `404`/`409` refetch with preserved return-time input. Colocated
+  `CheckinForm.test.tsx`. `CheckinPage` is gone.
 - `src/features/loans/loansListModel.ts`: re-exports shared infinite-scroll constants and loan page flattening helper
-- `src/features/loans/routes/LoansPage.tsx` (`/loans`, infinite scroll): `useInfiniteLoans()` plus unpaginated
-  `useBooks()` joins; active vs returned sections from `returned_at`; due/overdue labels via `loanTemporal`; durable
-  `Book {id}` fallback when the book is missing; empty / loading / retryable error states; bottom next-page loading and
-  retry affordances. Colocated `LoansPage.test.tsx`
+- `src/features/loans/routes/LoansPage.tsx` (`/loans`, infinite scroll + check-in): `useInfiniteLoans()` plus
+  unpaginated `useBooks()` joins; active vs returned sections from `returned_at`; due/overdue labels via `loanTemporal`;
+  durable `Book {id}` fallback when the book is missing; empty / loading / retryable error states; bottom next-page
+  loading and retry affordances. Eligible Active Loans rows offer Check In (`?bookId=`), which mounts `CheckinForm`;
+  returned / missing / ineligible rows do not. In-page loan/book when Check In is opened from Active Loans; otherwise
+  `useLoans({ bookId })` plus `useBooks()` cache, with `useBook(bookId)` only on cache miss. Targeted queries are not
+  mounted when `bookId` is unset. Colocated `LoansPage.test.tsx`
 - `src/features/wishlists/routes/WishlistsPage.tsx` (`/wishlists`): `useWishlists` plus nested `useWishlistBooks`;
   membership catalog join via `useBook` / `GET /books/{id}` (not `useBooks()` / `GET /books`, which omits unshelved
   rows) with durable `Book {id}` fallback; create form with Field-linked **422**; add via `AddWishlistBookControl`
@@ -742,8 +754,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   hops) via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.
 - `src/layout/AppShell.test.tsx`: Landmarks, drawer navigation (Collection Browse/Manage/Wishlists, Circulation Check
-  Out/Check In/Loans, Dashboard current-page and trunk `data-active` including `/wishlists`), footer `Release` from
-  `package.json` plus API version, drawer-to-route navigation with heading focus, and not-found recovery.
+  Out/Loans with no Check In item, Dashboard current-page and trunk `data-active` including `/wishlists`), footer
+  `Release` from `package.json` plus API version, drawer-to-route navigation with heading focus, not-found recovery,
+  and `/checkin` → `/loans` compatibility redirect (search forwarded).
 - `src/components/SharedState.test.tsx`: Field associations plus alert, loading, and empty-state semantics.
 - `src/components/ConfirmationDialog.test.tsx`: Dialog labelling, focus, Escape, confirm, and restoration.
 - `src/components/Notifications.test.tsx`: Live-region roles, dismissal, and provider hook usage.
@@ -819,13 +832,14 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   ISBN Find (typed single match, zero / ineligible matches, checksum / blank rejection, camera and hardware handoff
   into `useBooks({ isbn })`, checkout mutate unchanged after ISBN selection), and alternate-copy offers (ISBN sibling,
   author+title fallback, zero alternates, form preservation when selecting a substitute)
-- `src/features/loans/routes/CheckinPage.test.tsx` / `checkinModel.test.ts` / `checkinEligibility.test.ts`:
-  Check-in deep-link and eligible-book selection, active-loan eligibility (including status-independent cases),
-  soft-delete / non-eligible warnings, blank and supplied return time, confirmation, success navigation, Field-linked
-  `422`, documented `409` detail messaging, generic mutation errors, pending disable, and form conversion
+- `src/features/loans/components/CheckinForm.test.tsx` / `checkinModel.test.ts` / `checkinEligibility.test.ts`:
+  Check-in on `/loans` (`?bookId=` Return Card), active-loan eligibility (including status-independent cases),
+  soft-delete / non-eligible warnings, blank and supplied return time, confirmation, success staying on `/loans`,
+  Field-linked `422`, documented `409` detail messaging, generic mutation errors, pending disable, and form conversion
 - `src/features/loans/routes/LoansPage.test.tsx` / `loanTemporal.test.ts`: Infinite loan pagination into active vs
-  returned sections, due/overdue labels, durable missing-book fallback, empty / loading / retryable error states,
-  explicit empty active and returned sections, bottom loading/retry, and   due-date display
+  returned sections, Check In on eligible Active Loans rows, due/overdue labels, durable missing-book fallback, empty /
+  loading / retryable error states, explicit empty active and returned sections, bottom loading/retry, and due-date
+  display
 - `src/features/wishlists/routes/WishlistsPage.test.tsx` / `AddWishlistBookControl.test.tsx` /
   `wishlistFormModel.test.ts` / `wishlistDisplay.test.ts`: wishlists loading/error/empty, create, nested
   memberships with `GET /books/{id}` join and missing-book fallback, add omitting `shelf_name`, **412** exclusivity,
@@ -990,8 +1004,8 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-22_*.md` through `FEAT-27_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-21 are complete; those ticket files are removed). Prefer ticket presence under
+- `docs/tickets/FEAT-23_*.md` through `FEAT-27_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-22 are complete; those ticket files are removed). Prefer ticket presence under
   `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
 - `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
 - `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
@@ -1085,8 +1099,8 @@ make build
   `AppProviders` / `ConnectionProvider` / `apiClient` `onRequestFailure` and optional runtime config
   (`public/config.js` / `RuntimeConfig.diagnostics`); never fabricate correlation IDs, invent a second telemetry
   transport, or log denylisted fields.   Leave primary navigation under `AppShell` / `DrawerNavMenu` (Dashboard link;
-  Collection Browse/Manage/Wishlists and Circulation drawers; brand link to About). Leave `/collection/manage` under
-  `ManageCollectionPage` until FEAT-25 removes Backup Library. Leave edit under `EditBookPage` /
+  Collection Browse/Manage/Wishlists and Circulation Check Out/Loans; brand link to About). Leave `/collection/manage`
+  under `ManageCollectionPage` until FEAT-25 removes Backup Library. Leave edit under `EditBookPage` /
   `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; never send `status=on_loan`, reading fields, or
   loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`; block when
   `status === 'on_loan'` or `findActiveLoan` is present). Leave `/admin/deleted` under `DeletedBooksPage` and
@@ -1099,8 +1113,8 @@ make build
   `/books/new` and `/checkout`. Leave checkout under `CheckoutPage` / `checkoutModel` / `checkoutEligibility` /
   `displayOnlyAlternatives`, including ISBN Find via `useBooks({ isbn })` (not lookup), `412` `display_only`
   refetch/messaging, and alternate-copy offers via `isbn` and `author`+`title` list filters (never lookup). Leave
-  check-in and loan history under
-  `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`. Leave shelves under
+  check-in and loan history under `CheckinForm` / `checkinModel` / `checkinEligibility` / `LoansPage` / `loanTemporal`
+  (check-in on `/loans`; `/checkin` is `LegacyCheckinRedirect` only). Leave shelves under
   `ShelvesPage` / `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations (`/shelves` owns
   create/edit/delete with system-shelf protection; book forms use API-fed pickers with `shelf_name`, never shelf CRUD
   on Add/Edit Book). Leave wishlists under `WishlistsPage` / `AddWishlistBookControl` / `wishlistFormModel` /
@@ -1115,7 +1129,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-22 through FEAT-27 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-23 through FEAT-27 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.

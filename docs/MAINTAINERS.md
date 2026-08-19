@@ -164,8 +164,9 @@ recreate them.
 
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths
-  are `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin`, `/loans`,
-  `/admin/deleted`, `/admin/backup`, and `*` (not found).
+  are `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin` (compatibility
+  redirect to `/loans`; primary check-in IA is `/loans`), `/loans`, `/admin/deleted`, `/admin/backup`, and `*`
+  (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route body used by unfinished feature pages (`h1` with `tabIndex={-1}`).
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
@@ -177,7 +178,8 @@ recreate them.
 
 Route ownership under `src/features/*/routes/`. Implemented product UI vs placeholders:
 
-Implemented: books list/detail/create, checkout, check-in, and loans (see `docs/AGENTS.md` for the current inventory).
+Implemented: books list/detail/create, checkout, check-in on `/loans`, and loans (see `docs/AGENTS.md` for the current
+inventory).
 
 Connection feature (FEAT-02 + FEAT-05 better auth):
 
