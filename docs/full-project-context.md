@@ -5,11 +5,11 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline. Start from this file alone for that baseline;
-it does not depend on any other LLM prompt. Attach the on-demand docs
-listed in section 8 only when the current ticket needs them; do not
-re-synthesize those sources here. A user's explicit request takes
-precedence over general guidance here.
+the dated codebase baseline. Start from this file alone; do not load
+another project prompt or agents guide for additional baseline context.
+Attach the on-demand docs listed in section 8 only when the current
+ticket needs them; do not re-synthesize those sources here. A user's
+explicit request takes precedence over general guidance here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
@@ -206,7 +206,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 `docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI:
 `/docs` and `/openapi.json` on the running API.
 
-**Known baseline (as of 2026-08-18 -- verify before editing):**
+**Known baseline (as of 2026-08-19 -- verify before editing):**
 
 -   MVP product UI is shipped: application shell and shared primitives;
     runtime config and build-time Bearer auth; typed OpenAPI + React Query
@@ -556,7 +556,7 @@ index.html
         (lists including `include_deleted` via `['books']` prefix,
         detail, dashboard, and loans on checkout/check-in)
     -   `src/api/loansQueries.ts` / `dashboardQueries.ts` /
-        `shelvesQueries.ts`: `useLoans` (optional `{ bookId }`),
+        `shelvesQueries.ts`: `useLoans` (optional `{ bookId, enabled }`),
         `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size
         30 via shared config), `useLoan(id)` (disabled when falsy),
         `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
@@ -728,8 +728,11 @@ index.html
         `CheckinForm` (`checkinModel`, `checkinEligibility`,
         `useCheckinBook`); blank return time omits body; `ConfirmationDialog`;
         Field-linked **422**; **404** / **409** stale-state refetch;
-        success clears `bookId` and stays on `/loans`. `CheckinPage` is
-        gone.
+        success clears `bookId` and stays on `/loans`. In-page loan/book
+        when Check In is opened from Active Loans; otherwise
+        `useLoans({ bookId })` plus `useBooks()` cache, with
+        `useBook(bookId)` only on cache miss. Targeted queries are not
+        mounted when `bookId` is unset. `CheckinPage` is gone.
     -   `/shelves` -- `ShelvesPage` + `shelfDisplay` / `shelfFormModel`
         (complete): catalog via `useShelves` with create /
         edit / delete through `useCreateShelf` / `useUpdateShelf` /
@@ -1069,7 +1072,7 @@ merely to make a ticket pass.
     contents). Leave About under `AboutPage` / `CatalogGuide` at `/` (brand link
     only; not a separate primary-nav item). Leave primary navigation under
     `AppShell` / `DrawerNavMenu` (Dashboard link; Collection Browse/
-    Manage/Wishlists and Circulation drawers). Leave `/collection/manage`
+    Manage/Wishlists and Circulation Check Out/Loans). Leave `/collection/manage`
     under `ManageCollectionPage` until FEAT-25 removes Backup Library.
     Leave dashboard under `DashboardPage` at `/dashboard` (`useDashboard` /
     `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` /
@@ -1138,10 +1141,12 @@ hardware ISBN scan on more pages (FEAT-24), remove the browser backup page (FEAT
 **Out of scope unless explicitly requested:** UPC, true multi-library
 tenancy, cover images, overdue notifications, Goodreads/StoryGraph, user
 accounts/roles, realtime sync, loan CRUD, mark-unread, remote
-Ansible/systemd/TLS/rollback orchestration. Collection browse
-(`BooksPage`) and loan history (`LoansPage`) use infinite scroll with
-backend pagination; other callers still fetch unpaginated full lists
-when needed.
+Ansible/systemd/TLS/rollback orchestration, and replacing the
+single-value `Category` enum with a many-to-many / data-driven taxonomy
+(`docs/product-docs/CATEGORY_NOTES.md` is future-architecture notes, not
+a ticket). Collection browse (`BooksPage`) and loan history
+(`LoansPage`) use infinite scroll with backend pagination; other callers
+still fetch unpaginated full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not implement
 future tickets prematurely.
@@ -1333,6 +1338,10 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
   Architecture / workstreams /    `docs/product-docs/PLAN.md`
   release intent                  
 
+  Future category taxonomy notes  `docs/product-docs/CATEGORY_NOTES.md`
+  (not a ticket; do not implement
+  unless explicitly requested)
+
   Product requirements (source)   `docs/product-docs/PRODUCT_REQS.V1.md`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
@@ -1368,7 +1377,9 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
-self-contained for operating rules, non-negotiables, and the dated baseline.
+self-contained for operating rules, non-negotiables, and the dated
+baseline. Do not request another project agents or context file for more
+of the same.
 
 ------------------------------------------------------------------------
 

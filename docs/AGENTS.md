@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-18 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-19 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -283,8 +283,10 @@ page (FEAT-25), wishlist move-to-shelf (FEAT-26), and curated Collections (FEAT-
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
-orchestration. Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite scroll with backend
-pagination; other callers still fetch unpaginated full lists when needed.
+orchestration, and replacing the single-value `Category` enum with a many-to-many / data-driven taxonomy
+(`docs/product-docs/CATEGORY_NOTES.md` is future-architecture notes, not a ticket). Collection browse (`BooksPage`)
+and loan history (`LoansPage`) use infinite scroll with backend pagination; other callers still fetch unpaginated
+full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
@@ -488,7 +490,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write returned `BookRead` into the
   detail cache (except delete) and invalidate per PLAN.md 7.5 (lists including `include_deleted` via the `['books']`
   prefix, detail, dashboard, and loans on checkout/check-in).
-- `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId }`),
+- `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId, enabled }`),
   `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size 30 via shared config), `useLoan(id)` (disabled when
   falsy), `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
   `useInfiniteIncompleteMetadataBooks({ field?, enabled? })` (batch size 30 via shared config), `useShelves({ enabled?
@@ -779,9 +781,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
   Query client defaults, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
-- `src/api/queryKeys.test.ts`: Books/loans/dashboard/shelves/version key shape coverage including `author` / `title` /
-  `category` omission of blank filters, dashboard nested report keys, `infiniteList` isolation, and shelves list
-  isolation.
+- `src/api/queryKeys.test.ts`: Books/loans/dashboard/shelves/wishlists/version key shape coverage including `author` /
+  `title` / `category` omission of blank filters, dashboard nested report keys, `infiniteList` isolation, and
+  shelves / wishlists list isolation.
 - `src/api/shelvesApi.test.ts` / `shelvesQueries.test.tsx`: `GET` / `POST` / `PATCH` / `DELETE /shelves` helpers and
   `useShelves` / write mutation hooks (including rename invalidation of books/dashboard).
 - `src/api/wishlistsApi.test.ts` / `wishlistsQueries.test.tsx`: wishlist list/create/update/delete/listBooks/addBook
@@ -863,7 +865,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   fixtures, axe serious/critical gate) via mocked API
 - `e2e/book.creation.spec.ts`: Manual book-creation journey through `/books/new` into the created detail page
 - `e2e/library.lifecycle.spec.ts`: Checkout/check-in, mark-read, and delete/restore browser journeys against the
-  stateful mock API (dedicated lifecycle endpoints, not generic `PATCH`)
+  stateful mock API (dedicated lifecycle endpoints, not generic `PATCH`). Check-in follows detail "Check In" onto
+  `/loans?bookId=` (`CheckinForm` Return Card), not a dedicated `/checkin` page.
 - `e2e/accessibility.spec.ts`: Per-route axe serious/critical scans for books list, add book, book detail, checkout, and
   loans (see `docs/baselines/FEAT-13_testing.md` for broader manual accessibility ownership)
 - `e2e/support/mockApi.ts`: Stateful Playwright route mock for `http://127.0.0.1:8000/**` (health, version, shelves,
@@ -927,8 +930,8 @@ make check / yarn check
   same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
   `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, and `/wishlists` (not `/shelves` or
   `/version`).
-- `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`, and
-  `node_modules/` and treats warnings as failures through the package script.
+- `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`,
+  `node_modules/`, and `ci/artifacts/` and treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
 - `tsconfig.app.json`: Strict browser and React type checking for `src/`. It includes Vite, Vitest, and jest-dom types
   and emits no files.
@@ -1014,6 +1017,8 @@ their contents (for example, the active ticket's acceptance criteria or the Open
   accessibility / manual-gate ownership.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
+- `docs/product-docs/CATEGORY_NOTES.md`: Future book-category architecture notes (many-to-many / data-driven labels).
+  Not a ticket; do not implement from this file unless explicitly requested.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (see Backend Contract).
