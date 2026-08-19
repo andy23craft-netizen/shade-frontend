@@ -99,9 +99,8 @@ Use client-side routing with these user-facing destinations:
 - `/dashboard` -- read-only collection, circulation, and reading metrics.
 - `/books` -- active collection.
 - `/books/new` — ISBN-assisted or manual book creation.
-- `/books/:bookId` — book details and available lifecycle actions.
+- `/books/:bookId` — book details and available lifecycle actions, including checkout.
 - `/books/:bookId/edit` — editable metadata.
-- `/checkout` -- select and check out an available book.
 - `/loans` -- active and returned loan history, including check-in of on-loan books.
 - `/admin/deleted` -- soft-deleted books and restore actions.
 - `/admin/backup` — authenticated full-library SQL backup.
@@ -109,8 +108,8 @@ Use client-side routing with these user-facing destinations:
 - A not-found route with a path back into the application.
 
 The application shell must provide persistent access via a Dashboard link; a Collection drawer (Browse, Manage,
-Wishlists); and a Circulation drawer (Check Out, Loans -- no Check In). About is reachable via the brand link. Add Book
-and other collection maintenance live on `/collection/manage`.
+Wishlists); and a Circulation drawer (Loans only -- no Check Out or Check In). About is reachable via the brand link.
+Add Book and other collection maintenance live on `/collection/manage`.
 Administrative deletion/restore and connection settings may be visually separated, but there is no role-based
 authorization in the MVP.
 
@@ -447,21 +446,22 @@ surface becomes too large, but its acceptance criteria must not be lost.
 
 **Goal:** Loan one available book to a borrower.
 
-**API:** `GET /books`, `POST /books/{id}/checkout`.
+**API:** `POST /books/{id}/checkout`.
 
 **Deliverables:**
 
-- Checkout page with available-book selection.
-- Required borrower and optional checkout timestamp, due date, and notes.
-- An entry point from eligible book details.
-- Confirmation, in-flight duplicate prevention, and success feedback.
+- Checkout dialog on eligible book details (no available-book selection page).
+- Required borrower and optional notes.
+- Computed checkout timestamp (`checked_out_at` as UTC now) and due date (`due_at` as the UTC calendar date of noon on
+  the day 366 days after the checkout day).
+- In-flight duplicate prevention and success feedback on the same details page.
 - Refreshed book, loan, and dashboard data after success.
 - Conflict and stale-resource recovery.
 
 **Acceptance criteria:**
 
-- On-loan and deleted books cannot be selected.
-- The API default is used when checkout time is omitted.
+- On-loan, display-only, and deleted books do not offer checkout.
+- Checkout time and due date are computed at submit from the same `now`; they are not operator-editable.
 - Submitted borrower text is non-blank and at most 255 characters; submitted dates and timestamps use normalized
   formats.
 - A `409` explains that the state changed, refreshes the book, and does not lose safe form input.
@@ -745,7 +745,8 @@ The product requirements are covered as follows:
 - Minimal scanning interaction, fast lookup feedback, editable imports, failure fallback, and reversibility: Workstreams
   4, 5, and 9.
 - TypeScript/React/Node/Yarn/Vite and Make-driven build: Current baseline and Workstream 12.
-- Dashboard, Check Out, Loans (including check-in), and Admin Management UI: Workstreams 1, 6, 7, 9, and 10.
+- Dashboard, checkout on book details, Loans (including check-in), and Admin Management UI: Workstreams 1, 6, 7, 9, and
+  10.
 - Bearer authentication: Workstream 2 and sections 7.3 and 12.
 - CI, Podman, and tarball: Workstream 12.
 - Remote Ansible and systemd deployment: explicitly assigned to the deployment repository in sections 3 and 11.

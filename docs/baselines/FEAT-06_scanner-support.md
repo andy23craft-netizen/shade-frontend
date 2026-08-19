@@ -1,12 +1,12 @@
 # FEAT-06 scanner support matrix
 
 Library: `@zxing/browser` (with `@zxing/library`) for camera decode. Hardware wedges use keyboard-like
-input via `useHardwareIsbnScanner` / `IsbnScannerParser`. Camera code is lazy-loaded from `/books/new` and
-`/checkout`.
+input via `useHardwareIsbnScanner` / `IsbnScannerParser`. Camera code is lazy-loaded from `/books/new` only until
+FEAT-24.
 
 Recorded for FEAT-06 acceptance. Broader evergreen smoke matrices and release checklists remain FEAT-12 /
-FEAT-13. Re-run the manual rows below on real devices before calling FEAT-06 done. `/checkout` is a second capture
-surface that hands ISBNs into library Find (`GET /books?isbn=`), not metadata lookup.
+FEAT-13. Re-run the manual rows below on real devices before calling FEAT-06 done. `/books/new` is the documented
+capture page.
 
 ## Capture modes
 
@@ -14,10 +14,10 @@ surface that hands ISBNs into library Find (`GET /books?isbn=`), not metadata lo
 |-------------------|------------------------------------------|-----------------------------------------------------------------------|
 | Camera            | ISBN EAN-13 Bookland (`978` / `979`)     | UPC and other symbologies are filtered out before handoff             |
 | Hardware wedge    | ISBN-10 / ISBN-13 with spaces or hyphens | Enter terminator; inter-key timeout; checksum via FEAT-05 `isbn.ts` |
-| Manual typed ISBN | ISBN-10 / ISBN-13 with spaces or hyphens | Always available on `/books/new` and `/checkout`, including when camera fails |
+| Manual typed ISBN | ISBN-10 / ISBN-13 with spaces or hyphens | Always available on `/books/new`, including when camera fails |
 
-Successful captures on `/books/new` hand one ISBN string into the existing FEAT-05 lookup path. Successful captures on
-`/checkout` hand one ISBN into library Find (`useBooks({ isbn })`). Scanning never calls `POST /books` or checkout.
+Successful captures on `/books/new` hand one ISBN string into the existing FEAT-05 lookup path. Scanning never calls
+`POST /books` or checkout.
 
 ## Camera browser matrix
 
@@ -67,12 +67,10 @@ scanners used as the camera target.
 - Camera media mocks: permission, missing camera, generic start failure, first-frame-only detect, unmount stop,
   ISBN-only hints, UPC rejection, insecure/unsupported messaging, scan timeout, and multi-camera switching
 - `NewBookPage` handoff tests for camera and hardware captures into `useBookLookup`
-- `CheckoutPage` handoff tests for camera and hardware captures into ISBN Find (`useBooks({ isbn })`)
 
 ## Manual verification checklist
 
-Run against a connected API on `/books/new` (and `/checkout` for the second capture surface). Check each supported row
-you have available:
+Run against a connected API on `/books/new`. Check each supported row you have available:
 
 - [ ] Desktop Chrome: Scan ISBN opens camera, live guidance appears after start, ISBN handoff fills lookup
 - [ ] Desktop Safari or Firefox: same happy path
