@@ -192,7 +192,15 @@ export function CheckoutDialog({
 
         const handleCancel = (event: Event) => {
             event.preventDefault()
-            handleCancelCheckout()
+
+            if (checkoutBook.isPending) {
+                return
+            }
+
+            setValues(checkoutFormDefaults)
+            setFieldErrors({})
+            setFormError(null)
+            onCloseRef.current()
         }
 
         const handleClose = () => {
@@ -265,7 +273,7 @@ export function CheckoutDialog({
                 handleKeyDown,
             )
         }
-    }, [])
+    }, [checkoutBook.isPending])
 
     const errorEntries = (
         Object.entries(fieldErrors) as [
