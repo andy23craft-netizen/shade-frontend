@@ -79,13 +79,10 @@ Already in place and should be reused (not rebuilt):
 - Shared UI: `Alert`, `AppLink`, `Button`, `EmptyState`, `LoadingState`, `QueryErrorState`. Collection card CSS
   already on `BooksPage`.
 - Playwright `e2e/support/mockApi.ts` list `isbn` exact-matches `isbn13`. That is enough for full-ISBN e2e.
-- `docs/ToDo.md` has no checklist line for this ticket yet. `docs/AGENTS.md` documents
-  capture on `/books/new` and `/checkout`; this ticket adds hardware collection-jump on Dashboard / Books / Loans.
+- `docs/ToDo.md` has no checklist line for this ticket yet.
 
 The gap: a wedge scan on Dashboard, Books, or Loans is ignored (no listener). Operators must open Add Book to use the
-scanner, which is the wrong destination when they already own the book and want its details. `docs/AGENTS.md` still
-describes camera/hardware on `/checkout`; that page is gone -- this ticket's docs hygiene should drop that and describe
-the collection-jump surface instead.
+scanner, which is the wrong destination when they already own the book and want its details.
 
 ## Product intent
 
@@ -154,6 +151,7 @@ ticket owns scan-driven `isbn` URL param only).
 - Changing New Book lookup enablement (except sharing parser/hook option types).
 - Restoring `CheckoutPage`, Circulation Check Out nav, or FEAT-21 alternate-copy offers.
 - FEAT-25 / FEAT-26 / FEAT-27 product work.
+- Updating `docs/AGENTS.md`, `docs/full-project-context.md`, or `docs/MAINTAINERS.md`.
 
 ## Remaining scope (file-level plan)
 
@@ -214,15 +212,10 @@ Use API `total === 1` (full matching count), not "first page has one row while `
 
 ### 5. Docs hygiene (as part of this ticket, not a follow-up)
 
+Do not update `docs/AGENTS.md`, `docs/full-project-context.md`, or `docs/MAINTAINERS.md` in this ticket.
+
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Drop `/checkout` as a camera/hardware capture surface (that page is gone). Scanning also lives on Dashboard /
-  Books / Loans via `useCollectionIsbnJump` (hardware only; no camera there). Keep `/books/new` as the camera + New Book
-  hardware page. Prefetch `GET /books?isbn=` and branch on list length before navigation: unique match opens detail
-  without pushing `/books?isbn=`; zero or many matches go to the filtered collection. `/books` URL may include `isbn`;
-  bookmarked unique-open may still collapse via BooksPage replace-navigate. Still: scan never creates or checks out.
-  Camera still only `/books/new`. Note ignore-editable + preventDefault on this surface only. |
-| `docs/full-project-context.md` | Same capture and `/books?isbn=` notes when that pack is kept current. Drop stale `/checkout` capture if present. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 
 ## Acceptance criteria
@@ -248,8 +241,8 @@ Use API `total === 1` (full matching count), not "first page has one row while `
   unless that page opts in later).
 - Colocated parser, hook, `BooksPage`, and page-wiring tests cover the flow. Playwright covers scan-from-dashboard
   unique-open and Back behavior. `make check` passes.
-- `docs/AGENTS.md` describes this capture surface and the prefetch-before-navigate history rule, and no longer lists
-  `/checkout` as a capture route.
+- `docs/ToDo.md` has a checklist line for this ticket. Do not update `docs/AGENTS.md`, `docs/full-project-context.md`,
+  or `docs/MAINTAINERS.md`.
 
 ## Plan coverage
 
