@@ -112,8 +112,8 @@ once checkout lives on details.
    page. Scanning remains on `/books/new` only until FEAT-24. Operators choose the book from the collection, then
    check it out.
 9. **No remaining `/checkout` links** -- audit the repo and adjust or remove every in-app link to `/checkout` (nav,
-   book detail, loans empty state, About / `CatalogGuide`, tests, and docs). Product navigation and workflow copy must
-   target book details (or `/books` for collection entry) instead.
+   book detail, loans empty state, About / `CatalogGuide`, tests, and docs listed in Remaining scope). Product
+   navigation and workflow copy must target book details (or `/books` for collection entry) instead.
 
 Suggested composition (implementer-owned layout; keep it on book details):
 
@@ -140,6 +140,7 @@ Tone: extend `BookDetailsPage`; do not add a second checkout product.
 - Reverting FEAT-22 (`CheckinForm` on `/loans`, `/checkin` redirect, no Check In nav item).
 - FEAT-24 scanner expansion, or updates to other open tickets.
 - Relocating dashboard / About (FEAT-17) beyond retargeting workflow links away from `/checkout`.
+- Updating `docs/AGENTS.md`, `docs/full-project-context.md`, or `docs/MAINTAINERS.md`.
 - Editable due dates, loan-length settings, overdue notifications, or mark-unread.
 - Building a generic form-dialog primitive unless `CheckoutDialog` and `ConfirmationDialog` would otherwise
   duplicate focus-trap / Escape / restore logic in an unmaintainable way. Prefer a loans-owned `CheckoutDialog`
@@ -200,11 +201,8 @@ is clearly reused.
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Circulation checkout is a details dialog, not `/checkout`. Scanning lazy-load list is `/books/new` only. Inventory `CheckoutDialog` on `BookDetailsPage`; delete `CheckoutPage` / `/checkout`. Keep `checkoutModel` / `POST /books/{id}/checkout` / `412` handling. Circulation drawer: Loans only (no Check Out item). Detail Check Out is a button that opens the dialog. Mark FEAT-23 complete and remove this ticket file when the work ships. |
-| `docs/full-project-context.md` | Same route, nav, and scanning notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a completed checklist line for this ticket. |
 | `docs/product-docs/PLAN.md` | Target IA: drop `/checkout` as a user-facing destination; checkout lives on book details. Shell persistent access: Dashboard link; Collection drawer (Browse, Manage, Wishlists); Circulation drawer without Check Out (Loans). Workstream 6 deliverables: dialog on details, required borrower, optional notes, computed now + 366-day due date; no available-book selection page. |
-| `docs/MAINTAINERS.md` | Registered product routes: replace live `/checkout` with the `/checkout` → `/books` (or details) compatibility redirect if maintainers still list paths. |
 | `docs/baselines/FEAT-06_scanner-support.md` | Drop `/checkout` as a second capture surface; `/books/new` remains the documented capture page until FEAT-24. |
 
 `docs/product-docs/PRODUCT_REQS.V1.md` still requires a Check Out Book capability; satisfying it on book details is
@@ -214,8 +212,8 @@ enough. Do not revive a separate page to match that heading.
 
 - `/checkout` is not a product page. Visiting `/checkout` replace-navigates to `/books`. Visiting
   `/checkout?bookId={id}` replace-navigates to `/books/{id}?checkout=1`.
-- No in-app link targets `/checkout` (nav, book detail, loans empty state, About / CatalogGuide, tests, and updated
-  docs).
+- No in-app link targets `/checkout` (nav, book detail, loans empty state, About / CatalogGuide, tests, and docs
+  listed in Remaining scope).
 - Primary navigation: Circulation drawer has no Check Out item.
 - Eligible book details show a Check Out **button** that opens a dialog with Borrower and Notes only (no checkout
   datetime, no due date, no book picker, no ISBN Find, no alternate-copy chooser).
@@ -234,8 +232,9 @@ enough. Do not revive a separate page to match that heading.
 - Colocated tests cover the dialog, details gating/wiring, nav, empty-loans retarget, CatalogGuide links, and model
   timestamps. Playwright lifecycle checks out from the details dialog, then checks in on `/loans`. `make check`
   passes.
-- `docs/AGENTS.md` (and PLAN / ToDo / maintainer / FEAT-06 scanner docs as listed) no longer describe `/checkout` as
-  a live feature route.
+- `docs/ToDo.md`, `docs/product-docs/PLAN.md`, and `docs/baselines/FEAT-06_scanner-support.md` no longer describe
+  `/checkout` as a live feature route. Do not update `docs/AGENTS.md`, `docs/full-project-context.md`, or
+  `docs/MAINTAINERS.md` in this ticket.
 
 ## Plan coverage
 
