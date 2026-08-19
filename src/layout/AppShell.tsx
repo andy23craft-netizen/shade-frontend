@@ -117,14 +117,9 @@ export function AppShell() {
                         <DrawerNavMenu
                             label="Circulation"
                             activePrefixes={[
-                                '/checkout',
                                 '/loans',
                             ]}
                             items={[
-                                {
-                                    label: 'Check Out',
-                                    to: '/checkout',
-                                },
                                 {
                                     label: 'Loans',
                                     to: '/loans',

@@ -24,11 +24,6 @@ const criticalRoutes = [
         heading: 'Pale Fire',
     },
     {
-        name: 'checkout',
-        path: '/checkout?bookId=accessibility-book',
-        heading: 'Check Out Book',
-    },
-    {
         name: 'loans',
         path: '/loans',
         heading: 'Loans',

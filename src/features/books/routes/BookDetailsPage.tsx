@@ -1,5 +1,11 @@
-import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import {
+    useEffect,
+    useState,
+} from 'react'
+import {
+    useParams,
+    useSearchParams,
+} from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { Alert } from '../../../components/Alert'
@@ -19,6 +25,9 @@ import type {
     Status,
 } from '../../../api/apiTypes'
 import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
+import { Button } from '../../../components/Button'
+import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
+import { isCheckoutEligible } from '../../loans/checkoutEligibility'
 
 const CATEGORY_VALUES: readonly Category[] = [
     'unknown',
@@ -110,6 +119,11 @@ function displayDate(
 
 export function BookDetailsPage() {
     const { bookId } = useParams()
+    const [searchParams, setSearchParams] =
+        useSearchParams()
+
+    const [checkoutOpen, setCheckoutOpen] =
+        useState(() => searchParams.has('checkout'))
     const queryClient = useQueryClient()
 
     const bookQuery = useBook(bookId ?? '')
@@ -134,6 +148,23 @@ export function BookDetailsPage() {
     }, [
         isNotFound,
         queryClient,
+    ])
+
+    useEffect(() => {
+        if (
+            !searchParams.has('checkout') ||
+            bookQuery.isPending
+        ) {
+            return
+        }
+
+        setSearchParams({}, {
+            replace: true,
+        })
+    }, [
+        bookQuery.isPending,
+        searchParams,
+        setSearchParams,
     ])
 
     if (bookQuery.isPending) {
@@ -208,8 +239,7 @@ export function BookDetailsPage() {
         !isDeleted
 
     const canCheckout =
-        canShowActiveActions &&
-        book.status === 'available'
+        isCheckoutEligible(book)
 
     const canCheckin =
         canShowActiveActions &&
@@ -451,12 +481,15 @@ export function BookDetailsPage() {
                     </AppLink>
 
                     {canCheckout ? (
-                        <AppLink
-                            to={`/checkout?bookId=${encodeURIComponent(book.id)}`}
+                        <Button
+                            type="button"
                             variant="primary"
+                            onClick={() => {
+                                setCheckoutOpen(true)
+                            }}
                         >
                             Check Out
-                        </AppLink>
+                        </Button>
                     ) : null}
 
                     {canCheckin ? (
@@ -496,6 +529,17 @@ export function BookDetailsPage() {
                     ) : null}
                 </nav>
             ) : null}
+
+            <CheckoutDialog
+                book={book}
+                open={
+                    checkoutOpen &&
+                    canCheckout
+                }
+                onClose={() => {
+                    setCheckoutOpen(false)
+                }}
+            />
         </section>
     )
 }

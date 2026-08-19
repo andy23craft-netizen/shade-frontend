@@ -202,7 +202,7 @@ export function CatalogGuide() {
 
                         <p>
                             Use{' '}
-                            <AppLink to="/checkout">
+                            <AppLink to="/books">
                                 Check Out
                             </AppLink>
                             {' '}to lend a book, and visit{' '}

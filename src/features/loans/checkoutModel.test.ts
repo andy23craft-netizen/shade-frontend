@@ -37,40 +37,10 @@ describe('validateCheckoutFormValues', () => {
         })
     })
 
-    it('accepts a borrower with optional fields empty', () => {
+    it('accepts a borrower with notes empty', () => {
         const values: CheckoutFormValues = {
             ...checkoutFormDefaults,
             borrower: 'Pat',
-        }
-
-        expect(
-            validateCheckoutFormValues(values),
-        ).toEqual({})
-    })
-
-    it('rejects an invalid checkout timestamp', () => {
-        const values: CheckoutFormValues = {
-            ...checkoutFormDefaults,
-            borrower: 'Pat',
-            checked_out_at: 'not-a-date',
-        }
-
-        expect(
-            validateCheckoutFormValues(values),
-        ).toEqual({
-            checked_out_at:
-                'Enter a valid checkout date and time.',
-        })
-    })
-
-    it('accepts valid timestamps', () => {
-        const values: CheckoutFormValues = {
-            ...checkoutFormDefaults,
-            borrower: 'Pat',
-            checked_out_at:
-                '2026-08-13T14:30:00Z',
-            due_at:
-                '2026-08-20',
         }
 
         expect(
@@ -102,72 +72,29 @@ describe('validateCheckoutFormValues', () => {
                 'Borrower must be 255 characters or fewer.',
         })
     })
-
-    it('accepts a date-only due date', () => {
-        const values: CheckoutFormValues = {
-            ...checkoutFormDefaults,
-            borrower: 'Pat',
-            due_at: '2026-08-20',
-        }
-
-        expect(
-            validateCheckoutFormValues(values),
-        ).toEqual({})
-    })
-
-    it('keeps due dates date-only', () => {
-        const values: CheckoutFormValues = {
-            ...checkoutFormDefaults,
-            borrower: 'Pat',
-            due_at: '2026-08-20',
-        }
-
-        expect(
-            checkoutFormValuesToRequest(values),
-        ).toEqual({
-            borrower: 'Pat',
-            due_at: '2026-08-20',
-        })
-    })
-
-    it('normalizes checkout timestamp but keeps due date date-only', () => {
-        const values: CheckoutFormValues = {
-            ...checkoutFormDefaults,
-            borrower: 'Pat',
-            checked_out_at:
-                '2026-08-13T10:30:00-04:00',
-            due_at: '2026-08-20',
-        }
-
-        expect(
-            checkoutFormValuesToRequest(values),
-        ).toEqual({
-            borrower: 'Pat',
-            checked_out_at:
-                '2026-08-13T14:30:00.000Z',
-            due_at: '2026-08-20',
-        })
-    })
-
-    it('rejects an invalid due date', () => {
-        const values: CheckoutFormValues = {
-            ...checkoutFormDefaults,
-            borrower: 'Pat',
-            due_at: '2026-02-30',
-        }
-
-        expect(
-            validateCheckoutFormValues(values),
-        ).toEqual({
-            due_at: 'Enter a valid due date.',
-        })
-    })
-
-
 })
 
 describe('checkoutFormValuesToRequest', () => {
-    it('includes notes when provided', () => {
+    const now = new Date(
+        '2026-08-19T15:30:45.123Z',
+    )
+
+    it('trims borrower and records checkout time', () => {
+        const values: CheckoutFormValues = {
+            ...checkoutFormDefaults,
+            borrower: '  Pat  ',
+        }
+
+        expect(
+            checkoutFormValuesToRequest(values, now),
+        ).toEqual({
+            borrower: 'Pat',
+            checked_out_at:
+                '2026-08-19T15:30:45.123Z',
+        })
+    })
+
+    it('includes trimmed notes when provided', () => {
         const values: CheckoutFormValues = {
             ...checkoutFormDefaults,
             borrower: 'Pat',
@@ -175,10 +102,32 @@ describe('checkoutFormValuesToRequest', () => {
         }
 
         expect(
-            checkoutFormValuesToRequest(values),
+            checkoutFormValuesToRequest(values, now),
         ).toEqual({
             borrower: 'Pat',
+            checked_out_at:
+                '2026-08-19T15:30:45.123Z',
             notes: 'Handle with care',
         })
+    })
+
+    it('omits blank notes', () => {
+        const values: CheckoutFormValues = {
+            ...checkoutFormDefaults,
+            borrower: 'Pat',
+            notes: '   ',
+        }
+
+        const request =
+            checkoutFormValuesToRequest(values, now)
+
+        expect(request).toEqual({
+            borrower: 'Pat',
+            checked_out_at:
+                '2026-08-19T15:30:45.123Z',
+        })
+
+        expect(request).not.toHaveProperty('due_at')
+        expect(request).not.toHaveProperty('notes')
     })
 })

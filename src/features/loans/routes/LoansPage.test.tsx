@@ -363,7 +363,7 @@ describe('LoansPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            '/checkout',
+            '/books',
         )
     })
 

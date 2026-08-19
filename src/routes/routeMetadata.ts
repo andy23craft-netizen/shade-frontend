@@ -56,8 +56,6 @@ export const routeMetadata = {
   },
   checkout: {
     path: '/checkout',
-    title: 'Check Out',
-    heading: 'Check Out',
   },
   checkin: {
     path: '/checkin',
