@@ -22,6 +22,7 @@ import {
 import { ApiError } from '../../../api/apiErrors'
 import type { BookRead } from '../../../api/apiTypes'
 import { useCheckoutBook } from '../../../api/booksQueries'
+import { dueAtOneYearFrom } from '../checkoutModel'
 import { CheckoutDialog } from './CheckoutDialog'
 
 vi.mock('../../../api/booksQueries', () => ({
@@ -239,13 +240,13 @@ describe('CheckoutDialog', () => {
         ).toHaveFocus()
     })
 
-    it('submits borrower, checkout time, and notes without a due date', () => {
-        vi.useFakeTimers()
-        vi.setSystemTime(
-            new Date(
-                '2026-08-19T15:30:45.123Z',
-            ),
+    it('submits borrower, checkout time, due date, and notes', () => {
+        const now = new Date(
+            '2026-08-19T15:30:45.123Z',
         )
+
+        vi.useFakeTimers()
+        vi.setSystemTime(now)
 
         renderDialog()
 
@@ -274,13 +275,10 @@ describe('CheckoutDialog', () => {
                 borrower: 'Jane Reader',
                 checked_out_at:
                     '2026-08-19T15:30:45.123Z',
+                due_at: dueAtOneYearFrom(now),
                 notes: 'Handle with care',
             },
         })
-
-        expect(
-            variables.request,
-        ).not.toHaveProperty('due_at')
     })
 
     it('omits blank notes from the request', () => {
@@ -314,15 +312,16 @@ describe('CheckoutDialog', () => {
             borrower: 'Jane Reader',
             checked_out_at:
                 '2026-08-19T15:30:45.123Z',
+            due_at: dueAtOneYearFrom(
+                new Date(
+                    '2026-08-19T15:30:45.123Z',
+                ),
+            ),
         })
 
         expect(
             variables.request,
         ).not.toHaveProperty('notes')
-
-        expect(
-            variables.request,
-        ).not.toHaveProperty('due_at')
     })
 
     it('closes and resets after successful checkout', async () => {

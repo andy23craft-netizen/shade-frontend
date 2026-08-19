@@ -61,7 +61,7 @@ Already in place and should be reused (not rebuilt):
   `useAddWishlistBook`. Add invalidates that wishlist's books key; whole-wishlist delete invalidates
   `queryKeys.wishlists.all`.
 - `booksApi.update` / `useUpdateBook`: minimal `BookUpdate` patches; detail-cache write plus books/dashboard
-  invalidation (PLAN.md 7.5).
+  invalidation.
 - Shelf picker conventions from `BookForm` / `NewBookPage`: `useShelves` load gate; `filterAssignableShelves` (exclude
   `removed`; allow `unknown`); Title Case labels via `formatShelfCommonNameForDisplay`; resolve selected `shelfId` →
   `shelf_name` via `shelfCommonNameById`.

@@ -7,6 +7,7 @@ import {
 import {
     checkoutFormDefaults,
     checkoutFormValuesToRequest,
+    dueAtOneYearFrom,
     validateCheckoutFormValues,
     type CheckoutFormValues,
 } from './checkoutModel'
@@ -74,12 +75,30 @@ describe('validateCheckoutFormValues', () => {
     })
 })
 
+describe('dueAtOneYearFrom', () => {
+    it('is noon UTC 366 days after a non-leap checkout day', () => {
+        expect(
+            dueAtOneYearFrom(
+                new Date('2026-01-15T15:30:45.123Z'),
+            ),
+        ).toBe('2027-01-16')
+    })
+
+    it('accounts for a leap-day checkout day', () => {
+        expect(
+            dueAtOneYearFrom(
+                new Date('2024-02-29T23:45:00.000Z'),
+            ),
+        ).toBe('2025-03-01')
+    })
+})
+
 describe('checkoutFormValuesToRequest', () => {
     const now = new Date(
         '2026-08-19T15:30:45.123Z',
     )
 
-    it('trims borrower and records checkout time', () => {
+    it('trims borrower and records checkout time and due date', () => {
         const values: CheckoutFormValues = {
             ...checkoutFormDefaults,
             borrower: '  Pat  ',
@@ -91,6 +110,7 @@ describe('checkoutFormValuesToRequest', () => {
             borrower: 'Pat',
             checked_out_at:
                 '2026-08-19T15:30:45.123Z',
+            due_at: '2027-08-20',
         })
     })
 
@@ -107,6 +127,7 @@ describe('checkoutFormValuesToRequest', () => {
             borrower: 'Pat',
             checked_out_at:
                 '2026-08-19T15:30:45.123Z',
+            due_at: '2027-08-20',
             notes: 'Handle with care',
         })
     })
@@ -125,9 +146,35 @@ describe('checkoutFormValuesToRequest', () => {
             borrower: 'Pat',
             checked_out_at:
                 '2026-08-19T15:30:45.123Z',
+            due_at: '2027-08-20',
         })
 
-        expect(request).not.toHaveProperty('due_at')
         expect(request).not.toHaveProperty('notes')
+    })
+
+    it('uses the same now for checkout time and due date on a leap-day', () => {
+        const leapDayNow = new Date(
+            '2024-02-29T08:00:00.000Z',
+        )
+        const values: CheckoutFormValues = {
+            ...checkoutFormDefaults,
+            borrower: 'Pat',
+        }
+
+        expect(
+            checkoutFormValuesToRequest(
+                values,
+                leapDayNow,
+            ),
+        ).toEqual({
+            borrower: 'Pat',
+            checked_out_at:
+                '2024-02-29T08:00:00.000Z',
+            due_at: dueAtOneYearFrom(leapDayNow),
+        })
+
+        expect(dueAtOneYearFrom(leapDayNow)).toBe(
+            '2025-03-01',
+        )
     })
 })

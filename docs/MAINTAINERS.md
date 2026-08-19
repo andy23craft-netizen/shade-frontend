@@ -11,8 +11,8 @@ home-library FastAPI backend. The shared shell, runtime configuration, connectio
 React Query server-state layer are in place (FEAT-01 through FEAT-03). Most feature routes still render
 placeholders; product UI begins with FEAT-04 (active collection and book details).
 
-Remaining tickets are `FEAT-17` through `FEAT-21` under `docs/tickets/`. Broader delivery planning lives in
-`docs/product-docs/PLAN.md`. Ticket completion status is tracked in `docs/ToDo.md`.
+Remaining tickets are `FEAT-17` through `FEAT-21` under `docs/tickets/`. Ticket completion status is tracked in
+`docs/ToDo.md`.
 
 The most useful commands are:
 
@@ -156,7 +156,7 @@ recreate them.
   `refetchOnReconnect`, query retry that skips validation / auth / cancelled / invalid-response errors, and
   `mutations.retry: false`.
 - `src/api/booksQueries.ts`: `useBooks`, `useBook`, `useBookLookup`, plus mutations that write returned `BookRead`
-  into the detail cache and invalidate per PLAN.md 7.5 (lists, detail, dashboard, and loans on checkout/check-in).
+  into the detail cache and invalidate lists, detail, dashboard, and loans on checkout/check-in.
 - `src/api/loansQueries.ts` / `dashboardQueries.ts`: `useLoans` and `useDashboard` using the same keys mutations
   invalidate.
 
@@ -355,8 +355,8 @@ the production host must:
 These are deployment requirements, not frontend implementations. `make pack` produces the versioned archive under
 `ci/artifacts/`; the deployment repository owns concrete static-server, TLS, CSP/security-header, Ansible, systemd,
 and rollback configuration. Production verification must confirm these controls rather than treating a successful
-frontend build as evidence that they are present. See `README.md` for artifact names, the smoke checklist, and
-browser-support pointers (`docs/baselines/FEAT-12_browser-support.md`).
+frontend build as evidence that they are present. See `README.md` for artifact names and the smoke checklist, and
+`docs/AGENTS.md` for the evergreen browser-support matrix.
 
 `scripts/productionBuildTokenInspection.test.ts` builds with a dummy `VITE_API_SECRET_KEY` and asserts the
 repository-root `.env` file is not copied into `dist/` or the packed tarball (embedded build-time token in JS
@@ -408,11 +408,10 @@ When you need product or ticket detail, start with:
 - `docs/tickets/` for the current feature ticket and acceptance criteria (`FEAT-17` through `FEAT-21`; FEAT-13
   through FEAT-16 are complete).
 - `docs/ToDo.md` for ticket completion status.
-- `docs/product-docs/PLAN.md` for the overall frontend roadmap.
 - `docs/product-docs/UI_DESIGN_NOTES.MD` when visual design is in question.
 - `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` for the backend contract.
-- `docs/AGENTS.md` for the LLM-oriented twin of this guide.
-- `docs/baselines/FEAT-13_testing.md` for browser/accessibility/manual verification baseline.
+- `docs/AGENTS.md` for the LLM-oriented twin of this guide, including scanner, browser-support, and
+  testing / manual-verification matrices.
 
 ## Making a Change Safely
 
