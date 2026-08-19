@@ -1,15 +1,22 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { screen } from '@testing-library/react'
+import {
+    screen,
+    waitFor,
+} from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '../../../test/renderAppTree'
 import { BookDetailsPage } from './BookDetailsPage'
-import { useBook } from '../../../api/booksQueries'
+import {
+    useBook,
+    useCheckoutBook,
+} from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
 import type { BookRead } from '../../../api/apiTypes'
 import { ApiError } from '../../../api/apiErrors'
 
 vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
+    useCheckoutBook: vi.fn(),
 }))
 
 vi.mock('../../../api/loansQueries', () => ({
@@ -19,6 +26,9 @@ vi.mock('../../../api/loansQueries', () => ({
 const mockedUseBook = vi.mocked(useBook)
 
 const mockedUseLoans = vi.mocked(useLoans)
+
+const mockedUseCheckoutBook =
+    vi.mocked(useCheckoutBook)
 
 const completeBook: BookRead = {
     id: 'test-book-id',
@@ -93,6 +103,12 @@ describe('BookDetailsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
 
+        mockedUseCheckoutBook.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useCheckoutBook
+        >)
         mockedUseLoans.mockReturnValue({
             data: {
                 items: [],
@@ -758,15 +774,10 @@ describe('BookDetailsPage', () => {
         )
 
         expect(
-            screen.getByRole('link', {
+            screen.getByRole('button', {
                 name: 'Check Out',
             }),
-        ).toHaveAttribute(
-            'href',
-            `/checkout?bookId=${encodeURIComponent(
-                completeBook.id,
-            )}`,
-            )
+        ).toBeInTheDocument()
         expect(
             screen.getByRole('link', {
                 name: 'Mark Read',
@@ -848,6 +859,50 @@ describe('BookDetailsPage', () => {
                 name: 'Mark Read',
             }),
         ).toBeInTheDocument()
+    })
+
+    it('opens the checkout dialog for an eligible book', async () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                is_read: false,
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        const checkoutButton = screen.getByRole('button', {
+            name: 'Check Out',
+        })
+
+        checkoutButton.focus()
+        checkoutButton.click()
+
+        const dialog = await screen.findByRole('dialog', {
+            name: 'Check Out',
+        })
+
+        expect(dialog).toBeInTheDocument()
+
+        await waitFor(() => {
+            expect(
+                screen.getByLabelText('Borrower'),
+            ).toHaveFocus()
+        })
+
+        expect(
+            screen.getByLabelText('Notes'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByLabelText(/due date/i),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByLabelText(/checkout date/i),
+        ).not.toBeInTheDocument()
     })
 
     it('does not offer Edit Reading for a deleted read book', () => {

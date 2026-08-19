@@ -8,7 +8,7 @@ import { DeletedBooksPage } from '../features/books/routes/DeletedBooksPage'
 import { EditBookPage } from '../features/books/routes/EditBookPage'
 import { MarkReadPage } from '../features/books/routes/MarkReadPage'
 import { NewBookPage } from '../features/books/routes/NewBookPage'
-import { CheckoutPage } from '../features/loans/routes/CheckoutPage'
+import { LegacyCheckoutRedirect } from './LegacyCheckoutRedirect'
 import { LoansPage } from '../features/loans/routes/LoansPage'
 import { ShelvesPage } from '../features/shelves/routes/ShelvesPage'
 import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
@@ -104,10 +104,7 @@ export const routeConfig = [
             },
             {
                 path: routeMetadata.checkout.path,
-                handle: {
-                    title: routeMetadata.checkout.title,
-                },
-                element: <CheckoutPage />,
+                element: <LegacyCheckoutRedirect />,
             },
             {
                 path: routeMetadata.checkin.path,
