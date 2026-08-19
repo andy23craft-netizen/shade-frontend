@@ -175,7 +175,7 @@ describe('AboutPage', () => {
             guide.getByRole('link', {
                 name: 'Check Out',
             }),
-        ).toHaveAttribute('href', '/checkout')
+        ).toHaveAttribute('href', '/books')
 
 
         expect(

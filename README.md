@@ -321,7 +321,7 @@ is host and config confirmation, not a second end-to-end stack.
       revalidate; hashed `/assets/` are long-lived
 - [ ] Dashboard, collection list, and create (including shelf selection)
 - [ ] Shelves catalog create / edit / delete
-- [ ] Checkout, check-in, mark-read, delete, and restore
+- [ ] Checkout, check-in from Loans, mark-read, delete, and restore
 - [ ] Authenticated backup download: non-empty SQL attachment, safe filename
       from `Content-Disposition`, recoverable generation `500`, and no bogus
       download or retained/inspected SQL contents after failure

@@ -925,4 +925,77 @@ describe('BookDetailsPage', () => {
             }),
         ).not.toBeInTheDocument()
     })
+
+    it('opens checkout from the checkout query flag for an eligible book', async () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: completeBook,
+        } as ReturnType<typeof useBook>)
+
+        renderWithProviders(
+            <MemoryRouter
+                initialEntries={[
+                    '/books/test-book-id?checkout=1',
+                ]}
+            >
+                <Routes>
+                    <Route
+                        path="/books/:bookId"
+                        element={<BookDetailsPage />}
+                    />
+                </Routes>
+            </MemoryRouter>,
+        )
+
+        expect(
+            await screen.findByRole('dialog', {
+                name: 'Check Out',
+            }),
+        ).toBeInTheDocument()
+
+        await waitFor(() => {
+            expect(
+                window.location.search,
+            ).not.toContain('checkout')
+        })
+    })
+
+    it('does not open checkout from the checkout query flag for an ineligible book', async () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                status: 'display_only',
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderWithProviders(
+            <MemoryRouter
+                initialEntries={[
+                    '/books/test-book-id?checkout=1',
+                ]}
+            >
+                <Routes>
+                    <Route
+                        path="/books/:bookId"
+                        element={<BookDetailsPage />}
+                    />
+                </Routes>
+            </MemoryRouter>,
+        )
+
+        expect(
+            screen.queryByRole('dialog', {
+                name: 'Check Out',
+            }),
+        ).not.toBeInTheDocument()
+
+        await waitFor(() => {
+            expect(
+                window.location.search,
+            ).not.toContain('checkout')
+        })
+    })
 })

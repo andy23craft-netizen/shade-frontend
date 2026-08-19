@@ -123,7 +123,7 @@ export function BookDetailsPage() {
         useSearchParams()
 
     const [checkoutOpen, setCheckoutOpen] =
-        useState(false)
+        useState(() => searchParams.has('checkout'))
     const queryClient = useQueryClient()
 
     const bookQuery = useBook(bookId ?? '')
@@ -148,6 +148,23 @@ export function BookDetailsPage() {
     }, [
         isNotFound,
         queryClient,
+    ])
+
+    useEffect(() => {
+        if (
+            !searchParams.has('checkout') ||
+            bookQuery.isPending
+        ) {
+            return
+        }
+
+        setSearchParams({}, {
+            replace: true,
+        })
+    }, [
+        bookQuery.isPending,
+        searchParams,
+        setSearchParams,
     ])
 
     if (bookQuery.isPending) {
@@ -515,7 +532,10 @@ export function BookDetailsPage() {
 
             <CheckoutDialog
                 book={book}
-                open={checkoutOpen}
+                open={
+                    checkoutOpen &&
+                    canCheckout
+                }
                 onClose={() => {
                     setCheckoutOpen(false)
                 }}

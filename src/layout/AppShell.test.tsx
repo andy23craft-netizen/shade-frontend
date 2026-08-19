@@ -130,10 +130,10 @@ describe('AppShell layout and navigation', () => {
         )
 
         expect(
-            screen.getByRole('link', {
+            screen.queryByRole('link', {
                 name: 'Check Out',
             }),
-        ).toHaveAttribute('href', '/checkout')
+        ).not.toBeInTheDocument()
 
         expect(
             screen.queryByRole('link', {
@@ -222,13 +222,14 @@ describe('AppShell layout and navigation', () => {
 
         fireEvent.click(
             screen.getByRole('link', {
-                name: 'Check Out',
+                name: 'Loans',
             }),
         )
 
-      await screen.findByText(
-          'Record a loan for an available book.',
-      )
+        await screen.findByRole('heading', {
+            level: 1,
+            name: 'Loans',
+        })
 
       expect(
           screen.getByRole('main'),
@@ -294,6 +295,38 @@ describe('AppShell layout and navigation', () => {
 
         await waitFor(() => {
             expect(document.title).toBe('Loans — Shade')
+        })
+    })
+
+    it('redirects legacy checkout URLs to books', async () => {
+        const router = renderAppTree([
+            '/checkout',
+        ])
+
+        await waitFor(() => {
+            expect(
+                router.state.location.pathname,
+            ).toBe('/books')
+
+            expect(
+                router.state.location.search,
+            ).toBe('')
+        })
+    })
+
+    it('redirects legacy checkout book URLs to details with the checkout flag', async () => {
+        const router = renderAppTree([
+            '/checkout?bookId=test-book-id',
+        ])
+
+        await waitFor(() => {
+            expect(
+                router.state.location.pathname,
+            ).toBe('/books/test-book-id')
+
+            expect(
+                router.state.location.search,
+            ).toBe('?checkout=1')
         })
     })
 })

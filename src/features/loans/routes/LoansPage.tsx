@@ -347,10 +347,7 @@ function TargetedCheckin({
                         will appear here.
                     </p>
 
-                    <AppLink
-                        to="/checkout"
-                        variant="primary"
-                    >
+                    <AppLink to="/books">
                         Check Out a Book
                     </AppLink>
                 </EmptyState>

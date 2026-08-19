@@ -27,20 +27,19 @@ test('checks out and checks in a book through the browser', async ({
     ).toBeVisible()
 
     /*
-     * CHECKOUT
-     */
+ * CHECKOUT
+ */
 
     await page
         .getByLabel('Book actions')
-        .getByRole('link', {
+        .getByRole('button', {
             name: 'Check Out',
         })
         .click()
 
     await expect(
-        page.getByRole('heading', {
-            level: 1,
-            name: 'Check Out Book',
+        page.getByRole('dialog', {
+            name: 'Check Out',
         }),
     ).toBeVisible()
 
@@ -53,12 +52,10 @@ test('checks out and checks in a book through the browser', async ({
     }).click()
 
     await expect(
-        page.getByRole('dialog'),
-    ).toBeVisible()
-
-    await page.getByRole('button', {
-        name: 'Confirm checkout',
-    }).click()
+        page.getByRole('dialog', {
+            name: 'Check Out',
+        }),
+    ).not.toBeVisible()
 
     await expect(
         page.getByRole('heading', {
