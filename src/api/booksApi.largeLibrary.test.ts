@@ -72,8 +72,8 @@ describe('large-library list baseline fixture', () => {
 
         // Practical responsiveness baseline for FEAT-12 regressions:
         // typed list helper over a 2_000-item fixture should stay under 250ms
-        // in local Vitest/jsdom (see docs/baselines/FEAT-03_performance.md).
-        // BooksPage uses paginated requests; this guard covers unpaginated callers.
+        // in local Vitest/jsdom. BooksPage uses paginated requests; this guard
+        // covers unpaginated callers.
     })
 
     it('handles a paginated 2_000-book library slice through the typed helper', async () => {

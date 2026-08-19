@@ -130,15 +130,13 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
 | `scripts/contractSmoke.test.ts` | Keep `/backup` on the OpenAPI smoke list. |
 | `vite.config.ts` | Leave `/backup` in the optional API proxy allowlist. That is not the SPA route. |
 
-### 3. Browser journeys and baselines
+### 3. Browser journeys
 
 | File | Change |
 | ---- | ------ |
 | `e2e/accessibility.spec.ts` | No change (backup is not a critical route today). Do not add `/admin/backup`. |
 | `e2e/support/mockApi.ts` | No `/backup` handler today; do not add one. |
 | `e2e/library.lifecycle.spec.ts` | Unchanged (no backup step). |
-| `docs/baselines/FEAT-12_browser-support.md` | Smoke scope: drop "backup page". Deleted-books administration stays. |
-| `docs/baselines/FEAT-13_testing.md` | Automated coverage list: drop backup success/failure, SQL content-type/filename, UTF-8 `Content-Disposition` for the download helper, and object-URL cleanup after backup download. Keep generic timeout, Bearer, and unauthorized coverage. |
 
 ### 4. Docs hygiene (as part of this ticket, not a follow-up)
 
@@ -150,7 +148,10 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
   backend/operational, not a frontend caller; do not list it as an SPA lifecycle action. Preserve "never
   inspect/log/cache/upload dump contents." Collection maintenance on Manage Collection: Add Book, Shelves, Deleted
   Books only (no Backup Library). MVP in-scope prose can still say the *library* has authenticated SQL backup; it must
-  not say the *browser* downloads it. |
+  not say the *browser* downloads it. Evergreen smoke scope: drop "backup page"; deleted-books administration stays.
+  Automated coverage inventory: drop backup success/failure, SQL content-type/filename, UTF-8 `Content-Disposition` for
+  the download helper, and object-URL cleanup after backup download. Keep generic timeout, Bearer, and unauthorized
+  coverage. |
 | `docs/full-project-context.md` | Same route, nav, and API-helper notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 | `docs/product-docs/PLAN.md` | Target IA: drop `/admin/backup` (the duplicate bullet too). Workstream 9 already shipped FEAT-10; record that browser download is withdrawn in favor of backend FEAT-01 nightly fetch. Release-blocker / CORS notes that require JavaScript to read backup `Content-Disposition` should stop treating a browser download as a frontend deliverable (host CORS may still expose the header; the SPA does not consume it). |

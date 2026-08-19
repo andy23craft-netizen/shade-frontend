@@ -295,9 +295,8 @@ design for this trusted personal deployment, not multi-user authentication. If
 the application becomes publicly reachable or supports untrusted users, release
 must be blocked until authentication is redesigned.
 
-Browser support for production smoke remains
-`docs/baselines/FEAT-12_browser-support.md`. Do not duplicate that matrix here.
-Scanner hardware checks remain `docs/baselines/FEAT-06_scanner-support.md`.
+Browser support for production smoke and scanner hardware checks live in
+`docs/AGENTS.md`. Do not duplicate those matrices here.
 
 These requirements are deployment assumptions, not frontend implementations.
 This repository documents them for handoff; the deployment repository owns

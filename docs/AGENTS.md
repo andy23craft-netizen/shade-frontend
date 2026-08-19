@@ -26,7 +26,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
 - Book create/edit (`/books/new`, `/books/:bookId/edit`) via shared `BookForm` / `bookFormModel` / `bookEditModel`,
   ISBN lookup on create, and API-fed shelf pickers (`shelf_name`; create requires an explicit shelf).
 - ISBN camera and hardware-scanner capture under `src/features/scanning/` (lazy-loaded from `/books/new` and
-  `/checkout`; support matrix in `docs/baselines/FEAT-06_scanner-support.md`).
+  `/checkout`).
 - Checkout, check-in, and loan history (`/checkout`, `/loans`), including checkout Find-by-ISBN via
   `useBooks({ isbn })` (not lookup), `412` `display_only` refetch/messaging, and display-only alternate-copy offers
   (`displayOnlyAlternatives` / `isbn` and `author`+`title` list filters). Check-in is `CheckinForm` on `/loans`
@@ -52,9 +52,8 @@ accessibility checks, browser-level MVP and lifecycle journeys, mock/fixture cov
 error families, enforced V8 coverage thresholds, and Playwright integration into the canonical `make check` gate.
 The completed test infrastructure includes `playwright.config.ts`, isolated stateful API fixtures under
 `e2e/support/`, automated axe accessibility checks across critical routes, manual book-creation and lifecycle
-browser journeys, and regression coverage thresholds. Verification and manual-gate ownership are documented in
-`docs/baselines/FEAT-13_testing.md`, with the existing FEAT-06 scanner-support and FEAT-12 browser-support baselines
-remaining authoritative for hardware- and browser-specific manual checks. Product routes are fully implemented
+browser journeys, and regression coverage thresholds. Hardware-scanner and evergreen-browser manual checks remain
+in this document (scanner and browser-support matrices below). Product routes are fully implemented
 (no unfinished `RoutePlaceholder` feature pages remain).
 
 FEAT-14 continuous-integration quality pipeline (ticket file removed after completion). Shipped
@@ -190,8 +189,7 @@ Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer t
 - Testing Library and jest-dom
 - Playwright (`@playwright/test`) with `@axe-core/playwright` for browser journeys and accessibility checks (FEAT-13
   complete; `yarn test:e2e`; included in `make check`)
-- Vitest V8 coverage with enforced global floors (statements 87%, branches 80%, functions 92%, lines 87%; see
-  `docs/baselines/FEAT-13_testing.md`)
+- Vitest V8 coverage with enforced global floors (statements 87%, branches 80%, functions 92%, lines 87%)
 - ESLint flat configuration
 - Yarn 4 through Corepack (`yarn@4.18.0` in `package.json`)
 - Node.js 26.7.0
@@ -684,8 +682,50 @@ Scanning feature (complete -- extend, do not replace):
   filter, decode hints, and scan timeout helpers
 - `src/features/scanning/isbnScannerParser.ts` / `useHardwareIsbnScanner.ts`: Keyboard-wedge hardware capture with
   Enter terminator, inter-key timeout, and checksum via `isbn.ts`
-- Support matrix and manual device checklist: `docs/baselines/FEAT-06_scanner-support.md`
 - Colocated scanning tests plus `NewBookPage` / `CheckoutPage` handoff tests for camera and hardware captures
+
+Capture modes: camera accepts Bookland EAN-13 (`978` / `979`) only (UPC and other symbologies are filtered out);
+hardware wedges accept ISBN-10 / ISBN-13 with spaces or hyphens (Enter terminator, inter-key timeout, checksum via
+`isbn.ts`); typed ISBN stays available on `/books/new`, including when camera fails. Successful captures hand one ISBN
+into create lookup or checkout Find; scanning never calls `POST /books` or checkout.
+
+Camera browser matrix (secure context required: `https:` or `http://localhost` / loopback; permission only after
+"Scan ISBN"):
+
+| Platform        | Browser                         | Status      | Notes                                               |
+|-----------------|---------------------------------|-------------|-----------------------------------------------------|
+| Desktop macOS   | Current Chrome                  | Supported   | Preferred desktop verification target               |
+| Desktop macOS   | Current Firefox                 | Supported   |                                                     |
+| Desktop macOS   | Current Safari                  | Supported   |                                                     |
+| Desktop Windows | Current Chrome / Edge           | Supported   |                                                     |
+| Desktop Linux   | Current Chrome / Firefox        | Supported   |                                                     |
+| iOS             | Current Mobile Safari           | Supported   | Requires HTTPS outside localhost                    |
+| iOS             | Current Chrome (WebKit)         | Supported   | Same engine limits as Mobile Safari                 |
+| Android         | Current Chrome                  | Supported   | Preferred phone verification target                 |
+| Android         | Current Firefox                 | Supported   |                                                     |
+| Any             | Insecure `http:` (non-loopback) | Unsupported | UI explains secure-context requirement              |
+| Any             | No `mediaDevices.getUserMedia`  | Unsupported | UI explains unsupported browser; manual entry stays |
+
+Unsupported in the MVP: Internet Explorer, legacy EdgeHTML, browsers without getUserMedia, and UPC-only product
+scanners used as the camera target.
+
+Dedicated hardware scanners: USB/Bluetooth wedges that end with Enter and emit ISBN-10 or ISBN-13 text are
+supported (focus may remain in an input; ordinary typing is not swallowed; invalid checksums are dropped before
+lookup; parser generation/reset plus first-frame camera guard avoid duplicate scans). Wedges without an Enter
+terminator are unsupported (buffer clears on inter-key timeout; configure the scanner for Enter).
+
+Failure and recovery: permission denied, missing camera, unsupported browser, and insecure context show an error
+(camera does not start; Cancel and typed ISBN remain usable). No readable ISBN within timeout shows a warning with
+"Keep scanning" while video stays available. Multiple cameras: a camera select appears after start; switching stays
+in flow.
+
+Manual device checklist (run against a connected API on `/books/new` for each supported row available): desktop
+Chrome Scan ISBN happy path; desktop Safari or Firefox same path; Android Chrome rear-camera Bookland scan; iOS
+Safari (HTTPS) permission prompt plus successful scan or clear denial; multi-camera switch without leaving the flow;
+hardware wedge with Enter (valid ISBN triggers lookup; invalid checksum ignored); deny camera permission (accessible
+error; typed lookup still works); insecure non-loopback origin if available (secure-context message; typed entry
+works); unreadable barcode until timeout (warning; Keep scanning and manual entry work); UPC-only product barcode
+not accepted as an ISBN capture.
 
 Connection feature (build-time Bearer auth, complete):
 
@@ -792,7 +832,6 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
   (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, wishlist and dashboard-report paths plus existing lifecycle
   routes).
-- `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix and blocker policy.
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
   unauthorized handling without cache clear, and build-time token wiring.
 - `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection
@@ -855,9 +894,6 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `compactIsbnForListFilter` punctuation-only compaction
 - `src/features/scanning/IsbnCameraScanner.test.tsx` / `isbnCameraCapture.test.ts` / `isbnScannerParser.test.ts` /
   `useHardwareIsbnScanner.test.ts`: Camera UI, capture helpers, keyboard-wedge parser, and hardware hook coverage
-- `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist
-- `docs/baselines/FEAT-13_testing.md`: Automated quality-gate baseline (coverage floors, Playwright suite scope,
-  accessibility ownership, and manual-gate handoff to FEAT-06 / FEAT-12)
 - `playwright.config.ts`: Playwright browser-journey config (Chromium; Vite `yarn dev` webServer on `127.0.0.1:4173`
   with `VITE_API_SECRET_KEY=test-api-token`; list + HTML reporters; CI retries and a single CI worker). Included in
   `make check` via `yarn test:e2e`.
@@ -868,7 +904,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   stateful mock API (dedicated lifecycle endpoints, not generic `PATCH`). Check-in follows detail "Check In" onto
   `/loans?bookId=` (`CheckinForm` Return Card), not a dedicated `/checkin` page.
 - `e2e/accessibility.spec.ts`: Per-route axe serious/critical scans for books list, add book, book detail, checkout, and
-  loans (see `docs/baselines/FEAT-13_testing.md` for broader manual accessibility ownership)
+  loans. Automated axe supplements keyboard, responsive-layout, and assistive-technology review; it does not replace
+  them.
 - `e2e/support/mockApi.ts`: Stateful Playwright route mock for `http://127.0.0.1:8000/**` (health, version, shelves,
   books, loans, dashboard, lookup, lifecycle mutations, and backup fixtures)
 - `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
@@ -883,6 +920,29 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/productionLikeHost.ts` / `productionLikeHost.test.ts`: Production-like static host plus mock API checks
   for SPA fallback, HTML/config revalidation, immutable `/assets/`, CORS preflight, Bearer access, and backup
   `Content-Disposition`.
+
+Evergreen browser targets: desktop Firefox / Chrome / Edge / Safari latest; mobile Safari on iOS and Chrome on
+Android. Smoke scope: shell and primary nav, route-title updates, heading focus, keyboard-only navigation, skip
+link, forms and linked validation, confirmation-dialog focus, live status announcements, books list/detail,
+checkout and check-in, loans, deleted-books administration, backup page, 404 recovery, 320px / tablet / desktop
+layouts, long user content, and reduced-motion.
+
+| Browser / device | Result     | Notes |
+|---|---|---|
+| Firefox desktop | Pass | Manual smoke completed at 320px, tablet, and desktop widths (keyboard, focus, dialogs, forms, wrapping, reduced-motion). |
+| Chrome desktop | Not tested | Chrome is not available in the current local test environment. |
+| Edge desktop | Pending | Planned verification on an available Windows/Edge environment. |
+| Safari macOS | Pending | Planned verification by another maintainer with access to macOS/Safari. |
+| Safari iOS | Blocked | No iOS/Safari test environment currently available. |
+| Chrome Android | Blocked | No Android/Chrome test environment currently available. |
+
+Unavailable browser/device environments are recorded explicitly rather than assumed to pass. Any browser-specific
+failure discovered before release should be fixed or tracked as an explicit release blocker.
+
+A frontend change is release-ready when `make check` passes, coverage stays above the enforced floors, relevant
+manual gates (scanner device checklist and evergreen browser smoke above) are completed when the change affects
+those surfaces, no known critical or serious accessibility regression remains, and any deferred verification is
+documented with its rationale.
 
 Tests use a jsdom browser simulation for Vitest (except the Node-environment production-build inspection). Prefer
 semantic Testing Library queries such as `getByRole()` and test user-visible behavior instead of implementation
@@ -987,7 +1047,7 @@ Versioned static archive for the deployment repository. Not host Vite and not th
   start does not change the baked token), checks, Playwright Chromium install, CI, image name/tags/Make
   targets/port 8080/runtime-config env vars/CORS/healthcheck/cleanup, `make pack` artifact names/checksum/manifest,
   production-host HTTPS / CSP / SPA fallback / cache headers / network restriction / atomic install, and the
-  production smoke checklist. Browser support stays `docs/baselines/FEAT-12_browser-support.md`.
+  production smoke checklist. Browser support and scanner hardware checks live in this document.
 -   `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`. Uses the Node
   version from `.nvmrc`, Corepack/Yarn, immutable `yarn install`, Playwright Chromium
   (`yarn playwright install --with-deps chromium`), `VITE_API_SECRET_KEY=test-api-token`, and `make check`. Does not
@@ -1010,11 +1070,6 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/tickets/FEAT-23_*.md` through `FEAT-27_*.md`: Remaining sequenced implementation tickets with acceptance
   criteria (FEAT-13 through FEAT-22 are complete; those ticket files are removed). Prefer ticket presence under
   `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
-- `docs/baselines/FEAT-06_scanner-support.md`: Scanner support matrix and manual device checklist.
-- `docs/baselines/FEAT-12_browser-support.md`: Evergreen browser/device smoke matrix (Firefox Pass; other targets
-  pending/blocked/not tested as recorded).
-- `docs/baselines/FEAT-13_testing.md`: FEAT-13 completion baseline for coverage floors, Playwright scope, and
-  accessibility / manual-gate ownership.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
 - `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/CATEGORY_NOTES.md`: Future book-category architecture notes (many-to-many / data-driven labels).

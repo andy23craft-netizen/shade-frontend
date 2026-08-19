@@ -60,7 +60,7 @@ Already in place and should be reused (not rebuilt):
 - `docs/ToDo.md` already has a completed checklist line for this ticket. Leave it.
 - `docs/product-docs/PLAN.md` still lists `/checkout` as a user-facing destination and Circulation as Check Out plus
   Loans. Workstream 6 still describes a checkout page with operator-editable timestamps.
-- `docs/baselines/FEAT-06_scanner-support.md` still lists `/checkout` as a second ISBN capture surface.
+- `docs/AGENTS.md` still lists `/checkout` as a second ISBN capture surface.
 
 ## Product intent (remaining)
 
@@ -71,8 +71,8 @@ Already in place and should be reused (not rebuilt):
    Compute the due date by anchoring at noon UTC on the checkout calendar day (the UTC date portion of `now`), adding
    366 days, and formatting that instant's UTC date. Send both from the same submit so the due date matches the
    checkout timestamp's day anchor. Do not omit `due_at` so the API can pick a different default.
-2. **Docs match the shipped IA** -- `PLAN.md` and the FEAT-06 scanner baseline must not describe `/checkout` as a live
-   feature or capture route.
+2. **Docs match the shipped IA** -- `PLAN.md` and the `docs/AGENTS.md` scanner notes must not describe `/checkout` as
+   a live feature or capture route.
 
 ## Out of scope
 
@@ -83,7 +83,8 @@ Already in place and should be reused (not rebuilt):
 - Re-implementing FEAT-21 alternate-copy offers on details.
 - Reverting FEAT-22 (`CheckinForm` on `/loans`, `/checkin` redirect, no Check In nav item).
 - FEAT-24 scanner expansion, or updates to other open tickets.
-- Updating `docs/AGENTS.md`, `docs/full-project-context.md`, or `docs/MAINTAINERS.md`.
+- Updating `docs/full-project-context.md` or `docs/MAINTAINERS.md`. Limit `docs/AGENTS.md` edits in this ticket to
+  dropping `/checkout` as a scanner capture surface.
 - Editable due dates, loan-length settings, overdue notifications, or mark-unread.
 
 ## Remaining scope (file-level plan)
@@ -109,7 +110,7 @@ the dialog error summary.
 | File | Change |
 | ---- | ------ |
 | `docs/product-docs/PLAN.md` | Target IA: drop `/checkout` as a user-facing destination; checkout lives on book details. Shell persistent access: Dashboard link; Collection drawer (Browse, Manage, Wishlists); Circulation drawer without Check Out (Loans). Workstream 6 deliverables: dialog on details, required borrower, optional notes, computed now + 366-day due date; no available-book selection page. |
-| `docs/baselines/FEAT-06_scanner-support.md` | Drop `/checkout` as a second capture surface; `/books/new` remains the documented capture page until FEAT-24. |
+| `docs/AGENTS.md` | Drop `/checkout` as a second capture surface; `/books/new` remains the documented capture page until FEAT-24. |
 
 `docs/product-docs/PRODUCT_REQS.V1.md` still requires a Check Out Book capability; satisfying it on book details is
 enough. Do not revive a separate page to match that heading. Do not retouch `docs/ToDo.md`.
@@ -121,12 +122,12 @@ enough. Do not revive a separate page to match that heading. Do not retouch `doc
   (`YYYY-MM-DD`); `notes` omitted when blank.
 - Colocated model and dialog tests cover the computed `due_at` (including a leap-year checkout-day case in the model
   suite). Do not add date inputs.
-- `docs/product-docs/PLAN.md` and `docs/baselines/FEAT-06_scanner-support.md` no longer describe `/checkout` as a live
-  feature or capture route. Do not update `docs/AGENTS.md`, `docs/full-project-context.md`, or `docs/MAINTAINERS.md`
+- `docs/product-docs/PLAN.md` and `docs/AGENTS.md` scanner notes no longer describe `/checkout` as a live
+  feature or capture route. Do not update `docs/full-project-context.md` or `docs/MAINTAINERS.md`
   in this ticket.
 - Never simulate checkout with generic `PATCH`. `make check` passes.
 
 ## Plan coverage
 
 Workstream 6 checkout is now a details dialog with the same lifecycle endpoint. Remaining work is sending the
-computed 366-day `due_at` and aligning PLAN / scanner-baseline copy with that IA.
+computed 366-day `due_at` and aligning PLAN / AGENTS.md scanner copy with that IA.

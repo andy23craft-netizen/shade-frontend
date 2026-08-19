@@ -44,12 +44,10 @@ If UI/design is in question:
   - docs/product-docs/UI_DESIGN_NOTES.MD
 
 If scanner capture behavior or device support is in question:
-  - docs/baselines/FEAT-06_scanner-support.md
+  - this master context (capture modes, camera/hardware support, and the manual device checklist)
 
 If test/workflow/accessibility baseline behavior is relevant:
-  - docs/baselines/FEAT-13_testing.md
-  - docs/baselines/FEAT-06_scanner-support.md and
-    docs/baselines/FEAT-12_browser-support.md when manual support matrices are relevant
+  - this master context (coverage floors, Playwright scope, and manual-gate ownership)
   - preserve the existing Vitest / Testing Library / renderAppTree and Playwright e2e architecture;
     do not invent a parallel fake-API stack
 
@@ -58,7 +56,7 @@ If Podman (FEAT-15 complete) or release artifacts (FEAT-16 complete):
   - relevant sections of docs/product-docs/PLAN.md
 
 If browser-support or production-host security baselines are needed:
-  - docs/baselines/FEAT-12_browser-support.md
+  - this master context (evergreen smoke matrix and blocker policy)
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
   - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
@@ -271,7 +269,8 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     smoke passed at mobile/tablet/desktop widths. Additional Edge/Safari
     verification is documented as pending/unavailable rather than
     assumed to pass; Chrome was not tested locally; iOS/Android are
-    blocked -- see `docs/baselines/FEAT-12_browser-support.md`.
+    blocked. Unavailable environments are recorded rather than assumed
+    to pass; browser-specific failures before release are blockers.
 -   Performance re-check: the 2,000-book typed-helper fixture completed
     in 6 ms and the 50-book paginated slice in 2 ms against the 250 ms
     practical budget. Production main JS measured 429.15 kB raw /
@@ -309,11 +308,14 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     including checkout, check-in, mark-read, delete, and restore through
     their dedicated endpoints. Automated accessibility coverage
     exercises books list, add book, book detail, checkout, and loans
-    (`e2e/accessibility.spec.ts`); see `docs/baselines/FEAT-13_testing.md`
-    for broader manual accessibility ownership. The documented coverage
-    thresholds are enforced rather than treated as advisory (statements
-    87%, branches 80%, functions 92%, lines 87%). See
-    `docs/baselines/FEAT-13_testing.md` for the completed testing baseline.
+    (`e2e/accessibility.spec.ts`). Automated axe supplements keyboard,
+    responsive-layout, and assistive-technology review; it does not
+    replace them. The documented coverage thresholds are enforced rather
+    than treated as advisory (statements 87%, branches 80%, functions
+    92%, lines 87%). A change is release-ready when `make check` passes,
+    coverage stays above those floors, relevant manual gates are done
+    when the change affects a manual-only surface, and no known critical
+    or serious accessibility regression remains.
 -   FEAT-14 continuous-integration quality pipeline is complete (ticket
     file removed). Shipped `.github/workflows/check.yml` for pull
     requests and pushes to `main` (Node from `.nvmrc`, Corepack/Yarn,
@@ -827,8 +829,15 @@ index.html
         `useBookLookup`) or the Find-by-ISBN handoff on `/checkout`
         (`useBooks({ isbn })`); hardware listening is disabled while the
         camera UI is open or the related ISBN fetch is in flight
-    -   Support matrix and manual device checklist:
-        `docs/baselines/FEAT-06_scanner-support.md`
+    -   Camera: Bookland EAN-13 (`978` / `979`) only; secure context
+        required; current Chrome / Firefox / Safari / Edge and iOS /
+        Android evergreen browsers supported; insecure non-loopback
+        `http:` and missing `getUserMedia` unsupported. Hardware:
+        Enter-terminated ISBN-10 / ISBN-13 wedges supported; no Enter
+        terminator unsupported. Typed ISBN stays available on failure.
+        Manual checks: desktop Chrome/Safari/Firefox, Android Chrome,
+        iOS Safari HTTPS, multi-camera switch, wedge Enter, permission
+        denial, timeout, and UPC rejection.
     -   Colocated scanning tests plus `NewBookPage` / `CheckoutPage`
         handoff tests for camera and hardware captures
 -   Registered product routes (all live -- do not revert to placeholders
@@ -1244,8 +1253,7 @@ repo before editing.
                 `ci/{Containerfile,nginx.conf,container-entrypoint.sh}`, `.containerignore`
                 (FEAT-15 image `shade-frontend`; FEAT-16 `make pack` tarball)
 
-  Baselines /   `docs/baselines/FEAT-06_scanner-support.md`, `docs/baselines/FEAT-12_browser-support.md`,
-  smoke         `docs/baselines/FEAT-13_testing.md`, `scripts/contractSmoke.test.ts` 
+  Contract smoke `scripts/contractSmoke.test.ts`
   --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Feature route ownership (all complete unless noted): books list/detail;
@@ -1356,13 +1364,6 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   120 kB gzip, fail 150 kB).
                                   `.github/workflows/check.yml` runs
                                   `make check` (FEAT-14 complete)
-
-  Scanner support matrix / manual `docs/baselines/FEAT-06_scanner-support.md`
-  device checklist                
-
-  Browser support / manual smoke  `docs/baselines/FEAT-12_browser-support.md`
-
-  Workflow / accessibility tests  `docs/baselines/FEAT-13_testing.md`
 
   UI / design decisions           `docs/product-docs/UI_DESIGN_NOTES.MD`
 

@@ -79,8 +79,8 @@ Already in place and should be reused (not rebuilt):
 - Shared UI: `Alert`, `AppLink`, `Button`, `EmptyState`, `LoadingState`, `QueryErrorState`. Collection card CSS
   already on `BooksPage`.
 - Playwright `e2e/support/mockApi.ts` list `isbn` exact-matches `isbn13`. That is enough for full-ISBN e2e.
-- `docs/ToDo.md` has no checklist line for this ticket yet. `docs/baselines/FEAT-06_scanner-support.md` documents
-  capture on `/books/new` only until this ticket.
+- `docs/ToDo.md` has no checklist line for this ticket yet. `docs/AGENTS.md` documents
+  capture on `/books/new` and `/checkout`; this ticket adds hardware collection-jump on Dashboard / Books / Loans.
 
 The gap: a wedge scan on Dashboard, Books, or Loans is ignored (no listener). Operators must open Add Book to use the
 scanner, which is the wrong destination when they already own the book and want its details. `docs/AGENTS.md` still
@@ -217,14 +217,12 @@ Use API `total === 1` (full matching count), not "first page has one row while `
 | File | Change |
 | ---- | ------ |
 | `docs/AGENTS.md` | Drop `/checkout` as a camera/hardware capture surface (that page is gone). Scanning also lives on Dashboard /
-  Books / Loans via `useCollectionIsbnJump` (hardware only). Prefetch `GET /books?isbn=` and branch on list length
-  before navigation: unique match opens detail without pushing `/books?isbn=`; zero or many matches go to the filtered
-  collection. `/books` URL may include `isbn`; bookmarked unique-open may still collapse via BooksPage replace-navigate.
-  Still: scan never creates or checks out. Camera still only `/books/new`. Note ignore-editable + preventDefault on this
-  surface only. |
+  Books / Loans via `useCollectionIsbnJump` (hardware only; no camera there). Keep `/books/new` as the camera + New Book
+  hardware page. Prefetch `GET /books?isbn=` and branch on list length before navigation: unique match opens detail
+  without pushing `/books?isbn=`; zero or many matches go to the filtered collection. `/books` URL may include `isbn`;
+  bookmarked unique-open may still collapse via BooksPage replace-navigate. Still: scan never creates or checks out.
+  Camera still only `/books/new`. Note ignore-editable + preventDefault on this surface only. |
 | `docs/full-project-context.md` | Same capture and `/books?isbn=` notes when that pack is kept current. Drop stale `/checkout` capture if present. |
-| `docs/baselines/FEAT-06_scanner-support.md` | Hardware collection-jump also lives on `/dashboard`, `/books`, and `/loans` (no camera there). Keep `/books/new`
-  as the camera + New Book hardware page. Drop the "until FEAT-24" deferral. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 
 ## Acceptance criteria
