@@ -53,7 +53,6 @@ If test/workflow/accessibility baseline behavior is relevant:
 
 If Podman (FEAT-15 complete) or release artifacts (FEAT-16 complete):
   - README.md (local development, deployed-development image, deployed-production tarball)
-  - relevant sections of docs/product-docs/PLAN.md
 
 If browser-support or production-host security baselines are needed:
   - this master context (evergreen smoke matrix and blocker policy)
@@ -65,8 +64,8 @@ If later product tickets (FEAT-23 through FEAT-27):
   - docs/technical-reference/openapi.json and API-for-FE.md when the ticket touches new API surfaces
   - docs/product-docs/UI_DESIGN_NOTES.MD when layout or visual design is in question
 
-Do not paste PRODUCT_REQS.*, the full PLAN, or a re-synthesized API dump by default. Prefer the checked-in OpenAPI file
-over paraphrasing schemas into chat.
+Do not paste PRODUCT_REQS.* or a re-synthesized API dump by default. Prefer the checked-in OpenAPI file over
+paraphrasing schemas into chat.
 ```
 
 ------------------------------------------------------------------------
@@ -554,9 +553,9 @@ index.html
         `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
         `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and
         `useMarkBookRead`) that write returned `BookRead` into the
-        detail cache (except delete) and invalidate per PLAN.md 7.5
-        (lists including `include_deleted` via `['books']` prefix,
-        detail, dashboard, and loans on checkout/check-in)
+        detail cache (except delete) and invalidate lists (including
+        `include_deleted` via `['books']` prefix), detail, dashboard,
+        and loans on checkout/check-in
     -   `src/api/loansQueries.ts` / `dashboardQueries.ts` /
         `shelvesQueries.ts`: `useLoans` (optional `{ bookId, enabled }`),
         `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size
@@ -1032,9 +1031,8 @@ logging.
 ### Product sequencing
 
 Product intent, sequencing, and acceptance criteria live under `docs/`.
-When deciding what to build next, prefer the current ticket, then
-`docs/product-docs/PLAN.md`, then the product requirements docs. Do not
-implement future tickets prematurely.
+When deciding what to build next, prefer the current ticket, then the
+product requirements docs. Do not implement future tickets prematurely.
 
 ### Accessibility baseline
 
@@ -1342,9 +1340,6 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
   API behavior (auth, CORS,       `docs/technical-reference/API-for-FE.md`
   lifecycle, ISBN, backup, FE     
   ownership)                      
-
-  Architecture / workstreams /    `docs/product-docs/PLAN.md`
-  release intent                  
 
   Future category taxonomy notes  `docs/product-docs/CATEGORY_NOTES.md`
   (not a ticket; do not implement

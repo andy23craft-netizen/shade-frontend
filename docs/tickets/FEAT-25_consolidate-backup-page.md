@@ -154,7 +154,6 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
   coverage. |
 | `docs/full-project-context.md` | Same route, nav, and API-helper notes when that pack is kept current. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
-| `docs/product-docs/PLAN.md` | Target IA: drop `/admin/backup` (the duplicate bullet too). Workstream 9 already shipped FEAT-10; record that browser download is withdrawn in favor of backend FEAT-01 nightly fetch. Release-blocker / CORS notes that require JavaScript to read backup `Content-Disposition` should stop treating a browser download as a frontend deliverable (host CORS may still expose the header; the SPA does not consume it). |
 | `docs/MAINTAINERS.md` | Registered product routes: drop `/admin/backup`. Inventory: drop `backupApi` / `BackupLibraryPage`. Keep OpenAPI
   `/backup` as a backend path. Manage Collection links: Add Book, Shelves, Deleted Books only. |
 | `README.md` | Update onboarding and production handoff for the withdrawn browser backup page. Production connectivity: drop
@@ -164,8 +163,8 @@ cron status, backup-file browsing, or restore-from-SQL in the frontend.
   Keep CI/privacy notes that backup dumps must not appear in artifacts or be inspected/logged by the SPA. Point
   operators at backend FEAT-01 nightly fetch / `make fetch-backup` for operational backups instead of the removed page. |
 
-`docs/product-docs/PRODUCT_REQS.V1.md` has no Backup Library heading to revive. Do not add a browser backup page to
-match PLAN.md Workstream 9 after this withdrawal.
+`docs/product-docs/PRODUCT_REQS.V1.md` has no Backup Library heading to revive. Do not add a browser backup page after
+this withdrawal.
 
 ## Acceptance criteria
 
@@ -181,12 +180,12 @@ match PLAN.md Workstream 9 after this withdrawal.
   suite mounts `/admin/backup`. `make check` passes.
 - `README.md` no longer treats a browser backup download or backup `Content-Disposition` access as a frontend release
   blocker or production smoke step; it documents operational backup via the backend fetch script instead.
-- `docs/AGENTS.md` (and PLAN / ToDo / MAINTAINERS as listed) no longer describe `/admin/backup` as a live feature route
-  or a required browser download.
+- `docs/AGENTS.md` (and ToDo / MAINTAINERS as listed) no longer describe `/admin/backup` as a live feature route or a
+  required browser download.
 - Implementation did not start before backend FEAT-01 (`scripts/fetch_backup.py` and nightly cron) shipped.
 
 ## Plan coverage
 
-Workstream 9 already shipped deleted-books admin and a browser SQL download. This ticket is IA cleanup after backend
+Deleted-books admin and a browser SQL download already shipped (FEAT-10). This ticket is IA cleanup after backend
 FEAT-01: one operational backup path (`GET /backup` via script/cron), no SPA download page. Explicitly excludes
 backend contract changes and FEAT-15 through FEAT-24 product work except doc/nav mentions of `/admin/backup`.

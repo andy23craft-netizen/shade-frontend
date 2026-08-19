@@ -13,4 +13,3 @@
   * [x] Complete feature ticket `docs/tickets/FEAT-21_display-only.md`.
   * [x] Complete feature ticket `docs/tickets/FEAT-22_consolidate-check-in.md` (product on `/loans`; docs hygiene).
   * [x] Complete feature ticket `docs/tickets/FEAT-23_consolidate-check-out.md`
-  * [ ] Confirm that `product-docs/PLAN.md` is fully implemented.

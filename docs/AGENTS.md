@@ -13,7 +13,7 @@ request takes precedence over general guidance here.
 Shade is a browser UI for a personal home-library FastAPI backend. Shipped capabilities include:
 
 - Application shell, shared UI primitives, runtime config, build-time Bearer auth, and typed OpenAPI + React Query
-  server state (PLAN.md 7.5 invalidation).
+  server state (mutation invalidation of lists, detail, dashboard, and loans on checkout/check-in).
 - About homepage on `/` (`AboutPage` + `CatalogGuide`) with library background, dedication, lending policy, and an
   accessible card-catalog-style How to Use dialog; the dashboard lives at `/dashboard`.
 - Dashboard on `/dashboard` (`DashboardPage`): summary metrics (`useDashboard` / `GET /dashboard`) for Collection,
@@ -171,8 +171,8 @@ Notable shipped behaviors agents should preserve:
   exclusivity; no add-from-collection or membership remove/edit.
 - Scanning: hands one ISBN into create lookup or checkout Find; never creates or checks out from scan success alone.
 
-Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then
-`docs/product-docs/PLAN.md`, then the product requirements docs when deciding what to build next.
+Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket, then the product
+requirements docs when deciding what to build next.
 
 ## Technology
 
@@ -486,8 +486,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useBook`, `useBookLookup` (query), `useLookupBook` (lookup mutation for wishlist add), plus mutations (including
   `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
   `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write returned `BookRead` into the
-  detail cache (except delete) and invalidate per PLAN.md 7.5 (lists including `include_deleted` via the `['books']`
-  prefix, detail, dashboard, and loans on checkout/check-in).
+  detail cache (except delete) and invalidate lists (including `include_deleted` via the `['books']` prefix), detail,
+  dashboard, and loans on checkout/check-in.
 - `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId, enabled }`),
   `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size 30 via shared config), `useLoan(id)` (disabled when
   falsy), `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
@@ -1071,7 +1071,6 @@ their contents (for example, the active ticket's acceptance criteria or the Open
   criteria (FEAT-13 through FEAT-22 are complete; those ticket files are removed). Prefer ticket presence under
   `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
-- `docs/product-docs/PLAN.md`: Frontend production roadmap.
 - `docs/product-docs/CATEGORY_NOTES.md`: Future book-category architecture notes (many-to-many / data-driven labels).
   Not a ticket; do not implement from this file unless explicitly requested.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
