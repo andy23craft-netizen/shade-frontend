@@ -29,10 +29,10 @@ FEAT-17 About homepage is complete: `/` is About; the dashboard is `/dashboard`.
 at `/dashboard`, not on `/`.
 
 FEAT-22 check-in consolidation is complete: product check-in is `CheckinForm` on `/loans` (`?bookId=`), including a
-return-time `datetime-local` field. FEAT-23 checkout-on-details is in the tree (`CheckoutDialog` on `BookDetailsPage`;
-`/checkout` is `LegacyCheckoutRedirect` only; Circulation drawer is Loans only). Do not restore `CheckoutPage`, add
-ISBN Find / camera to checkout, or listen on `/books/:bookId`. Camera and New Book hardware capture stay on
-`/books/new` only.
+return-time `datetime-local` field. FEAT-23 checkout consolidation is complete (ticket file removed): product checkout
+is `CheckoutDialog` on `BookDetailsPage`; `/checkout` is `LegacyCheckoutRedirect` only; Circulation drawer is Loans
+only. Do not restore `CheckoutPage`, add ISBN Find / camera to checkout, or listen on `/books/:bookId`. Camera and New
+Book hardware capture stay on `/books/new` only.
 
 Do not pull FEAT-25 backup removal, FEAT-26 wishlist move-to-shelf, or FEAT-27 Collections into this implementation.
 
