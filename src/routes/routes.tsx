@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { LegacyCheckinRedirect } from './LegacyCheckinRedirect'
 import { AppShell } from '../layout/AppShell'
 import { BackupLibraryPage } from '../features/books/routes/BackupLibraryPage'
 import { BookDetailsPage } from '../features/books/routes/BookDetailsPage'
@@ -8,7 +9,6 @@ import { EditBookPage } from '../features/books/routes/EditBookPage'
 import { MarkReadPage } from '../features/books/routes/MarkReadPage'
 import { NewBookPage } from '../features/books/routes/NewBookPage'
 import { CheckoutPage } from '../features/loans/routes/CheckoutPage'
-import { CheckinPage } from '../features/loans/routes/CheckinPage'
 import { LoansPage } from '../features/loans/routes/LoansPage'
 import { ShelvesPage } from '../features/shelves/routes/ShelvesPage'
 import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
@@ -19,6 +19,7 @@ import { DeleteBookPage } from '../features/books/routes/DeleteBookPage'
 import { AboutPage } from '../features/about/routes/AboutPage'
 import { ManageCollectionPage } from '../features/collection/routes/ManageCollectionPage'
 import { WishlistsPage } from '../features/wishlists/routes/WishlistsPage'
+
 
 export const routeConfig = [
     {
@@ -110,10 +111,7 @@ export const routeConfig = [
             },
             {
                 path: routeMetadata.checkin.path,
-                handle: {
-                    title: routeMetadata.checkin.title,
-                },
-                element: <CheckinPage />,
+                element: <LegacyCheckinRedirect />,
             },
             {
                 path: routeMetadata.loans.path,

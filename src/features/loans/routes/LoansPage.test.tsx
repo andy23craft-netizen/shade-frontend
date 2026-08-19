@@ -11,15 +11,21 @@ import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
 
 const mockUseInfiniteLoans = vi.fn()
+const mockUseLoans = vi.fn()
 const mockUseBooks = vi.fn()
+const mockUseBook = vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
 
 vi.mock('../../../api/loansQueries', () => ({
     useInfiniteLoans: () => mockUseInfiniteLoans(),
+    useLoans: (options: unknown) =>
+        mockUseLoans(options),
 }))
 
 vi.mock('../../../api/booksQueries', () => ({
     useBooks: () => mockUseBooks(),
+    useBook: (id: string) =>
+        mockUseBook(id),
 }))
 
 vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
@@ -27,6 +33,41 @@ vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
         options: unknown,
     ) =>
         mockUseInfiniteScrollTrigger(options),
+}))
+
+vi.mock('../components/CheckinForm', () => ({
+    CheckinForm: ({
+                      book,
+                      onCancel,
+                      onSuccess,
+                  }: {
+        book: {
+            id: string
+            title: string
+        }
+        onCancel: () => void
+        onSuccess: () => void
+    }) => (
+        <div data-testid="checkin-form">
+            <p>
+                Returning {book.title}
+            </p>
+
+            <button
+                type="button"
+                onClick={onCancel}
+            >
+                Cancel return
+            </button>
+
+            <button
+                type="button"
+                onClick={onSuccess}
+            >
+                Complete return
+            </button>
+        </div>
+    ),
 }))
 
 function makeBookList(
@@ -114,9 +155,13 @@ function makeInfiniteLoansResult(
     }
 }
 
-function renderPage() {
+function renderPage(
+    initialEntry = '/loans',
+) {
     return renderWithProviders(
-        <MemoryRouter>
+        <MemoryRouter
+            initialEntries={[initialEntry]}
+        >
             <LoansPage />
         </MemoryRouter>,
     )
@@ -127,6 +172,22 @@ describe('LoansPage', () => {
         mockUseInfiniteLoans.mockReset()
         mockUseBooks.mockReset()
         mockUseInfiniteScrollTrigger.mockReset()
+        mockUseLoans.mockReset()
+        mockUseBook.mockReset()
+
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList(),
+            refetch: vi.fn(),
+        })
+
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: undefined,
+            refetch: vi.fn(),
+        })
 
         mockUseInfiniteScrollTrigger.mockReturnValue({
             getRowRef: () => undefined,
@@ -355,6 +416,416 @@ describe('LoansPage', () => {
         expect(
             screen.getByText(
                 /8\/20\/2026/,
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('offers check-in for an eligible active loan', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Check In',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('does not offer check-in for a returned loan', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [
+                        {
+                            ...makeLoanList().items[0],
+                            returned_at:
+                                '2026-08-13T15:30:00Z',
+                        },
+                    ],
+                }),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Check In',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('does not offer check-in for a deleted book', () => {
+        const bookList = makeBookList()
+
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...bookList,
+                items: bookList.items.map(
+                    (book) => ({
+                        ...book,
+                        deletion_date:
+                            '2026-08-13T15:30:00Z',
+                    }),
+                ),
+            },
+        })
+
+        renderPage()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Check In',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('opens check-in from an active loan without targeted fallback queries', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Check In',
+            }),
+        )
+
+        expect(
+            screen.getByTestId('checkin-form'),
+        ).toHaveTextContent(
+            'Returning The Left Hand of Darkness',
+        )
+
+        expect(
+            mockUseLoans,
+        ).not.toHaveBeenCalled()
+
+        expect(
+            mockUseBook,
+        ).not.toHaveBeenCalled()
+    })
+
+    it('opens check-in from a bookId deep link using loaded state', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage(
+            '/loans?bookId=book-1',
+        )
+
+        expect(
+            screen.getByTestId('checkin-form'),
+        ).toHaveTextContent(
+            'Returning The Left Hand of Darkness',
+        )
+
+        expect(
+            mockUseLoans,
+        ).not.toHaveBeenCalled()
+
+        expect(
+            mockUseBook,
+        ).not.toHaveBeenCalled()
+    })
+
+    it('closes check-in when the return is cancelled', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage(
+            '/loans?bookId=book-1',
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel return',
+            }),
+        )
+
+        expect(
+            screen.queryByTestId('checkin-form'),
+        ).not.toBeInTheDocument()
+    })
+
+    it('closes check-in after a successful return', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage(
+            '/loans?bookId=book-1',
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Complete return',
+            }),
+        )
+
+        expect(
+            screen.queryByTestId('checkin-form'),
+        ).not.toBeInTheDocument()
+    })
+
+    it('uses targeted loan state when the selected loan is not in the loaded pages', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [],
+                    total: 1,
+                }),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList(),
+            refetch: vi.fn(),
+        })
+
+        renderPage(
+            '/loans?bookId=book-1',
+        )
+
+        expect(
+            mockUseLoans,
+        ).toHaveBeenCalledWith({
+            bookId: 'book-1',
+        })
+
+        expect(
+            screen.getByTestId('checkin-form'),
+        ).toHaveTextContent(
+            'Returning The Left Hand of Darkness',
+        )
+
+        expect(
+            mockUseBook,
+        ).toHaveBeenCalledWith('')
+    })
+
+    it('falls back to the book detail query when the selected book is missing from the books cache', () => {
+        const bookList = makeBookList()
+
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [],
+                    total: 1,
+                }),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...bookList,
+                items: [],
+            },
+        })
+
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList(),
+            refetch: vi.fn(),
+        })
+
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: bookList.items[0],
+            refetch: vi.fn(),
+        })
+
+        renderPage(
+            '/loans?bookId=book-1',
+        )
+
+        expect(
+            mockUseLoans,
+        ).toHaveBeenCalledWith({
+            bookId: 'book-1',
+        })
+
+        expect(
+            mockUseBook,
+        ).toHaveBeenCalledWith(
+            'book-1',
+        )
+
+        expect(
+            screen.getByTestId('checkin-form'),
+        ).toHaveTextContent(
+            'Returning The Left Hand of Darkness',
+        )
+    })
+
+    it('shows an ineligible warning when targeted loan state has no active loan', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [],
+                    total: 1,
+                }),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList({
+                items: [
+                    {
+                        ...makeLoanList().items[0],
+                        returned_at:
+                            '2026-08-13T15:30:00Z',
+                    },
+                ],
+            }),
+            refetch: vi.fn(),
+        })
+
+        renderPage(
+            '/loans?bookId=book-1',
+        )
+
+        expect(
+            screen.getByText(
+                'The Left Hand of Darkness does not currently have an active loan.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByTestId(
+                'checkin-form',
+            ),
+        ).not.toBeInTheDocument()
+    })
+
+    it('shows a not-found warning when the fallback book query returns 404', () => {
+        const bookList = makeBookList()
+
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList({
+                    items: [],
+                    total: 1,
+                }),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...bookList,
+                items: [],
+            },
+        })
+
+        mockUseLoans.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeLoanList(),
+            refetch: vi.fn(),
+        })
+
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: new ApiError({
+                kind: 'http',
+                status: 404,
+                message: 'Book not found',
+                detail: 'Book not found',
+            }),
+            refetch: vi.fn(),
+        })
+
+        renderPage(
+            '/loans?bookId=missing-book',
+        )
+
+        expect(
+            screen.getByText(
+                'The selected book could not be found or is no longer eligible for check-in.',
             ),
         ).toBeInTheDocument()
     })

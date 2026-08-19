@@ -92,8 +92,8 @@ test('checks out and checks in a book through the browser', async ({
     ).toBe(true)
 
     /*
-     * CHECK-IN
-     */
+ * CHECK-IN
+ */
 
     await page
         .getByLabel('Book actions')
@@ -105,7 +105,19 @@ test('checks out and checks in a book through the browser', async ({
     await expect(
         page.getByRole('heading', {
             level: 1,
-            name: 'Check In Book',
+            name: 'Loans',
+        }),
+    ).toBeVisible()
+
+    await expect(page).toHaveURL(
+        new RegExp(
+            `/loans\\?bookId=${book.id}`,
+        ),
+    )
+
+    await expect(
+        page.getByRole('heading', {
+            name: 'Return Card',
         }),
     ).toBeVisible()
 
@@ -121,14 +133,38 @@ test('checks out and checks in a book through the browser', async ({
         name: 'Confirm check-in',
     }).click()
 
-    /*
- * MARK READ
- */
+    await expect(page).toHaveURL(
+        /\/loans$/,
+    )
 
-    await page.getByLabel('Book actions').getByRole('link', {
-        name: 'Mark Read',
+    await expect(
+        page.getByRole('heading', {
+            level: 2,
+            name: 'Returned Loans',
+        }),
+    ).toBeVisible()
+
+    await page.getByRole('link', {
+        name: book.title,
     }).click()
 
+    await expect(
+        page.getByRole('heading', {
+            level: 1,
+            name: book.title,
+        }),
+    ).toBeVisible()
+
+    /*
+     * MARK READ
+     */
+
+    await page
+        .getByLabel('Book actions')
+        .getByRole('link', {
+            name: 'Mark Read',
+        })
+        .click()
     await expect(
         page.getByRole('heading', {
             level: 1,

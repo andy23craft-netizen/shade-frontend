@@ -177,17 +177,18 @@ describe('AboutPage', () => {
             }),
         ).toHaveAttribute('href', '/checkout')
 
-        expect(
-            guide.getByRole('link', {
-                name: 'Check In',
-            }),
-        ).toHaveAttribute('href', '/checkin')
 
         expect(
             guide.getByRole('link', {
                 name: 'Loans',
             }),
         ).toHaveAttribute('href', '/loans')
+
+        expect(
+            guide.queryByRole('link', {
+                name: 'Check In',
+            }),
+        ).not.toBeInTheDocument()
 
         expect(
             guide.getByRole('link', {

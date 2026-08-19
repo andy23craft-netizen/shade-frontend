@@ -9,58 +9,27 @@ import {
     QueryClientProvider,
 } from '@tanstack/react-query'
 import {
-    MemoryRouter,
-} from 'react-router-dom'
-import {
     beforeEach,
     describe,
     expect,
     it,
     vi,
 } from 'vitest'
+
 import { ApiError } from '../../../api/apiErrors'
-
-import { CheckinPage } from './CheckinPage'
-
+import type {
+    BookRead,
+    LoanRead,
+} from '../../../api/apiTypes'
 import {
-    useBook,
-    useBooks,
     useCheckinBook,
 } from '../../../api/booksQueries'
-import {
-    useLoans,
-} from '../../../api/loansQueries'
+import { CheckinForm } from './CheckinForm'
 
 vi.mock('../../../api/booksQueries', () => ({
-    useBook: vi.fn(),
-    useBooks: vi.fn(),
     useCheckinBook: vi.fn(),
 }))
 
-vi.mock('../../../api/loansQueries', () => ({
-    useLoans: vi.fn(),
-}))
-
-const mockNavigate = vi.fn()
-
-vi.mock(
-    'react-router-dom',
-    async (importOriginal) => {
-        const actual =
-            await importOriginal<
-                typeof import('react-router-dom')
-            >()
-
-        return {
-            ...actual,
-            useNavigate: () => mockNavigate,
-        }
-    },
-)
-
-const mockUseBook = vi.mocked(useBook)
-const mockUseBooks = vi.mocked(useBooks)
-const mockUseLoans = vi.mocked(useLoans)
 const mockUseCheckinBook = vi.mocked(
     useCheckinBook,
 )
@@ -69,9 +38,9 @@ const book = {
     id: 'test-book-id',
     title: 'The Pale Fire',
     authors: 'Vladimir Nabokov',
-    status: 'on_loan' as const,
+    status: 'on_loan',
     deletion_date: null,
-}
+} as BookRead
 
 const activeLoan = {
     id: 'test-loan-id',
@@ -81,13 +50,7 @@ const activeLoan = {
     due_at: null,
     returned_at: null,
     notes: null,
-}
-
-const returnedLoan = {
-    ...activeLoan,
-    id: 'returned-loan-id',
-    returned_at: '2026-08-13T15:30:00Z',
-}
+} as LoanRead
 
 function createQueryClient() {
     return new QueryClient({
@@ -102,59 +65,49 @@ function createQueryClient() {
     })
 }
 
-function renderPage(
-    initialEntry =
-    '/checkin?bookId=test-book-id',
+function renderForm(
+    options: {
+        book?: BookRead
+        loans?: readonly LoanRead[]
+        onCancel?: () => void
+        onSuccess?: () => void
+    } = {},
 ) {
     const queryClient = createQueryClient()
+    const onCancel =
+        options.onCancel ?? vi.fn()
+    const onSuccess =
+        options.onSuccess ?? vi.fn()
 
     const result = render(
         <QueryClientProvider
             client={queryClient}
         >
-            <MemoryRouter
-                initialEntries={[
-                    initialEntry,
-                ]}
-            >
-                <CheckinPage />
-            </MemoryRouter>
+            <CheckinForm
+                book={options.book ?? book}
+                loans={
+                    options.loans ?? [activeLoan]
+                }
+                onCancel={onCancel}
+                onSuccess={onSuccess}
+            />
         </QueryClientProvider>,
     )
 
     return {
         ...result,
         queryClient,
+        onCancel,
+        onSuccess,
     }
 }
-function setupSuccessfulBook() {
-    mockUseBook.mockReturnValue({
-        data: book,
-        isPending: false,
-        isError: false,
-        error: null,
-    }  as unknown as ReturnType<
-    typeof useBook
->)
-    mockUseBooks.mockReturnValue({
-        data: {
-            items: [book],
-            total: 1,
-        },
-        isPending: false,
-        isError: false,
-        error: null,
-    } as ReturnType<typeof useBooks>)
 
-    mockUseLoans.mockReturnValue({
-        data: {
-            items: [activeLoan],
-            total: 1,
-        },
-        isPending: false,
-        isError: false,
-        error: null,
-    } as ReturnType<typeof useLoans>)
+function submitForm() {
+    fireEvent.click(
+        screen.getByRole('button', {
+            name: 'Check In Book',
+        }),
+    )
 }
 
 function confirmCheckin() {
@@ -169,11 +122,9 @@ function confirmCheckin() {
     )
 }
 
-describe('CheckinPage', () => {
+describe('CheckinForm', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-
-        setupSuccessfulBook()
 
         mockUseCheckinBook.mockReturnValue({
             mutate: vi.fn(),
@@ -183,12 +134,12 @@ describe('CheckinPage', () => {
         >)
     })
 
-    it('renders the check-in form for a book with an active loan', () => {
-        renderPage()
+    it('renders the return card for the selected book and active loan', () => {
+        renderForm()
 
         expect(
             screen.getByRole('heading', {
-                name: 'Check In Book',
+                name: 'Return Card',
             }),
         ).toBeInTheDocument()
 
@@ -221,226 +172,6 @@ describe('CheckinPage', () => {
         ).toBeEnabled()
     })
 
-    it('offers eligible book selection when no book ID is provided', () => {
-        mockUseBook.mockReturnValue({
-            data: undefined,
-            isPending: false,
-            isError: false,
-            error: null,
-        } as unknown as ReturnType<
-        typeof useBook
-    >)
-        renderPage('/checkin')
-
-        expect(
-            screen.getByRole('heading', {
-                name: 'Check In Book',
-            }),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByText(
-                'Select a book with an active loan to check in.',
-            ),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByRole('heading', {
-                name: 'The Pale Fire',
-            }),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByText('Jane Reader'),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByRole('button', {
-                name: 'Select',
-            }),
-        ).toBeEnabled()
-    })
-
-    it('does not offer books without an active loan in selection', () => {
-        mockUseBook.mockReturnValue({
-            data: undefined,
-            isPending: false,
-            isError: false,
-            error: null,
-        } as unknown as ReturnType<
-        typeof useBook
-    >)
-        mockUseLoans.mockReturnValue({
-            data: {
-                items: [returnedLoan],
-                total: 1,
-            },
-            isPending: false,
-            isError: false,
-            error: null,
-        } as ReturnType<typeof useLoans>)
-
-        renderPage('/checkin')
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'There are no active loans available for check-in.',
-        )
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Select',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('does not offer a deleted book even when it has an active loan', () => {
-        mockUseBook.mockReturnValue({
-            data: undefined,
-            isPending: false,
-            isError: false,
-            error: null,
-        } as unknown as ReturnType<
-        typeof useBook
-    >)
-        mockUseBooks.mockReturnValue({
-            data: {
-                items: [
-                    {
-                        ...book,
-                        deletion_date:
-                            '2026-08-13T12:00:00Z',
-                    },
-                ],
-                total: 1,
-            },
-            isPending: false,
-            isError: false,
-            error: null,
-        } as ReturnType<typeof useBooks>)
-
-        renderPage('/checkin')
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'There are no active loans available for check-in.',
-        )
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Select',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('allows a book with an active loan even when book status is inconsistent', () => {
-        mockUseBook.mockReturnValue({
-            data: {
-                ...book,
-                status: 'available',
-            },
-            isPending: false,
-            isError: false,
-            error: null,
-        } as ReturnType<typeof useBook>)
-
-        renderPage()
-
-        expect(
-            screen.getByLabelText(
-                'Return date and time',
-            ),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        ).toBeEnabled()
-    })
-
-    it('rejects an on-loan book when no active loan exists', () => {
-        mockUseLoans.mockReturnValue({
-            data: {
-                items: [returnedLoan],
-                total: 1,
-            },
-            isPending: false,
-            isError: false,
-            error: null,
-        } as ReturnType<typeof useLoans>)
-
-        renderPage()
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'The Pale Fire does not currently have an active loan.',
-        )
-
-        expect(
-            screen.getByRole('button', {
-                name: 'Refresh eligible books',
-            }),
-        ).toBeEnabled()
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Check In Book',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('rejects a deleted book even when an active loan exists', () => {
-        mockUseBook.mockReturnValue({
-            data: {
-                ...book,
-                deletion_date:
-                    '2026-08-13T12:00:00Z',
-            },
-            isPending: false,
-            isError: false,
-            error: null,
-        } as ReturnType<typeof useBook>)
-
-        renderPage()
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'The Pale Fire does not currently have an active loan.',
-        )
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Check In Book',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('shows an error when the book cannot be loaded', () => {
-        const error = new Error(
-            'Book could not be loaded.',
-        )
-
-        mockUseBook.mockReturnValue({
-            data: undefined,
-            isPending: false,
-            isError: true,
-            error,
-        } as ReturnType<typeof useBook>)
-
-        renderPage()
-
-        expect(
-            screen.getByRole('alert'),
-        ).toHaveTextContent(
-            'Book could not be loaded.',
-        )
-    })
-
     it('submits a check-in with no explicit return date', () => {
         const mutate = vi.fn()
 
@@ -451,14 +182,9 @@ describe('CheckinPage', () => {
             typeof useCheckinBook
         >)
 
-        renderPage()
+        renderForm()
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
+        submitForm()
         confirmCheckin()
 
         expect(mutate).toHaveBeenCalledWith(
@@ -483,7 +209,7 @@ describe('CheckinPage', () => {
             typeof useCheckinBook
         >)
 
-        renderPage()
+        renderForm()
 
         fireEvent.change(
             screen.getByLabelText(
@@ -497,12 +223,7 @@ describe('CheckinPage', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
+        submitForm()
         confirmCheckin()
 
         expect(mutate).toHaveBeenCalledWith(
@@ -526,7 +247,7 @@ describe('CheckinPage', () => {
         )
     })
 
-    it('navigates to the book after successful check-in', () => {
+    it('calls onSuccess after successful check-in', () => {
         const mutate = vi.fn(
             (
                 _variables: unknown,
@@ -545,24 +266,54 @@ describe('CheckinPage', () => {
             typeof useCheckinBook
         >)
 
-        renderPage()
+        const { onSuccess } = renderForm()
+
+        submitForm()
+        confirmCheckin()
+
+        expect(onSuccess).toHaveBeenCalledTimes(1)
+    })
+
+    it('calls onCancel when cancel is selected', () => {
+        const { onCancel } = renderForm()
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Check In Book',
+                name: 'Cancel',
             }),
         )
 
-        confirmCheckin()
-
-        expect(
-            mockNavigate,
-        ).toHaveBeenCalledWith(
-            '/books/test-book-id',
-        )
+        expect(onCancel).toHaveBeenCalledTimes(1)
     })
 
-    it('shows the mutation error when check-in fails', async () => {
+    it('does not submit when confirmation is cancelled', () => {
+        const mutate = vi.fn()
+
+        mockUseCheckinBook.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useCheckinBook
+        >)
+
+        renderForm()
+
+        submitForm()
+
+        const dialog =
+            screen.getByRole('dialog', {
+                name: 'Confirm check-in',
+            })
+
+        const buttons =
+            dialog.querySelectorAll('button')
+
+        fireEvent.click(buttons[0])
+
+        expect(mutate).not.toHaveBeenCalled()
+    })
+
+    it('shows a mutation error when check-in fails', async () => {
         const mutate = vi.fn(
             (
                 _variables: unknown,
@@ -587,14 +338,9 @@ describe('CheckinPage', () => {
             typeof useCheckinBook
         >)
 
-        renderPage()
+        renderForm()
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
+        submitForm()
         confirmCheckin()
 
         await waitFor(() => {
@@ -606,7 +352,7 @@ describe('CheckinPage', () => {
         })
     })
 
-    it('shows the generic mutation error when the error is not an Error', async () => {
+    it('shows the generic mutation error for an unknown failure', async () => {
         const mutate = vi.fn(
             (
                 _variables: unknown,
@@ -629,14 +375,9 @@ describe('CheckinPage', () => {
             typeof useCheckinBook
         >)
 
-        renderPage()
+        renderForm()
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
+        submitForm()
         confirmCheckin()
 
         await waitFor(() => {
@@ -646,51 +387,6 @@ describe('CheckinPage', () => {
                 'The book could not be checked in.',
             )
         })
-    })
-
-    it('cancels by navigating back', () => {
-        renderPage()
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Cancel',
-            }),
-        )
-
-        expect(
-            mockNavigate,
-        ).toHaveBeenCalledWith(-1)
-    })
-
-    it('does not submit when confirmation is cancelled', () => {
-        const mutate = vi.fn()
-
-        mockUseCheckinBook.mockReturnValue({
-            mutate,
-            isPending: false,
-        } as unknown as ReturnType<
-            typeof useCheckinBook
-        >)
-
-        renderPage()
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
-        const dialog =
-            screen.getByRole('dialog', {
-                name: 'Confirm check-in',
-            })
-
-        const buttons =
-            dialog.querySelectorAll('button')
-
-        fireEvent.click(buttons[0])
-
-        expect(mutate).not.toHaveBeenCalled()
     })
 
     it('refreshes stale state and preserves input after a 404', async () => {
@@ -725,7 +421,8 @@ describe('CheckinPage', () => {
 
         const {
             queryClient,
-        } = renderPage()
+            onSuccess,
+        } = renderForm()
 
         const invalidateSpy = vi.spyOn(
             queryClient,
@@ -744,12 +441,7 @@ describe('CheckinPage', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
+        submitForm()
         confirmCheckin()
 
         await waitFor(() => {
@@ -773,7 +465,7 @@ describe('CheckinPage', () => {
         ).toHaveBeenCalledTimes(3)
 
         expect(
-            mockNavigate,
+            onSuccess,
         ).not.toHaveBeenCalled()
     })
 
@@ -809,7 +501,8 @@ describe('CheckinPage', () => {
 
         const {
             queryClient,
-        } = renderPage()
+            onSuccess,
+        } = renderForm()
 
         const invalidateSpy = vi.spyOn(
             queryClient,
@@ -828,12 +521,7 @@ describe('CheckinPage', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
+        submitForm()
         confirmCheckin()
 
         await waitFor(() => {
@@ -863,7 +551,7 @@ describe('CheckinPage', () => {
         ).toHaveBeenCalledTimes(3)
 
         expect(
-            mockNavigate,
+            onSuccess,
         ).not.toHaveBeenCalled()
 
         expect(mutate).toHaveBeenCalledTimes(1)
@@ -905,7 +593,7 @@ describe('CheckinPage', () => {
             typeof useCheckinBook
         >)
 
-        renderPage()
+        renderForm()
 
         fireEvent.change(
             screen.getByLabelText(
@@ -919,12 +607,7 @@ describe('CheckinPage', () => {
             },
         )
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Check In Book',
-            }),
-        )
-
+        submitForm()
         confirmCheckin()
 
         await waitFor(() => {
@@ -962,13 +645,34 @@ describe('CheckinPage', () => {
             'href',
             '#checkin-returned-at',
         )
-
-        expect(
-            mockNavigate,
-        ).not.toHaveBeenCalled()
     })
 
-    it('disables the submit button while check-in is pending', () => {
+    it('does not submit when the book is no longer eligible', () => {
+        const mutate = vi.fn()
+
+        mockUseCheckinBook.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useCheckinBook
+        >)
+
+        renderForm({
+            loans: [],
+        })
+
+        submitForm()
+
+        expect(
+            screen.getByRole('alert'),
+        ).toHaveTextContent(
+            'This book does not currently have an active loan.',
+        )
+
+        expect(mutate).not.toHaveBeenCalled()
+    })
+
+    it('disables actions while check-in is pending', () => {
         mockUseCheckinBook.mockReturnValue({
             mutate: vi.fn(),
             isPending: true,
@@ -976,11 +680,17 @@ describe('CheckinPage', () => {
             typeof useCheckinBook
         >)
 
-        renderPage()
+        renderForm()
 
         expect(
             screen.getByRole('button', {
                 name: 'Checking In...',
+            }),
+        ).toBeDisabled()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Cancel',
             }),
         ).toBeDisabled()
     })

@@ -1599,23 +1599,6 @@
 }
 
 /*
- * Eligible check-in records.
- */
-.checkin-card-list {
-  display: grid;
-  gap: var(--space-5);
-
-  margin: 0;
-  padding: 0;
-
-  list-style: none;
-}
-
-.checkin-card-list > li {
-  margin: 0;
-}
-
-/*
  * Compact circulation record used when selecting which
  * checked-out book to return.
  */

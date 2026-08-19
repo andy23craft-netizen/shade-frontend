@@ -205,16 +205,12 @@ export function CatalogGuide() {
                             <AppLink to="/checkout">
                                 Check Out
                             </AppLink>
-                            {' '}and{' '}
-                            <AppLink to="/checkin">
-                                Check In
-                            </AppLink>
-                            {' '}to manage circulation, and review
-                            active and past records under{' '}
+                            {' '}to lend a book, and visit{' '}
                             <AppLink to="/loans">
                                 Loans
                             </AppLink>
-                            .
+                            {' '}to check books in and review
+                            active and past records.
                         </p>
 
                         <p>

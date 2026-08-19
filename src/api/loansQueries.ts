@@ -40,6 +40,7 @@ function getNextListPageParam(
 export function useLoans(
     options: {
         bookId?: string
+        enabled?: boolean
     } = {},
 ) {
     const {
@@ -50,16 +51,18 @@ export function useLoans(
         createLoansApi(apiClient)
 
     const bookId = options.bookId
+    const enabled = options.enabled ?? true
 
     return useQuery({
         queryKey: queryKeys.loans.list(bookId),
         queryFn: ({
-            signal,
-        }) =>
+                      signal,
+                  }) =>
             loansApi.list({
                 bookId,
                 signal,
             }),
+        enabled,
     })
 }
 

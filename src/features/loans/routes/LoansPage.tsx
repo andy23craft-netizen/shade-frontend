@@ -1,19 +1,36 @@
+import { useQueryClient } from '@tanstack/react-query'
+import {
+    useSearchParams,
+} from 'react-router-dom'
+
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
+import {
+    isApiError,
+} from '../../../api/apiErrors'
 import type {
+    BookRead,
     LoanRead,
 } from '../../../api/apiTypes'
 import {
+    useBook,
     useBooks,
 } from '../../../api/booksQueries'
 import {
     useInfiniteLoans,
+    useLoans,
 } from '../../../api/loansQueries'
+import { queryKeys } from '../../../api/queryKeys'
 import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
+import {
+    findActiveLoan,
+    isCheckinEligible,
+} from '../checkinEligibility'
+import { CheckinForm } from '../components/CheckinForm'
 import {
     flattenInfiniteListPages,
 } from '../loansListModel'
@@ -42,10 +59,207 @@ function dueStateLabel(
     }
 }
 
-export function LoansPage() {
+interface SelectedCheckinProps {
+    bookId: string
+    cachedBook?: BookRead
+    loadedLoans: readonly LoanRead[]
+    onClose: () => void
+}
+
+function SelectedCheckin({
+                             bookId,
+                             cachedBook,
+                             loadedLoans,
+                             onClose,
+                         }: SelectedCheckinProps) {
+    const loadedActiveLoan =
+        findActiveLoan(
+            bookId,
+            loadedLoans,
+        )
+
+    if (
+        cachedBook &&
+        loadedActiveLoan &&
+        isCheckinEligible(
+            cachedBook,
+            loadedLoans,
+        )
+    ) {
+        return (
+            <CheckinForm
+                book={cachedBook}
+                loans={loadedLoans}
+                onCancel={onClose}
+                onSuccess={onClose}
+            />
+        )
+    }
+
+    return (
+        <TargetedCheckin
+            bookId={bookId}
+            cachedBook={cachedBook}
+            onClose={onClose}
+        />
+    )
+}
+
+interface TargetedCheckinProps {
+    bookId: string
+    cachedBook?: BookRead
+    onClose: () => void
+}
+
+function TargetedCheckin({
+                             bookId,
+                             cachedBook,
+                             onClose,
+                         }: TargetedCheckinProps) {
+    const queryClient = useQueryClient()
+
+    const loansQuery = useLoans({
+        bookId,
+    })
+
+    const needsBook =
+        cachedBook === undefined
+
+    const bookQuery = useBook(
+        needsBook
+            ? bookId
+            : '',
+    )
+
+    const book =
+        cachedBook ?? bookQuery.data
+
+    async function refreshLoanState() {
+        await Promise.all([
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.books.all,
+            }),
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.loans.all,
+            }),
+        ])
+
+        onClose()
+    }
+
+    if (
+        loansQuery.isPending ||
+        (needsBook && bookQuery.isPending)
+    ) {
+        return (
+            <LoadingState label="Loading check-in…" />
+        )
+    }
+
+    if (
+        needsBook &&
+        bookQuery.isError
+    ) {
+        const isNotFound =
+            isApiError(bookQuery.error) &&
+            bookQuery.error.status === 404
+
+        if (isNotFound) {
+            return (
+                <div>
+                    <Alert
+                        variant="warning"
+                        title="Book is not available for check-in"
+                    >
+                        The selected book could not
+                        be found or is no longer
+                        eligible for check-in.
+                    </Alert>
+
+                    <Button
+                        type="button"
+                        onClick={() => {
+                            void refreshLoanState()
+                        }}
+                    >
+                        Refresh loans
+                    </Button>
+                </div>
+            )
+        }
+
+        return (
+            <QueryErrorState
+                title="Unable to load book"
+                error={bookQuery.error}
+                onRetry={() => {
+                    void bookQuery.refetch()
+                }}
+            />
+        )
+    }
+
+    if (loansQuery.isError) {
+        return (
+            <QueryErrorState
+                title="Unable to load loan state"
+                error={loansQuery.error}
+                onRetry={() => {
+                    void loansQuery.refetch()
+                }}
+            />
+        )
+    }
+
+    if (
+        !book ||
+        !isCheckinEligible(
+            book,
+            loansQuery.data.items,
+        )
+    ) {
+        return (
+            <div>
+                <Alert
+                    variant="warning"
+                    title="Book is not checked out"
+                >
+                    {book
+                        ? `${book.title} does not currently have an active loan.`
+                        : 'The selected book is not available for check-in.'}
+                </Alert>
+
+                <Button
+                    type="button"
+                    onClick={() => {
+                        void refreshLoanState()
+                    }}
+                >
+                    Refresh loans
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <CheckinForm
+            book={book}
+            loans={loansQuery.data.items}
+            onCancel={onClose}
+            onSuccess={onClose}
+        />
+    )
+}export function LoansPage() {
+    const [
+        searchParams,
+        setSearchParams,
+    ] = useSearchParams()
+
+    const selectedBookId =
+        searchParams.get('bookId') ?? ''
+
     const loansQuery = useInfiniteLoans()
     const booksQuery = useBooks()
-
     const fetchNextLoansPage =
         loansQuery.fetchNextPage
 
@@ -152,6 +366,23 @@ export function LoansPage() {
         ]),
     )
 
+    const selectedBook =
+        selectedBookId
+            ? booksById.get(selectedBookId)
+            : undefined
+
+    function clearSelectedBook() {
+        setSearchParams({})
+    }
+
+    function selectBookForCheckin(
+        bookId: string,
+    ) {
+        setSearchParams({
+            bookId,
+        })
+    }
+
     const activeLoans = loans.filter(
         (loan) => loan.returned_at === null,
     )
@@ -207,6 +438,15 @@ export function LoansPage() {
                         : 's'} in the history.
                 </p>
             </header>
+
+            {selectedBookId ? (
+                <SelectedCheckin
+                    bookId={selectedBookId}
+                    cachedBook={selectedBook}
+                    loadedLoans={loans}
+                    onClose={clearSelectedBook}
+                />
+            ) : null}
 
             <section>
                 <h2>Active Loans</h2>
@@ -285,6 +525,40 @@ export function LoansPage() {
                                             </div>
                                         ) : null}
                                     </dl>
+
+                                    {(() => {
+                                        const book =
+                                            booksById.get(
+                                                loan.book_id,
+                                            )
+
+                                        if (
+                                            !book ||
+                                            !isCheckinEligible(
+                                                book,
+                                                loans,
+                                            )
+                                        ) {
+                                            return null
+                                        }
+
+                                        return (
+                                            <div className="circulation-record-card__actions">
+                                                <Button
+                                                    type="button"
+                                                    variant="primary"
+                                                    onClick={() =>
+                                                        selectBookForCheckin(
+                                                            book.id,
+                                                        )
+                                                    }
+                                                >
+                                                    Check In
+                                                </Button>
+                                            </div>
+                                        )
+                                    })()}
+
                                 </article>
                             </li>
                         ))}

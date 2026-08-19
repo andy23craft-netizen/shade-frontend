@@ -511,9 +511,9 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/checkin?bookId=${encodeURIComponent(
+            `/loans?bookId=${encodeURIComponent(
                 completeBook.id,
-            )}`,
+            )}`
         )
 
         expect(
@@ -638,9 +638,9 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/checkin?bookId=${encodeURIComponent(
+            `/loans?bookId=${encodeURIComponent(
                 completeBook.id,
-            )}`,
+            )}`
         )
     })
 

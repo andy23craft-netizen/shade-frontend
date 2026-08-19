@@ -2,6 +2,7 @@ import {
     fireEvent,
     screen,
     within,
+    waitFor,
 } from '@testing-library/react'
 import {
     afterEach,
@@ -135,10 +136,10 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('href', '/checkout')
 
         expect(
-            screen.getByRole('link', {
+            screen.queryByRole('link', {
                 name: 'Check In',
             }),
-        ).toHaveAttribute('href', '/checkin')
+        ).not.toBeInTheDocument()
 
         expect(
             screen.getByRole('link', {
@@ -267,5 +268,32 @@ describe('AppShell layout and navigation', () => {
                 name: 'Return home',
             }),
         ).toHaveAttribute('href', '/')
+    })
+
+    it('redirects legacy check-in URLs to loans and preserves the book ID', async () => {
+        const router = renderAppTree([
+            '/checkin?bookId=test-book-id',
+        ])
+
+        await waitFor(() => {
+            expect(
+                router.state.location.pathname,
+            ).toBe('/loans')
+
+            expect(
+                router.state.location.search,
+            ).toBe('?bookId=test-book-id')
+        })
+
+        expect(
+            screen.getByRole('heading', {
+                level: 1,
+                name: 'Loans',
+            }),
+        ).toBeInTheDocument()
+
+        await waitFor(() => {
+            expect(document.title).toBe('Loans — Shade')
+        })
     })
 })

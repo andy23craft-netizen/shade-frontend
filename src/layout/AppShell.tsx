@@ -118,17 +118,12 @@ export function AppShell() {
                             label="Circulation"
                             activePrefixes={[
                                 '/checkout',
-                                '/checkin',
                                 '/loans',
                             ]}
                             items={[
                                 {
                                     label: 'Check Out',
                                     to: '/checkout',
-                                },
-                                {
-                                    label: 'Check In',
-                                    to: '/checkin',
                                 },
                                 {
                                     label: 'Loans',
