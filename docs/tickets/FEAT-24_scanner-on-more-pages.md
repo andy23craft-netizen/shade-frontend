@@ -2,16 +2,17 @@
 
 ## Objective
 
-On Dashboard (`/dashboard`), Books (`/books`), and Loans (`/loans`), a hardware barcode scan (or equivalent keyboard-wedge
-digit burst) should take the operator to the matching book. After a checksum-valid scan, query `GET /books?isbn=` with
-the compacted ISBN and inspect the returned list length **before** choosing a destination. If that filter returns exactly
-one book, navigate directly to `/books/{bookId}` so detail is the only new history entry and Back returns to the page
-the operator scanned from. If it returns zero or many books, navigate to `/books?isbn={compactedIsbn}` so the operator
-sees the filtered collection. Never push `/books?isbn=` onto the history stack when the prefetch already resolved to a
-single match -- the operator must not hit Back and land on a list page they never saw rendered.
+On Dashboard (`/dashboard`), Books (`/books`), and Loans (`/loans`), a hardware barcode scan (or equivalent
+keyboard-wedge digit burst) should take the operator to the matching book. After a checksum-valid scan, query
+`GET /books?isbn=` with the compacted ISBN and inspect the returned list length **before** choosing a destination. If
+that filter returns exactly one book, navigate directly to `/books/{bookId}` so detail is the only new history entry
+and Back returns to the page the operator scanned from. If it returns zero or many books, navigate to
+`/books?isbn={compactedIsbn}` so the operator sees the filtered collection. Never push `/books?isbn=` onto the history
+stack when the prefetch already resolved to a single match -- the operator must not hit Back and land on a list page
+they never saw rendered.
 
-This is a third hardware-capture surface. It does not add camera UI, does not call `GET /books/lookup`, and never
-creates or checks out a book from a successful scan.
+This is a second hardware-capture surface (alongside `/books/new`). It does not add camera UI, does not call
+`GET /books/lookup`, and never creates or checks out a book from a successful scan.
 
 ## Dependencies
 
@@ -19,18 +20,25 @@ FEAT-04 collection browse and hardware ISBN scanning are complete:
 
 - `useHardwareIsbnScanner` / `IsbnScannerParser` (Enter terminator, inter-key timeout, checksum via `isbn.ts`)
 - `compactIsbnForListFilter` and `useBooks({ isbn })` / `useInfiniteBooks({ isbn })` / `booksApi.list({ isbn })`
-- `/books` via `BooksPage` + `useInfiniteBooks({ sortBy, sortOrder })` with URL-backed category / author / title
-  filters and sort params
+- `/books` via `BooksPage` + `useInfiniteBooks({ category, author, title, sortBy, sortOrder })` with URL-backed
+  category / author / title filters and sort params
 
 FEAT-18 collection filters is complete; do not reference its removed ticket file.
 
-Do not pull FEAT-15 Podman, FEAT-16 release artifacts, FEAT-17 About / homepage, FEAT-19 wishlists, FEAT-20 dashboard
-reports, FEAT-21 display-only alternate copies, FEAT-22 check-in consolidation, or FEAT-23 checkout-on-details into
-this implementation.
-
 FEAT-17 About homepage is complete: `/` is About; the dashboard is `/dashboard`. Capture belongs on `DashboardPage`
-at `/dashboard`, not on `/`. `/books` already has category / author / title filter fields; this listener must ignore
-editable targets so those fields stay usable. FEAT-22 may add a return-time field on `/loans`; same ignore rule.
+at `/dashboard`, not on `/`.
+
+FEAT-22 check-in consolidation is complete: product check-in is `CheckinForm` on `/loans` (`?bookId=`), including a
+return-time `datetime-local` field. FEAT-23 checkout-on-details is in the tree (`CheckoutDialog` on `BookDetailsPage`;
+`/checkout` is `LegacyCheckoutRedirect` only; Circulation drawer is Loans only). Do not restore `CheckoutPage`, add
+ISBN Find / camera to checkout, or listen on `/books/:bookId`. Camera and New Book hardware capture stay on
+`/books/new` only.
+
+Do not pull FEAT-25 backup removal, FEAT-26 wishlist move-to-shelf, or FEAT-27 Collections into this implementation.
+
+`/books` already has category / author / title filter fields and sort `<select>`s. `/dashboard` has the Healing
+Metadata field `<select>`. `/loans` has the Return Card return-time input when `CheckinForm` is open. This listener
+must ignore editable targets so those controls stay usable.
 
 ## Contract references
 
@@ -51,29 +59,40 @@ Do not invent a dedicated "find book by scan" API. Collection filter is `GET /bo
 Already in place and should be reused (not rebuilt):
 
 - Hardware wedge capture: `IsbnScannerParser` buffers `[0-9Xx -]`, finishes on Enter, resets on inter-key timeout
-  (default 100ms), and emits only checksum-valid ISBN-10 / ISBN-13. `useHardwareIsbnScanner` listens on `window`
-  `keydown`. Today it is mounted only from `NewBookPage`. That caller does **not** ignore focused inputs (a scan can
-  fill the ISBN field) and does **not** `preventDefault` ("ordinary typing is not swallowed").
-- Camera capture stays lazy-loaded from `/books/new` only (`IsbnCameraScanner`).
-- `/dashboard` `DashboardPage`: metrics, Refresh, no text fields. After client-side navigation, `AppShell` focuses
-  the `h1`. `/` is the About homepage, not the dashboard.
+  (default 100ms), and emits only checksum-valid ISBN-10 / ISBN-13. `IsbnScannerParserResult` is
+  `{ isbn: string | null }` (no `consumed` flag yet). `useHardwareIsbnScanner` listens on `window` `keydown` with
+  `enabled` and `onDetected` only (no `ignoreEditableTargets` / `preventDefaultWhenConsumed`). Today it is mounted only
+  from `NewBookPage`. That caller does **not** ignore focused inputs (a scan can fill the ISBN field) and does **not**
+  `preventDefault` ("ordinary typing is not swallowed").
+- Camera capture is lazy-loaded from `/books/new` only (`IsbnCameraScanner`). There is no checkout capture surface.
+- `/dashboard` `DashboardPage`: summary / breakdown / healing drawers, Refresh, and a Healing Metadata field `<select>`
+  (`#dashboard-incomplete-field`). After client-side navigation, `AppShell` focuses `main` (not the `h1`). `/` is the
+  About homepage, not the dashboard.
 - `/books` `BooksPage`: infinite active collection, sort `<select>`s, and URL-backed category / author / title filter
-  controls (`BooksListControls`). URL search today: `sortBy`, `sortOrder`, and filter params -- not `isbn`.
-  `useInfiniteBooks` already accepts `isbn` but the page never passes it. Unfiltered `total === 0` is "Your library
-  is empty" + Add Book (via Collection → Manage or direct `/books/new`).
-- `/loans` `LoansPage`: infinite active/returned loans, no text fields (until FEAT-22).
+  controls (`BooksListControls`). URL search today: `sortBy`, `sortOrder`, `category`, `author`, `title` -- not `isbn`.
+  `useInfiniteBooks` already accepts `isbn` but the page never passes it. `updateListParams` lives in `BooksPage.tsx`
+  (clears stale `page`; does not yet set/clear `isbn`). Unfiltered `total === 0` is "Your library is empty." + Add Book
+  (`/books/new`). Filtered `total === 0` is "No books match these filters."
+- `/loans` `LoansPage`: infinite active/returned loans plus `CheckinForm` when `?bookId=` is set (Return date and time
+  `input type="datetime-local"`). Circulation nav is Loans only.
 - ISBN helpers: `isValidIsbn` / `compactIsbnForListFilter` in `src/features/books/utils/isbn.ts`.
 - Shared UI: `Alert`, `AppLink`, `Button`, `EmptyState`, `LoadingState`, `QueryErrorState`. Collection card CSS
   already on `BooksPage`.
+- Playwright `e2e/support/mockApi.ts` list `isbn` exact-matches `isbn13`. That is enough for full-ISBN e2e.
+- `docs/ToDo.md` has no checklist line for this ticket yet. `docs/baselines/FEAT-06_scanner-support.md` documents
+  capture on `/books/new` only until this ticket.
 
 The gap: a wedge scan on Dashboard, Books, or Loans is ignored (no listener). Operators must open Add Book to use the
-scanner, which is the wrong destination when they already own the book and want its details.
+scanner, which is the wrong destination when they already own the book and want its details. `docs/AGENTS.md` still
+describes camera/hardware on `/checkout`; that page is gone -- this ticket's docs hygiene should drop that and describe
+the collection-jump surface instead.
 
 ## Product intent
 
-1. **Scan-to-book on the three no-text-field pages** -- Dashboard, Books, and Loans. If the operator scans a
-   Bookland / ISBN barcode (keyboard wedge ending in Enter), Shade should open that copy's details when the library
-   has exactly one match.
+1. **Scan-to-book on Dashboard, Books, and Loans** -- If the operator scans a Bookland / ISBN barcode (keyboard wedge
+   ending in Enter) on `/dashboard`, `/books`, or `/loans`, Shade should open that copy's details when the library has
+   exactly one match. These pages have some form controls (Books filters/sorts, Dashboard field select, Loans return
+   time); they are not blank canvases. Ignore those targets (see item 4).
 2. **Check list length before navigation** -- on a completed scan, call `GET /books?isbn=` (via `booksApi.list` or an
    equivalent query helper) and read `total` (or equivalent list length) **before** pushing any route. Branch on that
    result:
@@ -89,9 +108,9 @@ scanner, which is the wrong destination when they already own the book and want 
    keypresses. Reuse the existing parser: ISBN characters + Enter terminator + checksum. Invalid checksums are
    dropped silently, same as `/books/new` hardware paths.
 4. **Do not steal typing from form controls** -- ignore `keydown` when the event target is an editable control
-   (`input`, `textarea`, `select`, or `contenteditable`). Books already has sort selects and category / author / title
-   filter fields; FEAT-22 may add a return-time field on `/loans`. Modifier chords (`Ctrl` / `Meta` / `Alt`) must not
-   start a scan.
+   (`input`, `textarea`, `select`, or `contenteditable`). That covers Books sort/filter controls, the Dashboard Healing
+   Metadata field select, and the Loans return-time field. Modifier chords (`Ctrl` / `Meta` / `Alt`) must not start a
+   scan.
 5. **Do not activate focused buttons** -- Dashboard Refresh and nav links can have focus. `preventDefault` consumed
    ISBN keys and a completing Enter so the scan does not click Refresh or follow a focused link. This preventDefault
    behavior is **opt-in** for this capture surface only; leave New Book "ordinary typing is not swallowed" as it is
@@ -104,19 +123,20 @@ scanner, which is the wrong destination when they already own the book and want 
 Suggested composition (implementer-owned layout; keep ISBN out of a typed search box):
 
 - Shared hook `useCollectionIsbnJump` called from `DashboardPage`, `BooksPage`, and `LoansPage` only.
-- On detect: compact the ISBN, await prefetch `GET /books?isbn={compacted}`, then branch on `total`. If `total === 1`
-  and the sole item has an id, `navigate` to `/books/{bookId}` only (push when coming from `/dashboard` or `/loans`;
-  when already on `/books`, push detail so Back returns to the prior browse state). If `total !== 1`, navigate to
-  `/books?isbn=...` -- when already on `/books`, preserve `sortBy` / `sortOrder` and replace the current entry;
-  otherwise push the filtered list (Back from the list returns to Dashboard or Loans).
+- On detect: compact the ISBN, await prefetch `GET /books?isbn={compacted}`, then branch on `total` before any
+  navigation. If `total === 1` and the sole item has an id, `navigate` to `/books/{bookId}` only -- never push
+  `/books?isbn=` first. Push from `/dashboard` or `/loans`; from `/books`, push detail so Back returns to the prior
+  browse state. If `total !== 1`, build search params -- when `location.pathname === '/books'`, start from
+  `location.search` and `set('isbn', compacted)` (preserve sort and other list filters) and `replace`; otherwise push
+  `{ pathname: '/books', search: { isbn: compacted } }`. Show a brief in-flight state if needed while prefetching.
 - `BooksPage` reads `isbn` from the URL when the operator lands on a filtered list (`total !== 1`, zero matches, or a
-  direct `/books?isbn=` bookmark). Pass `isbn` to `useInfiniteBooks({ isbn, sortBy, sortOrder })`. **Unique-open
+  direct `/books?isbn=` bookmark). Pass `isbn` to `useInfiniteBooks` with the existing filters and sort. **Unique-open
   fallback:** when the URL already has a checksum-valid `isbn`, query succeeds, and `total === 1`, replace-navigate to
-  detail once per isbn value (ref) so bookmarked filtered URLs still collapse. Scans that prefetched a unique match must
-  not rely on this path -- they must never put `/books?isbn=` on the stack in the first place. Guard with a ref so
+  detail once per isbn value (ref) so bookmarked filtered URLs still collapse. Scans that prefetched a unique match
+  must not rely on this path -- they must never put `/books?isbn=` on the stack in the first place. Guard with a ref so
   refetch does not loop. Do not unique-open for a non-ISBN `isbn` param (substring-only URLs just filter).
-- While `isbn` is set and unique-open has not fired, show a short status (e.g., "Showing books matching ISBN …")
-  plus a Clear control that deletes `isbn` and keeps sort. Not a text field.
+- While `isbn` is set and unique-open has not fired, show a short status (e.g., "Showing books matching ISBN ...")
+  plus a Clear control that deletes `isbn` and keeps sort and other filters. Not a text field.
 - Polite live region when the filter applies, so a screen reader hears that the collection changed.
 
 Tone: extend scanning and `BooksPage`; do not add a global AppShell listener (scanners stay local to feature pages,
@@ -129,10 +149,11 @@ ticket owns scan-driven `isbn` URL param only).
 - `GET /books/lookup`, ISBN-10 → ISBN-13 conversion, or changing `compactIsbnForListFilter`.
 - Creating, checking out, or checking in from scan success.
 - Typed ISBN search box or changes to existing author/title/category filter UI, or `include_deleted` on `/books`.
-- Listening on `/books/:bookId`, `/books/new`, `/shelves`, admin, or other routes.
+- Listening on `/books/:bookId`, `/books/new`, `/shelves`, admin, or other routes (CheckoutDialog on details stays
+  out of this capture surface).
 - Changing New Book lookup enablement (except sharing parser/hook option types).
-- FEAT-21 alternate copies, FEAT-22 / FEAT-23 circulation IA (beyond the ignore-editable rule those tickets will
-  need).
+- Restoring `CheckoutPage`, Circulation Check Out nav, or FEAT-21 alternate-copy offers.
+- FEAT-25 / FEAT-26 / FEAT-27 product work.
 
 ## Remaining scope (file-level plan)
 
@@ -151,12 +172,12 @@ Do not replace the parser. Do not change camera code.
 
 | File | Change |
 | ---- | ------ |
-| `src/features/scanning/useCollectionIsbnJump.ts` (new) | Call `useNavigate` / `useLocation`, `useConnection().apiClient` (or `booksApi.list`), and `useHardwareIsbnScanner` with `ignoreEditableTargets` and `preventDefaultWhenConsumed` true. `onDetected`: `compactIsbnForListFilter(isbn)`; **await** prefetch `GET /books?isbn={compacted}` (active collection only); **then** branch on `total` before any navigation. If `total === 1` and `items[0].id` exists, `navigate(`/books/${id}`)` only -- never push `/books?isbn=` first. Push from `/dashboard` or `/loans`; from `/books`, push detail so Back returns to prior browse. If `total !== 1`, build search params -- when `location.pathname === '/books'`, start from `location.search` and `set('isbn', compacted)` (preserve sort) and `replace`; otherwise push `{ pathname: '/books', search: { isbn: compacted } }`. Show a brief in-flight state if needed while prefetching. |
+| `src/features/scanning/useCollectionIsbnJump.ts` (new) | Call `useNavigate` / `useLocation`, `useConnection().apiClient` (or `booksApi.list`), and `useHardwareIsbnScanner` with `ignoreEditableTargets` and `preventDefaultWhenConsumed` true. `onDetected`: `compactIsbnForListFilter(isbn)`; **await** prefetch `GET /books?isbn={compacted}` (active collection only); **then** branch on `total` before any navigation. If `total === 1` and `items[0].id` exists, `navigate(`/books/${id}`)` only -- never push `/books?isbn=` first. Push from `/dashboard` or `/loans`; from `/books`, push detail so Back returns to prior browse. If `total !== 1`, build search params -- when `location.pathname === '/books'`, start from `location.search` and `set('isbn', compacted)` (preserve sort and other list filters) and `replace`; otherwise push `{ pathname: '/books', search: { isbn: compacted } }`. Show a brief in-flight state if needed while prefetching. |
 | `src/features/scanning/useCollectionIsbnJump.test.tsx` (new) | Memory-router harness plus mocked list API: from `/dashboard` a valid ISBN+Enter with one match navigates directly to `/books/{id}` and history does **not** include `/books?isbn=`; with zero or many matches navigates to `/books?isbn=...`; from `/loans` same; from `/books?sortBy=title` with many matches replaces and keeps `sortBy`; hyphenated scan is compacted; invalid checksum does not navigate; focused input does not navigate. Assert prefetch completes before `navigate` is called. |
 | `src/features/dashboard/routes/DashboardPage.tsx` | Call `useCollectionIsbnJump()` unconditionally (all branches of the page, including loading / error, so a scan still works). |
-| `src/features/loans/routes/LoansPage.tsx` | Same: call `useCollectionIsbnJump()` on the page, including loading / error / empty. |
+| `src/features/loans/routes/LoansPage.tsx` | Same: call `useCollectionIsbnJump()` on the page, including loading / error / empty / Return Card. |
 | `src/features/books/routes/BooksPage.tsx` | Call `useCollectionIsbnJump()` in addition to the URL/query work in section 3. |
-| `src/layout/AppShell.tsx` | No scanner import. Keep heading focus as-is (focused `h1` is not editable, so a scan after navigation is heard). |
+| `src/layout/AppShell.tsx` | No scanner import. Keep heading/main focus as-is (focused `h1` / `main` are not editable, so a scan after navigation is heard). |
 
 Optional: a tiny `isEditableKeyTarget(target: EventTarget | null)` helper colocated with the hardware hook if the
 ignore logic would otherwise duplicate.
@@ -165,9 +186,9 @@ ignore logic would otherwise duplicate.
 
 | File | Change |
 | ---- | ------ |
-| `src/features/books/booksListModel.ts` | Add `parseIsbnParam(value: string | null): string | undefined` -- trim, `compactIsbnForListFilter`, blank → `undefined`. Extend `updateListParams` (or a sibling) so ISBN can be set or cleared (`delete('isbn')` when unset) without dropping sort, and keep clearing stale `page`. |
+| `src/features/books/booksListModel.ts` | Add `parseIsbnParam(value: string | null): string | undefined` -- trim, `compactIsbnForListFilter`, blank → `undefined`. |
 | `src/features/books/booksListModel.test.ts` | Blank / whitespace / punctuation-only compact; hyphenated ISBN round-trip; `null` → unset. |
-| `src/features/books/routes/BooksPage.tsx` | Read `isbn` via `parseIsbnParam(searchParams.get('isbn'))`. Pass `isbn` into `useInfiniteBooks` with sort (omit when unset so the query key stays unfiltered). **Unique-open fallback (URL only):** when `isbn` is set, `isValidIsbn(isbn)`, query `isSuccess`, `total === 1`, and flattened `books[0]` exists, `navigate(`/books/${books[0].id}`, { replace: true })` once per isbn value (ref) -- for bookmarked `/books?isbn=` URLs, not for scans handled by `useCollectionIsbnJump`. Do not unique-open while pending or on error. **Empty states:** unfiltered `total === 0` stays library-empty + Add Book; `isbn` set and `total === 0` is a filtered empty message plus Clear ISBN (do not imply the library has no books). **Status:** when `isbn` is set and unique-open did not run, show matching-ISBN copy, `total` as the filtered count, and Clear. Preserve sort controls. Infinite scroll keeps the same `isbn` on later pages. |
+| `src/features/books/routes/BooksPage.tsx` | Extend local `updateListParams` so ISBN can be set or cleared (`delete('isbn')` when unset) without dropping sort or other filters, and keep clearing stale `page`. Read `isbn` via `parseIsbnParam(searchParams.get('isbn'))`. Pass `isbn` into `useInfiniteBooks` with existing filters/sort (omit when unset so the query key stays unfiltered). Treat `isbn` as an active filter for empty-state branching (`hasActiveFilters`). **Unique-open fallback (URL only):** when `isbn` is set, `isValidIsbn(isbn)`, query `isSuccess`, `total === 1`, and flattened `books[0]` exists, `navigate(`/books/${books[0].id}`, { replace: true })` once per isbn value (ref) -- for bookmarked `/books?isbn=` URLs, not for scans handled by `useCollectionIsbnJump`. Do not unique-open while pending or on error. **Empty states:** unfiltered `total === 0` stays library-empty + Add Book; `isbn` set and `total === 0` is a filtered empty message plus Clear ISBN (do not imply the library has no books). **Status:** when `isbn` is set and unique-open did not run, show matching-ISBN copy, `total` as the filtered count, and Clear. Preserve sort and category/author/title controls. Infinite scroll keeps the same `isbn` on later pages. |
 | `src/features/books/routes/BooksPage.test.tsx` | `useInfiniteBooks` receives `{ isbn }` from `/books?isbn=...`; unique-open navigates to `/books/{id}` when loaded directly with `total === 1` and isbn is valid; `total === 0` with isbn shows filtered empty, not Add Book empty; `total > 1` stays on the list with both titles; invalid/partial isbn param filters but does not unique-open; Clear removes `isbn` and keeps `sortBy`; loading/error do not navigate. Existing sort, ratings, and Title Case shelf coverage stays green. |
 | `src/features/books/components/BooksListControls.tsx` | No typed ISBN field. Optional: a read-only status + Clear can live on `BooksPage` instead of this controls row if that keeps sort layout alone. |
 | `src/styles/components.css` | Only if the ISBN status/Clear row needs spacing the existing `.books-page__*` classes do not provide. Reuse tokens; no new framework. |
@@ -183,7 +204,7 @@ Use API `total === 1` (full matching count), not "first page has one row while `
   (not an intermediate `/books?isbn=` entry). Spy `useCollectionIsbnJump` only if a full journey is too heavy -- prefer
   a real keydown through the mounted page so a missing hook call fails the test. |
 | `src/features/loans/routes/LoansPage.test.tsx` | Same wiring guarantee: scan from `/loans` with one match reaches `/books/{id}` directly; many-match reaches
-  `/books?isbn=`. Keep existing infinite-scroll tests. |
+  `/books?isbn=`. Keep existing infinite-scroll and Check In tests. |
 | `e2e/isbn-collection-jump.spec.ts` (new) | Playwright: from `/dashboard`, type a fixture ISBN + Enter; with one matching `isbn13` in `mockApi`, land on that
   book's detail heading and assert Back returns to Dashboard (not a one-row list). Second case: two books sharing the
   ISBN stay on `/books` with both titles (extend `mockApi` seed if needed). Reuse `installMockApi`; do not invent a
@@ -195,12 +216,15 @@ Use API `total === 1` (full matching count), not "first page has one row while `
 
 | File | Change |
 | ---- | ------ |
-| `docs/AGENTS.md` | Scanning also lives on Dashboard / Books / Loans via `useCollectionIsbnJump` (hardware only). Prefetch
-  `GET /books?isbn=` and branch on list length before navigation: unique match opens detail without pushing
-  `/books?isbn=`; zero or many matches go to the filtered collection. `/books` URL may include `isbn`; bookmarked
-  unique-open may still collapse via BooksPage replace-navigate. Still: scan never creates or checks out. Camera still
-  only `/books/new`. Note ignore-editable + preventDefault on this surface only. |
-| `docs/full-project-context.md` | Same capture and `/books?isbn=` notes when that pack is kept current. |
+| `docs/AGENTS.md` | Drop `/checkout` as a camera/hardware capture surface (that page is gone). Scanning also lives on Dashboard /
+  Books / Loans via `useCollectionIsbnJump` (hardware only). Prefetch `GET /books?isbn=` and branch on list length
+  before navigation: unique match opens detail without pushing `/books?isbn=`; zero or many matches go to the filtered
+  collection. `/books` URL may include `isbn`; bookmarked unique-open may still collapse via BooksPage replace-navigate.
+  Still: scan never creates or checks out. Camera still only `/books/new`. Note ignore-editable + preventDefault on this
+  surface only. |
+| `docs/full-project-context.md` | Same capture and `/books?isbn=` notes when that pack is kept current. Drop stale `/checkout` capture if present. |
+| `docs/baselines/FEAT-06_scanner-support.md` | Hardware collection-jump also lives on `/dashboard`, `/books`, and `/loans` (no camera there). Keep `/books/new`
+  as the camera + New Book hardware page. Drop the "until FEAT-24" deferral. |
 | `docs/ToDo.md` | Add a checklist line for this ticket. |
 
 ## Acceptance criteria
@@ -211,9 +235,9 @@ Use API `total === 1` (full matching count), not "first page has one row while `
 - When the prefetch returns `total === 1`, navigate directly to `/books/{bookId}` without ever pushing `/books?isbn=`
   onto the history stack. Back from detail after a scan from Dashboard or Loans returns to that page, not an unseen
   one-row list.
-- When the prefetch returns `total !== 1`, navigate to `/books?isbn={compactIsbn}` (preserve sort when already on
-  `/books`). `/books` passes that `isbn` to `useInfiniteBooks` / `GET /books?isbn=` (active collection only; no
-  `include_deleted`).
+- When the prefetch returns `total !== 1`, navigate to `/books?isbn={compactIsbn}` (preserve sort and other list
+  filters when already on `/books`). `/books` passes that `isbn` to `useInfiniteBooks` / `GET /books?isbn=` (active
+  collection only; no `include_deleted`).
 - Bookmarked or shared `/books?isbn=` URLs with `total === 1` may still collapse to detail via the BooksPage
   unique-open fallback (replace-navigate). Scan flows must not depend on that fallback.
 - If `total === 0`, stay on `/books` with a filtered empty state and a way to clear `isbn` (not the Add Book
@@ -226,11 +250,13 @@ Use API `total === 1` (full matching count), not "first page has one row while `
   unless that page opts in later).
 - Colocated parser, hook, `BooksPage`, and page-wiring tests cover the flow. Playwright covers scan-from-dashboard
   unique-open and Back behavior. `make check` passes.
-- `docs/AGENTS.md` describes this capture surface and the prefetch-before-navigate history rule.
+- `docs/AGENTS.md` describes this capture surface and the prefetch-before-navigate history rule, and no longer lists
+  `/checkout` as a capture route.
 
 ## Plan coverage
 
 Extends hardware capture beyond `/books/new`, using the existing `GET /books?isbn=` substring filter as the collection
 jump. Prefetch, inspect list length, then navigate keeps the history stack honest when a scan resolves to a single
-book. Explicitly excludes camera, lookup, mutations, and FEAT-19 through FEAT-23 product work except the
-ignore-editable notes those tickets need.
+book. Explicitly excludes camera, lookup, mutations, restoring checkout-as-a-page, and FEAT-25 through FEAT-27 product
+work. Ignore-editable is required for existing Books filters, the Dashboard field select, and the Loans return-time
+field.
