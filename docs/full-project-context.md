@@ -5,16 +5,16 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline. Start from this file alone for that baseline;
-it does not depend on any other LLM prompt. Attach the on-demand docs
-listed in section 8 only when the current ticket needs them; do not
-re-synthesize those sources here. A user's explicit request takes
-precedence over general guidance here.
+the dated codebase baseline. Start from this file alone; do not load
+another project prompt or agents guide for additional baseline context.
+Attach the on-demand docs listed in section 8 only when the current
+ticket needs them; do not re-synthesize those sources here. A user's
+explicit request takes precedence over general guidance here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
 
-Context pack version: 2026-08-18. Refresh this prompt when operating
+Context pack version: 2026-08-19. Refresh this prompt when operating
 rules, non-negotiables, or the known baseline change.
 
 The **current feature ticket is supplied separately** after this
@@ -62,7 +62,7 @@ If browser-support or production-host security baselines are needed:
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
   - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
-If later product tickets (FEAT-22 through FEAT-27):
+If later product tickets (FEAT-23 through FEAT-27):
   - the current ticket
   - docs/technical-reference/openapi.json and API-for-FE.md when the ticket touches new API surfaces
   - docs/product-docs/UI_DESIGN_NOTES.MD when layout or visual design is in question
@@ -206,13 +206,14 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 `docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI:
 `/docs` and `/openapi.json` on the running API.
 
-**Known baseline (as of 2026-08-18 -- verify before editing):**
+**Known baseline (as of 2026-08-19 -- verify before editing):**
 
 -   MVP product UI is shipped: application shell and shared primitives;
     runtime config and build-time Bearer auth; typed OpenAPI + React Query
     server state; book create with ISBN lookup and camera/hardware
     scanning; checkout (with Find-by-ISBN via `useBooks({ isbn })` and
-    display-only alternate-copy offers); check-in and loan history; reading
+    display-only alternate-copy offers); check-in on `/loans` (`CheckinForm`)
+    and loan history (`/checkin` is a compatibility redirect); reading
     flows; edit/delete/restore/backup;
     About homepage at `/` with dashboard metrics at `/dashboard`;
     diagnostics; shelves catalog CRUD; infinite scroll on
@@ -239,12 +240,12 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     edit may surface current `removed` membership; create requires an
     explicit shelf; Add/Edit Book block the page when shelves fail to
     load). Loan helpers (`loansApi.list({ bookId })`, `loansApi.get` /
-    `useLoan`, Check In deep-link, `booksApi.list({ isbn })` /
-    `useBooks({ isbn })`) remain in place. Remaining tickets are `FEAT-22` through `FEAT-27` under
+    `useLoan`, Check In on `/loans?bookId=`, `booksApi.list({ isbn })` /
+    `useBooks({ isbn })`) remain in place. Remaining tickets are `FEAT-23` through `FEAT-27` under
     `docs/tickets/`. FEAT-13 workflow and accessibility testing, FEAT-14 CI packaging, FEAT-15 Podman deployed
     development, FEAT-16 versioned release artifacts, FEAT-17 About homepage, FEAT-18 collection category / author /
-    title filters, FEAT-19 wishlists, FEAT-20 dashboard reports, and FEAT-21 display-only checkout alternate-copy UX
-    are complete (those ticket files are removed).
+    title filters, FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only checkout alternate-copy UX,
+    and FEAT-22 check-in consolidation onto `/loans` are complete (those ticket files are removed).
     Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Prefer dedicated
     lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`. Do not
     invent undocumented routes, realtime channels, or lifecycle shortcuts.
@@ -262,7 +263,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     a second telemetry transport or fabricate correlation IDs.
 -   Cross-route accessibility/responsive hardening: route changes update
     the document title and focus the page heading (including
-    create/checkout/check-in `h1` `tabIndex={-1}`); skip-link, visible
+    create/checkout/loans `h1` `tabIndex={-1}`); skip-link, visible
     focus, field-linked errors, dialog focus trapping/restoration,
     no-color-only status, reduced-motion behavior, 320px layout, and
     long-content wrapping (`overflow-wrap: anywhere` / `min-width: 0` in
@@ -346,8 +347,8 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     reachable via the brand link only. Primary navigation redesign
     (merged without a standalone ticket): `DrawerNavMenu` drawers for
     Collection (Browse → `/books`, Manage → `/collection/manage`,
-    Wishlists → `/wishlists`) and Circulation (Check Out, Check In,
-    Loans); flat About, Shelves, and admin/settings header links
+    Wishlists → `/wishlists`) and Circulation (Check Out, Loans);
+    flat About, Shelves, and admin/settings header links
     removed. Collection maintenance (Add Book, Shelves, Deleted Books,
     Backup Library) lives on `/collection/manage` (`ManageCollectionPage`)
     until FEAT-25 removes Backup Library from the product UI. FEAT-18
@@ -355,8 +356,11 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     removed). FEAT-20 dashboard breakdowns and incomplete-metadata healing are complete (ticket file removed).
     FEAT-21 display-only checkout alternate-copy UX is complete (ticket file removed): `/checkout` offers
     substitutes via `isbn` and `author`+`title` list filters (`displayOnlyAlternatives` /
-    `checkoutEligibility`) after a **412** or selected/deep-linked `display_only` book. FEAT-22 through
-    FEAT-27 remain product follow-ons. Do not implement those future tickets early.
+    `checkoutEligibility`) after a **412** or selected/deep-linked `display_only` book. FEAT-22 check-in
+    consolidation onto `/loans` is complete (ticket file removed): `CheckinForm` on `LoansPage`; detail Check In
+    links to `/loans?bookId=`; Circulation drawer is Check Out and Loans only; `/checkin` is
+    `LegacyCheckinRedirect`. FEAT-23 through FEAT-27 remain product follow-ons. Do not implement those future tickets
+    early.
 -   About `/` via `AboutPage` + `CatalogGuide` (library background,
     Charles Leewright dedication, lending policy, and accessible
     card-catalog How to Use dialog with in-app workflow links). Does
@@ -364,10 +368,10 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     brand link; it is not a separate primary-nav item.
 -   Primary navigation via `AppShell` + `DrawerNavMenu`: Dashboard
     link; Collection drawer (Browse, Manage, Wishlists); Circulation
-    drawer (Check Out, Check In, Loans). `/collection/manage`
+    drawer (Check Out, Loans -- no Check In). `/collection/manage`
     (`ManageCollectionPage`) links Add Book, Shelves, Deleted Books, and
-    Backup Library. FEAT-22 / FEAT-23 / FEAT-25 will further consolidate
-    circulation and backup surfaces.
+    Backup Library. FEAT-23 / FEAT-25 will further consolidate checkout
+    and backup surfaces.
 -   Dashboard `/dashboard` via `DashboardPage`: summary metrics (`useDashboard` / `GET /dashboard`) for Collection,
     Circulation, and Reading Record; catalog breakdowns (`useDashboardBreakdowns` / `GET /dashboard/breakdowns`);
     incomplete-metadata healing (`useDashboardIncompleteMetadata`, `useInfiniteIncompleteMetadataBooks` /
@@ -552,7 +556,7 @@ index.html
         (lists including `include_deleted` via `['books']` prefix,
         detail, dashboard, and loans on checkout/check-in)
     -   `src/api/loansQueries.ts` / `dashboardQueries.ts` /
-        `shelvesQueries.ts`: `useLoans` (optional `{ bookId }`),
+        `shelvesQueries.ts`: `useLoans` (optional `{ bookId, enabled }`),
         `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size
         30 via shared config), `useLoan(id)` (disabled when falsy),
         `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
@@ -628,7 +632,7 @@ index.html
         `review`; "Edit Book" links to `/books/:bookId/edit` when
         active; "Check Out" links to `/checkout?bookId=` when active
         and available (not `display_only`); "Check In" links to
-        `/checkin?bookId=` when active and check-in eligible via
+        `/loans?bookId=` when active and check-in eligible via
         `isCheckinEligible`; "Mark Read" links to
         `/books/:bookId/mark-read` when active and unread;
         "Edit Reading" links to `/books/:bookId/reading` when active and
@@ -709,25 +713,26 @@ index.html
         results without clearing borrower fields. Scanner modules are
         lazy-loaded here as on `/books/new` (never checkout or create
         from scan success). Never use lookup for alternate selection.
-    -   `/checkin` -- `CheckinPage` + `checkinModel` +
-        `checkinEligibility` (complete): `?bookId=` deep-link
-        via `useBook` + `useLoans({ bookId })`; without `bookId`, lists
-        eligible books via `useBooks` + `isCheckinEligible`; shows
-        borrower / checked-out from `findActiveLoan`; blank return time
-        omits body / supplied values as UTC ISO 8601;
-        `ConfirmationDialog` before mutate; Field-linked `422`;
-        documented `409` detail messaging (`Book is not checked out`);
-        in-flight disable via `useCheckinBook`; success navigates to
-        detail; soft-deleted / non-eligible warning UI; `404`/`409`
-        refetch with preserved return-time input.
-    -   `/loans` -- `LoansPage` + `loanTemporal` (infinite
-        scroll, complete): `useInfiniteLoans()` plus unpaginated
-        `useBooks()` joins; active vs returned sections from
+    -   `/checkin` -- `LegacyCheckinRedirect` only: replace-navigates to
+        `/loans` and forwards the current search string. Not a product
+        page (`routeMetadata.checkin` is path-only).
+    -   `/loans` -- `LoansPage` + `CheckinForm` + `loanTemporal`
+        (infinite scroll, complete): `useInfiniteLoans()` plus
+        unpaginated `useBooks()` joins; active vs returned sections from
         `returned_at` nullability; due/overdue labels via
         `getLoanDueState` / `displayLoanDate`; durable `Book {id}`
         fallback when the book is missing; empty / loading / retryable
         error states; bottom next-page loading and retry affordances;
-        explicit empty active and returned sections.
+        explicit empty active and returned sections. Eligible Active
+        Loans rows offer Check In (`?bookId=`), which mounts
+        `CheckinForm` (`checkinModel`, `checkinEligibility`,
+        `useCheckinBook`); blank return time omits body; `ConfirmationDialog`;
+        Field-linked **422**; **404** / **409** stale-state refetch;
+        success clears `bookId` and stays on `/loans`. In-page loan/book
+        when Check In is opened from Active Loans; otherwise
+        `useLoans({ bookId })` plus `useBooks()` cache, with
+        `useBook(bookId)` only on cache miss. Targeted queries are not
+        mounted when `bookId` is unset. `CheckinPage` is gone.
     -   `/shelves` -- `ShelvesPage` + `shelfDisplay` / `shelfFormModel`
         (complete): catalog via `useShelves` with create /
         edit / delete through `useCreateShelf` / `useUpdateShelf` /
@@ -831,7 +836,7 @@ index.html
     `/collection/manage`, `/books/new`, `/books/:bookId`,
     `/books/:bookId/mark-read`, `/books/:bookId/reading`,
     `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`,
-    `/checkin`, `/loans`, `/wishlists`, `/shelves`, `/admin/deleted`,
+    `/checkin` (`LegacyCheckinRedirect` to `/loans`), `/loans`, `/wishlists`, `/shelves`, `/admin/deleted`,
     `/admin/backup`, and `*` (`NotFoundPage`). `RoutePlaceholder.tsx`
     remains only as an unused helper.
 -   Shared UI under `src/components/` (Alert, AppLink, Button,
@@ -879,7 +884,7 @@ invent parallel hooks, or replace `AboutPage` / `CatalogGuide` / `DashboardPage`
 `BackupLibraryPage` / `isbn.ts` / `src/features/scanning/` /
 `CheckoutPage` / `checkoutModel` / `checkoutEligibility` /
 `displayOnlyAlternatives` (including ISBN Find, `412` handling, and
-alternate-copy offers) / `CheckinPage` / `checkinModel` / `checkinEligibility` /
+alternate-copy offers) / `CheckinForm` / `checkinModel` / `checkinEligibility` /
 `LoansPage` / `loanTemporal` / `MarkReadPage` / `markReadModel` /
 `ReadingEditPage` / `readingEditModel` / `ShelvesPage` / `shelfDisplay`
 / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations /
@@ -1067,7 +1072,7 @@ merely to make a ticket pass.
     contents). Leave About under `AboutPage` / `CatalogGuide` at `/` (brand link
     only; not a separate primary-nav item). Leave primary navigation under
     `AppShell` / `DrawerNavMenu` (Dashboard link; Collection Browse/
-    Manage/Wishlists and Circulation drawers). Leave `/collection/manage`
+    Manage/Wishlists and Circulation Check Out/Loans). Leave `/collection/manage`
     under `ManageCollectionPage` until FEAT-25 removes Backup Library.
     Leave dashboard under `DashboardPage` at `/dashboard` (`useDashboard` /
     `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` /
@@ -1086,8 +1091,9 @@ merely to make a ticket pass.
     Find via `useBooks({ isbn })` (not lookup), `412` `display_only`
     refetch/messaging, and alternate-copy offers via `isbn` and
     `author`+`title` list filters (never lookup). Leave
-    check-in and loan history under `CheckinPage` / `checkinModel` / `checkinEligibility` / `LoansPage` /
-    `loanTemporal`. Leave shelves under `ShelvesPage` /
+    check-in and loan history under `CheckinForm` / `checkinModel` / `checkinEligibility` / `LoansPage` /
+    `loanTemporal` (check-in on `/loans`; `/checkin` is `LegacyCheckinRedirect` only). Leave shelves under
+    `ShelvesPage` /
     `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` /
     write mutations (`/shelves` owns create/edit/delete with system-shelf
     protection; book forms use API-fed pickers with `shelf_name`, never
@@ -1110,7 +1116,7 @@ merely to make a ticket pass.
     keep `scripts/packRelease.ts`, Make `pack`, gitignored
     `ci/artifacts/`, and the production-like host inspection tests; do
     not upload secret-bearing archives from default CI. Do not pull
-    FEAT-22 through FEAT-27 product work into unrelated changes. Never
+    FEAT-23 through FEAT-27 product work into unrelated changes. Never
     simulate restore, checkout, check-in, or initial mark-read with
     generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
@@ -1128,17 +1134,19 @@ author / title filtering and URL-backed sorting, detail, manual/ISBN/camera/scan
 (including display-only alternate-copy offers), check-in, loan history, shelves catalog, reading tracking, soft
 delete/restore, deleted admin, authenticated SQL backup, runtime API config, CI, Podman preview, versioned production
 artifacts, About homepage with the dashboard at `/dashboard`, and wishlists. Ticketed follow-ons (implement only when
-working that ticket): check-in onto `/loans` (FEAT-22), checkout onto book details (FEAT-23),
+working that ticket): checkout onto book details (FEAT-23),
 hardware ISBN scan on more pages (FEAT-24), remove the browser backup page (FEAT-25), wishlist move-to-shelf
 (FEAT-26), and curated Collections (FEAT-27).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library
 tenancy, cover images, overdue notifications, Goodreads/StoryGraph, user
 accounts/roles, realtime sync, loan CRUD, mark-unread, remote
-Ansible/systemd/TLS/rollback orchestration. Collection browse
-(`BooksPage`) and loan history (`LoansPage`) use infinite scroll with
-backend pagination; other callers still fetch unpaginated full lists
-when needed.
+Ansible/systemd/TLS/rollback orchestration, and replacing the
+single-value `Category` enum with a many-to-many / data-driven taxonomy
+(`docs/product-docs/CATEGORY_NOTES.md` is future-architecture notes, not
+a ticket). Collection browse (`BooksPage`) and loan history
+(`LoansPage`) use infinite scroll with backend pagination; other callers
+still fetch unpaginated full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not implement
 future tickets prematurely.
@@ -1146,9 +1154,10 @@ future tickets prematurely.
 FEAT-13 workflow and accessibility tests, FEAT-14 CI packaging,
 FEAT-15 Podman deployed development, FEAT-16 versioned release
 artifacts, FEAT-17 About homepage, FEAT-18 collection filters,
-FEAT-19 wishlists, FEAT-20 dashboard reports, and FEAT-21 display-only
-checkout alternate-copy UX are complete. Remaining tickets begin with
-`FEAT-22` and continue through `FEAT-27` under
+FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only
+checkout alternate-copy UX, and FEAT-22 check-in consolidation onto
+`/loans` are complete. Remaining tickets begin with
+`FEAT-23` and continue through `FEAT-27` under
 `docs/tickets/`. When no current ticket is supplied, do not guess which
 remaining ticket to implement; ask for the next ticket.
 The supplied ticket's acceptance criteria are authoritative unless they
@@ -1212,8 +1221,10 @@ repo before editing.
   Loans UI      `src/features/loans/routes/CheckoutPage.tsx`, `checkoutModel.ts`,
                 `checkoutEligibility.ts`, `displayOnlyAlternatives.ts` (Find-by-ISBN +
                 `412` display-only refetch/messaging and alternate-copy offers complete);
-                `CheckinPage.tsx`, `checkinModel.ts`, `checkinEligibility.ts`, `LoansPage.tsx`,
-                `loanTemporal.ts`, `loansListModel.ts` (infinite scroll complete)
+                `src/features/loans/components/CheckinForm.tsx`, `checkinModel.ts`,
+                `checkinEligibility.ts`, `LoansPage.tsx`, `loanTemporal.ts`,
+                `loansListModel.ts` (check-in on `/loans`; infinite scroll complete);
+                `src/routes/LegacyCheckinRedirect.tsx` (`/checkin` → `/loans`)
 
   Scanning      `src/features/scanning/{IsbnCameraScanner,isbnCameraCapture,isbnScannerParser,useHardwareIsbnScanner}.{tsx,ts}` (lazy camera from `NewBookPage` and `CheckoutPage`)
 
@@ -1266,10 +1277,10 @@ category / author / title plus sort); FEAT-19 wishlists (`WishlistsPage` at
 `/wishlists`, Collection-drawer link, unshelved `POST /books` then add);
 FEAT-20 dashboard reports (breakdowns and incomplete-metadata healing on
 `/dashboard`); FEAT-21 display-only checkout alternate-copy UX
-(`displayOnlyAlternatives` / `checkoutEligibility` on `/checkout`).
+(`displayOnlyAlternatives` / `checkoutEligibility` on `/checkout`); FEAT-22
+check-in on `/loans` (`CheckinForm`; `/checkin` is `LegacyCheckinRedirect`).
 Primary navigation redesign (`ManageCollectionPage` at
 `/collection/manage`) shipped without a standalone ticket. Remaining tickets:
-FEAT-22 check-in onto `/loans`,
 FEAT-23 checkout onto book details, FEAT-24 hardware ISBN scan on more pages,
 FEAT-25 remove browser backup page, FEAT-26 wishlist move-to-shelf, FEAT-27
 curated Collections.
@@ -1327,12 +1338,16 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
   Architecture / workstreams /    `docs/product-docs/PLAN.md`
   release intent                  
 
+  Future category taxonomy notes  `docs/product-docs/CATEGORY_NOTES.md`
+  (not a ticket; do not implement
+  unless explicitly requested)
+
   Product requirements (source)   `docs/product-docs/PRODUCT_REQS.V1.md`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining current tickets under
-                                  `docs/tickets/`: `FEAT-22_...` through
-                                  `FEAT-27_...`; FEAT-13 through FEAT-21
+                                  `docs/tickets/`: `FEAT-23_...` through
+                                  `FEAT-27_...`; FEAT-13 through FEAT-22
                                   are complete (those ticket files are
                                   removed)
 
@@ -1362,7 +1377,9 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
-self-contained for operating rules, non-negotiables, and the dated baseline.
+self-contained for operating rules, non-negotiables, and the dated
+baseline. Do not request another project agents or context file for more
+of the same.
 
 ------------------------------------------------------------------------
 
