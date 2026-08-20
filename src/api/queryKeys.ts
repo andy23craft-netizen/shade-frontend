@@ -309,4 +309,23 @@ export const queryKeys = {
                 'books',
             ] as const,
     },
+
+    collections: {
+        all: ['collections'] as const,
+
+        list: () =>
+            [
+                'collections',
+                {
+                    list: true,
+                },
+            ] as const,
+
+        books: (collectionId: string) =>
+            [
+                'collections',
+                collectionId,
+                'books',
+            ] as const,
+    },
 } as const

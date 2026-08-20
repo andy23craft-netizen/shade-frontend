@@ -18,7 +18,7 @@ import { DeleteBookPage } from '../features/books/routes/DeleteBookPage'
 import { AboutPage } from '../features/about/routes/AboutPage'
 import { ManageCollectionPage } from '../features/collection/routes/ManageCollectionPage'
 import { WishlistsPage } from '../features/wishlists/routes/WishlistsPage'
-
+import { CollectionsPage } from '../features/collections/routes/CollectionsPage'
 
 export const routeConfig = [
     {
@@ -51,6 +51,13 @@ export const routeConfig = [
                     title: routeMetadata.wishlists.title,
                 },
                 element: <WishlistsPage />,
+            },
+            {
+                path: routeMetadata.collections.path,
+                handle: {
+                    title: routeMetadata.collections.title,
+                },
+                element: <CollectionsPage />,
             },
             {
                 path: routeMetadata.manageCollection.path,

@@ -181,8 +181,12 @@ describe('useCollectionIsbnJump', () => {
 
         scan()
 
-        await screen.findByRole('heading', {
-            name: 'Book detail',
+        await waitFor(() => {
+            expect(
+                screen.getByTestId('location'),
+            ).toHaveTextContent(
+                '/books/book-1',
+            )
         })
 
         fireEvent.click(

@@ -94,5 +94,30 @@ export type WishlistBookList =
 export type WishlistBookStatus =
     Schemas['WishlistBookStatus']
 
+export type CollectionCreate =
+    Schemas['CollectionCreate']
+
+export type CollectionUpdate =
+    Schemas['CollectionUpdate']
+
+export type CollectionRead =
+    Schemas['CollectionRead']
+
+export type CollectionList =
+    Schemas['CollectionList']
+
+export type CollectionBookCreate =
+    Schemas['CollectionBookCreate']
+
+export type CollectionBookRead =
+    Schemas['CollectionBookRead']
+
+export type CollectionBookList =
+    Schemas['CollectionBookList']
+
+export type CollectionBookReorder =
+    Schemas['CollectionBookReorder']
+
 export type Status =
     Schemas['Status']
+

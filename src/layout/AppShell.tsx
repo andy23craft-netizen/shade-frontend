@@ -107,6 +107,10 @@ export function AppShell() {
                                     to: '/collection/manage',
                                 },
                                 {
+                                    label:'Collections',
+                                    to: '/collections',
+                                },
+                                {
                                     label: 'Wishlists',
                                     to: '/wishlists',
                                 },

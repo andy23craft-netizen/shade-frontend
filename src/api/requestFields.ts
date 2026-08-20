@@ -11,6 +11,10 @@ import type {
     WishlistBookCreate,
     WishlistCreate,
     WishlistUpdate,
+    CollectionBookCreate,
+    CollectionBookReorder,
+    CollectionCreate,
+    CollectionUpdate,
 } from './apiTypes'
 
 export const BOOK_CREATE_KEYS = [
@@ -101,6 +105,26 @@ export const WISHLIST_BOOK_CREATE_KEYS = [
     'notes',
     'url',
 ] as const satisfies readonly (keyof WishlistBookCreate)[]
+
+export const COLLECTION_CREATE_KEYS = [
+    'name',
+    'description',
+] as const satisfies readonly (keyof CollectionCreate)[]
+
+export const COLLECTION_UPDATE_KEYS = [
+    'name',
+    'description',
+] as const satisfies readonly (keyof CollectionUpdate)[]
+
+export const COLLECTION_BOOK_CREATE_KEYS = [
+    'book_id',
+    'order_num',
+    'notes',
+] as const satisfies readonly (keyof CollectionBookCreate)[]
+
+export const COLLECTION_BOOK_REORDER_KEYS = [
+    'order_num',
+] as const satisfies readonly (keyof CollectionBookReorder)[]
 
 export function pickDocumentedRequestFields<
     T extends object,
@@ -208,4 +232,41 @@ export function pickWishlistBookCreate(
         WISHLIST_BOOK_CREATE_KEYS,
     )
 }
+
+export function pickCollectionCreate(
+    collection: CollectionCreate,
+): CollectionCreate {
+    return pickDocumentedRequestFields(
+        collection,
+        COLLECTION_CREATE_KEYS,
+    )
+}
+
+export function pickCollectionUpdate(
+    collection: CollectionUpdate,
+): CollectionUpdate {
+    return pickDocumentedRequestFields(
+        collection,
+        COLLECTION_UPDATE_KEYS,
+    )
+}
+
+export function pickCollectionBookCreate(
+    collectionBook: CollectionBookCreate,
+): CollectionBookCreate {
+    return pickDocumentedRequestFields(
+        collectionBook,
+        COLLECTION_BOOK_CREATE_KEYS,
+    )
+}
+
+export function pickCollectionBookReorder(
+    reorder: CollectionBookReorder,
+): CollectionBookReorder {
+    return pickDocumentedRequestFields(
+        reorder,
+        COLLECTION_BOOK_REORDER_KEYS,
+    )
+}
+
 

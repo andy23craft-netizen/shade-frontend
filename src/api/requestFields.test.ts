@@ -14,6 +14,10 @@ import {
     pickWishlistBookCreate,
     pickWishlistCreate,
     pickWishlistUpdate,
+    pickCollectionBookCreate,
+    pickCollectionBookReorder,
+    pickCollectionCreate,
+    pickCollectionUpdate,
 } from './requestFields'
 import type {
     BookCreate,
@@ -24,6 +28,10 @@ import type {
     WishlistBookCreate,
     WishlistCreate,
     WishlistUpdate,
+    CollectionBookCreate,
+    CollectionBookReorder,
+    CollectionCreate,
+    CollectionUpdate,
 } from './apiTypes'
 
 describe('requestFields', () => {
@@ -166,6 +174,70 @@ describe('requestFields', () => {
             pickWishlistBookCreate({
                 book_id: 'book-1',
             } as WishlistBookCreate),
+        ).toEqual({
+            book_id: 'book-1',
+        })
+    })
+
+    it('keeps documented collection create and update fields only', () => {
+        expect(
+            pickCollectionCreate({
+                name: 'Staff Picks',
+                description: 'Favorites',
+                mystery: true,
+            } as CollectionCreate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            name: 'Staff Picks',
+            description: 'Favorites',
+        })
+
+        expect(
+            pickCollectionUpdate({
+                description: null,
+                mystery: true,
+            } as CollectionUpdate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            description: null,
+        })
+    })
+
+    it('keeps documented collection membership fields only', () => {
+        expect(
+            pickCollectionBookCreate({
+                book_id: 'book-1',
+                order_num: 2,
+                notes: 'Feature this one',
+                mystery: true,
+            } as CollectionBookCreate & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            book_id: 'book-1',
+            order_num: 2,
+            notes: 'Feature this one',
+        })
+
+        expect(
+            pickCollectionBookReorder({
+                order_num: 1,
+                mystery: true,
+            } as CollectionBookReorder & {
+                mystery: boolean
+            }),
+        ).toEqual({
+            order_num: 1,
+        })
+    })
+
+    it('omits optional collection membership fields when absent', () => {
+        expect(
+            pickCollectionBookCreate({
+                book_id: 'book-1',
+            } as CollectionBookCreate),
         ).toEqual({
             book_id: 'book-1',
         })
