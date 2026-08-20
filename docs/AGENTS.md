@@ -37,9 +37,10 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
 - Shelves catalog CRUD on `/shelves` (`shelvesApi` / `useShelves` / write mutations) with system-shelf protection
   (`unknown` / `removed`); book payloads use `shelf_name` (string; no hard-coded `Shelf` enum).
 - Wishlists on `/wishlists` (`wishlistsApi` / `useWishlists` / `useWishlistBooks` / write mutations): Collection-drawer
-  link, nested memberships joined via `GET /books/{id}` (not `GET /books`), and add via unshelved `POST /books` (omit
-  `shelf_name`) then `POST /wishlists/{id}/books`. Shelf/wishlist exclusivity is enforced with documented **412**
-  responses.
+  link, nested memberships joined via `GET /books/{id}` (not `GET /books`), add via unshelved `POST /books` (omit
+  `shelf_name`) then `POST /wishlists/{id}/books`, and move-to-shelf via `MoveWishlistBookToShelfControl` /
+  `useMoveWishlistBookToShelf` (membership `DELETE` then `PATCH { shelf_name }`). Shelf/wishlist exclusivity is
+  enforced with documented **412** responses.
 - `booksApi` accepts `author` / `title` / `category` / `isbn` list filters. Collection browse on `/books` uses
   category / author / title and URL-backed `?isbn=` (from hardware collection jump or deep link).
 
@@ -107,7 +108,8 @@ via `GET /books/{id}` (durable `Book {id}` fallback; not `GET /books`), create-w
 unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`, permanent wishlist delete with
 confirmation, and edit **412** when assigning `shelf_name` to a wishlisted book. Do not offer add-from-collection;
 `GET /books` inner-joins shelf membership and would **412**. Collection create on `/books/new` still requires an
-explicit shelf. Do not invent membership remove/edit.
+explicit shelf. FEAT-26 later shipped per-membership move-to-shelf (membership `DELETE` then `PATCH { shelf_name }`);
+do not invent membership field edit.
 
 FEAT-20 dashboard breakdowns and incomplete-metadata healing (ticket file removed after completion). Shipped
 `dashboardApi.getBreakdowns` / `getIncompleteMetadata` / `listIncompleteMetadataBooks`, nested `queryKeys.dashboard.*`,
@@ -159,8 +161,15 @@ and Deleted Books only; Catalog Guide links restore deleted books only. Nightly 
 concern (`GET /backup` via backend `make fetch-backup` / `scripts/fetch_backup.py` / cron). Do not revive a browser
 download, restore-from-SQL UI, or SPA caller of `/backup`. Never inspect, log, cache, or upload dump contents.
 
-**Next:** Remaining tickets under `docs/tickets/` are wishlist move-to-shelf (FEAT-26) and curated Collections
-(FEAT-27).
+FEAT-26 wishlist move-to-shelf (ticket file removed after completion). Shipped `wishlistsApi.removeBook`
+(`DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}`), `useRemoveWishlistBook`,
+`useMoveWishlistBookToShelf` / `MoveWishlistBookToShelfError` (membership `DELETE` then minimal `PATCH { shelf_name }`;
+partial-failure retry via `membershipRemoved`), `moveWishlistBookModel`, and per-row
+`MoveWishlistBookToShelfControl` on `WishlistsPage` (assignable shelf picker, confirmation, success to
+`/books/{bookId}`). Do not assign `shelf_name` while membership still exists (**412**). Do not offer
+add-from-collection or membership field edit. Do not invent a second create row for shelf placement.
+
+**Next:** Remaining ticket under `docs/tickets/` is curated Collections (FEAT-27).
 
 Notable shipped behaviors agents should preserve:
 
@@ -193,8 +202,9 @@ Notable shipped behaviors agents should preserve:
 - Shelves: Title Case `common_name` labels; `unknown` allowed on books; `removed` excluded except edit may surface
   current membership; Add/Edit Book block the page when shelves fail to load; no shelf CRUD on book forms.
 - Wishlists: `/wishlists` via Collection drawer; memberships joined through `GET /books/{id}` (not `GET /books`); add
-  via unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`; documented **412** shelf/wishlist
-  exclusivity; no add-from-collection or membership remove/edit.
+  via unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`; move onto a shelf via
+  `MoveWishlistBookToShelfControl` (membership `DELETE` then `PATCH { shelf_name }`); documented **412**
+  shelf/wishlist exclusivity; no add-from-collection or membership field edit.
 - Scanning: camera and create-path hardware hand one ISBN into create lookup on `/books/new`; collection hardware jump
   on `/dashboard`, `/books`, and `/loans` opens a unique match or filters `/books?isbn=`. Never creates or checks out
   from scan success alone. There is no checkout capture surface.
@@ -304,8 +314,8 @@ author / title / ISBN filtering and URL-backed sorting, detail, manual/ISBN/came
 collection jump on Dashboard / Books / Loans, edit, checkout on book details (display-only **412** messaging without
 alternate-copy offers), check-in, loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL
 backup at the API host (not a browser download), runtime API config, CI, Podman preview, versioned production
-artifacts, About homepage with the dashboard at `/dashboard`, and wishlists. Ticketed follow-ons (implement only when
-working that ticket): wishlist move-to-shelf (FEAT-26) and curated Collections (FEAT-27).
+artifacts, About homepage with the dashboard at `/dashboard`, wishlists, and wishlist move-to-shelf. Ticketed follow-on
+(implement only when working that ticket): curated Collections (FEAT-27).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, cover images, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, remote Ansible/systemd/TLS/rollback
@@ -391,7 +401,8 @@ ISBN lookup plus camera/hardware scanner capture), `/books/:bookId/edit` (`EditB
 or `/books/{id}?checkout=1`), `/checkin` (`LegacyCheckinRedirect` to `/loans`, forwards search), `/loans`
 (`LoansPage` + `CheckinForm` + `loanTemporal` + collection ISBN jump), `/shelves` (`ShelvesPage` + `useShelves` /
 write mutations), `/admin/deleted` (`DeletedBooksPage`), and `/wishlists`
-(`WishlistsPage` + `AddWishlistBookControl`; memberships via `useBook` / `GET /books/{id}`). No feature routes still
+(`WishlistsPage` + `AddWishlistBookControl` + `MoveWishlistBookToShelfControl`; memberships via `useBook` /
+`GET /books/{id}`). No feature routes still
 render `RoutePlaceholder` (`RoutePlaceholder.tsx` remains only as an unused helper).
 
 TypeScript checks source code but emits no JavaScript. Vite transforms modules during development and creates the
@@ -519,14 +530,16 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   })`, plus `useCreateShelf` / `useUpdateShelf` / `useDeleteShelf` that invalidate `queryKeys.shelves.all` (and
   books/dashboard when a rename includes `common_name`).
 - `src/api/wishlistsApi.ts` / `wishlistsQueries.ts`: `list` / `create` (**201**) / `update` / `remove` (**204**) /
-  `listBooks` / `addBook`; optional `skip`/`take` together; documented fields only. Hooks: `useWishlists`,
-  `useWishlistBooks` (disabled when id is empty), `useCreateWishlist`, `useUpdateWishlist`, `useDeleteWishlist`,
-  `useAddWishlistBook`. Create/update/delete invalidate `queryKeys.wishlists.all`; add invalidates that wishlist's
-  books key. Add-to-wishlist creates an unshelved catalog row (`useCreateBook`, omit `shelf_name`) then
-  `useAddWishlistBook`. **412** `"Existing books cannot be added to a wishlist"` and edit **412**
-  `"The book must be removed from the wishlist before it can be placed on a shelf"` are surfaced honestly. OpenAPI
-  already documents membership `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}`; no `removeBook` helper
-  until FEAT-26.
+  `listBooks` / `addBook` / `removeBook` (**204** membership `DELETE`); optional `skip`/`take` together; documented
+  fields only. Hooks: `useWishlists`, `useWishlistBooks` (disabled when id is empty), `useCreateWishlist`,
+  `useUpdateWishlist`, `useDeleteWishlist`, `useAddWishlistBook`, `useRemoveWishlistBook`,
+  `useMoveWishlistBookToShelf` (`MoveWishlistBookToShelfError` with `membershipRemoved` for partial-failure retry).
+  Create/update/delete invalidate `queryKeys.wishlists.all`; add/remove invalidate that wishlist's books key.
+  Move-to-shelf runs membership `DELETE` then minimal `booksApi.update({ shelf_name })` (skip delete when
+  `membershipRemoved`); on success writes detail cache and invalidates wishlist books, `books.all`, book detail, and
+  dashboard. Add-to-wishlist creates an unshelved catalog row (`useCreateBook`, omit `shelf_name`) then
+  `useAddWishlistBook`. **412** `"Existing books cannot be added to a wishlist"` and edit/move **412**
+  `"The book must be removed from the wishlist before it can be placed on a shelf"` are surfaced honestly.
 
 ### Routing and Layout
 
@@ -688,13 +701,22 @@ Implemented (do not revert to placeholders):
 - `src/features/wishlists/routes/WishlistsPage.tsx` (`/wishlists`): `useWishlists` plus nested `useWishlistBooks`;
   membership catalog join via `useBook` / `GET /books/{id}` (not `useBooks()` / `GET /books`, which omits unshelved
   rows) with durable `Book {id}` fallback; create form with Field-linked **422**; add via `AddWishlistBookControl`
-  (`POST /books` omitting `shelf_name`, then `useAddWishlistBook`); permanent delete via `ConfirmationDialog` +
+  (`POST /books` omitting `shelf_name`, then `useAddWishlistBook`); move onto a shelf via
+  `MoveWishlistBookToShelfControl` per membership row; permanent delete via `ConfirmationDialog` +
   `useDeleteWishlist` (memberships removed, catalog books remain). Status via `enumDisplayValue`. No membership
-  remove/edit. Collection `/books` has no add-to-wishlist control.
+  field edit and no standalone membership remove outside move-to-shelf. Collection `/books` has no add-to-wishlist
+  control.
 - `src/features/wishlists/components/AddWishlistBookControl.tsx` /
   `src/features/wishlists/wishlistFormModel.ts` / `src/features/wishlists/wishlistDisplay.ts`: unshelved catalog create
   (title/authors required; optional ISBN lookup via `useLookupBook`) then membership add;
   **404** refetch, **412** exclusivity, Field-linked **422**; safe http(s) URL rendering for membership links
+- `src/features/wishlists/components/MoveWishlistBookToShelfControl.tsx` /
+  `src/features/wishlists/moveWishlistBookModel.ts`: per-row shelf picker (`filterAssignableShelves`, Title Case
+  labels, empty default) and "Add to Collection" with `ConfirmationDialog`; validates via
+  `validateMoveWishlistBookFormValues` / `shelfIdToShelfNameUpdate`; calls `useMoveWishlistBookToShelf` (membership
+  `DELETE` then `PATCH { shelf_name }` only); shelves load/error gate; Field-linked **400** / **422**; **404** /
+  **412** refetch; partial-failure retry when membership already removed; success navigates to `/books/{bookId}`.
+  Colocated `MoveWishlistBookToShelfControl.test.tsx` / `moveWishlistBookModel.test.ts`
 
 Scanning feature (complete -- extend, do not replace):
 
@@ -862,9 +884,10 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   shelves / wishlists list isolation.
 - `src/api/shelvesApi.test.ts` / `shelvesQueries.test.tsx`: `GET` / `POST` / `PATCH` / `DELETE /shelves` helpers and
   `useShelves` / write mutation hooks (including rename invalidation of books/dashboard).
-- `src/api/wishlistsApi.test.ts` / `wishlistsQueries.test.tsx`: wishlist list/create/update/delete/listBooks/addBook
-  helpers including **400** / **404** / **412** / **422**, plus hook keys, disabled empty-id books query, and
-  create/add invalidation.
+- `src/api/wishlistsApi.test.ts` / `wishlistsQueries.test.tsx`: wishlist list/create/update/delete/listBooks/addBook/
+  removeBook helpers including **400** / **404** / **412** / **422**, plus hook keys, disabled empty-id books query,
+  create/add/remove invalidation, and `useMoveWishlistBookToShelf` order (DELETE then PATCH), success invalidation,
+  and partial-failure `membershipRemoved` retry.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
   (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, `/backup`, wishlist paths including membership DELETE,
   Collections paths, dashboard-report paths, and existing lifecycle routes).
@@ -917,9 +940,11 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   loading / retryable error states, explicit empty active and returned sections, bottom loading/retry, due-date
   display, and hardware collection ISBN jump wiring
 - `src/features/wishlists/routes/WishlistsPage.test.tsx` / `AddWishlistBookControl.test.tsx` /
-  `wishlistFormModel.test.ts` / `wishlistDisplay.test.ts`: wishlists loading/error/empty, create, nested
-  memberships with `GET /books/{id}` join and missing-book fallback, add omitting `shelf_name`, **412** exclusivity,
-  Field-linked **422**, pending disable, and no collection add-to-wishlist affordance
+  `MoveWishlistBookToShelfControl.test.tsx` / `moveWishlistBookModel.test.ts` / `wishlistFormModel.test.ts` /
+  `wishlistDisplay.test.ts`: wishlists loading/error/empty, create, nested memberships with `GET /books/{id}` join
+  and missing-book fallback, add omitting `shelf_name`, move-to-shelf shelf picker / confirmation / success navigation
+  / **412** / **404** / partial-failure retry, **412** exclusivity, Field-linked **422**, pending disable, and no
+  collection add-to-wishlist affordance
 - `src/features/books/components/BookForm.test.tsx` / `bookFormModel.test.ts`: Form field rendering, API-fed shelf
   options (Title Case labels; `removed` excluded; required shelf), gated create controls, initial values, empty
   title/authors and ISBN rejection, submit payload shaping via `formValuesToBookCreate` (`shelf_name`),
@@ -1108,9 +1133,9 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-26_*.md` through `FEAT-27_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-25 are complete; those ticket files are removed). Prefer ticket presence under
-  `docs/tickets/` over `docs/ToDo.md` when judging what is still open.
+- `docs/tickets/FEAT-27_*.md`: Remaining sequenced implementation ticket with acceptance criteria (FEAT-13 through
+  FEAT-26 are complete; those ticket files are removed). Prefer ticket presence under `docs/tickets/` over
+  `docs/ToDo.md` when judging what is still open.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
 - `docs/product-docs/CATEGORY_NOTES.md`: Future book-category architecture notes (many-to-many / data-driven labels).
   Not a ticket; do not implement from this file unless explicitly requested.
@@ -1220,10 +1245,12 @@ make build
   (check-in on `/loans`; `/checkin` is `LegacyCheckinRedirect` only). Leave shelves under
   `ShelvesPage` / `shelfDisplay` / `shelfFormModel` / `shelvesApi` / `useShelves` / write mutations (`/shelves` owns
   create/edit/delete with system-shelf protection; book forms use API-fed pickers with `shelf_name`, never shelf CRUD
-  on Add/Edit Book). Leave wishlists under `WishlistsPage` / `AddWishlistBookControl` / `wishlistFormModel` /
-  `wishlistDisplay` / `wishlistsApi` / `wishlistsQueries` (`/wishlists` owns catalog CRUD and add; memberships via
-  `useBook` / `GET /books/{id}`; add via unshelved create then membership; no add-from-collection or membership
-  remove/edit). FEAT-13 test infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
+  on Add/Edit Book). Leave wishlists under `WishlistsPage` / `AddWishlistBookControl` /
+  `MoveWishlistBookToShelfControl` / `moveWishlistBookModel` / `wishlistFormModel` / `wishlistDisplay` /
+  `wishlistsApi` / `wishlistsQueries` (`/wishlists` owns catalog CRUD, add, and move-to-shelf; memberships via
+  `useBook` / `GET /books/{id}`; add via unshelved create then membership; move via membership `DELETE` then
+  `PATCH { shelf_name }`; no add-from-collection or membership field edit). FEAT-13 test infrastructure is complete:
+  keep Vitest / Testing Library / `renderAppTree`
   coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced coverage floors,
   and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites rather than
   inventing a parallel fake-API stack or removing them from the gate. FEAT-14 CI packaging is complete: keep
@@ -1232,7 +1259,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-26 or FEAT-27 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-27 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
