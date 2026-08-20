@@ -5,10 +5,12 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline. Start from this file alone. Attach the
-on-demand docs listed in section 8 only when the current ticket needs
-them; do not re-synthesize those sources here. A user's explicit
-request takes precedence over general guidance here.
+the dated codebase baseline. Start from this file alone. Do not treat
+`docs/AGENTS.md` (or any other agents guide) as required reading -- this
+pack does not depend on it. Attach the on-demand docs listed in section 8
+only when the current ticket needs them; do not re-synthesize those
+sources here. A user's explicit request takes precedence over general
+guidance here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
@@ -58,7 +60,7 @@ If browser-support or production-host security baselines are needed:
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
   - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
-If later product tickets (FEAT-25 through FEAT-27):
+If later product tickets (FEAT-26 through FEAT-27):
   - the current ticket
   - docs/technical-reference/openapi.json and API-for-FE.md when the ticket touches new API surfaces
   - docs/product-docs/UI_DESIGN_NOTES.MD when layout or visual design is in question
@@ -213,7 +215,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     checkout on book details via `CheckoutDialog` (`/checkout` is a
     compatibility redirect); check-in on `/loans` (`CheckinForm`) and
     loan history (`/checkin` is a compatibility redirect); reading
-    flows; edit/delete/restore/backup;
+    flows; edit/delete/restore;
     About homepage at `/` with dashboard metrics at `/dashboard`;
     diagnostics; shelves catalog CRUD; infinite scroll on
     `/books` and `/loans`; API contract sync (regenerated OpenAPI types for wishlist / dashboard-report and
@@ -244,12 +246,13 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     `useLoan`, Check In on `/loans?bookId=`) remain in place.
     `booksApi.list({ isbn })` / `useInfiniteBooks({ isbn })` power the
     collection ISBN filter and collection jump (checkout no longer uses
-    them). Remaining tickets are `FEAT-25` through `FEAT-27` under
+    them). Remaining tickets are `FEAT-26` through `FEAT-27` under
     `docs/tickets/`. FEAT-13 workflow and accessibility testing, FEAT-14 CI packaging, FEAT-15 Podman deployed
     development, FEAT-16 versioned release artifacts, FEAT-17 About homepage, FEAT-18 collection category / author /
     title filters, FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only checkout alternate-copy UX,
-    FEAT-22 check-in consolidation onto `/loans`, FEAT-23 checkout consolidation onto book details, and FEAT-24
-    hardware ISBN scan on Dashboard / Books / Loans are complete (those ticket files are removed).
+    FEAT-22 check-in consolidation onto `/loans`, FEAT-23 checkout consolidation onto book details, FEAT-24
+    hardware ISBN scan on Dashboard / Books / Loans, and FEAT-25 remove browser backup page are complete (those
+    ticket files are removed).
     Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Prefer dedicated
     lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`. Do not
     invent undocumented routes, realtime channels, or lifecycle shortcuts.
@@ -355,13 +358,14 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     reachable via the brand link only. Primary navigation redesign
     (merged without a standalone ticket): `DrawerNavMenu` drawers for
     Collection (Browse → `/books`, Manage → `/collection/manage`,
-    Wishlists → `/wishlists`) and Circulation (Check Out, Loans);
-    flat About, Shelves, and admin/settings header links
-    removed. Collection maintenance (Add Book, Shelves, Deleted Books,
-    Backup Library) lives on `/collection/manage` (`ManageCollectionPage`)
-    until FEAT-25 removes Backup Library from the product UI. FEAT-18
-    collection filters and FEAT-19 wishlists are complete (ticket files
-    removed). FEAT-20 dashboard breakdowns and incomplete-metadata healing are complete (ticket file removed).
+    Wishlists → `/wishlists`) and Circulation (originally Check Out and
+    Loans; FEAT-23 later left Loans only); flat About, Shelves, and
+    admin/settings header links removed. Collection maintenance (Add
+    Book, Shelves, Deleted Books) lives on `/collection/manage`
+    (`ManageCollectionPage`). FEAT-18 collection filters and FEAT-19
+    wishlists are complete (ticket files removed). FEAT-20 dashboard
+    breakdowns and incomplete-metadata healing are complete (ticket file
+    removed).
     FEAT-21 display-only checkout alternate-copy UX is complete (ticket file removed): it shipped
     substitutes via `isbn` and `author`+`title` list filters (`displayOnlyAlternatives` /
     `checkoutEligibility`) after a **412** or selected/deep-linked `display_only` book. FEAT-23 later
@@ -382,7 +386,10 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     prefetch `GET /books?isbn=`; open sole match at `/books/{id}`, otherwise `/books?isbn=`);
     `BooksPage` parses URL `isbn`, shows Clear ISBN, and auto-opens a unique filtered match.
     Camera and create-path hardware remain on `/books/new` only. Playwright coverage in
-    `e2e/isbn-collection-jump.spec.ts`. Remaining product follow-ons are FEAT-25 through FEAT-27.
+    `e2e/isbn-collection-jump.spec.ts`. FEAT-25 remove browser backup page is complete (ticket file
+    removed): `/admin/backup`, `BackupLibraryPage`, and `backupApi` are gone; Manage Collection links
+    Add Book, Shelves, and Deleted Books only; Catalog Guide restore-deleted only; `GET /backup` remains
+    an API-host concern. Remaining product follow-ons are FEAT-26 through FEAT-27.
     Do not implement those future tickets early.
 -   About `/` via `AboutPage` + `CatalogGuide` (library background,
     Charles Leewright dedication, lending policy, and accessible
@@ -392,8 +399,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 -   Primary navigation via `AppShell` + `DrawerNavMenu`: Dashboard
     link; Collection drawer (Browse, Manage, Wishlists); Circulation
     drawer (Loans only -- no Check Out or Check In). `/collection/manage`
-    (`ManageCollectionPage`) links Add Book, Shelves, Deleted Books, and
-    Backup Library. FEAT-25 will remove Backup Library from the product UI.
+    (`ManageCollectionPage`) links Add Book, Shelves, and Deleted Books only.
 -   Dashboard `/dashboard` via `DashboardPage`: summary metrics (`useDashboard` / `GET /dashboard`) for Collection,
     Circulation, and Reading Record; catalog breakdowns (`useDashboardBreakdowns` / `GET /dashboard/breakdowns`);
     incomplete-metadata healing (`useDashboardIncompleteMetadata`, `useInfiniteIncompleteMetadataBooks` /
@@ -405,7 +411,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     drawer-level errors do not blank summary drawers. Basic Stats shows totals plus category and creation-year buckets
     (API `by_shelf` is not rendered). Styles in `src/styles/components.css` (`.dashboard-page`,
     `.dashboard-drawer-bank`, `.dashboard-drawer`, `.dashboard-metric`, `.dashboard-breakdowns`, `.dashboard-healing`).
--   Edit/delete/restore/backup: `/books/:bookId/edit` via `EditBookPage`
+-   Edit/delete/restore: `/books/:bookId/edit` via `EditBookPage`
     + `bookEditModel` (`bookFormValuesFromBook`,
     `bookFormValuesToUpdate` minimal `BookUpdate` patch; blank ISBN -\>
     `null`; never send `status`, reading fields, or loan-driving values)
@@ -418,10 +424,9 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     (not status alone). `/admin/deleted` via `DeletedBooksPage`
     (`useBooks({ includeDeleted: true })` filtered to non-null
     `deletion_date`; restore via `ConfirmationDialog` + `useRestoreBook`
-    / `booksApi.restore`). `/admin/backup` via `BackupLibraryPage` +
-    `backupApi.get` (programmatic `<a download>`, always
-    `URL.revokeObjectURL`; never inspect/log/cache/upload dump
-    contents). Prefer dedicated delete/restore endpoints; never simulate
+    / `booksApi.restore`). Authenticated SQL dumps (`GET /backup`) are an
+    API-host concern (no SPA caller); never inspect/log/cache/upload dump
+    contents. Prefer dedicated delete/restore endpoints; never simulate
     restore, checkout, check-in, or initial mark-read with generic
     `PATCH`.
 
@@ -482,8 +487,9 @@ index.html
         `WishlistRead` / `WishlistList`, `WishlistBookCreate` /
         `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`,
         validation/error schemas, enums). Book payloads use `shelf_name`
-        (string); there is no hard-coded `Shelf` enum. Generated OpenAPI
-        also includes Collections schemas; product helpers wait for FEAT-27.
+        (string); there is no hard-coded `Shelf` enum. Generated
+        `openapi.ts` also includes Collections schemas; do not add
+        `apiTypes` aliases or product helpers until FEAT-27.
         `src/api/enumDisplay.ts` (`enumDisplayValue`)
     -   `src/api/apiCallOptions.ts` shared optional `AbortSignal`
         options for typed helpers
@@ -517,7 +523,7 @@ index.html
         / `title` / `category` / incomplete-metadata `field` are omitted from
         keys (trimmed when present).
     -   `src/api/api.ts` `createApi` aggregates typed helpers: `books`,
-        `loans`, `shelves`, `dashboard`, `health`, `version`, `backup`,
+        `loans`, `shelves`, `dashboard`, `health`, `version`,
         `wishlists`, plus the underlying `client`. Generated OpenAPI types
         also include Collections paths; product helpers for those wait for
         FEAT-27.
@@ -546,10 +552,6 @@ index.html
         `skip`/`take` together), `healthApi.get` (public), `versionApi.get`
         (public `GET /version`; footer API release string via `useVersion` --
         not a health probe)
-    -   `backupApi.get` returns `{ blob, filename }` for authenticated
-        `/backup`, parsing UTF-8 `Content-Disposition`
-        (`filename*=UTF-8''...`) with a `backup.sql` fallback when the
-        header is missing or malformed
     -   Colocated helper tests cover happy paths, edge cases (lookup
         `found: false`, mark-read `{}`, omitted check-in body, `409`
         bodies, checkout `412` display-only), large-library timing, and
@@ -558,8 +560,9 @@ index.html
         invalid JSON / binary backup / `204`
     -   `scripts/contractSmoke.test.ts` OpenAPI path/type smoke
         (includes `/shelves`, `/shelves/{shelf_id}`, `/version`,
-        wishlist and dashboard-report paths plus existing lifecycle
-        routes)
+        `/backup`, wishlist paths including membership DELETE,
+        Collections paths, dashboard-report paths, and existing
+        lifecycle routes)
 -   React Query is mounted and complete for server state:
     -   `createQueryClient()` sets `staleTime` 30s,
         `refetchOnWindowFocus`, `refetchOnReconnect`, query retry that
@@ -597,7 +600,10 @@ index.html
         invalidate `queryKeys.wishlists.all`; add invalidates that
         wishlist's books key. Add-to-wishlist creates an unshelved catalog
         row (`useCreateBook`, omit `shelf_name`) then `useAddWishlistBook`.
-        **412** shelf/wishlist exclusivity is surfaced honestly.
+        **412** shelf/wishlist exclusivity is surfaced honestly. OpenAPI
+        already documents membership
+        `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}`; no
+        `removeBook` helper until FEAT-26.
     -   Abort/stale overwrite guards are covered by colocated tests
 -   Infinite scroll (complete on `/books` and `/loans` -- extend, do not
     replace):
@@ -636,8 +642,9 @@ index.html
         `src/styles/components.css`.
     -   `/collection/manage` -- `ManageCollectionPage`: collection
         maintenance hub with links to Add Book (`/books/new`), Shelves
-        (`/shelves`), Deleted Books (`/admin/deleted`), and Backup
-        Library (`/admin/backup`; interim until FEAT-25).
+        (`/shelves`), and Deleted Books (`/admin/deleted`) only.
+        Colocated `ManageCollectionPage.test.tsx` asserts those links
+        and the absence of any Backup Library affordance.
     -   `/books` -- `BooksPage` via
         `useInfiniteBooks({ category, author, title, isbn, sortBy, sortOrder })`
         with URL-backed category / author / title / ISBN filters and sort
@@ -782,12 +789,6 @@ index.html
         `useRestoreBook` / `booksApi.restore`; empty / loading /
         retryable error states; `404`/`409` restore messaging with
         refetch.
-    -   `/admin/backup` -- `BackupLibraryPage` (complete):
-        authenticated SQL download via `backupApi.get` through
-        `useConnection().apiClient`; programmatic `<a download>` with
-        always-`URL.revokeObjectURL`; documented `403` / generation
-        `500` / network failure messaging; never inspect, log, cache, or
-        upload dump contents.
 -   Reading form models (complete -- extend, do not replace):
     -   `markReadModel.ts`: defaults, client validation (date-only
         completion date, rating 1-5), and `markReadFormValuesToRequest`
@@ -880,7 +881,7 @@ index.html
     `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout`
     (`LegacyCheckoutRedirect`), `/checkin` (`LegacyCheckinRedirect` to
     `/loans`), `/loans`, `/wishlists`, `/shelves`, `/admin/deleted`,
-    `/admin/backup`, and `*` (`NotFoundPage`). `RoutePlaceholder.tsx`
+    and `*` (`NotFoundPage`). `RoutePlaceholder.tsx`
     remains only as an unused helper.
 -   Shared UI under `src/components/` (Alert, AppLink, Button,
     ConfirmationDialog, EmptyState, Field, LoadingState, Notifications,
@@ -889,7 +890,7 @@ index.html
     and shows `.env` / rebuild guidance for unauthorized errors. Books
     list/detail, create/edit form, shelves catalog, wishlists, scanner
     capture, checkout, check-in, loan history, mark-read, reading edit,
-    delete/restore admin, backup download, and dashboard already use
+    delete/restore admin, and dashboard already use
     these primitives.
 -   CSS layers: `tokens` -\> `base` -\> `shell` -\> `components` via
     `src/index.css` (plain CSS; BEM-like component classes). Shell
@@ -905,9 +906,10 @@ index.html
     `SHADE_API_PROXY=1 make run` (optional `SHADE_API_PROXY_TARGET`).
     The proxy forwards `/health`, `/books`, `/loans`, `/dashboard`,
     `/backup`, `/docs`, `/redoc`, `/openapi.json`, and `/wishlists` (not
-    `/shelves` or `/version`). Playwright Chromium must be installed
-    once per machine (`yarn playwright install --with-deps chromium`)
-    before `yarn test:e2e` / `make check`. Production build inspection:
+    `/shelves`, `/version`, or `/collections`). Playwright Chromium must
+    be installed once per machine
+    (`yarn playwright install --with-deps chromium`) before
+    `yarn test:e2e` / `make check`. Production build inspection:
     `scripts/productionBuildTokenInspection.test.ts` asserts `.env` is
     not copied into `dist/` or the release tarball and that
     `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
@@ -918,7 +920,7 @@ scanner capture on `/books/new`, hardware collection ISBN jump on
 `CheckoutDialog` (display-only **412** messaging without alternate
 copies; `/checkout` is a compatibility redirect), check-in and loan
 history, reading tracking (mark-read + reading edit),
-edit/delete/restore/backup, API contract sync (`author` / `title` /
+edit/delete/restore, API contract sync (`author` / `title` /
 `category` / `isbn` list filters used by `/books`, `sortBy=shelf`,
 checkout `412` display-only messaging without alternate copies),
 collection category / author / title / ISBN filter UI, About
@@ -927,7 +929,7 @@ shelves catalog writes, and infinite scroll on `/books` and `/loans` are done. D
 invent parallel hooks, or replace `AboutPage` / `CatalogGuide` / `DashboardPage` / `NewBookPage` /
 `BookForm` / `bookEditModel` /
 `EditBookPage` / `DeleteBookPage` / `DeletedBooksPage` /
-`BackupLibraryPage` / `isbn.ts` / `src/features/scanning/` /
+`isbn.ts` / `src/features/scanning/` /
 `useCollectionIsbnJump` /
 `CheckoutDialog` / `checkoutModel` / `checkoutEligibility`
 (borrower and notes only; `412` handling without alternate copies;
@@ -1015,7 +1017,7 @@ form library unless a ticket explicitly requires it.
   Check-in        `POST /books/{id}/checkin`
   Mark read       `POST /books/{id}/mark-read`
   ISBN lookup     `GET /books/lookup?isbn={isbn}`
-  Backup          `GET /backup`
+  Backup (ops)    `GET /backup` (API host / cron; no SPA caller)
 
 ### Known backend limitations (frontend compensations)
 
@@ -1112,14 +1114,13 @@ merely to make a ticket pass.
     `status=on_loan`, reading fields, or loan-driving values). Leave
     delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`;
     block when `status === 'on_loan'` or `findActiveLoan` is present).
-    Leave `/admin/deleted` under `DeletedBooksPage` and `/admin/backup`
-    under `BackupLibraryPage` (programmatic `<a download>`, always
-    `URL.revokeObjectURL`; do not inspect, log, cache, or upload dump
-    contents). Leave About under `AboutPage` / `CatalogGuide` at `/` (brand link
+    Leave `/admin/deleted` under `DeletedBooksPage`. Do not revive
+    `/admin/backup`, `BackupLibraryPage`, or `backupApi`; never inspect,
+    log, cache, or upload SQL dump contents. Leave About under `AboutPage` / `CatalogGuide` at `/` (brand link
     only; not a separate primary-nav item). Leave primary navigation under
     `AppShell` / `DrawerNavMenu` (Dashboard link; Collection Browse/
     Manage/Wishlists and Circulation Loans only). Leave `/collection/manage`
-    under `ManageCollectionPage` until FEAT-25 removes Backup Library.
+    under `ManageCollectionPage` (Add Book, Shelves, Deleted Books only).
     Leave dashboard under `DashboardPage` at `/dashboard` (`useDashboard` /
     `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` /
     `useInfiniteIncompleteMetadataBooks`; display API stats only; null averages as
@@ -1166,7 +1167,7 @@ merely to make a ticket pass.
     keep `scripts/packRelease.ts`, Make `pack`, gitignored
     `ci/artifacts/`, and the production-like host inspection tests; do
     not upload secret-bearing archives from default CI. Do not pull
-    FEAT-25 through FEAT-27 product work into unrelated changes. Never
+    FEAT-26 or FEAT-27 product work into unrelated changes. Never
     simulate restore, checkout, check-in, or initial mark-read with
     generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
@@ -1185,11 +1186,10 @@ URL-backed sorting, detail, manual/ISBN/camera/scanner add flows, hardware ISBN
 collection jump on Dashboard / Books / Loans, edit, checkout on book
 details (display-only **412** messaging without alternate-copy offers), check-in,
 loan history, shelves catalog, reading tracking, soft delete/restore, deleted
-admin, authenticated SQL backup, runtime API config, CI, Podman preview,
+admin, authenticated SQL backup at the API host (not a browser download), runtime API config, CI, Podman preview,
 versioned production artifacts, About homepage with the dashboard at
 `/dashboard`, and wishlists. Ticketed follow-ons (implement only when working
-that ticket): remove the browser backup page (FEAT-25; backend fetch-backup gate
-is satisfied), wishlist move-to-shelf (FEAT-26), and curated Collections
+that ticket): wishlist move-to-shelf (FEAT-26) and curated Collections
 (FEAT-27).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library
@@ -1210,9 +1210,10 @@ FEAT-15 Podman deployed development, FEAT-16 versioned release
 artifacts, FEAT-17 About homepage, FEAT-18 collection filters,
 FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only
 checkout alternate-copy UX, FEAT-22 check-in consolidation onto
-`/loans`, FEAT-23 checkout consolidation onto book details, and FEAT-24
-hardware ISBN scan on Dashboard / Books / Loans are complete. Remaining
-tickets begin with `FEAT-25` and continue through `FEAT-27` under
+`/loans`, FEAT-23 checkout consolidation onto book details, FEAT-24
+hardware ISBN scan on Dashboard / Books / Loans, and FEAT-25 remove
+browser backup page are complete. Remaining tickets begin with
+`FEAT-26` and continue through `FEAT-27` under
 `docs/tickets/`. When no current ticket is supplied, do not guess which
 remaining ticket to implement; ask for the next ticket. The supplied
 ticket's acceptance criteria are authoritative unless they contradict the
@@ -1238,7 +1239,7 @@ repo before editing.
                 diagnostics (no runtime `release` field)
 
   API           `src/api/generated/openapi.ts`, `apiTypes.ts`, `enumDisplay.ts`, `apiCallOptions.ts`, `apiClient.ts`, `apiErrors.ts`, `apiRedaction.ts`, `requestFields.ts`, `dateTime.ts`, `queryKeys.ts`, `api.ts`, `booksApi.ts`,
-                `loansApi.ts`, `shelvesApi.ts`, `wishlistsApi.ts`, `dashboardApi.ts`, `healthApi.ts`, `versionApi.ts`, `versionQueries.ts`, `backupApi.ts`, `queryClient.ts`, `booksQueries.ts`, `loansQueries.ts`, `shelvesQueries.ts`, `wishlistsQueries.ts`, `dashboardQueries.ts`
+                `loansApi.ts`, `shelvesApi.ts`, `wishlistsApi.ts`, `dashboardApi.ts`, `healthApi.ts`, `versionApi.ts`, `versionQueries.ts`, `queryClient.ts`, `booksQueries.ts`, `loansQueries.ts`, `shelvesQueries.ts`, `wishlistsQueries.ts`, `dashboardQueries.ts`
 
   Diagnostics   `src/diagnostics/diagnosticReporter.ts` plus `RootErrorBoundary`, `AppProviders`, `ConnectionProvider`, and `apiClient` integration
 
@@ -1259,18 +1260,22 @@ repo before editing.
   Feature       `src/features/{about,collection,dashboard,books,loans,shelves,wishlists,connection,scanning,shared}/`
   routes        (scanning is a feature module, not a top-level route)
 
-  Books UI      `src/features/books/routes/{BooksPage,BookDetailsPage,NewBookPage,EditBookPage,bookEditModel,DeleteBookPage,DeletedBooksPage,BackupLibraryPage,MarkReadPage,markReadModel,ReadingEditPage,readingEditModel}.{tsx,ts}`,
+  Books UI      `src/features/books/routes/{BooksPage,BookDetailsPage,NewBookPage,EditBookPage,bookEditModel,DeleteBookPage,DeletedBooksPage,MarkReadPage,markReadModel,ReadingEditPage,readingEditModel}.{tsx,ts}`,
                 `src/features/books/components/{BookForm,bookFormDefaults,bookFormModel,BooksListControls}.{tsx,ts}`, `src/features/books/booksListModel.ts` (sort: `author` \| `title` \| `creationDate` \| `shelf`; URL-backed category / author / title / ISBN filters),
                 `src/features/books/utils/isbn.ts` (`compactIsbnForListFilter` for
                 `GET /books?isbn=` list filters and collection jump; not used by checkout)
 
   Shelves UI    `src/features/shelves/routes/ShelvesPage.tsx`, `shelfDisplay.ts`, `shelfFormModel.ts` (catalog CRUD complete)
 
-  Wishlists UI  `src/features/wishlists/routes/WishlistsPage.tsx`, `src/features/wishlists/components/AddWishlistBookControl.tsx`, `wishlistFormModel.ts`, `wishlistDisplay.ts` (`/wishlists` complete)
+  Wishlists UI  `src/features/wishlists/routes/WishlistsPage.tsx`, `src/features/wishlists/components/AddWishlistBookControl.tsx`,
+                `wishlistFormModel.ts`, `wishlistDisplay.ts` (`/wishlists` complete; no membership remove/`removeBook`
+                until FEAT-26)
 
   About UI      `src/features/about/routes/AboutPage.tsx`, `src/features/about/components/CatalogGuide.tsx` (`/` homepage)
 
-  Collection    `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage` hub)
+  Collection    `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage` hub;
+                colocated `ManageCollectionPage.test.tsx` asserts Add Book / Shelves / Deleted Books
+                only -- no Backup Library)
 
   Dashboard UI  `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`; summary, breakdowns,
                 incomplete-metadata healing, collection ISBN jump)
@@ -1294,17 +1299,22 @@ repo before editing.
                 `shell.css`; `.dashboard-page`, `.dashboard-drawer-bank`, `.dashboard-drawer`, `.dashboard-metric`,
                 `.dashboard-breakdowns`, `.dashboard-healing`, and long-content wrap in `components.css`)
 
-  Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (includes diagnostic reporter and dashboard
-                report route mocks)
+  Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (diagnostic reporter; dashboard report
+                route mocks; empty wishlists)
 
-  Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,isbn-collection-jump,library.lifecycle}.spec.ts`, `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in `make check`)
+  Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,isbn-collection-jump,library.lifecycle}.spec.ts`,
+                `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in
+                `make check`). `mockApi` covers health, version, shelves, books, loans, dashboard summary,
+                lookup, and lifecycle mutations; no wishlist, Collections, dashboard-report, or `/backup`
+                fixtures yet (extend when a ticket needs them; SQL backup remains API-host-only)
 
   Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`,
                 `.github/workflows/check.yml`, `scripts/checkBundleSize.mjs`, `scripts/packRelease.ts`,
                 `ci/{Containerfile,nginx.conf,container-entrypoint.sh}`, `.containerignore`
                 (FEAT-15 image `shade-frontend`; FEAT-16 `make pack` tarball)
 
-  Contract smoke `scripts/contractSmoke.test.ts`
+  Contract smoke `scripts/contractSmoke.test.ts` (includes `/shelves`, `/version`, `/backup`, wishlist
+                membership DELETE, Collections paths, dashboard-report paths, and lifecycle routes)
   --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Feature route ownership (all complete unless noted): books list/detail;
@@ -1314,9 +1324,9 @@ scanner capture on `/books/new`; hardware collection ISBN jump on
 on book details via `CheckoutDialog` (display-only **412** without
 alternate copies; `/checkout` is `LegacyCheckoutRedirect`); check-in/loans;
 reading tracking (`MarkReadPage` / `markReadModel` /
-`ReadingEditPage` / `readingEditModel`); edit/delete/restore/backup
+`ReadingEditPage` / `readingEditModel`); edit/delete/restore
 (`EditBookPage` / `bookEditModel` / `DeleteBookPage` /
-`DeletedBooksPage` / `BackupLibraryPage`); API contract sync (list
+`DeletedBooksPage`); API contract sync (list
 filters including ISBN, shelf sort, checkout `412` without alternate
 copies); About `/` (`AboutPage` + `CatalogGuide`); dashboard `/dashboard`
 (`DashboardPage` with summary, breakdown, and incomplete-metadata reports);
@@ -1343,9 +1353,10 @@ alternate-copy UX (later retired with FEAT-23; **412** messaging remains on
 `LegacyCheckinRedirect`); FEAT-23 checkout on book details (`CheckoutDialog`;
 `/checkout` is `LegacyCheckoutRedirect`; Circulation is Loans only); FEAT-24
 hardware ISBN scan on Dashboard / Books / Loans (`useCollectionIsbnJump`,
-URL `?isbn=`). Primary navigation redesign (`ManageCollectionPage` at
+URL `?isbn=`); FEAT-25 remove browser backup page (`/admin/backup` /
+`BackupLibraryPage` / `backupApi` removed; backups are API-host only). Primary
+navigation redesign (`ManageCollectionPage` at
 `/collection/manage`) shipped without a standalone ticket. Remaining tickets:
-FEAT-25 remove browser backup page (backend fetch-backup gate satisfied),
 FEAT-26 wishlist move-to-shelf, FEAT-27 curated Collections.
 
 ------------------------------------------------------------------------
@@ -1406,8 +1417,8 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining current tickets under
-                                  `docs/tickets/`: `FEAT-25_...` through
-                                  `FEAT-27_...`; FEAT-13 through FEAT-24
+                                  `docs/tickets/`: `FEAT-26_...` through
+                                  `FEAT-27_...`; FEAT-13 through FEAT-25
                                   are complete (those ticket files are
                                   removed)
 
@@ -1431,7 +1442,7 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
-baseline.
+baseline. It does not require `docs/AGENTS.md` or any other agents guide.
 
 ------------------------------------------------------------------------
 

@@ -92,7 +92,8 @@ JS bundles). Missing or blank env values throw at bootstrap. Confirmed `403` sho
 the query cache or redirecting to a settings screen.
 
 Never simulate lifecycle operations with a generic `PATCH`. Use the dedicated endpoints (create, edit, delete,
-restore, checkout, check-in, mark-read, ISBN lookup, backup). Prefer regenerating `src/api/generated/openapi.ts`
+restore, checkout, check-in, mark-read, ISBN lookup). Authenticated SQL backup (`GET /backup`) is an API-host
+concern, not a SPA caller. Prefer regenerating `src/api/generated/openapi.ts`
 with `yarn api:generate` rather than hand-editing it.
 
 ## Project Structure
@@ -142,7 +143,7 @@ recreate them.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
   `YYYY-MM-DD` / UTC ISO 8601 normalizers for later form tickets.
 - `src/api/queryKeys.ts`: Shared React Query keys for books, loans, and dashboard.
-- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`, `backup`) plus the
+- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `dashboard`, `health`) plus the
   underlying `client`.
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`), `create`, `lookup`, `get`, `update`, `remove`, `restore`,
   `checkout`, `checkin` (optional body), `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and
@@ -150,8 +151,6 @@ recreate them.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`).
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`).
 - `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
-- `src/api/backupApi.ts`: `get()` returns `{ blob, filename }` for authenticated `/backup`, parsing UTF-8
-  `Content-Disposition` (`filename*=UTF-8''...`) with a `backup.sql` fallback when the header is missing or malformed.
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`,
   `refetchOnReconnect`, query retry that skips validation / auth / cancelled / invalid-response errors, and
   `mutations.retry: false`.
@@ -165,7 +164,7 @@ recreate them.
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route.
 - `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths
   are `/`, `/books`, `/books/new`, `/books/:bookId`, `/books/:bookId/edit`, `/checkout`, `/checkin` (compatibility
-  redirect to `/loans`; primary check-in IA is `/loans`), `/loans`, `/admin/deleted`, `/admin/backup`, and `*`
+  redirect to `/loans`; primary check-in IA is `/loans`), `/loans`, `/admin/deleted`, and `*`
   (not found).
 - `src/routes/RoutePlaceholder.tsx`: Minimal route body used by unfinished feature pages (`h1` with `tabIndex={-1}`).
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back to the dashboard.
@@ -247,7 +246,7 @@ Keep the import order in `src/index.css`. Later layers rely on variables and def
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` /
-  `loansApi.test.ts` / `dashboardApi.test.ts` / `healthApi.test.ts` / `backupApi.test.ts`: Typed route helper coverage including conflict bodies and a large-list timing guard.
+  `loansApi.test.ts` / `dashboardApi.test.ts` / `healthApi.test.ts`: Typed route helper coverage including conflict bodies and a large-list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `queryInvalidation.test.ts` / `booksQueries.test.tsx` /
   `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`: Query client defaults, connection-invalidation
@@ -328,15 +327,16 @@ Local API access:
   (`SHADE_API_PROXY_TARGET` defaults to `http://127.0.0.1:8000`).
 
 Cross-origin production requests may send `Authorization`, `Content-Type`, and `Library-Username`. Cookies and
-credentialed CORS are not used. Frontend JavaScript may read the exposed backup `Content-Disposition` filename.
+credentialed CORS are not used.
 
 Production connectivity remains a release blocker until one arrangement is chosen and verified:
 
 - Exact frontend origin (scheme, hostname, port; no path or trailing slash) in backend `CORS_ORIGINS`, or
 - A deployment-managed same-origin reverse proxy.
 
-Verification must cover authenticated requests, browser preflights, and JavaScript access to the backup
-`Content-Disposition` filename. See also `README.md` and `docs/technical-reference/API-for-FE.md`.
+Verification must cover authenticated requests and browser preflights (CORS/Bearer or same-origin proxy). Production-like
+host checks may still exercise authenticated `GET /backup` as API connectivity (not a SPA product flow). See also
+`README.md` and `docs/technical-reference/API-for-FE.md`.
 
 Production host security is owned by the deployment environment rather than this frontend repository. Before release,
 the production host must:
@@ -361,7 +361,8 @@ frontend build as evidence that they are present. See `README.md` for artifact n
 `scripts/productionBuildTokenInspection.test.ts` builds with a dummy `VITE_API_SECRET_KEY` and asserts the
 repository-root `.env` file is not copied into `dist/` or the packed tarball (embedded build-time token in JS
 bundles is expected). `scripts/packRelease.test.ts` and `scripts/productionLikeHost.test.ts` cover deterministic
-archives, forbidden members, SPA fallback, cache headers, CORS/Bearer access, and backup `Content-Disposition`.
+archives, forbidden members, SPA fallback, cache headers, CORS/Bearer access, and authenticated `/backup`
+connectivity (API host verification, not a browser product download).
 
 ### Build, TypeScript, and Lint Configuration
 
