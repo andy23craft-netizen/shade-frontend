@@ -14,9 +14,11 @@ import {
     expect,
     it,
     vi,
+    beforeEach,
 } from 'vitest'
 
 import type {
+    BookRead,
     WishlistBookCreate,
     WishlistBookList,
     WishlistBookRead,
@@ -28,9 +30,12 @@ import {
     useAddWishlistBook,
     useCreateWishlist,
     useDeleteWishlist,
+    useRemoveWishlistBook,
     useUpdateWishlist,
     useWishlistBooks,
     useWishlists,
+    MoveWishlistBookToShelfError,
+    useMoveWishlistBookToShelf,
 } from './wishlistsQueries'
 import {
     queryKeys,
@@ -42,6 +47,8 @@ const mockUpdateWishlist = vi.fn()
 const mockRemoveWishlist = vi.fn()
 const mockListBooks = vi.fn()
 const mockAddBook = vi.fn()
+const mockRemoveBook = vi.fn()
+const mockUpdateBook = vi.fn()
 
 vi.mock('./wishlistsApi', () => ({
     createWishlistsApi: () => ({
@@ -51,6 +58,7 @@ vi.mock('./wishlistsApi', () => ({
         remove: mockRemoveWishlist,
         listBooks: mockListBooks,
         addBook: mockAddBook,
+        removeBook: mockRemoveBook,
     }),
 }))
 
@@ -62,6 +70,16 @@ vi.mock(
         }),
     }),
 )
+
+vi.mock('./booksApi', () => ({
+    createBooksApi: () => ({
+        update: mockUpdateBook,
+    }),
+}))
+
+beforeEach(() => {
+    vi.clearAllMocks()
+})
 
 function createWrapper() {
     const queryClient = new QueryClient({
@@ -411,3 +429,201 @@ describe('wishlist write mutations', () => {
         queryClient.clear()
     })
 })
+
+describe('useRemoveWishlistBook', () => {
+    it('removes the membership and invalidates that wishlist books query', async () => {
+        mockRemoveBook.mockResolvedValue(undefined)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries = vi.spyOn(
+            queryClient,
+            'invalidateQueries',
+        )
+
+        const {
+            result,
+        } = renderHook(
+            () => useRemoveWishlistBook(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        result.current.mutate({
+            wishlistId: 'wishlist-1',
+            wishlistBookId: 'membership-1',
+        })
+
+        await waitFor(() => {
+            expect(result.current.isSuccess).toBe(true)
+        })
+
+        expect(mockRemoveBook).toHaveBeenCalledWith(
+            'wishlist-1',
+            'membership-1',
+        )
+
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey:
+                queryKeys.wishlists.books(
+                    'wishlist-1',
+                ),
+        })
+    })
+})
+
+describe('useMoveWishlistBookToShelf', () => {
+    it('removes the membership before assigning the shelf', async () => {
+        const calls: string[] = []
+
+        mockRemoveBook.mockImplementation(
+            async () => {
+                calls.push('remove')
+            },
+        )
+
+        mockUpdateBook.mockImplementation(
+            async () => {
+                calls.push('update')
+
+                return {
+                    id: 'book-1',
+                    title: 'The Dispossessed',
+                    shelf_name: 'a1',
+                } as BookRead
+            },
+        )
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () => useMoveWishlistBookToShelf(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        result.current.mutate({
+            wishlistId: 'wishlist-1',
+            wishlistBookId: 'membership-1',
+            bookId: 'book-1',
+            shelfName: 'a1',
+        })
+
+        await waitFor(() => {
+            expect(result.current.isSuccess).toBe(true)
+        })
+
+        expect(calls).toEqual([
+            'remove',
+            'update',
+        ])
+
+        expect(mockUpdateBook).toHaveBeenCalledWith(
+            'book-1',
+            {
+                shelf_name: 'a1',
+            },
+        )
+    })
+
+    it('reports when membership removal succeeded before shelf assignment failed', async () => {
+        mockRemoveBook.mockResolvedValue(undefined)
+
+        const updateError =
+            new Error('Shelf update failed.')
+
+        mockUpdateBook.mockRejectedValue(
+            updateError,
+        )
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () => useMoveWishlistBookToShelf(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        result.current.mutate({
+            wishlistId: 'wishlist-1',
+            wishlistBookId: 'membership-1',
+            bookId: 'book-1',
+            shelfName: 'a1',
+        })
+
+        await waitFor(() => {
+            expect(result.current.isError).toBe(true)
+        })
+
+        expect(result.current.error)
+            .toBeInstanceOf(
+                MoveWishlistBookToShelfError,
+            )
+
+        expect(
+            (
+                result.current.error as
+                    MoveWishlistBookToShelfError
+            ).membershipRemoved,
+        ).toBe(true)
+    })
+
+    it('skips membership removal when retrying after a partial failure', async () => {
+        mockUpdateBook.mockResolvedValue({
+            id: 'book-1',
+            title: 'The Dispossessed',
+            shelf_name: 'a1',
+        } as BookRead)
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () => useMoveWishlistBookToShelf(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        result.current.mutate({
+            wishlistId: 'wishlist-1',
+            wishlistBookId: 'membership-1',
+            bookId: 'book-1',
+            shelfName: 'a1',
+            membershipRemoved: true,
+        })
+
+        await waitFor(() => {
+            expect(result.current.isSuccess).toBe(true)
+        })
+
+        expect(
+            mockRemoveBook,
+        ).not.toHaveBeenCalled()
+
+        expect(mockUpdateBook).toHaveBeenCalledWith(
+            'book-1',
+            {
+                shelf_name: 'a1',
+            },
+        )
+    })
+})
+

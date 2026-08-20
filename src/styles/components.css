@@ -2586,3 +2586,20 @@
   overflow-wrap: anywhere;
 }
 
+.wishlist-membership__move {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.wishlist-membership__move form {
+  display: grid;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+@media (min-width: 40rem) {
+  .wishlist-membership__move form {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+

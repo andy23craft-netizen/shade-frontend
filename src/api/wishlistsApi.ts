@@ -166,5 +166,19 @@ export function createWishlistsApi(
                 },
             )
         },
+
+        async removeBook(
+            wishlistId: string,
+            wishlistBookId: string,
+            options: ApiCallOptions = {},
+        ): Promise<void> {
+            await client.request(
+                `/wishlists/${encodeURIComponent(wishlistId)}/books/${encodeURIComponent(wishlistBookId)}`,
+                {
+                    method: 'DELETE',
+                    ...withSignal(options.signal),
+                },
+            )
+        },
     }
 }

@@ -36,6 +36,9 @@ import {
     AddWishlistBookControl,
 } from '../components/AddWishlistBookControl'
 import {
+    MoveWishlistBookToShelfControl,
+} from '../components/MoveWishlistBookToShelfControl'
+import {
     displayWishlistBookStatus,
     displayWishlistPriority,
     safeHttpUrl,
@@ -84,13 +87,15 @@ function focusSummary(
 }
 
 function WishlistMembershipRow({
-    bookId,
-    status,
-    priority,
-    notes,
-    url,
-    membershipId,
-}: {
+                                   wishlistId,
+                                   bookId,
+                                   status,
+                                   priority,
+                                   notes,
+                                   url,
+                                   membershipId,
+                               }: {
+    wishlistId: string
     bookId: string
     status: string
     priority: number | null
@@ -162,6 +167,14 @@ function WishlistMembershipRow({
                     </div>
                 ) : null}
             </dl>
+
+            <MoveWishlistBookToShelfControl
+                wishlistId={wishlistId}
+                wishlistBookId={membershipId}
+                bookId={bookId}
+                bookTitle={title}
+            />
+
         </li>
     )
 }
@@ -246,6 +259,9 @@ function WishlistSection({
                         <WishlistMembershipRow
                             key={
                                 membership.wishlist_book_id
+                            }
+                            wishlistId={
+                                wishlist.wishlist_id
                             }
                             membershipId={
                                 membership.wishlist_book_id
@@ -603,10 +619,9 @@ export function WishlistsPage() {
                         </strong>
                         ? Memberships on this wishlist
                         are removed permanently, but
-                        catalog books remain. A
-                        wishlisted book cannot be
-                        placed on a shelf until its
-                        wishlist is deleted.
+                        catalog books remain. Individual
+                        books can be moved to a shelf
+                        without deleting the wishlist.
                     </p>
                 ) : (
                     <p>

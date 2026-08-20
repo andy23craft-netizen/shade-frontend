@@ -318,6 +318,8 @@ is host and config confirmation, not a second end-to-end stack.
 - [ ] Direct-route refresh uses SPA fallback; `index.html` / `config.js`
       revalidate; hashed `/assets/` are long-lived
 - [ ] Dashboard, collection list, and create (including shelf selection)
+- [ ] Wishlists create / delete / add book, and move a wishlisted book into the
+      collection with explicit shelf selection
 - [ ] Shelves catalog create / edit / delete
 - [ ] Checkout, check-in from Loans, mark-read, delete, and restore
 - [ ] Operational backups are configured and verified via the backend

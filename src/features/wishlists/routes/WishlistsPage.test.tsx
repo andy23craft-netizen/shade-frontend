@@ -55,6 +55,31 @@ vi.mock('../../../api/wishlistsQueries', () => ({
     useAddWishlistBook: vi.fn(),
 }))
 
+vi.mock(
+    '../components/MoveWishlistBookToShelfControl',
+    () => ({
+        MoveWishlistBookToShelfControl: ({
+                                             wishlistId,
+                                             wishlistBookId,
+                                             bookId,
+                                             bookTitle,
+                                         }: {
+            wishlistId: string
+            wishlistBookId: string
+            bookId: string
+            bookTitle: string
+        }) => (
+            <div
+                data-testid="move-wishlist-book"
+                data-wishlist-id={wishlistId}
+                data-membership-id={wishlistBookId}
+                data-book-id={bookId}
+                data-book-title={bookTitle}
+            />
+        ),
+    }),
+)
+
 const mockUseBook = vi.mocked(useBook)
 const mockUseCreateBook = vi.mocked(useCreateBook)
 const mockUseLookupBook = vi.mocked(useLookupBook)
@@ -764,5 +789,43 @@ describe('WishlistsPage', () => {
         expect(
             screen.queryByRole('dialog'),
         ).not.toBeInTheDocument()
+    })
+
+    it('provides wishlist membership identity to the move control', () => {
+        renderPage()
+
+        const membershipRow =
+            document.querySelector(
+                '[data-membership-id="membership-1"]',
+            )
+
+        expect(membershipRow).not.toBeNull()
+
+        const moveControl =
+            within(
+                membershipRow as HTMLElement,
+            ).getByTestId(
+                'move-wishlist-book',
+            )
+
+        expect(moveControl).toHaveAttribute(
+            'data-wishlist-id',
+            'wishlist-1',
+        )
+
+        expect(moveControl).toHaveAttribute(
+            'data-membership-id',
+            'membership-1',
+        )
+
+        expect(moveControl).toHaveAttribute(
+            'data-book-id',
+            'book-1',
+        )
+
+        expect(moveControl).toHaveAttribute(
+            'data-book-title',
+            'The Dispossessed',
+        )
     })
 })
