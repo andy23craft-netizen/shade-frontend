@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { LegacyCheckinRedirect } from './LegacyCheckinRedirect'
 import { AppShell } from '../layout/AppShell'
-import { BackupLibraryPage } from '../features/books/routes/BackupLibraryPage'
 import { BookDetailsPage } from '../features/books/routes/BookDetailsPage'
 import { BooksPage } from '../features/books/routes/BooksPage'
 import { DeletedBooksPage } from '../features/books/routes/DeletedBooksPage'
@@ -130,13 +129,6 @@ export const routeConfig = [
                     title: routeMetadata.deletedBooks.title,
                 },
                 element: <DeletedBooksPage />,
-            },
-            {
-                path: routeMetadata.backup.path,
-                handle: {
-                    title: routeMetadata.backup.title,
-                },
-                element: <BackupLibraryPage />,
             },
             {
                 path: routeMetadata.notFound.path,

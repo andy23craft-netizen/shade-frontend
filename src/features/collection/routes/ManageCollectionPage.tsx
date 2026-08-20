@@ -39,13 +39,6 @@ export function ManageCollectionPage() {
                 >
                     Deleted Books
                 </AppLink>
-
-                <AppLink
-                    to="/admin/backup"
-                    variant="secondary"
-                >
-                    Backup Library
-                </AppLink>
             </div>
         </section>
     )

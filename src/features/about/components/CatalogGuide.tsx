@@ -230,10 +230,6 @@ export function CatalogGuide() {
                             <AppLink to="/admin/deleted">
                                 restore deleted books
                             </AppLink>
-                            {' '}or{' '}
-                            <AppLink to="/admin/backup">
-                                download a library backup
-                            </AppLink>
                             .
                         </p>
 

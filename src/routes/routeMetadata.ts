@@ -75,11 +75,6 @@ export const routeMetadata = {
     title: 'Deleted Books',
     heading: 'Deleted Books',
   },
-  backup: {
-    path: '/admin/backup',
-    title: 'Backup Library',
-    heading: 'Backup Library',
-  },
   notFound: {
     path: '*',
     title: 'Page Not Found',

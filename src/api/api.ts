@@ -3,10 +3,6 @@ import {
 } from './apiClient'
 
 import {
-    createBackupApi,
-} from './backupApi'
-
-import {
     createBooksApi,
 } from './booksApi'
 
@@ -51,7 +47,6 @@ export function createApi(
             createDashboardApi(client),
         health: createHealthApi(client),
         version: createVersionApi(client),
-        backup: createBackupApi(client),
         wishlists: createWishlistsApi(client),
     }
 }

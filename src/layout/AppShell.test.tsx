@@ -110,6 +110,16 @@ describe('AppShell layout and navigation', () => {
                 name: 'Wishlists',
             }),
         ).toHaveAttribute('href', '/wishlists')
+
+        expect(
+            within(
+                screen.getByRole('navigation', {
+                    name: 'Primary navigation',
+                }),
+            ).queryByRole('link', {
+                name: /backup/i,
+            }),
+        ).not.toBeInTheDocument()
     })
 
     it('opens the Circulation menu with lending destinations', () => {
@@ -269,6 +279,24 @@ describe('AppShell layout and navigation', () => {
                 name: 'Return home',
             }),
         ).toHaveAttribute('href', '/')
+    })
+
+    it('treats the removed backup route as not found', () => {
+        renderAppTree(['/admin/backup'])
+
+        expect(
+            screen.getByRole('heading', {
+                level: 1,
+                name: 'Page Not Found',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                level: 1,
+                name: 'Backup Library',
+            }),
+        ).not.toBeInTheDocument()
     })
 
     it('redirects legacy check-in URLs to loans and preserves the book ID', async () => {

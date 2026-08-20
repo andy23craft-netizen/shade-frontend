@@ -94,7 +94,6 @@ export function AppShell() {
                                 '/books',
                                 '/shelves',
                                 '/admin/deleted',
-                                '/admin/backup',
                                 '/collection',
                                 '/wishlists',
                             ]}
