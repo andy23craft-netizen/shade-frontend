@@ -53,6 +53,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: '9780441172719',
+            consumed: true,
         })
     })
 
@@ -67,6 +68,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: '0441172717',
+            consumed: true,
         })
     })
 
@@ -81,6 +83,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: '080442957X',
+            consumed: true,
         })
     })
 
@@ -96,6 +99,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: '978-0-441-17271-9',
+            consumed: true,
         })
     })
 
@@ -110,6 +114,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: null,
+            consumed: true,
         })
     })
 
@@ -124,6 +129,7 @@ describe('IsbnScannerParser', () => {
 
             expect(result).toEqual({
                 isbn: null,
+                consumed: true,
             })
         }
 
@@ -132,6 +138,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: '9780441172719',
+            consumed: true,
         })
     })
 
@@ -152,14 +159,17 @@ describe('IsbnScannerParser', () => {
 
         expect(first).toEqual({
             isbn: '9780441172719',
+            consumed: true,
         })
 
         expect(second).toEqual({
             isbn: null,
+            consumed: true,
         })
 
         expect(third).toEqual({
             isbn: null,
+            consumed: true,
         })
     })
 
@@ -181,6 +191,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: null,
+            consumed: true,
         })
     })
 
@@ -204,6 +215,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: null,
+            consumed: true,
         })
     })
 
@@ -227,6 +239,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: null,
+            consumed: true,
         })
     })
 
@@ -245,6 +258,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: '9780441172719',
+            consumed: true,
         })
     })
 
@@ -259,6 +273,7 @@ describe('IsbnScannerParser', () => {
 
         expect(result).toEqual({
             isbn: null,
+            consumed: true,
         })
     })
 
@@ -279,10 +294,80 @@ describe('IsbnScannerParser', () => {
 
         expect(first).toEqual({
             isbn: '9780441172719',
+            consumed: true,
         })
 
         expect(second).toEqual({
             isbn: '9780743273565',
+            consumed: true,
+        })
+    })
+
+    it('reports whether each key was consumed', () => {
+        const parser =
+            new IsbnScannerParser()
+
+        expect(
+            parser.handleKey('9', 0),
+        ).toEqual({
+            isbn: null,
+            consumed: true,
+        })
+
+        expect(
+            parser.handleKey('X', 10),
+        ).toEqual({
+            isbn: null,
+            consumed: true,
+        })
+
+        expect(
+            parser.handleKey('-', 20),
+        ).toEqual({
+            isbn: null,
+            consumed: true,
+        })
+
+        expect(
+            parser.handleKey(' ', 30),
+        ).toEqual({
+            isbn: null,
+            consumed: true,
+        })
+
+        expect(
+            parser.handleKey('a', 40),
+        ).toEqual({
+            isbn: null,
+            consumed: false,
+        })
+
+        expect(
+            parser.handleKey('Tab', 50),
+        ).toEqual({
+            isbn: null,
+            consumed: false,
+        })
+    })
+
+    it('consumes Enter even when the candidate is invalid or empty', () => {
+        const parser =
+            new IsbnScannerParser()
+
+        parser.handleKey('1', 0)
+
+        expect(
+            parser.handleKey('Enter', 10),
+        ).toEqual({
+            isbn: null,
+            consumed: true,
+        })
+
+        expect(
+            parser.handleKey('Enter', 20),
+        ).toEqual({
+            isbn: null,
+            consumed: true,
         })
     })
 })

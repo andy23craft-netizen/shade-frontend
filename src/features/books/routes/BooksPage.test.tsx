@@ -8,6 +8,7 @@ import {
 
 import {
     MemoryRouter,
+    useLocation,
 } from 'react-router-dom'
 import { BooksPage } from './BooksPage'
 import type {
@@ -20,6 +21,7 @@ import {
     fireEvent,
     screen,
     within,
+    waitFor,
 } from '@testing-library/react'
 
 const mockUseInfiniteBooks = vi.fn()
@@ -90,6 +92,17 @@ function makeInfiniteBooksResult(
     }
 }
 
+function LocationProbe() {
+    const location = useLocation()
+
+    return (
+        <div data-testid="location">
+            {location.pathname}
+            {location.search}
+        </div>
+    )
+}
+
 function renderBooksPage(
     initialEntry = '/books',
 ) {
@@ -98,6 +111,7 @@ function renderBooksPage(
             initialEntries={[initialEntry]}
         >
             <BooksPage />
+            <LocationProbe />
         </MemoryRouter>,
     )
 }
@@ -1053,5 +1067,272 @@ describe('BooksPage', () => {
         expect(
             within(unratedCard!).getByText('—'),
         ).toBeInTheDocument()
+    })
+
+    it('passes the ISBN URL filter to the books query', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                        }),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Second Copy',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?isbn=978-0-441-17271-9',
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith({
+            category: undefined,
+            author: undefined,
+            title: undefined,
+            isbn: '9780441172719',
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+    })
+
+    it('opens a unique valid ISBN result from the URL', async () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook({
+                            id: 'unique-book',
+                            isbn13: '9780441172719',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?isbn=9780441172719',
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByTestId('location'),
+            ).toHaveTextContent(
+                '/books/unique-book',
+            )
+        })
+    })
+
+    it('shows a filtered empty state for an ISBN with no matches', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 0,
+                    items: [],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?isbn=9780441172719',
+        )
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'No books match these filters.',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Your library is empty.',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Clear ISBN',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText(
+                /Showing books matching ISBN/,
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('keeps multiple ISBN matches on the filtered list', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook({
+                            id: 'copy-1',
+                            title: 'First Copy',
+                        }),
+                        makeBook({
+                            id: 'copy-2',
+                            title: 'Second Copy',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?isbn=9780441172719',
+        )
+
+        expect(
+            screen.getByRole('link', {
+                name: 'First Copy',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Second Copy',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent(
+            '/books?isbn=9780441172719',
+        )
+    })
+
+    it('filters by a partial ISBN without unique-opening', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?isbn=978044',
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith({
+            category: undefined,
+            author: undefined,
+            title: undefined,
+            isbn: '978044',
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent(
+            '/books?isbn=978044',
+        )
+
+        expect(
+            screen.getByRole('link', {
+                name: 'The Left Hand of Darkness',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('clears only the ISBN filter and preserves sort', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook(),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?isbn=9780441172719&sortBy=title&sortOrder=desc',
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Clear ISBN',
+            }),
+        )
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent(
+            '/books?sortBy=title&sortOrder=desc',
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenLastCalledWith({
+            category: undefined,
+            author: undefined,
+            title: undefined,
+            isbn: undefined,
+            sortBy: 'title',
+            sortOrder: 'desc',
+        })
+    })
+
+    it('does not unique-open while an ISBN query is loading', () => {
+        mockUseInfiniteBooks.mockReturnValue({
+            isPending: true,
+            isSuccess: false,
+            isError: false,
+        })
+
+        renderBooksPage(
+            '/books?isbn=9780441172719',
+        )
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent(
+            '/books?isbn=9780441172719',
+        )
+    })
+
+    it('does not unique-open when an ISBN query fails', () => {
+        mockUseInfiniteBooks.mockReturnValue({
+            isPending: false,
+            isSuccess: false,
+            isLoadingError: true,
+            isError: true,
+            error: new Error('Unable to reach the API'),
+        })
+
+        renderBooksPage(
+            '/books?isbn=9780441172719',
+        )
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent(
+            '/books?isbn=9780441172719',
+        )
     })
 })

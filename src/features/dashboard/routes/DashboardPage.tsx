@@ -20,6 +20,9 @@ import {
     LoadingState,
     QueryErrorState,
 } from '../../../components'
+import {
+    useCollectionIsbnJump,
+} from '../../scanning/useCollectionIsbnJump'
 
 
 function displayAverage(
@@ -69,6 +72,8 @@ function DashboardBreakdown({
 }
 
 export function DashboardPage() {
+    useCollectionIsbnJump()
+
     const dashboardQuery = useDashboard()
     const breakdownsQuery =
         useDashboardBreakdowns()

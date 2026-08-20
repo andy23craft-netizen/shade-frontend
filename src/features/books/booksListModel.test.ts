@@ -8,6 +8,7 @@ import {
     BOOKS_BATCH_SIZE,
     CATEGORY_FILTER_VALUES,
     parseCategoryParam,
+    parseIsbnParam,
     parseSortByParam,
     parseSortOrderParam,
     parseTextFilterParam,
@@ -85,5 +86,33 @@ describe('booksListModel', () => {
         expect(sortByLabel('shelf')).toBe('Shelf')
         expect(sortOrderLabel('asc')).toBe('Ascending')
         expect(sortOrderLabel('desc')).toBe('Descending')
+    })
+
+    it('normalizes missing or blank ISBN URL params', () => {
+        expect(
+            parseIsbnParam(null),
+        ).toBeUndefined()
+
+        expect(
+            parseIsbnParam(''),
+        ).toBeUndefined()
+
+        expect(
+            parseIsbnParam('   '),
+        ).toBeUndefined()
+
+        expect(
+            parseIsbnParam(' -._/ '),
+        ).toBeUndefined()
+    })
+
+    it('preserves partial ISBN values for list filtering', () => {
+        expect(
+            parseIsbnParam('978044'),
+        ).toBe('978044')
+
+        expect(
+            parseIsbnParam('978-044'),
+        ).toBe('978044')
     })
 })

@@ -15,7 +15,12 @@ const mockUseLoans = vi.fn()
 const mockUseBooks = vi.fn()
 const mockUseBook = vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
+const mockUseCollectionIsbnJump = vi.fn()
 
+vi.mock('../../scanning/useCollectionIsbnJump', () => ({
+    useCollectionIsbnJump: () =>
+        mockUseCollectionIsbnJump(),
+}))
 vi.mock('../../../api/loansQueries', () => ({
     useInfiniteLoans: () => mockUseInfiniteLoans(),
     useLoans: (options: unknown) =>
@@ -174,6 +179,7 @@ describe('LoansPage', () => {
         mockUseInfiniteScrollTrigger.mockReset()
         mockUseLoans.mockReset()
         mockUseBook.mockReset()
+        mockUseCollectionIsbnJump.mockReset()
 
         mockUseLoans.mockReturnValue({
             isPending: false,
@@ -1304,5 +1310,43 @@ describe('LoansPage', () => {
                 itemCount: 1,
             }),
         )
+    })
+
+    it('mounts collection ISBN scanning on the loans page', () => {
+        mockUseInfiniteLoans.mockReturnValue(
+            makeInfiniteLoansResult([
+                makeLoanList(),
+            ]),
+        )
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: makeBookList(),
+        })
+
+        renderPage()
+
+        expect(
+            mockUseCollectionIsbnJump,
+        ).toHaveBeenCalled()
+    })
+
+    it('keeps collection ISBN scanning mounted while loans are loading', () => {
+        mockUseInfiniteLoans.mockReturnValue({
+            isPending: true,
+            isError: false,
+        })
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+        })
+
+        renderPage()
+
+        expect(
+            mockUseCollectionIsbnJump,
+        ).toHaveBeenCalled()
     })
 })

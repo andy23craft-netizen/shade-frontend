@@ -8,6 +8,7 @@ export interface IsbnScannerParserOptions {
 
 export interface IsbnScannerParserResult {
     isbn: string | null
+    consumed: boolean
 }
 
 const DEFAULT_TIMEOUT_MS = 100
@@ -60,6 +61,7 @@ export class IsbnScannerParser {
         ) {
             return {
                 isbn: null,
+                consumed: false,
             }
         }
 
@@ -69,6 +71,7 @@ export class IsbnScannerParser {
 
         return {
             isbn: null,
+            consumed: true,
         }
     }
 
@@ -90,17 +93,20 @@ export class IsbnScannerParser {
         if (!candidate) {
             return {
                 isbn: null,
+                consumed: true,
             }
         }
 
         if (!isValidIsbn(candidate)) {
             return {
                 isbn: null,
+                consumed: true,
             }
         }
 
         return {
             isbn: candidate,
+            consumed: true,
         }
     }
 

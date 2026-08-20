@@ -1,4 +1,5 @@
 import type { Category } from '../../api/apiTypes'
+import { compactIsbnForListFilter } from './utils/isbn'
 
 export {
     INFINITE_SCROLL_BATCH_SIZE as BOOKS_BATCH_SIZE,
@@ -50,6 +51,21 @@ export function parseSortByParam(
     }
 
     return DEFAULT_SORT_BY
+}
+
+export function parseIsbnParam(
+    value: string | null,
+): string | undefined {
+    if (value === null) {
+        return undefined
+    }
+
+    const compacted =
+        compactIsbnForListFilter(value.trim())
+
+    return compacted === ''
+        ? undefined
+        : compacted
 }
 
 export function parseSortOrderParam(

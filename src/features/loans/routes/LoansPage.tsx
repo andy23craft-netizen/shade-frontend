@@ -38,6 +38,9 @@ import {
     displayLoanDate,
     getLoanDueState,
 } from '../loanTemporal'
+import {
+    useCollectionIsbnJump,
+} from '../../scanning/useCollectionIsbnJump'
 
 function dueStateLabel(
     dueAt: string | null | undefined,
@@ -249,7 +252,11 @@ function TargetedCheckin({
             onSuccess={onClose}
         />
     )
-}export function LoansPage() {
+}
+
+export function LoansPage() {
+    useCollectionIsbnJump()
+
     const [
         searchParams,
         setSearchParams,

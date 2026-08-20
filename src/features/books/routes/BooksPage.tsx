@@ -1,6 +1,11 @@
 import {
+    useNavigate,
     useSearchParams,
 } from 'react-router-dom'
+import {
+    useEffect,
+    useRef,
+} from 'react'
 
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
@@ -20,12 +25,15 @@ import { BooksListControls } from '../components/BooksListControls'
 import {
     flattenInfiniteBookPages,
     parseCategoryParam,
+    parseIsbnParam,
     parseSortByParam,
     parseSortOrderParam,
     parseTextFilterParam,
     type BookSortBy,
     type BookSortOrder,
 } from '../booksListModel'
+import { isValidIsbn } from '../utils/isbn'
+import { useCollectionIsbnJump } from '../../scanning/useCollectionIsbnJump'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -44,6 +52,7 @@ const CATEGORY_VALUES: readonly Category[] = [
     'fiction',
     'nonfiction',
 ]
+
 
 function displayEnum(
     value: string,
@@ -77,6 +86,7 @@ function updateListParams(
         category?: Category | undefined
         author?: string | undefined
         title?: string | undefined
+        isbn?: string | undefined
         sortBy?: BookSortBy
         sortOrder?: BookSortOrder
     },
@@ -114,6 +124,14 @@ function updateListParams(
         }
     }
 
+    if ('isbn' in updates) {
+        if (updates.isbn === undefined) {
+            next.delete('isbn')
+        } else {
+            next.set('isbn', updates.isbn)
+        }
+    }
+
     if (updates.sortBy !== undefined) {
         if (updates.sortBy === 'author') {
             next.delete('sortBy')
@@ -142,6 +160,12 @@ function updateListParams(
 }
 
 export function BooksPage() {
+    useCollectionIsbnJump()
+
+    const navigate = useNavigate()
+    const uniqueOpenedIsbnRef =
+        useRef<string | null>(null)
+
     const [
         searchParams,
         setSearchParams,
@@ -163,10 +187,15 @@ export function BooksPage() {
         searchParams.get('title'),
     )
 
+    const isbn = parseIsbnParam(
+        searchParams.get('isbn'),
+    )
+
     const booksQuery = useInfiniteBooks({
         category,
         author,
         title,
+        isbn,
         sortBy,
         sortOrder,
     })
@@ -182,7 +211,36 @@ export function BooksPage() {
     const hasActiveFilters =
         category !== undefined ||
         author !== undefined ||
-        title !== undefined
+        title !== undefined ||
+        isbn !== undefined
+
+    useEffect(() => {
+        if (
+            isbn === undefined ||
+            !isValidIsbn(isbn) ||
+            !booksQuery.isSuccess ||
+            total !== 1 ||
+            books.length !== 1 ||
+            uniqueOpenedIsbnRef.current === isbn
+        ) {
+            return
+        }
+
+        uniqueOpenedIsbnRef.current = isbn
+
+        navigate(
+            `/books/${books[0].id}`,
+            {
+                replace: true,
+            },
+        )
+    }, [
+        books,
+        booksQuery.isSuccess,
+        isbn,
+        navigate,
+        total,
+    ])
 
     const {
         getRowRef,
@@ -326,6 +384,7 @@ export function BooksPage() {
                                 category: undefined,
                                 author: undefined,
                                 title: undefined,
+                                isbn: undefined,
                             },
                         ),
                         {
@@ -334,6 +393,39 @@ export function BooksPage() {
                     )
                 }}
             />
+
+            {isbn !== undefined ? (
+                <div
+                    className="books-page__isbn-filter"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <p>
+                        Showing books matching ISBN{' '}
+                        <strong>{isbn}</strong>.
+                    </p>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setSearchParams(
+                                updateListParams(
+                                    searchParams,
+                                    {
+                                        isbn: undefined,
+                                    },
+                                ),
+                                {
+                                    replace: true,
+                                },
+                            )
+                        }}
+                    >
+                        Clear ISBN
+                    </Button>
+                </div>
+            ) : null}
 
             {total === 0 ? (
                 <EmptyState title="No books match these filters.">
@@ -353,6 +445,7 @@ export function BooksPage() {
                                         category: undefined,
                                         author: undefined,
                                         title: undefined,
+                                        isbn: undefined,
                                     },
                                 ),
                                 {

@@ -1,6 +1,5 @@
 import {
     fireEvent,
-    render,
     screen,
     within,
 } from '@testing-library/react'
@@ -14,7 +13,9 @@ import {
 } from 'vitest'
 
 import { DashboardPage } from './DashboardPage'
-
+import {
+    renderWithProviders,
+} from '../../../test/renderAppTree'
 import {
     useDashboard,
     useDashboardBreakdowns,
@@ -25,6 +26,13 @@ import {
 import type {
     DashboardSummary,
 } from '../../../api/apiTypes'
+
+const mockUseCollectionIsbnJump = vi.fn()
+
+vi.mock('../../scanning/useCollectionIsbnJump', () => ({
+    useCollectionIsbnJump: () =>
+        mockUseCollectionIsbnJump(),
+}))
 
 vi.mock('../../../api/dashboardQueries', () => ({
     useDashboard: vi.fn(),
@@ -202,7 +210,7 @@ function mockDashboardIncompleteMetadataQuery(
 }
 
 function renderDashboard() {
-    return render(
+    return renderWithProviders(
         <MemoryRouter>
             <DashboardPage />
         </MemoryRouter>,
@@ -216,6 +224,7 @@ describe('DashboardPage', () => {
         mockDashboardBreakdownsQuery()
         mockDashboardIncompleteMetadataQuery()
         mockIncompleteBooksQuery()
+        mockUseCollectionIsbnJump.mockReset()
     })
 
     it('displays every dashboard business statistic from the API', () => {
@@ -1269,7 +1278,7 @@ describe('DashboardPage', () => {
             fetchNextPage,
         })
 
-        const { rerender } = renderDashboard()
+        const { unmount } = renderDashboard()
 
         expect(
             screen.getByText('Loading more books…'),
@@ -1281,11 +1290,8 @@ describe('DashboardPage', () => {
             fetchNextPage,
         })
 
-        rerender(
-            <MemoryRouter>
-                <DashboardPage />
-            </MemoryRouter>,
-        )
+        unmount()
+        renderDashboard()
 
         expect(
             screen.getByText(
@@ -1300,5 +1306,26 @@ describe('DashboardPage', () => {
         )
 
         expect(fetchNextPage).toHaveBeenCalledTimes(1)
+    })
+
+    it('mounts collection ISBN scanning on the dashboard', () => {
+        renderDashboard()
+
+        expect(
+            mockUseCollectionIsbnJump,
+        ).toHaveBeenCalled()
+    })
+
+    it('keeps collection ISBN scanning mounted while the dashboard is loading', () => {
+        mockDashboardQuery({
+            data: undefined,
+            isPending: true,
+        })
+
+        renderDashboard()
+
+        expect(
+            mockUseCollectionIsbnJump,
+        ).toHaveBeenCalled()
     })
 })
