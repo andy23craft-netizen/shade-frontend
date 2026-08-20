@@ -5,17 +5,15 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline. Start from this file alone. Do not load
-`docs/AGENTS.md` or any other project prompt for additional baseline
-context; this pack does not depend on them. Attach the on-demand docs
-listed in section 8 only when the current ticket needs them; do not
-re-synthesize those sources here. A user's explicit request takes
-precedence over general guidance here.
+the dated codebase baseline. Start from this file alone. Attach the
+on-demand docs listed in section 8 only when the current ticket needs
+them; do not re-synthesize those sources here. A user's explicit
+request takes precedence over general guidance here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
 
-Context pack version: 2026-08-19. Refresh this prompt when operating
+Context pack version: 2026-08-20. Refresh this prompt when operating
 rules, non-negotiables, or the known baseline change.
 
 The **current feature ticket is supplied separately** after this
@@ -60,7 +58,7 @@ If browser-support or production-host security baselines are needed:
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
   - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
-If later product tickets (FEAT-24 through FEAT-27):
+If later product tickets (FEAT-25 through FEAT-27):
   - the current ticket
   - docs/technical-reference/openapi.json and API-for-FE.md when the ticket touches new API surfaces
   - docs/product-docs/UI_DESIGN_NOTES.MD when layout or visual design is in question
@@ -190,13 +188,14 @@ under `AppProviders` with configured client defaults,
 books/loans/shelves/dashboard hooks including infinite-list pagination,
 and mutation detail-cache writes), `openapi-typescript` for generated
 types, `@zxing/browser` + `@zxing/library` (camera ISBN decode;
-lazy-loaded from `/books/new` only), Yarn 4 (`yarn@4.18.0`
-via Corepack), Node.js 26.7.0, ESLint (flat), Vitest, Testing Library,
-jsdom, Playwright (`@playwright/test` + `@axe-core/playwright`;
-`yarn test:e2e`; included in `make check`), Vitest V8 coverage with
-enforced global floors (statements 87%, branches 80%, functions 92%,
-lines 87%), Make. Native ESM (`"type": "module"`). No Next.js,
-Tailwind, component library, or form library.
+lazy-loaded from `/books/new` only), hardware collection ISBN jump via
+`useCollectionIsbnJump` on `/dashboard`, `/books`, and `/loans`, Yarn 4
+(`yarn@4.18.0` via Corepack), Node.js 26.7.0, ESLint (flat), Vitest,
+Testing Library, jsdom, Playwright (`@playwright/test` +
+`@axe-core/playwright`; `yarn test:e2e`; included in `make check`),
+Vitest V8 coverage with enforced global floors (statements 87%, branches
+80%, functions 92%, lines 87%), Make. Native ESM (`"type": "module"`).
+No Next.js, Tailwind, component library, or form library.
 
 **Backend:** Separate project. Authoritative for API behavior. Default
 local base: `http://127.0.0.1:8000` (no `/api` prefix). In-repo
@@ -204,23 +203,24 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 `docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI:
 `/docs` and `/openapi.json` on the running API.
 
-**Known baseline (as of 2026-08-19 -- verify before editing):**
+**Known baseline (as of 2026-08-20 -- verify before editing):**
 
 -   MVP product UI is shipped: application shell and shared primitives;
     runtime config and build-time Bearer auth; typed OpenAPI + React Query
     server state; book create with ISBN lookup and camera/hardware
-    scanning on `/books/new`; checkout on book details via `CheckoutDialog`
-    (`/checkout` is a compatibility redirect); check-in on `/loans`
-    (`CheckinForm`) and loan history (`/checkin` is a compatibility
-    redirect); reading
+    scanning on `/books/new`; hardware collection ISBN jump on
+    `/dashboard`, `/books`, and `/loans` (`useCollectionIsbnJump`);
+    checkout on book details via `CheckoutDialog` (`/checkout` is a
+    compatibility redirect); check-in on `/loans` (`CheckinForm`) and
+    loan history (`/checkin` is a compatibility redirect); reading
     flows; edit/delete/restore/backup;
     About homepage at `/` with dashboard metrics at `/dashboard`;
     diagnostics; shelves catalog CRUD; infinite scroll on
     `/books` and `/loans`; API contract sync (regenerated OpenAPI types for wishlist / dashboard-report and
     Collections paths; `booksApi` / query keys for `author` / `title` /
     `category` / `isbn`, used by the `/books` collection browse UI for
-    category / author / title today (ISBN list filtering is reserved for
-    FEAT-24); collection
+    category / author / title and URL-backed `?isbn=` from hardware
+    collection jump or deep link; collection
     `sortBy=shelf`; checkout `412` `display_only` refetch/messaging on
     `CheckoutDialog` without alternate-copy offers). Dashboard reports on `/dashboard`: summary
     plus breakdowns and incomplete-metadata healing
@@ -242,14 +242,14 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     explicit shelf; Add/Edit Book block the page when shelves fail to
     load). Loan helpers (`loansApi.list({ bookId })`, `loansApi.get` /
     `useLoan`, Check In on `/loans?bookId=`) remain in place.
-    `booksApi.list({ isbn })` / `useBooks({ isbn })` remain as list-filter
-    helpers (FEAT-24 will use them; checkout no longer does). Remaining
-    tickets are `FEAT-24` through `FEAT-27` under
+    `booksApi.list({ isbn })` / `useInfiniteBooks({ isbn })` power the
+    collection ISBN filter and collection jump (checkout no longer uses
+    them). Remaining tickets are `FEAT-25` through `FEAT-27` under
     `docs/tickets/`. FEAT-13 workflow and accessibility testing, FEAT-14 CI packaging, FEAT-15 Podman deployed
     development, FEAT-16 versioned release artifacts, FEAT-17 About homepage, FEAT-18 collection category / author /
     title filters, FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only checkout alternate-copy UX,
-    FEAT-22 check-in consolidation onto `/loans`, and FEAT-23 checkout consolidation onto book details are complete
-    (those ticket files are removed).
+    FEAT-22 check-in consolidation onto `/loans`, FEAT-23 checkout consolidation onto book details, and FEAT-24
+    hardware ISBN scan on Dashboard / Books / Loans are complete (those ticket files are removed).
     Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Prefer dedicated
     lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`. Do not
     invent undocumented routes, realtime channels, or lifecycle shortcuts.
@@ -375,8 +375,15 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     drawer is Loans only; `/checkout` is `LegacyCheckoutRedirect` (bare path to `/books`; `?bookId=`
     to `/books/{id}?checkout=1`); borrower and notes only (`checked_out_at` / `due_at` computed
     client-side via `dueAtOneYearFrom`); **412** display-only does not offer alternate copies. Do not
-    restore `CheckoutPage`, Circulation Check Out nav, or FEAT-21 alternate-copy offers. Remaining
-    product follow-ons are FEAT-24 through FEAT-27. Do not implement those future tickets early.
+    restore `CheckoutPage`, Circulation Check Out nav, or FEAT-21 alternate-copy offers. FEAT-24
+    hardware ISBN scan on Dashboard / Books / Loans is complete (ticket file removed):
+    `useCollectionIsbnJump` on `/dashboard`, `/books`, and `/loans` (hardware wedge with
+    `ignoreEditableTargets` / `preventDefaultWhenConsumed`; compact via `compactIsbnForListFilter`;
+    prefetch `GET /books?isbn=`; open sole match at `/books/{id}`, otherwise `/books?isbn=`);
+    `BooksPage` parses URL `isbn`, shows Clear ISBN, and auto-opens a unique filtered match.
+    Camera and create-path hardware remain on `/books/new` only. Playwright coverage in
+    `e2e/isbn-collection-jump.spec.ts`. Remaining product follow-ons are FEAT-25 through FEAT-27.
+    Do not implement those future tickets early.
 -   About `/` via `AboutPage` + `CatalogGuide` (library background,
     Charles Leewright dedication, lending policy, and accessible
     card-catalog How to Use dialog with in-app workflow links). Does
@@ -391,7 +398,8 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     Circulation, and Reading Record; catalog breakdowns (`useDashboardBreakdowns` / `GET /dashboard/breakdowns`);
     incomplete-metadata healing (`useDashboardIncompleteMetadata`, `useInfiniteIncompleteMetadataBooks` /
     `GET /dashboard/incomplete-metadata` and `/books`). Five card-catalog drawers (summary I--III, Basic Stats IV,
-    Healing Metadata V). Display API numbers only; null averages as "Not enough data"; inconsistent read/unread
+    Healing Metadata V). `useCollectionIsbnJump` for hardware wedge jump to a unique book or `/books?isbn=`.
+    Display API numbers only; null averages as "Not enough data"; inconsistent read/unread
     totals show a contract warning without recalculation; do not recalculate metrics from `GET /books`. Unified Refresh
     refetches summary and report queries; offline/paused and stale status; drawer-level `QueryErrorState` recovery;
     drawer-level errors do not blank summary drawers. Basic Stats shows totals plus category and creation-year buckets
@@ -601,12 +609,15 @@ index.html
         the bottom of loaded rows
     -   `src/features/books/booksListModel.ts`: sort types (`author` \|
         `title` \| `creationDate` \| `shelf`), sort and
-        category/text-filter URL parsing, labels, category filter
-        values, and page flattening helper
+        category/text/ISBN-filter URL parsing (`parseIsbnParam` via
+        `compactIsbnForListFilter`), labels, category filter values, and
+        page flattening helper
     -   `src/features/books/components/BooksListControls.tsx`: labelled
         category / author / title filter controls plus sort selects for
         `BooksPage` (including Shelf); author/title drafts apply
-        explicitly and can be cleared independently of sort state
+        explicitly and can be cleared independently of sort state. ISBN
+        filter is URL/hardware-driven (status + Clear ISBN on
+        `BooksPage`), not a typed control here.
     -   `src/features/loans/loansListModel.ts`: re-exports shared
         infinite-scroll constants and loan page flattening helper
 -   Live product UI (do not revert to placeholders):
@@ -618,21 +629,25 @@ index.html
         V); summary metrics via `useDashboard`; Basic Stats via `useDashboardBreakdowns` (totals plus category and
         creation-year buckets; API `by_shelf` is not rendered); Healing Metadata via `useDashboardIncompleteMetadata`
         and `useInfiniteIncompleteMetadataBooks` (per-field counts, field filter, infinite-scroll cleanup list with
-        detail/edit links). Display API numbers only; null averages as "Not enough data"; inconsistency warning without
-        recalculation; do not recalculate metrics from `GET /books`. Unified Refresh refetches summary and report
-        queries; offline/stale status; drawer-level `QueryErrorState` recovery; drawer-level errors do not blank
-        summary drawers. Styles in `src/styles/components.css`.
+        detail/edit links). `useCollectionIsbnJump` for hardware wedge jump. Display API numbers only; null averages
+        as "Not enough data"; inconsistency warning without recalculation; do not recalculate metrics from
+        `GET /books`. Unified Refresh refetches summary and report queries; offline/stale status; drawer-level
+        `QueryErrorState` recovery; drawer-level errors do not blank summary drawers. Styles in
+        `src/styles/components.css`.
     -   `/collection/manage` -- `ManageCollectionPage`: collection
         maintenance hub with links to Add Book (`/books/new`), Shelves
         (`/shelves`), Deleted Books (`/admin/deleted`), and Backup
         Library (`/admin/backup`; interim until FEAT-25).
     -   `/books` -- `BooksPage` via
-        `useInfiniteBooks({ category, author, title, sortBy, sortOrder })`
-        with URL-backed category / author / title filters and sort
-        (`category`, `author`, `title`, `sortBy`, `sortOrder`); sort
+        `useInfiniteBooks({ category, author, title, isbn, sortBy, sortOrder })`
+        with URL-backed category / author / title / ISBN filters and sort
+        (`category`, `author`, `title`, `isbn`, `sortBy`, `sortOrder`);
+        `useCollectionIsbnJump` for hardware wedge navigation; sort
         controls include Author, Title, Date added, and Shelf (default
         author ascending); author/title drafts apply explicitly and can
-        be cleared independently of sort; filtered empty state ("No
+        be cleared independently of sort; active `?isbn=` shows a polite
+        Clear ISBN status; when an ISBN filter resolves to exactly one
+        book, replace-navigate to detail; filtered empty state ("No
         books match these filters.") stays distinct from the unfiltered
         empty library state; loading, error+retry, unfiltered empty
         state linking to `/books/new`, list rows to detail with
@@ -640,7 +655,7 @@ index.html
         `formatShelfCommonNameForDisplay`, Read/Unread state, and rating
         (`N / 5`, or an em dash when null); bottom next-page loading and
         retry affordances (infinite scroll, ratings, shelf sort, catalog
-        filters)
+        filters, ISBN jump)
     -   `/books/:bookId` -- `BookDetailsPage` via `useBook`; loading,
         not-found / error recovery, safe enum display, including Title
         Case `shelf_name`, `is_read`, `completion_date`, `rating`, and
@@ -701,7 +716,9 @@ index.html
         shelf errors into the form summary; disables controls while
         pending; navigates to new detail on success.
         Camera and hardware scanner capture hands one ISBN into the same
-        lookup path (never calls `POST /books` from scanner success).
+        lookup path (never calls `POST /books` from scanner success);
+        hardware listening is disabled while the camera UI is open or
+        lookup is fetching.
     -   `/checkout` -- `LegacyCheckoutRedirect` only: replace-navigates
         `/checkout?bookId=` to `/books/{id}?checkout=1` and bare
         `/checkout` to `/books`. Not a product page
@@ -721,23 +738,23 @@ index.html
     -   `/checkin` -- `LegacyCheckinRedirect` only: replace-navigates to
         `/loans` and forwards the current search string. Not a product
         page (`routeMetadata.checkin` is path-only).
-    -   `/loans` -- `LoansPage` + `CheckinForm` + `loanTemporal`
-        (infinite scroll, complete): `useInfiniteLoans()` plus
-        unpaginated `useBooks()` joins; active vs returned sections from
-        `returned_at` nullability; due/overdue labels via
-        `getLoanDueState` / `displayLoanDate`; durable `Book {id}`
-        fallback when the book is missing; empty / loading / retryable
-        error states; bottom next-page loading and retry affordances;
-        explicit empty active and returned sections. Eligible Active
-        Loans rows offer Check In (`?bookId=`), which mounts
-        `CheckinForm` (`checkinModel`, `checkinEligibility`,
-        `useCheckinBook`); blank return time omits body; `ConfirmationDialog`;
-        Field-linked **422**; **404** / **409** stale-state refetch;
-        success clears `bookId` and stays on `/loans`. In-page loan/book
-        when Check In is opened from Active Loans; otherwise
-        `useLoans({ bookId })` plus `useBooks()` cache, with
-        `useBook(bookId)` only on cache miss. Targeted queries are not
-        mounted when `bookId` is unset. `CheckinPage` is gone.
+    -   `/loans` -- `LoansPage` + `CheckinForm` + `loanTemporal` +
+        `useCollectionIsbnJump` (infinite scroll, complete):
+        `useInfiniteLoans()` plus unpaginated `useBooks()` joins; active
+        vs returned sections from `returned_at` nullability; due/overdue
+        labels via `getLoanDueState` / `displayLoanDate`; durable
+        `Book {id}` fallback when the book is missing; empty / loading /
+        retryable error states; bottom next-page loading and retry
+        affordances; explicit empty active and returned sections.
+        Eligible Active Loans rows offer Check In (`?bookId=`), which
+        mounts `CheckinForm` (`checkinModel`, `checkinEligibility`,
+        `useCheckinBook`); blank return time omits body;
+        `ConfirmationDialog`; Field-linked **422**; **404** / **409**
+        stale-state refetch; success clears `bookId` and stays on
+        `/loans`. In-page loan/book when Check In is opened from Active
+        Loans; otherwise `useLoans({ bookId })` plus `useBooks()` cache,
+        with `useBook(bookId)` only on cache miss. Targeted queries are
+        not mounted when `bookId` is unset. `CheckinPage` is gone.
     -   `/shelves` -- `ShelvesPage` + `shelfDisplay` / `shelfFormModel`
         (complete): catalog via `useShelves` with create /
         edit / delete through `useCreateShelf` / `useUpdateShelf` /
@@ -801,9 +818,9 @@ index.html
     blank-optional-to-`null` conversion. Submit label is "Save Book".
     `src/features/books/utils/isbn.ts` checksum helpers plus
     `compactIsbnForListFilter` (punctuation strip only for
-    `GET /books?isbn=`); used by lookup, create, and scanner capture;
-    the compact helper is ready for FEAT-24 list-filter callers and is
-    not used by checkout.
+    `GET /books?isbn=`); used by lookup, create, scanner capture,
+    collection jump, and `/books` ISBN list filtering. Not used by
+    checkout.
     Colocated `BookForm.test.tsx` /
     `bookFormModel.test.ts` / `isbn.test.ts` cover gating, validation,
     conversion, and checksums.
@@ -823,27 +840,39 @@ index.html
         EAN-13 filter, decode hints, scan timeout),
         `IsbnScannerParser` + `useHardwareIsbnScanner` (keyboard-wedge
         capture with Enter terminator, inter-key timeout, checksum via
-        `isbn.ts`)
+        `isbn.ts`; optional `ignoreEditableTargets` and
+        `preventDefaultWhenConsumed` for collection-jump pages),
+        `useCollectionIsbnJump` (shared hardware jump for `/dashboard`,
+        `/books`, and `/loans`: compact via `compactIsbnForListFilter`,
+        prefetch `GET /books?isbn=`, open sole match at `/books/{id}`,
+        otherwise navigate to `/books?isbn=`; failed prefetch does not
+        navigate; never creates, checks out, or calls lookup)
     -   Camera uses `@zxing/browser` (`BrowserMultiFormatReader`) +
         `@zxing/library`; permission requested only after the explicit
         "Scan ISBN" action; unsupported / insecure / permission /
         timeout paths keep manual ISBN entry usable
-    -   Successful camera or hardware captures call the book-create
-        lookup handoff on `/books/new` (fill lookup ISBN, start
-        `useBookLookup`); hardware listening is disabled while the
-        camera UI is open or lookup is fetching. There is no checkout
-        capture surface.
+    -   Successful create-path camera or hardware captures call the
+        book-create lookup handoff on `/books/new` (fill lookup ISBN,
+        start `useBookLookup`); hardware listening is disabled while the
+        camera UI is open or lookup is fetching. Collection-jump
+        captures open a unique match or filter `/books?isbn=`. There is
+        no checkout capture surface. Camera remains `/books/new` only.
     -   Camera: Bookland EAN-13 (`978` / `979`) only; secure context
         required; current Chrome / Firefox / Safari / Edge and iOS /
         Android evergreen browsers supported; insecure non-loopback
         `http:` and missing `getUserMedia` unsupported. Hardware:
         Enter-terminated ISBN-10 / ISBN-13 wedges supported; no Enter
-        terminator unsupported. Typed ISBN stays available on failure.
+        terminator unsupported. On Dashboard / Books / Loans, collection
+        jump ignores editable targets so ordinary typing is not
+        swallowed. Typed ISBN stays available on `/books/new` on failure.
         Manual checks: desktop Chrome/Safari/Firefox, Android Chrome,
-        iOS Safari HTTPS, multi-camera switch, wedge Enter, permission
-        denial, timeout, and UPC rejection.
+        iOS Safari HTTPS, multi-camera switch, wedge Enter (create lookup
+        and collection jump), permission denial, timeout, and UPC
+        rejection.
     -   Colocated scanning tests plus `NewBookPage` handoff tests for
-        camera and hardware captures
+        camera and hardware captures; `BooksPage` / `DashboardPage` /
+        `LoansPage` / `useCollectionIsbnJump` tests; Playwright
+        `e2e/isbn-collection-jump.spec.ts`
 -   Registered product routes (all live -- do not revert to placeholders
     or rebuild the typed client / hooks): `/`, `/dashboard`, `/books`,
     `/collection/manage`, `/books/new`, `/books/:bookId`,
@@ -884,19 +913,22 @@ index.html
     `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
 
 Typed transport/query/redaction, browse/detail, create/lookup,
-scanner capture on `/books/new`, checkout on book details via
+scanner capture on `/books/new`, hardware collection ISBN jump on
+`/dashboard` / `/books` / `/loans`, checkout on book details via
 `CheckoutDialog` (display-only **412** messaging without alternate
 copies; `/checkout` is a compatibility redirect), check-in and loan
 history, reading tracking (mark-read + reading edit),
-edit/delete/restore/backup, API contract sync (`author` / `title` / `category` list filters used by `/books`,
-`sortBy=shelf`, checkout `412` display-only messaging without alternate copies),
-collection category / author / title filter UI, About
+edit/delete/restore/backup, API contract sync (`author` / `title` /
+`category` / `isbn` list filters used by `/books`, `sortBy=shelf`,
+checkout `412` display-only messaging without alternate copies),
+collection category / author / title / ISBN filter UI, About
 homepage, dashboard (summary plus breakdown / incomplete-metadata reports), wishlists, operational/browser hardening,
 shelves catalog writes, and infinite scroll on `/books` and `/loans` are done. Do not rebuild the typed client,
 invent parallel hooks, or replace `AboutPage` / `CatalogGuide` / `DashboardPage` / `NewBookPage` /
 `BookForm` / `bookEditModel` /
 `EditBookPage` / `DeleteBookPage` / `DeletedBooksPage` /
 `BackupLibraryPage` / `isbn.ts` / `src/features/scanning/` /
+`useCollectionIsbnJump` /
 `CheckoutDialog` / `checkoutModel` / `checkoutEligibility`
 (borrower and notes only; `412` handling without alternate copies;
 `/checkout` is `LegacyCheckoutRedirect` only) / `CheckinForm` / `checkinModel` / `checkinEligibility` /
@@ -1098,9 +1130,12 @@ merely to make a ticket pass.
     `wishlistsQueries` (`/wishlists` owns catalog CRUD and add;
     memberships via `useBook` / `GET /books/{id}`; add via unshelved
     create then membership; no add-from-collection or membership
-    remove/edit). Leave scanner code under `src/features/scanning/` lazy-loaded from `/books/new` only
-    (hands one ISBN into create lookup; never creates or checks out from scan success
-    alone; there is no checkout capture surface). Leave checkout under `CheckoutDialog` / `checkoutModel` /
+    remove/edit). Leave scanner code under `src/features/scanning/`:
+    camera lazy-loaded from `/books/new` only; create-path hardware on
+    `NewBookPage`; collection jump via `useCollectionIsbnJump` on
+    `/dashboard`, `/books`, and `/loans` (unique match opens detail;
+    otherwise `/books?isbn=`; never creates or checks out from scan
+    success alone; there is no checkout capture surface). Leave checkout under `CheckoutDialog` / `checkoutModel` /
     `checkoutEligibility` on `BookDetailsPage` (borrower and notes only; timestamps computed
     client-side; `412` `display_only` refetch/messaging without alternate copies; `/checkout` is
     `LegacyCheckoutRedirect` only). Do not restore `CheckoutPage`, ISBN Find, camera capture on
@@ -1115,7 +1150,7 @@ merely to make a ticket pass.
     shelf CRUD on Add/Edit Book). Leave infinite scroll and catalog filters under
     `useInfiniteBooks` / `useInfiniteLoans` / `useInfiniteScrollTrigger`
     / `booksListModel` / `BooksListControls` (URL-backed category /
-    author / title plus sort; do not regress those controls). Preserve
+    author / title / ISBN plus sort; do not regress those controls). Preserve
     the completed FEAT-13 test architecture: existing Vitest / Testing
     Library / `renderAppTree` coverage plus Playwright `e2e/` with the
     shared stateful mock API and axe helper. Browser journeys and
@@ -1131,7 +1166,7 @@ merely to make a ticket pass.
     keep `scripts/packRelease.ts`, Make `pack`, gitignored
     `ci/artifacts/`, and the production-like host inspection tests; do
     not upload secret-bearing archives from default CI. Do not pull
-    FEAT-24 through FEAT-27 product work into unrelated changes. Never
+    FEAT-25 through FEAT-27 product work into unrelated changes. Never
     simulate restore, checkout, check-in, or initial mark-read with
     generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
@@ -1145,15 +1180,16 @@ merely to make a ticket pass.
 ## 5. Scope (short)
 
 **In scope for MVP:** dashboard (summary plus breakdown / incomplete-metadata
-reports), active books with category / author / title filtering and URL-backed
-sorting, detail, manual/ISBN/camera/scanner add flows, edit, checkout on book
+reports), active books with category / author / title / ISBN filtering and
+URL-backed sorting, detail, manual/ISBN/camera/scanner add flows, hardware ISBN
+collection jump on Dashboard / Books / Loans, edit, checkout on book
 details (display-only **412** messaging without alternate-copy offers), check-in,
 loan history, shelves catalog, reading tracking, soft delete/restore, deleted
 admin, authenticated SQL backup, runtime API config, CI, Podman preview,
 versioned production artifacts, About homepage with the dashboard at
 `/dashboard`, and wishlists. Ticketed follow-ons (implement only when working
-that ticket): hardware ISBN scan on more pages (FEAT-24), remove the browser
-backup page (FEAT-25), wishlist move-to-shelf (FEAT-26), and curated Collections
+that ticket): remove the browser backup page (FEAT-25; backend fetch-backup gate
+is satisfied), wishlist move-to-shelf (FEAT-26), and curated Collections
 (FEAT-27).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library
@@ -1174,12 +1210,13 @@ FEAT-15 Podman deployed development, FEAT-16 versioned release
 artifacts, FEAT-17 About homepage, FEAT-18 collection filters,
 FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only
 checkout alternate-copy UX, FEAT-22 check-in consolidation onto
-`/loans`, and FEAT-23 checkout consolidation onto book details are
-complete. Remaining tickets begin with `FEAT-24` and continue through
-`FEAT-27` under `docs/tickets/`. When no current ticket is supplied, do
-not guess which remaining ticket to implement; ask for the next ticket.
-The supplied ticket's acceptance criteria are authoritative unless they
-contradict the backend contract or established architecture.
+`/loans`, FEAT-23 checkout consolidation onto book details, and FEAT-24
+hardware ISBN scan on Dashboard / Books / Loans are complete. Remaining
+tickets begin with `FEAT-25` and continue through `FEAT-27` under
+`docs/tickets/`. When no current ticket is supplied, do not guess which
+remaining ticket to implement; ask for the next ticket. The supplied
+ticket's acceptance criteria are authoritative unless they contradict the
+backend contract or established architecture.
 
 ------------------------------------------------------------------------
 
@@ -1223,9 +1260,9 @@ repo before editing.
   routes        (scanning is a feature module, not a top-level route)
 
   Books UI      `src/features/books/routes/{BooksPage,BookDetailsPage,NewBookPage,EditBookPage,bookEditModel,DeleteBookPage,DeletedBooksPage,BackupLibraryPage,MarkReadPage,markReadModel,ReadingEditPage,readingEditModel}.{tsx,ts}`,
-                `src/features/books/components/{BookForm,bookFormDefaults,bookFormModel,BooksListControls}.{tsx,ts}`, `src/features/books/booksListModel.ts` (sort: `author` \| `title` \| `creationDate` \| `shelf`; URL-backed category / author / title filters),
+                `src/features/books/components/{BookForm,bookFormDefaults,bookFormModel,BooksListControls}.{tsx,ts}`, `src/features/books/booksListModel.ts` (sort: `author` \| `title` \| `creationDate` \| `shelf`; URL-backed category / author / title / ISBN filters),
                 `src/features/books/utils/isbn.ts` (`compactIsbnForListFilter` for
-                `GET /books?isbn=` list filters; not used by checkout)
+                `GET /books?isbn=` list filters and collection jump; not used by checkout)
 
   Shelves UI    `src/features/shelves/routes/ShelvesPage.tsx`, `shelfDisplay.ts`, `shelfFormModel.ts` (catalog CRUD complete)
 
@@ -1236,7 +1273,7 @@ repo before editing.
   Collection    `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage` hub)
 
   Dashboard UI  `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`; summary, breakdowns,
-                incomplete-metadata healing complete)
+                incomplete-metadata healing, collection ISBN jump)
 
   Loans UI      `src/features/loans/components/CheckoutDialog.tsx`,
                 `checkoutModel.ts`, `checkoutEligibility.ts` (checkout on
@@ -1244,12 +1281,12 @@ repo before editing.
                 display-only refetch/messaging without alternate copies);
                 `src/features/loans/components/CheckinForm.tsx`, `checkinModel.ts`,
                 `checkinEligibility.ts`, `LoansPage.tsx`, `loanTemporal.ts`,
-                `loansListModel.ts` (check-in on `/loans`; infinite scroll complete);
-                `src/routes/LegacyCheckoutRedirect.tsx` (`/checkout` → `/books` or
-                `/books/{id}?checkout=1`); `src/routes/LegacyCheckinRedirect.tsx`
-                (`/checkin` → `/loans`)
+                `loansListModel.ts` (check-in on `/loans`; infinite scroll +
+                collection ISBN jump); `src/routes/LegacyCheckoutRedirect.tsx`
+                (`/checkout` → `/books` or `/books/{id}?checkout=1`);
+                `src/routes/LegacyCheckinRedirect.tsx` (`/checkin` → `/loans`)
 
-  Scanning      `src/features/scanning/{IsbnCameraScanner,isbnCameraCapture,isbnScannerParser,useHardwareIsbnScanner}.{tsx,ts}` (lazy camera from `NewBookPage` only)
+  Scanning      `src/features/scanning/{IsbnCameraScanner,isbnCameraCapture,isbnScannerParser,useHardwareIsbnScanner,useCollectionIsbnJump}.{tsx,ts}` (lazy camera from `NewBookPage`; collection jump on Dashboard / Books / Loans)
 
   Shared UI     `src/components/*` (import via `index.ts`; includes `QueryErrorState`)
 
@@ -1260,7 +1297,7 @@ repo before editing.
   Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (includes diagnostic reporter and dashboard
                 report route mocks)
 
-  Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,library.lifecycle}.spec.ts`, `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in `make check`)
+  Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,isbn-collection-jump,library.lifecycle}.spec.ts`, `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in `make check`)
 
   Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`,
                 `.github/workflows/check.yml`, `scripts/checkBundleSize.mjs`, `scripts/packRelease.ts`,
@@ -1272,41 +1309,43 @@ repo before editing.
 
 Feature route ownership (all complete unless noted): books list/detail;
 infinite scroll on `/books` and `/loans`; new book create/lookup; ISBN
-scanner capture on `/books/new`; checkout on book details via
-`CheckoutDialog` (display-only **412** without alternate copies;
-`/checkout` is `LegacyCheckoutRedirect`); check-in/loans;
+scanner capture on `/books/new`; hardware collection ISBN jump on
+`/dashboard`, `/books`, and `/loans` (`useCollectionIsbnJump`); checkout
+on book details via `CheckoutDialog` (display-only **412** without
+alternate copies; `/checkout` is `LegacyCheckoutRedirect`); check-in/loans;
 reading tracking (`MarkReadPage` / `markReadModel` /
 `ReadingEditPage` / `readingEditModel`); edit/delete/restore/backup
 (`EditBookPage` / `bookEditModel` / `DeleteBookPage` /
 `DeletedBooksPage` / `BackupLibraryPage`); API contract sync (list
-filters, shelf sort, checkout `412` without alternate copies); About `/` (`AboutPage` +
-`CatalogGuide`); dashboard `/dashboard` (`DashboardPage` with summary,
-breakdown, and incomplete-metadata reports); operational/browser hardening
-(runtime diagnostics, cross-route accessibility/responsive hardening,
-browser-support documentation, performance/contract re-check, and
-production-host security ownership notes); shelves catalog (`ShelvesPage` /
-`shelfDisplay` / `shelfFormModel`); wishlists (`WishlistsPage` /
-`AddWishlistBookControl` / `wishlistFormModel` / `wishlistDisplay` /
-`wishlistsApi` / `wishlistsQueries`); FEAT-13 workflow/accessibility
-quality-gate coverage (Vitest coverage thresholds, Playwright journeys,
-axe checks, and `make check` integration); FEAT-14 CI packaging
-(`.github/workflows/check.yml` and `scripts/checkBundleSize.mjs`); FEAT-15
-Podman deployed-development image (`ci/Containerfile`, Make `container-*`
-targets); FEAT-16 versioned release tarball (`scripts/packRelease.ts`, Make
-`pack`); FEAT-17 About homepage (`AboutPage` at `/`, dashboard at
-`/dashboard`, drawer primary nav via `DrawerNavMenu`); FEAT-18 collection
-filters (`BooksPage` / `BooksListControls` / `booksListModel` URL-backed
-category / author / title plus sort); FEAT-19 wishlists (`WishlistsPage` at
-`/wishlists`, Collection-drawer link, unshelved `POST /books` then add);
-FEAT-20 dashboard reports (breakdowns and incomplete-metadata healing on
-`/dashboard`); FEAT-21 display-only checkout alternate-copy UX (later
-retired with FEAT-23; **412** messaging remains on `CheckoutDialog`);
-FEAT-22 check-in on `/loans` (`CheckinForm`; `/checkin` is
-`LegacyCheckinRedirect`); FEAT-23 checkout on book details
-(`CheckoutDialog`; `/checkout` is `LegacyCheckoutRedirect`; Circulation
-is Loans only). Primary navigation redesign (`ManageCollectionPage` at
+filters including ISBN, shelf sort, checkout `412` without alternate
+copies); About `/` (`AboutPage` + `CatalogGuide`); dashboard `/dashboard`
+(`DashboardPage` with summary, breakdown, and incomplete-metadata reports);
+operational/browser hardening (runtime diagnostics, cross-route
+accessibility/responsive hardening, browser-support documentation,
+performance/contract re-check, and production-host security ownership
+notes); shelves catalog (`ShelvesPage` / `shelfDisplay` / `shelfFormModel`);
+wishlists (`WishlistsPage` / `AddWishlistBookControl` / `wishlistFormModel` /
+`wishlistDisplay` / `wishlistsApi` / `wishlistsQueries`); FEAT-13
+workflow/accessibility quality-gate coverage (Vitest coverage thresholds,
+Playwright journeys, axe checks, and `make check` integration); FEAT-14 CI
+packaging (`.github/workflows/check.yml` and `scripts/checkBundleSize.mjs`);
+FEAT-15 Podman deployed-development image (`ci/Containerfile`, Make
+`container-*` targets); FEAT-16 versioned release tarball
+(`scripts/packRelease.ts`, Make `pack`); FEAT-17 About homepage (`AboutPage`
+at `/`, dashboard at `/dashboard`, drawer primary nav via `DrawerNavMenu`);
+FEAT-18 collection filters (`BooksPage` / `BooksListControls` /
+`booksListModel` URL-backed category / author / title plus sort); FEAT-19
+wishlists (`WishlistsPage` at `/wishlists`, Collection-drawer link,
+unshelved `POST /books` then add); FEAT-20 dashboard reports (breakdowns and
+incomplete-metadata healing on `/dashboard`); FEAT-21 display-only checkout
+alternate-copy UX (later retired with FEAT-23; **412** messaging remains on
+`CheckoutDialog`); FEAT-22 check-in on `/loans` (`CheckinForm`; `/checkin` is
+`LegacyCheckinRedirect`); FEAT-23 checkout on book details (`CheckoutDialog`;
+`/checkout` is `LegacyCheckoutRedirect`; Circulation is Loans only); FEAT-24
+hardware ISBN scan on Dashboard / Books / Loans (`useCollectionIsbnJump`,
+URL `?isbn=`). Primary navigation redesign (`ManageCollectionPage` at
 `/collection/manage`) shipped without a standalone ticket. Remaining tickets:
-FEAT-24 hardware ISBN scan on more pages, FEAT-25 remove browser backup page,
+FEAT-25 remove browser backup page (backend fetch-backup gate satisfied),
 FEAT-26 wishlist move-to-shelf, FEAT-27 curated Collections.
 
 ------------------------------------------------------------------------
@@ -1367,8 +1406,8 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining current tickets under
-                                  `docs/tickets/`: `FEAT-24_...` through
-                                  `FEAT-27_...`; FEAT-13 through FEAT-23
+                                  `docs/tickets/`: `FEAT-25_...` through
+                                  `FEAT-27_...`; FEAT-13 through FEAT-24
                                   are complete (those ticket files are
                                   removed)
 
@@ -1392,8 +1431,7 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
-baseline. Do not load `docs/AGENTS.md` or any other project agents or
-context file for more of the same.
+baseline.
 
 ------------------------------------------------------------------------
 
