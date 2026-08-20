@@ -15,18 +15,19 @@ Wishlists. Reuse the wishlists page patterns where they fit, but follow the Coll
 
 - FEAT-19 wishlists are complete (`WishlistsPage`, `wishlistsApi` / `wishlistsQueries`, membership join via
   `GET /books/{id}`). Use that feature as a structural reference, not a copy-paste source.
+- FEAT-26 wishlist move-to-shelf is complete (ticket file removed): membership `DELETE` then `PATCH { shelf_name }` via
+  `MoveWishlistBookToShelfControl` / `useMoveWishlistBookToShelf`. That two-step lifecycle **does not apply** to
+  Collections. Collection memberships are orthogonal to shelf and wishlist placement; do not port
+  `MoveWishlistBookToShelfControl` or shelf pickers onto collection rows.
 - Checked-in `docs/technical-reference/openapi.json` and `docs/technical-reference/API-for-FE.md` document Collections
-  routes and behavior, including soft-delete exclusion (**412** on add; memberships removed on book delete). Regenerate
-  `src/api/generated/openapi.ts` with `yarn api:generate` before implementing transport helpers (`yarn api:check` must
-  pass).
+  routes and behavior, including soft-delete exclusion (**412** on add; memberships removed on book delete). Generated
+  types in `src/api/generated/openapi.ts` already include Collections paths/schemas; `scripts/contractSmoke.test.ts`
+  already lists the `/collections` paths. Re-run `yarn api:generate` / `yarn api:check` only if OpenAPI drift is
+  suspected.
 - Book detail, collection browse (`/books`), shelves, and ISBN utilities are complete for add-book search/join flows.
 
 **Explicit non-dependencies:**
 
-- **FEAT-26** (`docs/tickets/FEAT-26_add-from-wishlist.md`) adds wishlist membership remove plus move-to-shelf
-  (`DELETE` wishlist membership, then `PATCH { shelf_name }`). That two-step lifecycle **does not apply** to
-  Collections. Collection memberships are orthogonal to shelf and wishlist placement; do not port
-  `MoveWishlistBookToShelfControl` or shelf pickers onto collection rows.
 - Do not pull FEAT-20 dashboard reports, FEAT-21 display-only checkout, FEAT-22 / FEAT-23 circulation consolidation,
   FEAT-24 scanner expansion, or FEAT-25 backup removal into this ticket.
 
@@ -101,16 +102,16 @@ These decisions close open UX questions for this ticket:
 
 ## How Collections differ from Wishlists
 
-| Area | Wishlists (FEAT-19) | Collections (this ticket) |
-| ---- | ------------------- | ------------------------- |
+| Area | Wishlists (FEAT-19 / FEAT-26) | Collections (this ticket) |
+| ---- | ---------------------------- | ------------------------- |
 | Purpose | Books to acquire (often unshelved) | Curated groups of catalog books (shelved and/or wishlisted) |
 | Add flow | Unshelved `POST /books` (omit `shelf_name`), then membership `POST` | Shelved-only `GET /books` search, then membership `POST` with `book_id` |
 | Shelved books | **412** if the book has shelf membership | Allowed via add search |
 | Wishlisted books | Primary surface on `/wishlists` | May appear in membership lists; add search does not find unshelved rows; list shows **Wishlist** location (or equivalent label) |
 | Library delete | Catalog row remains; wishlist memberships removed | Catalog row remains; collection memberships removed server-side; frontend invalidates collection queries on book delete |
 | Soft-deleted add | **412** `"Soft-deleted books cannot be added to a wishlist"` | **412** `"Soft-deleted books cannot be added to a collection"` |
-| Membership order | Priority (display only; no reorder API in FEAT-19) | Explicit `order_num`; reorder `PATCH` and renumber on remove |
-| Membership remove | FEAT-26 only (wishlist-specific move-to-shelf exit) | `DELETE` membership (no shelf patch) |
+| Membership order | Priority (display only; no reorder API) | Explicit `order_num`; reorder `PATCH` and renumber on remove |
+| Membership remove | `DELETE` membership (FEAT-26 move-to-shelf exit also removes then shelves) | `DELETE` membership (no shelf patch) |
 | Membership fields | `status`, `priority`, `notes`, `url` | `order_num`, `notes`; enriched `shelf_name`, `on_wishlist` |
 | Duplicate add | Permitted | **409** `"Book is already in this collection"` |
 | Move to shelf | FEAT-26 (`DELETE` membership → `PATCH shelf_name`) | **Out of scope** -- not applicable |
@@ -123,13 +124,14 @@ Already in place and should be reused (not rebuilt):
   `/collection/manage`, Wishlists → `/wishlists`). The drawer label "Collection" refers to the physical library; the
   new API feature uses the plural product name **Collections** on `/collections` to avoid conflating the two concepts.
 - Wishlists product UI under `src/features/wishlists/` (page layout, create form, nested memberships, add control,
-  styles in `components.css`).
+  move-to-shelf control, styles in `components.css`).
 - Typed client stack: `createApi`, `queryKeys`, React Query hooks, `requestFields` pickers, `formatApiQueryError`,
   shared UI primitives.
-- `docs/technical-reference/openapi.json` includes Collections paths/schemas, but `src/api/generated/openapi.ts` may
-  still be stale (regenerate first). No `collectionsApi`, `collectionsQueries`, route, or nav link exists yet.
-- `scripts/contractSmoke.test.ts` `expectedPaths` does not yet list `/collections` paths.
+- Checked-in OpenAPI and generated types already include Collections paths/schemas; contract smoke lists the four
+  `/collections` paths. No `collectionsApi`, `collectionsQueries`, `apiTypes` Collection aliases, `requestFields`
+  Collection pickers, route, or nav link exists yet.
 - Vite dev proxy forwards `/wishlists` but not `/collections` (`vite.config.ts`).
+- `docs/ToDo.md` already lists this ticket; do not add a duplicate checklist line.
 
 ## Product intent
 
@@ -179,12 +181,10 @@ curated groups of catalog books; acquisition planning stays on `/wishlists`.
 
 ## Remaining scope (file-level plan)
 
-### 1. OpenAPI sync and API transport
+### 1. API transport and React Query
 
 | File | Change |
 | ---- | ------ |
-| `docs/technical-reference/openapi.json` | Already updated; verify against running backend when available. |
-| `src/api/generated/openapi.ts` | Regenerate via `yarn api:generate` / `yarn api:check`. |
 | `src/api/apiTypes.ts` | Export aliases: `CollectionCreate`, `CollectionUpdate`, `CollectionRead`, `CollectionList`, `CollectionBookCreate`, `CollectionBookRead`, `CollectionBookList`, `CollectionBookReorder`. |
 | `src/api/requestFields.ts` | Add `COLLECTION_CREATE_FIELDS`, `COLLECTION_UPDATE_FIELDS`, `COLLECTION_BOOK_CREATE_FIELDS`, `COLLECTION_BOOK_REORDER_FIELDS` and `pickCollectionCreate`, `pickCollectionUpdate`, `pickCollectionBookCreate`, `pickCollectionBookReorder`. Colocated tests in `requestFields.test.ts`. |
 | `src/api/collectionsApi.ts` (new) | `createCollectionsApi(client)` with `list`, `create` (**201**), `update`, `remove` (**204**), `listBooks`, `addBook` (**201**), `reorderBook` (**200**), `removeBook` (**204**). Mirror `wishlistsApi` pagination/signal helpers; encode path segments; serialize documented fields only. |
@@ -195,7 +195,10 @@ curated groups of catalog books; acquisition planning stays on `/wishlists`.
 | `src/api/collectionsQueries.test.tsx` (new) | Hook fetch/invalidation, disabled empty-id books query, reorder/remove invalidation, `useDeleteBook` invalidates collections keys. |
 | `src/api/api.ts` | Register `collections: createCollectionsApi(client)` on `createApi`. |
 | `src/api/api.test.ts` | Assert `createApi` exposes `collections`. |
-| `scripts/contractSmoke.test.ts` | Extend `expectedPaths` with `/collections`, `/collections/{collection_id}`, `/collections/{collection_id}/books`, `/collections/{collection_id}/books/{collection_book_id}`; assert generated types contain `CollectionRead` / `CollectionBookRead` operation ids. |
+| `scripts/contractSmoke.test.ts` | Optionally assert generated types contain `CollectionRead` / `CollectionBookRead` (paths already listed in `expectedPaths`). |
+
+OpenAPI JSON, generated `openapi.ts`, and contract-smoke path coverage are already current; re-run
+`yarn api:generate` / `yarn api:check` only on drift.
 
 ### 2. Form and display helpers
 
@@ -245,7 +248,7 @@ Do not rename the existing Collection drawer or `/collection/manage` hub; `/coll
 | `e2e/support/mockApi.ts` | Stateful fixtures for collections list/create/delete, membership add/reorder/remove, enriched `shelf_name` / `on_wishlist`, **409** duplicate and **412** soft-deleted add handling, and server-side removal of collection memberships when a book is soft-deleted (with per-collection renumbering). Keeps Playwright mocks aligned with OpenAPI and Product clarifications. |
 | `e2e/accessibility.spec.ts` | Optional: add `/collections` axe scan once the route ships (follow FEAT-13 pattern). |
 | `docs/AGENTS.md` | After completion: inventory collections feature files/hooks/routes; nav drawer includes Collections; update "Next" / completed lists; note Collections differ from wishlists (shelved-only add search, **Wishlist** location labels, reorder/remove, library delete drops memberships server-side, **412** for soft-deleted add only, no shelf/wishlist overlap **412**, no FEAT-26 shelf move). |
-| `docs/ToDo.md` | Add checklist line for FEAT-27. |
+| `docs/ToDo.md` | Mark this ticket done (or remove the line) when the ticket file is deleted on completion. |
 
 ## Acceptance criteria
 
