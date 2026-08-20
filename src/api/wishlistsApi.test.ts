@@ -228,6 +228,50 @@ describe('createWishlistsApi', () => {
         )
     })
 
+    it('propagates a 400 error when removing a malformed membership', async () => {
+        const client = createMockClient()
+
+        const error = new ApiError({
+            kind: 'http',
+            status: 400,
+            message: 'Bad request.',
+        })
+
+        vi.mocked(client.request)
+            .mockRejectedValue(error)
+
+        const api = createWishlistsApi(client)
+
+        await expect(
+            api.removeBook(
+                'wishlist-1',
+                'membership-1',
+            ),
+        ).rejects.toBe(error)
+    })
+
+    it('propagates a 404 error when removing an unknown membership', async () => {
+        const client = createMockClient()
+
+        const error = new ApiError({
+            kind: 'http',
+            status: 404,
+            message: 'Membership not found.',
+        })
+
+        vi.mocked(client.request)
+            .mockRejectedValue(error)
+
+        const api = createWishlistsApi(client)
+
+        await expect(
+            api.removeBook(
+                'wishlist-1',
+                'missing-membership',
+            ),
+        ).rejects.toBe(error)
+    })
+
     it('lists wishlist books with the membership path and pagination', async () => {
         const list: WishlistBookList = {
             items: [sampleMembership],
@@ -347,6 +391,86 @@ describe('createWishlistsApi', () => {
         ).rejects.toMatchObject({
             status: 404,
         })
+    })
+
+    it('removes a wishlist book membership via DELETE', async () => {
+        const client = createMockClient()
+
+        vi.mocked(client.request)
+            .mockResolvedValue(
+                new Response(null, {
+                    status: 204,
+                }),
+            )
+
+        const api = createWishlistsApi(client)
+
+        await api.removeBook(
+            'wishlist-1',
+            'membership-1',
+        )
+
+        expect(client.request).toHaveBeenCalledWith(
+            '/wishlists/wishlist-1/books/membership-1',
+            {
+                method: 'DELETE',
+            },
+        )
+    })
+
+    it('encodes wishlist and membership ids when removing a membership', async () => {
+        const client = createMockClient()
+
+        vi.mocked(client.request)
+            .mockResolvedValue(
+                new Response(null, {
+                    status: 204,
+                }),
+            )
+
+        const api = createWishlistsApi(client)
+
+        await api.removeBook(
+            'wishlist/one',
+            'membership/two',
+        )
+
+        expect(client.request).toHaveBeenCalledWith(
+            '/wishlists/wishlist%2Fone/books/membership%2Ftwo',
+            {
+                method: 'DELETE',
+            },
+        )
+    })
+
+    it('forwards AbortSignal when removing a wishlist membership', async () => {
+        const client = createMockClient()
+        const signal = new AbortController().signal
+
+        vi.mocked(client.request)
+            .mockResolvedValue(
+                new Response(null, {
+                    status: 204,
+                }),
+            )
+
+        const api = createWishlistsApi(client)
+
+        await api.removeBook(
+            'wishlist-1',
+            'membership-1',
+            {
+                signal,
+            },
+        )
+
+        expect(client.request).toHaveBeenCalledWith(
+            '/wishlists/wishlist-1/books/membership-1',
+            {
+                method: 'DELETE',
+                signal,
+            },
+        )
     })
 
     it('surfaces shelved-book add failures as 412 with detail', async () => {

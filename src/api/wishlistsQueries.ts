@@ -5,10 +5,14 @@ import {
 } from '@tanstack/react-query'
 
 import type {
+    BookRead,
     WishlistBookCreate,
     WishlistCreate,
     WishlistUpdate,
 } from './apiTypes'
+import {
+    createBooksApi,
+} from './booksApi'
 import {
     createWishlistsApi,
 } from './wishlistsApi'
@@ -18,6 +22,29 @@ import {
 import {
     useConnection,
 } from '../features/connection/useConnection'
+
+export class MoveWishlistBookToShelfError extends Error {
+    readonly cause: unknown
+    readonly membershipRemoved: boolean
+
+    constructor({
+                    cause,
+                    membershipRemoved,
+                }: {
+        cause: unknown
+        membershipRemoved: boolean
+    }) {
+        super(
+            cause instanceof Error
+                ? cause.message
+                : 'Unable to move the book to a shelf.',
+        )
+
+        this.name = 'MoveWishlistBookToShelfError'
+        this.cause = cause
+        this.membershipRemoved = membershipRemoved
+    }
+}
 
 export function useWishlists(
     options: {
@@ -75,6 +102,101 @@ export function useWishlistBooks(
                 },
             ),
         enabled,
+    })
+}
+
+export function useMoveWishlistBookToShelf() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const wishlistsApi =
+        createWishlistsApi(apiClient)
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: async ({
+                               wishlistId,
+                               wishlistBookId,
+                               bookId,
+                               shelfName,
+                               membershipRemoved = false,
+                           }: {
+            wishlistId: string
+            wishlistBookId: string
+            bookId: string
+            shelfName: string
+            membershipRemoved?: boolean
+        }): Promise<BookRead> => {
+            let removed = membershipRemoved
+
+            if (!removed) {
+                try {
+                    await wishlistsApi.removeBook(
+                        wishlistId,
+                        wishlistBookId,
+                    )
+
+                    removed = true
+                } catch (error) {
+                    throw new MoveWishlistBookToShelfError({
+                        cause: error,
+                        membershipRemoved: false,
+                    })
+                }
+            }
+
+            try {
+                return await booksApi.update(
+                    bookId,
+                    {
+                        shelf_name: shelfName,
+                    },
+                )
+            } catch (error) {
+                throw new MoveWishlistBookToShelfError({
+                    cause: error,
+                    membershipRemoved: removed,
+                })
+            }
+        },
+
+        onSuccess: async (
+            book,
+            variables,
+        ) => {
+            queryClient.setQueryData(
+                queryKeys.books.detail(book.id),
+                book,
+            )
+
+            await queryClient.invalidateQueries({
+                queryKey:
+                    queryKeys.wishlists.books(
+                        variables.wishlistId,
+                    ),
+            })
+
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.books.all,
+            })
+
+            await queryClient.invalidateQueries({
+                queryKey:
+                    queryKeys.books.detail(
+                        variables.bookId,
+                    ),
+            })
+
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.dashboard.all,
+            })
+        },
     })
 }
 
@@ -197,3 +319,42 @@ export function useAddWishlistBook() {
         },
     })
 }
+
+export function useRemoveWishlistBook() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const wishlistsApi =
+        createWishlistsApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({
+                         wishlistId,
+                         wishlistBookId,
+                     }: {
+            wishlistId: string
+            wishlistBookId: string
+        }) =>
+            wishlistsApi.removeBook(
+                wishlistId,
+                wishlistBookId,
+            ),
+
+        onSuccess: async (
+            _result,
+            variables,
+        ) => {
+            await queryClient.invalidateQueries({
+                queryKey:
+                    queryKeys.wishlists.books(
+                        variables.wishlistId,
+                    ),
+            })
+        },
+    })
+}
+
