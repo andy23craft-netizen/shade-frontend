@@ -90,9 +90,10 @@ changing its FEAT-11 behavior or `GET /dashboard` API contract. Brand/home recov
 About; Dashboard is a direct primary-nav link. About is reachable via the brand link, not a separate nav item.
 
 Primary navigation redesign (merged without a standalone ticket). Shipped `DrawerNavMenu` drawer menus for Collection
-(Browse → `/books`, Manage → `/collection/manage`) and Circulation (Check Out, Loans), plus a direct Dashboard
-link. Removed the flat About link, Shelves link, and admin/settings group from the header. Collection maintenance
-actions (Add Book, Shelves, Deleted Books) live on `/collection/manage` (`ManageCollectionPage`).
+(Browse → `/books`, Manage → `/collection/manage`) and Circulation (originally Check Out and Loans; FEAT-23 later left
+Loans only), plus a direct Dashboard link. Removed the flat About link, Shelves link, and admin/settings group from
+the header. Collection maintenance actions (Add Book, Shelves, Deleted Books) live on `/collection/manage`
+(`ManageCollectionPage`).
 
 FEAT-18 collection sorting and filtering (ticket file removed after completion). Shipped URL-backed category /
 author / title filters and shelf sort on `/books` via `BooksPage`, `BooksListControls`, and `booksListModel`;
@@ -455,7 +456,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, `WishlistCreate` / `WishlistUpdate` / `WishlistRead` /
   `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`,
   validation/error schemas, enums). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
-  Generated OpenAPI also includes Collections schemas; product helpers wait for FEAT-27.
+  Generated `openapi.ts` also includes Collections schemas; do not add `apiTypes` aliases or product helpers until
+  FEAT-27.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection on authenticated
@@ -522,7 +524,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useAddWishlistBook`. Create/update/delete invalidate `queryKeys.wishlists.all`; add invalidates that wishlist's
   books key. Add-to-wishlist creates an unshelved catalog row (`useCreateBook`, omit `shelf_name`) then
   `useAddWishlistBook`. **412** `"Existing books cannot be added to a wishlist"` and edit **412**
-  `"The book must be removed from the wishlist before it can be placed on a shelf"` are surfaced honestly.
+  `"The book must be removed from the wishlist before it can be placed on a shelf"` are surfaced honestly. OpenAPI
+  already documents membership `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}`; no `removeBook` helper
+  until FEAT-26.
 
 ### Routing and Layout
 
@@ -594,7 +598,8 @@ Implemented (do not revert to placeholders):
   with library background, dedication, lending policy, and accessible card-catalog-style How to Use dialog with
   in-app workflow links (Administration links restore deleted books only; no `/admin/backup`).
 - `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage`): collection maintenance hub with
-  links to Add Book, Shelves, and Deleted Books only.
+  links to Add Book, Shelves, and Deleted Books only. Colocated `ManageCollectionPage.test.tsx` asserts those links
+  and the absence of any Backup Library affordance.
 - `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`): `useDashboard` summary drawers (Collection,
   Circulation, Reading Record with read/unread pie chart); `useDashboardBreakdowns` Basic Stats drawer (totals plus
   category and creation-year buckets; API `by_shelf` is not rendered); `useDashboardIncompleteMetadata` and
@@ -861,8 +866,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   helpers including **400** / **404** / **412** / **422**, plus hook keys, disabled empty-id books query, and
   create/add invalidation.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
-  (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, wishlist and dashboard-report paths plus existing lifecycle
-  routes).
+  (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, `/backup`, wishlist paths including membership DELETE,
+  Collections paths, dashboard-report paths, and existing lifecycle routes).
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
   unauthorized handling without cache clear, and build-time token wiring.
 - `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection
@@ -886,6 +891,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   focus management, in-app workflow links (no Backup Library / `/admin/backup`), and document title / heading focus
 - `src/features/about/components/CatalogGuide.test.tsx`: Catalog guide dialog open/close, labelled description,
   keyboard focus trap and restoration, and in-app workflow links
+- `src/features/collection/routes/ManageCollectionPage.test.tsx`: Manage Collection hub links (Add Book, Shelves,
+  Deleted Books) and no Backup Library / backup affordance
 - `src/features/dashboard/routes/DashboardPage.test.tsx`: Summary metric rendering, breakdown buckets, incomplete
   metadata counts (without summing field totals into `total_incomplete`), field filter and book links, healing empty
   state, drawer-level error recovery, unified Refresh, null-average "Not enough data", inconsistency warning without
@@ -940,12 +947,13 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   loans. Automated axe supplements keyboard, responsive-layout, and assistive-technology review; it does not replace
   them.
 - `e2e/support/mockApi.ts`: Stateful Playwright route mock for `http://127.0.0.1:8000/**` (health, version, shelves,
-  books, loans, dashboard, lookup, lifecycle mutations, and backup fixtures)
+  books, loans, dashboard summary, lookup, and lifecycle mutations). No wishlist, Collections, dashboard-report, or
+  `/backup` fixtures yet (extend when a ticket needs them; SQL backup remains API-host-only).
 - `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
-  `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API (including dashboard report routes)
-  and a diagnostic reporter.
+  `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API (including dashboard report routes
+  and empty wishlists) and a diagnostic reporter.
 - `scripts/productionBuildTokenInspection.test.ts`: Production build env inspection; asserts `.env` is not copied into
   `dist/` or the release tarball and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles (accepted risk).
 - `scripts/packRelease.ts` / `packRelease.test.ts`: Deterministic `dist/` tarball, SHA-256 sidecar, and release
@@ -1021,8 +1029,8 @@ make check / yarn check
 - `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests (`src/**` and `scripts/**` test
   files), global test setup, V8 coverage thresholds, `__APP_VERSION__` from `package.json`, and an optional
   same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
-  `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, and `/wishlists` (not `/shelves` or
-  `/version`).
+  `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, and `/wishlists` (not `/shelves`,
+  `/version`, or `/collections`).
 - `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`,
   `node_modules/`, and `ci/artifacts/` and treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.

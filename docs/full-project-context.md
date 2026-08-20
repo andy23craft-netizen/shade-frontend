@@ -5,10 +5,12 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline. Start from this file alone. Attach the
-on-demand docs listed in section 8 only when the current ticket needs
-them; do not re-synthesize those sources here. A user's explicit
-request takes precedence over general guidance here.
+the dated codebase baseline. Start from this file alone. Do not treat
+`docs/AGENTS.md` (or any other agents guide) as required reading -- this
+pack does not depend on it. Attach the on-demand docs listed in section 8
+only when the current ticket needs them; do not re-synthesize those
+sources here. A user's explicit request takes precedence over general
+guidance here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
@@ -356,12 +358,14 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     reachable via the brand link only. Primary navigation redesign
     (merged without a standalone ticket): `DrawerNavMenu` drawers for
     Collection (Browse → `/books`, Manage → `/collection/manage`,
-    Wishlists → `/wishlists`) and Circulation (Check Out, Loans);
-    flat About, Shelves, and admin/settings header links
-    removed. Collection maintenance (Add Book, Shelves, Deleted Books)
-    lives on `/collection/manage` (`ManageCollectionPage`). FEAT-18
-    collection filters and FEAT-19 wishlists are complete (ticket files
-    removed). FEAT-20 dashboard breakdowns and incomplete-metadata healing are complete (ticket file removed).
+    Wishlists → `/wishlists`) and Circulation (originally Check Out and
+    Loans; FEAT-23 later left Loans only); flat About, Shelves, and
+    admin/settings header links removed. Collection maintenance (Add
+    Book, Shelves, Deleted Books) lives on `/collection/manage`
+    (`ManageCollectionPage`). FEAT-18 collection filters and FEAT-19
+    wishlists are complete (ticket files removed). FEAT-20 dashboard
+    breakdowns and incomplete-metadata healing are complete (ticket file
+    removed).
     FEAT-21 display-only checkout alternate-copy UX is complete (ticket file removed): it shipped
     substitutes via `isbn` and `author`+`title` list filters (`displayOnlyAlternatives` /
     `checkoutEligibility`) after a **412** or selected/deep-linked `display_only` book. FEAT-23 later
@@ -483,8 +487,9 @@ index.html
         `WishlistRead` / `WishlistList`, `WishlistBookCreate` /
         `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`,
         validation/error schemas, enums). Book payloads use `shelf_name`
-        (string); there is no hard-coded `Shelf` enum. Generated OpenAPI
-        also includes Collections schemas; product helpers wait for FEAT-27.
+        (string); there is no hard-coded `Shelf` enum. Generated
+        `openapi.ts` also includes Collections schemas; do not add
+        `apiTypes` aliases or product helpers until FEAT-27.
         `src/api/enumDisplay.ts` (`enumDisplayValue`)
     -   `src/api/apiCallOptions.ts` shared optional `AbortSignal`
         options for typed helpers
@@ -555,8 +560,9 @@ index.html
         invalid JSON / binary backup / `204`
     -   `scripts/contractSmoke.test.ts` OpenAPI path/type smoke
         (includes `/shelves`, `/shelves/{shelf_id}`, `/version`,
-        wishlist and dashboard-report paths plus existing lifecycle
-        routes)
+        `/backup`, wishlist paths including membership DELETE,
+        Collections paths, dashboard-report paths, and existing
+        lifecycle routes)
 -   React Query is mounted and complete for server state:
     -   `createQueryClient()` sets `staleTime` 30s,
         `refetchOnWindowFocus`, `refetchOnReconnect`, query retry that
@@ -594,7 +600,10 @@ index.html
         invalidate `queryKeys.wishlists.all`; add invalidates that
         wishlist's books key. Add-to-wishlist creates an unshelved catalog
         row (`useCreateBook`, omit `shelf_name`) then `useAddWishlistBook`.
-        **412** shelf/wishlist exclusivity is surfaced honestly.
+        **412** shelf/wishlist exclusivity is surfaced honestly. OpenAPI
+        already documents membership
+        `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}`; no
+        `removeBook` helper until FEAT-26.
     -   Abort/stale overwrite guards are covered by colocated tests
 -   Infinite scroll (complete on `/books` and `/loans` -- extend, do not
     replace):
@@ -634,6 +643,8 @@ index.html
     -   `/collection/manage` -- `ManageCollectionPage`: collection
         maintenance hub with links to Add Book (`/books/new`), Shelves
         (`/shelves`), and Deleted Books (`/admin/deleted`) only.
+        Colocated `ManageCollectionPage.test.tsx` asserts those links
+        and the absence of any Backup Library affordance.
     -   `/books` -- `BooksPage` via
         `useInfiniteBooks({ category, author, title, isbn, sortBy, sortOrder })`
         with URL-backed category / author / title / ISBN filters and sort
@@ -895,9 +906,10 @@ index.html
     `SHADE_API_PROXY=1 make run` (optional `SHADE_API_PROXY_TARGET`).
     The proxy forwards `/health`, `/books`, `/loans`, `/dashboard`,
     `/backup`, `/docs`, `/redoc`, `/openapi.json`, and `/wishlists` (not
-    `/shelves` or `/version`). Playwright Chromium must be installed
-    once per machine (`yarn playwright install --with-deps chromium`)
-    before `yarn test:e2e` / `make check`. Production build inspection:
+    `/shelves`, `/version`, or `/collections`). Playwright Chromium must
+    be installed once per machine
+    (`yarn playwright install --with-deps chromium`) before
+    `yarn test:e2e` / `make check`. Production build inspection:
     `scripts/productionBuildTokenInspection.test.ts` asserts `.env` is
     not copied into `dist/` or the release tarball and that
     `VITE_API_SECRET_KEY` is embedded in generated JS bundles.
@@ -1255,11 +1267,15 @@ repo before editing.
 
   Shelves UI    `src/features/shelves/routes/ShelvesPage.tsx`, `shelfDisplay.ts`, `shelfFormModel.ts` (catalog CRUD complete)
 
-  Wishlists UI  `src/features/wishlists/routes/WishlistsPage.tsx`, `src/features/wishlists/components/AddWishlistBookControl.tsx`, `wishlistFormModel.ts`, `wishlistDisplay.ts` (`/wishlists` complete)
+  Wishlists UI  `src/features/wishlists/routes/WishlistsPage.tsx`, `src/features/wishlists/components/AddWishlistBookControl.tsx`,
+                `wishlistFormModel.ts`, `wishlistDisplay.ts` (`/wishlists` complete; no membership remove/`removeBook`
+                until FEAT-26)
 
   About UI      `src/features/about/routes/AboutPage.tsx`, `src/features/about/components/CatalogGuide.tsx` (`/` homepage)
 
-  Collection    `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage` hub)
+  Collection    `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage` hub;
+                colocated `ManageCollectionPage.test.tsx` asserts Add Book / Shelves / Deleted Books
+                only -- no Backup Library)
 
   Dashboard UI  `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`; summary, breakdowns,
                 incomplete-metadata healing, collection ISBN jump)
@@ -1283,17 +1299,22 @@ repo before editing.
                 `shell.css`; `.dashboard-page`, `.dashboard-drawer-bank`, `.dashboard-drawer`, `.dashboard-metric`,
                 `.dashboard-breakdowns`, `.dashboard-healing`, and long-content wrap in `components.css`)
 
-  Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (includes diagnostic reporter and dashboard
-                report route mocks)
+  Tests helpers `src/test/setup.ts`, `src/test/renderAppTree.tsx` (diagnostic reporter; dashboard report
+                route mocks; empty wishlists)
 
-  Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,isbn-collection-jump,library.lifecycle}.spec.ts`, `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in `make check`)
+  Browser e2e   `playwright.config.ts`, `e2e/{accessibility,book.creation,dashboard.smoke,isbn-collection-jump,library.lifecycle}.spec.ts`,
+                `e2e/support/{mockApi,accessibility}.ts` (FEAT-13 complete; `yarn test:e2e`; included in
+                `make check`). `mockApi` covers health, version, shelves, books, loans, dashboard summary,
+                lookup, and lifecycle mutations; no wishlist, Collections, dashboard-report, or `/backup`
+                fixtures yet (extend when a ticket needs them; SQL backup remains API-host-only)
 
   Tooling       `package.json`, `Makefile`, `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`, `.env.example`,
                 `.github/workflows/check.yml`, `scripts/checkBundleSize.mjs`, `scripts/packRelease.ts`,
                 `ci/{Containerfile,nginx.conf,container-entrypoint.sh}`, `.containerignore`
                 (FEAT-15 image `shade-frontend`; FEAT-16 `make pack` tarball)
 
-  Contract smoke `scripts/contractSmoke.test.ts`
+  Contract smoke `scripts/contractSmoke.test.ts` (includes `/shelves`, `/version`, `/backup`, wishlist
+                membership DELETE, Collections paths, dashboard-report paths, and lifecycle routes)
   --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Feature route ownership (all complete unless noted): books list/detail;
@@ -1421,7 +1442,7 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
-baseline.
+baseline. It does not require `docs/AGENTS.md` or any other agents guide.
 
 ------------------------------------------------------------------------
 
