@@ -210,14 +210,5 @@ describe('AboutPage', () => {
             'href',
             '/admin/deleted',
         )
-
-        expect(
-            guide.getByRole('link', {
-                name: 'download a library backup',
-            }),
-        ).toHaveAttribute(
-            'href',
-            '/admin/backup',
-        )
     })
 })

@@ -255,10 +255,9 @@ Production must choose and verify one connectivity arrangement before release:
   path or trailing slash) in the backend `CORS_ORIGINS` list, or
 - Same-origin: put a deployment-managed reverse proxy in front of the API.
 
-Either choice remains a release blocker until authenticated requests, browser
-CORS preflights, and JavaScript access to the backup response
-`Content-Disposition` filename are verified. Cross-origin requests may send
-`Authorization`, `Content-Type`, and `Library-Username`. Cookies and credentialed CORS are not used.
+Either choice remains a release blocker until authenticated requests and browser
+CORS preflights are verified. Cross-origin requests may send `Authorization`,
+`Content-Type`, and `Library-Username`. Cookies and credentialed CORS are not used.
 
 ## Production host security
 
@@ -321,9 +320,9 @@ is host and config confirmation, not a second end-to-end stack.
 - [ ] Dashboard, collection list, and create (including shelf selection)
 - [ ] Shelves catalog create / edit / delete
 - [ ] Checkout, check-in from Loans, mark-read, delete, and restore
-- [ ] Authenticated backup download: non-empty SQL attachment, safe filename
-      from `Content-Disposition`, recoverable generation `500`, and no bogus
-      download or retained/inspected SQL contents after failure
+- [ ] Operational backups are configured and verified via the backend
+      `make fetch-backup` / `scripts/fetch_backup.py` workflow and scheduled
+      backup job
 
 ### CI artifacts and privacy
 

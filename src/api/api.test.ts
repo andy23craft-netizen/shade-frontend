@@ -27,7 +27,6 @@ describe('createApi', () => {
         expect(api.dashboard).toBeDefined()
         expect(api.health).toBeDefined()
         expect(api.version).toBeDefined()
-        expect(api.backup).toBeDefined()
         expect(api.wishlists).toBeDefined()
         expect(api.wishlists.list).toBeTypeOf(
             'function',
