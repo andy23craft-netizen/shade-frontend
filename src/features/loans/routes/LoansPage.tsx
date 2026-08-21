@@ -10,9 +10,6 @@ import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
 import {
-    isApiError,
-} from '../../../api/apiErrors'
-import {
     isBookIdentityError,
 } from '../../../api/bookIdentity'
 import type {

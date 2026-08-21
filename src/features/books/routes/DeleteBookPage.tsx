@@ -16,9 +16,6 @@ import {
     QueryErrorState,
 } from '../../../components'
 import {
-    isApiError,
-} from '../../../api/apiErrors'
-import {
     isBookIdentityError,
 } from '../../../api/bookIdentity'
 import {
