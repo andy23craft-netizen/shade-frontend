@@ -37,5 +37,18 @@ describe('createApi', () => {
         expect(api.wishlists.addBook).toBeTypeOf(
             'function',
         )
+        expect(api.collections).toBeDefined()
+        expect(api.collections.list).toBeTypeOf(
+            'function',
+        )
+        expect(api.collections.create).toBeTypeOf(
+            'function',
+        )
+        expect(api.collections.addBook).toBeTypeOf(
+            'function',
+        )
+        expect(api.collections.reorderBook).toBeTypeOf(
+            'function',
+        )
     })
 })

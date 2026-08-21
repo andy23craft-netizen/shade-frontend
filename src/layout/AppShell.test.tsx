@@ -112,6 +112,15 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('href', '/wishlists')
 
         expect(
+            screen.getByRole('link', {
+                name: 'Collections',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/collections',
+        )
+
+        expect(
             within(
                 screen.getByRole('navigation', {
                     name: 'Primary navigation',
@@ -262,6 +271,27 @@ describe('AppShell layout and navigation', () => {
                 `Release ${APP_VERSION} · API 0.2.1`,
             ),
         ).toBeInTheDocument()
+    })
+
+    it('marks the Collection trunk as active on /collections', () => {
+        renderAppTree(['/collections'])
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Collection',
+            }),
+        ).toHaveAttribute(
+            'data-active',
+            'true',
+        )
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Circulation',
+            }),
+        ).not.toHaveAttribute(
+            'data-active',
+        )
     })
 
     it('recovers from unknown routes with a home link', () => {

@@ -48,7 +48,7 @@ function createDevServerProxy() {
         'http://127.0.0.1:8000'
 
     return {
-        '^/(health|books|loans|dashboard|backup|docs|redoc|openapi\\.json|wishlists)':
+        '^/(health|books|loans|dashboard|backup|docs|redoc|openapi\\.json|wishlists|collections)':
             {
                 target,
                 changeOrigin: true,

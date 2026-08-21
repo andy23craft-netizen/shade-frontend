@@ -120,6 +120,49 @@ describe('queryKeys.wishlists', () => {
     })
 })
 
+describe('queryKeys.collections', () => {
+    it('uses unpaginated list and books keys under the collections prefix', () => {
+        expect(queryKeys.collections.all).toEqual([
+            'collections',
+        ])
+
+        expect(queryKeys.collections.list()).toEqual([
+            'collections',
+            {
+                list: true,
+            },
+        ])
+
+        expect(
+            queryKeys.collections.books('collection-1'),
+        ).toEqual([
+            'collections',
+            'collection-1',
+            'books',
+        ])
+    })
+
+    it('isolates collections keys from books, shelves, and wishlists', () => {
+        expect(
+            queryKeys.collections.list()[0],
+        ).not.toBe(queryKeys.books.all[0])
+
+        expect(
+            queryKeys.collections.list()[0],
+        ).not.toBe(queryKeys.shelves.all[0])
+
+        expect(
+            queryKeys.collections.list()[0],
+        ).not.toBe(queryKeys.wishlists.all[0])
+
+        expect(
+            queryKeys.collections.books('collection-1'),
+        ).not.toEqual(
+            queryKeys.collections.books('collection-2'),
+        )
+    })
+})
+
 describe('queryKeys.version', () => {
     it('uses a stable version root key', () => {
         expect(queryKeys.version.all).toEqual([

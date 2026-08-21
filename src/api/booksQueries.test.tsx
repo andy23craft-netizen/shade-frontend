@@ -853,6 +853,12 @@ it(
             queryKey: ['dashboard'],
         })
 
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['collections'],
+        })
+
         queryClient.clear()
     },
 )

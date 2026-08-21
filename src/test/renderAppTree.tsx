@@ -193,6 +193,22 @@ export function mockReachableApi() {
                     )
                 }
 
+                if (pathname === '/collections') {
+                    return new Response(
+                        JSON.stringify({
+                            items: [],
+                            total: 0,
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
                 if (pathname === '/version') {
                     return new Response(
                         JSON.stringify({

@@ -367,10 +367,14 @@ export function useDeleteBook() {
                 queryClient,
                 id,
             )
+
+            await queryClient.invalidateQueries({
+                queryKey:
+                queryKeys.collections.all,
+            })
         },
     })
 }
-
 export function useRestoreBook() {
     const {
         apiClient,
