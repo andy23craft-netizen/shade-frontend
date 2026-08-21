@@ -53,7 +53,9 @@ can still reach the server, but browser JS cannot read the response.
 
 | Status | Meaning beyond the OpenAPI label |
 | ------ | -------------------------------- |
-| `400`  | Malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` query); |
+| `400`  | Malformed or empty GUID on book path `{id}` (`GET` / `PATCH` / `DELETE` / restore / |
+|        | checkout / check-in / mark-read); malformed or empty GUID on loan reads |
+|        | (`GET /loans/{id}` path, or `book_id` query); |
 |        | malformed or empty `wishlist_id` / membership `wishlist_book_id` / membership `book_id` on wishlist routes; |
 |        | malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on |
 |        | collection routes; malformed or empty `shelf_id` on shelf update/delete; |
@@ -156,7 +158,9 @@ values: `asc`, `desc`. Invalid values return **400**. A stable tie-breaker on bo
 consistent. The previous implicit title sort is no longer the default; pass `sortBy=title` when title order is
 required.
 
-Path `{id}` accepts any string and returns **404** when no row matches.
+Path `{id}` must be a GUID: **400** when empty or malformed (including legacy spreadsheet codes
+like `SL-0001`); **404** when the GUID is well-formed but unknown. Soft-delete rules for
+checkout / check-in / mark-read / `PATCH` are unchanged.
 
 Optional `isbn`, `author`, and `title` on `GET /books` support catalog lookup. `isbn` retains its existing literal
 substring match against stored `isbn13` and is not normalized like create/lookup. `author` and `title` use
