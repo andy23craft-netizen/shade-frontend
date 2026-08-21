@@ -13,6 +13,9 @@ import {
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
+import {
+    isBookIdentityError,
+} from '../../../api/bookIdentity'
 import type { BookRead } from '../../../api/apiTypes'
 import { useCheckoutBook } from '../../../api/booksQueries'
 import { queryKeys } from '../../../api/queryKeys'
@@ -424,10 +427,7 @@ export function CheckoutDialog({
             return
         }
 
-        if (
-            isApiError(error) &&
-            error.status === 404
-        ) {
+        if (isBookIdentityError(error)) {
             await refetchStaleLoanState()
 
             setFormError(

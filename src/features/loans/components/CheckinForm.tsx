@@ -12,6 +12,9 @@ import {
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
+import {
+    isBookIdentityError,
+} from '../../../api/bookIdentity'
 import type {
     BookRead,
     LoanRead,
@@ -289,10 +292,7 @@ export function CheckinForm({
             return
         }
 
-        if (
-            isApiError(error) &&
-            error.status === 404
-        ) {
+        if (isBookIdentityError(error)) {
             await refetchStaleLoanState()
 
             setFormError(

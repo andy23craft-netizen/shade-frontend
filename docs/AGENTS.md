@@ -249,6 +249,18 @@ these as complementary sources of truth:
 Compare with a running backend `/openapi.json` before locking transport types; record drift as a blocker rather than
 inventing frontend semantics. Do not invent backend behavior from product docs alone.
 
+### Book identifiers (`id` vs `book_id`)
+
+- Catalog rows expose identity as `BookRead.id` (UUID string). There is no `book_id` field on `BookRead`.
+- Path `/books/{id}` and lifecycle routes require a GUID: **400** when empty or malformed (including legacy
+  spreadsheet codes like `SL-0001`); **404** when the GUID is well-formed but unknown.
+- Child resources keep the FK field name `book_id` (loans query `?book_id=`, wishlist membership create/read,
+  collection membership when FEAT-27 lands). Values are the same UUID as `BookRead.id`.
+- Frontend helpers: `isGuid` (`src/api/guid.ts`), `isBookIdentityError` / `isMalformedBookId`
+  (`src/api/bookIdentity.ts`). Treat **400** and **404** from book-identity lookups as "book not available".
+- Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
+  when they do not enforce GUID validation.
+
 ### Authority when sources disagree
 
 1. Current repository contents
@@ -467,8 +479,11 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, `WishlistCreate` / `WishlistUpdate` / `WishlistRead` /
   `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`,
   validation/error schemas, enums). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
+  Catalog identity is `BookRead.id` (UUID); loans/wishlist memberships reference that UUID as `book_id`.
   Generated `openapi.ts` also includes Collections schemas; do not add `apiTypes` aliases or product helpers until
   FEAT-27.
+- `src/api/guid.ts` / `bookIdentity.ts`: GUID check for book path/query ids; `isBookIdentityError` /
+  `isMalformedBookId` map API **400** / **404** for malformed or unknown book identity.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
 - `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection on authenticated

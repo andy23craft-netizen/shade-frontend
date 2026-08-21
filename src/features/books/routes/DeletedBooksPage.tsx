@@ -15,6 +15,9 @@ import {
 import {
     isApiError,
 } from '../../../api/apiErrors'
+import {
+    isBookIdentityError,
+} from '../../../api/bookIdentity'
 import type {
     BookRead,
 } from '../../../api/apiTypes'
@@ -88,9 +91,9 @@ export function DeletedBooksPage() {
                     setPendingBook(null)
 
                     if (
-                        isApiError(error) &&
+                        isBookIdentityError(error) ||
                         (
-                            error.status === 404 ||
+                            isApiError(error) &&
                             error.status === 409
                         )
                     ) {

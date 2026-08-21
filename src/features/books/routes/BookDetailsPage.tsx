@@ -12,7 +12,7 @@ import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
-import { isApiError } from '../../../api/apiErrors'
+import { isBookIdentityError } from '../../../api/bookIdentity'
 import { useBook } from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
 import {
@@ -134,8 +134,7 @@ export function BookDetailsPage() {
 
     const isNotFound =
         bookQuery.isError &&
-        isApiError(bookQuery.error) &&
-        bookQuery.error.status === 404
+        isBookIdentityError(bookQuery.error)
 
     useEffect(() => {
         if (!isNotFound) {
@@ -192,7 +191,8 @@ export function BookDetailsPage() {
                         title="This book could not be found"
                     >
                         The book is no longer available
-                        from the API. It may have been
+                        from the API, or the book id is
+                        not a valid GUID. It may have been
                         removed rather than soft-deleted.
                     </Alert>
 

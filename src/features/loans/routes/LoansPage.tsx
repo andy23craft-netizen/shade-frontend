@@ -12,6 +12,9 @@ import { QueryErrorState } from '../../../components/QueryErrorState'
 import {
     isApiError,
 } from '../../../api/apiErrors'
+import {
+    isBookIdentityError,
+} from '../../../api/bookIdentity'
 import type {
     BookRead,
     LoanRead,
@@ -164,8 +167,7 @@ function TargetedCheckin({
         bookQuery.isError
     ) {
         const isNotFound =
-            isApiError(bookQuery.error) &&
-            bookQuery.error.status === 404
+            isBookIdentityError(bookQuery.error)
 
         if (isNotFound) {
             return (
