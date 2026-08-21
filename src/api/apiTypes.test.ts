@@ -24,9 +24,9 @@ import type {
 } from './apiTypes'
 
 describe('API transport types', () => {
-    it('preserves BookRead transport field names', () => {
+    it('preserves BookRead.id as the catalog identity field', () => {
         const book = {
-            id: 'book-1',
+            id: '550e8400-e29b-41d4-a716-446655440000',
             title: 'A Book',
             authors: 'An Author',
             category: 'unknown',
@@ -40,6 +40,11 @@ describe('API transport types', () => {
             last_borrowed_at: '2026-07-01T00:00:00Z',
             average_loan_days: 4.5,
         } satisfies BookRead
+
+        expect(book.id).toBe(
+            '550e8400-e29b-41d4-a716-446655440000',
+        )
+        expect(book).not.toHaveProperty('book_id')
 
         expect(book.creation_date)
             .toBe('2026-08-01T00:00:00Z')
@@ -85,10 +90,10 @@ describe('API transport types', () => {
         expect(update.description).toBe('Notes')
     })
 
-    it('preserves LoanRead audit field names', () => {
+    it('preserves LoanRead.book_id as the FK to BookRead.id', () => {
         const loan = {
             id: 'loan-1',
-            book_id: 'book-1',
+            book_id: '550e8400-e29b-41d4-a716-446655440000',
             borrower: 'Borrower',
             checked_out_at: '2026-08-01T00:00:00Z',
             returned_at: null,
@@ -96,6 +101,9 @@ describe('API transport types', () => {
             last_updated_date: '2026-08-01T00:00:00Z',
         } satisfies LoanRead
 
+        expect(loan.book_id).toBe(
+            '550e8400-e29b-41d4-a716-446655440000',
+        )
         expect(loan.created_date)
             .toBe('2026-08-01T00:00:00Z')
 
@@ -189,18 +197,18 @@ describe('API transport types', () => {
         expect(list.total).toBe(1)
     })
 
-    it('preserves wishlist membership transport field names', () => {
+    it('preserves wishlist membership book_id as the FK to BookRead.id', () => {
         const status = 'wanted' satisfies WishlistBookStatus
 
         const create = {
-            book_id: 'book-1',
+            book_id: '550e8400-e29b-41d4-a716-446655440000',
             status,
         } satisfies WishlistBookCreate
 
         const membership = {
             wishlist_book_id: 'membership-1',
             wishlist_id: 'wishlist-1',
-            book_id: 'book-1',
+            book_id: '550e8400-e29b-41d4-a716-446655440000',
             status,
             priority: null,
             notes: null,
@@ -213,7 +221,10 @@ describe('API transport types', () => {
             total: 1,
         } satisfies WishlistBookList
 
-        expect(create.book_id).toBe('book-1')
+        expect(create.book_id).toBe(
+            '550e8400-e29b-41d4-a716-446655440000',
+        )
+        expect(membership.book_id).toBe(create.book_id)
         expect(membership.priority).toBeNull()
         expect(list.total).toBe(1)
     })

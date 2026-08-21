@@ -22,6 +22,9 @@ import {
     type ApiFieldError,
 } from '../../../api/apiErrors'
 import {
+    isBookIdentityError,
+} from '../../../api/bookIdentity'
+import {
     useBook,
     useMarkBookRead,
 } from '../../../api/booksQueries'
@@ -319,10 +322,7 @@ export function MarkReadPage() {
                         return
                     }
 
-                    if (
-                        isApiError(error) &&
-                        error.status === 404
-                    ) {
+                    if (isBookIdentityError(error)) {
                         setFormError(
                             'This book could not be marked as read because it is missing, deleted, or no longer available.',
                         )
@@ -356,8 +356,7 @@ export function MarkReadPage() {
 
     if (bookQuery.isError) {
         const isNotFound =
-            isApiError(bookQuery.error) &&
-            bookQuery.error.status === 404
+            isBookIdentityError(bookQuery.error)
 
         return (
             <section className="route-page">
@@ -378,7 +377,7 @@ export function MarkReadPage() {
                     }
                 >
                     {isNotFound
-                        ? 'This book could not be found. It may have been removed.'
+                        ? 'This book could not be found. It may have been removed, or the book id may be invalid.'
                         : bookQuery.error instanceof Error
                           ? bookQuery.error.message
                           : 'An unexpected error occurred.'}

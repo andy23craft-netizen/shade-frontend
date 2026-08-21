@@ -16,8 +16,8 @@ import {
     QueryErrorState,
 } from '../../../components'
 import {
-    isApiError,
-} from '../../../api/apiErrors'
+    isBookIdentityError,
+} from '../../../api/bookIdentity'
 import {
     useBook,
     useDeleteBook,
@@ -79,8 +79,7 @@ export function DeleteBookPage() {
 
     if (bookQuery.isError) {
         const isNotFound =
-            isApiError(bookQuery.error) &&
-            bookQuery.error.status === 404
+            isBookIdentityError(bookQuery.error)
 
         if (isNotFound) {
             return (
@@ -94,7 +93,8 @@ export function DeleteBookPage() {
                         title="Book not found"
                     >
                         This book could not be found. It may
-                        already have been deleted or removed.
+                        already have been deleted or removed,
+                        or the book id may be invalid.
                     </Alert>
 
                     <AppLink
@@ -295,10 +295,7 @@ export function DeleteBookPage() {
                 onError: (error) => {
                     setIsConfirmationOpen(false)
 
-                    if (
-                        isApiError(error) &&
-                        error.status === 404
-                    ) {
+                    if (isBookIdentityError(error)) {
                         setDeleteError(
                             'This book could not be deleted because it is missing or has already been deleted.',
                         )
