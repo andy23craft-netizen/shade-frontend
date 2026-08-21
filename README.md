@@ -140,9 +140,11 @@ This is the Compose/dev-deployment path. Compose should pull **`shade-frontend`*
 `shade-frontend:<package.json version>` (the same version string as `APP_VERSION`).
 
 The image is runtime-only `nginx:1.31-alpine`. It serves host-built `dist/` over
-HTTP on port **8080**. It does not run Node, Yarn, or Vite, and it does not
-`COPY` `.env`. The multi-service Compose file lives in the orchestrator
-repository, not here.
+HTTP on container port **8080** and proxies `/api/*` to `shade-backend:8000`
+(prefix stripped) on the Compose network. It does not run Node, Yarn, or Vite,
+and it does not `COPY` `.env`. The multi-service Compose file lives in the
+orchestrator repository (`shade-proxy` is the public HTTP entry on host **80**;
+this nginx port is not published on the host in that stack).
 
 ### Build, run, and clean up
 
@@ -176,22 +178,19 @@ Application release stays the `package.json` `version` from the image build.
 | `SHADE_DIAGNOSTICS_ENABLED` | `false` | Must be `true` or `false` |
 | `SHADE_DIAGNOSTICS_ENDPOINT` | empty (`null` in `config.js`) | Diagnostics POST URL when enabled |
 
-`SHADE_API_BASE_URL` is loaded by the browser, so it must be a URL the browser
-can reach. A Compose-internal hostname is not enough unless that name is also
-how the browser calls the API (or a reverse proxy makes the API same-origin).
+`SHADE_API_BASE_URL` is loaded by the browser, so it must be an absolute
+`http:`/`https:` URL ending in `/api` that matches the origin you browse
+(e.g. `http://shade.library.spir.es/api`, `http://localhost/api`). Orchestrator
+Compose defaults to the DNS name; set the frontend service env to match
+localhost or LAN when testing those entrypoints.
 
 ### CORS and origin
 
-Default API CORS allows only the Vite origins `http://localhost:5173` and
-`http://127.0.0.1:5173`. A Compose-published frontend is a different origin.
-
-Choose one:
-
-- **Cross-origin:** put the frontend's exact published origin (scheme, hostname,
-  and port; no path or trailing slash) in the backend `CORS_ORIGINS` list, or
-- **Same-origin:** put a Compose reverse proxy in front of the API.
-
-Do not rely on the Vite `SHADE_API_PROXY=1` dev-server proxy for this path.
+Orchestrator Compose puts `shade-proxy` (Caddy) in front and routes everything
+to this nginx container. Browser calls are same-origin `/api` through the proxy;
+backend `CORS_ORIGINS` must still list the exact HTTP origins in use (no path,
+no trailing slash). Do not rely on the Vite `SHADE_API_PROXY=1` dev-server proxy
+for the Compose path.
 
 ### Healthcheck
 
