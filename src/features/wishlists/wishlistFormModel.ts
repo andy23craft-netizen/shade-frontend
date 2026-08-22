@@ -135,7 +135,7 @@ export function formValuesToUnshelvedBookCreate(
     const book: BookCreate = {
         title: values.title.trim(),
         authors: values.authors.trim(),
-        category: 'unknown',
+        category_ids: [],
         is_read: false,
         status: 'available',
     }

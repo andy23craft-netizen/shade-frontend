@@ -1,15 +1,14 @@
-import type { Category } from '../../../api/apiTypes'
-import { enumDisplayValue } from '../../../api/enumDisplay'
+import type { CategoryRead } from '../../../api/apiTypes'
 import { Field } from '../../../components/Field'
 import type {
     BookSortBy,
     BookSortOrder,
 } from '../booksListModel'
 import {
-    CATEGORY_FILTER_VALUES,
     sortByLabel,
     sortOrderLabel,
 } from '../booksListModel'
+import { sortCategoriesByName } from '../categoryDisplay'
 import { Button } from '../../../components/Button'
 import { useState } from 'react'
 
@@ -25,29 +24,15 @@ const SORT_ORDER_OPTIONS: readonly BookSortOrder[] = [
     'desc',
 ]
 
-function categoryLabel(
-    category: Category,
-): string {
-    const display = enumDisplayValue(
-        category,
-        CATEGORY_FILTER_VALUES,
-    )
-
-    return display.value
-        .replaceAll('_', ' ')
-        .replace(/\b\w/g, (character) =>
-            character.toUpperCase(),
-        )
-}
-
 export interface BooksListControlsProps {
-    category: Category | undefined
+    categories: readonly CategoryRead[]
+    categoryIds: readonly string[]
     author: string
     title: string
     sortBy: BookSortBy
     sortOrder: BookSortOrder
-    onCategoryChange: (
-        category: Category | undefined,
+    onCategoryIdsChange: (
+        categoryIds: string[],
     ) => void
     onApply: (
         author: string,
@@ -59,53 +44,74 @@ export interface BooksListControlsProps {
 }
 
 export function BooksListControls({
-                                      category,
-                                      author,
-                                      title,
-                                      sortBy,
-                                      sortOrder,
-                                      onCategoryChange,
-                                      onApply,
-                                      onClear,
-                                      onSortByChange,
-                                      onSortOrderChange,
-                                  }: BooksListControlsProps) {
+    categories,
+    categoryIds,
+    author,
+    title,
+    sortBy,
+    sortOrder,
+    onCategoryIdsChange,
+    onApply,
+    onClear,
+    onSortByChange,
+    onSortOrderChange,
+}: BooksListControlsProps) {
     const [authorDraft, setAuthorDraft] = useState(author)
     const [titleDraft, setTitleDraft] = useState(title)
+    const sortedCategories =
+        sortCategoriesByName(categories)
+    const selected = new Set(categoryIds)
+
+    function toggleCategoryId(
+        categoryId: string,
+    ) {
+        const next = new Set(selected)
+
+        if (next.has(categoryId)) {
+            next.delete(categoryId)
+        } else {
+            next.add(categoryId)
+        }
+
+        onCategoryIdsChange(
+            [...next].sort(),
+        )
+    }
+
     return (
         <div className="books-page__controls">
             <div className="books-page__filters">
-                <Field label="Category">
-                    <select
-                        className="field__control"
-                        value={category ?? ''}
-                        onChange={(event) => {
-                            const value =
-                                event.target.value
+                <fieldset className="book-form__categories books-page__category-filter">
+                    <legend>Categories</legend>
 
-                            onCategoryChange(
-                                value === ''
-                                    ? undefined
-                                    : value as Category,
-                            )
-                        }}
-                    >
-                        <option value="">
-                            All categories
-                        </option>
-
-                        {CATEGORY_FILTER_VALUES.map(
-                            (value) => (
-                                <option
-                                    key={value}
-                                    value={value}
+                    <div className="book-form__categories-list">
+                        {sortedCategories.map(
+                            (category) => (
+                                <label
+                                    key={
+                                        category.category_id
+                                    }
+                                    htmlFor={`books-filter-category-${category.category_id}`}
+                                    className="book-form__category-option"
                                 >
-                                    {categoryLabel(value)}
-                                </option>
+                                    <input
+                                        id={`books-filter-category-${category.category_id}`}
+                                        type="checkbox"
+                                        checked={selected.has(
+                                            category.category_id,
+                                        )}
+                                        onChange={() =>
+                                            toggleCategoryId(
+                                                category.category_id,
+                                            )
+                                        }
+                                    />
+                                    {category.name}
+                                </label>
                             ),
                         )}
-                    </select>
-                </Field>
+                    </div>
+                </fieldset>
 
                 <Field label="Author">
                     <input

@@ -208,7 +208,7 @@ describe('book queries', () => {
                 useBooks({
                     author: 'Le Guin',
                     title: 'Darkness',
-                    category: 'fiction',
+                    categoryIds: ['cat-fiction'],
                 }),
             {
                 wrapper: Wrapper,
@@ -227,7 +227,7 @@ describe('book queries', () => {
             expect.objectContaining({
                 author: 'Le Guin',
                 title: 'Darkness',
-                category: 'fiction',
+                categoryIds: ['cat-fiction'],
             }),
         )
 

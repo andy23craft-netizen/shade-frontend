@@ -7,6 +7,9 @@ import {
     shelfCommonNameById,
     shelfIdByCommonName,
 } from '../../shelves/shelfDisplay'
+import {
+    categoryIdsEqual,
+} from '../categoryDisplay'
 import type {
     BookFormValues,
 } from '../components/BookForm'
@@ -30,7 +33,11 @@ export function bookFormValuesFromBook(
             book.pages === undefined
                 ? ''
                 : String(book.pages),
-        category: book.category,
+        categoryIds: (
+            book.categories ?? []
+        ).map(
+            (category) => category.category_id,
+        ),
         shelfId:
             shelfIdByCommonName(
                 shelves,
@@ -150,8 +157,21 @@ export function bookFormValuesToUpdate(
         update.pages = pages
     }
 
-    if (values.category !== original.category) {
-        update.category = values.category
+    const originalCategoryIds = (
+        original.categories ?? []
+    ).map(
+        (category) => category.category_id,
+    )
+
+    if (
+        !categoryIdsEqual(
+            values.categoryIds,
+            originalCategoryIds,
+        )
+    ) {
+        update.category_ids = [
+            ...values.categoryIds,
+        ]
     }
 
     const shelfName = shelfCommonNameById(

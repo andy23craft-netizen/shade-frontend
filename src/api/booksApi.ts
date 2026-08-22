@@ -4,7 +4,6 @@ import type {
     BookLookupResponse,
     BookRead,
     BookUpdate,
-    Category,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -29,7 +28,7 @@ export interface ListBooksOptions
     isbn?: string
     author?: string
     title?: string
-    category?: Category | string
+    categoryIds?: readonly string[]
     skip?: number
     take?: number
     sortBy?: string
@@ -63,6 +62,25 @@ function setOptionalStringParam(
     }
 
     params.set(name, trimmed)
+}
+
+function setRepeatedCategoryIdParams(
+    params: URLSearchParams,
+    categoryIds: readonly string[] | undefined,
+): void {
+    if (categoryIds === undefined) {
+        return
+    }
+
+    for (const categoryId of categoryIds) {
+        const trimmed = categoryId.trim()
+
+        if (trimmed === '') {
+            continue
+        }
+
+        params.append('category_id', trimmed)
+    }
 }
 
 export function createBooksApi(
@@ -101,10 +119,9 @@ export function createBooksApi(
                 'title',
                 options.title,
             )
-            setOptionalStringParam(
+            setRepeatedCategoryIdParams(
                 params,
-                'category',
-                options.category,
+                options.categoryIds,
             )
 
             if (options.skip !== undefined) {

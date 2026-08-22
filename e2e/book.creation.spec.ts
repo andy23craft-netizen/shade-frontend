@@ -20,8 +20,11 @@ test('adds a book manually and opens the created book', async ({
     )
 
     await page
-        .getByLabel('Category')
-        .selectOption('fiction')
+        .getByRole('checkbox', {
+            name: 'Fiction',
+            exact: true,
+        })
+        .check()
 
     await page
         .getByLabel('Shelf')
@@ -43,7 +46,13 @@ test('adds a book manually and opens the created book', async ({
     expect(api.state.books[0]).toMatchObject({
         title: 'The Left Hand of Darkness',
         authors: 'Ursula K. Le Guin',
-        category: 'fiction',
+        categories: [
+            {
+                category_id: 'cat-fiction',
+                name: 'Fiction',
+                slug: 'fiction',
+            },
+        ],
         shelf_name: 'a1',
         status: 'available',
         is_read: false,
@@ -62,7 +71,7 @@ test('adds a book manually and opens the created book', async ({
     expect(createRequest?.body).toMatchObject({
         title: 'The Left Hand of Darkness',
         authors: 'Ursula K. Le Guin',
-        category: 'fiction',
+        category_ids: ['cat-fiction'],
         shelf_name: 'a1',
     })
 })

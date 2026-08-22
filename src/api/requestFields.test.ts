@@ -64,8 +64,10 @@ describe('requestFields', () => {
             pickBookCreate({
                 title: 'Title',
                 authors: 'Author',
-                category: 'unknown',
+                category_ids: [],
                 shelf_name: 'unknown',
+                is_read: false,
+                status: 'available',
                 id: 'book-1',
                 updated_date:
                     '2026-08-01T00:00:00Z',
@@ -76,8 +78,10 @@ describe('requestFields', () => {
         ).toEqual({
             title: 'Title',
             authors: 'Author',
-            category: 'unknown',
+            category_ids: [],
             shelf_name: 'unknown',
+            is_read: false,
+            status: 'available',
         })
     })
 

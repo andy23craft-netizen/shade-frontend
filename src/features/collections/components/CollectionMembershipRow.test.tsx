@@ -51,7 +51,7 @@ const book: BookRead = {
     id: 'book-1',
     title: 'The Dispossessed',
     authors: 'Ursula K. Le Guin',
-    category: 'fiction',
+    categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
     status: 'available',
     is_read: false,

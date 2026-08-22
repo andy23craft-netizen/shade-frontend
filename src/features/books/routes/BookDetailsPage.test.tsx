@@ -51,7 +51,7 @@ const completeBook: BookRead = {
     title: 'The Pale Fire',
     authors: 'Vladimir Nabokov',
     isbn13: '9780679723427',
-    category: 'fiction',
+    categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
     status: 'available',
     publication_date: '1962',
@@ -270,7 +270,7 @@ describe('BookDetailsPage', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText('fiction'),
+            screen.getByText('Fiction'),
         ).toBeInTheDocument()
 
         expect(
@@ -376,7 +376,13 @@ describe('BookDetailsPage', () => {
     it('renders unknown enum values safely', () => {
         const bookWithUnknownEnums = {
             ...completeBook,
-            category: 'future_category',
+            categories: [
+                {
+                    category_id: 'cat-future',
+                    name: 'Future Category',
+                    slug: 'future-category',
+                },
+            ],
             shelf_name: 'future_shelf',
             status: 'future_status',
         } as unknown as BookRead
@@ -391,7 +397,7 @@ describe('BookDetailsPage', () => {
 
         expect(
             screen.getByText(
-                /future_category \(unknown\)/,
+                'Future Category',
             ),
         ).toBeInTheDocument()
 

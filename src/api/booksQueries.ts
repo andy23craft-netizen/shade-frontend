@@ -93,7 +93,7 @@ export function useBooks(
         isbn?: string
         author?: string
         title?: string
-        category?: string
+        categoryIds?: readonly string[]
         skip?: number
         take?: number
         sortBy?: string
@@ -113,7 +113,7 @@ export function useBooks(
     const isbn = options.isbn
     const author = options.author
     const title = options.title
-    const category = options.category
+    const categoryIds = options.categoryIds
     const skip = options.skip
     const take = options.take
     const sortBy = options.sortBy
@@ -126,7 +126,7 @@ export function useBooks(
             isbn,
             author,
             title,
-            category,
+            categoryIds,
             skip,
             take,
             sortBy,
@@ -140,7 +140,7 @@ export function useBooks(
                 isbn,
                 author,
                 title,
-                category,
+                categoryIds,
                 skip,
                 take,
                 sortBy,
@@ -157,7 +157,7 @@ export function useInfiniteBooks(
         isbn?: string
         author?: string
         title?: string
-        category?: string
+        categoryIds?: readonly string[]
         sortBy?: string
         sortOrder?: string
         enabled?: boolean
@@ -175,7 +175,7 @@ export function useInfiniteBooks(
     const isbn = options.isbn
     const author = options.author
     const title = options.title
-    const category = options.category
+    const categoryIds = options.categoryIds
     const sortBy = options.sortBy
     const sortOrder = options.sortOrder
     const enabled = options.enabled ?? true
@@ -186,7 +186,7 @@ export function useInfiniteBooks(
             isbn,
             author,
             title,
-            category,
+            categoryIds,
             sortBy,
             sortOrder,
             take: INFINITE_SCROLL_BATCH_SIZE,
@@ -201,7 +201,7 @@ export function useInfiniteBooks(
                 isbn,
                 author,
                 title,
-                category,
+                categoryIds,
                 skip: pageParam,
                 take: INFINITE_SCROLL_BATCH_SIZE,
                 sortBy,

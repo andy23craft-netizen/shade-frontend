@@ -188,13 +188,13 @@ describe('createBooksApi', () => {
         await api.list({
             author: 'Le Guin',
             title: 'Darkness',
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
         })
 
         expect(
             client.getJson,
         ).toHaveBeenCalledWith(
-            '/books?author=Le+Guin&title=Darkness&category=fiction',
+            '/books?author=Le+Guin&title=Darkness&category_id=cat-fiction',
         )
     })
 
@@ -214,7 +214,7 @@ describe('createBooksApi', () => {
         await api.list({
             author: '  ',
             title: '',
-            category: '\t',
+            categoryIds: ['\t', ''],
         })
 
         expect(
@@ -238,13 +238,13 @@ describe('createBooksApi', () => {
         await api.list({
             author: '  Le Guin  ',
             title: ' Darkness ',
-            category: ' fiction ',
+            categoryIds: [' fiction '],
         })
 
         expect(
             client.getJson,
         ).toHaveBeenCalledWith(
-            '/books?author=Le+Guin&title=Darkness&category=fiction',
+            '/books?author=Le+Guin&title=Darkness&category_id=fiction',
         )
     })
 
@@ -368,7 +368,7 @@ describe('createBooksApi', () => {
             isbn: '9780441',
             author: 'Le Guin',
             title: 'Darkness',
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
             skip: 0,
             take: 30,
             sortBy: 'shelf',
@@ -378,7 +378,7 @@ describe('createBooksApi', () => {
         expect(
             client.getJson,
         ).toHaveBeenCalledWith(
-            '/books?isbn=9780441&author=Le+Guin&title=Darkness&category=fiction&skip=0&take=30&sortBy=shelf&sortOrder=asc',
+            '/books?isbn=9780441&author=Le+Guin&title=Darkness&category_id=cat-fiction&skip=0&take=30&sortBy=shelf&sortOrder=asc',
         )
     })
 
@@ -523,8 +523,10 @@ describe('createBooksApi', () => {
         await api.create({
             title: 'Title',
             authors: 'Author',
-            category: 'unknown',
+            category_ids: [],
             shelf_name: 'unknown',
+            is_read: false,
+            status: 'available',
             updated_date: '2026-08-01T00:00:00Z',
         } as BookCreate & {
             updated_date: string
@@ -539,8 +541,10 @@ describe('createBooksApi', () => {
                 body: {
                     title: 'Title',
                     authors: 'Author',
-                    category: 'unknown',
+                    category_ids: [],
                     shelf_name: 'unknown',
+                    is_read: false,
+                    status: 'available',
                 },
             },
         )

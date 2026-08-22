@@ -9,13 +9,13 @@ import {
 } from './queryKeys'
 
 describe('queryKeys.books list filters', () => {
-    it('omits blank and whitespace author, title, category, and isbn', () => {
+    it('omits blank and whitespace author, title, categoryIds, and isbn', () => {
         expect(
             queryKeys.books.list({
                 isbn: '  ',
                 author: '',
                 title: '\t',
-                category: '   ',
+                categoryIds: ['   ', ''],
             }),
         ).toEqual([
             'books',
@@ -25,12 +25,12 @@ describe('queryKeys.books list filters', () => {
         ])
     })
 
-    it('includes trimmed author, title, and category in list keys', () => {
+    it('includes trimmed author, title, and categoryIds in list keys', () => {
         expect(
             queryKeys.books.list({
                 author: '  Le Guin  ',
                 title: ' Darkness ',
-                category: ' fiction ',
+                categoryIds: [' fiction ', 'religion'],
             }),
         ).toEqual([
             'books',
@@ -38,7 +38,7 @@ describe('queryKeys.books list filters', () => {
                 includeDeleted: false,
                 author: 'Le Guin',
                 title: 'Darkness',
-                category: 'fiction',
+                categoryIds: ['fiction', 'religion'],
             },
         ])
     })
@@ -55,6 +55,21 @@ describe('queryKeys.books list filters', () => {
                 take: 30,
             }),
         )
+    })
+})
+
+describe('queryKeys.categories', () => {
+    it('uses an unpaginated list key under the categories prefix', () => {
+        expect(queryKeys.categories.all).toEqual([
+            'categories',
+        ])
+
+        expect(queryKeys.categories.list()).toEqual([
+            'categories',
+            {
+                list: true,
+            },
+        ])
     })
 })
 

@@ -23,7 +23,7 @@ function createBook(
         id: `book-${index}`,
         title: `Title ${index}`,
         authors: `Author ${index}`,
-        category: 'unknown',
+        categories: [],
         shelf_name: 'unknown',
         status: 'available',
         is_read: false,

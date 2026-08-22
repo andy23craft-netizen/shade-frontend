@@ -143,6 +143,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Categories */
+        get: operations["list_categories_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/collections": {
         parameters: {
             query?: never;
@@ -468,14 +485,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BookCategoryRead */
+        BookCategoryRead: {
+            /** Category Id */
+            category_id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
         /** BookCreate */
         BookCreate: {
             /** Acquisition Source */
             acquisition_source?: string | null;
             /** Authors */
             authors: string;
-            /** @default unknown */
-            category: components["schemas"]["Category"];
+            /** Category Ids */
+            category_ids?: string[];
             /** Completion Date */
             completion_date?: string | null;
             /**
@@ -549,8 +575,8 @@ export interface components {
             authors: string;
             /** Average Loan Days */
             average_loan_days: number | null;
-            /** @default unknown */
-            category: components["schemas"]["Category"];
+            /** Categories */
+            categories?: components["schemas"]["BookCategoryRead"][];
             /** Completion Date */
             completion_date?: string | null;
             /** Creation Date */
@@ -603,7 +629,8 @@ export interface components {
             acquisition_source?: string | null;
             /** Authors */
             authors?: string | null;
-            category?: components["schemas"]["Category"] | null;
+            /** Category Ids */
+            category_ids?: string[] | null;
             /** Completion Date */
             completion_date?: string | null;
             /** Is Read */
@@ -634,11 +661,19 @@ export interface components {
             /** Title */
             title?: string | null;
         };
-        /**
-         * Category
-         * @enum {string}
-         */
-        Category: "unknown" | "religion" | "philosophy" | "fiction" | "nonfiction";
+        /** CategoryRead */
+        CategoryRead: {
+            /** Category Id */
+            category_id: string;
+            /** Created Date */
+            created_date: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Updated Date */
+            updated_date: string;
+        };
         /** CheckinRequest */
         CheckinRequest: {
             /** Returned At */
@@ -1048,7 +1083,29 @@ export interface operations {
                 isbn?: string | null;
                 author?: string | null;
                 title?: string | null;
-                category?: components["schemas"]["Category"] | null;
+                publisher?: string | null;
+                acquisition_source?: string | null;
+                id?: string | null;
+                pages_min?: number | null;
+                pages_max?: number | null;
+                rating_min?: number | null;
+                rating_max?: number | null;
+                purchase_price_min?: number | null;
+                purchase_price_max?: number | null;
+                publication_year_min?: number | null;
+                publication_year_max?: number | null;
+                purchase_date_min?: string | null;
+                purchase_date_max?: string | null;
+                completion_date_min?: string | null;
+                completion_date_max?: string | null;
+                creation_date_min?: string | null;
+                creation_date_max?: string | null;
+                updated_date_min?: string | null;
+                updated_date_max?: string | null;
+                category_id?: string[] | null;
+                shelf_name?: string | null;
+                is_read?: boolean | null;
+                status?: components["schemas"]["Status"] | null;
                 skip?: number | null;
                 take?: number | null;
                 sortBy?: string | null;
@@ -1677,6 +1734,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryRead"][];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
         };

@@ -1,6 +1,8 @@
 import type { Page, Route } from '@playwright/test'
 import type {
+    BookCategoryRead,
     BookRead,
+    CategoryRead,
     DashboardSummary,
     LoanRead,
     ShelfRead,
@@ -25,6 +27,7 @@ export interface MockApiState {
     books: BookRead[]
     loans: LoanRead[]
     shelves: ShelfRead[]
+    categories: CategoryRead[]
     requests: MockApiRequest[]
 }
 
@@ -58,6 +61,7 @@ interface InstallMockApiOptions {
     books?: BookRead[]
     loans?: LoanRead[]
     shelves?: ShelfRead[]
+    categories?: CategoryRead[]
 }
 
 interface CheckoutBody {
@@ -127,7 +131,10 @@ function cloneBook(
 ): BookRead {
     return {
         ...book,
-        tags: [...book.tags],
+        tags: book.tags ? [...book.tags] : book.tags,
+        categories: book.categories
+            ? [...book.categories]
+            : book.categories,
     }
 }
 
@@ -147,7 +154,13 @@ export function makeBook(
         title: 'Pale Fire',
         authors: 'Vladimir Nabokov',
         isbn13: '9780679723427',
-        category: 'fiction',
+        categories: [
+            {
+                category_id: 'cat-fiction',
+                name: 'Fiction',
+                slug: 'fiction',
+            },
+        ],
         shelf_name: 'a1',
         status: 'available',
         publication_date: '1962',
@@ -196,6 +209,23 @@ export const lifecycleShelf: ShelfRead = {
     updated_date: '2026-01-01T00:00:00Z',
 }
 
+export const lifecycleCategories: CategoryRead[] = [
+    {
+        category_id: 'cat-fiction',
+        name: 'Fiction',
+        slug: 'fiction',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        category_id: 'cat-nonfiction',
+        name: 'Nonfiction',
+        slug: 'nonfiction',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
 function findBook(
     state: MockApiState,
     id: string,
@@ -225,7 +255,10 @@ function listBooks(
     const isbn = url.searchParams.get('isbn')
     const author = url.searchParams.get('author')
     const title = url.searchParams.get('title')
-    const category = url.searchParams.get('category')
+    const categoryIds = url.searchParams
+        .getAll('category_id')
+        .map((value) => value.trim())
+        .filter((value) => value !== '')
     const sortBy = url.searchParams.get('sortBy')
     const sortOrder =
         url.searchParams.get('sortOrder') === 'desc'
@@ -266,10 +299,19 @@ function listBooks(
         )
     }
 
-    if (category !== null) {
-        books = books.filter(
-            (book) => book.category === category,
-        )
+    if (categoryIds.length > 0) {
+        books = books.filter((book) => {
+            const bookCategoryIds = new Set(
+                (book.categories ?? []).map(
+                    (category) =>
+                        category.category_id,
+                ),
+            )
+
+            return categoryIds.every((categoryId) =>
+                bookCategoryIds.has(categoryId),
+            )
+        })
     }
 
     if (sortBy !== null) {
@@ -488,6 +530,40 @@ function calculateDashboard(
     }
 }
 
+function resolveCategoriesFromIds(
+    state: MockApiState,
+    categoryIds: unknown,
+): BookCategoryRead[] {
+    if (!Array.isArray(categoryIds)) {
+        return []
+    }
+
+    const resolved: BookCategoryRead[] = []
+
+    for (const value of categoryIds) {
+        if (typeof value !== 'string') {
+            continue
+        }
+
+        const category = state.categories.find(
+            (entry) =>
+                entry.category_id === value,
+        )
+
+        if (category === undefined) {
+            continue
+        }
+
+        resolved.push({
+            category_id: category.category_id,
+            name: category.name,
+            slug: category.slug,
+        })
+    }
+
+    return resolved
+}
+
 function createBookFromRequest(
     state: MockApiState,
     body: Record<string, unknown>,
@@ -509,10 +585,10 @@ function createBookFromRequest(
             typeof body.isbn13 === 'string'
                 ? body.isbn13
                 : null,
-        category:
-            typeof body.category === 'string'
-                ? body.category as BookRead['category']
-                : 'unknown',
+        categories: resolveCategoriesFromIds(
+            state,
+            body.category_ids,
+        ),
         shelf_name:
             typeof body.shelf_name === 'string'
                 ? body.shelf_name
@@ -571,16 +647,29 @@ function createBookFromRequest(
 }
 
 function updateBookFromRequest(
+    state: MockApiState,
     book: BookRead,
     body: Record<string, unknown>,
 ) {
+    const {
+        category_ids: categoryIds,
+        ...rest
+    } = body
+
     Object.assign(
         book,
-        body as Partial<BookRead>,
+        rest as Partial<BookRead>,
         {
             updated_date: NOW,
         },
     )
+
+    if ('category_ids' in body) {
+        book.categories = resolveCategoriesFromIds(
+            state,
+            categoryIds,
+        )
+    }
 }
 
 function recordRequest(
@@ -616,6 +705,7 @@ export async function installMockApi(
         books = [],
         loans = [],
         shelves = [lifecycleShelf],
+        categories = lifecycleCategories,
     }: InstallMockApiOptions = {},
 ): Promise<MockApiController> {
     const state: MockApiState = {
@@ -623,6 +713,9 @@ export async function installMockApi(
         loans: loans.map(cloneLoan),
         shelves: shelves.map((shelf) => ({
             ...shelf,
+        })),
+        categories: categories.map((category) => ({
+            ...category,
         })),
         requests: [],
     }
@@ -660,6 +753,16 @@ export async function installMockApi(
             ) {
                 await fulfillJson(route, {
                     body: state.shelves,
+                })
+                return
+            }
+
+            if (
+                method === 'GET' &&
+                url.pathname === '/categories'
+            ) {
+                await fulfillJson(route, {
+                    body: state.categories,
                 })
                 return
             }
@@ -1122,6 +1225,7 @@ export async function installMockApi(
 
                 if (method === 'PATCH') {
                     updateBookFromRequest(
+                        state,
                         book,
                         readRequestBody(
                             route,

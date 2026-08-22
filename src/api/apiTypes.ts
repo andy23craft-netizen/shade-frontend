@@ -58,8 +58,11 @@ export type HTTPValidationError =
 export type ValidationError =
     Schemas['ValidationError']
 
-export type Category =
-    Schemas['Category']
+export type CategoryRead =
+    Schemas['CategoryRead']
+
+export type BookCategoryRead =
+    Schemas['BookCategoryRead']
 
 export type ShelfCreate =
     Schemas['ShelfCreate']

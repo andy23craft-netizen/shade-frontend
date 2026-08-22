@@ -177,6 +177,19 @@ export function mockReachableApi() {
                     )
                 }
 
+                if (pathname === '/categories') {
+                    return new Response(
+                        JSON.stringify([]),
+                        {
+                            status: 200,
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                        },
+                    )
+                }
+
                 if (pathname === '/wishlists') {
                     return new Response(
                         JSON.stringify({

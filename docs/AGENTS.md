@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-21 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-22 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -21,10 +21,13 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   incomplete-metadata healing (`useDashboardIncompleteMetadata`, `useInfiniteIncompleteMetadataBooks` /
   `GET /dashboard/incomplete-metadata` and `/books`). Display API numbers only (null averages as "Not enough data";
   contract warnings without inventing totals).
-- Active collection and book details (`/books`, `/books/:bookId`) with infinite scroll, URL-backed category / author /
-  title / ISBN filtering, shelf sort, Read/Unread, and ratings.
+- Active collection and book details (`/books`, `/books/:bookId`) with infinite scroll, URL-backed multi-`category_id`
+  (AND/intersection) / author / title / ISBN filtering, shelf sort, Read/Unread, and ratings. Category vocabulary
+  loads from `GET /categories` (`useCategories`); list/detail display uses `formatBookCategories` on
+  `BookRead.categories`.
 - Book create/edit (`/books/new`, `/books/:bookId/edit`) via shared `BookForm` / `bookFormModel` / `bookEditModel`,
-  ISBN lookup on create, and API-fed shelf pickers (`shelf_name`; create requires an explicit shelf).
+  ISBN lookup on create, API-fed shelf pickers (`shelf_name`; create requires an explicit shelf), and multi-category
+  checkboxes (`category_ids`; zero allowed). Create/edit gate on shelves and categories load failure.
 - ISBN camera capture lazy-loaded from `/books/new` only; hardware-scanner capture under `src/features/scanning/`
   for create lookup on `/books/new` and collection jump on `/dashboard`, `/books`, and `/loans`
   (`useCollectionIsbnJump`).
@@ -42,15 +45,19 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   `useMoveWishlistBookToShelf` (membership `DELETE` then `PATCH { shelf_name }`). Shelf/wishlist exclusivity is
   enforced with documented **412** responses.
 - Curated Collections on `/collections` (`collectionsApi` / `useCollections` / `useCollectionBooks` / write
-  mutations): Collection-drawer link, create/delete collections, add shelved catalog books via `GET /books` search
-  then `POST /collections/{id}/books`, reorder/remove memberships, and join title/authors via `GET /books/{id}`.
+  mutations): Collection-drawer link, create/edit/delete collections (`useUpdateCollection` for name/description;
+  blank description clears via explicit JSON `null`), add shelved catalog books via `GET /books` search then
+  `POST /collections/{id}/books`, reorder/remove memberships, and join title/authors via `GET /books/{id}`.
   Membership lists show shelved and wishlisted books (**Wishlist** location when `on_wishlist`); soft-deleted add is
   **412**; duplicate add is **409**; library delete drops memberships server-side (`useDeleteBook` invalidates
   `queryKeys.collections.all`). Orthogonal to shelf/wishlist placement (no shelf/wishlist overlap **412**; no
-  FEAT-26-style move-to-shelf). Collection name/description edit UI and Book Details add-to-collection are FEAT-28
-  (API `update` / `useUpdateCollection` / `useAddCollectionBook` already exist).
-- `booksApi` accepts `author` / `title` / `category` / `isbn` list filters. Collection browse on `/books` uses
-  category / author / title and URL-backed `?isbn=` (from hardware collection jump or deep link).
+  FEAT-26-style move-to-shelf). Book Details adds the current active book via `AddBookToCollectionDialog`
+  (`useAddCollectionBook` with the detail `book.id`; no catalog search).
+- `booksApi.list` / `useInfiniteBooks` wire `author` / `title` / repeated `category_id` / `isbn` for the shipped
+  FEAT-18 + FEAT-29 UI (plus sort/pagination). The checked-in contract also exposes a broader `GET /books` filter
+  surface (`shelf_name`, `is_read`, `status`, and more); expose remaining V1 controls under FEAT-30 through the
+  centralized Books URL model rather than inventing a second filter stack. Collection browse on `/books` still uses
+  multi-`category_id` / author / title and URL-backed `?isbn=` (from hardware collection jump or deep link).
 
 Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic
 `PATCH`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open (the
@@ -106,9 +113,10 @@ from the header. Collection maintenance actions (Add Book, Shelves, Deleted Book
 
 FEAT-18 collection sorting and filtering (ticket file removed after completion). Shipped URL-backed category /
 author / title filters and shelf sort on `/books` via `BooksPage`, `BooksListControls`, and `booksListModel`;
-`useInfiniteBooks` / `booksApi.list` accept `author`, `title`, and `category`; filter drafts apply explicitly and
-clear independently of sort state. Shelf sort (`sortBy=shelf`) was already in FEAT-10; this ticket added the
-filter UI and wired list queries.
+`useInfiniteBooks` / `booksApi.list` accepted `author`, `title`, and singular `category` at the time; filter drafts
+apply explicitly and clear independently of sort state. Shelf sort (`sortBy=shelf`) was already in FEAT-10; this
+ticket added the filter UI and wired list queries. FEAT-29 later replaced singular `category` / `?category=` with
+API-fed multi-`category_id` (AND) filters.
 
 FEAT-19 wishlists (ticket file removed after completion). Shipped typed `wishlistsApi` / `wishlistsQueries` /
 `queryKeys.wishlists`, `/wishlists` (`WishlistsPage`) reachable from the Collection drawer, nested memberships joined
@@ -185,10 +193,31 @@ membership `POST` with `book_id`; optional notes; copy links to `/wishlists` for
 `CollectionMembershipRow` (join via `useBook` / `GET /books/{id}`, **Wishlist** vs Title Case shelf location,
 Move up/down reorder, Remove), and styles under `.collection-*` in `components.css`. Soft-deleted add **412**;
 duplicate **409**; `useDeleteBook` invalidates `queryKeys.collections.all`. Do not port wishlist create-then-add,
-FEAT-26 move-to-shelf, or shelf pickers onto collection rows. Collection edit UI and Book Details add are FEAT-28.
+FEAT-26 move-to-shelf, or shelf pickers onto collection rows.
 
-**Next:** Remaining tickets under `docs/tickets/` start with Collections follow-up (FEAT-28), then FEAT-29 through
-FEAT-35 (dynamic categories, V1 filters, bulk selection / move-to-shelf, Home discovery, cover stretch, V1 gate).
+FEAT-28 Collections follow-up (ticket file removed after completion). Shipped collection name/description edit on
+`/collections` via `EditCollectionForm` / `collectionEditFormValuesFromCollection` /
+`validateCollectionEditFormValues` / `formValuesToCollectionUpdate` / `useUpdateCollection` (minimal patch; blank
+description → explicit JSON `null`; cancel without mutation; Field-linked **422**), and Book Details
+**Add to Collection** via `AddBookToCollectionDialog` (`useCollections` picker, optional membership notes,
+`useAddCollectionBook` with the current `book.id` -- no catalog search or `POST /books`; empty-collections link to
+`/collections`; **409** duplicate and **412** soft-deleted surfaced honestly). Do not confuse with wishlist
+move-to-shelf copy that also says "Add to Collection" on `MoveWishlistBookToShelfControl`. Do not list memberships
+on Book Details, edit membership notes, or remove membership from detail.
+
+FEAT-29 dynamic multi-category UI (ticket file removed after completion). Shipped normalized category types
+(`CategoryRead` / `BookCategoryRead`; no singular `Category` enum), `categoriesApi` / `categoriesQueries` /
+`queryKeys.categories`, `createApi.categories`, `requestFields` `category_ids`, and `booksApi.list` /
+`useInfiniteBooks` / query keys for repeated `category_id` (AND/intersection). `BookForm` multi-checkbox assignment
+(zero allowed); create/edit shelves+categories load gates; `categoryDisplay` (`formatBookCategories`,
+`categoryIdsEqual`, `sortCategoriesByName`); Books URL state via `parseCategoryIdParams` / multi-`?category_id=`;
+`BooksListControls` checkboxes from `useCategories`; list/detail display of `book.categories`. e2e mock honors
+`/categories` and intersection filters. Do not hard-code category vocabulary or revive singular `category` /
+`?category=`. Frontend category admin remains out of V1. Broader V1 filters (`shelf_name` / `is_read` / `status`)
+are FEAT-30.
+
+**Next:** Remaining tickets under `docs/tickets/` start with FEAT-30 through FEAT-35 (V1 filter plumbing, bulk
+selection / move-to-shelf, Home discovery, cover stretch, V1 gate).
 
 Notable shipped behaviors agents should preserve:
 
@@ -205,8 +234,12 @@ Notable shipped behaviors agents should preserve:
 - Dashboard: `/dashboard`; five card-catalog drawers (summary I--III, Basic Stats IV, Healing Metadata V); explicit
   Refresh across summary and report queries; offline/paused and stale status; drawer-level `QueryErrorState` recovery;
   styles in `src/styles/components.css`.
-- Edit: minimal `BookUpdate` patch (blank ISBN → `null`; never send `status`, reading fields, or loan-driving values);
-  Field-linked `422`; `404` refetch; no-op rejection; deleted warning; shelves load gate.
+- Categories: load from `GET /categories` (`useCategories`); submit GUIDs as `category_ids`; display
+  `BookRead.categories` via `formatBookCategories`; Books filters use repeated `category_id` (AND). No hard-coded
+  taxonomy and no frontend category admin in V1.
+- Edit: minimal `BookUpdate` patch (blank ISBN → `null`; omit unchanged `category_ids` / `shelf_name`; send `[]` to
+  clear categories; never send `status`, reading fields, or loan-driving values); Field-linked `422`; `404` refetch;
+  no-op rejection; deleted warning; shelves and categories load gates.
 - Delete/restore: on-loan blocking via `status === 'on_loan'` or `findActiveLoan`. Authenticated SQL dumps
   (`GET /backup`) are an API-host concern (no SPA caller); never inspect/log/cache/upload dump contents. Soft-delete
   also invalidates `queryKeys.collections.all` (server removes collection memberships).
@@ -225,10 +258,11 @@ Notable shipped behaviors agents should preserve:
   via unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`; move onto a shelf via
   `MoveWishlistBookToShelfControl` (membership `DELETE` then `PATCH { shelf_name }`); documented **412**
   shelf/wishlist exclusivity; no add-from-collection or membership field edit.
-- Collections: `/collections` via Collection drawer; create/delete collections; add shelved books via `GET /books`
-  search then membership `POST` (`book_id`); memberships joined through `GET /books/{id}`; **Wishlist** location when
-  `on_wishlist`; reorder/remove memberships; soft-deleted add **412**; duplicate **409**; no shelf/wishlist overlap
-  **412** and no move-to-shelf on collection rows. Edit collection and Book Details add-to-collection are FEAT-28.
+- Collections: `/collections` via Collection drawer; create/edit/delete collections (edit via `useUpdateCollection`;
+  blank description clears with explicit `null`); add shelved books via `GET /books` search then membership `POST`
+  (`book_id`); Book Details adds the current book via `AddBookToCollectionDialog`; memberships joined through
+  `GET /books/{id}`; **Wishlist** location when `on_wishlist`; reorder/remove memberships; soft-deleted add **412**;
+  duplicate **409**; no shelf/wishlist overlap **412** and no move-to-shelf on collection rows.
 - Scanning: camera and create-path hardware hand one ISBN into create lookup on `/books/new`; collection hardware jump
   on `/dashboard`, `/books`, and `/loans` opens a unique match or filters `/books?isbn=`. Never creates or checks out
   from scan success alone. There is no checkout capture surface.
@@ -243,8 +277,8 @@ requirements docs when deciding what to build next.
 - Vite 8
 - React Router 7 (`react-router-dom`), integrated in `src/main.tsx`
 - TanStack React Query 5 (`QueryClientProvider` mounted under `AppProviders` with configured client defaults,
-  books/loans/dashboard/shelves/wishlists/collections hooks including infinite-list pagination where applicable, and
-  mutation detail-cache writes)
+  books/loans/dashboard/shelves/categories/wishlists/collections hooks including infinite-list pagination where
+  applicable, and mutation detail-cache writes)
 - `openapi-typescript` for generating `src/api/generated/openapi.ts` from the checked-in OpenAPI document
 - `@zxing/browser` + `@zxing/library` for camera ISBN decode (lazy-loaded from `/books/new` only; not on the critical
   path for ordinary navigation)
@@ -285,6 +319,55 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
   (`src/api/bookIdentity.ts`). Treat **400** and **404** from book-identity lookups as "book not available".
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
+
+### Categories (normalized resources; OpenAPI `0.2.8+`)
+
+Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI no longer defines a singular `Category`
+string enum.
+
+- `GET /categories`: authenticated, unpaginated JSON **array** of `CategoryRead` (`category_id`, `name`, `slug`,
+  `created_date`, `updated_date`); same list pattern as `GET /shelves`.
+- `BookRead.categories`: array of `BookCategoryRead` (`category_id`, `name`, `slug`). A book may have zero, one, or
+  many memberships.
+- `BookCreate.category_ids` / `BookUpdate.category_ids`: array of category GUIDs. Create may omit or send `[]`
+  (zero categories allowed). On update: omit to preserve memberships; send `[]` to clear; send a list to replace.
+- `GET /books` accepts repeated `category_id` query params. One value requires membership in that category; multiple
+  values use **AND / intersection** (book must belong to every requested category). Duplicate IDs are rejected.
+  Blank/absent selection sends no category filter. Unknown or malformed IDs follow the OpenAPI contract; a valid
+  selection with no matches returns an empty `BookList`, not **404**.
+- Do not hard-code category names or slugs. Load vocabulary from `GET /categories` (`useCategories`) and submit stable
+  GUIDs as `category_ids`. Frontend category admin (create/rename/merge/delete) is out of V1.
+- Dashboard: `by_category` buckets use category display names; a multi-category book contributes once per applicable
+  bucket. Incomplete-metadata "missing category" means **no memberships** (not a legacy `unknown` enum value).
+
+Shipped under FEAT-29: generated types, `categoriesApi` / `useCategories`, create/edit multi-assignment, Books
+multi-`category_id` URL filters, and list/detail display. Do not revive singular `category` / `Category` enum
+assumptions.
+
+### Catalog list filters (`GET /books`)
+
+Optional filters form one composable catalog-query surface (AND across different filter types). They compose with
+`include_deleted`, supported sorting, and `skip` / `take`. No matches → empty `BookList` (`items: []`, `total: 0`),
+not **404**. When paginated, `total` remains the full matching count.
+
+Documented filter families (see OpenAPI + `API-for-FE.md` for exact params and status codes):
+
+- Text (case-insensitive substring except `isbn`): `isbn` (literal substring on stored `isbn13`), `author`, `title`,
+  `publisher`, `acquisition_source`. Blank/whitespace text filters → **400**.
+- Exact/state: `id` (Book GUID; malformed → **400**; well-formed miss → empty list), `shelf_name` (trimmed/lowercased
+  membership; unknown valid name → empty list), `is_read`, `status`, repeated `category_id` (above).
+- Inclusive numeric ranges (either bound alone; inverted range → **400**): `pages_*`, `rating_*`,
+  `purchase_price_*`, `publication_year_*`.
+- Inclusive `YYYY-MM-DD` date ranges (either bound alone; invalid syntax → **422**; inverted → **400**):
+  `purchase_date_*`, `completion_date_*`, `creation_date_*`, `updated_date_*`.
+
+Intentionally not normal V1 list filters: `notes`, `review`, `tags` (JSON text), `deletion_date` (use
+`include_deleted`), and derived loan stats (`times_borrowed`, `last_borrowed_at`, `average_loan_days`).
+
+**Frontend drift until FEAT-30:** collection browse wires `author` / `title` / repeated `category_id` / `isbn` (plus
+sort). Expose remaining V1 controls (`shelf_name`, `is_read`, `status`) through the centralized Books URL model under
+FEAT-30; do not invent page-local filter stacks. Broader contract filters (publisher, ranges, etc.) stay out unless a
+ticket explicitly needs them.
 
 ### Authority when sources disagree
 
@@ -333,11 +416,14 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 - Validate ISBN-10 check digits (backend does not do this correctly).
 - Send normalized `YYYY-MM-DD` dates and UTC ISO 8601 timestamps.
-- Do not send `null` for required DB fields (title, authors, category, shelf_name on create, is_read, status).
+- Do not send `null` for required DB fields (title, authors, shelf_name on create, is_read, status). Category
+  membership is optional (`category_ids` omit/`[]` allowed); never send a singular `category` enum field.
 - Load shelves from `GET /shelves` for book placement; send selected `common_name` as `shelf_name` (never Title Case
   display strings). Collection create on `/books/new` requires an explicit shelf. Wishlist-only catalog rows omit
   `shelf_name` on `POST /books`. Manage the catalog on `/shelves` with documented `POST` / `PATCH` / `DELETE` (do not
   invent shelf CRUD on Add/Edit Book).
+- Load categories from `GET /categories` (`useCategories`); submit GUIDs as `category_ids`. Do not hard-code category
+  vocabulary or recreate legacy labels as fake options.
 - Prevent blank title, authors, borrower, and (on create) unselected shelf.
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Render unknown enum values safely (see `enumDisplayValue`).
@@ -346,21 +432,23 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 ### Scope
 
-**In scope for MVP:** dashboard (summary plus breakdown / incomplete-metadata reports), active books with category /
-author / title / ISBN filtering and URL-backed sorting, detail, manual/ISBN/camera/scanner add flows, hardware ISBN
-collection jump on Dashboard / Books / Loans, edit, checkout on book details (display-only **412** messaging without
-alternate-copy offers), check-in, loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL
-backup at the API host (not a browser download), runtime API config, CI, Podman preview, versioned production
-artifacts, About homepage with the dashboard at `/dashboard`, wishlists, wishlist move-to-shelf, and curated
-Collections (create/delete/add/reorder/remove on `/collections`). Ticketed follow-ons (implement only when working that
-ticket): Collections edit and Book Details add (FEAT-28), dynamic multi-category UI (FEAT-29), V1 filter plumbing
-(FEAT-30), bulk selection (FEAT-31), bulk move-to-shelf (FEAT-32), Home discovery (FEAT-33), cover images stretch
-(FEAT-34), and V1 regression/deployment gate (FEAT-35).
+**In scope for MVP:** dashboard (summary plus breakdown / incomplete-metadata reports), active books with
+multi-`category_id` / author / title / ISBN filtering and URL-backed sorting, detail, manual/ISBN/camera/scanner add
+flows, hardware ISBN collection jump on Dashboard / Books / Loans, edit, checkout on book details (display-only **412**
+messaging without alternate-copy offers), check-in, loan history, reading tracking, soft delete/restore, deleted admin,
+authenticated SQL backup at the API host (not a browser download), runtime API config, CI, Podman preview, versioned
+production artifacts, About homepage with the dashboard at `/dashboard`, wishlists, wishlist move-to-shelf, curated
+Collections (create/edit/delete/add/reorder/remove on `/collections`, plus Book Details add-to-collection), and
+dynamic multi-category UI against the refreshed contract (FEAT-29). Ticketed follow-ons (implement only when working
+that ticket): V1 filter plumbing for remaining `GET /books` controls (FEAT-30), bulk selection (FEAT-31), bulk
+move-to-shelf (FEAT-32), Home discovery (FEAT-33), cover images stretch (FEAT-34), and V1 regression/deployment gate
+(FEAT-35).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, and remote
-Ansible/systemd/TLS/rollback orchestration. Cover images and many-to-many categories are ticketed (FEAT-34 stretch /
-FEAT-29); do not implement them from `docs/product-docs/CATEGORY_NOTES.md` alone (architecture notes, not a ticket).
+Ansible/systemd/TLS/rollback orchestration. Cover images remain ticketed (FEAT-34 stretch). Backend many-to-many
+categories are shipped in the SPA (FEAT-29); expanded catalog filters beyond the current Books controls are FEAT-30 --
+do not implement from `docs/product-docs/CATEGORY_NOTES.md` alone (architecture notes that may lag the contract).
 Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite scroll with backend pagination; other
 callers still fetch unpaginated full lists when needed.
 
@@ -505,12 +593,14 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
   `DashboardSummary` / `DashboardBreakdowns` / `DashboardCountBucket` / `DashboardIncompleteMetadata`, health,
-  version, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, `WishlistCreate` / `WishlistUpdate` / `WishlistRead` /
-  `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`,
-  `CollectionCreate` / `CollectionUpdate` / `CollectionRead` / `CollectionList`, `CollectionBookCreate` /
-  `CollectionBookRead` / `CollectionBookList` / `CollectionBookReorder`, validation/error schemas, enums). Book
-  payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum. Catalog identity is `BookRead.id` (UUID);
-  loans / wishlist / collection memberships reference that UUID as `book_id`.
+  version, `CategoryRead` / `BookCategoryRead`, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, `WishlistCreate` /
+  `WishlistUpdate` / `WishlistRead` / `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` /
+  `WishlistBookList` / `WishlistBookStatus`, `CollectionCreate` / `CollectionUpdate` / `CollectionRead` /
+  `CollectionList`, `CollectionBookCreate` / `CollectionBookRead` / `CollectionBookList` /
+  `CollectionBookReorder`, validation/error schemas, `Status`). Book payloads use `shelf_name` (string); there is no
+  hard-coded `Shelf` enum. Catalog identity is `BookRead.id` (UUID); loans / wishlist / collection memberships
+  reference that UUID as `book_id`. Book category memberships are `BookRead.categories` (`BookCategoryRead[]`);
+  create/update use `category_ids` (GUID array). There is no singular `Category` enum alias.
 - `src/api/guid.ts` / `bookIdentity.ts`: GUID check for book path/query ids; `isBookIdentityError` /
   `isMalformedBookId` map API **400** / **404** for malformed or unknown book identity.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
@@ -528,23 +618,27 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/apiRedaction.ts`: Safe diagnostic projection and assertions so API/error logs never retain headers, tokens,
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
-  `YYYY-MM-DD` / UTC ISO 8601 normalizers used by form tickets. Colocated unit tests cover both modules.
+  `YYYY-MM-DD` / UTC ISO 8601 normalizers used by form tickets. Book create/update pickers allowlist `category_ids`
+  (not singular `category`). Colocated unit tests cover both modules.
 - `src/api/queryKeys.ts`: Shared React Query keys for books (`all`,
-  `list({ includeDeleted, isbn?, author?, title?, category?, skip?, take?, sortBy?, sortOrder? })`,
-  `infiniteList({ includeDeleted, isbn?, author?, title?, category?, sortBy?, sortOrder?, take })`, `detail(id)`,
+  `list({ includeDeleted, isbn?, author?, title?, categoryIds?, skip?, take?, sortBy?, sortOrder? })`,
+  `infiniteList({ includeDeleted, isbn?, author?, title?, categoryIds?, sortBy?, sortOrder?, take })`, `detail(id)`,
   `lookup(isbn)`), loans (`all`, `list(bookId?)`, `infiniteList({ bookId?, take })`, `detail(id)`),
   dashboard (`all`, `breakdowns()`, `incompleteMetadata()`, `incompleteMetadataBooks({ field?, skip?, take? })`),
-  version, and shelves (`all`, `list()` unpaginated). Blank/whitespace `isbn` / `author` / `title` / `category` /
-  incomplete-metadata `field` are omitted from keys (trimmed when present). Wishlists: `all`, `list()` unpaginated,
-  `books(wishlistId)`. Collections: `all`, `list()` unpaginated, `books(collectionId)`.
-- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `dashboard`, `health`, `version`,
-  `wishlists`, `collections`) plus the underlying `client`.
-- `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `author`, `title`, `category`, `skip`, `take`,
-  `sortBy` including `shelf`, `sortOrder`; omit empty/whitespace `isbn` / `author` / `title` / `category`; send
-  `skip`/`take` together when paginating), `create`, `lookup`, `get`, `update`, `remove`,
-  `restore`, `checkout` (including documented **412** `Book is display only`), `checkin` (optional body), `markRead`
-  (defaults to `{}`). Helpers accept optional `AbortSignal` and serialize only documented request fields (including
-  `shelf_name`).
+  version, shelves (`all`, `list()` unpaginated), and categories (`all`, `list()` unpaginated). Blank/whitespace
+  `isbn` / `author` / `title` / category IDs / incomplete-metadata `field` are omitted from keys (trimmed when
+  present; `categoryIds` de-duped and sorted). Wishlists: `all`, `list()` unpaginated, `books(wishlistId)`.
+  Collections: `all`, `list()` unpaginated, `books(collectionId)`.
+- `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `categories`, `dashboard`,
+  `health`, `version`, `wishlists`, `collections`) plus the underlying `client`.
+- `src/api/categoriesApi.ts` / `categoriesQueries.ts`: `list()` (`GET /categories`) returns a plain `CategoryRead[]`
+  array (no pagination params); `useCategories({ enabled? })` keyed by `queryKeys.categories.list()`.
+- `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `author`, `title`, `categoryIds` as repeated
+  `category_id`, `skip`, `take`, `sortBy` including `shelf`, `sortOrder`; omit empty/whitespace `isbn` / `author` /
+  `title` and blank category IDs; send `skip`/`take` together when paginating), `create`, `lookup`, `get`, `update`,
+  `remove`, `restore`, `checkout` (including documented **412** `Book is display only`), `checkin` (optional body),
+  `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and serialize only documented request fields
+  (including `shelf_name` and `category_ids`). Do not revive singular `category` query/body fields.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`, optional `skip`/`take` together;
   omit empty/`undefined` `bookId` and omitted pagination params), `get(id)` (`GET /loans/{id}`).
 - `src/api/shelvesApi.ts`: `list()` (`GET /shelves`) returns a plain `ShelfRead[]` array (no pagination params);
@@ -558,9 +652,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useVersion` for the AppShell footer API release string (not a health probe).
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
   query retry that skips validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`.
-- `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, author, title, category, skip, take, sortBy,
-  sortOrder, enabled }`), `useInfiniteBooks` (optional `{ includeDeleted, isbn, author, title, category, sortBy,
-  sortOrder, enabled }`; batch size 30 via shared config),
+- `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, author, title, categoryIds, skip, take,
+  sortBy, sortOrder, enabled }`), `useInfiniteBooks` (optional `{ includeDeleted, isbn, author, title, categoryIds,
+  sortBy, sortOrder, enabled }`; batch size 30 via shared config),
   `useBook`, `useBookLookup` (query), `useLookupBook` (lookup mutation for wishlist add), plus mutations (including
   `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
   `useRestoreBook`, `useCheckoutBook`, `useCheckinBook`, and `useMarkBookRead`) that write returned `BookRead` into the
@@ -591,8 +685,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useCreateCollection`, `useUpdateCollection`, `useDeleteCollection`, `useAddCollectionBook`,
   `useReorderCollectionBook`, `useRemoveCollectionBook`. Create/update/delete invalidate `queryKeys.collections.all`;
   membership add/reorder/remove invalidate that collection's books key. `useDeleteBook` also invalidates
-  `queryKeys.collections.all` (server drops memberships on soft-delete). Product UI uses create/delete/add/reorder/
-  remove today; collection edit and Book Details add (FEAT-28) reuse `useUpdateCollection` / `useAddCollectionBook`.
+  `queryKeys.collections.all` (server drops memberships on soft-delete). Product UI uses create/edit/delete/add/
+  reorder/remove on `/collections` plus Book Details `AddBookToCollectionDialog` (`useUpdateCollection` /
+  `useAddCollectionBook`).
 
 ### Routing and Layout
 
@@ -632,29 +727,32 @@ Implemented (do not revert to placeholders):
 - `src/hooks/useInfiniteScrollTrigger.ts`: shared `IntersectionObserver` hook for prefetching the next batch near the
   bottom of loaded rows; colocated `useInfiniteScrollTrigger.test.ts`
 - `src/features/books/routes/BooksPage.tsx` (`/books`, infinite scroll + ratings + ISBN filter / collection jump):
-  active collection via `useInfiniteBooks({ category, author, title, isbn, sortBy, sortOrder })` with URL-backed
-  category / author / title / ISBN filters and sort state; `useCollectionIsbnJump` for hardware wedge navigation;
-  sort controls include Author, Title, Date added, and Shelf (default author ascending); filtered and unfiltered empty
-  states remain distinct; active `?isbn=` shows a polite Clear ISBN status; when an ISBN filter resolves to exactly one
-  book, replace-navigate to detail; loading, error+retry, and list rows link to detail with safe enum display for
-  category/status, Title Case `shelf_name` via `formatShelfCommonNameForDisplay`, Read/Unread state, and rating
+  active collection via `useInfiniteBooks({ categoryIds, author, title, isbn, sortBy, sortOrder })` with URL-backed
+  multi-`category_id` (AND) / author / title / ISBN filters and sort state; `useCategories` for filter options;
+  `useCollectionIsbnJump` for hardware wedge navigation; sort controls include Author, Title, Date added, and Shelf
+  (default author ascending); filtered and unfiltered empty states remain distinct; active `?isbn=` shows a polite
+  Clear ISBN status; when an ISBN filter resolves to exactly one book, replace-navigate to detail; loading,
+  error+retry, and list rows link to detail with `formatBookCategories` for `book.categories`, safe enum display for
+  status, Title Case `shelf_name` via `formatShelfCommonNameForDisplay`, Read/Unread state, and rating
   (`N / 5`, or an em dash when null); bottom next-page loading and retry affordances.
 - `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`): detail via `useBook`;
-  loading, not-found / error recovery, and field presentation with safe enum display, including Title Case
-  `shelf_name`, `is_read`, `completion_date`, `rating`, and `review`. "Edit Book" links to `/books/:bookId/edit` when
-  active. "Check Out" is a button that opens `CheckoutDialog` when `isCheckoutEligible` (active and `available`).
-  Deep link `?checkout=1` opens that dialog then replace-clears the search flag. "Check In" links to
-  `/loans?bookId=...` when active and check-in eligible via `isCheckinEligible` (active loan present, not deleted).
-  "Mark Read" links to `/books/:bookId/mark-read` when active and unread. "Edit Reading" links to
-  `/books/:bookId/reading` when active and already read. "Delete Book" links to `/books/:bookId/delete` when
-  active and not on loan (`status !== 'on_loan'` and no `findActiveLoan`).
+  loading, not-found / error recovery, and field presentation including `formatBookCategories` for
+  `book.categories`, Title Case `shelf_name`, `is_read`, `completion_date`, `rating`, and `review`. "Edit Book" links
+  to `/books/:bookId/edit` when active. "Add to Collection" opens `AddBookToCollectionDialog` for the current active
+  book (picker + optional notes; no catalog search). "Check Out" is a button that opens `CheckoutDialog` when
+  `isCheckoutEligible` (active and `available`). Deep link `?checkout=1` opens that dialog then replace-clears the
+  search flag. "Check In" links to `/loans?bookId=...` when active and check-in eligible via `isCheckinEligible`
+  (active loan present, not deleted). "Mark Read" links to `/books/:bookId/mark-read` when active and unread.
+  "Edit Reading" links to `/books/:bookId/reading` when active and already read. "Delete Book" links to
+  `/books/:bookId/delete` when active and not on loan (`status !== 'on_loan'` and no `findActiveLoan`).
 - `src/features/books/routes/EditBookPage.tsx` / `bookEditModel.ts` / `bookEditModel.test.ts`
-  (`/books/:bookId/edit`): metadata edit via shared `BookForm` + `useUpdateBook` / `booksApi.update` + `useShelves`;
-  populate with `bookFormValuesFromBook` (seeds `shelfId` from `shelf_name`); minimal patch via
-  `bookFormValuesToUpdate` (blank ISBN → `null`; omit unchanged `shelf_name`; never send `status`, reading fields, or
-  loan-driving values); reject no-op submits; Field-linked `422` / **400** shelf errors; `404` refetch with preserved
-  form input; in-flight disable; success to detail; deleted-book warning UI; full-page shelves load/error gate before
-  the form. Reading fields stay on mark-read / reading-edit flows.
+  (`/books/:bookId/edit`): metadata edit via shared `BookForm` + `useUpdateBook` / `booksApi.update` + `useShelves` +
+  `useCategories`; populate with `bookFormValuesFromBook` (seeds `shelfId` from `shelf_name` and `categoryIds` from
+  `categories`); minimal patch via `bookFormValuesToUpdate` (blank ISBN → `null`; omit unchanged `shelf_name` /
+  `category_ids`; send `category_ids: []` to clear; never send `status`, reading fields, or loan-driving values);
+  reject no-op submits; Field-linked `422` / **400** shelf errors; `404` refetch with preserved form input; in-flight
+  disable; success to detail; deleted-book warning UI; full-page shelves and categories load/error gates before the
+  form. Reading fields stay on mark-read / reading-edit flows.
 - `src/features/books/routes/DeleteBookPage.tsx` (`/books/:bookId/delete`): soft delete via `useDeleteBook` /
   `booksApi.remove` with `ConfirmationDialog`; blocks when `status === 'on_loan'` or `findActiveLoan` is present;
   soft-deleted / not-found / loan-status error recovery; success navigates away from the deleted detail. Never
@@ -685,23 +783,27 @@ Implemented (do not revert to placeholders):
   `pickBookUpdate`; populate from `BookRead`; send only changed `completion_date` / `rating` / `review` (blank →
   `null`); reject no-op submits; `ConfirmationDialog`; Field-linked `422`; `404` refetch with preserved form input;
   success to detail. Active already-read books only; deleted / unread warning UI. Does not offer mark-unread.
-- `src/features/books/routes/NewBookPage.tsx` (`/books/new`): loads `useShelves` first
-  (loading / full-page `QueryErrorState` without mounting `BookForm` on failure); mounts shared `BookForm` with shelves,
-  optional ISBN lookup via `useBookLookup` (checksum-gated; apply draft without overwriting the typed ISBN;
-  progress/cancel/retry and manual fallback), creates via `useCreateBook`, maps create `422` `shelf_name` and **400**
-  shelf errors into the form summary, disables controls while pending, and navigates to the new detail on success.
-  Camera ("Scan ISBN") and hardware scanner capture hands one ISBN into the same lookup path (never calls `POST /books`
-  from scanner success); hardware listening is disabled while the camera UI is open or lookup is fetching
+- `src/features/books/routes/NewBookPage.tsx` (`/books/new`): loads `useShelves` and `useCategories` first
+  (loading / full-page `QueryErrorState` without mounting `BookForm` on either failure); mounts shared `BookForm` with
+  shelves and categories, optional ISBN lookup via `useBookLookup` (checksum-gated; apply draft without overwriting the
+  typed ISBN; progress/cancel/retry and manual fallback), creates via `useCreateBook`, maps create `422` `shelf_name`
+  / `category_ids` and **400** shelf errors into the form summary, disables controls while pending, and navigates to
+  the new detail on success. Camera ("Scan ISBN") and hardware scanner capture hands one ISBN into the same lookup
+  path (never calls `POST /books` from scanner success); hardware listening is disabled while the camera UI is open or
+  lookup is fetching
 - `src/features/books/components/BookForm.tsx` / `bookFormDefaults.ts` / `bookFormModel.ts`: reusable create/edit form
-  model (title, authors, ISBN, publisher, publication date as text for year-only values, pages, category, `shelfId`
-  from `GET /shelves`, tags, purchase fields, notes). Create UI omits status/read/loan/review; create conversion always
-  sends `status=available` and `is_read=false` and resolves `shelfId` → `shelf_name` (`common_name`); create defaults
-  to empty shelf selection (explicit pick required, including `unknown`). Shelf options use Title Case labels; exclude
-  `removed` except edit may surface current `removed` membership as a disabled selected option. No inline shelf CRUD.
-  Edit conversion lives in `bookEditModel` (minimal patch; never status/reading/loan fields). Client validation,
-  Field-linked errors, error summary focus, tag normalization, and `formValuesToBookCreate` blank-optional-to-`null`
-  conversion. Submit label is "Save Book". Colocated `BookForm.test.tsx` / `bookFormModel.test.ts` cover gating,
-  validation, conversion, and server error linking
+  model (title, authors, ISBN, publisher, publication date as text for year-only values, pages, multi-`categoryIds`
+  checkboxes from API categories, `shelfId` from `GET /shelves`, tags, purchase fields, notes). Create UI omits
+  status/read/loan/review; create conversion always sends `status=available` and `is_read=false`, resolves `shelfId` →
+  `shelf_name` (`common_name`), and sends `category_ids` (including `[]`). Create defaults to empty shelf selection
+  (explicit pick required, including `unknown`) and empty categories. Shelf options use Title Case labels; exclude
+  `removed` except edit may surface current `removed` membership as a disabled selected option. No inline shelf or
+  category CRUD. Edit conversion lives in `bookEditModel` (minimal patch; never status/reading/loan fields). Client
+  validation, Field-linked errors, error summary focus, tag normalization, and `formValuesToBookCreate`
+  blank-optional-to-`null` conversion. Submit label is "Save Book". Colocated `BookForm.test.tsx` /
+  `bookFormModel.test.ts` cover gating, validation, conversion, and server error linking
+- `src/features/books/categoryDisplay.ts`: `formatBookCategories` (comma-joined names or "None"), `categoryIdsEqual`,
+  and `sortCategoriesByName`; colocated `categoryDisplay.test.ts`
 - `src/features/shelves/shelfDisplay.ts`: Title Case `formatShelfCommonNameForDisplay`, assignable-shelf helpers
   (`unknown` allowed; `removed` excluded), system-shelf rename/delete guards, and id↔`common_name` lookup; colocated
   `shelfDisplay.test.ts`
@@ -713,12 +815,13 @@ Implemented (do not revert to placeholders):
   `ConfirmationDialog` for delete; Field-linked **422** plus **400** / **404** / **409** mapping; loading /
   `QueryErrorState` / empty states. Book forms do not create or edit shelves.
 - `src/features/books/booksListModel.ts`: `BOOKS_BATCH_SIZE` (from shared infinite-scroll config), sort types
-  (`author` | `title` | `creationDate` | `shelf`), sort and category/text/ISBN-filter URL parsing (`parseIsbnParam`
-  via `compactIsbnForListFilter`), labels, category filter values, and page flattening helper; colocated
-  `booksListModel.test.ts`
-- `src/features/books/components/BooksListControls.tsx`: labelled category / author / title filter controls plus sort
-  selects for `BooksPage` (including Shelf); author/title drafts apply explicitly and can be cleared independently of
-  sort state. ISBN filter is URL/hardware-driven (status + Clear ISBN on `BooksPage`), not a typed control here.
+  (`author` | `title` | `creationDate` | `shelf`), sort and filter URL parsing (`parseCategoryIdParams` for repeated
+  `category_id`, `parseTextFilterParam`, `parseIsbnParam` via `compactIsbnForListFilter`), labels, and page flattening
+  helper; colocated `booksListModel.test.ts`. No hard-coded `CATEGORY_FILTER_VALUES` or singular `?category=`.
+- `src/features/books/components/BooksListControls.tsx`: multi-category checkboxes (from `useCategories` options) plus
+  author / title filter controls and sort selects for `BooksPage` (including Shelf); drafts apply explicitly and can
+  be cleared independently of sort state. ISBN filter is URL/hardware-driven (status + Clear ISBN on `BooksPage`), not
+  a typed control here. Remaining V1 filters (`shelf_name` / `is_read` / `status`) are FEAT-30.
 - `src/features/books/utils/isbn.ts`: ISBN-10 / ISBN-13 checksum helpers plus `compactIsbnForListFilter` (punctuation
   strip only for `GET /books?isbn=`); used by lookup, create, scanner capture, collection jump, and `/books` ISBN list
   filtering. Not used by checkout. Colocated unit tests
@@ -773,20 +876,27 @@ Implemented (do not revert to placeholders):
   **412** refetch; partial-failure retry when membership already removed; success navigates to `/books/{bookId}`.
   Colocated `MoveWishlistBookToShelfControl.test.tsx` / `moveWishlistBookModel.test.ts`
 - `src/features/collections/routes/CollectionsPage.tsx` (`/collections`): `useCollections` plus nested
-  `useCollectionBooks`; create form with Field-linked **422**; add via `AddCollectionBookControl` (shelved-only
-  `GET /books` search by ISBN / title / author, then `useAddCollectionBook`); membership rows via
-  `CollectionMembershipRow` (join `useBook` / `GET /books/{id}`, durable `Book {id}` fallback, omit soft-deleted,
-  **Wishlist** vs Title Case shelf location, Move up/down, Remove with `ConfirmationDialog`); permanent collection
-  delete via `ConfirmationDialog` + `useDeleteCollection` (memberships removed, catalog books remain). Intro copy
-  distinguishes curated lists from Browse and Wishlists. No collection name/description edit UI yet (FEAT-28;
-  `useUpdateCollection` exists). No Book Details add-to-collection yet (FEAT-28). No shelf pickers or FEAT-26
-  move-to-shelf on collection rows.
+  `useCollectionBooks`; create form with Field-linked **422**; edit via `EditCollectionForm` /
+  `useUpdateCollection` (name/description; blank description → explicit `null`; cancel without mutation;
+  Field-linked **422**); add via `AddCollectionBookControl` (shelved-only `GET /books` search by ISBN / title /
+  author, then `useAddCollectionBook`); membership rows via `CollectionMembershipRow` (join `useBook` /
+  `GET /books/{id}`, durable `Book {id}` fallback, omit soft-deleted, **Wishlist** vs Title Case shelf location,
+  Move up/down, Remove with `ConfirmationDialog`); permanent collection delete via `ConfirmationDialog` +
+  `useDeleteCollection` (memberships removed, catalog books remain). Intro copy distinguishes curated lists from
+  Browse and Wishlists. No shelf pickers or FEAT-26 move-to-shelf on collection rows.
 - `src/features/collections/components/AddCollectionBookControl.tsx` /
   `src/features/collections/collectionFormModel.ts` / `src/features/collections/collectionDisplay.ts`: shelved
   catalog find (`useBooks`, no `include_deleted`, no unshelved wishlist-only rows) then membership add with optional
   notes; **404** / **409** duplicate / **412** soft-deleted / Field-linked **422**; location helpers
-  (`displayCollectionBookLocation`, wishlist emphasis class); create-form validation and conversion. Copy links to
-  `/wishlists` for books not yet on a shelf. Colocated tests cover create/add/display helpers and controls.
+  (`displayCollectionBookLocation`, wishlist emphasis class); create and edit form validation/conversion
+  (`collectionEditFormValuesFromCollection`, `formValuesToCollectionUpdate`). Copy links to `/wishlists` for books
+  not yet on a shelf. Colocated tests cover create/edit/add/display helpers and controls.
+- `src/features/collections/components/AddBookToCollectionDialog.tsx`: Book Details dialog to add the current active
+  book to a chosen collection (`useCollections` picker, optional notes, `useAddCollectionBook` with `book.id`; no
+  catalog search or create). Empty-collections state links to `/collections`. Surfaces **409** duplicate and **412**
+  soft-deleted honestly; does not change shelf, wishlist, reading, or circulation state. Distinct from wishlist
+  move-to-shelf "Add to Collection" copy on `MoveWishlistBookToShelfControl`. Colocated
+  `AddBookToCollectionDialog.test.tsx`.
 
 Scanning feature (complete -- extend, do not replace):
 
@@ -945,15 +1055,15 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
-  `dashboardApi.test.ts` / `healthApi.test.ts` / `versionApi.test.ts`: Typed route helper coverage
-  including dashboard summary and report paths, lookup `found: false`, mark-read `{}`, omitted check-in body,
-  restore/checkout/check-in `409` bodies, and a 2_000-item list timing guard.
+  `dashboardApi.test.ts` / `healthApi.test.ts` / `versionApi.test.ts` / `categoriesApi.test.ts`: Typed route helper
+  coverage including dashboard summary and report paths, lookup `found: false`, mark-read `{}`, omitted check-in body,
+  restore/checkout/check-in `409` bodies, repeated `category_id` list filters, and a 2_000-item list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
   Query client defaults, books/loans/dashboard hooks, detail-cache writes, and abort/stale overwrite guards.
-- `src/api/queryKeys.test.ts`: Books/loans/dashboard/shelves/wishlists/collections/version key shape coverage including
-  `author` / `title` / `category` omission of blank filters, dashboard nested report keys, `infiniteList` isolation,
-  and shelves / wishlists / collections list isolation.
+- `src/api/queryKeys.test.ts`: Books/loans/dashboard/shelves/categories/wishlists/collections/version key shape
+  coverage including `author` / `title` / `categoryIds` omission of blank filters, dashboard nested report keys,
+  `infiniteList` isolation, and shelves / categories / wishlists / collections list isolation.
 - `src/api/shelvesApi.test.ts` / `shelvesQueries.test.tsx`: `GET` / `POST` / `PATCH` / `DELETE /shelves` helpers and
   `useShelves` / write mutation hooks (including rename invalidation of books/dashboard).
 - `src/api/wishlistsApi.test.ts` / `wishlistsQueries.test.tsx`: wishlist list/create/update/delete/listBooks/addBook/
@@ -965,23 +1075,27 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   books query, create/update/delete invalidation of `collections.all`, and membership write invalidation of
   `collections.books(collectionId)`.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
-  (includes `/shelves`, `/shelves/{shelf_id}`, `/version`, `/backup`, wishlist paths including membership DELETE,
-  Collections paths, dashboard-report paths, and existing lifecycle routes).
+  (includes `/categories`, `/shelves`, `/shelves/{shelf_id}`, `/version`, `/backup`, wishlist paths including
+  membership DELETE, Collections paths, dashboard-report paths, and existing lifecycle routes).
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
   unauthorized handling without cache clear, and build-time token wiring.
 - `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection
   infinite scroll (batch size 30, sort URL persistence, flattened pages, bottom loading/retry, Read/Unread and rating
-  on cards, Title Case `shelf_name`, URL `isbn` filter / Clear ISBN / unique-match auto-open, collection jump), detail
+  on cards, Title Case `shelf_name`, multi-`category_id` URL filters / Clear Filters, `formatBookCategories`, URL
+  `isbn` filter / Clear ISBN / unique-match auto-open, collection jump), detail
   (including gated Check Out via `CheckoutDialog` / `?checkout=1`, Mark Read / Edit Reading / Edit Book / Delete Book
-  with active-loan gating, and soft-deleted action gating), and create-route behavior (shelves load gate / failure
-  blocks form, loading/error/empty, navigation, create success with `shelf_name`, lookup success / `found: false` /
+  with active-loan gating, soft-deleted action gating, and multi-category display), and create-route behavior (shelves
+  and categories load gates / failure blocks form, loading/error/empty, navigation, create success with `shelf_name`
+  and `category_ids`, lookup success / `found: false` /
   provider failure / checksum rejection, create `422` field mapping, camera and hardware scanner handoff into lookup)
 - `src/features/shelves/routes/ShelvesPage.test.tsx` / `shelfDisplay.test.ts` / `shelfFormModel.test.ts`: Shelves
   catalog loading/error/empty, Title Case labels, system-shelf badges and rename/delete guards, create/edit/delete
   flows with Field-linked errors and confirmation, plus display/assignable/form-model helper coverage
 - `src/features/books/routes/EditBookPage.test.tsx` / `bookEditModel.test.ts`: Edit eligibility (active books only;
-  deleted warning), populate-from-book, minimal changed-fields patch (blank ISBN → `null`; no status/reading/loan
+  deleted warning), shelves and categories load gates, populate-from-book (including `categoryIds`), minimal
+  changed-fields patch (blank ISBN → `null`; omit unchanged `category_ids`; send `[]` to clear; no status/reading/loan
   fields), no-op rejection, Field-linked `422`, mutation `404`, pending disable, and success navigation
+- `src/features/books/categoryDisplay.test.ts`: `formatBookCategories`, `categoryIdsEqual`, and `sortCategoriesByName`
 - `src/features/books/routes/DeleteBookPage.test.tsx`: Delete confirmation, on-loan blocking via status and
   `findActiveLoan`, soft-deleted / not-found warnings, success navigation, and mutation error recovery
 - `src/features/books/routes/DeletedBooksPage.test.tsx`: Deleted list filtering, empty state, restore confirmation,
@@ -1053,8 +1167,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   loans. Automated axe supplements keyboard, responsive-layout, and assistive-technology review; it does not replace
   them.
 - `e2e/support/mockApi.ts`: Stateful Playwright route mock for `http://127.0.0.1:8000/**` (health, version, shelves,
-  books, loans, dashboard summary, lookup, and lifecycle mutations). No wishlist, Collections, dashboard-report, or
-  `/backup` fixtures yet (extend when a ticket needs them; SQL backup remains API-host-only).
+  categories, books with repeated `category_id` AND filters and `category_ids` on create/update, loans, dashboard
+  summary, lookup, and lifecycle mutations). No wishlist, Collections, dashboard-report, or `/backup` fixtures yet
+  (extend when a ticket needs them; SQL backup remains API-host-only).
 - `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
@@ -1136,7 +1251,7 @@ make check / yarn check
   files), global test setup, V8 coverage thresholds, `__APP_VERSION__` from `package.json`, and an optional
   same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
   `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, `/wishlists`, and `/collections`
-  (not `/shelves` or `/version`).
+  (not `/shelves`, `/version`, or `/categories`).
 - `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`,
   `node_modules/`, and `ci/artifacts/` and treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
@@ -1214,17 +1329,20 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-28_*.md` through `FEAT-35_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-27 are complete; those ticket files are removed). Prefer ticket presence under
-  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Next product work is FEAT-28 (Collections
-  follow-up); FEAT-29--FEAT-35 cover V1 categories, filters, bulk actions, Home discovery, cover stretch, and the
-  regression gate.
+- `docs/tickets/FEAT-30_*.md` through `FEAT-35_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-29 are complete; those ticket files are removed). Prefer ticket presence under
+  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Next product work is FEAT-30 (V1 filter
+  plumbing for `shelf_name` / `is_read` / `status` on the centralized Books URL model); FEAT-31--FEAT-35 cover bulk
+  actions, Home discovery, cover stretch, and the regression gate.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
-- `docs/product-docs/CATEGORY_NOTES.md`: Future book-category architecture notes (many-to-many / data-driven labels).
-  Not a ticket; implement category changes from FEAT-29 when working that ticket, not from this notes file alone.
+- `docs/product-docs/CATEGORY_NOTES.md`: Historical / architectural category notes. Prefer checked-in
+  `openapi.json` + `API-for-FE.md` for the live many-to-many contract; FEAT-29 already adapted the SPA -- do not
+  reintroduce hard-coded taxonomy from this notes file alone.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
-- `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (see Backend Contract).
+- `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
+  `info.version` `0.2.8` -- see Backend Contract), including `GET /categories`, book `categories` /
+  `category_ids`, and the expanded `GET /books` filter query params.
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json`.
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
@@ -1266,7 +1384,9 @@ Common commands:
 - `make check`: Runs lint, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright e2e, the
   production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
-- `yarn api:check`: Regenerates types and fails if the generated file differs from git.
+- `yarn api:check`: Regenerates types and fails if the generated file differs from git. Keep callers aligned with the
+  checked-in OpenAPI (including `CategoryRead` / `category_ids` / repeated `category_id`); do not hand-edit generated
+  types.
 
 `make check` currently performs type checking twice because `make build` also type-checks. This is expected.
 
@@ -1333,12 +1453,12 @@ make build
   `wishlistsApi` / `wishlistsQueries` (`/wishlists` owns catalog CRUD, add, and move-to-shelf; memberships via
   `useBook` / `GET /books/{id}`; add via unshelved create then membership; move via membership `DELETE` then
   `PATCH { shelf_name }`; no add-from-collection or membership field edit). Leave collections under `CollectionsPage` /
-  `AddCollectionBookControl` / `CollectionMembershipRow` / `collectionFormModel` / `collectionDisplay` /
-  `collectionsApi` / `collectionsQueries` (`/collections` owns create/delete, shelved-only add search, reorder/remove;
-  memberships via `useBook` / `GET /books/{id}`; soft-deleted add **412**; duplicate **409**; no shelf/wishlist overlap
-  **412**; no FEAT-26 move-to-shelf on collection rows). FEAT-28 owns collection edit UI and Book Details
-  add-to-collection; do not invent those surfaces in unrelated changes. FEAT-13 test infrastructure is complete:
-  keep Vitest / Testing Library / `renderAppTree`
+  `EditCollectionForm` / `AddCollectionBookControl` / `AddBookToCollectionDialog` / `CollectionMembershipRow` /
+  `collectionFormModel` / `collectionDisplay` / `collectionsApi` / `collectionsQueries` (`/collections` owns
+  create/edit/delete, shelved-only add search, reorder/remove; Book Details owns add-current-book via
+  `AddBookToCollectionDialog`; memberships via `useBook` / `GET /books/{id}`; soft-deleted add **412**; duplicate
+  **409**; no shelf/wishlist overlap **412**; no FEAT-26 move-to-shelf on collection rows). FEAT-13 test
+  infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
   coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced coverage floors,
   and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites rather than
   inventing a parallel fake-API stack or removing them from the gate. FEAT-14 CI packaging is complete: keep
@@ -1347,7 +1467,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-28--FEAT-35 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-30--FEAT-35 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
@@ -1355,7 +1475,9 @@ make build
   mutations. There is no realtime API.
 - For API-dependent work, treat `docs/technical-reference/openapi.json` as the schema source of truth and
   `docs/technical-reference/API-for-FE.md` as behavioral guidance. Prefer a running backend `/openapi.json` for drift
-  checks when available; do not invent lifecycle behavior with generic `PATCH`.
+  checks when available; do not invent lifecycle behavior with generic `PATCH`. Leave categories under
+  `categoriesApi` / `useCategories` / `categoryDisplay` / `BookForm` multi-assignment / Books multi-`category_id`
+  filters (FEAT-29 complete); do not revive singular `category` enum selectors or hard-coded taxonomy.
 - Prefer product-domain names over vague folders such as `helpers` or `misc`.
 - Never commit the API token (keep `.env` gitignored), put it in URLs, log Authorization headers, render API text as
   HTML, or upload SQL backup contents to telemetry. The token is injected at build time and appears in JS bundles by

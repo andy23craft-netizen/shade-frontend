@@ -1,4 +1,3 @@
-import type { Category } from '../../api/apiTypes'
 import { compactIsbnForListFilter } from './utils/isbn'
 
 export {
@@ -17,14 +16,6 @@ export type BookSortOrder =
 
 export const DEFAULT_SORT_BY: BookSortBy = 'author'
 export const DEFAULT_SORT_ORDER: BookSortOrder = 'asc'
-
-export const CATEGORY_FILTER_VALUES: readonly Category[] = [
-    'unknown',
-    'religion',
-    'philosophy',
-    'fiction',
-    'nonfiction',
-]
 
 const SORT_BY_VALUES: readonly BookSortBy[] = [
     'author',
@@ -83,19 +74,30 @@ export function parseSortOrderParam(
     return DEFAULT_SORT_ORDER
 }
 
-export function parseCategoryParam(
-    value: string | null,
-): Category | undefined {
-    if (
-        value !== null &&
-        CATEGORY_FILTER_VALUES.includes(
-            value as Category,
-        )
-    ) {
-        return value as Category
+/**
+ * Trim, de-dupe, and sort category_id URL values for stable list filters.
+ */
+export function parseCategoryIdParams(
+    values: string[],
+): string[] {
+    const seen = new Set<string>()
+    const result: string[] = []
+
+    for (const value of values) {
+        const trimmed = value.trim()
+
+        if (
+            trimmed === '' ||
+            seen.has(trimmed)
+        ) {
+            continue
+        }
+
+        seen.add(trimmed)
+        result.push(trimmed)
     }
 
-    return undefined
+    return result.sort()
 }
 
 export function parseTextFilterParam(
