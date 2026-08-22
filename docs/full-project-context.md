@@ -5,16 +5,15 @@ repository access).
 
 This document is the complete always-on operating context for those
 chats. It stands on its own for operating rules, non-negotiables, and
-the dated codebase baseline. Start from this file alone. Do not require
-`docs/AGENTS.md` or any other agents guide; this pack does not depend on
-them. Attach the on-demand docs listed in section 8 only when the
-current ticket needs them; do not re-synthesize those sources here. A
-user's explicit request takes precedence over general guidance here.
+the dated codebase baseline. Start from this file alone. Attach the
+on-demand docs listed in section 8 only when the current ticket needs
+them; do not re-synthesize those sources here. A user's explicit
+request takes precedence over general guidance here.
 
 Source of truth for API schemas, behavioral API notes, product
 requirements, and plans lives in the docs listed in section 8.
 
-Context pack version: 2026-08-21. Refresh this prompt when operating
+Context pack version: 2026-08-22. Refresh this prompt when operating
 rules, non-negotiables, or the known baseline change.
 
 The **current feature ticket is supplied separately** after this
@@ -59,7 +58,7 @@ If browser-support or production-host security baselines are needed:
   - README.md / docs/MAINTAINERS.md for the documented production-host security boundary
   - bundle-budget and CI facts in this master context (FEAT-14 complete)
 
-If later product tickets (FEAT-28 through FEAT-35):
+If later product tickets (FEAT-29 through FEAT-35):
   - the current ticket
   - docs/technical-reference/openapi.json and API-for-FE.md when the ticket touches new API surfaces
   - docs/product-docs/UI_DESIGN_NOTES.MD when layout or visual design is in question
@@ -205,7 +204,7 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
 `docs/technical-reference/API-for-FE.md` (behavior). Live OpenAPI:
 `/docs` and `/openapi.json` on the running API.
 
-**Known baseline (as of 2026-08-21 -- verify before editing):**
+**Known baseline (as of 2026-08-22 -- verify before editing):**
 
 -   MVP product UI is shipped: application shell and shared primitives;
     runtime config and build-time Bearer auth; typed OpenAPI + React Query
@@ -235,17 +234,18 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     (membership `DELETE` then `PATCH { shelf_name }`); **412** shelf/
     wishlist exclusivity. Curated Collections: `/collections` via
     Collection drawer; `collectionsApi` / `useCollections` /
-    `useCollectionBooks` / write mutations; create/delete collections;
-    add shelved catalog books via `GET /books` search then
-    `POST /collections/{id}/books`; reorder/remove memberships; join
-    title/authors via `GET /books/{id}`; **Wishlist** location when
+    `useCollectionBooks` / write mutations; create/edit/delete collections
+    (`useUpdateCollection` for name/description; blank description clears
+    via explicit JSON `null`); add shelved catalog books via `GET /books`
+    search then `POST /collections/{id}/books`; reorder/remove memberships;
+    join title/authors via `GET /books/{id}`; **Wishlist** location when
     `on_wishlist`; soft-deleted add **412**; duplicate **409**; library
     delete drops memberships server-side (`useDeleteBook` invalidates
     `queryKeys.collections.all`). Orthogonal to shelf/wishlist placement
     (no shelf/wishlist overlap **412**; no FEAT-26-style move-to-shelf).
-    Collection name/description edit UI and Book Details add-to-collection
-    are FEAT-28 (API `update` / `useUpdateCollection` /
-    `useAddCollectionBook` already exist). Shelves: `GET` /
+    Book Details adds the current active book via `AddBookToCollectionDialog`
+    (`useAddCollectionBook` with the detail `book.id`; no catalog search).
+    Shelves: `GET` /
     `POST` / `PATCH` / `DELETE /shelves` via `shelvesApi` (`list` /
     `create` / `update` / `remove`) and `useShelves` / `useCreateShelf` /
     `useUpdateShelf` / `useDeleteShelf`; book payloads use `shelf_name`
@@ -260,14 +260,15 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     `useLoan`, Check In on `/loans?bookId=`) remain in place.
     `booksApi.list({ isbn })` / `useInfiniteBooks({ isbn })` power the
     collection ISBN filter and collection jump (checkout no longer uses
-    them). Remaining tickets under `docs/tickets/` start with Collections
-    follow-up (`FEAT-28`), then `FEAT-29` through `FEAT-35`. FEAT-13
+    them). Remaining tickets under `docs/tickets/` start with `FEAT-29`
+    through `FEAT-35`. FEAT-13
     workflow and accessibility testing, FEAT-14 CI packaging, FEAT-15 Podman deployed
     development, FEAT-16 versioned release artifacts, FEAT-17 About homepage, FEAT-18 collection category / author /
     title filters, FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only checkout alternate-copy UX,
     FEAT-22 check-in consolidation onto `/loans`, FEAT-23 checkout consolidation onto book details, FEAT-24
     hardware ISBN scan on Dashboard / Books / Loans, FEAT-25 remove browser backup page, FEAT-26 wishlist
-    move-to-shelf, and FEAT-27 curated Collections are complete (those ticket files are removed).
+    move-to-shelf, FEAT-27 curated Collections, and FEAT-28 Collections follow-up are complete (those ticket
+    files are removed).
     Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Prefer dedicated
     lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic `PATCH`. Do not
     invent undocumented routes, realtime channels, or lifecycle shortcuts.
@@ -418,7 +419,20 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     (join via `useBook`, **Wishlist** vs Title Case shelf location, reorder/remove), soft-deleted
     add **412**, duplicate **409**, `useDeleteBook` invalidates `queryKeys.collections.all`.
     Do not port wishlist create-then-add or FEAT-26 move-to-shelf onto collection rows.
-    Remaining product follow-ons start at FEAT-28. Do not implement future tickets early.
+    FEAT-28 Collections follow-up is complete (ticket file removed): collection
+    name/description edit on `/collections` via `EditCollectionForm` /
+    `collectionEditFormValuesFromCollection` / `validateCollectionEditFormValues` /
+    `formValuesToCollectionUpdate` / `useUpdateCollection` (minimal patch; blank
+    description → explicit JSON `null`; cancel without mutation; Field-linked
+    **422**), and Book Details **Add to Collection** via `AddBookToCollectionDialog`
+    (`useCollections` picker, optional membership notes, `useAddCollectionBook` with
+    the current `book.id` -- no catalog search or `POST /books`; empty-collections
+    link to `/collections`; **409** duplicate and **412** soft-deleted surfaced
+    honestly). Do not confuse with wishlist move-to-shelf copy that also says
+    "Add to Collection" on `MoveWishlistBookToShelfControl`. Do not list
+    memberships on Book Details, edit membership notes, or remove membership from
+    detail. Remaining product follow-ons start at FEAT-29. Do not implement future
+    tickets early.
 -   About `/` via `AboutPage` + `CatalogGuide` (library background,
     Charles Leewright dedication, lending policy, and accessible
     card-catalog How to Use dialog with in-app workflow links). Does
@@ -654,9 +668,9 @@ index.html
         `useAddCollectionBook`, `useReorderCollectionBook`,
         `useRemoveCollectionBook`. Create/update/delete invalidate
         `queryKeys.collections.all`; membership writes invalidate that
-        collection's books key. Product UI uses create/delete/add/reorder/
-        remove today; collection edit and Book Details add (FEAT-28) reuse
-        `useUpdateCollection` / `useAddCollectionBook`.
+        collection's books key. Product UI uses create/edit/delete/add/reorder/
+        remove on `/collections` plus Book Details `AddBookToCollectionDialog`
+        (`useUpdateCollection` / `useAddCollectionBook`).
     -   Abort/stale overwrite guards are covered by colocated tests
 -   Infinite scroll (complete on `/books` and `/loans` -- extend, do not
     replace):
@@ -720,7 +734,9 @@ index.html
         not-found / error recovery, safe enum display, including Title
         Case `shelf_name`, `is_read`, `completion_date`, `rating`, and
         `review`; "Edit Book" links to `/books/:bookId/edit` when
-        active; "Check Out" is a button that opens `CheckoutDialog` when
+        active; "Add to Collection" opens `AddBookToCollectionDialog` for
+        the current active book (picker + optional notes; no catalog
+        search); "Check Out" is a button that opens `CheckoutDialog` when
         `isCheckoutEligible` (active and `available`); deep link
         `?checkout=1` opens that dialog then replace-clears the search
         flag; "Check In" links to
@@ -843,19 +859,21 @@ index.html
         membership remove outside move-to-shelf. Collection `/books` has
         no add-to-wishlist control.
     -   `/collections` -- `CollectionsPage` + `AddCollectionBookControl` /
-        `CollectionMembershipRow` / `collectionFormModel` /
-        `collectionDisplay` (complete for FEAT-27): `useCollections` plus
-        nested `useCollectionBooks`; create form with Field-linked **422**;
+        `AddBookToCollectionDialog` / `CollectionMembershipRow` /
+        `collectionFormModel` / `collectionDisplay` (complete through
+        FEAT-28): `useCollections` plus nested `useCollectionBooks`; create
+        form with Field-linked **422**; edit via `EditCollectionForm` /
+        `useUpdateCollection` (name/description; blank description →
+        explicit `null`; cancel without mutation; Field-linked **422**);
         add via shelved-only `GET /books` search (ISBN / title / author)
         then `useAddCollectionBook`; membership join via `useBook` /
         `GET /books/{id}` with durable `Book {id}` fallback; omit
         soft-deleted memberships; **Wishlist** vs Title Case shelf location;
         Move up/down reorder; Remove with `ConfirmationDialog`; permanent
         collection delete via `ConfirmationDialog` + `useDeleteCollection`.
-        Soft-deleted add **412**; duplicate **409**. No collection
-        name/description edit UI yet (FEAT-28; `useUpdateCollection`
-        exists). No Book Details add-to-collection yet (FEAT-28). No shelf
-        pickers or FEAT-26 move-to-shelf on collection rows.
+        Soft-deleted add **412**; duplicate **409**. Book Details adds the
+        current book via `AddBookToCollectionDialog`. No shelf pickers or
+        FEAT-26 move-to-shelf on collection rows.
     -   `/admin/deleted` -- `DeletedBooksPage` (complete):
         `useBooks({ includeDeleted: true })` filtered to non-null
         `deletion_date`; restore via `ConfirmationDialog` +
@@ -1222,14 +1240,15 @@ merely to make a ticket pass.
     unshelved create then membership; move via membership `DELETE` then
     `PATCH { shelf_name }`; no add-from-collection or membership field
     edit). Leave collections under `CollectionsPage` /
-    `AddCollectionBookControl` / `CollectionMembershipRow` /
+    `EditCollectionForm` / `AddCollectionBookControl` /
+    `AddBookToCollectionDialog` / `CollectionMembershipRow` /
     `collectionFormModel` / `collectionDisplay` / `collectionsApi` /
-    `collectionsQueries` (`/collections` owns create/delete, shelved-only
-    add search, reorder/remove; memberships via `useBook` /
-    `GET /books/{id}`; soft-deleted add **412**; duplicate **409**; no
-    shelf/wishlist overlap **412**; no FEAT-26 move-to-shelf on collection
-    rows). FEAT-28 owns collection edit UI and Book Details
-    add-to-collection; do not invent those surfaces in unrelated changes.
+    `collectionsQueries` (`/collections` owns create/edit/delete,
+    shelved-only add search, reorder/remove; Book Details owns
+    add-current-book via `AddBookToCollectionDialog`; memberships via
+    `useBook` / `GET /books/{id}`; soft-deleted add **412**; duplicate
+    **409**; no shelf/wishlist overlap **412**; no FEAT-26 move-to-shelf
+    on collection rows).
     Leave scanner code under `src/features/scanning/`:
     camera lazy-loaded from `/books/new` only; create-path hardware on
     `NewBookPage`; collection jump via `useCollectionIsbnJump` on
@@ -1266,7 +1285,7 @@ merely to make a ticket pass.
     keep `scripts/packRelease.ts`, Make `pack`, gitignored
     `ci/artifacts/`, and the production-like host inspection tests; do
     not upload secret-bearing archives from default CI. Do not pull
-    FEAT-28--FEAT-35 product work into unrelated changes. Never
+    FEAT-29--FEAT-35 product work into unrelated changes. Never
     simulate restore, checkout, check-in, or initial mark-read with
     generic `PATCH`.
 -   Prefer regenerating `src/api/generated/openapi.ts` over hand-editing
@@ -1288,9 +1307,9 @@ loan history, shelves catalog, reading tracking, soft delete/restore, deleted
 admin, authenticated SQL backup at the API host (not a browser download), runtime API config, CI, Podman preview,
 versioned production artifacts, About homepage with the dashboard at
 `/dashboard`, wishlists, wishlist move-to-shelf, and curated Collections
-(create/delete/add/reorder/remove on `/collections`). Ticketed follow-ons
-(implement only when working that ticket): Collections edit and Book Details
-add (FEAT-28), dynamic multi-category UI (FEAT-29), V1 filter plumbing
+(create/edit/delete/add/reorder/remove on `/collections`, plus Book Details
+add-to-collection). Ticketed follow-ons (implement only when working that
+ticket): dynamic multi-category UI (FEAT-29), V1 filter plumbing
 (FEAT-30), bulk selection (FEAT-31), bulk move-to-shelf (FEAT-32), Home
 discovery (FEAT-33), cover images stretch (FEAT-34), and V1
 regression/deployment gate (FEAT-35).
@@ -1315,10 +1334,10 @@ FEAT-19 wishlists, FEAT-20 dashboard reports, FEAT-21 display-only
 checkout alternate-copy UX, FEAT-22 check-in consolidation onto
 `/loans`, FEAT-23 checkout consolidation onto book details, FEAT-24
 hardware ISBN scan on Dashboard / Books / Loans, FEAT-25 remove
-browser backup page, FEAT-26 wishlist move-to-shelf, and FEAT-27
-curated Collections are complete.
-Remaining tickets under `docs/tickets/` start with `FEAT-28`, then
-`FEAT-29` through `FEAT-35`. When no current
+browser backup page, FEAT-26 wishlist move-to-shelf, FEAT-27
+curated Collections, and FEAT-28 Collections follow-up are complete.
+Remaining tickets under `docs/tickets/` start with `FEAT-29` through
+`FEAT-35`. When no current
 ticket is supplied, do not guess which remaining ticket to implement;
 ask for the next ticket. The supplied ticket's acceptance criteria are
 authoritative unless they contradict the backend contract or established
@@ -1380,11 +1399,12 @@ repo before editing.
                 `PATCH { shelf_name }`; no membership field edit)
 
   Collections   `src/features/collections/routes/CollectionsPage.tsx`,
-  UI            `src/features/collections/components/{AddCollectionBookControl,CollectionMembershipRow}.tsx`,
+  UI            `src/features/collections/components/{AddCollectionBookControl,AddBookToCollectionDialog,CollectionMembershipRow}.tsx`,
                 `collectionFormModel.ts`, `collectionDisplay.ts`
-                (`/collections` complete for create/delete/add/reorder/
-                remove; shelved-only add search; **Wishlist** location
-                labels; edit UI and Book Details add are FEAT-28)
+                (`/collections` complete for create/edit/delete/add/
+                reorder/remove; shelved-only add search; **Wishlist**
+                location labels; Book Details add via
+                `AddBookToCollectionDialog`)
 
   About UI      `src/features/about/routes/AboutPage.tsx`, `src/features/about/components/CatalogGuide.tsx` (`/` homepage)
 
@@ -1454,7 +1474,8 @@ wishlists (`WishlistsPage` / `AddWishlistBookControl` /
 `MoveWishlistBookToShelfControl` / `moveWishlistBookModel` /
 `wishlistFormModel` / `wishlistDisplay` / `wishlistsApi` /
 `wishlistsQueries`); curated Collections (`CollectionsPage` /
-`AddCollectionBookControl` / `CollectionMembershipRow` /
+`EditCollectionForm` / `AddCollectionBookControl` /
+`AddBookToCollectionDialog` / `CollectionMembershipRow` /
 `collectionFormModel` / `collectionDisplay` / `collectionsApi` /
 `collectionsQueries`); FEAT-13
 workflow/accessibility quality-gate coverage (Vitest coverage thresholds,
@@ -1479,10 +1500,12 @@ URL `?isbn=`); FEAT-25 remove browser backup page (`/admin/backup` /
 FEAT-26 wishlist move-to-shelf (`MoveWishlistBookToShelfControl` /
 `useMoveWishlistBookToShelf`; membership `DELETE` then `PATCH { shelf_name }`);
 FEAT-27 curated Collections (`CollectionsPage` at `/collections`,
-Collection-drawer link, shelved-only add search, reorder/remove).
+Collection-drawer link, shelved-only add search, reorder/remove);
+FEAT-28 Collections follow-up (collection edit on `/collections`; Book Details
+`AddBookToCollectionDialog`).
 Primary navigation redesign (`ManageCollectionPage` at
 `/collection/manage`) shipped without a standalone ticket. Remaining tickets
-start at FEAT-28 (Collections follow-up), then FEAT-29 through FEAT-35.
+start at FEAT-29 through FEAT-35.
 
 ------------------------------------------------------------------------
 
@@ -1544,11 +1567,11 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
 
   Feature tickets                 Remaining tickets under
-                                  `docs/tickets/`: `FEAT-28_...` through
-                                  `FEAT-35_...`; FEAT-13 through FEAT-27
+                                  `docs/tickets/`: `FEAT-29_...` through
+                                  `FEAT-35_...`; FEAT-13 through FEAT-28
                                   are complete (those ticket files are
-                                  removed). Next product work is FEAT-28
-                                  (Collections follow-up)
+                                  removed). Next product work is FEAT-29
+                                  (dynamic multi-category UI)
 
   Bundle budget / CI              Recorded in this master context.
                                   `scripts/checkBundleSize.mjs` (warn
@@ -1570,7 +1593,7 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
 Request a listed document only when its contents are necessary for the
 current ticket and are not already attached. This master context is
 self-contained for operating rules, non-negotiables, and the dated
-baseline. It does not depend on `docs/AGENTS.md`.
+baseline.
 
 ------------------------------------------------------------------------
 

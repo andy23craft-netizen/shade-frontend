@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-21 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-22 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -42,13 +42,14 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   `useMoveWishlistBookToShelf` (membership `DELETE` then `PATCH { shelf_name }`). Shelf/wishlist exclusivity is
   enforced with documented **412** responses.
 - Curated Collections on `/collections` (`collectionsApi` / `useCollections` / `useCollectionBooks` / write
-  mutations): Collection-drawer link, create/delete collections, add shelved catalog books via `GET /books` search
-  then `POST /collections/{id}/books`, reorder/remove memberships, and join title/authors via `GET /books/{id}`.
+  mutations): Collection-drawer link, create/edit/delete collections (`useUpdateCollection` for name/description;
+  blank description clears via explicit JSON `null`), add shelved catalog books via `GET /books` search then
+  `POST /collections/{id}/books`, reorder/remove memberships, and join title/authors via `GET /books/{id}`.
   Membership lists show shelved and wishlisted books (**Wishlist** location when `on_wishlist`); soft-deleted add is
   **412**; duplicate add is **409**; library delete drops memberships server-side (`useDeleteBook` invalidates
   `queryKeys.collections.all`). Orthogonal to shelf/wishlist placement (no shelf/wishlist overlap **412**; no
-  FEAT-26-style move-to-shelf). Collection name/description edit UI and Book Details add-to-collection are FEAT-28
-  (API `update` / `useUpdateCollection` / `useAddCollectionBook` already exist).
+  FEAT-26-style move-to-shelf). Book Details adds the current active book via `AddBookToCollectionDialog`
+  (`useAddCollectionBook` with the detail `book.id`; no catalog search).
 - `booksApi` accepts `author` / `title` / `category` / `isbn` list filters. Collection browse on `/books` uses
   category / author / title and URL-backed `?isbn=` (from hardware collection jump or deep link).
 
@@ -185,10 +186,20 @@ membership `POST` with `book_id`; optional notes; copy links to `/wishlists` for
 `CollectionMembershipRow` (join via `useBook` / `GET /books/{id}`, **Wishlist** vs Title Case shelf location,
 Move up/down reorder, Remove), and styles under `.collection-*` in `components.css`. Soft-deleted add **412**;
 duplicate **409**; `useDeleteBook` invalidates `queryKeys.collections.all`. Do not port wishlist create-then-add,
-FEAT-26 move-to-shelf, or shelf pickers onto collection rows. Collection edit UI and Book Details add are FEAT-28.
+FEAT-26 move-to-shelf, or shelf pickers onto collection rows.
 
-**Next:** Remaining tickets under `docs/tickets/` start with Collections follow-up (FEAT-28), then FEAT-29 through
-FEAT-35 (dynamic categories, V1 filters, bulk selection / move-to-shelf, Home discovery, cover stretch, V1 gate).
+FEAT-28 Collections follow-up (ticket file removed after completion). Shipped collection name/description edit on
+`/collections` via `EditCollectionForm` / `collectionEditFormValuesFromCollection` /
+`validateCollectionEditFormValues` / `formValuesToCollectionUpdate` / `useUpdateCollection` (minimal patch; blank
+description → explicit JSON `null`; cancel without mutation; Field-linked **422**), and Book Details
+**Add to Collection** via `AddBookToCollectionDialog` (`useCollections` picker, optional membership notes,
+`useAddCollectionBook` with the current `book.id` -- no catalog search or `POST /books`; empty-collections link to
+`/collections`; **409** duplicate and **412** soft-deleted surfaced honestly). Do not confuse with wishlist
+move-to-shelf copy that also says "Add to Collection" on `MoveWishlistBookToShelfControl`. Do not list memberships
+on Book Details, edit membership notes, or remove membership from detail.
+
+**Next:** Remaining tickets under `docs/tickets/` start with FEAT-29 through FEAT-35 (dynamic categories, V1 filters,
+bulk selection / move-to-shelf, Home discovery, cover stretch, V1 gate).
 
 Notable shipped behaviors agents should preserve:
 
@@ -225,10 +236,11 @@ Notable shipped behaviors agents should preserve:
   via unshelved `POST /books` (omit `shelf_name`) then `POST /wishlists/{id}/books`; move onto a shelf via
   `MoveWishlistBookToShelfControl` (membership `DELETE` then `PATCH { shelf_name }`); documented **412**
   shelf/wishlist exclusivity; no add-from-collection or membership field edit.
-- Collections: `/collections` via Collection drawer; create/delete collections; add shelved books via `GET /books`
-  search then membership `POST` (`book_id`); memberships joined through `GET /books/{id}`; **Wishlist** location when
-  `on_wishlist`; reorder/remove memberships; soft-deleted add **412**; duplicate **409**; no shelf/wishlist overlap
-  **412** and no move-to-shelf on collection rows. Edit collection and Book Details add-to-collection are FEAT-28.
+- Collections: `/collections` via Collection drawer; create/edit/delete collections (edit via `useUpdateCollection`;
+  blank description clears with explicit `null`); add shelved books via `GET /books` search then membership `POST`
+  (`book_id`); Book Details adds the current book via `AddBookToCollectionDialog`; memberships joined through
+  `GET /books/{id}`; **Wishlist** location when `on_wishlist`; reorder/remove memberships; soft-deleted add **412**;
+  duplicate **409**; no shelf/wishlist overlap **412** and no move-to-shelf on collection rows.
 - Scanning: camera and create-path hardware hand one ISBN into create lookup on `/books/new`; collection hardware jump
   on `/dashboard`, `/books`, and `/loans` opens a unique match or filters `/books?isbn=`. Never creates or checks out
   from scan success alone. There is no checkout capture surface.
@@ -352,8 +364,8 @@ collection jump on Dashboard / Books / Loans, edit, checkout on book details (di
 alternate-copy offers), check-in, loan history, reading tracking, soft delete/restore, deleted admin, authenticated SQL
 backup at the API host (not a browser download), runtime API config, CI, Podman preview, versioned production
 artifacts, About homepage with the dashboard at `/dashboard`, wishlists, wishlist move-to-shelf, and curated
-Collections (create/delete/add/reorder/remove on `/collections`). Ticketed follow-ons (implement only when working that
-ticket): Collections edit and Book Details add (FEAT-28), dynamic multi-category UI (FEAT-29), V1 filter plumbing
+Collections (create/edit/delete/add/reorder/remove on `/collections`, plus Book Details add-to-collection). Ticketed
+follow-ons (implement only when working that ticket): dynamic multi-category UI (FEAT-29), V1 filter plumbing
 (FEAT-30), bulk selection (FEAT-31), bulk move-to-shelf (FEAT-32), Home discovery (FEAT-33), cover images stretch
 (FEAT-34), and V1 regression/deployment gate (FEAT-35).
 
@@ -591,8 +603,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useCreateCollection`, `useUpdateCollection`, `useDeleteCollection`, `useAddCollectionBook`,
   `useReorderCollectionBook`, `useRemoveCollectionBook`. Create/update/delete invalidate `queryKeys.collections.all`;
   membership add/reorder/remove invalidate that collection's books key. `useDeleteBook` also invalidates
-  `queryKeys.collections.all` (server drops memberships on soft-delete). Product UI uses create/delete/add/reorder/
-  remove today; collection edit and Book Details add (FEAT-28) reuse `useUpdateCollection` / `useAddCollectionBook`.
+  `queryKeys.collections.all` (server drops memberships on soft-delete). Product UI uses create/edit/delete/add/
+  reorder/remove on `/collections` plus Book Details `AddBookToCollectionDialog` (`useUpdateCollection` /
+  `useAddCollectionBook`).
 
 ### Routing and Layout
 
@@ -642,8 +655,9 @@ Implemented (do not revert to placeholders):
 - `src/features/books/routes/BookDetailsPage.tsx` (`/books/:bookId`): detail via `useBook`;
   loading, not-found / error recovery, and field presentation with safe enum display, including Title Case
   `shelf_name`, `is_read`, `completion_date`, `rating`, and `review`. "Edit Book" links to `/books/:bookId/edit` when
-  active. "Check Out" is a button that opens `CheckoutDialog` when `isCheckoutEligible` (active and `available`).
-  Deep link `?checkout=1` opens that dialog then replace-clears the search flag. "Check In" links to
+  active. "Add to Collection" opens `AddBookToCollectionDialog` for the current active book (picker + optional notes;
+  no catalog search). "Check Out" is a button that opens `CheckoutDialog` when `isCheckoutEligible` (active and
+  `available`). Deep link `?checkout=1` opens that dialog then replace-clears the search flag. "Check In" links to
   `/loans?bookId=...` when active and check-in eligible via `isCheckinEligible` (active loan present, not deleted).
   "Mark Read" links to `/books/:bookId/mark-read` when active and unread. "Edit Reading" links to
   `/books/:bookId/reading` when active and already read. "Delete Book" links to `/books/:bookId/delete` when
@@ -773,20 +787,27 @@ Implemented (do not revert to placeholders):
   **412** refetch; partial-failure retry when membership already removed; success navigates to `/books/{bookId}`.
   Colocated `MoveWishlistBookToShelfControl.test.tsx` / `moveWishlistBookModel.test.ts`
 - `src/features/collections/routes/CollectionsPage.tsx` (`/collections`): `useCollections` plus nested
-  `useCollectionBooks`; create form with Field-linked **422**; add via `AddCollectionBookControl` (shelved-only
-  `GET /books` search by ISBN / title / author, then `useAddCollectionBook`); membership rows via
-  `CollectionMembershipRow` (join `useBook` / `GET /books/{id}`, durable `Book {id}` fallback, omit soft-deleted,
-  **Wishlist** vs Title Case shelf location, Move up/down, Remove with `ConfirmationDialog`); permanent collection
-  delete via `ConfirmationDialog` + `useDeleteCollection` (memberships removed, catalog books remain). Intro copy
-  distinguishes curated lists from Browse and Wishlists. No collection name/description edit UI yet (FEAT-28;
-  `useUpdateCollection` exists). No Book Details add-to-collection yet (FEAT-28). No shelf pickers or FEAT-26
-  move-to-shelf on collection rows.
+  `useCollectionBooks`; create form with Field-linked **422**; edit via `EditCollectionForm` /
+  `useUpdateCollection` (name/description; blank description → explicit `null`; cancel without mutation;
+  Field-linked **422**); add via `AddCollectionBookControl` (shelved-only `GET /books` search by ISBN / title /
+  author, then `useAddCollectionBook`); membership rows via `CollectionMembershipRow` (join `useBook` /
+  `GET /books/{id}`, durable `Book {id}` fallback, omit soft-deleted, **Wishlist** vs Title Case shelf location,
+  Move up/down, Remove with `ConfirmationDialog`); permanent collection delete via `ConfirmationDialog` +
+  `useDeleteCollection` (memberships removed, catalog books remain). Intro copy distinguishes curated lists from
+  Browse and Wishlists. No shelf pickers or FEAT-26 move-to-shelf on collection rows.
 - `src/features/collections/components/AddCollectionBookControl.tsx` /
   `src/features/collections/collectionFormModel.ts` / `src/features/collections/collectionDisplay.ts`: shelved
   catalog find (`useBooks`, no `include_deleted`, no unshelved wishlist-only rows) then membership add with optional
   notes; **404** / **409** duplicate / **412** soft-deleted / Field-linked **422**; location helpers
-  (`displayCollectionBookLocation`, wishlist emphasis class); create-form validation and conversion. Copy links to
-  `/wishlists` for books not yet on a shelf. Colocated tests cover create/add/display helpers and controls.
+  (`displayCollectionBookLocation`, wishlist emphasis class); create and edit form validation/conversion
+  (`collectionEditFormValuesFromCollection`, `formValuesToCollectionUpdate`). Copy links to `/wishlists` for books
+  not yet on a shelf. Colocated tests cover create/edit/add/display helpers and controls.
+- `src/features/collections/components/AddBookToCollectionDialog.tsx`: Book Details dialog to add the current active
+  book to a chosen collection (`useCollections` picker, optional notes, `useAddCollectionBook` with `book.id`; no
+  catalog search or create). Empty-collections state links to `/collections`. Surfaces **409** duplicate and **412**
+  soft-deleted honestly; does not change shelf, wishlist, reading, or circulation state. Distinct from wishlist
+  move-to-shelf "Add to Collection" copy on `MoveWishlistBookToShelfControl`. Colocated
+  `AddBookToCollectionDialog.test.tsx`.
 
 Scanning feature (complete -- extend, do not replace):
 
@@ -1214,10 +1235,10 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-28_*.md` through `FEAT-35_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-27 are complete; those ticket files are removed). Prefer ticket presence under
-  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Next product work is FEAT-28 (Collections
-  follow-up); FEAT-29--FEAT-35 cover V1 categories, filters, bulk actions, Home discovery, cover stretch, and the
+- `docs/tickets/FEAT-29_*.md` through `FEAT-35_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-28 are complete; those ticket files are removed). Prefer ticket presence under
+  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Next product work is FEAT-29 (dynamic
+  multi-category UI); FEAT-30--FEAT-35 cover V1 filters, bulk actions, Home discovery, cover stretch, and the
   regression gate.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
 - `docs/product-docs/CATEGORY_NOTES.md`: Future book-category architecture notes (many-to-many / data-driven labels).
@@ -1333,12 +1354,12 @@ make build
   `wishlistsApi` / `wishlistsQueries` (`/wishlists` owns catalog CRUD, add, and move-to-shelf; memberships via
   `useBook` / `GET /books/{id}`; add via unshelved create then membership; move via membership `DELETE` then
   `PATCH { shelf_name }`; no add-from-collection or membership field edit). Leave collections under `CollectionsPage` /
-  `AddCollectionBookControl` / `CollectionMembershipRow` / `collectionFormModel` / `collectionDisplay` /
-  `collectionsApi` / `collectionsQueries` (`/collections` owns create/delete, shelved-only add search, reorder/remove;
-  memberships via `useBook` / `GET /books/{id}`; soft-deleted add **412**; duplicate **409**; no shelf/wishlist overlap
-  **412**; no FEAT-26 move-to-shelf on collection rows). FEAT-28 owns collection edit UI and Book Details
-  add-to-collection; do not invent those surfaces in unrelated changes. FEAT-13 test infrastructure is complete:
-  keep Vitest / Testing Library / `renderAppTree`
+  `EditCollectionForm` / `AddCollectionBookControl` / `AddBookToCollectionDialog` / `CollectionMembershipRow` /
+  `collectionFormModel` / `collectionDisplay` / `collectionsApi` / `collectionsQueries` (`/collections` owns
+  create/edit/delete, shelved-only add search, reorder/remove; Book Details owns add-current-book via
+  `AddBookToCollectionDialog`; memberships via `useBook` / `GET /books/{id}`; soft-deleted add **412**; duplicate
+  **409**; no shelf/wishlist overlap **412**; no FEAT-26 move-to-shelf on collection rows). FEAT-13 test
+  infrastructure is complete: keep Vitest / Testing Library / `renderAppTree`
   coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced coverage floors,
   and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites rather than
   inventing a parallel fake-API stack or removing them from the gate. FEAT-14 CI packaging is complete: keep
@@ -1347,7 +1368,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-28--FEAT-35 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-29--FEAT-35 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a ticket explicitly requires it.
