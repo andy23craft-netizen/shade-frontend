@@ -1,6 +1,6 @@
 # API for Frontend (supplementary)
 
-Paths, methods, status codes, request/response schemas, and enums live in `docs/openapi.json`
+Paths, methods, status codes, request/response schemas, and enums live in `openapi.json`
 (regenerate with `make openapi`). Live `/openapi.json` and `/docs` match the running app; a drift test keeps the
 checked-in file equal to what the app generates.
 
@@ -26,7 +26,7 @@ Public routes: `GET /health`, `GET /version`, and FastAPI's generated docs/OpenA
 `/openapi.json`, `/docs/oauth2-redirect`). Every other business route requires the Bearer token.
 
 There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated).
-Use `GET /version` when the UI needs the running API release string (same value as `ci/VERSION` and OpenAPI
+Use `GET /version` when the UI needs the running API release string (same value as `../../ci/VERSION` and OpenAPI
 `info.version`); do not treat it as a health probe. Learn whether credentials are accepted from the first protected
 request you need (e.g., `GET /books` or `GET /dashboard`); a **403** means the token is missing or invalid.
 
@@ -59,7 +59,7 @@ can still reach the server, but browser JS cannot read the response.
 |        | malformed or empty `wishlist_id` / membership `wishlist_book_id` / membership `book_id` on wishlist routes; |
 |        | malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on |
 |        | collection routes; malformed or empty `shelf_id` on shelf update/delete; |
-|        | empty/whitespace `isbn`, `author`, or `title` on `GET /books`; |
+|        | empty/whitespace `isbn`, `author`, `title`, `publisher`, `acquisition_source`, or `shelf_name` on `GET /books`; malformed `id`; inverted numeric/date ranges; |
 |        | partial or invalid `skip`/`take` on list endpoints; |
 |        | invalid `sortBy` or `sortOrder` on `GET /books`; invalid or blank `field` on |
 |        | `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book create/update; |
@@ -139,9 +139,11 @@ Prefer dedicated endpoints over reproducing their effects with `PATCH`:
 * checkout / check-in / mark-read / restore / lookup
 
 `PATCH` bumps `updated_date` via a SQLite trigger when the handler does not set it explicitly (the column still
-changes on successful update). Do not send `null` for DB-required fields such as `title`, `authors`,
-`category`, `is_read`, or `status`. `shelf_name` must not be JSON `null` on update (**422**); omit the field to leave
-membership unchanged. Assigning `shelf_name` on create or update returns **412**
+changes on successful update). Do not send `null` for DB-required fields such as `title`, `authors`, `is_read`, or
+`status`. Category membership is replaced only when `category_ids` is present: omit `category_ids` to preserve
+existing memberships, send `[]` to clear all memberships, or send a list of category GUIDs to replace them.
+`shelf_name` must not be JSON `null` on update (**422**); omit the field to leave membership unchanged. Assigning
+`shelf_name` on create or update returns **412**
 `{"detail": "The book must be removed from the wishlist before it can be placed on a shelf"}` when the book is on
 any wishlist; remove the membership with `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` first.
 
@@ -162,21 +164,80 @@ Path `{id}` must be a GUID: **400** when empty or malformed (including legacy sp
 like `SL-0001`); **404** when the GUID is well-formed but unknown. Soft-delete rules for
 checkout / check-in / mark-read / `PATCH` are unchanged.
 
-Optional `isbn`, `author`, and `title` on `GET /books` support catalog lookup. `isbn` retains its existing literal
-substring match against stored `isbn13` and is not normalized like create/lookup. `author` and `title` use
-case-insensitive substring matching. Empty or whitespace-only values for any of these filters return **400**.
+Optional filters on `GET /books` form one composable catalog-query surface. Different filter types use **AND**
+semantics: a book must satisfy every supplied predicate. Filters compose with `include_deleted`, all supported
+sorting modes, and `skip` / `take` pagination. No matches return an empty `BookList`
+(`items: []`, `total: 0`), not **404**. When paginated, `total` remains the full number of matching books before
+pagination.
 
-The filters compose with each other, `category`, `include_deleted`, pagination, and sorting. When multiple filters
-are supplied, all predicates must match. No matches return an empty `BookList` (`items: []`, `total: 0`), not
-**404**. When paginated, `total` remains the count of all matching rows before pagination.
+Text filters:
+
+* `isbn` retains literal substring matching against stored `isbn13` and is not normalized like create/lookup.
+* `author`, `title`, `publisher`, and `acquisition_source` use case-insensitive substring matching.
+* Blank or whitespace-only text filters return **400**.
+
+Exact/state filters:
+
+* `id` matches one exact Book GUID. A malformed GUID is **400**; a well-formed GUID with no matching book returns
+  an empty `BookList`, not **404**.
+* `shelf_name` matches normalized shelf membership through `books_shelves` / `shelves.common_name`; input is trimmed
+  and lowercased. An unknown but valid shelf name simply returns no matches.
+* `is_read` is an exact boolean filter.
+* `status` is an exact `Status` enum filter; allowed values are defined by OpenAPI.
+
+Numeric ranges are inclusive and either bound may be supplied alone:
+
+* `pages_min` / `pages_max`
+* `rating_min` / `rating_max`
+* `purchase_price_min` / `purchase_price_max`
+
+Supplying both bounds with the minimum greater than the maximum returns **400**.
+
+Publication filtering uses `publication_year_min` / `publication_year_max`. Bounds are inclusive and may be used
+independently. This operates on the stored `publication_date` text using its leading year representation.
+
+Date filters accept `YYYY-MM-DD` values and may use either bound independently:
+
+* `purchase_date_min` / `purchase_date_max`
+* `completion_date_min` / `completion_date_max`
+* `creation_date_min` / `creation_date_max`
+* `updated_date_min` / `updated_date_max`
+
+Ranges are inclusive by calendar date. Invalid date syntax is FastAPI **422**; an inverted range is **400**.
+`creation_date` and `updated_date` are stored timestamps, so their date bounds cover the requested whole calendar
+day.
+
+The following Book data is intentionally not exposed as normal `GET /books` filters in V1:
+
+* `notes` and `review` are free-form prose rather than useful catalog dimensions.
+* `tags` are currently serialized JSON in a SQLite text column; proper tag-membership filtering is not implemented
+  as a JSON substring query.
+* `deletion_date` is represented by the existing `include_deleted` behavior rather than a second deletion filter.
+* `times_borrowed`, `last_borrowed_at`, and `average_loan_days` are derived loan statistics rather than persisted
+  Book fields.
+  
+The filters compose with each other, repeated `category_id`, `include_deleted`, pagination, and sorting. When
+different filter types are supplied, all predicates must match. No matches return an empty `BookList`
+(`items: []`, `total: 0`), not **404**. When paginated, `total` remains the count of all matching rows before
+pagination.
+
+Categories are normalized resources rather than a fixed enum. Load the available category vocabulary from
+`GET /categories`; do not hard-code category names or slugs in the frontend. Books expose their memberships through
+`categories`, and create/update requests assign memberships with `category_ids`.
+
+`GET /books` accepts repeated `category_id` query parameters. One `category_id` requires membership in that category.
+Multiple values use **AND/intersection semantics**: a book must belong to every requested category to match. For
+example, `?category_id=<history-id>&category_id=<fiction-id>` returns books assigned to both categories, not books
+assigned to either category. Duplicate category IDs are rejected rather than silently deduplicated.
+
+Category filtering composes with `isbn`, `author`, `title`, `include_deleted`, pagination, and sorting. Unknown or
+malformed category IDs are rejected according to the API contract in OpenAPI. A valid category selection with no
+matching books returns an empty `BookList` (`items: []`, `total: 0`), not **404**. When paginated, `total` uses the
+same category intersection predicate and remains the count of all matching rows before pagination.
 
 For alternate-copy lookup, use the existing `isbn` filter to find copies sharing an ISBN. To look for another
 edition of the same work, use `author` and `title`; the API has no dedicated alternate-edition or work resource.
 The frontend should exclude the current book and prefer `status=available` when presenting a checkout substitute.
-
-Optional `category` on `GET /books` filters by exact `Category` enum value (`unknown`, `religion`, `philosophy`,
-`fiction`, `nonfiction`). This is distinct from curated `/collections` lists; there is no `collection` query parameter
-on `GET /books`.
 
 Invalid category values are rejected by FastAPI validation with **422**. A valid category with no matches returns
 an empty `BookList` (`items: []`, `total: 0`), not **404**. The category filter composes with `isbn`, `author`,
@@ -293,14 +354,15 @@ Averages are `null` when there is insufficient data. `recent_window_days` is cur
 
 `GET /dashboard/breakdowns` provides active-catalog totals plus counts by category, shelf, and creation year.
 `on_loan` uses active books whose stored `status` is `on_loan`, matching the summary's `checked_out` definition.
-Category buckets use stored category strings. Shelf buckets use `shelves.common_name` via membership. Creation-year
-buckets are derived from `creation_date`. Zero-count buckets are omitted because the response is built from existing
-grouped rows.
+Category buckets are built from normalized category memberships and use category display names as keys. A book with
+multiple categories contributes once to each applicable category bucket. Shelf buckets use `shelves.common_name`
+via membership. Creation-year buckets are derived from `creation_date`. Zero-count buckets are omitted because the
+response is built from existing grouped rows.
 
 `GET /dashboard/incomplete-metadata` reports cleanup counts for missing category, shelf, pages, publisher,
-publication year, and ISBN. Category is missing when stored as `unknown`. Shelf is missing when membership is on
-`common_name = unknown` (not `removed`). Publisher, `publication_date`, and `isbn13` are missing when `null` or blank;
-pages are missing when `null`.
+publication year, and ISBN. Category is missing when an active book has no category memberships. Shelf is missing
+when membership is on `common_name = unknown` (not `removed`). Publisher, `publication_date`, and `isbn13` are
+missing when `null` or blank; pages are missing when `null`.
 `missing_year` refers to `publication_date`, while the breakdown's creation-year chart uses `creation_date`.
 `total_incomplete` counts distinct active books missing at least one tracked field and is not the sum of the
 individual field counts.
@@ -425,13 +487,15 @@ URL.revokeObjectURL(objectUrl);
 | Barcode/camera/manual ISBN capture, editable drafts, forms, presentation | Frontend |
 | Display of API release/version from `GET /version` | Frontend |
 | Shelf picker UI from `GET /shelves`; submit chosen `common_name` as `shelf_name` | Frontend |
+| Category picker/filter UI from `GET /categories`; submit category GUIDs as `category_ids` | Frontend |
 | Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
 | Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist | Frontend |
 | Collection list/create/add/reorder UI | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
-| Canonical project version (`ci/VERSION` via `GET /version`) | API |
+| Canonical project version (`../../ci/VERSION` via `GET /version`) | API |
 | Soft delete/restore, loan records, checkout/check-in, reading state | API |
 | Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
+| Category catalog (`GET /categories`), normalized book memberships, and category intersection filtering | API |
 | Wishlist/shelf mutual exclusion (**412** when both would apply) | API |
 | Collections CRUD and ordered membership (`/collections`) | API |
 | Borrowing and dashboard statistics | API |

@@ -1,6 +1,29 @@
 {
   "components": {
     "schemas": {
+      "BookCategoryRead": {
+        "properties": {
+          "category_id": {
+            "title": "Category Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category_id",
+          "name",
+          "slug"
+        ],
+        "title": "BookCategoryRead",
+        "type": "object"
+      },
       "BookCreate": {
         "properties": {
           "acquisition_source": {
@@ -19,9 +42,12 @@
             "title": "Authors",
             "type": "string"
           },
-          "category": {
-            "$ref": "#/components/schemas/Category",
-            "default": "unknown"
+          "category_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Category Ids",
+            "type": "array"
           },
           "completion_date": {
             "anyOf": [
@@ -328,9 +354,12 @@
             ],
             "title": "Average Loan Days"
           },
-          "category": {
-            "$ref": "#/components/schemas/Category",
-            "default": "unknown"
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/BookCategoryRead"
+            },
+            "title": "Categories",
+            "type": "array"
           },
           "completion_date": {
             "anyOf": [
@@ -559,15 +588,19 @@
             ],
             "title": "Authors"
           },
-          "category": {
+          "category_ids": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Category"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Category Ids"
           },
           "completion_date": {
             "anyOf": [
@@ -747,16 +780,38 @@
         "title": "BookUpdate",
         "type": "object"
       },
-      "Category": {
-        "enum": [
-          "unknown",
-          "religion",
-          "philosophy",
-          "fiction",
-          "nonfiction"
+      "CategoryRead": {
+        "properties": {
+          "category_id": {
+            "title": "Category Id",
+            "type": "string"
+          },
+          "created_date": {
+            "title": "Created Date",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "updated_date": {
+            "title": "Updated Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category_id",
+          "name",
+          "slug",
+          "created_date",
+          "updated_date"
         ],
-        "title": "Category",
-        "type": "string"
+        "title": "CategoryRead",
+        "type": "object"
       },
       "CheckinRequest": {
         "properties": {
@@ -1915,7 +1970,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "0.2.6"
+    "version": "0.2.8"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2038,18 +2093,389 @@
           },
           {
             "in": "query",
-            "name": "category",
+            "name": "publisher",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/Category"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Category"
+              "title": "Publisher"
+            }
+          },
+          {
+            "in": "query",
+            "name": "acquisition_source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Acquisition Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pages_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pages Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pages_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pages Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rating_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rating Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rating_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rating Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purchase_price_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purchase Price Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purchase_price_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purchase Price Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "publication_year_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Publication Year Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "publication_year_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Publication Year Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purchase_date_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purchase Date Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purchase_date_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purchase Date Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "completion_date_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Completion Date Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "completion_date_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Completion Date Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "creation_date_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Creation Date Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "creation_date_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Creation Date Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_date_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Updated Date Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_date_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Updated Date Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "shelf_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Shelf Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_read",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Status"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
             }
           },
           {
@@ -2943,6 +3369,46 @@
         "summary": "Restore Book",
         "tags": [
           "books"
+        ]
+      }
+    },
+    "/categories": {
+      "get": {
+        "operationId": "list_categories_categories_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryRead"
+                  },
+                  "title": "Response List Categories Categories Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Categories",
+        "tags": [
+          "categories"
         ]
       }
     },
