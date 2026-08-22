@@ -156,7 +156,7 @@ export function formValuesToBookCreate(
     return {
         title: values.title.trim(),
         authors: values.authors.trim(),
-        category: values.category,
+        category_ids: [...values.categoryIds],
         shelf_name: shelfName,
         is_read: false,
         status: 'available',

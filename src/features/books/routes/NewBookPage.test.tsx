@@ -14,13 +14,17 @@ import {
 } from 'vitest'
 
 import { ApiError } from '../../../api/apiErrors'
-import type { ShelfRead } from '../../../api/apiTypes'
+import type {
+    CategoryRead,
+    ShelfRead,
+} from '../../../api/apiTypes'
 import { NewBookPage } from './NewBookPage'
 
 const mockNavigate = vi.fn()
 const mockMutate = vi.fn()
 const mockRefetch = vi.fn()
 const mockShelvesRefetch = vi.fn()
+const mockCategoriesRefetch = vi.fn()
 
 const TEST_SHELVES: ShelfRead[] = [
     {
@@ -41,8 +45,26 @@ const TEST_SHELVES: ShelfRead[] = [
     },
 ]
 
+const TEST_CATEGORIES: CategoryRead[] = [
+    {
+        category_id: 'cat-fiction',
+        name: 'Fiction',
+        slug: 'fiction',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
 const shelvesState = {
     data: TEST_SHELVES as ShelfRead[] | undefined,
+    isPending: false,
+    isError: false,
+    error: null as unknown,
+    isSuccess: true,
+}
+
+const categoriesState = {
+    data: TEST_CATEGORIES as CategoryRead[] | undefined,
     isPending: false,
     isError: false,
     error: null as unknown,
@@ -98,6 +120,13 @@ vi.mock('../../../api/shelvesQueries', () => ({
     }),
 }))
 
+vi.mock('../../../api/categoriesQueries', () => ({
+    useCategories: () => ({
+        ...categoriesState,
+        refetch: mockCategoriesRefetch,
+    }),
+}))
+
 vi.mock('../../scanning/IsbnCameraScanner', () => ({
     IsbnCameraScanner: ({
                             onDetected,
@@ -141,11 +170,17 @@ describe('NewBookPage', () => {
         mockMutate.mockReset()
         mockRefetch.mockReset()
         mockShelvesRefetch.mockReset()
+        mockCategoriesRefetch.mockReset()
         shelvesState.data = TEST_SHELVES
         shelvesState.isPending = false
         shelvesState.isError = false
         shelvesState.error = null
         shelvesState.isSuccess = true
+        categoriesState.data = TEST_CATEGORIES
+        categoriesState.isPending = false
+        categoriesState.isError = false
+        categoriesState.error = null
+        categoriesState.isSuccess = true
         lookupState.data = undefined
         lookupState.isPending = false
         lookupState.isFetching = false
@@ -216,6 +251,40 @@ describe('NewBookPage', () => {
         ).toHaveBeenCalled()
     })
 
+    it('blocks the page when categories fail to load', () => {
+        categoriesState.data = undefined
+        categoriesState.isPending = false
+        categoriesState.isError = true
+        categoriesState.isSuccess = false
+        categoriesState.error = new ApiError({
+            kind: 'unreachable',
+            message:
+                'The API could not be reached',
+        })
+
+        renderNewBookPage()
+
+        expect(
+            screen.getByText(
+                'Unable to load categories',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByLabelText('Title'),
+        ).not.toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(
+            mockCategoriesRefetch,
+        ).toHaveBeenCalled()
+    })
+
     it('submits the book through the create mutation', () => {
         renderNewBookPage()
 
@@ -257,7 +326,7 @@ describe('NewBookPage', () => {
             expect.objectContaining({
                 title: 'Dune',
                 authors: 'Frank Herbert',
-                category: 'unknown',
+                category_ids: [],
                 shelf_name: 'unknown',
                 status: 'available',
                 is_read: false,

@@ -100,7 +100,7 @@ describe('formValuesToUnshelvedBookCreate', () => {
         expect(payload).toEqual({
             title: 'A Book',
             authors: 'An Author',
-            category: 'unknown',
+            category_ids: [],
             is_read: false,
             status: 'available',
         })

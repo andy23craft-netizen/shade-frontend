@@ -15,6 +15,7 @@ import {
 } from 'vitest'
 
 import type {
+    CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
 import {
@@ -59,6 +60,23 @@ const TEST_SHELVES: ShelfRead[] = [
     },
 ]
 
+const TEST_CATEGORIES: CategoryRead[] = [
+    {
+        category_id: 'cat-fiction',
+        name: 'Fiction',
+        slug: 'fiction',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        category_id: 'cat-nonfiction',
+        name: 'Nonfiction',
+        slug: 'nonfiction',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
 function makeBook(
     overrides: Partial<BookFormValues> = {},
 ): BookFormValues {
@@ -74,6 +92,7 @@ function makeBook(
 function ControlledBookForm({
     initialValues = makeBook(),
     shelves = TEST_SHELVES,
+    categories = TEST_CATEGORIES,
     onSubmit = vi.fn(),
     onCancel = vi.fn(),
     ...rest
@@ -89,6 +108,7 @@ function ControlledBookForm({
         <BookForm
             values={values}
             shelves={shelves}
+            categories={categories}
             onChange={setValues}
             onSubmit={onSubmit}
             onCancel={onCancel}
@@ -135,7 +155,13 @@ describe('BookForm', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Category'),
+            screen.getByRole('group', {
+                name: 'Categories',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('Fiction'),
         ).toBeInTheDocument()
 
         expect(
@@ -198,7 +224,7 @@ describe('BookForm', () => {
                     isbn13: '9780743273565',
                     publisher: 'Scribner',
                     pages: '180',
-                    category: 'fiction',
+                    categoryIds: ['cat-fiction'],
                     shelfId: 'id-a1',
                     notes: 'A classic.',
                     tags: 'classic, american',
@@ -227,8 +253,12 @@ describe('BookForm', () => {
         ).toHaveValue(180)
 
         expect(
-            screen.getByLabelText('Category'),
-        ).toHaveValue('fiction')
+            screen.getByLabelText('Fiction'),
+        ).toBeChecked()
+
+        expect(
+            screen.getByLabelText('Nonfiction'),
+        ).not.toBeChecked()
 
         expect(
             screen.getByLabelText('Shelf'),
@@ -390,13 +420,8 @@ describe('BookForm', () => {
             },
         )
 
-        fireEvent.change(
-            screen.getByLabelText('Category'),
-            {
-                target: {
-                    value: 'fiction',
-                },
-            },
+        fireEvent.click(
+            screen.getByLabelText('Fiction'),
         )
 
         fireEvent.change(
@@ -454,7 +479,7 @@ describe('BookForm', () => {
             publisher: '',
             publication_date: '1965',
             pages: '412',
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
             shelfId: 'id-a1',
             tags: '',
             acquisition_source: '',
@@ -552,11 +577,48 @@ describe('BookForm', () => {
     it('starts a new book with the expected defaults', () => {
         expect(bookFormDefaults.title).toBe('')
         expect(bookFormDefaults.authors).toBe('')
-        expect(bookFormDefaults.category).toBe(
-            'unknown',
+        expect(bookFormDefaults.categoryIds).toEqual(
+            [],
         )
         expect(bookFormDefaults.shelfId).toBe('')
         expect(bookFormDefaults.tags).toBe('')
+    })
+
+    it('toggles category checkboxes in the submitted values', () => {
+        const onSubmit = vi.fn()
+
+        render(
+            <ControlledBookForm
+                initialValues={makeBook({
+                    categoryIds: ['cat-fiction'],
+                    shelfId: 'id-a1',
+                })}
+                onSubmit={onSubmit}
+            />,
+        )
+
+        expect(
+            screen.getByLabelText('Fiction'),
+        ).toBeChecked()
+
+        fireEvent.click(
+            screen.getByLabelText('Fiction'),
+        )
+        fireEvent.click(
+            screen.getByLabelText('Nonfiction'),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Book',
+            }),
+        )
+
+        expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                categoryIds: ['cat-nonfiction'],
+            }),
+        )
     })
 
     it('shows linked server field errors in the summary', () => {

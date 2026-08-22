@@ -32,6 +32,12 @@ vi.mock('../../../api/booksQueries', () => ({
         mockUseInfiniteBooks(options),
 }))
 
+const mockUseCategories = vi.fn()
+
+vi.mock('../../../api/categoriesQueries', () => ({
+    useCategories: () => mockUseCategories(),
+}))
+
 vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
     useInfiniteScrollTrigger: (
         options: unknown,
@@ -46,7 +52,13 @@ function makeBook(
         id: 'book-1',
         title: 'The Left Hand of Darkness',
         authors: 'Ursula K. Le Guin',
-        category: 'fiction',
+        categories: [
+            {
+                category_id: 'cat-fiction',
+                name: 'Fiction',
+                slug: 'fiction',
+            },
+        ],
         shelf_name: 'liz_tbr',
         status: 'available',
         is_read: false,
@@ -120,9 +132,34 @@ describe('BooksPage', () => {
     beforeEach(() => {
         mockUseInfiniteBooks.mockReset()
         mockUseInfiniteScrollTrigger.mockReset()
+        mockUseCategories.mockReset()
 
         mockUseInfiniteScrollTrigger.mockReturnValue({
             getRowRef: () => undefined,
+        })
+
+        mockUseCategories.mockReturnValue({
+            data: [
+                {
+                    category_id: 'cat-fiction',
+                    name: 'Fiction',
+                    slug: 'fiction',
+                    created_date: '2026-01-01T00:00:00Z',
+                    updated_date: '2026-01-01T00:00:00Z',
+                },
+                {
+                    category_id: 'cat-nonfiction',
+                    name: 'Nonfiction',
+                    slug: 'nonfiction',
+                    created_date: '2026-01-01T00:00:00Z',
+                    updated_date: '2026-01-01T00:00:00Z',
+                },
+            ],
+            isPending: false,
+            isError: false,
+            isSuccess: true,
+            error: null,
+            refetch: vi.fn(),
         })
     })
 
@@ -373,13 +410,13 @@ describe('BooksPage', () => {
         )
 
         renderBooksPage(
-            '/books?category=fiction&author=Le%20Guin&title=Left%20Hand',
+            '/books?category_id=cat-fiction&author=Le%20Guin&title=Left%20Hand',
         )
 
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenCalledWith({
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
             author: 'Le Guin',
             title: 'Left Hand',
             sortBy: 'author',
@@ -387,8 +424,8 @@ describe('BooksPage', () => {
         })
 
         expect(
-            screen.getByLabelText('Category'),
-        ).toHaveValue('fiction')
+            screen.getByLabelText('Fiction'),
+        ).toBeChecked()
 
         expect(
             screen.getByLabelText('Author'),
@@ -412,13 +449,13 @@ describe('BooksPage', () => {
         )
 
         renderBooksPage(
-            '/books?category=invalid&author=%20%20%20&title=%20',
+            '/books?category_id=%20%20&author=%20%20%20&title=%20',
         )
 
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenCalledWith({
-            category: undefined,
+            categoryIds: undefined,
             author: undefined,
             title: undefined,
             sortBy: 'author',
@@ -426,8 +463,8 @@ describe('BooksPage', () => {
         })
 
         expect(
-            screen.getByLabelText('Category'),
-        ).toHaveValue('')
+            screen.getByLabelText('Fiction'),
+        ).not.toBeChecked()
 
         expect(
             screen.getByLabelText('Author'),
@@ -456,25 +493,21 @@ describe('BooksPage', () => {
 
         renderBooksPage('/books?page=2')
 
-        fireEvent.change(
-            screen.getByLabelText('Category'),
-            {
-                target: {
-                    value: 'fiction',
-                },
-            },
+        fireEvent.click(
+            screen.getByLabelText('Fiction'),
         )
 
         expect(
-            screen.getByLabelText('Category'),
-        ).toHaveValue('fiction')
+            screen.getByLabelText('Fiction'),
+        ).toBeChecked()
 
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith({
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
             author: undefined,
             title: undefined,
+            isbn: undefined,
             sortBy: 'author',
             sortOrder: 'asc',
         })
@@ -493,28 +526,24 @@ describe('BooksPage', () => {
         )
 
         renderBooksPage(
-            '/books?category=fiction',
+            '/books?category_id=cat-fiction',
         )
 
-        fireEvent.change(
-            screen.getByLabelText('Category'),
-            {
-                target: {
-                    value: '',
-                },
-            },
+        fireEvent.click(
+            screen.getByLabelText('Fiction'),
         )
 
         expect(
-            screen.getByLabelText('Category'),
-        ).toHaveValue('')
+            screen.getByLabelText('Fiction'),
+        ).not.toBeChecked()
 
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith({
-            category: undefined,
+            categoryIds: undefined,
             author: undefined,
             title: undefined,
+            isbn: undefined,
             sortBy: 'author',
             sortOrder: 'asc',
         })
@@ -532,7 +561,7 @@ describe('BooksPage', () => {
             ]),
         )
 
-        renderBooksPage('/books?category=fiction')
+        renderBooksPage('/books?category_id=cat-fiction')
 
         fireEvent.change(
             screen.getByLabelText('Author'),
@@ -555,7 +584,7 @@ describe('BooksPage', () => {
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith({
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
             author: undefined,
             title: undefined,
             sortBy: 'author',
@@ -571,7 +600,7 @@ describe('BooksPage', () => {
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith({
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
             author: 'Le Guin',
             title: 'Left Hand',
             sortBy: 'author',
@@ -590,7 +619,7 @@ describe('BooksPage', () => {
         )
 
         renderBooksPage(
-            '/books?category=fiction&author=Le%20Guin',
+            '/books?category_id=cat-fiction&author=Le%20Guin',
         )
 
         expect(
@@ -606,8 +635,8 @@ describe('BooksPage', () => {
         ).not.toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Category'),
-        ).toHaveValue('fiction')
+            screen.getByLabelText('Fiction'),
+        ).toBeChecked()
 
         expect(
             screen.getByLabelText('Author'),
@@ -622,7 +651,7 @@ describe('BooksPage', () => {
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith({
-            category: undefined,
+            categoryIds: undefined,
             author: undefined,
             title: undefined,
             sortBy: 'author',
@@ -643,7 +672,7 @@ describe('BooksPage', () => {
         )
 
         renderBooksPage(
-            '/books?category=fiction&author=Le%20Guin&title=Left%20Hand&sortBy=shelf&sortOrder=desc',
+            '/books?category_id=cat-fiction&author=Le%20Guin&title=Left%20Hand&sortBy=shelf&sortOrder=desc',
         )
 
         fireEvent.click(
@@ -653,8 +682,8 @@ describe('BooksPage', () => {
         )
 
         expect(
-            screen.getByLabelText('Category'),
-        ).toHaveValue('')
+            screen.getByLabelText('Fiction'),
+        ).not.toBeChecked()
 
         expect(
             screen.getByLabelText('Author'),
@@ -675,7 +704,7 @@ describe('BooksPage', () => {
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith({
-            category: undefined,
+            categoryIds: undefined,
             author: undefined,
             title: undefined,
             sortBy: 'shelf',
@@ -980,7 +1009,13 @@ describe('BooksPage', () => {
                     items: [
                         makeBook({
                             status: 'future_status' as unknown as BookRead['status'],
-                            category: 'future_category' as unknown as BookRead['category'],
+                            categories: [
+                                {
+                                    category_id: 'cat-future',
+                                    name: 'Future Category',
+                                    slug: 'future-category',
+                                },
+                            ],
                             shelf_name: 'future_shelf',
                         }),
                     ],
@@ -999,7 +1034,7 @@ describe('BooksPage', () => {
 
         expect(
             screen.getByText(
-                'future_category (unknown)',
+                'Future Category',
             ),
         ).toBeInTheDocument()
 
@@ -1094,7 +1129,7 @@ describe('BooksPage', () => {
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenCalledWith({
-            category: undefined,
+            categoryIds: undefined,
             author: undefined,
             title: undefined,
             isbn: '9780441172719',
@@ -1233,7 +1268,7 @@ describe('BooksPage', () => {
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenCalledWith({
-            category: undefined,
+            categoryIds: undefined,
             author: undefined,
             title: undefined,
             isbn: '978044',
@@ -1289,7 +1324,7 @@ describe('BooksPage', () => {
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith({
-            category: undefined,
+            categoryIds: undefined,
             author: undefined,
             title: undefined,
             isbn: undefined,

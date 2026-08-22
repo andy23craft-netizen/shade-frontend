@@ -24,21 +24,13 @@ import {
 } from '../../loans/checkinEligibility'
 import { queryKeys } from '../../../api/queryKeys'
 import type {
-    Category,
     Status,
 } from '../../../api/apiTypes'
 import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
+import { formatBookCategories } from '../categoryDisplay'
 import { Button } from '../../../components/Button'
 import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
 import { isCheckoutEligible } from '../../loans/checkoutEligibility'
-
-const CATEGORY_VALUES: readonly Category[] = [
-    'unknown',
-    'religion',
-    'philosophy',
-    'fiction',
-    'nonfiction',
-]
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -311,9 +303,8 @@ export function BookDetailsPage() {
                     <div className="book-details-card__field">
                         <dt>Category</dt>
                         <dd>
-                            {displayEnum(
-                                book.category,
-                                CATEGORY_VALUES,
+                            {formatBookCategories(
+                                book.categories,
                             )}
                         </dd>
                     </div>

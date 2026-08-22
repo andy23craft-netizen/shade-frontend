@@ -200,7 +200,7 @@ describe('formValuesToBookCreate', () => {
         ).toEqual({
             title: 'Dune',
             authors: 'Frank Herbert',
-            category: 'unknown',
+            category_ids: [],
             shelf_name: 'unknown',
             is_read: false,
             status: 'available',

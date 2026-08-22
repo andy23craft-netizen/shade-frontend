@@ -12,6 +12,26 @@ function nonEmptyFilter(
         : trimmed
 }
 
+function normalizeCategoryIds(
+    categoryIds: readonly string[] | undefined,
+): string[] | undefined {
+    if (categoryIds === undefined) {
+        return undefined
+    }
+
+    const normalized = [
+        ...new Set(
+            categoryIds
+                .map((id) => id.trim())
+                .filter((id) => id !== ''),
+        ),
+    ].sort()
+
+    return normalized.length === 0
+        ? undefined
+        : normalized
+}
+
 export const queryKeys = {
     books: {
         all: ['books'] as const,
@@ -22,7 +42,7 @@ export const queryKeys = {
                 isbn?: string
                 author?: string
                 title?: string
-                category?: string
+                categoryIds?: readonly string[]
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -39,16 +59,17 @@ export const queryKeys = {
             const title = nonEmptyFilter(
                 options.title,
             )
-            const category = nonEmptyFilter(
-                options.category,
-            )
+            const categoryIds =
+                normalizeCategoryIds(
+                    options.categoryIds,
+                )
 
             const key: {
                 includeDeleted: boolean
                 isbn?: string
                 author?: string
                 title?: string
-                category?: string
+                categoryIds?: string[]
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -71,8 +92,8 @@ export const queryKeys = {
                 key.title = title
             }
 
-            if (category !== undefined) {
-                key.category = category
+            if (categoryIds !== undefined) {
+                key.categoryIds = categoryIds
             }
 
             if (options.sortBy !== undefined) {
@@ -95,7 +116,7 @@ export const queryKeys = {
                 isbn?: string
                 author?: string
                 title?: string
-                category?: string
+                categoryIds?: readonly string[]
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -113,16 +134,17 @@ export const queryKeys = {
             const title = nonEmptyFilter(
                 options.title,
             )
-            const category = nonEmptyFilter(
-                options.category,
-            )
+            const categoryIds =
+                normalizeCategoryIds(
+                    options.categoryIds,
+                )
 
             const key: {
                 includeDeleted: boolean
                 isbn?: string
                 author?: string
                 title?: string
-                category?: string
+                categoryIds?: string[]
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -143,8 +165,8 @@ export const queryKeys = {
                 key.title = title
             }
 
-            if (category !== undefined) {
-                key.category = category
+            if (categoryIds !== undefined) {
+                key.categoryIds = categoryIds
             }
 
             if (options.skip !== undefined) {
@@ -285,6 +307,18 @@ export const queryKeys = {
         list: () =>
             [
                 'shelves',
+                {
+                    list: true,
+                },
+            ] as const,
+    },
+
+    categories: {
+        all: ['categories'] as const,
+
+        list: () =>
+            [
+                'categories',
                 {
                     list: true,
                 },

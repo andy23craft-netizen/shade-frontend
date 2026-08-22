@@ -297,6 +297,35 @@
   margin-block: var(--space-5);
 }
 
+.book-form__categories {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.book-form__categories legend {
+  padding: 0;
+  margin-block-end: var(--space-2);
+  font-weight: 600;
+}
+
+.book-form__categories-list {
+  display: grid;
+  gap: var(--space-2);
+  max-block-size: 12rem;
+  overflow: auto;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-1);
+}
+
+.book-form__category-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
 .books-page__sort {
   display: grid;
   gap: var(--space-4);

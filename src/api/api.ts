@@ -23,6 +23,10 @@ import {
 } from './shelvesApi'
 
 import {
+    createCategoriesApi,
+} from './categoriesApi'
+
+import {
     createVersionApi,
 } from './versionApi'
 
@@ -47,6 +51,7 @@ export function createApi(
         books: createBooksApi(client),
         loans: createLoansApi(client),
         shelves: createShelvesApi(client),
+        categories: createCategoriesApi(client),
         dashboard:
             createDashboardApi(client),
         health: createHealthApi(client),

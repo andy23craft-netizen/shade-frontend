@@ -27,6 +27,9 @@ import {
     useUpdateBook,
 } from '../../../api/booksQueries'
 import {
+    useCategories,
+} from '../../../api/categoriesQueries'
+import {
     useShelves,
 } from '../../../api/shelvesQueries'
 import { queryKeys } from '../../../api/queryKeys'
@@ -50,7 +53,7 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'publisher',
     'publication_date',
     'pages',
-    'category',
+    'categoryIds',
     'shelfId',
     'tags',
     'acquisition_source',
@@ -69,6 +72,10 @@ function mapEditFieldErrors(
 
         if (field === 'shelf_name') {
             field = 'shelfId'
+        }
+
+        if (field === 'category_ids') {
+            field = 'categoryIds'
         }
 
         if (
@@ -93,6 +100,7 @@ export function EditBookPage() {
 
     const bookQuery = useBook(bookId)
     const shelvesQuery = useShelves()
+    const categoriesQuery = useCategories()
     const updateBook = useUpdateBook()
 
     const initializedBookIdRef =
@@ -118,10 +126,13 @@ export function EditBookPage() {
     useEffect(() => {
         const book = bookQuery.data
         const shelves = shelvesQuery.data
+        const categories =
+            categoriesQuery.data
 
         if (
             !book ||
             shelves === undefined ||
+            categories === undefined ||
             initializedBookIdRef.current ===
             book.id
         ) {
@@ -139,6 +150,7 @@ export function EditBookPage() {
             book.id
     }, [
         bookQuery.data,
+        categoriesQuery.data,
         shelvesQuery.data,
     ])
 
@@ -283,7 +295,8 @@ export function EditBookPage() {
 
     if (
         bookQuery.isPending ||
-        shelvesQuery.isPending
+        shelvesQuery.isPending ||
+        categoriesQuery.isPending
     ) {
         return (
             <section className="route-page">
@@ -314,6 +327,36 @@ export function EditBookPage() {
                         void shelvesQuery.refetch()
                     }}
                     title="Unable to load shelves"
+                />
+
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    Back to Books
+                </AppLink>
+            </section>
+        )
+    }
+
+    if (categoriesQuery.isError) {
+        return (
+            <section className="route-page">
+                <h1 tabIndex={-1}>
+                    Edit Book
+                </h1>
+
+                <p>
+                    Categories must load before a
+                    book can be edited.
+                </p>
+
+                <QueryErrorState
+                    error={categoriesQuery.error}
+                    onRetry={() => {
+                        void categoriesQuery.refetch()
+                    }}
+                    title="Unable to load categories"
                 />
 
                 <AppLink
@@ -368,6 +411,8 @@ export function EditBookPage() {
 
     const book = bookQuery.data
     const shelves = shelvesQuery.data ?? []
+    const categories =
+        categoriesQuery.data ?? []
 
     if (book.deletion_date !== null) {
         return (
@@ -431,6 +476,7 @@ export function EditBookPage() {
             <BookForm
                 values={values}
                 shelves={shelves}
+                categories={categories}
                 onChange={(nextValues) => {
                     setValues(nextValues)
                     setServerFieldErrors({})

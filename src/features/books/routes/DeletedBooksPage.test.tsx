@@ -41,7 +41,7 @@ const deletedBook: BookRead = {
     title: 'Pale Fire',
     authors: 'Vladimir Nabokov',
     isbn13: null,
-    category: 'fiction',
+    categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
     status: 'available',
     publication_date: '1962',

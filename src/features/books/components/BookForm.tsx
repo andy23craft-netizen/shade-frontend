@@ -10,7 +10,7 @@ import {
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import type {
-    Category,
+    CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
 import {
@@ -18,6 +18,9 @@ import {
     formatShelfCommonNameForDisplay,
     normalizeShelfCommonName,
 } from '../../shelves/shelfDisplay'
+import {
+    sortCategoriesByName,
+} from '../categoryDisplay'
 
 import {
     parseTagsInput,
@@ -26,14 +29,6 @@ import {
     type BookFormFieldErrors,
 } from './bookFormModel'
 
-const CATEGORY_VALUES: readonly Category[] = [
-    'unknown',
-    'religion',
-    'philosophy',
-    'fiction',
-    'nonfiction',
-]
-
 export interface BookFormValues {
     title: string
     authors: string
@@ -41,7 +36,7 @@ export interface BookFormValues {
     publisher: string
     publication_date: string
     pages: string
-    category: Category
+    categoryIds: string[]
     shelfId: string
     tags: string
     acquisition_source: string
@@ -60,7 +55,7 @@ const FIELD_LABELS: Record<
     publisher: 'Publisher',
     publication_date: 'Publication date',
     pages: 'Pages',
-    category: 'Category',
+    categoryIds: 'Categories',
     shelfId: 'Shelf',
     tags: 'Tags',
     acquisition_source: 'Acquisition source',
@@ -72,6 +67,7 @@ const FIELD_LABELS: Record<
 export interface BookFormProps {
     values: BookFormValues
     shelves: readonly ShelfRead[]
+    categories: readonly CategoryRead[]
     onChange: (
         values: BookFormValues,
     ) => void
@@ -93,6 +89,7 @@ function focusSummary(
 export function BookForm({
     values,
     shelves,
+    categories,
     onChange,
     onSubmit,
     onCancel,
@@ -129,6 +126,9 @@ export function BookForm({
             ...assignableShelves,
         ]
         : assignableShelves
+
+    const sortedCategories =
+        sortCategoriesByName(categories)
 
     const fieldErrors: BookFormFieldErrors = {
         ...serverFieldErrors,
@@ -185,6 +185,25 @@ export function BookForm({
             ...values,
             [field]: value,
         })
+    }
+
+    function toggleCategoryId(
+        categoryId: string,
+    ) {
+        const selected = new Set(
+            values.categoryIds,
+        )
+
+        if (selected.has(categoryId)) {
+            selected.delete(categoryId)
+        } else {
+            selected.add(categoryId)
+        }
+
+        updateField(
+            'categoryIds',
+            [...selected],
+        )
     }
 
     function handleTextChange(
@@ -431,33 +450,65 @@ export function BookForm({
             <section>
                 <h2>Library Placement</h2>
 
-                <Field
-                    label="Category"
-                    id={fieldId('category')}
-                    error={fieldErrors.category}
+                <fieldset
+                    id={fieldId('categoryIds')}
+                    className="book-form__categories"
+                    aria-invalid={
+                        fieldErrors.categoryIds
+                            ? true
+                            : undefined
+                    }
+                    aria-describedby={
+                        fieldErrors.categoryIds
+                            ? `${fieldId('categoryIds')}-error`
+                            : undefined
+                    }
                 >
-                    <select
-                        value={values.category}
-                        onChange={(event) =>
-                            updateField(
-                                'category',
-                                event.target
-                                    .value as Category,
-                            )
-                        }
-                    >
-                        {CATEGORY_VALUES.map(
-                            (category) => (
-                                <option
-                                    key={category}
-                                    value={category}
-                                >
-                                    {category}
-                                </option>
-                            ),
+                    <legend>Categories</legend>
+
+                    {fieldErrors.categoryIds ? (
+                        <p
+                            id={`${fieldId('categoryIds')}-error`}
+                            className="field__error"
+                            role="alert"
+                        >
+                            {fieldErrors.categoryIds}
+                        </p>
+                    ) : null}
+
+                    <div className="book-form__categories-list">
+                        {sortedCategories.map(
+                            (category) => {
+                                const inputId =
+                                    `${fieldId('categoryIds')}-${category.category_id}`
+
+                                return (
+                                    <label
+                                        key={
+                                            category.category_id
+                                        }
+                                        htmlFor={inputId}
+                                        className="book-form__category-option"
+                                    >
+                                        <input
+                                            id={inputId}
+                                            type="checkbox"
+                                            checked={values.categoryIds.includes(
+                                                category.category_id,
+                                            )}
+                                            onChange={() =>
+                                                toggleCategoryId(
+                                                    category.category_id,
+                                                )
+                                            }
+                                        />
+                                        {category.name}
+                                    </label>
+                                )
+                            },
                         )}
-                    </select>
-                </Field>
+                    </div>
+                </fieldset>
 
                 <Field
                     label="Shelf"

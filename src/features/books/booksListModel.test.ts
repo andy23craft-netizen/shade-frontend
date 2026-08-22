@@ -6,8 +6,7 @@ import {
 
 import {
     BOOKS_BATCH_SIZE,
-    CATEGORY_FILTER_VALUES,
-    parseCategoryParam,
+    parseCategoryIdParams,
     parseIsbnParam,
     parseSortByParam,
     parseSortOrderParam,
@@ -33,26 +32,26 @@ describe('booksListModel', () => {
         expect(parseSortOrderParam('desc')).toBe('desc')
     })
 
-    it('parses valid category URL params', () => {
-        expect(parseCategoryParam('fiction')).toBe('fiction')
-        expect(parseCategoryParam('religion')).toBe('religion')
-        expect(parseCategoryParam('unknown')).toBe('unknown')
-    })
-
-    it('normalizes missing or invalid category URL params', () => {
-        expect(parseCategoryParam(null)).toBeUndefined()
-        expect(parseCategoryParam('')).toBeUndefined()
-        expect(parseCategoryParam('invalid')).toBeUndefined()
-    })
-
-    it('provides every supported category filter value', () => {
-        expect(CATEGORY_FILTER_VALUES).toEqual([
-            'unknown',
-            'religion',
-            'philosophy',
-            'fiction',
-            'nonfiction',
+    it('parses category_id URL params', () => {
+        expect(
+            parseCategoryIdParams([
+                'cat-fiction',
+                ' cat-religion ',
+                'cat-fiction',
+                '',
+                '  ',
+            ]),
+        ).toEqual([
+            'cat-fiction',
+            'cat-religion',
         ])
+    })
+
+    it('returns an empty list when category_id params are blank', () => {
+        expect(parseCategoryIdParams([])).toEqual([])
+        expect(
+            parseCategoryIdParams(['', '   ']),
+        ).toEqual([])
     })
 
     it('trims text filter URL params', () => {

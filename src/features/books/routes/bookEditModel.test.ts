@@ -51,7 +51,7 @@ const BOOK: BookRead = {
     publisher: 'Ace',
     publication_date: '1965',
     pages: 412,
-    category: 'fiction',
+    categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
     tags: ['science fiction', 'classic'],
     acquisition_source: 'Bookstore',
@@ -85,7 +85,7 @@ describe('bookFormValuesFromBook', () => {
             publisher: 'Ace',
             publication_date: '1965',
             pages: '412',
-            category: 'fiction',
+            categoryIds: ['cat-fiction'],
             shelfId: 'id-a1',
             tags: 'science fiction, classic',
             acquisition_source: 'Bookstore',
@@ -209,6 +209,50 @@ describe('bookFormValuesToUpdate', () => {
             bookFormValuesToUpdate(
                 BOOK,
                 values,
+                SHELVES,
+            ),
+        ).toEqual({})
+    })
+
+    it('includes category_ids when categories change', () => {
+        const values: BookFormValues = {
+            ...bookFormValuesFromBook(
+                BOOK,
+                SHELVES,
+            ),
+            categoryIds: [],
+        }
+
+        expect(
+            bookFormValuesToUpdate(
+                BOOK,
+                values,
+                SHELVES,
+            ),
+        ).toEqual({
+            category_ids: [],
+        })
+    })
+
+    it('omits category_ids when the set is unchanged', () => {
+        const values = bookFormValuesFromBook(
+            BOOK,
+            SHELVES,
+        )
+
+        values.categoryIds = [
+            'cat-fiction',
+        ].reverse()
+
+        expect(
+            bookFormValuesToUpdate(
+                BOOK,
+                {
+                    ...values,
+                    categoryIds: [
+                        'cat-fiction',
+                    ],
+                },
                 SHELVES,
             ),
         ).toEqual({})

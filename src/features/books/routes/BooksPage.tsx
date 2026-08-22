@@ -14,17 +14,20 @@ import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
 import { useInfiniteBooks } from '../../../api/booksQueries'
+import { useCategories } from '../../../api/categoriesQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
-    Category,
     Status,
 } from '../../../api/apiTypes'
 import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
 import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 import { BooksListControls } from '../components/BooksListControls'
 import {
+    formatBookCategories,
+} from '../categoryDisplay'
+import {
     flattenInfiniteBookPages,
-    parseCategoryParam,
+    parseCategoryIdParams,
     parseIsbnParam,
     parseSortByParam,
     parseSortOrderParam,
@@ -44,15 +47,6 @@ const STATUS_VALUES: readonly Status[] = [
     'reserved',
     'reading',
 ]
-
-const CATEGORY_VALUES: readonly Category[] = [
-    'unknown',
-    'religion',
-    'philosophy',
-    'fiction',
-    'nonfiction',
-]
-
 
 function displayEnum(
     value: string,
@@ -83,7 +77,7 @@ function displayReadState(
 function updateListParams(
     searchParams: URLSearchParams,
     updates: {
-        category?: Category | undefined
+        categoryIds?: string[] | undefined
         author?: string | undefined
         title?: string | undefined
         isbn?: string | undefined
@@ -93,13 +87,13 @@ function updateListParams(
 ): URLSearchParams {
     const next = new URLSearchParams(searchParams)
 
-    if ('category' in updates) {
-        if (updates.category === undefined) {
-            next.delete('category')
-        } else {
-            next.set(
-                'category',
-                updates.category,
+    if ('categoryIds' in updates) {
+        next.delete('category_id')
+
+        for (const categoryId of updates.categoryIds ?? []) {
+            next.append(
+                'category_id',
+                categoryId,
             )
         }
     }
@@ -171,14 +165,16 @@ export function BooksPage() {
         setSearchParams,
     ] = useSearchParams()
 
+    const categoriesQuery = useCategories()
+
     const sortBy = parseSortByParam(
         searchParams.get('sortBy'),
     )
     const sortOrder = parseSortOrderParam(
         searchParams.get('sortOrder'),
     )
-    const category = parseCategoryParam(
-        searchParams.get('category'),
+    const categoryIds = parseCategoryIdParams(
+        searchParams.getAll('category_id'),
     )
     const author = parseTextFilterParam(
         searchParams.get('author'),
@@ -192,7 +188,10 @@ export function BooksPage() {
     )
 
     const booksQuery = useInfiniteBooks({
-        category,
+        categoryIds:
+            categoryIds.length === 0
+                ? undefined
+                : categoryIds,
         author,
         title,
         isbn,
@@ -209,7 +208,7 @@ export function BooksPage() {
     const total =
         booksQuery.data?.pages[0]?.total ?? 0
     const hasActiveFilters =
-        category !== undefined ||
+        categoryIds.length > 0 ||
         author !== undefined ||
         title !== undefined ||
         isbn !== undefined
@@ -312,17 +311,23 @@ export function BooksPage() {
 
             <BooksListControls
                 key={`${author ?? ''}:${title ?? ''}`}
-                category={category}
+                categories={
+                    categoriesQuery.data ?? []
+                }
+                categoryIds={categoryIds}
                 author={author ?? ''}
                 title={title ?? ''}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
-                onCategoryChange={(nextCategory) => {
+                onCategoryIdsChange={(
+                    nextCategoryIds,
+                ) => {
                     setSearchParams(
                         updateListParams(
                             searchParams,
                             {
-                                category: nextCategory,
+                                categoryIds:
+                                    nextCategoryIds,
                             },
                         ),
                         {
@@ -330,8 +335,6 @@ export function BooksPage() {
                         },
                     )
                 }}
-
-                
                 onSortByChange={(nextSortBy) => {
                     setSearchParams(
                         updateListParams(
@@ -360,8 +363,6 @@ export function BooksPage() {
                         },
                     )
                 }}
-
-
                 onApply={(nextAuthor, nextTitle) => {
                     setSearchParams(
                         updateListParams(
@@ -381,7 +382,7 @@ export function BooksPage() {
                         updateListParams(
                             searchParams,
                             {
-                                category: undefined,
+                                categoryIds: [],
                                 author: undefined,
                                 title: undefined,
                                 isbn: undefined,
@@ -442,7 +443,7 @@ export function BooksPage() {
                                 updateListParams(
                                     searchParams,
                                     {
-                                        category: undefined,
+                                        categoryIds: [],
                                         author: undefined,
                                         title: undefined,
                                         isbn: undefined,
@@ -470,10 +471,10 @@ export function BooksPage() {
                             STATUS_VALUES,
                         )
 
-                        const category = displayEnum(
-                            book.category,
-                            CATEGORY_VALUES,
-                        )
+                        const category =
+                            formatBookCategories(
+                                book.categories,
+                            )
 
                         const shelf =
                             formatShelfCommonNameForDisplay(

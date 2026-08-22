@@ -24,12 +24,16 @@ import {
 import { ApiError } from '../../../api/apiErrors'
 import type {
     BookRead,
+    CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
 import {
     useBook,
     useUpdateBook,
 } from '../../../api/booksQueries'
+import {
+    useCategories,
+} from '../../../api/categoriesQueries'
 import {
     useShelves,
 } from '../../../api/shelvesQueries'
@@ -42,6 +46,10 @@ vi.mock('../../../api/booksQueries', () => ({
 
 vi.mock('../../../api/shelvesQueries', () => ({
     useShelves: vi.fn(),
+}))
+
+vi.mock('../../../api/categoriesQueries', () => ({
+    useCategories: vi.fn(),
 }))
 
 const mockNavigate = vi.fn()
@@ -65,6 +73,8 @@ const mockUseBook = vi.mocked(useBook)
 const mockUseUpdateBook =
     vi.mocked(useUpdateBook)
 const mockUseShelves = vi.mocked(useShelves)
+const mockUseCategories =
+    vi.mocked(useCategories)
 
 const TEST_SHELVES: ShelfRead[] = [
     {
@@ -93,12 +103,22 @@ const TEST_SHELVES: ShelfRead[] = [
     },
 ]
 
+const TEST_CATEGORIES: CategoryRead[] = [
+    {
+        category_id: 'cat-fiction',
+        name: 'Fiction',
+        slug: 'fiction',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
 const book: BookRead = {
     id: 'test-book-id',
     title: 'The Pale Fire',
     authors: 'Vladimir Nabokov',
     isbn13: '9780441172719',
-    category: 'fiction',
+    categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
     status: 'available',
     publication_date: '1962',
@@ -184,6 +204,21 @@ function setupSuccessfulShelves(
     >)
 }
 
+function setupSuccessfulCategories(
+    value: CategoryRead[] = TEST_CATEGORIES,
+) {
+    mockUseCategories.mockReturnValue({
+        data: value,
+        isPending: false,
+        isError: false,
+        error: null,
+        isSuccess: true,
+        refetch: vi.fn(),
+    } as unknown as ReturnType<
+        typeof useCategories
+    >)
+}
+
 function setupSuccessfulBook(
     value: BookRead = book,
 ) {
@@ -203,6 +238,7 @@ describe('EditBookPage', () => {
 
         setupSuccessfulBook()
         setupSuccessfulShelves()
+        setupSuccessfulCategories()
 
         mockUseUpdateBook.mockReturnValue({
             mutate: vi.fn(),
@@ -276,6 +312,37 @@ describe('EditBookPage', () => {
         ).toHaveTextContent(
             'Deleted books cannot be edited here.',
         )
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Save Book',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('blocks the page when categories fail to load', () => {
+        mockUseCategories.mockReturnValue({
+            data: undefined,
+            isPending: false,
+            isError: true,
+            error: new ApiError({
+                kind: 'unreachable',
+                message:
+                    'The API could not be reached',
+            }),
+            isSuccess: false,
+            refetch: vi.fn(),
+        } as unknown as ReturnType<
+            typeof useCategories
+        >)
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'Unable to load categories',
+            ),
+        ).toBeInTheDocument()
 
         expect(
             screen.queryByRole('button', {

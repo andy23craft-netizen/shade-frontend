@@ -69,7 +69,7 @@ const createdBook: BookRead = {
     id: 'book-99',
     title: 'A Book',
     authors: 'An Author',
-    category: 'unknown',
+    categories: [],
     shelf_name: 'unknown',
     status: 'available',
     is_read: false,
@@ -263,7 +263,7 @@ describe('AddWishlistBookControl', () => {
         expect(createPayload).toMatchObject({
             title: 'A Book',
             authors: 'An Author',
-            category: 'unknown',
+            category_ids: [],
             is_read: false,
             status: 'available',
         })

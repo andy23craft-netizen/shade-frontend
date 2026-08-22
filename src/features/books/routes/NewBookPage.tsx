@@ -16,6 +16,9 @@ import {
     useCreateBook,
 } from '../../../api/booksQueries'
 import {
+    useCategories,
+} from '../../../api/categoriesQueries'
+import {
     useShelves,
 } from '../../../api/shelvesQueries'
 import {
@@ -44,7 +47,7 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'publisher',
     'publication_date',
     'pages',
-    'category',
+    'categoryIds',
     'shelfId',
     'tags',
     'acquisition_source',
@@ -72,6 +75,10 @@ function mapCreateFieldErrors(
 
         if (field === 'shelf_name') {
             field = 'shelfId'
+        }
+
+        if (field === 'category_ids') {
+            field = 'categoryIds'
         }
 
         if (
@@ -121,6 +128,7 @@ export function NewBookPage() {
     const navigate = useNavigate()
 
     const shelvesQuery = useShelves()
+    const categoriesQuery = useCategories()
 
     const [
         values,
@@ -176,6 +184,7 @@ export function NewBookPage() {
     useHardwareIsbnScanner({
         enabled:
             shelvesQuery.isSuccess &&
+            categoriesQuery.isSuccess &&
             !isScannerOpen &&
             !lookup.isFetching,
         onDetected: handleIsbnDetected,
@@ -335,7 +344,10 @@ export function NewBookPage() {
         !lookup.isError &&
         lookup.data !== undefined
 
-    if (shelvesQuery.isPending) {
+    if (
+        shelvesQuery.isPending ||
+        categoriesQuery.isPending
+    ) {
         return (
             <section className="route-page">
                 <AppLink
@@ -351,7 +363,7 @@ export function NewBookPage() {
                     </h1>
                 </header>
 
-                <LoadingState label="Loading shelves…" />
+                <LoadingState label="Loading form…" />
             </section>
         )
     }
@@ -387,7 +399,40 @@ export function NewBookPage() {
         )
     }
 
+    if (categoriesQuery.isError) {
+        return (
+            <section className="route-page">
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    ← Back to Books
+                </AppLink>
+
+                <header>
+                    <h1 tabIndex={-1}>
+                        Add Book
+                    </h1>
+                    <p>
+                        Categories must load before a
+                        book can be added.
+                    </p>
+                </header>
+
+                <QueryErrorState
+                    error={categoriesQuery.error}
+                    onRetry={() => {
+                        void categoriesQuery.refetch()
+                    }}
+                    title="Unable to load categories"
+                />
+            </section>
+        )
+    }
+
     const shelves = shelvesQuery.data ?? []
+    const categories =
+        categoriesQuery.data ?? []
 
     return (
         <section className="route-page">
@@ -553,6 +598,7 @@ export function NewBookPage() {
             <BookForm
                 values={values}
                 shelves={shelves}
+                categories={categories}
                 onChange={setValues}
                 onSubmit={handleSubmit}
                 onCancel={() => {
