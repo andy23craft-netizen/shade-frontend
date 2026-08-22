@@ -5,12 +5,15 @@ import {
 } from 'vitest'
 
 import {
+    collectionEditFormValuesFromCollection,
     emptyAddCollectionBookFormValues,
     emptyCollectionCreateFormValues,
     formValuesToCollectionBookCreate,
     formValuesToCollectionCreate,
+    formValuesToCollectionUpdate,
     validateAddCollectionBookFormValues,
     validateCollectionCreateFormValues,
+    validateCollectionEditFormValues,
 } from './collectionFormModel'
 
 describe('collectionFormModel', () => {
@@ -72,6 +75,135 @@ describe('collectionFormModel', () => {
                 description:
                     'Favorites from the library',
             })
+        })
+    })
+
+    describe('collection edit form', () => {
+        const collection = {
+            collection_id: 'collection-1',
+            name: 'Staff Picks',
+            description: 'Favorites',
+            created_date:
+                '2026-08-01T00:00:00Z',
+            last_updated_date:
+                '2026-08-01T00:00:00Z',
+        }
+
+        it('initializes values from an existing collection', () => {
+            expect(
+                collectionEditFormValuesFromCollection(
+                    collection,
+                ),
+            ).toEqual({
+                name: 'Staff Picks',
+                description: 'Favorites',
+            })
+        })
+
+        it('uses a blank form value for a null description', () => {
+            expect(
+                collectionEditFormValuesFromCollection({
+                    ...collection,
+                    description: null,
+                }),
+            ).toEqual({
+                name: 'Staff Picks',
+                description: '',
+            })
+        })
+
+        it('requires a non-blank name', () => {
+            expect(
+                validateCollectionEditFormValues({
+                    name: '   ',
+                    description: 'Favorites',
+                }),
+            ).toEqual({
+                name:
+                    'Enter a name for the collection.',
+            })
+        })
+
+        it('rejects names longer than 255 characters', () => {
+            expect(
+                validateCollectionEditFormValues({
+                    name: 'a'.repeat(256),
+                    description: '',
+                }),
+            ).toEqual({
+                name:
+                    'Name must be 255 characters or fewer.',
+            })
+        })
+
+        it('returns an empty patch when nothing changed', () => {
+            expect(
+                formValuesToCollectionUpdate(
+                    {
+                        name: 'Staff Picks',
+                        description: 'Favorites',
+                    },
+                    collection,
+                ),
+            ).toEqual({})
+        })
+
+        it('returns only a changed trimmed name', () => {
+            expect(
+                formValuesToCollectionUpdate(
+                    {
+                        name: '  New Staff Picks  ',
+                        description: 'Favorites',
+                    },
+                    collection,
+                ),
+            ).toEqual({
+                name: 'New Staff Picks',
+            })
+        })
+
+        it('returns only a changed trimmed description', () => {
+            expect(
+                formValuesToCollectionUpdate(
+                    {
+                        name: 'Staff Picks',
+                        description:
+                            '  New favorites  ',
+                    },
+                    collection,
+                ),
+            ).toEqual({
+                description: 'New favorites',
+            })
+        })
+
+        it('uses null when clearing an existing description', () => {
+            expect(
+                formValuesToCollectionUpdate(
+                    {
+                        name: 'Staff Picks',
+                        description: '   ',
+                    },
+                    collection,
+                ),
+            ).toEqual({
+                description: null,
+            })
+        })
+
+        it('does not send null when an already-null description stays blank', () => {
+            expect(
+                formValuesToCollectionUpdate(
+                    {
+                        name: 'Staff Picks',
+                        description: '',
+                    },
+                    {
+                        ...collection,
+                        description: null,
+                    },
+                ),
+            ).toEqual({})
         })
     })
 

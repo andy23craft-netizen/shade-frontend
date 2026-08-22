@@ -8,6 +8,9 @@ import {
 } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
+import {
+    AddBookToCollectionDialog,
+} from '../../collections/components/AddBookToCollectionDialog'
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { LoadingState } from '../../../components/LoadingState'
@@ -124,6 +127,10 @@ export function BookDetailsPage() {
 
     const [checkoutOpen, setCheckoutOpen] =
         useState(() => searchParams.has('checkout'))
+    const [
+        addToCollectionOpen,
+        setAddToCollectionOpen,
+    ] = useState(false)
     const queryClient = useQueryClient()
 
     const bookQuery = useBook(bookId ?? '')
@@ -480,6 +487,16 @@ export function BookDetailsPage() {
                         Edit Book
                     </AppLink>
 
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setAddToCollectionOpen(true)
+                        }}
+                    >
+                        Add to Collection
+                    </Button>
+
                     {canCheckout ? (
                         <Button
                             type="button"
@@ -529,6 +546,17 @@ export function BookDetailsPage() {
                     ) : null}
                 </nav>
             ) : null}
+
+            <AddBookToCollectionDialog
+                book={book}
+                open={
+                    addToCollectionOpen &&
+                    canShowActiveActions
+                }
+                onClose={() => {
+                    setAddToCollectionOpen(false)
+                }}
+            />
 
             <CheckoutDialog
                 book={book}

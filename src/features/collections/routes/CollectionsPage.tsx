@@ -27,6 +27,7 @@ import {
     useCollections,
     useCreateCollection,
     useDeleteCollection,
+    useUpdateCollection,
 } from '../../../api/collectionsQueries'
 import {
     AddCollectionBookControl,
@@ -35,12 +36,18 @@ import {
     CollectionMembershipRow,
 } from '../components/CollectionMembershipRow'
 import {
+    collectionEditFormValuesFromCollection,
     emptyCollectionCreateFormValues,
     formValuesToCollectionCreate,
+    formValuesToCollectionUpdate,
     validateCollectionCreateFormValues,
+    validateCollectionEditFormValues,
     type CollectionCreateField,
     type CollectionCreateFieldErrors,
     type CollectionCreateFormValues,
+    type CollectionEditField,
+    type CollectionEditFieldErrors,
+    type CollectionEditFormValues,
 } from '../collectionFormModel'
 
 const CREATE_FIELDS = new Set<string>([
@@ -65,6 +72,29 @@ function mapCreateFieldErrors(
         }
 
         mapped[field as CollectionCreateField] =
+            entry.message
+    }
+
+    return mapped
+}
+
+function mapEditFieldErrors(
+    fieldErrors: readonly ApiFieldError[],
+): CollectionEditFieldErrors {
+    const mapped: CollectionEditFieldErrors = {}
+
+    for (const entry of fieldErrors) {
+        const field = entry.field.split('.')[0]
+
+        if (
+            !field ||
+            !CREATE_FIELDS.has(field) ||
+            mapped[field as CollectionEditField]
+        ) {
+            continue
+        }
+
+        mapped[field as CollectionEditField] =
             entry.message
     }
 
@@ -272,6 +302,266 @@ function CreateCollectionForm() {
     )
 }
 
+function EditCollectionForm({
+                                collection,
+                                onCancel,
+                            }: {
+    collection: CollectionRead
+    onCancel: () => void
+}) {
+    const updateCollection =
+        useUpdateCollection()
+
+    const formId = useId()
+
+    const summaryRef =
+        useRef<HTMLDivElement | null>(null)
+
+    const [
+        values,
+        setValues,
+    ] = useState<CollectionEditFormValues>(
+        () =>
+            collectionEditFormValuesFromCollection(
+                collection,
+            ),
+    )
+
+    const [
+        fieldErrors,
+        setFieldErrors,
+    ] = useState<CollectionEditFieldErrors>({})
+
+    const [
+        formError,
+        setFormError,
+    ] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (
+            formError !== null ||
+            Object.keys(fieldErrors).length > 0
+        ) {
+            focusSummary(summaryRef.current)
+        }
+    }, [
+        formError,
+        fieldErrors,
+    ])
+
+    function updateField<
+        Field extends keyof CollectionEditFormValues,
+    >(
+        field: Field,
+        value: CollectionEditFormValues[Field],
+    ) {
+        setValues((current) => ({
+            ...current,
+            [field]: value,
+        }))
+
+        setFormError(null)
+
+        setFieldErrors((current) => {
+            if (
+                current[
+                    field as CollectionEditField
+                    ] === undefined
+            ) {
+                return current
+            }
+
+            const next = {
+                ...current,
+            }
+
+            delete next[
+                field as CollectionEditField
+                ]
+
+            return next
+        })
+    }
+
+    function handleSubmit(
+        event: FormEvent<HTMLFormElement>,
+    ) {
+        event.preventDefault()
+
+        if (updateCollection.isPending) {
+            return
+        }
+
+        setFieldErrors({})
+        setFormError(null)
+
+        const clientErrors =
+            validateCollectionEditFormValues(
+                values,
+            )
+
+        if (
+            Object.keys(clientErrors).length > 0
+        ) {
+            setFieldErrors(clientErrors)
+            setFormError(
+                'Fix the highlighted fields and try again.',
+            )
+            return
+        }
+
+        const update =
+            formValuesToCollectionUpdate(
+                values,
+                collection,
+            )
+
+        if (Object.keys(update).length === 0) {
+            setFormError(
+                'Make a change before saving.',
+            )
+            return
+        }
+
+        updateCollection.mutate(
+            {
+                collectionId:
+                collection.collection_id,
+                collection: update,
+            },
+            {
+                onSuccess: () => {
+                    onCancel()
+                },
+
+                onError: (error) => {
+                    if (
+                        isApiError(error) &&
+                        error.status === 422 &&
+                        error.fieldErrors.length > 0
+                    ) {
+                        setFieldErrors(
+                            mapEditFieldErrors(
+                                error.fieldErrors,
+                            ),
+                        )
+
+                        setFormError(
+                            'Correct the marked fields and try again.',
+                        )
+
+                        return
+                    }
+
+                    setFormError(
+                        isApiError(error)
+                            ? error.detail ??
+                            error.message
+                            : error instanceof Error
+                                ? error.message
+                                : 'The collection could not be updated.',
+                    )
+                },
+            },
+        )
+    }
+
+    return (
+        <form
+            className="collection-form"
+            aria-labelledby={`${formId}-heading`}
+            onSubmit={handleSubmit}
+            noValidate
+        >
+            <h3 id={`${formId}-heading`}>
+                Edit {collection.name}
+            </h3>
+
+            {formError ? (
+                <div
+                    ref={summaryRef}
+                    className="alert alert--error"
+                    tabIndex={-1}
+                    role="alert"
+                >
+                    <p>{formError}</p>
+                </div>
+            ) : null}
+
+            <Field
+                id={`${formId}-name`}
+                label="Name"
+                error={fieldErrors.name}
+            >
+                <input
+                    id={`${formId}-name`}
+                    name="name"
+                    type="text"
+                    value={values.name}
+                    onChange={(event) => {
+                        updateField(
+                            'name',
+                            event.target.value,
+                        )
+                    }}
+                    disabled={
+                        updateCollection.isPending
+                    }
+                    maxLength={255}
+                    autoComplete="off"
+                />
+            </Field>
+
+            <Field
+                id={`${formId}-description`}
+                label="Description"
+                error={fieldErrors.description}
+            >
+                <textarea
+                    id={`${formId}-description`}
+                    name="description"
+                    value={values.description}
+                    onChange={(event) => {
+                        updateField(
+                            'description',
+                            event.target.value,
+                        )
+                    }}
+                    disabled={
+                        updateCollection.isPending
+                    }
+                    rows={3}
+                />
+            </Field>
+
+            <div className="collection-form__actions">
+                <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={
+                        updateCollection.isPending
+                    }
+                >
+                    {updateCollection.isPending
+                        ? 'Saving…'
+                        : 'Save Changes'}
+                </Button>
+
+                <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={
+                        updateCollection.isPending
+                    }
+                    onClick={onCancel}
+                >
+                    Cancel
+                </Button>
+            </div>
+        </form>
+    )
+}
+
 function CollectionSection({
                                collection,
                                onDelete,
@@ -283,6 +573,10 @@ function CollectionSection({
     ) => void
     deletePending: boolean
 }) {
+    const [
+        editOpen,
+        setEditOpen,
+    ] = useState(false)
     const membershipsQuery =
         useCollectionBooks(
             collection.collection_id,
@@ -323,17 +617,45 @@ function CollectionSection({
                     ) : null}
                 </div>
 
-                <Button
-                    type="button"
-                    variant="danger"
-                    disabled={deletePending}
-                    onClick={() => {
-                        onDelete(collection)
-                    }}
-                >
-                    Delete Collection
-                </Button>
+                <div className="collection-card__actions">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={
+                            deletePending ||
+                            editOpen
+                        }
+                        onClick={() => {
+                            setEditOpen(true)
+                        }}
+                    >
+                        Edit
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="danger"
+                        disabled={
+                            deletePending ||
+                            editOpen
+                        }
+                        onClick={() => {
+                            onDelete(collection)
+                        }}
+                    >
+                        Delete Collection
+                    </Button>
+                </div>
             </header>
+
+            {editOpen ? (
+                <EditCollectionForm
+                    collection={collection}
+                    onCancel={() => {
+                        setEditOpen(false)
+                    }}
+                />
+            ) : null}
 
             {membershipsQuery.isPending ? (
                 <LoadingState

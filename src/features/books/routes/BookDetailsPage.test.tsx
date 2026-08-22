@@ -1,5 +1,6 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import {
+    fireEvent,
     screen,
     waitFor,
 } from '@testing-library/react'
@@ -22,6 +23,21 @@ vi.mock('../../../api/booksQueries', () => ({
 vi.mock('../../../api/loansQueries', () => ({
     useLoans: vi.fn(),
 }))
+vi.mock(
+    '../../collections/components/AddBookToCollectionDialog',
+    () => ({
+        AddBookToCollectionDialog: ({
+                                        open,
+                                    }: {
+            open: boolean
+        }) =>
+            open ? (
+                <div role="dialog">
+                    Add to Collection Dialog
+                </div>
+            ) : null,
+    }),
+)
 
 const mockedUseBook = vi.mocked(useBook)
 
@@ -997,5 +1013,63 @@ describe('BookDetailsPage', () => {
                 window.location.search,
             ).not.toContain('checkout')
         })
+    })
+
+    it('offers Add to Collection for an active book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: completeBook,
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Add to Collection',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('opens Add to Collection from Book Details', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: completeBook,
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Add to Collection',
+            }),
+        )
+
+        expect(
+            screen.getByRole('dialog'),
+        ).toHaveTextContent(
+            'Add to Collection Dialog',
+        )
+    })
+
+    it('does not offer Add to Collection for a deleted book', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                deletion_date:
+                    '2026-08-14T12:00:00.000Z',
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Add to Collection',
+            }),
+        ).not.toBeInTheDocument()
     })
 })

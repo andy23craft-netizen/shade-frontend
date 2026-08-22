@@ -29,6 +29,7 @@ import {
     useCollections,
     useCreateCollection,
     useDeleteCollection,
+    useUpdateCollection,
 } from '../../../api/collectionsQueries'
 import {
     CollectionsPage,
@@ -39,6 +40,7 @@ vi.mock('../../../api/collectionsQueries', () => ({
     useCollectionBooks: vi.fn(),
     useCreateCollection: vi.fn(),
     useDeleteCollection: vi.fn(),
+    useUpdateCollection: vi.fn(),
 }))
 
 vi.mock(
@@ -108,6 +110,8 @@ const mockUseCreateCollection =
 
 const mockUseDeleteCollection =
     vi.mocked(useDeleteCollection)
+const mockUseUpdateCollection =
+    vi.mocked(useUpdateCollection)
 
 const collection: CollectionRead = {
     collection_id: 'collection-1',
@@ -195,6 +199,11 @@ function mockSuccessState() {
     mockUseDeleteCollection.mockReturnValue(
         idleMutation() as unknown as ReturnType<
             typeof useDeleteCollection
+        >,
+    )
+    mockUseUpdateCollection.mockReturnValue(
+        idleMutation() as unknown as ReturnType<
+            typeof useUpdateCollection
         >,
     )
 }
@@ -478,6 +487,286 @@ describe('CollectionsPage', () => {
         expect(
             screen.getByText('2 books'),
         ).toBeInTheDocument()
+    })
+
+    it('opens and cancels collection editing without mutating', () => {
+        const mutate = vi.fn()
+
+        mockUseUpdateCollection.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useUpdateCollection
+        >)
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Edit',
+            }),
+        )
+
+        const editForm = screen.getByRole('form', {
+            name: 'Edit Staff Picks',
+        })
+
+        expect(
+            screen.getByRole('heading', {
+                level: 3,
+                name: 'Edit Staff Picks',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            within(editForm).getByLabelText('Name'),
+        ).toHaveValue('Staff Picks')
+
+        expect(
+            within(editForm).getByLabelText('Description'),
+        ).toHaveValue('Favorites')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('heading', {
+                level: 3,
+                name: 'Edit Staff Picks',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(mutate).not.toHaveBeenCalled()
+    })
+
+    it('renames an existing collection', async () => {
+        const mutate = vi.fn(
+            (
+                _variables: unknown,
+                options: {
+                    onSuccess?: () => void
+                },
+            ) => {
+                options.onSuccess?.()
+            },
+        )
+
+        mockUseUpdateCollection.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useUpdateCollection
+        >)
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Edit',
+            }),
+        )
+
+        const editForm = screen.getByRole('form', {
+            name: 'Edit Staff Picks',
+        })
+
+        fireEvent.change(
+            within(editForm).getByLabelText('Name'),
+            {
+                target: {
+                    value: '  New Staff Picks  ',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Changes',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(mutate).toHaveBeenCalledWith(
+                {
+                    collectionId: 'collection-1',
+                    collection: {
+                        name: 'New Staff Picks',
+                    },
+                },
+                expect.any(Object),
+            )
+        })
+    })
+
+    it('clears an existing collection description with explicit null', async () => {
+        const mutate = vi.fn()
+
+        mockUseUpdateCollection.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useUpdateCollection
+        >)
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Edit',
+            }),
+        )
+
+        const editForm = screen.getByRole('form', {
+            name: 'Edit Staff Picks',
+        })
+
+        fireEvent.change(
+            within(editForm).getByLabelText('Description'),
+            {
+                target: {
+                    value: '   ',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Changes',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(mutate).toHaveBeenCalledWith(
+                {
+                    collectionId: 'collection-1',
+                    collection: {
+                        description: null,
+                    },
+                },
+                expect.any(Object),
+            )
+        })
+    })
+
+    it('shows client validation when an edited name is blank', () => {
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Edit',
+            }),
+        )
+
+        const editForm = screen.getByRole('form', {
+            name: 'Edit Staff Picks',
+        })
+
+        fireEvent.change(
+            within(editForm).getByLabelText('Name'),
+            {
+                target: {
+                    value: '   ',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Changes',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                'Enter a name for the collection.',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(editForm).getByLabelText('Name'),
+        ).toHaveAttribute(
+            'aria-invalid',
+            'true',
+        )
+    })
+
+    it('maps collection edit 422 errors to the name field', async () => {
+        mockUseUpdateCollection.mockReturnValue({
+            mutate: vi.fn(
+                (
+                    _variables: unknown,
+                    options: {
+                        onError?: (
+                            error: unknown,
+                        ) => void
+                    },
+                ) => {
+                    options.onError?.(
+                        new ApiError({
+                            kind: 'validation',
+                            status: 422,
+                            message:
+                                'Validation failed.',
+                            fieldErrors: [
+                                {
+                                    field: 'name',
+                                    message:
+                                        'Invalid name.',
+                                },
+                            ],
+                        }),
+                    )
+                },
+            ),
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useUpdateCollection
+        >)
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Edit',
+            }),
+        )
+
+        const editForm = screen.getByRole('form', {
+            name: 'Edit Staff Picks',
+        })
+
+        fireEvent.change(
+            within(editForm).getByLabelText('Name'),
+            {
+                target: {
+                    value: 'Changed',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Changes',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByText(
+                    'Invalid name.',
+                ),
+            ).toBeInTheDocument()
+        })
+
+        expect(
+            within(editForm).getByLabelText('Name')
+        ).toHaveAttribute(
+            'aria-invalid',
+            'true',
+        )
     })
 
     it('shows an empty state when no collections exist', () => {

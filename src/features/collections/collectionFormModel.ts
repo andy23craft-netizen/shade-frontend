@@ -1,6 +1,8 @@
 import type {
     CollectionBookCreate,
     CollectionCreate,
+    CollectionRead,
+    CollectionUpdate,
 } from '../../api/apiTypes'
 import {
     isValidIsbn,
@@ -17,6 +19,19 @@ export type CollectionCreateField =
 
 export type CollectionCreateFieldErrors = Partial<
     Record<CollectionCreateField, string>
+>
+
+export interface CollectionEditFormValues {
+    name: string
+    description: string
+}
+
+export type CollectionEditField =
+    | 'name'
+    | 'description'
+
+export type CollectionEditFieldErrors = Partial<
+    Record<CollectionEditField, string>
 >
 
 export interface AddCollectionBookFormValues {
@@ -86,6 +101,59 @@ export function formValuesToCollectionCreate(
                 ? null
                 : description,
     }
+}
+
+export function collectionEditFormValuesFromCollection(
+    collection: CollectionRead,
+): CollectionEditFormValues {
+    return {
+        name: collection.name,
+        description: collection.description ?? '',
+    }
+}
+
+export function validateCollectionEditFormValues(
+    values: CollectionEditFormValues,
+): CollectionEditFieldErrors {
+    const errors: CollectionEditFieldErrors = {}
+    const name = values.name.trim()
+
+    if (name === '') {
+        errors.name =
+            'Enter a name for the collection.'
+    } else if (name.length > 255) {
+        errors.name =
+            'Name must be 255 characters or fewer.'
+    }
+
+    return errors
+}
+
+export function formValuesToCollectionUpdate(
+    values: CollectionEditFormValues,
+    original: CollectionRead,
+): CollectionUpdate {
+    const update: CollectionUpdate = {}
+
+    const name = values.name.trim()
+
+    if (name !== original.name) {
+        update.name = name
+    }
+
+    const trimmedDescription =
+        values.description.trim()
+
+    const description =
+        trimmedDescription === ''
+            ? null
+            : trimmedDescription
+
+    if (description !== original.description) {
+        update.description = description
+    }
+
+    return update
 }
 
 export function validateAddCollectionBookFormValues(
