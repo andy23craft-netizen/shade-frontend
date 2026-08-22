@@ -2,6 +2,4 @@
 
 * [ ] Read helpful docs:
   * [ ] Read `docs/technical-reference/bash-reference.md`
-* [ ] Implement the feature docs:
-  * [x] Complete feature ticket `docs/tickets/FEAT-26_add-from-wishlist.md`.
-  * [x] Complete feature ticket `docs/tickets/FEAT-27_add-support-for-collections.md`.
+* [ ] Implement the feature docs
