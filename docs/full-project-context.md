@@ -217,13 +217,16 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     flows; edit/delete/restore;
     About homepage at `/` with dashboard metrics at `/dashboard`;
     diagnostics; shelves catalog CRUD; infinite scroll on
-    `/books` and `/loans`; API contract sync (regenerated OpenAPI types for wishlist / dashboard-report and
-    Collections paths; `booksApi` / query keys for `author` / `title` /
-    `category` / `isbn`, used by the `/books` collection browse UI for
-    category / author / title and URL-backed `?isbn=` from hardware
-    collection jump or deep link; collection
-    `sortBy=shelf`; checkout `412` `display_only` refetch/messaging on
-    `CheckoutDialog` without alternate-copy offers). Dashboard reports on `/dashboard`: summary
+    `/books` and `/loans`; API contract docs refreshed for OpenAPI `0.2.8`
+    (normalized categories via `GET /categories`, book `categories` /
+    `category_ids`, repeated `category_id` list filter with AND semantics,
+    and expanded `GET /books` filters in OpenAPI / `API-for-FE.md`). Shipped
+    FE still uses singular `category` plus FEAT-18 `author` / `title` /
+    `isbn` wiring on `/books` until FEAT-29 / FEAT-30; collection browse
+    uses category / author / title and URL-backed `?isbn=` from hardware
+    collection jump or deep link; collection `sortBy=shelf`; checkout `412`
+    `display_only` refetch/messaging on `CheckoutDialog` without
+    alternate-copy offers. Dashboard reports on `/dashboard`: summary
     plus breakdowns and incomplete-metadata healing
     (`dashboardApi`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`, `useInfiniteIncompleteMetadataBooks`;
     Basic Stats and Healing Metadata drawers). Wishlists: `/wishlists` via Collection drawer;
@@ -308,9 +311,14 @@ contract: `docs/technical-reference/openapi.json` (schemas) plus
     second bundle-budget tool.
 -   Live contract smoke compared the representative running backend
     OpenAPI with `docs/technical-reference/openapi.json`; path/schema
-    sets matched and canonical JSON had no diff. The running API did not
-    expose a documented request/correlation-ID header, so the frontend
-    must not fabricate one.
+    sets matched and canonical JSON had no diff at the last recorded
+    check. Checked-in OpenAPI is now `0.2.8` (normalized categories and
+    expanded `GET /books` filters). Generated
+    `src/api/generated/openapi.ts` and the shipped FE still lag that
+    contract until FEAT-29; expect `yarn api:check` / typecheck breakage
+    until types are regenerated and callers are adapted. The running API
+    did not expose a documented request/correlation-ID header, so the
+    frontend must not fabricate one.
 -   Production-host ownership is documented in `README.md` and
     `docs/MAINTAINERS.md`: the frontend owns runtime config, safe
     diagnostics, and client behavior; the backend owns auth/CORS; the
@@ -1000,7 +1008,7 @@ index.html
     `SHADE_API_PROXY=1 make run` (optional `SHADE_API_PROXY_TARGET`).
     The proxy forwards `/health`, `/books`, `/loans`, `/dashboard`,
     `/backup`, `/docs`, `/redoc`, `/openapi.json`, `/wishlists`, and
-    `/collections` (not `/shelves` or `/version`). Playwright Chromium must
+    `/collections` (not `/shelves`, `/version`, or `/categories`). Playwright Chromium must
     be installed once per machine
     (`yarn playwright install --with-deps chromium`) before
     `yarn test:e2e` / `make check`. Production build inspection:
@@ -1014,9 +1022,12 @@ scanner capture on `/books/new`, hardware collection ISBN jump on
 `CheckoutDialog` (display-only **412** messaging without alternate
 copies; `/checkout` is a compatibility redirect), check-in and loan
 history, reading tracking (mark-read + reading edit),
-edit/delete/restore, API contract sync (`author` / `title` /
-`category` / `isbn` list filters used by `/books`, `sortBy=shelf`,
-checkout `412` display-only messaging without alternate copies),
+edit/delete/restore, API contract notes (`author` / `title` /
+singular `category` / `isbn` list filters still used by shipped `/books`
+UI; checked-in OpenAPI now uses `category_id` / `category_ids` /
+`categories` plus broader filters -- adapt under FEAT-29 / FEAT-30;
+`sortBy=shelf`; checkout `412` display-only messaging without alternate
+copies),
 collection category / author / title / ISBN filter UI, About
 homepage, dashboard (summary plus breakdown / incomplete-metadata reports), wishlists, wishlist move-to-shelf,
 curated Collections on `/collections`,
@@ -1123,14 +1134,29 @@ form library unless a ticket explicitly requires it.
 
 -   Validate ISBN-10 check digits (backend does not do this correctly).
 -   Send normalized `YYYY-MM-DD` dates and UTC ISO 8601 timestamps.
--   Do not send `null` for required DB fields (title, authors, category,
-    shelf_name on create, is_read, status).
+-   Do not send `null` for required DB fields (title, authors,
+    shelf_name on create, is_read, status). Category membership is
+    optional (`category_ids` omit/`[]` allowed). Against OpenAPI
+    `0.2.8+`, do not send a singular `category` enum field once FEAT-29
+    regenerates types.
 -   Load shelves from `GET /shelves` for book placement; send selected
     `common_name` as `shelf_name` (never Title Case display strings).
     Collection create on `/books/new` requires an explicit shelf.
     Wishlist-only catalog rows omit `shelf_name` on `POST /books`. Manage
     the catalog on `/shelves` with documented `POST` / `PATCH` / `DELETE`
     (do not invent shelf CRUD on Add/Edit Book).
+-   Categories are normalized resources (`GET /categories`,
+    `CategoryRead` / `BookCategoryRead`, book `categories` /
+    `category_ids`, repeated `category_id` AND filter). Load vocabulary
+    from the API under FEAT-29; do not hard-code names/slugs. Dashboard
+    `by_category` uses display names (multi-category books count once
+    per bucket); incomplete-metadata missing category means no
+    memberships.
+-   `GET /books` exposes a broader composable filter surface (text,
+    exact/state, numeric/date ranges, `shelf_name`, `is_read`, `status`,
+    `category_id`) documented in OpenAPI / `API-for-FE.md`. Shipped UI
+    still wires `author` / `title` / singular `category` / `isbn` only;
+    expand through the centralized Books URL model under FEAT-30.
 -   Prevent blank title, authors, borrower, and (on create) unselected
     shelf.
 -   Prevent deletion of on-loan books (backend allows it; frontend must
@@ -1309,7 +1335,8 @@ versioned production artifacts, About homepage with the dashboard at
 `/dashboard`, wishlists, wishlist move-to-shelf, and curated Collections
 (create/edit/delete/add/reorder/remove on `/collections`, plus Book Details
 add-to-collection). Ticketed follow-ons (implement only when working that
-ticket): dynamic multi-category UI (FEAT-29), V1 filter plumbing
+ticket): dynamic multi-category UI against the refreshed OpenAPI contract
+(FEAT-29), V1 filter plumbing for the expanded `GET /books` surface
 (FEAT-30), bulk selection (FEAT-31), bulk move-to-shelf (FEAT-32), Home
 discovery (FEAT-33), cover images stretch (FEAT-34), and V1
 regression/deployment gate (FEAT-35).
@@ -1317,10 +1344,12 @@ regression/deployment gate (FEAT-35).
 **Out of scope unless explicitly requested:** UPC, true multi-library
 tenancy, overdue notifications, Goodreads/StoryGraph, user
 accounts/roles, realtime sync, loan CRUD, mark-unread, and remote
-Ansible/systemd/TLS/rollback orchestration. Cover images and many-to-many
-categories are ticketed (FEAT-34 stretch / FEAT-29); do not implement them
-from `docs/product-docs/CATEGORY_NOTES.md` alone (architecture notes, not
-a ticket). Collection browse (`BooksPage`) and loan history
+Ansible/systemd/TLS/rollback orchestration. Cover images remain
+ticketed (FEAT-34 stretch). Backend many-to-many categories and expanded
+catalog filters are already in checked-in OpenAPI (`0.2.8+`); frontend
+adaptation is FEAT-29 / FEAT-30 -- do not implement them from
+`docs/product-docs/CATEGORY_NOTES.md` alone (architecture notes that may
+lag the contract). Collection browse (`BooksPage`) and loan history
 (`LoansPage`) use infinite scroll with backend pagination; other callers
 still fetch unpaginated full lists when needed.
 
@@ -1551,17 +1580,19 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
   Need                            Document
   ------------------------------- ---------------------------------------------
   API paths, methods, status      `docs/technical-reference/openapi.json`
-  codes, schemas, enums           
+  codes, schemas, enums           (OpenAPI 3.1; currently `info.version`
+                                  `0.2.8`, including `GET /categories`,
+                                  book `categories` / `category_ids`, and
+                                  expanded `GET /books` filters)
 
   API behavior (auth, CORS,       `docs/technical-reference/API-for-FE.md`
   lifecycle, ISBN, backup, FE     
   ownership)                      
 
-  Future category taxonomy notes  `docs/product-docs/CATEGORY_NOTES.md`
-  (architecture notes; implement
-  category changes from FEAT-29
-  when working that ticket, not
-  from this notes file alone)
+  Category taxonomy notes         `docs/product-docs/CATEGORY_NOTES.md`
+  (may lag live contract; prefer
+  OpenAPI + API-for-FE; implement
+  FE changes from FEAT-29)
 
   Product requirements (source)   `docs/product-docs/PRODUCT_REQS.V1.md`,
                                   `docs/product-docs/PRODUCT_REQS.V2.*.md`
@@ -1571,7 +1602,9 @@ when necessary. Prefer `docs/technical-reference/openapi.json`,
                                   `FEAT-35_...`; FEAT-13 through FEAT-28
                                   are complete (those ticket files are
                                   removed). Next product work is FEAT-29
-                                  (dynamic multi-category UI)
+                                  (adapt UI/types to normalized
+                                  categories already in checked-in
+                                  OpenAPI)
 
   Bundle budget / CI              Recorded in this master context.
                                   `scripts/checkBundleSize.mjs` (warn

@@ -50,8 +50,11 @@ Shade is a browser UI for a personal home-library FastAPI backend. Shipped capab
   `queryKeys.collections.all`). Orthogonal to shelf/wishlist placement (no shelf/wishlist overlap **412**; no
   FEAT-26-style move-to-shelf). Book Details adds the current active book via `AddBookToCollectionDialog`
   (`useAddCollectionBook` with the detail `book.id`; no catalog search).
-- `booksApi` accepts `author` / `title` / `category` / `isbn` list filters. Collection browse on `/books` uses
-  category / author / title and URL-backed `?isbn=` (from hardware collection jump or deep link).
+- `booksApi` still accepts singular `author` / `title` / `category` / `isbn` list filters for the shipped FEAT-18 UI.
+  The checked-in backend contract has moved to normalized categories (`category_id` / `category_ids` /
+  `GET /categories`) and a broader `GET /books` filter surface; adapt that under FEAT-29 / FEAT-30 rather than
+  inventing a second filter stack. Collection browse on `/books` still uses category / author / title and
+  URL-backed `?isbn=` (from hardware collection jump or deep link).
 
 Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in, or initial mark-read with generic
 `PATCH`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open (the
@@ -298,6 +301,55 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
 
+### Categories (normalized resources; OpenAPI `0.2.8+`)
+
+Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI no longer defines a singular `Category`
+string enum.
+
+- `GET /categories`: authenticated, unpaginated JSON **array** of `CategoryRead` (`category_id`, `name`, `slug`,
+  `created_date`, `updated_date`); same list pattern as `GET /shelves`.
+- `BookRead.categories`: array of `BookCategoryRead` (`category_id`, `name`, `slug`). A book may have zero, one, or
+  many memberships.
+- `BookCreate.category_ids` / `BookUpdate.category_ids`: array of category GUIDs. Create may omit or send `[]`
+  (zero categories allowed). On update: omit to preserve memberships; send `[]` to clear; send a list to replace.
+- `GET /books` accepts repeated `category_id` query params. One value requires membership in that category; multiple
+  values use **AND / intersection** (book must belong to every requested category). Duplicate IDs are rejected.
+  Blank/absent selection sends no category filter. Unknown or malformed IDs follow the OpenAPI contract; a valid
+  selection with no matches returns an empty `BookList`, not **404**.
+- Do not hard-code category names or slugs. Load vocabulary from `GET /categories` (FEAT-29) and submit stable
+  GUIDs as `category_ids`. Frontend category admin (create/rename/merge/delete) is out of V1.
+- Dashboard: `by_category` buckets use category display names; a multi-category book contributes once per applicable
+  bucket. Incomplete-metadata "missing category" means **no memberships** (not a legacy `unknown` enum value).
+
+**Frontend drift until FEAT-29:** shipped UI, `booksApi`, `requestFields`, and `src/api/generated/openapi.ts` still
+assume singular `category` / `Category`. Regenerating types alone will break `yarn api:check` and typecheck until
+FEAT-29 adapts forms, list filters, display, and e2e mocks. Prefer regenerating and adapting under that ticket rather
+than hand-editing generated OpenAPI or inventing adapter shapes. Do not treat the obsolete enum as the live contract.
+
+### Catalog list filters (`GET /books`)
+
+Optional filters form one composable catalog-query surface (AND across different filter types). They compose with
+`include_deleted`, supported sorting, and `skip` / `take`. No matches → empty `BookList` (`items: []`, `total: 0`),
+not **404**. When paginated, `total` remains the full matching count.
+
+Documented filter families (see OpenAPI + `API-for-FE.md` for exact params and status codes):
+
+- Text (case-insensitive substring except `isbn`): `isbn` (literal substring on stored `isbn13`), `author`, `title`,
+  `publisher`, `acquisition_source`. Blank/whitespace text filters → **400**.
+- Exact/state: `id` (Book GUID; malformed → **400**; well-formed miss → empty list), `shelf_name` (trimmed/lowercased
+  membership; unknown valid name → empty list), `is_read`, `status`, repeated `category_id` (above).
+- Inclusive numeric ranges (either bound alone; inverted range → **400**): `pages_*`, `rating_*`,
+  `purchase_price_*`, `publication_year_*`.
+- Inclusive `YYYY-MM-DD` date ranges (either bound alone; invalid syntax → **422**; inverted → **400**):
+  `purchase_date_*`, `completion_date_*`, `creation_date_*`, `updated_date_*`.
+
+Intentionally not normal V1 list filters: `notes`, `review`, `tags` (JSON text), `deletion_date` (use
+`include_deleted`), and derived loan stats (`times_borrowed`, `last_borrowed_at`, `average_loan_days`).
+
+**Frontend drift until FEAT-30:** collection browse still wires `author` / `title` / singular `category` / `isbn`
+only. Expose additional contract filters through the centralized Books URL model under FEAT-30; do not invent
+page-local filter stacks.
+
 ### Authority when sources disagree
 
 1. Current repository contents
@@ -345,11 +397,15 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 
 - Validate ISBN-10 check digits (backend does not do this correctly).
 - Send normalized `YYYY-MM-DD` dates and UTC ISO 8601 timestamps.
-- Do not send `null` for required DB fields (title, authors, category, shelf_name on create, is_read, status).
+- Do not send `null` for required DB fields (title, authors, shelf_name on create, is_read, status). Category
+  membership is optional (`category_ids` omit/`[]` allowed); never send a singular `category` enum field against the
+  current contract once FEAT-29 regenerates types.
 - Load shelves from `GET /shelves` for book placement; send selected `common_name` as `shelf_name` (never Title Case
   display strings). Collection create on `/books/new` requires an explicit shelf. Wishlist-only catalog rows omit
   `shelf_name` on `POST /books`. Manage the catalog on `/shelves` with documented `POST` / `PATCH` / `DELETE` (do not
   invent shelf CRUD on Add/Edit Book).
+- Load categories from `GET /categories` when adapting the UI (FEAT-29); submit GUIDs as `category_ids`. Do not
+  hard-code category vocabulary or recreate legacy labels as fake options.
 - Prevent blank title, authors, borrower, and (on create) unselected shelf.
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Render unknown enum values safely (see `enumDisplayValue`).
@@ -365,16 +421,18 @@ alternate-copy offers), check-in, loan history, reading tracking, soft delete/re
 backup at the API host (not a browser download), runtime API config, CI, Podman preview, versioned production
 artifacts, About homepage with the dashboard at `/dashboard`, wishlists, wishlist move-to-shelf, and curated
 Collections (create/edit/delete/add/reorder/remove on `/collections`, plus Book Details add-to-collection). Ticketed
-follow-ons (implement only when working that ticket): dynamic multi-category UI (FEAT-29), V1 filter plumbing
-(FEAT-30), bulk selection (FEAT-31), bulk move-to-shelf (FEAT-32), Home discovery (FEAT-33), cover images stretch
-(FEAT-34), and V1 regression/deployment gate (FEAT-35).
+follow-ons (implement only when working that ticket): dynamic multi-category UI against the refreshed contract
+(FEAT-29), V1 filter plumbing for the expanded `GET /books` surface (FEAT-30), bulk selection (FEAT-31), bulk
+move-to-shelf (FEAT-32), Home discovery (FEAT-33), cover images stretch (FEAT-34), and V1 regression/deployment gate
+(FEAT-35).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, and remote
-Ansible/systemd/TLS/rollback orchestration. Cover images and many-to-many categories are ticketed (FEAT-34 stretch /
-FEAT-29); do not implement them from `docs/product-docs/CATEGORY_NOTES.md` alone (architecture notes, not a ticket).
-Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite scroll with backend pagination; other
-callers still fetch unpaginated full lists when needed.
+Ansible/systemd/TLS/rollback orchestration. Cover images remain ticketed (FEAT-34 stretch). Backend many-to-many
+categories and expanded catalog filters are already in the checked-in OpenAPI; frontend adaptation is FEAT-29 /
+FEAT-30 -- do not implement from `docs/product-docs/CATEGORY_NOTES.md` alone (architecture notes that may lag the
+contract). Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite scroll with backend
+pagination; other callers still fetch unpaginated full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not implement future tickets prematurely.
 
@@ -522,7 +580,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `CollectionCreate` / `CollectionUpdate` / `CollectionRead` / `CollectionList`, `CollectionBookCreate` /
   `CollectionBookRead` / `CollectionBookList` / `CollectionBookReorder`, validation/error schemas, enums). Book
   payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum. Catalog identity is `BookRead.id` (UUID);
-  loans / wishlist / collection memberships reference that UUID as `book_id`.
+  loans / wishlist / collection memberships reference that UUID as `book_id`. Until FEAT-29 regenerates types, this
+  module still aliases obsolete singular `Category`; checked-in OpenAPI defines `CategoryRead` / `BookCategoryRead`
+  and book `categories` / `category_ids` instead.
 - `src/api/guid.ts` / `bookIdentity.ts`: GUID check for book path/query ids; `isBookIdentityError` /
   `isMalformedBookId` map API **400** / **404** for malformed or unknown book identity.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
@@ -550,13 +610,14 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   incomplete-metadata `field` are omitted from keys (trimmed when present). Wishlists: `all`, `list()` unpaginated,
   `books(wishlistId)`. Collections: `all`, `list()` unpaginated, `books(collectionId)`.
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `dashboard`, `health`, `version`,
-  `wishlists`, `collections`) plus the underlying `client`.
+  `wishlists`, `collections`) plus the underlying `client`. No `categories` helper yet (add under FEAT-29).
 - `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `author`, `title`, `category`, `skip`, `take`,
   `sortBy` including `shelf`, `sortOrder`; omit empty/whitespace `isbn` / `author` / `title` / `category`; send
   `skip`/`take` together when paginating), `create`, `lookup`, `get`, `update`, `remove`,
   `restore`, `checkout` (including documented **412** `Book is display only`), `checkin` (optional body), `markRead`
   (defaults to `{}`). Helpers accept optional `AbortSignal` and serialize only documented request fields (including
-  `shelf_name`).
+  `shelf_name`). Singular `category` query/body fields are FEAT-18 leftovers; switch to `category_id` /
+  `category_ids` under FEAT-29.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`, optional `skip`/`take` together;
   omit empty/`undefined` `bookId` and omitted pagination params), `get(id)` (`GET /loans/{id}`).
 - `src/api/shelvesApi.ts`: `list()` (`GET /shelves`) returns a plain `ShelfRead[]` array (no pagination params);
@@ -1157,7 +1218,7 @@ make check / yarn check
   files), global test setup, V8 coverage thresholds, `__APP_VERSION__` from `package.json`, and an optional
   same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
   `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, `/wishlists`, and `/collections`
-  (not `/shelves` or `/version`).
+  (not `/shelves`, `/version`, or `/categories`).
 - `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`,
   `node_modules/`, and `ci/artifacts/` and treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
@@ -1237,15 +1298,18 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 
 - `docs/tickets/FEAT-29_*.md` through `FEAT-35_*.md`: Remaining sequenced implementation tickets with acceptance
   criteria (FEAT-13 through FEAT-28 are complete; those ticket files are removed). Prefer ticket presence under
-  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Next product work is FEAT-29 (dynamic
-  multi-category UI); FEAT-30--FEAT-35 cover V1 filters, bulk actions, Home discovery, cover stretch, and the
-  regression gate.
+  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Next product work is FEAT-29 (adapt UI/types
+  to normalized categories already in checked-in OpenAPI); FEAT-30--FEAT-35 cover V1 filters, bulk actions, Home
+  discovery, cover stretch, and the regression gate.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
-- `docs/product-docs/CATEGORY_NOTES.md`: Future book-category architecture notes (many-to-many / data-driven labels).
-  Not a ticket; implement category changes from FEAT-29 when working that ticket, not from this notes file alone.
+- `docs/product-docs/CATEGORY_NOTES.md`: Historical / architectural category notes. Prefer checked-in
+  `openapi.json` + `API-for-FE.md` for the live many-to-many contract; implement frontend changes from FEAT-29, not
+  from this notes file alone.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
-- `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (see Backend Contract).
+- `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
+  `info.version` `0.2.8` -- see Backend Contract), including `GET /categories`, book `categories` /
+  `category_ids`, and the expanded `GET /books` filter query params.
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json`.
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
@@ -1287,7 +1351,9 @@ Common commands:
 - `make check`: Runs lint, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright e2e, the
   production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
-- `yarn api:check`: Regenerates types and fails if the generated file differs from git.
+- `yarn api:check`: Regenerates types and fails if the generated file differs from git. After the OpenAPI `0.2.8`
+  category/filter refresh, expect this (and subsequent typecheck) to fail until FEAT-29 regenerates and adapts
+  callers.
 
 `make check` currently performs type checking twice because `make build` also type-checks. This is expected.
 
