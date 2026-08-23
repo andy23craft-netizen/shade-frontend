@@ -902,6 +902,11 @@
           inset 0 0 0.4rem rgb(60 39 23 / 12%);
 }
 
+.dashboard-drawer:nth-child(4),
+.dashboard-drawer:nth-child(5) {
+  min-height: 42rem;
+}
+
 /*
  * Dark slot at the top where the drawer appears to emerge
  * from the cabinet/header.
@@ -1065,6 +1070,103 @@
 
 .dashboard-reading-chart__key--unread {
   background: var(--color-card-rule);
+}
+
+.dashboard-category-chart {
+  --category-chart-1: #6f4436;
+  --category-chart-2: #8b6748;
+  --category-chart-3: #4f6652;
+  --category-chart-4: #7b5e70;
+  --category-chart-5: #9a824f;
+  --category-chart-6: #526d78;
+  --category-chart-7: #82604a;
+  --category-chart-8: #887f73;
+
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+
+.dashboard-category-chart__pie {
+  position: relative;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 50%;
+}
+
+.dashboard-category-chart__pie::after {
+  position: absolute;
+  inset: 24%;
+  content: "";
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+
+.dashboard-category-chart__center {
+  position: absolute;
+  z-index: 1;
+  inset: 24%;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.dashboard-category-chart__center strong {
+  display: block;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dashboard-category-chart__center span {
+  margin-top: var(--space-1);
+  color: var(--color-surface-text-muted);
+  font-size: 0.75rem;
+}
+
+.dashboard-category-chart__legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+}
+
+.dashboard-category-chart__legend-row {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.dashboard-category-chart__legend-row dt {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  color: var(--color-surface-text);
+  line-height: 1.2;
+}
+
+.dashboard-category-chart__legend-row dd {
+  margin: 0;
+  padding-left: calc(0.65rem + var(--space-2));
+  color: var(--color-wood-dark);
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dashboard-category-chart__key {
+  flex: 0 0 auto;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+}
+
+.dashboard-category-chart__note {
+  margin: 0 0 var(--space-3);
+  color: var(--color-surface-text-muted);
+  font-size: 0.8rem;
 }
 
 .dashboard-metrics {
@@ -1286,6 +1388,14 @@
   color: var(--color-wood-dark);
   font-family: var(--font-family-heading);
   font-weight: 700;
+}
+
+.dashboard-healing__counts .app-link {
+  color: var(--color-surface-text);
+}
+
+.dashboard-healing__counts .app-link:hover {
+  color: var(--color-link-hover);
 }
 
 .dashboard-healing__note,
@@ -2132,6 +2242,7 @@
 
 .shelves-list {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
   margin: var(--space-6) 0 0;
   padding: 0;
@@ -2140,6 +2251,18 @@
 
 .shelves-list__item {
   margin: 0;
+}
+
+@media (max-width: 64rem) {
+  .shelves-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .shelves-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .shelf-row {
@@ -2201,6 +2324,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+.shelf-row .app-link {
+  color: var(--color-surface-text);
+}
+
+.shelf-row .app-link:hover {
+  color: var(--color-link-hover);
 }
 
 .shelf-form {

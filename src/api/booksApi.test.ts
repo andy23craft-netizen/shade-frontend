@@ -198,6 +198,78 @@ describe('createBooksApi', () => {
         )
     })
 
+    it('lists books filtered by shelf', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            shelfName: 'e4',
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?shelf_name=e4',
+        )
+    })
+
+    it('lists books filtered by read status', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isRead: true,
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?is_read=true',
+        )
+    })
+
+    it('preserves false when filtering unread books', async () => {
+        const books: BookList = {
+            items: [],
+            total: 0,
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.getJson)
+            .mockResolvedValue(books)
+
+        const api = createBooksApi(client)
+
+        await api.list({
+            isRead: false,
+        })
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/books?is_read=false',
+        )
+    })
+
     it('omits blank and whitespace author, title, and category filters', async () => {
         const books: BookList = {
             items: [],
@@ -215,6 +287,7 @@ describe('createBooksApi', () => {
             author: '  ',
             title: '',
             categoryIds: ['\t', ''],
+            shelfName: '   ',
         })
 
         expect(
@@ -239,12 +312,13 @@ describe('createBooksApi', () => {
             author: '  Le Guin  ',
             title: ' Darkness ',
             categoryIds: [' fiction '],
+            shelfName: ' e4 ',
         })
 
         expect(
             client.getJson,
         ).toHaveBeenCalledWith(
-            '/books?author=Le+Guin&title=Darkness&category_id=fiction',
+            '/books?author=Le+Guin&title=Darkness&category_id=fiction&shelf_name=e4',
         )
     })
 

@@ -12,7 +12,9 @@ import {
     waitFor,
     within,
 } from '@testing-library/react'
-
+import {
+    MemoryRouter,
+} from 'react-router-dom'
 import type {
     ShelfRead,
 } from '../../../api/apiTypes'
@@ -23,6 +25,7 @@ const mockRefetch = vi.fn()
 const mockCreateMutate = vi.fn()
 const mockUpdateMutate = vi.fn()
 const mockDeleteMutate = vi.fn()
+const mockBreakdownsRefetch = vi.fn()
 
 let mockShelvesPending = false
 let mockShelvesError: unknown = null
@@ -30,6 +33,8 @@ let mockShelvesData: ShelfRead[] | undefined
 let mockCreatePending = false
 let mockUpdatePending = false
 let mockDeletePending = false
+let mockBreakdownsPending = false
+let mockBreakdownsError: unknown = null
 
 vi.mock('../../../api/shelvesQueries', () => ({
     useShelves: () => ({
@@ -50,6 +55,32 @@ vi.mock('../../../api/shelvesQueries', () => ({
     useDeleteShelf: () => ({
         isPending: mockDeletePending,
         mutate: mockDeleteMutate,
+    }),
+}))
+
+vi.mock('../../../api/dashboardQueries', () => ({
+    useDashboardBreakdowns: () => ({
+        isPending: mockBreakdownsPending,
+        isLoadingError:
+            mockBreakdownsError !== null,
+        error: mockBreakdownsError,
+        data: {
+            total_books: 3,
+            on_loan: 0,
+            by_category: [],
+            by_shelf: [
+                {
+                    key: 'unknown',
+                    count: 2,
+                },
+                {
+                    key: 'liz_tbr',
+                    count: 1,
+                },
+            ],
+            by_creation_year: [],
+        },
+        refetch: mockBreakdownsRefetch,
     }),
 }))
 
@@ -80,6 +111,14 @@ const sampleShelves: ShelfRead[] = [
     },
 ]
 
+function renderShelvesPage() {
+    return render(
+        <MemoryRouter>
+            <ShelvesPage />
+        </MemoryRouter>,
+    )
+}
+
 describe('ShelvesPage', () => {
     beforeEach(() => {
         mockShelvesPending = false
@@ -92,13 +131,16 @@ describe('ShelvesPage', () => {
         mockCreateMutate.mockReset()
         mockUpdateMutate.mockReset()
         mockDeleteMutate.mockReset()
+        mockBreakdownsPending = false
+        mockBreakdownsError = null
+        mockBreakdownsRefetch.mockReset()
     })
 
     it('shows a loading state while shelves load', () => {
         mockShelvesPending = true
         mockShelvesData = undefined
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         expect(
             screen.getByText(
@@ -115,7 +157,7 @@ describe('ShelvesPage', () => {
         })
         mockShelvesData = undefined
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         expect(
             screen.getByText(
@@ -132,14 +174,97 @@ describe('ShelvesPage', () => {
         expect(mockRefetch).toHaveBeenCalled()
     })
 
+    it('shows a retryable error when shelf counts fail to load', () => {
+        mockBreakdownsError = new ApiError({
+            kind: 'unreachable',
+            message:
+                'The API could not be reached',
+        })
+
+        renderShelvesPage()
+
+        expect(
+            screen.getByText(
+                'Unable to load shelf counts',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(
+            mockBreakdownsRefetch,
+        ).toHaveBeenCalled()
+    })
+
     it('lists shelves with Title Case labels, system badges, and write controls', () => {
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         expect(
             screen.getByRole('heading', {
                 name: 'Unknown',
             }),
         ).toBeInTheDocument()
+
+        const unknownRow = screen
+            .getByRole('heading', {
+                name: 'Unknown',
+            })
+            .closest('article')
+
+        expect(unknownRow).not.toBeNull()
+
+        expect(
+            within(
+                unknownRow as HTMLElement,
+            ).getByRole('link', {
+                name: '2 books',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books?shelf_name=unknown',
+        )
+
+        const removedRow = screen
+            .getByRole('heading', {
+                name: 'Removed',
+            })
+            .closest('article')
+
+        expect(removedRow).not.toBeNull()
+
+        expect(
+            within(
+                removedRow as HTMLElement,
+            ).getByRole('link', {
+                name: '0 books',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books?shelf_name=removed',
+        )
+
+        const lizRow = screen
+            .getByRole('heading', {
+                name: 'Liz Tbr',
+            })
+            .closest('article')
+
+        expect(lizRow).not.toBeNull()
+
+        expect(
+            within(
+                lizRow as HTMLElement,
+            ).getByRole('link', {
+                name: '1 book',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books?shelf_name=liz_tbr',
+        )
 
         expect(
             screen.getByRole('heading', {
@@ -177,12 +302,6 @@ describe('ShelvesPage', () => {
             }),
         ).toBeInTheDocument()
 
-        const lizRow = screen
-            .getByRole('heading', {
-                name: 'Liz Tbr',
-            })
-            .closest('article')
-
         expect(lizRow).not.toBeNull()
 
         expect(
@@ -205,7 +324,7 @@ describe('ShelvesPage', () => {
     })
 
     it('does not offer delete for system shelves', () => {
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         const unknownRow = screen
             .getByRole('heading', {
@@ -258,7 +377,7 @@ describe('ShelvesPage', () => {
             },
         )
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         const addForm = screen
             .getByRole('heading', {
@@ -319,7 +438,7 @@ describe('ShelvesPage', () => {
             },
         )
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         const addForm = screen
             .getByRole('heading', {
@@ -367,7 +486,7 @@ describe('ShelvesPage', () => {
             },
         )
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         const lizRow = screen
             .getByRole('heading', {
@@ -428,7 +547,7 @@ describe('ShelvesPage', () => {
             },
         )
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         const lizRow = screen
             .getByRole('heading', {
@@ -487,7 +606,7 @@ describe('ShelvesPage', () => {
             },
         )
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         const lizRow = screen
             .getByRole('heading', {
@@ -524,7 +643,7 @@ describe('ShelvesPage', () => {
     it('shows an empty state when the catalog is empty', () => {
         mockShelvesData = []
 
-        render(<ShelvesPage />)
+        renderShelvesPage()
 
         expect(
             screen.getByText('No shelves yet'),

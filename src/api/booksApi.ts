@@ -29,6 +29,8 @@ export interface ListBooksOptions
     author?: string
     title?: string
     categoryIds?: readonly string[]
+    shelfName?: string
+    isRead?: boolean
     skip?: number
     take?: number
     sortBy?: string
@@ -123,6 +125,19 @@ export function createBooksApi(
                 params,
                 options.categoryIds,
             )
+
+            setOptionalStringParam(
+                params,
+                'shelf_name',
+                options.shelfName,
+            )
+
+            if (options.isRead !== undefined) {
+                params.set(
+                    'is_read',
+                    String(options.isRead),
+                )
+            }
 
             if (options.skip !== undefined) {
                 params.set(

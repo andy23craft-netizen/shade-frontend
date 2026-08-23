@@ -509,6 +509,34 @@ describe('DashboardPage', () => {
 
         renderDashboard()
 
+        const readLinks = screen.getAllByRole(
+            'link',
+            { name: '318' },
+        )
+
+        expect(readLinks).toHaveLength(2)
+
+        for (const link of readLinks) {
+            expect(link).toHaveAttribute(
+                'href',
+                '/books?is_read=true',
+            )
+        }
+
+        const unreadLinks = screen.getAllByRole(
+            'link',
+            { name: '224' },
+        )
+
+        expect(unreadLinks).toHaveLength(2)
+
+        for (const link of unreadLinks) {
+            expect(link).toHaveAttribute(
+                'href',
+                '/books?is_read=false',
+            )
+        }
+
         expect(
             screen.getByRole('alert'),
         ).toHaveTextContent(
@@ -709,53 +737,6 @@ describe('DashboardPage', () => {
         expect(refetch).toHaveBeenCalledOnce()
     })
 
-    it('allows the user to explicitly refresh all dashboard queries', () => {
-        const dashboardRefetch = vi.fn()
-        const breakdownsRefetch = vi.fn()
-        const incompleteMetadataRefetch = vi.fn()
-        const incompleteBooksRefetch = vi.fn()
-
-        mockDashboardQuery({
-            refetch: dashboardRefetch,
-        })
-
-        mockDashboardBreakdownsQuery({
-            refetch: breakdownsRefetch,
-        })
-
-        mockDashboardIncompleteMetadataQuery({
-            refetch: incompleteMetadataRefetch,
-        })
-
-        mockIncompleteBooksQuery({
-            refetch: incompleteBooksRefetch,
-        })
-
-        renderDashboard()
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Refresh',
-            }),
-        )
-
-        expect(
-            dashboardRefetch,
-        ).toHaveBeenCalledOnce()
-
-        expect(
-            breakdownsRefetch,
-        ).toHaveBeenCalledOnce()
-
-        expect(
-            incompleteMetadataRefetch,
-        ).toHaveBeenCalledOnce()
-
-        expect(
-            incompleteBooksRefetch,
-        ).toHaveBeenCalledOnce()
-    })
-
     it('disables explicit refresh while a request is already in progress', () => {
         mockDashboardQuery({
             isFetching: true,
@@ -848,25 +829,25 @@ describe('DashboardPage', () => {
         ).toBeInTheDocument()
 
         expect(
+            within(basicStatsDrawer!).getByText(
+                '218',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).getByText(
+                'assignments',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
             within(basicStatsDrawer!).queryByText(
-                'By Shelf',
+                'By Creation Year',
             ),
         ).not.toBeInTheDocument()
-
-        expect(
-            within(basicStatsDrawer!).getByText(
-                '2026',
-            ),
-        ).toBeInTheDocument()
-
-        expect(
-            within(basicStatsDrawer!).getByText(
-                '42',
-            ),
-        ).toBeInTheDocument()
     })
 
-    it('does not invent missing breakdown buckets', () => {
+    it('does not invent missing category breakdown buckets', () => {
         mockDashboardBreakdownsQuery({
             data: {
                 total_books: 10,
@@ -906,9 +887,21 @@ describe('DashboardPage', () => {
 
         expect(
             within(basicStatsDrawer!).getByText(
-                'No data recorded.',
+                'fiction',
             ),
         ).toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).queryByText(
+                'nonfiction',
+            ),
+        ).not.toBeInTheDocument()
+
+        expect(
+            within(basicStatsDrawer!).queryByText(
+                'By Creation Year',
+            ),
+        ).not.toBeInTheDocument()
     })
 
     it('shows a retryable drawer-level breakdown error without hiding summary statistics', () => {
@@ -1040,6 +1033,66 @@ describe('DashboardPage', () => {
         ).toBeInTheDocument()
 
         expect(
+            within(healingCounts!).getByRole(
+                'link',
+                { name: '2' },
+            ),
+        ).toHaveAttribute(
+            'href',
+            '/books?cleanup_field=category',
+        )
+
+        expect(
+            within(healingCounts!).getByRole(
+                'link',
+                { name: '3' },
+            ),
+        ).toHaveAttribute(
+            'href',
+            '/books?cleanup_field=shelf',
+        )
+
+        expect(
+            within(healingCounts!).getByRole(
+                'link',
+                { name: '4' },
+            ),
+        ).toHaveAttribute(
+            'href',
+            '/books?cleanup_field=pages',
+        )
+
+        expect(
+            within(healingCounts!).getByRole(
+                'link',
+                { name: '5' },
+            ),
+        ).toHaveAttribute(
+            'href',
+            '/books?cleanup_field=publisher',
+        )
+
+        expect(
+            within(healingCounts!).getByRole(
+                'link',
+                { name: '6' },
+            ),
+        ).toHaveAttribute(
+            'href',
+            '/books?cleanup_field=year',
+        )
+
+        expect(
+            within(healingCounts!).getByRole(
+                'link',
+                { name: '7' },
+            ),
+        ).toHaveAttribute(
+            'href',
+            '/books?cleanup_field=isbn',
+        )
+
+        expect(
             within(healingDrawer!).getByText(
                 /these counts do not add up to the total above/i,
             ),
@@ -1162,150 +1215,6 @@ describe('DashboardPage', () => {
                 'Loading metadata cleanup counts…',
             ),
         ).toBeInTheDocument()
-    })
-
-    it('filters incomplete books by the selected metadata field', () => {
-        renderDashboard()
-
-        fireEvent.change(
-            screen.getByLabelText('Show books missing'),
-            {
-                target: {
-                    value: 'isbn',
-                },
-            },
-        )
-
-        expect(
-            useInfiniteIncompleteMetadataBooks,
-        ).toHaveBeenLastCalledWith({
-            field: 'isbn',
-            enabled: true,
-        })
-    })
-
-    it('omits the incomplete-book field filter when showing any tracked field', () => {
-        renderDashboard()
-
-        expect(
-            useInfiniteIncompleteMetadataBooks,
-        ).toHaveBeenLastCalledWith({
-            field: undefined,
-            enabled: true,
-        })
-
-        fireEvent.change(
-            screen.getByLabelText('Show books missing'),
-            {
-                target: {
-                    value: 'category',
-                },
-            },
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('Show books missing'),
-            {
-                target: {
-                    value: '',
-                },
-            },
-        )
-
-        expect(
-            useInfiniteIncompleteMetadataBooks,
-        ).toHaveBeenLastCalledWith({
-            field: undefined,
-            enabled: true,
-        })
-    })
-
-    it('links incomplete books to detail and edit routes', () => {
-        renderDashboard()
-
-        expect(
-            screen.getByRole('link', {
-                name: 'Incomplete Book',
-            }),
-        ).toHaveAttribute(
-            'href',
-            '/books/book-1',
-        )
-
-        expect(
-            screen.getByRole('link', {
-                name: 'Edit',
-            }),
-        ).toHaveAttribute(
-            'href',
-            '/books/book-1/edit',
-        )
-
-        expect(
-            screen.getByText('Example Author'),
-        ).toBeInTheDocument()
-    })
-
-    it('shows an empty state when the active cleanup filter has no matching books', () => {
-        mockIncompleteBooksQuery({
-            data: {
-                pages: [
-                    {
-                        items: [],
-                        total: 0,
-                    },
-                ],
-                pageParams: [
-                    0,
-                ],
-            },
-        })
-
-        renderDashboard()
-
-        expect(
-            screen.getByText(
-                'No books match this cleanup filter.',
-            ),
-        ).toBeInTheDocument()
-    })
-
-    it('shows next-page loading and retry states for incomplete books', () => {
-        const fetchNextPage = vi.fn()
-
-        mockIncompleteBooksQuery({
-            isFetchingNextPage: true,
-            fetchNextPage,
-        })
-
-        const { unmount } = renderDashboard()
-
-        expect(
-            screen.getByText('Loading more books…'),
-        ).toBeInTheDocument()
-
-        mockIncompleteBooksQuery({
-            isFetchingNextPage: false,
-            isFetchNextPageError: true,
-            fetchNextPage,
-        })
-
-        unmount()
-        renderDashboard()
-
-        expect(
-            screen.getByText(
-                'Unable to load more books.',
-            ),
-        ).toBeInTheDocument()
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Retry',
-            }),
-        )
-
-        expect(fetchNextPage).toHaveBeenCalledTimes(1)
     })
 
     it('mounts collection ISBN scanning on the dashboard', () => {

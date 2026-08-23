@@ -209,6 +209,8 @@ describe('book queries', () => {
                     author: 'Le Guin',
                     title: 'Darkness',
                     categoryIds: ['cat-fiction'],
+                    shelfName: 'e4',
+                    isRead: false,
                 }),
             {
                 wrapper: Wrapper,
@@ -228,6 +230,8 @@ describe('book queries', () => {
                 author: 'Le Guin',
                 title: 'Darkness',
                 categoryIds: ['cat-fiction'],
+                shelfName: 'e4',
+                isRead: false,
             }),
         )
 
@@ -394,6 +398,8 @@ describe('book queries', () => {
         const { result } = renderHook(
             () =>
                 useInfiniteBooks({
+                    shelfName: 'h5',
+                    isRead: true,
                     sortBy: 'author',
                     sortOrder: 'asc',
                 }),
@@ -436,6 +442,8 @@ describe('book queries', () => {
                 take: 30,
                 sortBy: 'author',
                 sortOrder: 'asc',
+                shelfName: 'h5',
+                isRead: true,
             }),
         )
 

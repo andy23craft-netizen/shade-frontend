@@ -28,10 +28,14 @@ export interface BooksListControlsProps {
     categoryIds: readonly string[]
     author: string
     title: string
+    isRead: boolean | undefined
     sortBy: BookSortBy
     sortOrder: BookSortOrder
     onCategoryIdsChange: (
         categoryIds: string[],
+    ) => void
+    onReadStatusChange: (
+        isRead: boolean | undefined,
     ) => void
     onApply: (
         author: string,
@@ -47,9 +51,11 @@ export function BooksListControls({
                                       categoryIds,
                                       author,
                                       title,
+                                      isRead,
                                       sortBy,
                                       sortOrder,
                                       onCategoryIdsChange,
+                                      onReadStatusChange,
                                       onApply,
                                       onClear,
                                       onSortByChange,
@@ -300,6 +306,36 @@ export function BooksListControls({
                             )
                         }}
                     />
+                </Field>
+
+                <Field label="Read status">
+                    <select
+                        className="field__control"
+                        value={
+                            isRead === undefined
+                                ? ''
+                                : String(isRead)
+                        }
+                        onChange={(event) => {
+                            const value = event.target.value
+
+                            if (value === 'true') {
+                                onReadStatusChange(true)
+                                return
+                            }
+
+                            if (value === 'false') {
+                                onReadStatusChange(false)
+                                return
+                            }
+
+                            onReadStatusChange(undefined)
+                        }}
+                    >
+                        <option value="">All</option>
+                        <option value="true">Read</option>
+                        <option value="false">Unread</option>
+                    </select>
                 </Field>
             </div>
 

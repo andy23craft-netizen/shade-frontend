@@ -9,6 +9,7 @@ import {
 
 import {
     Alert,
+    AppLink,
     Button,
     ConfirmationDialog,
     EmptyState,
@@ -29,6 +30,9 @@ import {
     useShelves,
     useUpdateShelf,
 } from '../../../api/shelvesQueries'
+import {
+    useDashboardBreakdowns,
+} from '../../../api/dashboardQueries'
 import {
     canDeleteShelf,
     canRenameShelf,
@@ -598,6 +602,8 @@ function EditShelfForm({
 
 export function ShelvesPage() {
     const shelvesQuery = useShelves()
+    const breakdownsQuery =
+        useDashboardBreakdowns()
     const deleteShelf = useDeleteShelf()
 
     const [
@@ -623,7 +629,10 @@ export function ShelvesPage() {
     const mutationBusy =
         deleteShelf.isPending
 
-    if (shelvesQuery.isPending) {
+    if (
+        shelvesQuery.isPending ||
+        breakdownsQuery.isPending
+    ) {
         return (
             <section className="route-page shelves-page">
                 <header>
@@ -657,7 +666,36 @@ export function ShelvesPage() {
         )
     }
 
+    if (breakdownsQuery.isLoadingError) {
+        return (
+            <section className="route-page shelves-page">
+                <header>
+                    <h1 tabIndex={-1}>
+                        Shelves
+                    </h1>
+                </header>
+
+                <QueryErrorState
+                    title="Unable to load shelf counts"
+                    error={breakdownsQuery.error}
+                    onRetry={() => {
+                        void breakdownsQuery.refetch()
+                    }}
+                />
+            </section>
+        )
+    }
+
     const shelves = shelvesQuery.data ?? []
+
+    const shelfCounts = new Map(
+        breakdownsQuery.data.by_shelf.map(
+            (bucket) => [
+                bucket.key,
+                bucket.count,
+            ],
+        ),
+    )
 
     function handleDeleteRequest(
         shelf: ShelfRead,
@@ -793,6 +831,10 @@ export function ShelvesPage() {
                         const isEditing =
                             editingShelfId ===
                             shelf.shelf_id
+                        const bookCount =
+                            shelfCounts.get(
+                                shelf.common_name,
+                            ) ?? 0
 
                         return (
                             <li
@@ -804,10 +846,29 @@ export function ShelvesPage() {
                                 <article className="shelf-row">
                                     <header className="shelf-row__heading">
                                         <h2 className="shelf-row__name">
-                                            {formatShelfCommonNameForDisplay(
-                                                shelf.common_name,
-                                            )}
+                                            <AppLink
+                                                to={`/books?shelf_name=${encodeURIComponent(
+                                                    shelf.common_name,
+                                                )}`}
+                                            >
+                                                {formatShelfCommonNameForDisplay(
+                                                    shelf.common_name,
+                                                )}
+                                            </AppLink>
                                         </h2>
+
+                                        <p className="shelf-row__count">
+                                            <AppLink
+                                                to={`/books?shelf_name=${encodeURIComponent(
+                                                    shelf.common_name,
+                                                )}`}
+                                            >
+                                                {bookCount}{' '}
+                                                {bookCount === 1
+                                                    ? 'book'
+                                                    : 'books'}
+                                            </AppLink>
+                                        </p>
 
                                         {isSystem ? (
                                             <p className="shelf-row__badge">

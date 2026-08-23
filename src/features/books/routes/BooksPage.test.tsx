@@ -25,11 +25,22 @@ import {
 } from '@testing-library/react'
 
 const mockUseInfiniteBooks = vi.fn()
+const mockUseInfiniteIncompleteMetadataBooks =
+    vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
 
 vi.mock('../../../api/booksQueries', () => ({
     useInfiniteBooks: (options: unknown) =>
         mockUseInfiniteBooks(options),
+}))
+
+vi.mock('../../../api/dashboardQueries', () => ({
+    useInfiniteIncompleteMetadataBooks: (
+        options: unknown,
+    ) =>
+        mockUseInfiniteIncompleteMetadataBooks(
+            options,
+        ),
 }))
 
 const mockUseCategories = vi.fn()
@@ -139,6 +150,7 @@ function openCategoryPicker() {
 describe('BooksPage', () => {
     beforeEach(() => {
         mockUseInfiniteBooks.mockReset()
+        mockUseInfiniteIncompleteMetadataBooks.mockReset()
         mockUseInfiniteScrollTrigger.mockReset()
         mockUseCategories.mockReset()
 
@@ -169,6 +181,15 @@ describe('BooksPage', () => {
             error: null,
             refetch: vi.fn(),
         })
+
+        mockUseInfiniteIncompleteMetadataBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    items: [],
+                    total: 0,
+                },
+            ]),
+        )
     })
 
     it('shows a loading state while books are loading', () => {
@@ -305,10 +326,12 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith({
-            sortBy: 'author',
-            sortOrder: 'asc',
-        })
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sortBy: 'author',
+                sortOrder: 'asc',
+            }),
+        )
 
         expect(
             screen.getByText(
@@ -358,10 +381,12 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith({
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
             sortBy: 'title',
             sortOrder: 'desc',
-        })
+        }),
+        )
     })
 
     it('honors URL search params for shelf sort', () => {
@@ -389,10 +414,12 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith({
-            sortBy: 'shelf',
-            sortOrder: 'asc',
-        })
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sortBy: 'shelf',
+                sortOrder: 'asc',
+            }),
+        )
 
         expect(
             screen.getByLabelText('Sort by'),
@@ -423,13 +450,15 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith({
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
             categoryIds: ['cat-fiction'],
             author: 'Le Guin',
             title: 'Left Hand',
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+        )
 
         openCategoryPicker()
 
@@ -444,6 +473,106 @@ describe('BooksPage', () => {
         expect(
             screen.getByLabelText('Title'),
         ).toHaveValue('Left Hand')
+    })
+
+    it('uses the cleanup books query for a cleanup-field URL', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 0,
+                    items: [],
+                },
+            ]),
+        )
+
+        mockUseInfiniteIncompleteMetadataBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook({
+                            isbn13: null,
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?cleanup_field=isbn',
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                enabled: false,
+            }),
+        )
+
+        expect(
+            mockUseInfiniteIncompleteMetadataBooks,
+        ).toHaveBeenCalledWith({
+            field: 'isbn',
+            enabled: true,
+        })
+
+        expect(
+            screen.getByText(
+                /Showing books missing/i,
+            ),
+        ).toHaveTextContent(
+            'Showing books missing ISBN.',
+        )
+
+        expect(
+            screen.queryByLabelText('Author'),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'The Left Hand of Darkness',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books/book-1',
+        )
+    })
+
+    it('clears a cleanup-field URL filter', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 0,
+                    items: [],
+                },
+            ]),
+        )
+
+        mockUseInfiniteIncompleteMetadataBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook(),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?cleanup_field=publisher',
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Clear cleanup filter',
+            }),
+        )
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent('/books')
     })
 
     it('normalizes invalid or blank catalog filter params', () => {
@@ -464,13 +593,15 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith({
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
             categoryIds: undefined,
             author: undefined,
             title: undefined,
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+        )
 
         openCategoryPicker()
 
@@ -517,14 +648,16 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
             categoryIds: ['cat-fiction'],
             author: undefined,
             title: undefined,
             isbn: undefined,
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+    )
     })
 
     it('clears the category filter', () => {
@@ -555,14 +688,16 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
             categoryIds: undefined,
             author: undefined,
             title: undefined,
             isbn: undefined,
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+    )
     })
 
     it('applies trimmed author and title filters', () => {
@@ -599,13 +734,16 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
             categoryIds: ['cat-fiction'],
             author: undefined,
             title: undefined,
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+        )
+
 
         fireEvent.click(
             screen.getByRole('button', {
@@ -615,13 +753,15 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
             categoryIds: ['cat-fiction'],
             author: 'Le Guin',
             title: 'Left Hand',
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+        )
     })
 
     it('shows a filtered empty state and clears filters', () => {
@@ -674,13 +814,15 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
             categoryIds: undefined,
             author: undefined,
             title: undefined,
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+        )
     })
 
     it('clears catalog filters while preserving sort', () => {
@@ -730,13 +872,15 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
             categoryIds: undefined,
             author: undefined,
             title: undefined,
             sortBy: 'shelf',
             sortOrder: 'desc',
-        })
+        }),
+        )
     })
 
     it('issues a fresh first batch when sort field changes', () => {
@@ -775,10 +919,12 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
-            sortBy: 'title',
-            sortOrder: 'asc',
-        })
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sortBy: 'title',
+                sortOrder: 'asc',
+            }),
+        )
     })
 
     it('flattens multiple loaded pages for rendering', () => {
@@ -1007,11 +1153,15 @@ describe('BooksPage', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText('Unread'),
+            screen.getByText('Unread', {
+                selector: 'dd',
+            }),
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText('Read'),
+            screen.getByText('Read', {
+                selector: 'dd',
+            }),
         ).toBeInTheDocument()
 
         expect(
@@ -1155,14 +1305,16 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith({
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
             categoryIds: undefined,
             author: undefined,
             title: undefined,
             isbn: '9780441172719',
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+        )
     })
 
     it('opens a unique valid ISBN result from the URL', async () => {
@@ -1294,14 +1446,16 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith({
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
             categoryIds: undefined,
             author: undefined,
             title: undefined,
             isbn: '978044',
             sortBy: 'author',
             sortOrder: 'asc',
-        })
+        }),
+        )
 
         expect(
             screen.getByTestId('location'),
@@ -1350,14 +1504,16 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith({
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
             categoryIds: undefined,
             author: undefined,
             title: undefined,
             isbn: undefined,
             sortBy: 'title',
             sortOrder: 'desc',
-        })
+        }),
+        )
     })
 
     it('does not unique-open while an ISBN query is loading', () => {

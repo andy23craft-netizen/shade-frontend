@@ -1,18 +1,13 @@
 import {
     type CSSProperties,
-    useState,
 } from 'react'
 
 import {
     useDashboard,
     useDashboardBreakdowns,
     useDashboardIncompleteMetadata,
-    useInfiniteIncompleteMetadataBooks,
 } from '../../../api/dashboardQueries'
 
-import {
-    useInfiniteScrollTrigger,
-} from '../../../hooks/useInfiniteScrollTrigger'
 import {
     Alert,
     AppLink,
@@ -36,39 +31,87 @@ function displayAverage(
     return `${value.toFixed(1)}${suffix}`
 }
 
-function DashboardBreakdown({
-                                title,
-                                buckets,
-                            }: {
-    title: string
+const CATEGORY_CHART_COLORS = [
+    'var(--category-chart-1, #6f4436)',
+    'var(--category-chart-2, #8b6748)',
+    'var(--category-chart-3, #4f6652)',
+    'var(--category-chart-4, #7b5e70)',
+    'var(--category-chart-5, #9a824f)',
+    'var(--category-chart-6, #526d78)',
+    'var(--category-chart-7, #82604a)',
+    'var(--category-chart-8, #887f73)',
+] as const
+
+function categoryChartBuckets(
     buckets: {
         key: string
         count: number
-    }[]
-}) {
-    return (
-        <section className="dashboard-breakdown">
-            <h3>{title}</h3>
-
-            {buckets.length === 0 ? (
-                <p className="dashboard-breakdown__empty">
-                    No data recorded.
-                </p>
-            ) : (
-                <dl className="dashboard-breakdown__list">
-                    {buckets.map((bucket) => (
-                        <div
-                            className="dashboard-breakdown__row"
-                            key={bucket.key}
-                        >
-                            <dt>{bucket.key}</dt>
-                            <dd>{bucket.count}</dd>
-                        </div>
-                    ))}
-                </dl>
-            )}
-        </section>
+    }[],
+) {
+    const sorted = [...buckets].sort(
+        (left, right) =>
+            right.count - left.count,
     )
+
+    const top = sorted.slice(0, 7)
+    const otherCount = sorted
+        .slice(7)
+        .reduce(
+            (total, bucket) =>
+                total + bucket.count,
+            0,
+        )
+
+    return otherCount > 0
+        ? [
+            ...top,
+            {
+                key: 'Other',
+                count: otherCount,
+            },
+        ]
+        : top
+}
+
+function categoryChartGradient(
+    buckets: {
+        key: string
+        count: number
+    }[],
+): string {
+    const total = buckets.reduce(
+        (sum, bucket) =>
+            sum + bucket.count,
+        0,
+    )
+
+    if (total === 0) {
+        return 'var(--color-surface-muted)'
+    }
+
+    let start = 0
+    const stops: string[] = []
+
+    buckets.forEach((bucket, index) => {
+        const end =
+            start +
+            (bucket.count / total) * 100
+
+        const color =
+            CATEGORY_CHART_COLORS[index] ??
+            CATEGORY_CHART_COLORS[
+            CATEGORY_CHART_COLORS.length - 1
+                ]
+
+        stops.push(
+            `${color} ${start}%`,
+            `${color} ${end}%`,
+        )
+
+        start = end
+    })
+
+    return `conic-gradient(${stops.join(', ')})`
 }
 
 export function DashboardPage() {
@@ -79,52 +122,18 @@ export function DashboardPage() {
         useDashboardBreakdowns()
     const incompleteMetadataQuery =
         useDashboardIncompleteMetadata()
-    const [incompleteField, setIncompleteField] =
-        useState('')
-    const incompleteBooksQuery =
-        useInfiniteIncompleteMetadataBooks({
-            field:
-                incompleteField === ''
-                    ? undefined
-                    : incompleteField,
-            enabled:
-                incompleteMetadataQuery.data
-                    ?.total_incomplete !== 0,
-        })
 
-    const incompleteBooks =
-        incompleteBooksQuery.data?.pages.flatMap(
-            (page) => page.items,
-        ) ?? []
-
-    const {
-        getRowRef: getIncompleteBookRowRef,
-    } = useInfiniteScrollTrigger({
-        enabled:
-            incompleteBooksQuery.hasNextPage === true &&
-            !incompleteBooksQuery.isFetchingNextPage,
-        hasNextPage:
-        incompleteBooksQuery.hasNextPage,
-        isFetchingNextPage:
-        incompleteBooksQuery.isFetchingNextPage,
-        fetchNextPage: () => {
-            void incompleteBooksQuery.fetchNextPage()
-        },
-        itemCount: incompleteBooks.length,
-    })
 
     const isDashboardRefreshing =
         dashboardQuery.isFetching ||
         breakdownsQuery.isFetching ||
-        incompleteMetadataQuery.isFetching ||
-        incompleteBooksQuery.isFetching
+        incompleteMetadataQuery.isFetching
 
     function refreshDashboard() {
         void Promise.all([
             dashboardQuery.refetch(),
             breakdownsQuery.refetch(),
             incompleteMetadataQuery.refetch(),
-            incompleteBooksQuery.refetch(),
         ])
     }
 
@@ -193,6 +202,18 @@ export function DashboardPage() {
         readingTotal === 0
             ? 0
             : (dashboard.read / readingTotal) * 100
+
+    const categoryBuckets =
+        categoryChartBuckets(
+            breakdownsQuery.data?.by_category ??
+            [],
+        )
+    const categoryAssignmentTotal =
+        categoryBuckets.reduce(
+            (total, bucket) =>
+                total + bucket.count,
+            0,
+        )
 
     return (
         <section className="route-page dashboard-page">
@@ -453,11 +474,16 @@ export function DashboardPage() {
 
                         <div className="dashboard-reading-chart__legend">
                             <p>
-                <span
-                    className="dashboard-reading-chart__key dashboard-reading-chart__key--read"
-                    aria-hidden="true"
-                />
-                                <strong>{dashboard.read}</strong> read
+                                <span
+                                    className="dashboard-reading-chart__key dashboard-reading-chart__key--read"
+                                    aria-hidden="true"
+                                />
+                                <strong>
+                                    <AppLink to="/books?is_read=true">
+                                        {dashboard.read}
+                                    </AppLink>
+                                </strong>{' '}
+                                read
                             </p>
 
                             <p>
@@ -465,7 +491,12 @@ export function DashboardPage() {
                     className="dashboard-reading-chart__key dashboard-reading-chart__key--unread"
                     aria-hidden="true"
                 />
-                                <strong>{dashboard.unread}</strong> unread
+                                <strong>
+                                    <AppLink to="/books?is_read=false">
+                                        {dashboard.unread}
+                                    </AppLink>
+                                </strong>{' '}
+                                unread
                             </p>
                         </div>
                     </div>
@@ -473,7 +504,11 @@ export function DashboardPage() {
                     <dl className="dashboard-metrics">
                         <div className="dashboard-metric">
                             <dt>Books Read</dt>
-                            <dd>{dashboard.read}</dd>
+                            <dd>
+                                <AppLink to="/books?is_read=true">
+                                    {dashboard.read}
+                                </AppLink>
+                            </dd>
 
                             <dd className="dashboard-metric__description">
                                 Books marked as read in the catalog.
@@ -482,7 +517,11 @@ export function DashboardPage() {
 
                         <div className="dashboard-metric">
                             <dt>Books Unread</dt>
-                            <dd>{dashboard.unread}</dd>
+                            <dd>
+                                <AppLink to="/books?is_read=false">
+                                    {dashboard.unread}
+                                </AppLink>
+                            </dd>
 
                             <dd className="dashboard-metric__description">
                                 Books not yet marked as read.
@@ -560,19 +599,70 @@ export function DashboardPage() {
                                 </div>
                             </dl>
 
-                            <DashboardBreakdown
-                                title="By Category"
-                                buckets={
-                                    breakdownsQuery.data.by_category
-                                }
-                            />
+                            <section className="dashboard-breakdown">
+                                <h3>By Category</h3>
 
-                            <DashboardBreakdown
-                                title="By Creation Year"
-                                buckets={
-                                    breakdownsQuery.data.by_creation_year
-                                }
-                            />
+                                <p className="dashboard-category-chart__note">
+                                    Top categories by assignment. Books may
+                                    belong to more than one category.
+                                </p>
+
+                                {categoryBuckets.length === 0 ? (
+                                    <p className="dashboard-breakdown__empty">
+                                        No data recorded.
+                                    </p>
+                                ) : (
+                                    <div className="dashboard-category-chart">
+                                        <div
+                                            className="dashboard-category-chart__pie"
+                                            style={{
+                                                background:
+                                                    categoryChartGradient(
+                                                        categoryBuckets,
+                                                    ),
+                                            }}
+                                            aria-hidden="true"
+                                        >
+                                            <div className="dashboard-category-chart__center">
+                                                <strong>
+                                                    {categoryAssignmentTotal}
+                                                </strong>
+                                                <span>assignments</span>
+                                            </div>
+                                        </div>
+
+                                        <dl className="dashboard-category-chart__legend">
+                                            {categoryBuckets.map(
+                                                (bucket, index) => (
+                                                    <div
+                                                        key={bucket.key}
+                                                        className="dashboard-category-chart__legend-row"
+                                                    >
+                                                        <dt>
+                                                            <span
+                                                                className="dashboard-category-chart__key"
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        CATEGORY_CHART_COLORS[
+                                                                            index
+                                                                            ] ??
+                                                                        CATEGORY_CHART_COLORS[
+                                                                        CATEGORY_CHART_COLORS.length -
+                                                                        1
+                                                                            ],
+                                                                }}
+                                                                aria-hidden="true"
+                                                            />
+                                                            {bucket.key}
+                                                        </dt>
+                                                        <dd>{bucket.count}</dd>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </dl>
+                                    </div>
+                                )}
+                            </section>
                         </div>
                     )}
 
@@ -638,60 +728,72 @@ export function DashboardPage() {
                                 <div>
                                     <dt>Category</dt>
                                     <dd>
-                                        {
-                                            incompleteMetadataQuery.data
-                                                .missing_category
-                                        }
+                                        <AppLink to="/books?cleanup_field=category">
+                                            {
+                                                incompleteMetadataQuery.data
+                                                    .missing_category
+                                            }
+                                        </AppLink>
                                     </dd>
                                 </div>
 
                                 <div>
                                     <dt>Shelf</dt>
                                     <dd>
-                                        {
-                                            incompleteMetadataQuery.data
-                                                .missing_shelf
-                                        }
+                                        <AppLink to="/books?cleanup_field=shelf">
+                                            {
+                                                incompleteMetadataQuery.data
+                                                    .missing_shelf
+                                            }
+                                        </AppLink>
                                     </dd>
                                 </div>
 
                                 <div>
                                     <dt>Pages</dt>
                                     <dd>
-                                        {
-                                            incompleteMetadataQuery.data
-                                                .missing_pages
-                                        }
+                                        <AppLink to="/books?cleanup_field=pages">
+                                            {
+                                                incompleteMetadataQuery.data
+                                                    .missing_pages
+                                            }
+                                        </AppLink>
                                     </dd>
                                 </div>
 
                                 <div>
                                     <dt>Publisher</dt>
                                     <dd>
-                                        {
-                                            incompleteMetadataQuery.data
-                                                .missing_publisher
-                                        }
+                                        <AppLink to="/books?cleanup_field=publisher">
+                                            {
+                                                incompleteMetadataQuery.data
+                                                    .missing_publisher
+                                            }
+                                        </AppLink>
                                     </dd>
                                 </div>
 
                                 <div>
                                     <dt>Publication Year</dt>
                                     <dd>
-                                        {
-                                            incompleteMetadataQuery.data
-                                                .missing_year
-                                        }
+                                        <AppLink to="/books?cleanup_field=year">
+                                            {
+                                                incompleteMetadataQuery.data
+                                                    .missing_year
+                                            }
+                                        </AppLink>
                                     </dd>
                                 </div>
 
                                 <div>
                                     <dt>ISBN</dt>
                                     <dd>
-                                        {
-                                            incompleteMetadataQuery.data
-                                                .missing_isbn
-                                        }
+                                        <AppLink to="/books?cleanup_field=isbn">
+                                            {
+                                                incompleteMetadataQuery.data
+                                                    .missing_isbn
+                                            }
+                                        </AppLink>
                                     </dd>
                                 </div>
                             </dl>
@@ -702,118 +804,6 @@ export function DashboardPage() {
                             </p>
                         </div>
                     )}
-
-                    <div className="dashboard-healing__books">
-                        <label
-                            className="dashboard-healing__filter"
-                            htmlFor="dashboard-incomplete-field"
-                        >
-                            <span>Show books missing</span>
-
-                            <select
-                                id="dashboard-incomplete-field"
-                                value={incompleteField}
-                                onChange={(event) => {
-                                    setIncompleteField(
-                                        event.currentTarget.value,
-                                    )
-                                }}
-                            >
-                                <option value="">
-                                    Any tracked field
-                                </option>
-                                <option value="category">
-                                    Category
-                                </option>
-                                <option value="shelf">
-                                    Shelf
-                                </option>
-                                <option value="pages">
-                                    Pages
-                                </option>
-                                <option value="publisher">
-                                    Publisher
-                                </option>
-                                <option value="year">
-                                    Publication Year
-                                </option>
-                                <option value="isbn">
-                                    ISBN
-                                </option>
-                            </select>
-                        </label>
-
-                        {incompleteBooksQuery.isPending ? (
-                            <LoadingState label="Loading books needing cleanup…" />
-                        ) : incompleteBooksQuery.isLoadingError ? (
-                            <QueryErrorState
-                                title="Unable to load books needing cleanup"
-                                error={incompleteBooksQuery.error}
-                                onRetry={() => {
-                                    void incompleteBooksQuery.refetch()
-                                }}
-                            />
-                        ) : incompleteBooks.length === 0 ? (
-                            <p className="dashboard-healing__books-empty">
-                                No books match this cleanup filter.
-                            </p>
-                        ) : (
-                            <ul className="dashboard-healing__book-list">
-                                {incompleteBooks.map(
-                                    (book, index) => (
-                                        <li
-                                            key={book.id}
-                                            ref={
-                                                getIncompleteBookRowRef(
-                                                    index,
-                                                )
-                                            }
-                                            className="dashboard-healing__book"
-                                        >
-                                            <div>
-                                                <AppLink
-                                                    to={`/books/${book.id}`}
-                                                >
-                                                    {book.title}
-                                                </AppLink>
-
-                                                <p>{book.authors}</p>
-                                            </div>
-
-                                            <AppLink
-                                                to={`/books/${book.id}/edit`}
-                                            >
-                                                Edit
-                                            </AppLink>
-                                        </li>
-                                    ),
-                                )}
-                            </ul>
-                        )}
-
-                        {incompleteBooksQuery.isFetchingNextPage ? (
-                            <div className="infinite-scroll__footer">
-                                <LoadingState label="Loading more books…" />
-                            </div>
-                        ) : null}
-
-                        {incompleteBooksQuery.isFetchNextPageError ? (
-                            <div className="infinite-scroll__footer">
-                                <Alert variant="error">
-                                    Unable to load more books.
-                                </Alert>
-
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                        void incompleteBooksQuery.fetchNextPage()
-                                    }}
-                                >
-                                    Retry
-                                </Button>
-                            </div>
-                        ) : null}
-                    </div>
 
                     <div
                         className="dashboard-drawer__pull"

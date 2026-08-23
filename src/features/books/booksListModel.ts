@@ -14,6 +14,14 @@ export type BookSortOrder =
     | 'asc'
     | 'desc'
 
+export type BookCleanupField =
+    | 'category'
+    | 'shelf'
+    | 'pages'
+    | 'publisher'
+    | 'year'
+    | 'isbn'
+
 export const DEFAULT_SORT_BY: BookSortBy = 'author'
 export const DEFAULT_SORT_ORDER: BookSortOrder = 'asc'
 
@@ -27,6 +35,16 @@ const SORT_BY_VALUES: readonly BookSortBy[] = [
 const SORT_ORDER_VALUES: readonly BookSortOrder[] = [
     'asc',
     'desc',
+]
+
+const CLEANUP_FIELD_VALUES:
+    readonly BookCleanupField[] = [
+    'category',
+    'shelf',
+    'pages',
+    'publisher',
+    'year',
+    'isbn',
 ]
 
 export function parseSortByParam(
@@ -106,6 +124,35 @@ export function parseTextFilterParam(
     const trimmed = value?.trim()
 
     return trimmed ? trimmed : undefined
+}
+
+export function parseReadStatusParam(
+    value: string | null,
+): boolean | undefined {
+    if (value === 'true') {
+        return true
+    }
+
+    if (value === 'false') {
+        return false
+    }
+
+    return undefined
+}
+
+export function parseCleanupFieldParam(
+    value: string | null,
+): BookCleanupField | undefined {
+    if (
+        value !== null &&
+        CLEANUP_FIELD_VALUES.includes(
+            value as BookCleanupField,
+        )
+    ) {
+        return value as BookCleanupField
+    }
+
+    return undefined
 }
 
 export function sortByLabel(

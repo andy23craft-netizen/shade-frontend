@@ -43,6 +43,8 @@ export const queryKeys = {
                 author?: string
                 title?: string
                 categoryIds?: readonly string[]
+                shelfName?: string
+                isRead?: boolean
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -63,13 +65,17 @@ export const queryKeys = {
                 normalizeCategoryIds(
                     options.categoryIds,
                 )
-
+            const shelfName = nonEmptyFilter(
+                options.shelfName,
+            )
             const key: {
                 includeDeleted: boolean
                 isbn?: string
                 author?: string
                 title?: string
                 categoryIds?: string[]
+                shelfName?: string
+                isRead?: boolean
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -96,6 +102,14 @@ export const queryKeys = {
                 key.categoryIds = categoryIds
             }
 
+            if (shelfName !== undefined) {
+                key.shelfName = shelfName
+            }
+
+            if (options.isRead !== undefined) {
+                key.isRead = options.isRead
+            }
+
             if (options.sortBy !== undefined) {
                 key.sortBy = options.sortBy
             }
@@ -117,6 +131,8 @@ export const queryKeys = {
                 author?: string
                 title?: string
                 categoryIds?: readonly string[]
+                shelfName?: string
+                isRead?: boolean
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -138,6 +154,9 @@ export const queryKeys = {
                 normalizeCategoryIds(
                     options.categoryIds,
                 )
+            const shelfName = nonEmptyFilter(
+                options.shelfName,
+            )
 
             const key: {
                 includeDeleted: boolean
@@ -145,6 +164,8 @@ export const queryKeys = {
                 author?: string
                 title?: string
                 categoryIds?: string[]
+                shelfName?: string
+                isRead?: boolean
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -167,6 +188,14 @@ export const queryKeys = {
 
             if (categoryIds !== undefined) {
                 key.categoryIds = categoryIds
+            }
+
+            if (shelfName !== undefined) {
+                key.shelfName = shelfName
+            }
+
+            if (options.isRead !== undefined) {
+                key.isRead = options.isRead
             }
 
             if (options.skip !== undefined) {

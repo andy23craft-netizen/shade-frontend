@@ -14,6 +14,9 @@ import { EmptyState } from '../../../components/EmptyState'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
 import { useInfiniteBooks } from '../../../api/booksQueries'
+import {
+    useInfiniteIncompleteMetadataBooks,
+} from '../../../api/dashboardQueries'
 import { useCategories } from '../../../api/categoriesQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
@@ -29,9 +32,12 @@ import {
     flattenInfiniteBookPages,
     parseCategoryIdParams,
     parseIsbnParam,
+    parseReadStatusParam,
     parseSortByParam,
     parseSortOrderParam,
     parseTextFilterParam,
+    parseCleanupFieldParam,
+    type BookCleanupField,
     type BookSortBy,
     type BookSortOrder,
 } from '../booksListModel'
@@ -74,6 +80,25 @@ function displayReadState(
     return isRead ? 'Read' : 'Unread'
 }
 
+function cleanupFieldLabel(
+    field: BookCleanupField,
+): string {
+    switch (field) {
+        case 'category':
+            return 'category'
+        case 'shelf':
+            return 'shelf'
+        case 'pages':
+            return 'page count'
+        case 'publisher':
+            return 'publisher'
+        case 'year':
+            return 'publication year'
+        case 'isbn':
+            return 'ISBN'
+    }
+}
+
 function updateListParams(
     searchParams: URLSearchParams,
     updates: {
@@ -81,6 +106,9 @@ function updateListParams(
         author?: string | undefined
         title?: string | undefined
         isbn?: string | undefined
+        shelfName?: string | undefined
+        isRead?: boolean | undefined
+        cleanupField?: BookCleanupField | undefined
         sortBy?: BookSortBy
         sortOrder?: BookSortOrder
     },
@@ -123,6 +151,38 @@ function updateListParams(
             next.delete('isbn')
         } else {
             next.set('isbn', updates.isbn)
+        }
+    }
+
+    if ('shelfName' in updates) {
+        const shelfName = updates.shelfName?.trim()
+
+        if (shelfName) {
+            next.set('shelf_name', shelfName)
+        } else {
+            next.delete('shelf_name')
+        }
+    }
+
+    if ('cleanupField' in updates) {
+        if (updates.cleanupField === undefined) {
+            next.delete('cleanup_field')
+        } else {
+            next.set(
+                'cleanup_field',
+                updates.cleanupField,
+            )
+        }
+    }
+
+    if ('isRead' in updates) {
+        if (updates.isRead === undefined) {
+            next.delete('is_read')
+        } else {
+            next.set(
+                'is_read',
+                String(updates.isRead),
+            )
         }
     }
 
@@ -182,12 +242,22 @@ export function BooksPage() {
     const title = parseTextFilterParam(
         searchParams.get('title'),
     )
+    const shelfName = parseTextFilterParam(
+        searchParams.get('shelf_name'),
+    )
+    const isRead = parseReadStatusParam(
+        searchParams.get('is_read'),
+    )
+
+    const cleanupField = parseCleanupFieldParam(
+        searchParams.get('cleanup_field'),
+    )
 
     const isbn = parseIsbnParam(
         searchParams.get('isbn'),
     )
 
-    const booksQuery = useInfiniteBooks({
+    const catalogBooksQuery = useInfiniteBooks({
         categoryIds:
             categoryIds.length === 0
                 ? undefined
@@ -195,9 +265,23 @@ export function BooksPage() {
         author,
         title,
         isbn,
+        shelfName,
+        isRead,
         sortBy,
         sortOrder,
+        enabled: cleanupField === undefined,
     })
+
+    const cleanupBooksQuery =
+        useInfiniteIncompleteMetadataBooks({
+            field: cleanupField,
+            enabled: cleanupField !== undefined,
+        })
+
+    const booksQuery =
+        cleanupField === undefined
+            ? catalogBooksQuery
+            : cleanupBooksQuery
 
     const fetchNextBooksPage =
         booksQuery.fetchNextPage
@@ -211,10 +295,14 @@ export function BooksPage() {
         categoryIds.length > 0 ||
         author !== undefined ||
         title !== undefined ||
-        isbn !== undefined
+        isbn !== undefined ||
+        shelfName !== undefined ||
+        isRead !== undefined ||
+        cleanupField !== undefined
 
     useEffect(() => {
         if (
+            cleanupField !== undefined ||
             isbn === undefined ||
             !isValidIsbn(isbn) ||
             !booksQuery.isSuccess ||
@@ -309,14 +397,16 @@ export function BooksPage() {
                 </p>
             </div>
 
+            {cleanupField === undefined ? (
             <BooksListControls
-                key={`${author ?? ''}:${title ?? ''}`}
+                key={`${author ?? ''}:${title ?? ''}:${isRead === undefined ? '' : String(isRead)}`}
                 categories={
                     categoriesQuery.data ?? []
                 }
                 categoryIds={categoryIds}
                 author={author ?? ''}
                 title={title ?? ''}
+                isRead={isRead}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onCategoryIdsChange={(
@@ -328,6 +418,19 @@ export function BooksPage() {
                             {
                                 categoryIds:
                                     nextCategoryIds,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+                onReadStatusChange={(nextIsRead) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                isRead: nextIsRead,
                             },
                         ),
                         {
@@ -386,6 +489,9 @@ export function BooksPage() {
                                 author: undefined,
                                 title: undefined,
                                 isbn: undefined,
+                                shelfName: undefined,
+                                isRead: undefined,
+                                cleanupField: undefined,
                             },
                         ),
                         {
@@ -393,9 +499,46 @@ export function BooksPage() {
                         },
                     )
                 }}
-            />
+            /> ) : null}
 
-            {isbn !== undefined ? (
+            {cleanupField !== undefined ? (
+                <div
+                    className="books-page__isbn-filter"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <p>
+                        Showing books missing{' '}
+                        <strong>
+                            {cleanupFieldLabel(cleanupField)}
+                        </strong>
+                        .
+                    </p>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setSearchParams(
+                                updateListParams(
+                                    searchParams,
+                                    {
+                                        cleanupField: undefined,
+                                    },
+                                ),
+                                {
+                                    replace: true,
+                                },
+                            )
+                        }}
+                    >
+                        Clear cleanup filter
+                    </Button>
+                </div>
+            ) : null}
+
+            {cleanupField === undefined &&
+            isbn !== undefined ? (
                 <div
                     className="books-page__isbn-filter"
                     role="status"
@@ -428,6 +571,44 @@ export function BooksPage() {
                 </div>
             ) : null}
 
+            {cleanupField === undefined &&
+            shelfName !== undefined ? (
+                <div
+                    className="books-page__isbn-filter"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <p>
+                        Showing books on shelf{' '}
+                        <strong>
+                            {formatShelfCommonNameForDisplay(
+                                shelfName,
+                            )}
+                        </strong>.
+                    </p>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setSearchParams(
+                                updateListParams(
+                                    searchParams,
+                                    {
+                                        shelfName: undefined,
+                                    },
+                                ),
+                                {
+                                    replace: true,
+                                },
+                            )
+                        }}
+                    >
+                        Clear shelf
+                    </Button>
+                </div>
+            ) : null}
+
             {total === 0 ? (
                 <EmptyState title="No books match these filters.">
                     <p>
@@ -447,6 +628,8 @@ export function BooksPage() {
                                         author: undefined,
                                         title: undefined,
                                         isbn: undefined,
+                                        shelfName: undefined,
+                                        isRead: undefined,
                                     },
                                 ),
                                 {

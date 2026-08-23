@@ -7,7 +7,9 @@ import {
 import {
     BOOKS_BATCH_SIZE,
     parseCategoryIdParams,
+    parseCleanupFieldParam,
     parseIsbnParam,
+    parseReadStatusParam,
     parseSortByParam,
     parseSortOrderParam,
     parseTextFilterParam,
@@ -75,6 +77,78 @@ describe('booksListModel', () => {
 
         expect(
             parseTextFilterParam('   '),
+        ).toBeUndefined()
+    })
+
+    it('parses read-status URL params', () => {
+        expect(
+            parseReadStatusParam('true'),
+        ).toBe(true)
+
+        expect(
+            parseReadStatusParam('false'),
+        ).toBe(false)
+    })
+
+    it('ignores missing or invalid read-status URL params', () => {
+        expect(
+            parseReadStatusParam(null),
+        ).toBeUndefined()
+
+        expect(
+            parseReadStatusParam(''),
+        ).toBeUndefined()
+
+        expect(
+            parseReadStatusParam('yes'),
+        ).toBeUndefined()
+
+        expect(
+            parseReadStatusParam('TRUE'),
+        ).toBeUndefined()
+    })
+
+    it('parses supported cleanup-field URL params', () => {
+        expect(
+            parseCleanupFieldParam('category'),
+        ).toBe('category')
+
+        expect(
+            parseCleanupFieldParam('shelf'),
+        ).toBe('shelf')
+
+        expect(
+            parseCleanupFieldParam('pages'),
+        ).toBe('pages')
+
+        expect(
+            parseCleanupFieldParam('publisher'),
+        ).toBe('publisher')
+
+        expect(
+            parseCleanupFieldParam('year'),
+        ).toBe('year')
+
+        expect(
+            parseCleanupFieldParam('isbn'),
+        ).toBe('isbn')
+    })
+
+    it('ignores missing or invalid cleanup-field URL params', () => {
+        expect(
+            parseCleanupFieldParam(null),
+        ).toBeUndefined()
+
+        expect(
+            parseCleanupFieldParam(''),
+        ).toBeUndefined()
+
+        expect(
+            parseCleanupFieldParam('author'),
+        ).toBeUndefined()
+
+        expect(
+            parseCleanupFieldParam('section'),
         ).toBeUndefined()
     })
 

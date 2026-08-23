@@ -94,6 +94,8 @@ export function useBooks(
         author?: string
         title?: string
         categoryIds?: readonly string[]
+        shelfName?: string
+        isRead?: boolean
         skip?: number
         take?: number
         sortBy?: string
@@ -114,6 +116,8 @@ export function useBooks(
     const author = options.author
     const title = options.title
     const categoryIds = options.categoryIds
+    const shelfName = options.shelfName
+    const isRead = options.isRead
     const skip = options.skip
     const take = options.take
     const sortBy = options.sortBy
@@ -127,6 +131,8 @@ export function useBooks(
             author,
             title,
             categoryIds,
+            shelfName,
+            isRead,
             skip,
             take,
             sortBy,
@@ -141,6 +147,8 @@ export function useBooks(
                 author,
                 title,
                 categoryIds,
+                shelfName,
+                isRead,
                 skip,
                 take,
                 sortBy,
@@ -158,6 +166,8 @@ export function useInfiniteBooks(
         author?: string
         title?: string
         categoryIds?: readonly string[]
+        shelfName?: string
+        isRead?: boolean
         sortBy?: string
         sortOrder?: string
         enabled?: boolean
@@ -176,6 +186,8 @@ export function useInfiniteBooks(
     const author = options.author
     const title = options.title
     const categoryIds = options.categoryIds
+    const shelfName = options.shelfName
+    const isRead = options.isRead
     const sortBy = options.sortBy
     const sortOrder = options.sortOrder
     const enabled = options.enabled ?? true
@@ -187,6 +199,8 @@ export function useInfiniteBooks(
             author,
             title,
             categoryIds,
+            shelfName,
+            isRead,
             sortBy,
             sortOrder,
             take: INFINITE_SCROLL_BATCH_SIZE,
@@ -202,6 +216,8 @@ export function useInfiniteBooks(
                 author,
                 title,
                 categoryIds,
+                shelfName,
+                isRead,
                 skip: pageParam,
                 take: INFINITE_SCROLL_BATCH_SIZE,
                 sortBy,
