@@ -142,7 +142,7 @@ function renderBooksPage(
 function openCategoryPicker() {
     fireEvent.click(
         screen.getByRole('button', {
-            name: /^Select/,
+            name: /^Select(?: \(\d+\))?$/,
         }),
     )
 }
@@ -1552,5 +1552,314 @@ describe('BooksPage', () => {
         ).toHaveTextContent(
             '/books?isbn=9780441172719',
         )
+    })
+
+    it('enters and exits bulk-selection mode', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook(),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('region', {
+                name: 'Bulk selection',
+            }),
+        ).not.toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        expect(
+            screen.getByRole('region', {
+                name: 'Bulk selection',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByText('0 books selected'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Clear selection',
+            }),
+        ).toBeDisabled()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Exit selection',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('region', {
+                name: 'Bulk selection',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('selects all currently loaded books and clears the selection', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 8,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                        }),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                        }),
+                        makeBook({
+                            id: 'book-3',
+                            title: 'Invisible Cities',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select all loaded books',
+            }),
+        )
+
+        expect(
+            screen.getByText('3 books selected'),
+        ).toBeInTheDocument()
+
+        /*
+         * total is 8, but only three books have actually
+         * been loaded into the infinite list.
+         */
+        expect(
+            screen.queryByText('8 books selected'),
+        ).not.toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Clear selection',
+            }),
+        )
+
+        expect(
+            screen.getByText('0 books selected'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Clear selection',
+            }),
+        ).toBeDisabled()
+    })
+
+    it('clears selected books when the catalog filter identity changes', async () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                        }),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select all loaded books',
+            }),
+        )
+
+        expect(
+            screen.getByText('2 books selected'),
+        ).toBeInTheDocument()
+
+        fireEvent.change(
+            screen.getByLabelText('Author'),
+            {
+                target: {
+                    value: 'Le Guin',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Apply',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByText('0 books selected'),
+            ).toBeInTheDocument()
+        })
+
+        /*
+         * Changing a filter clears selection, but does not
+         * force the user out of selection mode.
+         */
+        expect(
+            screen.getByRole('region', {
+                name: 'Bulk selection',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('preserves selected books when only sorting changes', async () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                        }),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select all loaded books',
+            }),
+        )
+
+        expect(
+            screen.getByText('2 books selected'),
+        ).toBeInTheDocument()
+
+        fireEvent.change(
+            screen.getByLabelText('Sort by'),
+            {
+                target: {
+                    value: 'title',
+                },
+            },
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByText('2 books selected'),
+            ).toBeInTheDocument()
+        })
+
+        expect(
+            screen.getByLabelText('Sort by'),
+        ).toHaveValue('title')
+    })
+
+    it('clears selection when exiting and does not restore it on re-entry', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                        }),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select all loaded books',
+            }),
+        )
+
+        expect(
+            screen.getByText('2 books selected'),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Exit selection',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        expect(
+            screen.getByText('0 books selected'),
+        ).toBeInTheDocument()
     })
 })

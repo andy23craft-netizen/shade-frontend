@@ -5,6 +5,7 @@ import {
 import {
     useEffect,
     useRef,
+    useState,
 } from 'react'
 
 import { Alert } from '../../../components/Alert'
@@ -28,6 +29,8 @@ import { BooksListControls } from '../components/BooksListControls'
 import {
     formatBookCategories,
 } from '../categoryDisplay'
+import { BooksBulkActions } from '../components/BooksBulkActions'
+import { useBulkSelection } from '../useBulkSelection'
 import {
     flattenInfiniteBookPages,
     parseCategoryIdParams,
@@ -300,6 +303,28 @@ export function BooksPage() {
         isRead !== undefined ||
         cleanupField !== undefined
 
+    const bulkSelectionResultIdentity =
+        JSON.stringify({
+            categoryIds,
+            author: author ?? null,
+            title: title ?? null,
+            isbn: isbn ?? null,
+            shelfName: shelfName ?? null,
+            isRead: isRead ?? null,
+            cleanupField: cleanupField ?? null,
+        })
+
+    const [
+        isBulkSelectionMode,
+        setIsBulkSelectionMode,
+    ] = useState(false)
+
+    const bulkSelection = useBulkSelection({
+        books,
+        resultIdentity:
+        bulkSelectionResultIdentity,
+    })
+
     useEffect(() => {
         if (
             cleanupField !== undefined ||
@@ -395,7 +420,37 @@ export function BooksPage() {
                 <p>
                     {total} books in the library.
                 </p>
+
+                {!isBulkSelectionMode ? (
+                    <div className="books-page__bulk-entry">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                                setIsBulkSelectionMode(true)
+                            }}
+                        >
+                            Select books
+                        </Button>
+                    </div>
+                ) : null}
             </div>
+
+            {isBulkSelectionMode ? (
+                <BooksBulkActions
+                    selectedCount={
+                        bulkSelection.selectedCount
+                    }
+                    onSelectVisible={
+                        bulkSelection.selectVisible
+                    }
+                    onClear={bulkSelection.clear}
+                    onExit={() => {
+                        bulkSelection.clear()
+                        setIsBulkSelectionMode(false)
+                    }}
+                />
+            ) : null}
 
             {cleanupField === undefined ? (
             <BooksListControls
