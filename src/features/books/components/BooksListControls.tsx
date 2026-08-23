@@ -1,16 +1,15 @@
+import { useState } from 'react'
+
 import type { CategoryRead } from '../../../api/apiTypes'
+import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
-import type {
-    BookSortBy,
-    BookSortOrder,
-} from '../booksListModel'
 import {
     sortByLabel,
     sortOrderLabel,
+    type BookSortBy,
+    type BookSortOrder,
 } from '../booksListModel'
 import { sortCategoriesByName } from '../categoryDisplay'
-import { Button } from '../../../components/Button'
-import { useState } from 'react'
 
 const SORT_BY_OPTIONS: readonly BookSortBy[] = [
     'author',
@@ -44,23 +43,45 @@ export interface BooksListControlsProps {
 }
 
 export function BooksListControls({
-    categories,
-    categoryIds,
-    author,
-    title,
-    sortBy,
-    sortOrder,
-    onCategoryIdsChange,
-    onApply,
-    onClear,
-    onSortByChange,
-    onSortOrderChange,
-}: BooksListControlsProps) {
+                                      categories,
+                                      categoryIds,
+                                      author,
+                                      title,
+                                      sortBy,
+                                      sortOrder,
+                                      onCategoryIdsChange,
+                                      onApply,
+                                      onClear,
+                                      onSortByChange,
+                                      onSortOrderChange,
+                                  }: BooksListControlsProps) {
     const [authorDraft, setAuthorDraft] = useState(author)
     const [titleDraft, setTitleDraft] = useState(title)
+    const [categoryPickerOpen, setCategoryPickerOpen] =
+        useState(false)
+    const [categorySearch, setCategorySearch] =
+        useState('')
+
     const sortedCategories =
         sortCategoriesByName(categories)
     const selected = new Set(categoryIds)
+
+    const selectedCategories =
+        sortedCategories.filter((category) =>
+            selected.has(category.category_id),
+        )
+
+    const normalizedCategorySearch =
+        categorySearch.trim().toLowerCase()
+
+    const visibleCategories =
+        normalizedCategorySearch === ''
+            ? sortedCategories
+            : sortedCategories.filter((category) =>
+                category.name
+                    .toLowerCase()
+                    .includes(normalizedCategorySearch),
+            )
 
     function toggleCategoryId(
         categoryId: string,
@@ -78,40 +99,182 @@ export function BooksListControls({
         )
     }
 
+    function clearCategoryId(
+        categoryId: string,
+    ) {
+        onCategoryIdsChange(
+            categoryIds
+                .filter(
+                    (selectedCategoryId) =>
+                        selectedCategoryId !==
+                        categoryId,
+                )
+                .sort(),
+        )
+    }
+
     return (
         <div className="books-page__controls">
             <div className="books-page__filters">
-                <fieldset className="book-form__categories books-page__category-filter">
-                    <legend>Categories</legend>
+                <div className="books-page__category-filter">
+                    <div className="books-page__category-filter-heading">
+                        <div>
+                            <span className="books-page__category-filter-label">
+                                Categories
+                            </span>
 
-                    <div className="book-form__categories-list">
-                        {sortedCategories.map(
-                            (category) => (
-                                <label
-                                    key={
-                                        category.category_id
-                                    }
-                                    htmlFor={`books-filter-category-${category.category_id}`}
-                                    className="book-form__category-option"
-                                >
-                                    <input
-                                        id={`books-filter-category-${category.category_id}`}
-                                        type="checkbox"
-                                        checked={selected.has(
-                                            category.category_id,
-                                        )}
-                                        onChange={() =>
-                                            toggleCategoryId(
+                            <p className="books-page__category-filter-help">
+                                Choose multiple categories to
+                                match books in all selected
+                                categories.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="books-page__category-picker-toggle"
+                            aria-expanded={
+                                categoryPickerOpen
+                            }
+                            aria-controls="books-category-picker"
+                            onClick={() => {
+                                setCategoryPickerOpen(
+                                    (open) => !open,
+                                )
+                            }}
+                        >
+                            {categoryPickerOpen
+                                ? 'Close'
+                                : selected.size > 0
+                                    ? `Select (${selected.size})`
+                                    : 'Select'}
+                            <span
+                                aria-hidden="true"
+                                className="books-page__category-picker-chevron"
+                            >
+                                {categoryPickerOpen
+                                    ? '▴'
+                                    : '▾'}
+                            </span>
+                        </button>
+                    </div>
+
+                    {selectedCategories.length > 0 ? (
+                        <div
+                            className="books-page__selected-categories"
+                            aria-label="Selected categories"
+                        >
+                            {selectedCategories.map(
+                                (category) => (
+                                    <button
+                                        key={
+                                            category.category_id
+                                        }
+                                        type="button"
+                                        className="books-page__selected-category"
+                                        aria-label={`Remove ${category.name} category filter`}
+                                        onClick={() => {
+                                            clearCategoryId(
                                                 category.category_id,
                                             )
-                                        }
-                                    />
-                                    {category.name}
-                                </label>
-                            ),
-                        )}
-                    </div>
-                </fieldset>
+                                        }}
+                                    >
+                                        <span>
+                                            {
+                                                category.name
+                                            }
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="books-page__selected-category-remove"
+                                        >
+                                            ×
+                                        </span>
+                                    </button>
+                                ),
+                            )}
+                        </div>
+                    ) : (
+                        <p className="books-page__category-filter-empty">
+                            All categories
+                        </p>
+                    )}
+
+                    {categoryPickerOpen ? (
+                        <div
+                            id="books-category-picker"
+                            className="books-page__category-picker"
+                        >
+                            <Field label="Find a category">
+                                <input
+                                    className="field__control"
+                                    type="search"
+                                    value={
+                                        categorySearch
+                                    }
+                                    autoComplete="off"
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        setCategorySearch(
+                                            event.target
+                                                .value,
+                                        )
+                                    }}
+                                />
+                            </Field>
+
+                            <fieldset className="books-page__category-options">
+                                <legend className="visually-hidden">
+                                    Category filters
+                                </legend>
+
+                                {visibleCategories.length >
+                                0 ? (
+                                    <div className="books-page__category-options-list">
+                                        {visibleCategories.map(
+                                            (
+                                                category,
+                                            ) => (
+                                                <label
+                                                    key={
+                                                        category.category_id
+                                                    }
+                                                    htmlFor={`books-filter-category-${category.category_id}`}
+                                                    className="books-page__category-option"
+                                                >
+                                                    <input
+                                                        id={`books-filter-category-${category.category_id}`}
+                                                        type="checkbox"
+                                                        checked={selected.has(
+                                                            category.category_id,
+                                                        )}
+                                                        onChange={() =>
+                                                            toggleCategoryId(
+                                                                category.category_id,
+                                                            )
+                                                        }
+                                                    />
+
+                                                    <span>
+                                                        {
+                                                            category.name
+                                                        }
+                                                    </span>
+                                                </label>
+                                            ),
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="books-page__category-no-results">
+                                        No categories match
+                                        that search.
+                                    </p>
+                                )}
+                            </fieldset>
+                        </div>
+                    ) : null}
+                </div>
 
                 <Field label="Author">
                     <input
@@ -160,6 +323,7 @@ export function BooksListControls({
                     onClick={() => {
                         setAuthorDraft('')
                         setTitleDraft('')
+                        setCategorySearch('')
                         onClear()
                     }}
                 >
@@ -179,14 +343,18 @@ export function BooksListControls({
                             )
                         }}
                     >
-                        {SORT_BY_OPTIONS.map((value) => (
-                            <option
-                                key={value}
-                                value={value}
-                            >
-                                {sortByLabel(value)}
-                            </option>
-                        ))}
+                        {SORT_BY_OPTIONS.map(
+                            (value) => (
+                                <option
+                                    key={value}
+                                    value={value}
+                                >
+                                    {sortByLabel(
+                                        value,
+                                    )}
+                                </option>
+                            ),
+                        )}
                     </select>
                 </Field>
 
@@ -201,14 +369,18 @@ export function BooksListControls({
                             )
                         }}
                     >
-                        {SORT_ORDER_OPTIONS.map((value) => (
-                            <option
-                                key={value}
-                                value={value}
-                            >
-                                {sortOrderLabel(value)}
-                            </option>
-                        ))}
+                        {SORT_ORDER_OPTIONS.map(
+                            (value) => (
+                                <option
+                                    key={value}
+                                    value={value}
+                                >
+                                    {sortOrderLabel(
+                                        value,
+                                    )}
+                                </option>
+                            ),
+                        )}
                     </select>
                 </Field>
             </div>

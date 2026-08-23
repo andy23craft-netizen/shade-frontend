@@ -128,6 +128,14 @@ function renderBooksPage(
     )
 }
 
+function openCategoryPicker() {
+    fireEvent.click(
+        screen.getByRole('button', {
+            name: /^Select/,
+        }),
+    )
+}
+
 describe('BooksPage', () => {
     beforeEach(() => {
         mockUseInfiniteBooks.mockReset()
@@ -423,6 +431,8 @@ describe('BooksPage', () => {
             sortOrder: 'asc',
         })
 
+        openCategoryPicker()
+
         expect(
             screen.getByLabelText('Fiction'),
         ).toBeChecked()
@@ -462,6 +472,8 @@ describe('BooksPage', () => {
             sortOrder: 'asc',
         })
 
+        openCategoryPicker()
+
         expect(
             screen.getByLabelText('Fiction'),
         ).not.toBeChecked()
@@ -492,6 +504,8 @@ describe('BooksPage', () => {
         )
 
         renderBooksPage('/books?page=2')
+
+        openCategoryPicker()
 
         fireEvent.click(
             screen.getByLabelText('Fiction'),
@@ -528,6 +542,8 @@ describe('BooksPage', () => {
         renderBooksPage(
             '/books?category_id=cat-fiction',
         )
+
+        openCategoryPicker()
 
         fireEvent.click(
             screen.getByLabelText('Fiction'),
@@ -635,8 +651,10 @@ describe('BooksPage', () => {
         ).not.toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Fiction'),
-        ).toBeChecked()
+            screen.getByRole('button', {
+                name: 'Remove Fiction category filter',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             screen.getByLabelText('Author'),
@@ -647,6 +665,12 @@ describe('BooksPage', () => {
                 name: 'Clear filters',
             }),
         )
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Remove Fiction category filter',
+            }),
+        ).not.toBeInTheDocument()
 
         expect(
             mockUseInfiniteBooks,
@@ -682,8 +706,11 @@ describe('BooksPage', () => {
         )
 
         expect(
-            screen.getByLabelText('Fiction'),
-        ).not.toBeChecked()
+            screen.queryByRole('button', {
+                name: 'Remove Fiction category filter',
+            }),
+        ).not.toBeInTheDocument()
+
 
         expect(
             screen.getByLabelText('Author'),
