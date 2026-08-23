@@ -627,6 +627,33 @@
   color: var(--color-surface-text-muted);
 }
 
+.book-card--selected {
+  border-color: var(--color-brass);
+  box-shadow:
+          var(--shadow-card),
+          inset 0 0 0 1px var(--color-brass);
+}
+
+.book-card__selection {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.book-selection-control {
+  display: inline-flex;
+  min-height: var(--control-target);
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-surface-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.book-selection-control input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .book-details__topbar {
   display: flex;
   justify-content: flex-start;

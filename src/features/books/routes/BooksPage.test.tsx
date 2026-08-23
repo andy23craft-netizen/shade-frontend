@@ -1862,4 +1862,203 @@ describe('BooksPage', () => {
             screen.getByText('0 books selected'),
         ).toBeInTheDocument()
     })
+
+    it('selects and deselects an individual visible book', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 2,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                            title:
+                                'The Left Hand of Darkness',
+                        }),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        expect(
+            screen.queryByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            }),
+        ).not.toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        const firstBook =
+            screen.getByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            })
+
+        const secondBook =
+            screen.getByRole('checkbox', {
+                name: 'Select Pale Fire',
+            })
+
+        expect(firstBook).not.toBeChecked()
+        expect(secondBook).not.toBeChecked()
+
+        fireEvent.click(firstBook)
+
+        expect(firstBook).toBeChecked()
+        expect(secondBook).not.toBeChecked()
+
+        expect(
+            screen.getByText('1 book selected'),
+        ).toBeInTheDocument()
+
+        fireEvent.click(firstBook)
+
+        expect(firstBook).not.toBeChecked()
+
+        expect(
+            screen.getByText('0 books selected'),
+        ).toBeInTheDocument()
+    })
+
+    it('checks every loaded eligible row when selecting all', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 5,
+                    items: [
+                        makeBook({
+                            id: 'book-1',
+                            title:
+                                'The Left Hand of Darkness',
+                        }),
+                        makeBook({
+                            id: 'book-2',
+                            title: 'Pale Fire',
+                        }),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select all loaded books',
+            }),
+        )
+
+        expect(
+            screen.getByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            }),
+        ).toBeChecked()
+
+        expect(
+            screen.getByRole('checkbox', {
+                name: 'Select Pale Fire',
+            }),
+        ).toBeChecked()
+
+        expect(
+            screen.getByText('2 books selected'),
+        ).toBeInTheDocument()
+    })
+
+    it('unchecks selected rows when clearing selection', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook(),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        const checkbox =
+            screen.getByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            })
+
+        fireEvent.click(checkbox)
+
+        expect(checkbox).toBeChecked()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Clear selection',
+            }),
+        )
+
+        expect(checkbox).not.toBeChecked()
+    })
+
+    it('removes row selection controls when selection mode exits', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [
+                        makeBook(),
+                    ],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select books',
+            }),
+        )
+
+        expect(
+            screen.getByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Exit selection',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByRole('link', {
+                name: 'The Left Hand of Darkness',
+            }),
+        ).toBeInTheDocument()
+    })
 })

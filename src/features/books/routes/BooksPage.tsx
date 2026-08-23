@@ -46,6 +46,8 @@ import {
 } from '../booksListModel'
 import { isValidIsbn } from '../utils/isbn'
 import { useCollectionIsbnJump } from '../../scanning/useCollectionIsbnJump'
+import { BookSelectionControl } from '../components/BookSelectionControl'
+import { isBookBulkSelectable } from '../utils/bulkSelectionModel'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -347,6 +349,7 @@ export function BooksPage() {
             },
         )
     }, [
+        cleanupField,
         books,
         booksQuery.isSuccess,
         isbn,
@@ -719,13 +722,42 @@ export function BooksPage() {
                                 book.shelf_name,
                             )
 
+                        const isSelectable =
+                            isBookBulkSelectable(book)
+
+                        const isSelected =
+                            bulkSelection.isSelected(
+                                book.id,
+                            )
+
                         return (
                             <li
                                 key={book.id}
                                 ref={getRowRef(index)}
                                 className="books-list__item"
                             >
-                                <article className="book-card">
+                                <article
+                                    className={
+                                        isSelected
+                                            ? 'book-card book-card--selected'
+                                            : 'book-card'
+                                    }
+                                >
+                                    {isBulkSelectionMode &&
+                                    isSelectable ? (
+                                        <div className="book-card__selection">
+                                            <BookSelectionControl
+                                                bookTitle={book.title}
+                                                checked={isSelected}
+                                                onChange={() => {
+                                                    bulkSelection.toggle(
+                                                        book.id,
+                                                    )
+                                                }}
+                                            />
+                                        </div>
+                                    ) : null}
+
                                     <div className="book-card__heading">
                                         <h2 className="book-card__title">
                                             <AppLink
