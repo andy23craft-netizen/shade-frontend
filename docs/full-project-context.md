@@ -921,10 +921,8 @@ tests, including:
 * `BooksPage` bulk-selection integration;
 * `ConfirmationDialog`.
 
-Home discovery (FEAT-33) is implemented in the SPA (`HomePage` at `/`, About
-at `/about`) with colocated Home / discovery-model tests. The FEAT-33 ticket
-file remains under `docs/tickets/` until acceptance criteria and the
-authoritative gate are confirmed.
+Home discovery (FEAT-33) is complete: `HomePage` at `/`, About at `/about`,
+with colocated Home / discovery-model tests (ticket file removed).
 
 The backend OpenAPI contract includes:
 
@@ -1052,8 +1050,8 @@ Recent V1 work now includes:
 * Dashboard category-assignment donut;
 * FEAT-31 bulk-selection infrastructure;
 * FEAT-32 atomic bulk move-to-shelf UI and API integration;
-* FEAT-33 discovery Home at `/` with About at `/about` (implemented in code;
-  ticket file still present for AC / gate confirmation).
+* FEAT-33 discovery Home at `/` with About at `/about` (complete; ticket file
+  removed).
 
 ## FEAT-30 -- implemented
 
@@ -1078,20 +1076,22 @@ POST /books/bulk/move-to-shelf
 Do not replace it with per-book `PATCH` loops. Documented wishlist **412**
 conflicts must be resolved before retry.
 
-## FEAT-33 -- implemented in SPA; ticket still present
+## FEAT-33 -- implemented
 
-Home discovery is live:
+Home discovery is complete:
 
-* `/` → `HomePage`
+* `/` → `HomePage` (featured category drawers, New Additions, Staff Picks,
+  quotes, secondary Browse / Collections / Wishlists / About links)
 * `/about` → `AboutPage` + `CatalogGuide`
 
-Verify remaining acceptance criteria and `make check` before removing the
-ticket file.
+Featured categories are the top buckets from dashboard breakdowns joined to
+`GET /categories` (`topHomeCategories` / `homeCategoryHref` →
+`/books?category_id=`). Optional counts/metadata failures must not blank core
+Home browsing. Cover images remain FEAT-34.
 
 ## Remaining planned V1 work
 
 ```text
-FEAT-33 confirm Home AC / gate (ticket still under docs/tickets/)
 FEAT-34 cover images stretch
 FEAT-35 V1 regression / deployment gate
 ```

@@ -249,15 +249,15 @@ selection; success clears selection and invalidates books/shelf/dashboard caches
 destination. Do not replace with per-book `PATCH` loops. Documented **412** wishlist conflicts must be resolved
 before retry (API does not auto-remove wishlist membership).
 
-FEAT-33 discovery Home (ticket file still under `docs/tickets/` -- verify AC / gate before removing). Shipped
-`HomePage` at `/` with About relocated to `/about`. Home features top category drawers (`topHomeCategories` /
-`homeCategoryHref` → canonical `/books?category_id=`), New Additions (`useRecentBooks`), Staff Picks carousel from
-the named Collections membership, randomized quote bucket (`homeQuotes`), and secondary Browse / Collections /
-Wishlists / About links. Brand link recovers to `/` (Home). Optional counts/metadata failures must not blank core
-category browsing. Cover images remain FEAT-34.
+FEAT-33 discovery Home (ticket file removed after completion). Shipped `HomePage` at `/` with About relocated to
+`/about`. Home features top category drawers (`topHomeCategories` / `homeCategoryHref` → canonical
+`/books?category_id=`), New Additions (`useRecentBooks`), Staff Picks carousel from the named Collections
+membership, randomized quote bucket (`homeQuotes`), and secondary Browse / Collections / Wishlists / About links.
+Brand link recovers to `/` (Home). Optional counts/metadata failures must not blank core category browsing. Cover
+images remain FEAT-34.
 
-**Next:** Remaining tickets under `docs/tickets/` are FEAT-33 (confirm Home against ticket AC / `make check` then
-remove the ticket file), FEAT-34 (cover images stretch), and FEAT-35 (V1 regression and deployment gate).
+**Next:** Remaining tickets under `docs/tickets/` are FEAT-34 (cover images stretch) and FEAT-35 (V1 regression and
+deployment gate).
 
 Notable shipped behaviors agents should preserve:
 
@@ -496,8 +496,8 @@ history, reading tracking, soft delete/restore, deleted admin, authenticated SQL
 browser download), runtime API config, CI, Podman preview, versioned production artifacts, wishlists, wishlist
 move-to-shelf, curated Collections (create/edit/delete/add/reorder/remove on `/collections`, plus Book Details
 add-to-collection), and dynamic multi-category UI against the refreshed contract (FEAT-29). Ticketed follow-ons
-(implement only when working that ticket): finish/confirm Home discovery against FEAT-33 AC, cover images stretch
-(FEAT-34), and V1 regression/deployment gate (FEAT-35).
+(implement only when working that ticket): cover images stretch (FEAT-34), and V1 regression/deployment gate
+(FEAT-35).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, and remote
@@ -1423,11 +1423,10 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/FEAT-33_*.md` through `FEAT-35_*.md`: Remaining sequenced implementation tickets with acceptance
-  criteria (FEAT-13 through FEAT-32 are complete; those ticket files are removed). Prefer ticket presence under
-  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Home discovery is largely implemented in the
-  SPA; treat FEAT-33 as confirm-against-AC / gate before removing its ticket file. Next product stretch work is
-  FEAT-34 (cover images); FEAT-35 is the V1 regression and deployment gate.
+- `docs/tickets/FEAT-34_*.md` through `FEAT-35_*.md`: Remaining sequenced implementation tickets with acceptance
+  criteria (FEAT-13 through FEAT-33 are complete; those ticket files are removed). Prefer ticket presence under
+  `docs/tickets/` over `docs/ToDo.md` when judging what is still open. Next product stretch work is FEAT-34 (cover
+  images); FEAT-35 is the V1 regression and deployment gate.
 - `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
 - `docs/product-docs/CATEGORY_NOTES.md`: Historical / architectural category notes. Prefer checked-in
   `openapi.json` + `API-for-FE.md` for the live many-to-many contract; FEAT-29 already adapted the SPA -- do not
@@ -1568,7 +1567,7 @@ make build
   `.containerignore`, and Make `container-*` targets; do not add containerized Vite/HMR or a Compose file in this repo.
   FEAT-16 release artifacts are complete: keep `scripts/packRelease.ts`, Make `pack`, gitignored `ci/artifacts/`, and
   the production-like host inspection tests; do not upload secret-bearing archives from default CI or treat the
-  Compose image as production. Do not pull FEAT-33--FEAT-35 product work into unrelated changes. Never simulate
+  Compose image as production. Do not pull FEAT-34--FEAT-35 product work into unrelated changes. Never simulate
   restore, checkout, check-in, or initial mark-read with generic `PATCH`. Never implement bulk shelf moves as per-book
   `PATCH` loops.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
