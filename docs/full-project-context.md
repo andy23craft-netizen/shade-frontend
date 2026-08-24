@@ -1,4 +1,4 @@
-# Shade Frontend — Master Implementation Context
+# Shade Frontend -- Master Implementation Context
 
 Slim always-on context for ChatGPT or any assistant without direct repository
 access.
@@ -6,11 +6,13 @@ access.
 This document is the self-contained operating baseline for the Shade frontend.
 It describes working rules, architecture, non-negotiables, current product
 state, and the minimum reference index needed to continue development safely.
+Do not assume a separate LLM agents document is required; start from this file
+plus the current ticket and API contract when those apply.
 
 A current feature ticket, when one exists, is supplied separately. Do not
 assume this document replaces the ticket or the checked-in API contract.
 
-**Context pack version:** 2026-08-23
+**Context pack version:** 2026-08-24
 
 ---
 
@@ -151,7 +153,7 @@ Default local URL:
 
 ```text
 http://127.0.0.1:8000
-````
+```
 
 No `/api` prefix.
 
@@ -161,6 +163,10 @@ Authoritative frontend contract:
 docs/technical-reference/openapi.json
 docs/technical-reference/API-for-FE.md
 ```
+
+Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.9`
+(includes many-to-many categories, expanded `GET /books` filters, and
+`POST /books/bulk/move-to-shelf`).
 
 Generated types:
 
@@ -182,7 +188,8 @@ The core V1 application is live rather than placeholder UI.
 Current registered product routes include:
 
 ```text
-/
+/                         Home (discovery)
+/about                    About (library information)
 /dashboard
 /books
 /books/new
@@ -204,10 +211,12 @@ Current registered product routes include:
 
 ## Navigation
 
-* `/` is the About page.
-* Dashboard is `/dashboard`.
-* Brand link reaches About.
-* Primary Dashboard link is direct.
+* `/` is discovery Home (`HomePage`).
+* `/about` is library information (`AboutPage` + `CatalogGuide`).
+* Brand link recovers to Home (`/`).
+* Dashboard is `/dashboard` (direct primary-nav link).
+* About is reachable from Home (hero and secondary links), not a separate
+  primary-nav item.
 * Collection drawer:
 
   * Browse
@@ -224,6 +233,39 @@ Current registered product routes include:
   * Deleted Books
 
 Do not restore dedicated Checkout / Check-in navigation.
+Do not move Dashboard back to `/`.
+
+## Home and About
+
+Home answers: what might I want to browse or read?
+
+Primary implementation:
+
+```text
+src/features/home/routes/HomePage.tsx
+src/features/home/homeDiscoveryModel.ts
+src/features/home/homeQuotes.ts
+src/features/home/components/
+src/features/about/routes/AboutPage.tsx
+src/features/about/components/CatalogGuide.tsx
+```
+
+Home includes:
+
+* hero image linking to `/about`;
+* randomized quote bucket (`homeQuotes`);
+* New Additions via `useRecentBooks` (newest 10 by `creationDate` desc);
+* featured category drawers from top `by_category` buckets joined to
+  `useCategories` (`topHomeCategories` / `homeCategoryHref` →
+  `/books?category_id=`);
+* Staff Picks carousel from the Collections membership named
+  `Staff Picks`;
+* secondary links to Browse, Collections, Wishlists, and About.
+
+Optional counts/metadata failures must not blank core category browsing.
+
+About retains dedication, lending policy, purpose, and the accessible
+Catalog Guide. Cover images remain a later ticket (FEAT-34).
 
 ---
 
@@ -327,7 +369,7 @@ Global query behavior includes:
 
 ---
 
-# 7. Books catalog — current state
+# 7. Books catalog -- current state
 
 `/books` uses infinite pagination with a shared batch size of 30.
 
@@ -542,7 +584,7 @@ a later ticket.
 
 ---
 
-# 9. Shelves — current state
+# 9. Shelves -- current state
 
 Shelf catalog API:
 
@@ -615,7 +657,7 @@ The Shelves catalog is responsive:
 
 ---
 
-# 10. Dashboard — current state
+# 10. Dashboard -- current state
 
 `/dashboard` remains a five-drawer card-catalog dashboard.
 
@@ -630,19 +672,19 @@ useDashboardIncompleteMetadata()
 `useInfiniteIncompleteMetadataBooks()` is consumed by Books cleanup mode rather
 than mounted by Dashboard.
 
-## Drawer I — Collection
+## Drawer I -- Collection
 
 Shows API-provided collection statistics.
 
 Do not recalculate dashboard statistics from `GET /books`.
 
-## Drawer II — Circulation
+## Drawer II -- Circulation
 
 Shows borrowing/circulation summary.
 
 Loan history links to `/loans`.
 
-## Drawer III — Reading Record
+## Drawer III -- Reading Record
 
 Contains the Read/Unread visualization and metrics.
 
@@ -655,7 +697,7 @@ Unread -> /books?is_read=false
 
 API top-level `read` / `unread` values remain the display source.
 
-## Drawer IV — Basic Stats
+## Drawer IV -- Basic Stats
 
 Uses `useDashboardBreakdowns()`.
 
@@ -677,7 +719,7 @@ Creation Year is intentionally not rendered.
 
 `by_shelf` is consumed by `ShelvesPage`, not rendered here.
 
-## Drawer V — Healing Metadata
+## Drawer V -- Healing Metadata
 
 Displays:
 
@@ -867,30 +909,34 @@ Preserve the existing test architecture.
 
 ## Current verification state
 
-FEAT-31/32 focused tests are green, including:
+FEAT-30 through FEAT-32 product work is implemented and covered by focused
+tests, including:
 
-* API bulk mutation;
+* Books URL filters (`shelf_name` / `is_read` / `cleanup_field`);
+* Shelves / Dashboard deep links into filtered Books;
+* API bulk mutation (`POST /books/bulk/move-to-shelf`);
 * React Query bulk mutation;
 * bulk-selection model/hook;
 * `BulkMoveToShelfControl`;
 * `BooksPage` bulk-selection integration;
 * `ConfirmationDialog`.
 
-Bulk Move has also been manually exercised successfully in the browser.
+Home discovery (FEAT-33) is implemented in the SPA (`HomePage` at `/`, About
+at `/about`) with colocated Home / discovery-model tests. The FEAT-33 ticket
+file remains under `docs/tickets/` until acceptance criteria and the
+authoritative gate are confirmed.
 
-The backend OpenAPI contract now includes:
+The backend OpenAPI contract includes:
 
 ```text
 POST /books/bulk/move-to-shelf
 ```
 
-The frontend checked-in OpenAPI and generated types have been updated to match.
+Checked-in OpenAPI (`info.version` `0.2.9`) and generated types match.
+`contractSmoke.test.ts` includes the bulk-move path.
 
-`contractSmoke.test.ts` required the new path to be added to its expected path
-list after the contract update.
-
-The final full-project `make check` rerun is not yet recorded as green for this
-baseline. Do not claim the final gate passed until the current run confirms it.
+Do not claim the final V1 regression gate (FEAT-35) passed until the current
+`make check` run confirms it for that ticket's acceptance criteria.
 
 ---
 
@@ -971,6 +1017,8 @@ field, and action do not crowd each other.
 
 ## Product behavior
 
+* `/` is discovery Home; `/about` is library information.
+* Brand recovers to Home, not About.
 * No strict lending due-date pressure.
 * No standalone Checkout page.
 * No standalone Check-in page.
@@ -993,24 +1041,33 @@ than guessing.
 
 # 19. Current ticket / remaining-work status
 
-Completed historical product work through FEAT-29 should not be reimplemented.
+Completed historical product work through FEAT-32 should not be reimplemented.
 
 Recent V1 work now includes:
 
-* expanded Books filtering/deep-link plumbing;
+* expanded Books filtering/deep-link plumbing (FEAT-30);
 * Books cleanup mode;
 * Dashboard metadata/read deep links;
 * Shelves counts and filtered-Books navigation;
 * Dashboard category-assignment donut;
 * FEAT-31 bulk-selection infrastructure;
-* FEAT-32 atomic bulk move-to-shelf UI and API integration.
+* FEAT-32 atomic bulk move-to-shelf UI and API integration;
+* FEAT-33 discovery Home at `/` with About at `/about` (implemented in code;
+  ticket file still present for AC / gate confirmation).
 
-## FEAT-31 — implemented
+## FEAT-30 -- implemented
+
+Centralized Books URL model wires `category_id` / `author` / `title` / `isbn` /
+`shelf_name` / `is_read` / `cleanup_field` plus sort. Visible controls cover
+category, author, title, read status, and sort. `shelf_name` and ISBN remain
+URL / deep-link / hardware driven.
+
+## FEAT-31 -- implemented
 
 Bulk selection is integrated into Books with loaded-row Select All, individual
 selection, selection clearing, and filter/sort lifecycle behavior.
 
-## FEAT-32 — implementation complete; final gate pending
+## FEAT-32 -- implemented
 
 Bulk Move to Shelf is implemented against:
 
@@ -1018,15 +1075,23 @@ Bulk Move to Shelf is implemented against:
 POST /books/bulk/move-to-shelf
 ```
 
-Focused tests and manual UI verification are green.
+Do not replace it with per-book `PATCH` loops. Documented wishlist **412**
+conflicts must be resolved before retry.
 
-The final authoritative `make check` result still needs to be recorded after
-the OpenAPI/contract-smoke synchronization and unrelated scanner-test rerun.
+## FEAT-33 -- implemented in SPA; ticket still present
+
+Home discovery is live:
+
+* `/` → `HomePage`
+* `/about` → `AboutPage` + `CatalogGuide`
+
+Verify remaining acceptance criteria and `make check` before removing the
+ticket file.
 
 ## Remaining planned V1 work
 
 ```text
-FEAT-33 Home discovery
+FEAT-33 confirm Home AC / gate (ticket still under docs/tickets/)
 FEAT-34 cover images stretch
 FEAT-35 V1 regression / deployment gate
 ```
@@ -1059,6 +1124,7 @@ src/api/generated/openapi.ts
 src/api/loansApi.ts
 src/api/loansQueries.ts
 src/api/queryKeys.ts
+src/api/requestFields.ts
 src/api/shelvesApi.ts
 src/api/shelvesQueries.ts
 src/api/wishlistsApi.ts
@@ -1101,7 +1167,17 @@ src/features/shelves/shelfFormModel.ts
 
 ```text
 src/features/loans/
-src/features/checkout/
+```
+
+## Home / About
+
+```text
+src/features/home/routes/HomePage.tsx
+src/features/home/homeDiscoveryModel.ts
+src/features/home/homeQuotes.ts
+src/features/home/components/
+src/features/about/routes/AboutPage.tsx
+src/features/about/components/CatalogGuide.tsx
 ```
 
 ## Collections / wishlists
@@ -1120,6 +1196,7 @@ src/routes/routes.tsx
 src/routes/routeMetadata.ts
 src/styles/components.css
 src/styles/tokens.css
+src/assets/Shade_Library_Hero.webp
 ```
 
 ## Contract verification
@@ -1178,7 +1255,7 @@ regression, expected contract drift, or intentionally retired behavior.
 
 ---
 
-# 22. Document index — attach on demand
+# 22. Document index -- attach on demand
 
 | Need                                | Document                                 |
 | ----------------------------------- | ---------------------------------------- |
@@ -1189,9 +1266,11 @@ regression, expected contract drift, or intentionally retired behavior.
 | Current product work                | relevant file under `docs/tickets/`      |
 | Setup / local development / release | `README.md`                              |
 | Production-host ownership           | `docs/MAINTAINERS.md`                    |
-| Build checklist                     | `docs/ToDo.md` — may lag tickets         |
+| Build checklist                     | `docs/ToDo.md` -- may lag tickets        |
 
-Prefer the current ticket and API contract over old planning notes.
+This Master Implementation Context is the always-on baseline. Attach the rows
+above only when the task needs them. Prefer the current ticket and API contract
+over old planning notes.
 
 ---
 
