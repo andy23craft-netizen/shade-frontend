@@ -3,6 +3,9 @@ import {
     LoadingState,
 } from '../../../components'
 import {
+    HomeCategoryDrawer,
+} from '../components/HomeCategoryDrawer'
+import {
     useCategories,
 } from '../../../api/categoriesQueries'
 import {
@@ -103,8 +106,19 @@ export function HomePage() {
                     Shade Library
                 </h1>
 
-                <p>
+                <div
+                    className="home-page__title-rule"
+                    aria-hidden="true"
+                />
+
+                <p className="home-page__tagline">
                     Find something worth reading.
+                </p>
+
+                <p className="home-page__quote">
+                    A book must be the axe for the frozen sea
+                    within us.
+                    <cite> — Franz Kafka</cite>
                 </p>
             </div>
 
@@ -201,33 +215,23 @@ export function HomePage() {
                 ) : null}
 
                 {categories.length > 0 ? (
-                    <ul>
+                    <ul className="home-category-drawers">
                         {categories.map(
                             (category) => (
-                                <li
+                                <HomeCategoryDrawer
                                     key={
                                         category.categoryId
                                     }
-                                >
-                                    <AppLink
-                                        to={homeCategoryHref(
-                                            category.categoryId,
-                                        )}
-                                    >
-                                        {
-                                            category.name
-                                        }
-                                    </AppLink>
-
-                                    <span>
-                                        {' '}
-                                        (
-                                        {
-                                            category.count
-                                        }
-                                        )
-                                    </span>
-                                </li>
+                                    name={
+                                        category.name
+                                    }
+                                    count={
+                                        category.count
+                                    }
+                                    href={homeCategoryHref(
+                                        category.categoryId,
+                                    )}
+                                />
                             ),
                         )}
                     </ul>

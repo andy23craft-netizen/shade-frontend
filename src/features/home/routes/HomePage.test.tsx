@@ -415,7 +415,10 @@ describe('HomePage', () => {
                 categorySection.getByRole(
                     'link',
                     {
-                        name,
+                        name: new RegExp(
+                            `^Browse ${name}, \\d+ books$`,
+                            'i',
+                        ),
                     },
                 ),
             ).toHaveAttribute(
