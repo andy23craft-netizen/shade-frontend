@@ -11,6 +11,7 @@ import {
 } from 'react'
 
 import {
+    beforeEach,
     describe,
     expect,
     it,
@@ -32,10 +33,13 @@ import type {
 
 import {
     useBook,
+    useBookCover,
     useBookLookup,
     useBooks,
     useCreateBook,
     useUpdateBook,
+    useUploadBookCover,
+    useRemoveBookCover,
     useBulkMoveBooksToShelf,
     useDeleteBook,
     useRestoreBook,
@@ -48,6 +52,9 @@ import {
 
 const mockList = vi.fn()
 const mockGet = vi.fn()
+const mockGetCover = vi.fn()
+const mockUploadCover = vi.fn()
+const mockRemoveCover = vi.fn()
 const mockLookup = vi.fn()
 const mockCreate = vi.fn()
 const mockUpdate = vi.fn()
@@ -62,6 +69,9 @@ vi.mock('./booksApi', () => ({
     createBooksApi: () => ({
         list: mockList,
         get: mockGet,
+        getCover: mockGetCover,
+        uploadCover: mockUploadCover,
+        removeCover: mockRemoveCover,
         lookup: mockLookup,
         create: mockCreate,
         update: mockUpdate,
@@ -113,6 +123,12 @@ function createWrapper() {
 }
 
 describe('book queries', () => {
+    beforeEach(() => {
+        mockGetCover.mockReset()
+        mockUploadCover.mockReset()
+        mockRemoveCover.mockReset()
+    })
+
     it('loads books through the books API', async () => {
         const books: BookList = {
             items: [],
@@ -1464,5 +1480,220 @@ it(
         queryClient.clear()
     },
 )
+
+    it('loads a book cover through the books API', async () => {
+        const blob = new Blob(
+            ['cover-image'],
+            {
+                type: 'image/jpeg',
+            },
+        )
+
+        mockGetCover.mockResolvedValueOnce(blob)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () => useBookCover('book-123'),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(
+            mockGetCover,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            {
+                signal: expect.any(AbortSignal),
+            },
+        )
+
+        expect(result.current.data).toBe(blob)
+
+        expect(
+            queryClient.getQueryData(
+                [
+                    'book-covers',
+                    'book-123',
+                ],
+            ),
+        ).toBe(blob)
+
+        queryClient.clear()
+    })
+
+    it('uploads a cover and invalidates book and cover caches', async () => {
+        const file = new File(
+            ['cover-image'],
+            'cover.webp',
+            {
+                type: 'image/webp',
+            },
+        )
+
+        const book = {
+            id: 'book-123',
+            cover_image_path:
+                'book-123.webp',
+        } as BookRead
+
+        mockUploadCover.mockResolvedValueOnce(
+            book,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } = renderHook(
+            () => useUploadBookCover(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await result.current.mutateAsync({
+            id: 'book-123',
+            file,
+        })
+
+        expect(
+            mockUploadCover,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            file,
+        )
+
+        expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            [
+                'books',
+                'book-123',
+            ],
+            book,
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'book-covers',
+                'book-123',
+            ],
+        })
+
+        queryClient.clear()
+    })
+
+    it('removes a cover and invalidates book and cover caches', async () => {
+        mockRemoveCover.mockResolvedValueOnce(
+            undefined,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } = renderHook(
+            () => useRemoveBookCover(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await result.current.mutateAsync(
+            'book-123',
+        )
+
+        expect(
+            mockRemoveCover,
+        ).toHaveBeenCalledWith(
+            'book-123',
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'book-covers',
+                'book-123',
+            ],
+        })
+
+        queryClient.clear()
+    })
+
+    it('does not load a book cover while disabled', () => {
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () =>
+                useBookCover(
+                    'book-123',
+                    {
+                        enabled: false,
+                    },
+                ),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        expect(result.current.fetchStatus).toBe(
+            'idle',
+        )
+
+        expect(
+            mockGetCover,
+        ).not.toHaveBeenCalled()
+
+        queryClient.clear()
+    })
 
 })

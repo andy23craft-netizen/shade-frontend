@@ -8,6 +8,9 @@ import {
 import {
     formatShelfCommonNameForDisplay,
 } from '../../shelves/shelfDisplay'
+import {
+    BookCover,
+} from '../../books/components/BookCover'
 
 interface HomeStaffPickProps {
     bookId: string
@@ -49,7 +52,17 @@ export function HomeStaffPick({
     return (
         <div className="home-book-deck__item">
             <article className="book-card book-card--compact">
-                <div className="book-card__heading">
+                <div className="book-card__cover">
+                    <BookCover
+                        bookId={book.id}
+                        title={book.title}
+                        status={book.status}
+                        decorative
+                    />
+                </div>
+
+                <div className="book-card__content">
+                    <div className="book-card__heading">
                     <h3 className="book-card__title">
                         <AppLink
                             to={`/books/${encodeURIComponent(
@@ -80,6 +93,7 @@ export function HomeStaffPick({
                         <dd>{shelf}</dd>
                     </div>
                 </dl>
+                </div>
             </article>
         </div>
     )

@@ -174,6 +174,172 @@ describe('createBooksApi', () => {
         ).toHaveBeenCalledWith('/books')
     })
 
+    it('gets a book cover as a blob', async () => {
+        const coverBlob = new Blob(
+            ['cover-image'],
+            {
+                type: 'image/jpeg',
+            },
+        )
+
+        const response = {
+            blob: vi.fn().mockResolvedValue(
+                coverBlob,
+            ),
+        } as unknown as Response
+
+        const client = createMockClient()
+
+        vi.mocked(client.get)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        const result = await api.getCover(
+            'book/123',
+        )
+
+        expect(
+            client.get,
+        ).toHaveBeenCalledWith(
+            '/books/book%2F123/cover',
+        )
+
+        expect(
+            response.blob,
+        ).toHaveBeenCalledOnce()
+
+        expect(result).toBe(coverBlob)
+        expect(result.type).toBe('image/jpeg')
+    })
+
+    it('passes an abort signal when getting a book cover', async () => {
+        const controller =
+            new AbortController()
+
+        const response = new Response(
+            new Blob(['cover-image']),
+            {
+                status: 200,
+            },
+        )
+
+        const client = createMockClient()
+
+        vi.mocked(client.get)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        await api.getCover(
+            'book-123',
+            {
+                signal: controller.signal,
+            },
+        )
+
+        expect(
+            client.get,
+        ).toHaveBeenCalledWith(
+            '/books/book-123/cover',
+            {
+                signal: controller.signal,
+            },
+        )
+    })
+
+    it('uploads a manual book cover with multipart form data', async () => {
+        const book =
+            {} as BookRead
+
+        const response = new Response(
+            JSON.stringify(book),
+            {
+                status: 200,
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+            },
+        )
+
+        const client = createMockClient()
+
+        vi.mocked(client.request)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        const file = new File(
+            ['cover-image'],
+            'cover.webp',
+            {
+                type: 'image/webp',
+            },
+        )
+
+        const result = await api.uploadCover(
+            'book/123',
+            file,
+        )
+
+        expect(
+            client.request,
+        ).toHaveBeenCalledTimes(1)
+
+        const [
+            path,
+            options,
+        ] = vi.mocked(
+            client.request,
+        ).mock.calls[0]
+
+        expect(path).toBe(
+            '/books/book%2F123/cover',
+        )
+
+        expect(options).toMatchObject({
+            method: 'PUT',
+        })
+
+        expect(options?.body).toBeInstanceOf(
+            FormData,
+        )
+
+        const formData =
+            options?.body as FormData
+
+        expect(
+            formData.get('file'),
+        ).toBe(file)
+
+        expect(result).toEqual(book)
+    })
+
+    it('removes a manual book cover', async () => {
+        const client = createMockClient()
+
+        vi.mocked(client.request)
+            .mockResolvedValue(
+                new Response(null, {
+                    status: 204,
+                }),
+            )
+
+        const api = createBooksApi(client)
+
+        await api.removeCover('book/123')
+
+        expect(
+            client.request,
+        ).toHaveBeenCalledWith(
+            '/books/book%2F123/cover',
+            {
+                method: 'DELETE',
+            },
+        )
+    })
+
     it('lists books filtered by author, title, and category', async () => {
         const books: BookList = {
             items: [],

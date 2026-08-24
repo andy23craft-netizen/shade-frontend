@@ -59,6 +59,28 @@ vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
     ) =>
         mockUseInfiniteScrollTrigger(options),
 }))
+vi.mock(
+    '../components/BookCover',
+    () => ({
+        BookCover: ({
+                        bookId,
+                        title,
+                        status,
+                    }: {
+            bookId: string
+            title: string
+            status: string
+        }) => (
+            <div
+                data-testid="book-cover"
+                data-book-id={bookId}
+                data-status={status}
+            >
+                Cover for {title}
+            </div>
+        ),
+    }),
+)
 
 function makeBook(
     overrides: Partial<BookRead> = {},
@@ -278,6 +300,42 @@ describe('BooksPage', () => {
             ).not.toBeInTheDocument()
         },
     )
+
+    it('renders a reusable cover for each catalog book', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    items: [
+                        makeBook({
+                            id: 'book-cover-test',
+                            title: 'Pale Fire',
+                            status: 'available',
+                        }),
+                    ],
+                    total: 1,
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        const cover =
+            screen.getByTestId('book-cover')
+
+        expect(cover).toHaveTextContent(
+            'Cover for Pale Fire',
+        )
+
+        expect(cover).toHaveAttribute(
+            'data-book-id',
+            'book-cover-test',
+        )
+
+        expect(cover).toHaveAttribute(
+            'data-status',
+            'available',
+        )
+    })
 
     it('shows an empty state when the collection contains no books', () => {
         mockUseInfiniteBooks.mockReturnValue(

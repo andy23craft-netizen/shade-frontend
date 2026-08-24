@@ -3,6 +3,9 @@ import {
 } from 'react'
 
 import {
+    BookCover,
+} from '../../books/components/BookCover'
+import {
     Alert,
     AppLink,
     Button,
@@ -216,16 +219,25 @@ export function CollectionMembershipRow({
             }
         >
             <div className="collection-membership__book">
-                <span
-                    className="collection-membership__position"
-                    aria-label={`Position ${membership.order_num}`}
-                >
-                    {displayCollectionBookPosition(
-                        membership.order_num,
-                    )}
-                </span>
+    <span
+        className="collection-membership__position"
+        aria-label={`Position ${membership.order_num}`}
+    >
+        {displayCollectionBookPosition(
+            membership.order_num,
+        )}
+    </span>
 
-                <div>
+                <div className="collection-membership__cover">
+                    <BookCover
+                        bookId={book.id}
+                        title={book.title}
+                        status={book.status}
+                        decorative
+                    />
+                </div>
+
+                <div className="collection-membership__identity">
                     <strong>
                         <AppLink
                             to={`/books/${encodeURIComponent(

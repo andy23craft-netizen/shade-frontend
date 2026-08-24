@@ -38,6 +38,45 @@ vi.mock(
             ) : null,
     }),
 )
+vi.mock(
+    '../components/BookCover',
+    () => ({
+        BookCover: ({
+                        bookId,
+                        title,
+                        status,
+                    }: {
+            bookId: string
+            title: string
+            status: string
+        }) => (
+            <div
+                data-testid="book-cover"
+                data-book-id={bookId}
+                data-status={status}
+            >
+                Cover of {title}
+            </div>
+        ),
+    }),
+)
+vi.mock(
+    '../components/BookCoverManager',
+    () => ({
+        BookCoverManager: ({
+                               bookId,
+                           }: {
+            bookId: string
+        }) => (
+            <div
+                data-testid="book-cover-manager"
+                data-book-id={bookId}
+            >
+                Cover manager
+            </div>
+        ),
+    }),
+)
 
 const mockedUseBook = vi.mocked(useBook)
 
@@ -201,6 +240,44 @@ describe('BookDetailsPage', () => {
                 name: 'Mark Read',
             }),
         ).not.toBeInTheDocument()
+    })
+
+    it('renders the reusable cover for the current book', () => {
+        mockedUseBook.mockReturnValue({
+            data: completeBook,
+            isPending: false,
+            isError: false,
+            isSuccess: true,
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        const cover =
+            screen.getByTestId('book-cover')
+
+        expect(cover).toHaveTextContent(
+            'Cover of The Pale Fire',
+        )
+
+        expect(cover).toHaveAttribute(
+            'data-book-id',
+            'test-book-id',
+        )
+
+        expect(cover).toHaveAttribute(
+            'data-status',
+            'available',
+        )
+
+        const coverManager =
+            screen.getByTestId(
+                'book-cover-manager',
+            )
+
+        expect(coverManager).toHaveAttribute(
+            'data-book-id',
+            'test-book-id',
+        )
     })
 
     it('shows a loading state while the book is loading', () => {
@@ -644,6 +721,12 @@ describe('BookDetailsPage', () => {
             screen.queryByRole('navigation', {
                 name: 'Book actions',
             }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByTestId(
+                'book-cover-manager',
+            ),
         ).not.toBeInTheDocument()
     })
 

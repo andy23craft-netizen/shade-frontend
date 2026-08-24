@@ -8,6 +8,7 @@ import {
     useState,
 } from 'react'
 
+import { BookCover } from '../components/BookCover'
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
@@ -763,21 +764,31 @@ export function BooksPage() {
                                         </div>
                                     ) : null}
 
-                                    <div className="book-card__heading">
-                                        <h2 className="book-card__title">
-                                            <AppLink
-                                                to={`/books/${book.id}`}
-                                            >
-                                                {book.title}
-                                            </AppLink>
-                                        </h2>
-
-                                        <p className="book-card__author">
-                                            {book.authors}
-                                        </p>
+                                    <div className="book-card__cover">
+                                        <BookCover
+                                            bookId={book.id}
+                                            title={book.title}
+                                            status={book.status}
+                                            decorative
+                                        />
                                     </div>
 
-                                    <dl className="book-card__metadata">
+                                    <div className="book-card__content">
+                                        <div className="book-card__heading">
+                                            <h2 className="book-card__title">
+                                                <AppLink
+                                                    to={`/books/${book.id}`}
+                                                >
+                                                    {book.title}
+                                                </AppLink>
+                                            </h2>
+
+                                            <p className="book-card__author">
+                                                {book.authors}
+                                            </p>
+                                        </div>
+
+                                        <dl className="book-card__metadata">
                                         <div className="book-card__field">
                                             <dt>Status</dt>
                                             <dd>{status}</dd>
@@ -810,7 +821,8 @@ export function BooksPage() {
                                             <dt>Shelf</dt>
                                             <dd>{shelf}</dd>
                                         </div>
-                                    </dl>
+                                        </dl>
+                                    </div>
                                 </article>
                             </li>
                         )

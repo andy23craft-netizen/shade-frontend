@@ -9,6 +9,12 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import {
+    BookCover,
+} from '../components/BookCover'
+import {
+    BookCoverManager,
+} from '../components/BookCoverManager'
+import {
     AddBookToCollectionDialog,
 } from '../../collections/components/AddBookToCollectionDialog'
 import { Alert } from '../../../components/Alert'
@@ -291,15 +297,31 @@ export function BookDetailsPage() {
             ) : null}
 
             <article className="book-details-card">
-                <header className="book-details-card__header">
-                    <h1 tabIndex={-1}>
-                        {book.title}
-                    </h1>
+                <div className="book-details-card__cover">
+                    <BookCover
+                        bookId={book.id}
+                        title={book.title}
+                        status={book.status}
+                        eager
+                    />
 
-                    <p>{book.authors}</p>
-                </header>
+                    {canShowActiveActions ? (
+                        <BookCoverManager
+                            bookId={book.id}
+                        />
+                    ) : null}
+                </div>
 
-                <dl className="book-details-card__metadata">
+                <div className="book-details-card__content">
+                    <header className="book-details-card__header">
+                        <h1 tabIndex={-1}>
+                            {book.title}
+                        </h1>
+
+                        <p>{book.authors}</p>
+                    </header>
+
+                    <dl className="book-details-card__metadata">
                     <div className="book-details-card__field">
                         <dt>Category</dt>
                         <dd>
@@ -414,13 +436,14 @@ export function BookDetailsPage() {
                         </dd>
                     </div>
 
-                    <div className="book-details-card__field book-details-card__field--wide">
-                        <dt>Notes</dt>
-                        <dd>
-                            {displayValue(book.notes)}
-                        </dd>
-                    </div>
-                </dl>
+                        <div className="book-details-card__field book-details-card__field--wide">
+                            <dt>Notes</dt>
+                            <dd>
+                                {displayValue(book.notes)}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
             </article>
 
             {isOnLoan ? (

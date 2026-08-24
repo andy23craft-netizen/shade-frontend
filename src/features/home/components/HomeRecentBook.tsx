@@ -7,6 +7,9 @@ import type {
 import {
     formatShelfCommonNameForDisplay,
 } from '../../shelves/shelfDisplay'
+import {
+    BookCover,
+} from '../../books/components/BookCover'
 
 interface HomeRecentBookProps {
     book: BookRead
@@ -28,7 +31,17 @@ export function HomeRecentBook({
     return (
         <li className="home-book-carousel__item">
             <article className="book-card book-card--compact">
-                <div className="book-card__heading">
+                <div className="book-card__cover">
+                    <BookCover
+                        bookId={book.id}
+                        title={book.title}
+                        status={book.status}
+                        decorative
+                    />
+                </div>
+
+                <div className="book-card__content">
+                    <div className="book-card__heading">
                     <h3 className="book-card__title">
                         <AppLink
                             to={`/books/${encodeURIComponent(
@@ -61,6 +74,7 @@ export function HomeRecentBook({
                         </div>
                     ) : null}
                 </dl>
+                </div>
             </article>
         </li>
     )

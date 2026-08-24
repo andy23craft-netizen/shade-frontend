@@ -240,11 +240,13 @@ const recentBooksFixture = {
             id: 'recent-1',
             title: 'Newest Book',
             authors: 'Newest Author',
+            status: 'available',
         },
         {
             id: 'recent-2',
             title: 'Second Newest Book',
             authors: 'Second Author',
+            status: 'available',
         },
     ],
     total: 2,

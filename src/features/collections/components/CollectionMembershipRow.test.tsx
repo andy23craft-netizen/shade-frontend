@@ -38,6 +38,26 @@ vi.mock('../../../api/collectionsQueries', () => ({
     useRemoveCollectionBook: vi.fn(),
 }))
 
+vi.mock(
+    '../../books/components/BookCover',
+    () => ({
+        BookCover: ({
+                        bookId,
+                        title,
+                    }: {
+            bookId: string
+            title: string
+        }) => (
+            <div
+                data-testid="book-cover"
+                data-book-id={bookId}
+            >
+                Cover for {title}
+            </div>
+        ),
+    }),
+)
+
 const mockUseBook =
     vi.mocked(useBook)
 
@@ -189,6 +209,18 @@ describe('CollectionMembershipRow', () => {
                 'Essential reading',
             ),
         ).toBeInTheDocument()
+
+        const cover =
+            screen.getByTestId('book-cover')
+
+        expect(cover).toHaveAttribute(
+            'data-book-id',
+            'book-1',
+        )
+
+        expect(cover).toHaveTextContent(
+            'Cover for The Dispossessed',
+        )
     })
 
     it('shows Wishlist for a wishlisted membership', () => {

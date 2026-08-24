@@ -29,6 +29,28 @@ vi.mock(
         useBook: vi.fn(),
     }),
 )
+vi.mock(
+    '../../books/components/BookCover',
+    () => ({
+        BookCover: ({
+                        bookId,
+                        title,
+                        status,
+                    }: {
+            bookId: string
+            title: string
+            status: string
+        }) => (
+            <div
+                data-testid="book-cover"
+                data-book-id={bookId}
+                data-status={status}
+            >
+                Cover for {title}
+            </div>
+        ),
+    }),
+)
 
 const mockUseBook =
     vi.mocked(useBook)
@@ -117,6 +139,14 @@ describe('HomeStaffPick', () => {
         expect(
             screen.getByText('E4'),
         ).toBeInTheDocument()
+
+        const cover =
+            screen.getByTestId('book-cover')
+
+        expect(cover).toHaveAttribute(
+            'data-book-id',
+            'book-1',
+        )
     })
 
     it('omits optional author and year metadata when absent', () => {

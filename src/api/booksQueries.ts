@@ -117,6 +117,18 @@ function writeBookDetailCache(
     )
 }
 
+async function invalidateBookCover(
+    queryClient: ReturnType<
+        typeof useQueryClient
+    >,
+    id: string,
+): Promise<void> {
+    await queryClient.invalidateQueries({
+        queryKey:
+            queryKeys.bookCovers.detail(id),
+    })
+}
+
 export function useBooks(
     options: {
         includeDeleted?: boolean
@@ -281,6 +293,35 @@ export function useBook(
     })
 }
 
+export function useBookCover(
+    id: string,
+    options: {
+        enabled?: boolean
+    } = {},
+) {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useQuery({
+        queryKey:
+            queryKeys.bookCovers.detail(id),
+        queryFn: ({
+                      signal,
+                  }) =>
+            booksApi.getCover(id, {
+                signal,
+            }),
+        enabled:
+            Boolean(id) &&
+            (options.enabled ?? true),
+        retry: false,
+    })
+}
+
 export function useRecentBooks(
     options: {
         enabled?: boolean
@@ -397,6 +438,81 @@ export function useUpdateBook() {
             await invalidateBookCaches(
                 queryClient,
                 book.id,
+            )
+        },
+    })
+}
+
+export function useUploadBookCover() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({
+                         id,
+                         file,
+                     }: {
+            id: string
+            file: File
+        }) =>
+            booksApi.uploadCover(
+                id,
+                file,
+            ),
+
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
+
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.books.all,
+            })
+
+            await invalidateBookCover(
+                queryClient,
+                book.id,
+            )
+        },
+    })
+}
+
+export function useRemoveBookCover() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (
+            id: string,
+        ) =>
+            booksApi.removeCover(id),
+
+        onSuccess: async (
+            _result,
+            id,
+        ) => {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.books.all,
+            })
+
+            await invalidateBookCover(
+                queryClient,
+                id,
             )
         },
     })

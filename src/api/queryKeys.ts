@@ -231,6 +231,16 @@ export const queryKeys = {
             ] as const,
     },
 
+    bookCovers: {
+        all: ['book-covers'] as const,
+
+        detail: (id: string) =>
+            [
+                'book-covers',
+                id,
+            ] as const,
+    },
+
     loans: {
         all: ['loans'] as const,
 

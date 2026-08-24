@@ -267,6 +267,62 @@ export function createBooksApi(
                 )
         },
 
+        async getCover(
+            id: string,
+            options: ApiCallOptions = {},
+        ): Promise<Blob> {
+            const path =
+                `/books/${encodeURIComponent(id)}/cover`
+
+            const signalOptions = withSignal(
+                options.signal,
+            )
+
+            const response =
+                signalOptions === undefined
+                    ? await client.get(path)
+                    : await client.get(
+                        path,
+                        signalOptions,
+                    )
+
+            return response.blob()
+        },
+
+        async uploadCover(
+            id: string,
+            file: File,
+            options: ApiCallOptions = {},
+        ): Promise<BookRead> {
+            const formData = new FormData()
+
+            formData.append('file', file)
+
+            const response = await client.request(
+                `/books/${encodeURIComponent(id)}/cover`,
+                {
+                    method: 'PUT',
+                    body: formData,
+                    ...withSignal(options.signal),
+                },
+            )
+
+            return response.json() as Promise<BookRead>
+        },
+
+        async removeCover(
+            id: string,
+            options: ApiCallOptions = {},
+        ): Promise<void> {
+            await client.request(
+                `/books/${encodeURIComponent(id)}/cover`,
+                {
+                    method: 'DELETE',
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
         async update(
             id: string,
             book: BookUpdate,
