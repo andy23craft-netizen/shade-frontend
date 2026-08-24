@@ -3,11 +3,13 @@
 Slim always-on context for ChatGPT or any assistant without direct repository
 access.
 
-This document is the self-contained operating baseline for the Shade frontend.
-It describes working rules, architecture, non-negotiables, current product
-state, and the minimum reference index needed to continue development safely.
-Do not assume a separate LLM agents document is required; start from this file
-plus the current ticket and API contract when those apply.
+This document is the complete self-contained operating baseline for the Shade
+frontend. It covers working rules, architecture, non-negotiables, current
+product state, the backend contract summary, and the minimum reference index
+needed to continue development safely. Start from this file alone for that
+baseline. Do not require, request, or defer to any other LLM prompt or project
+agents guide. Attach the current feature ticket and the checked-in API contract
+only when the task needs them.
 
 A current feature ticket, when one exists, is supplied separately. Do not
 assume this document replaces the ticket or the checked-in API contract.
@@ -164,9 +166,10 @@ docs/technical-reference/openapi.json
 docs/technical-reference/API-for-FE.md
 ```
 
-Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.9`
-(includes many-to-many categories, expanded `GET /books` filters, and
-`POST /books/bulk/move-to-shelf`).
+Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.10`
+(includes many-to-many categories, expanded `GET /books` filters,
+`POST /books/bulk/move-to-shelf`, `BookRead.cover_image_path`, and
+`GET` / `PUT` / `DELETE /books/{id}/cover`).
 
 Generated types:
 
@@ -174,8 +177,12 @@ Generated types:
 src/api/generated/openapi.ts
 ```
 
-Regenerate generated types from the checked-in OpenAPI contract; never edit
-them manually.
+Regenerate generated types from the checked-in OpenAPI contract
+(`yarn api:generate` / `yarn api:check`); never edit them manually.
+
+Prefer dedicated lifecycle endpoints over generic `PATCH` for restore,
+checkout, check-in, initial mark-read, bulk shelf move, and cover
+upload/delete.
 
 ---
 
@@ -265,7 +272,8 @@ Home includes:
 Optional counts/metadata failures must not blank core category browsing.
 
 About retains dedication, lending policy, purpose, and the accessible
-Catalog Guide. Cover images remain a later ticket (FEAT-34).
+Catalog Guide. Cover UI remains FEAT-34 (backend cover routes are already in
+OpenAPI `0.2.10`; SPA helpers and Book Details cover display are not started).
 
 ---
 
@@ -337,6 +345,11 @@ It handles:
 * unauthorized handling;
 * typed API errors;
 * diagnostics reporting.
+
+Helpers today are JSON-oriented. FEAT-34 cover work needs authenticated binary
+`GET` (blob / **307** `Location`) and multipart `PUT` beyond `requestJson` --
+extend the existing client carefully rather than inventing a second HTTP
+stack.
 
 Do not invent a second transport layer.
 
@@ -584,7 +597,63 @@ a later ticket.
 
 ---
 
-# 9. Shelves -- current state
+# 9. Book covers (contract ready; SPA still FEAT-34)
+
+Authenticated cover routes:
+
+```text
+GET    /books/{id}/cover
+PUT    /books/{id}/cover
+DELETE /books/{id}/cover
+```
+
+Behavioral detail beyond OpenAPI schemas lives in
+`docs/technical-reference/API-for-FE.md` (Book covers). OpenAPI lists cover
+`GET` as **200** only; treat **307** as live behavior.
+
+Rules:
+
+* `BookRead.cover_image_path` is an optional **filename** (e.g.,
+  `{book_id}.webp`), not a URL and not browser-ready.
+* It is set only by successful `PUT` and cleared by `DELETE`.
+* Create/update JSON cannot set it. Never PATCH `cover_image_path`.
+* Non-null `cover_image_path` means a local file exists. `null` does **not**
+  mean "no cover available" -- `GET` may still **307** to Open Library when
+  `isbn13` is present.
+* `PUT` uses multipart form field `file` (required); JPEG / PNG / WebP only;
+  max **10 MB**; empty or bytes/type mismatch → **422** (string `detail`);
+  success → **200** `BookRead`.
+* `DELETE` clears on-disk files and `cover_image_path` (**204**).
+* `GET` shapes:
+  1. local file → **200** image bytes + matching `Content-Type`;
+  2. no local file but `isbn13` → **307** `Location` to
+     `https://covers.openlibrary.org/b/isbn/{isbn13}-L.jpg?default=false`
+     (public; no Bearer on that host);
+  3. otherwise → **404** `"Book cover not found"`;
+  4. soft-deleted / missing book → **404** `"Book not found"`.
+* Local uploads take priority over the ISBN redirect.
+* Soft-deleted books reject cover get/upload/delete (**404**).
+
+Browser display cannot put `Authorization` on an `<img src>`. Prefer
+authenticated `fetch` to `GET /books/{id}/cover`:
+
+* **200** → `response.blob()` and an object URL for `<img>`;
+* **307** → use the `Location` header as a public image URL (or follow
+  redirects when fetch mode allows);
+* **404** → placeholder.
+
+Do not invent cover URLs from `cover_image_path`. Do not treat Open Library
+redirect targets as authenticated API assets. Do not invent a separate FE-only
+Open Library client when implementing FEAT-34 -- use these backend routes.
+
+SPA status: generated OpenAPI includes the cover paths and
+`cover_image_path`; `booksApi` cover helpers and Book Details cover UI are
+**not** shipped yet. Non-JSON binary responses today are `GET /backup` and
+`GET /books/{id}/cover`.
+
+---
+
+# 10. Shelves -- current state
 
 Shelf catalog API:
 
@@ -657,7 +726,7 @@ The Shelves catalog is responsive:
 
 ---
 
-# 10. Dashboard -- current state
+# 11. Dashboard -- current state
 
 `/dashboard` remains a five-drawer card-catalog dashboard.
 
@@ -748,7 +817,7 @@ failure behavior.
 
 ---
 
-# 11. Reading and circulation flows
+# 12. Reading and circulation flows
 
 ## Checkout
 
@@ -757,6 +826,9 @@ Product checkout lives on Book Details through `CheckoutDialog`.
 `/checkout` is compatibility routing only.
 
 Do not simulate checkout with generic PATCH.
+
+Book Details currently has no cover image, placeholder, or authenticated cover
+fetch. That UI is FEAT-34.
 
 ## Check-in
 
@@ -779,7 +851,7 @@ Do not introduce Mark Unread unless explicitly requested.
 
 ---
 
-# 12. Wishlists and Collections
+# 13. Wishlists and Collections
 
 ## Wishlists
 
@@ -820,7 +892,7 @@ Collections are orthogonal to shelf placement.
 
 ---
 
-# 13. Delete / restore and backup boundary
+# 14. Delete / restore and backup boundary
 
 Books use soft delete.
 
@@ -840,7 +912,7 @@ Never inspect, log, cache, or upload backup contents from frontend code.
 
 ---
 
-# 14. Scanner behavior
+# 15. Scanner behavior
 
 Camera ISBN scanning remains on `/books/new` only.
 
@@ -869,7 +941,7 @@ reproduction.
 
 ---
 
-# 15. Testing and quality gate
+# 16. Testing and quality gate
 
 Canonical full gate:
 
@@ -928,17 +1000,20 @@ The backend OpenAPI contract includes:
 
 ```text
 POST /books/bulk/move-to-shelf
+GET  /books/{id}/cover
+PUT  /books/{id}/cover
+DELETE /books/{id}/cover
 ```
 
-Checked-in OpenAPI (`info.version` `0.2.9`) and generated types match.
-`contractSmoke.test.ts` includes the bulk-move path.
+Checked-in OpenAPI (`info.version` `0.2.10`) and generated types match.
+`contractSmoke.test.ts` includes the bulk-move path and `/books/{id}/cover`.
 
 Do not claim the final V1 regression gate (FEAT-35) passed until the current
 `make check` run confirms it for that ticket's acceptance criteria.
 
 ---
 
-# 16. Accessibility and responsive baseline
+# 17. Accessibility and responsive baseline
 
 Preserve:
 
@@ -965,7 +1040,7 @@ Do not claim untested browsers/devices passed.
 
 ---
 
-# 17. CSS / visual architecture
+# 18. CSS / visual architecture
 
 CSS layers:
 
@@ -998,7 +1073,7 @@ field, and action do not crowd each other.
 
 ---
 
-# 18. Non-negotiables
+# 19. Non-negotiables
 
 ## API / data
 
@@ -1009,9 +1084,13 @@ field, and action do not crowd each other.
 * Do not duplicate server state into a second state store.
 * Do not silently recalculate API-owned dashboard metrics.
 * Preserve tenant header behavior.
-* Prefer dedicated lifecycle endpoints.
+* Prefer dedicated lifecycle endpoints (restore, checkout, check-in, mark-read,
+  bulk shelf move, cover upload/delete -- never simulate those with generic
+  `PATCH`).
 * Bulk shelf movement must use the dedicated atomic endpoint, not repeated
   single-book PATCH requests.
+* Covers use `GET` / `PUT` / `DELETE /books/{id}/cover` only. Never invent
+  browser URLs from `cover_image_path` or set covers through create/update JSON.
 
 ## Product behavior
 
@@ -1030,14 +1109,15 @@ field, and action do not crowd each other.
 
 ## Scope discipline
 
-Do not implement later tickets merely because the API already supports them.
+Do not implement later tickets merely because the API already supports them
+(for example, cover routes exist before FEAT-34 ships UI).
 
 When no current ticket is supplied, ask which work should be taken next rather
 than guessing.
 
 ---
 
-# 19. Current ticket / remaining-work status
+# 20. Current ticket / remaining-work status
 
 Completed historical product work through FEAT-32 should not be reimplemented.
 
@@ -1087,21 +1167,32 @@ Home discovery is complete:
 Featured categories are the top buckets from dashboard breakdowns joined to
 `GET /categories` (`topHomeCategories` / `homeCategoryHref` →
 `/books?category_id=`). Optional counts/metadata failures must not blank core
-Home browsing. Cover images remain FEAT-34.
+Home browsing.
+
+## FEAT-34 -- not started (stretch)
+
+Backend cover contract is ready (`cover_image_path` +
+`GET` / `PUT` / `DELETE /books/{id}/cover` in OpenAPI `0.2.10` /
+`API-for-FE.md`). SPA cover display/upload is not started. Prefer authenticated
+cover routes (blob / **307** `Location` / multipart `file`) over inventing
+FE-only Open Library clients or `cover_image_path` browser paths. V1 completion
+does not block on this ticket.
 
 ## Remaining planned V1 work
 
 ```text
-FEAT-34 cover images stretch
+FEAT-34 cover images stretch (optional; backend ready, SPA not started)
 FEAT-35 V1 regression / deployment gate
 ```
 
 Ticket presence under `docs/tickets/` is more authoritative than stale
-`docs/ToDo.md` entries.
+`docs/ToDo.md` entries. FEAT-34 ticket prose may still describe a
+pre-cover-API investigation path -- prefer the checked-in OpenAPI and
+`API-for-FE.md` Book covers section when implementing.
 
 ---
 
-# 20. Condensed source inventory
+# 21. Condensed source inventory
 
 Verify before editing, but these are known architectural locations.
 
@@ -1209,7 +1300,7 @@ scripts/contractSmoke.test.ts
 
 ---
 
-# 21. Ticket implementation procedure
+# 22. Ticket implementation procedure
 
 For a feature ticket:
 
@@ -1255,26 +1346,27 @@ regression, expected contract drift, or intentionally retired behavior.
 
 ---
 
-# 22. Document index -- attach on demand
+# 23. Document index -- attach on demand
 
-| Need                                | Document                                 |
-| ----------------------------------- | ---------------------------------------- |
-| API paths, schemas, methods, enums  | `docs/technical-reference/openapi.json`  |
-| API behavioral guidance             | `docs/technical-reference/API-for-FE.md` |
-| UI/design decisions                 | `docs/product-docs/UI_DESIGN_NOTES.MD`   |
-| Category architecture notes         | `docs/product-docs/CATEGORY_NOTES.md`    |
-| Current product work                | relevant file under `docs/tickets/`      |
-| Setup / local development / release | `README.md`                              |
-| Production-host ownership           | `docs/MAINTAINERS.md`                    |
-| Build checklist                     | `docs/ToDo.md` -- may lag tickets        |
+| Need                                   | Document                                 |
+| -------------------------------------- | ---------------------------------------- |
+| API paths, schemas, methods, enums     | `docs/technical-reference/openapi.json`  |
+| API behavioral guidance (incl. covers) | `docs/technical-reference/API-for-FE.md` |
+| UI/design decisions                    | `docs/product-docs/UI_DESIGN_NOTES.MD`   |
+| Category architecture notes            | `docs/product-docs/CATEGORY_NOTES.md`    |
+| Current product work                   | relevant file under `docs/tickets/`      |
+| Setup / local development / release    | `README.md`                              |
+| Production-host ownership              | `docs/MAINTAINERS.md`                    |
+| Build checklist                        | `docs/ToDo.md` -- may lag tickets        |
 
-This Master Implementation Context is the always-on baseline. Attach the rows
-above only when the task needs them. Prefer the current ticket and API contract
-over old planning notes.
+This Master Implementation Context is the complete always-on baseline. Do not
+require any other project agents guide. Attach the rows above only when the
+task needs them. Prefer the current ticket and API contract over old planning
+notes.
 
 ---
 
-# 23. Final working principle
+# 24. Final working principle
 
 Build Shade incrementally and in a way the user understands.
 
