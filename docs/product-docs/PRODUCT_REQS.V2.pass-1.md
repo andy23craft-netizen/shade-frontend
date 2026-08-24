@@ -1,121 +1,80 @@
-# Library V2 — UI Design & Feature Brief
+# Library V2 — UI Design & Feature Brief (Remaining)
 
-**Purpose:** Define the desired direction and scope for the V2 user interface so it can be broken into implementation
-tickets.
+**Purpose:** Capture remaining V2 design direction after the shipped catalog, Home discovery core, Collections,
+Wishlists, Dashboard summary, circulation, and reading surfaces.
 
-**Status:** Design direction / ticket-planning document
+**Status:** Design direction / ticket-planning document for unfinished V2 work
 
-## Response from Senior Engineer
+**Already shipped (removed from this brief):** discovery Home core (New Additions, Staff Picks via named Collections,
+rotating quotes), Browse / Shelves / Collections / Wishlists, Book Details (data-oriented record), reader notes and
+ratings, loan history on `/loans`, Dashboard summary and category breakdowns, soft delete/restore, covers, and the
+current drawer navigation.
+
+## Response from Senior Engineer (still open for remaining work)
 
 Summarized Notes:
-* For each page, we want to specify how the features/data will be displayed to the user. How will the user interact with
-  the page?
-* I think it may be best to work the current tickets, and then revisit this document
+* For each remaining page or section, specify how features/data will be displayed and how the user will interact.
+* Prefer finishing current tickets, then revisiting this document.
 
-Detailed Notes
-* The first hundred lines are low-value and heavy on LLM fluff language.
-* The home page has 10 features. How do we plan to fit all that on a mobile screen?
-  * This question exists for every page recommended in this frontend
-* Are we tracking how many inches books occupy on each shelf? Tracking physical shelf capacity seems
-  unlikely
-* The library owner appreciates book metaphors, but representing bar charts with illustrations of
-  books seems an odd priority. Ensure this matches the desired aesthetic.
-* Section 6 seems to simply be saying that we want a "Book Details" page in addition to a page for listing all books
-* Section 7 seems to be adding little value over section 7.
-* It seems like the main feature being described here is custom collections. The data model will need to be augmented to
-  facilitate dynamic collections of books.
-  * A new DB table: `collections`.
-    * Columns: `collection_id`, `created_date`, `name`, `description`, `book_ids`, `last_updated_date`
-  * A new DB table: `wishlists`.
-    * Columns: `wishlist_id`, `created_date`, `name`, `description`, `last_updated_date`
-  * A new DB table: `wishlist_books`.
-    * Columns: `wishlist_id`, `created_date`, `book_id`, `priority`, `status`, `notes`, `url`
-* How does a "neglected" book differ from a book that hasn't been read recently? As currently is defined in section 16,
-  most unread books will meet the criteria. Do you want to track `last_discussed_date` for each book?
-* You have one idea where book quotes are shown according to the weather. You have another idea where the weather is
-  used to recommend titles. Keep these features separate
-  * A new DB table: `quotes`.
-    * Columns: `quote_id`, `created_date`, `book_id`, `quote_text`, `weather_options`, `last_displayed_date`
-* The DB will need to be augmented to track a "Library Journal". Is this separate from the git commit history?
-* "On this Day" feature isn't currently tracked in any page. Where should this live?
-* Seasonal themes & time-of-day behaviors are both nice UI-only features
-* Where do these elements appear in the UI? On which page(s)?
-* Section 22 seems to indicate a visual (not data) representation of the library
-* Section 27 has critical information, it's buried too deep in this doc.
-  * "Staff Picks" is just another category, no? Or maybe another "Discover" option?
-  * "Reading->Read" vs "Reading->Reading History". Arent' these the same thing?
-  * "Circulation->Checked Out" & "Circulation->Loan History" seems ripe for consolidating into a single page
-  * You may want more than one Wishlist
-
+Detailed Notes (unresolved):
+* Home and Discover surfaces still risk packing too many features onto a mobile viewport. Plan layout density before
+  adding New Releases, Featured Exhibition, Current Loans, Book of the Day, Surprise Me, weather recommendations, or
+  statistics on Home.
+* Tracking physical shelf capacity in inches seems unlikely. Confirm whether capacity meters remain desired or should
+  drop from V2.
+* Book-metaphor charts (spines as bars, etc.) are an odd priority if they hurt readability. Keep charts useful first.
+* How does a "neglected" book differ from one that has not been read recently? As defined today, most unread books
+  meet the criteria. Do you want `last_discussed_date` (or similar), or a narrower rule set?
+* Weather-driven author quotes and weather-based title recommendations are separate features. Keep them separate.
+* Is the Library Journal a manual log, or an automated summary of events created through this tool?
+* "On This Day" is not placed on any page yet. Where should it live?
+* Seasonal themes and time-of-day behaviors are UI-only; decide where they appear.
+* Decorative environmental elements (plants, desk, lamp, signage) need explicit page placement so they do not become
+  accidental navigation.
 
 ---
 
-# 1. V2 Vision
+# 1. V2 Vision (remaining priorities)
 
-V2 should turn the existing library data into a polished, intuitive, and personal web interface.
+V2 should turn existing library data into a polished, personal web interface. Much of the catalog and circulation
+baseline already ships. Remaining V2 work should prioritize:
 
-The current system already contains the underlying library information: books, shelves, categories, reading status,
-ratings, notes, acquisitions, and loans. V2 should make that information significantly easier and more enjoyable to
-browse, understand, and interact with.
+* Deeper discovery (serendipity, forgotten books, new releases, book of the day)
+* Richer statistics and visualization beyond the current Dashboard summary
+* Wishlist/acquisition planning polish only if product asks beyond the shipped Wishlists surface
+* Light environmental personality (seasonal themes, weather awareness, decorative library atmosphere)
+* Library Journal and "On This Day" historical personality
 
-The core principle is:
+V2 should **not** attempt to build a fully simulated or spatial library. That is reserved for V3.
+
+The core principle remains:
 
 > **V2 is the library's digital catalog made beautiful.**
-
-It should feel like a personal library rather than a generic CRUD application, while remaining fundamentally grounded in
-the existing data model.
-
-V2 should prioritize:
-
-* Collection browsing
-* Book discovery
-* Reading information
-* Circulation
-* Shelf organization
-* Statistics and visualization
-* Personal recommendations
-* Wishlist/acquisition planning
-* Light environmental personality
-
-V2 should **not** attempt to build a fully simulated or spatial library.
-
-That is reserved for V3.
 
 ---
 
 # 2. V2 vs. V3 Scope Boundary
 
-The key distinction is:
-
 > **V2 makes the data beautiful.**
 >
 > **V3 makes the library itself a place.**
 
-V2 can use visual metaphors, illustrations, seasonal themes, decorative elements, and atmospheric design.
+### Remaining V2 candidates
 
-However, V2 should remain primarily a conventional web application underneath.
-
-### V2
-
-* Dashboard
-* Book browsing
-* Shelf browsing
-* Book detail pages
-* Reading history
-* Loan history
-* Ratings and notes
-* New additions
-* New releases
-* Staff picks
-* Exhibitions/curated collections
-* Wishlist
-* Recommendations
-* Statistics
-* Seasonal themes
+* New releases (publication-date based, in-collection)
+* Stronger exhibition / featured-collection presentation on Home (beyond Staff Picks)
+* Recommendations and Surprise Me / serendipity
+* Forgotten / neglected books
 * Weather-based recommendations
-* Random/serendipitous book selection
-* Library journal
+* Book of the Day
+* Library Journal
+* "On This Day"
+* Seasonal themes
+* Weather / time-of-day awareness
 * Decorative library environment
+* Empty-state personality copy
+* Deeper Dashboard visualizations (time series, shelf capacity if retained, book-metaphor charts where readable)
+* Richer shelf browsing (capacity / read-unread by shelf) if retained after capacity decision
 
 ### V3
 
@@ -159,57 +118,44 @@ The goal is:
 
 > **Don't make the UI look like a library. Make the UI behave like one.**
 
+See also `docs/product-docs/UI_DESIGN_NOTES.MD` for aesthetic direction (Nabokov office, jewel tones, card-catalog
+metaphors).
+
 ---
 
-# 4. Primary V2 Areas
+# 4. Library Home (remaining sections)
 
-V2 should conceptually consist of several major areas.
+Home already ships New Additions, Staff Picks, featured category drawers, and a rotating quote. Remaining potential
+sections:
 
-## 4.1 Library Home
-
-The home page should act as the main entry point into the collection.
-
-Potential sections:
-
-* New Additions
 * New Releases
-* Staff Picks
 * Current Reading / Current Loans
-* Featured Exhibition
+* Featured Exhibition (editorial presentation beyond Staff Picks)
 * Weather-based recommendation
 * Book of the Day
-* Random/Surprise Me
-* Library statistics
-* Rotating author quote
+* Random / Surprise Me
+* Library statistics summary (if Home should surface Dashboard signals)
 
-The exact layout should be determined during ticket planning.
+Exact layout must fit mobile; do not add all of these without a density plan.
 
 ---
 
-# 5. Dashboard
+# 5. Dashboard (remaining visualizations)
 
-The dashboard is a major V2 feature.
+Summary metrics and category breakdowns already ship. Remaining potential work:
 
-It should transform existing collection data into useful visualizations.
+## Additional collection metrics
 
-## Collection statistics
-
-Potential metrics:
-
-* Total books
-* Books read
-* Books unread
-* Books currently checked out
-* Recently acquired books
 * Pages read
 * Books acquired this year
 * Books read this year
+* Richer "recently acquired" presentation if product wants more than `recently_added` / Home New Additions
 
 ## Shelf statistics
 
-Visualize:
+Visualize (pending capacity decision):
 
-* Books by shelf
+* Books by shelf (counts exist via breakdowns; Shelves page deep-links today)
 * Shelf capacity
 * Percentage of shelf capacity used
 * Read/unread by shelf
@@ -225,14 +171,6 @@ PHILOSOPHY
 86% capacity
 ```
 
-## Category statistics
-
-Visualize:
-
-* Books by category
-* Read by category
-* Unread by category
-
 ## Reading statistics
 
 Potential visualizations:
@@ -244,117 +182,12 @@ Potential visualizations:
 
 ## Visual style
 
-Where appropriate, charts should use library/book metaphors.
-
-For example:
-
-* Bars resembling stacks of books
-* Book spines representing counts
-* Shelf-like capacity meters
-
-Charts should remain readable and useful rather than becoming decorative at the expense of clarity.
+Where appropriate, charts may use library/book metaphors (stacks, spines, shelf meters) **only when readability
+stays first**. Charts should remain useful rather than decorative at the expense of clarity.
 
 ---
 
-# 6. Book Detail
-
-Every book should have a richer presentation than a simple database record.
-
-Potential information:
-
-* Cover
-* Title
-* Author
-* Publication information
-* ISBN
-* Shelf
-* Category
-* Reading status
-* Loan status
-* Borrower
-* Date acquired
-* Date read
-* Rating
-* Reader notes
-* Review
-* Loan history
-* Reading history
-* Acquisition information
-
-The page should make the book feel like an **artifact in the collection**.
-
-Potential visual concept:
-
-> **Library Record No. 00427**
-
----
-
-# 7. Digital Library Record / Bookplate
-
-Each book should have a persistent library identity.
-
-Potential elements:
-
-* Library ID
-* Acquisition information
-* Shelf location
-* Reading history
-* Circulation history
-* Reader notes
-* Rating
-* Personal recommendation status
-
-The initial V2 implementation can remain data-oriented.
-
-A more elaborate physical/digital bookplate or animated checkout card can be deferred to V3.
-
----
-
-# 8. Reader Notes and Reviews
-
-Reader notes should be treated as first-class information rather than hidden metadata.
-
-Potential functionality:
-
-* Add/edit reader notes
-* Display notes on book detail
-* Display personal rating
-* Display review
-* Display read date
-* Display reading history
-
-If the data model eventually supports multiple readers:
-
-* Personal rating
-* Aggregate library rating
-* Individual reviews
-
-The V2 design should avoid prematurely assuming that all reviews are public or anonymous.
-
----
-
-# 9. New Additions
-
-Create a **New Additions** section/page.
-
-Purpose:
-
-> Show what has recently entered the collection.
-
-Potential presentation:
-
-* Horizontal carousel
-* Book cards
-* Cover + title + author
-* Date acquired
-* Shelf/category
-* Link to book detail
-
-Primary data source should be existing acquisition information.
-
----
-
-# 10. New Releases
+# 6. New Releases
 
 Create a **New Releases** section based initially on books already present in the collection.
 
@@ -366,110 +199,14 @@ Future versions may incorporate external book data.
 
 ---
 
-# 11. Staff Picks
+# 7. Browse by Shelf (remaining depth)
 
-Create a curated recommendation area.
+Basic shelf catalog, counts, and `/books?shelf_name=` deep links already ship. Remaining V2 depth (if retained):
 
-A book can be marked as a Staff Pick.
-
-Potential presentation:
-
-> ## Staff Picks
->
-> Books the librarian would recommend to almost anyone.
-
-Potential metadata:
-
-* Book
-* Short recommendation
-* Rating
-* Category
-* Optional reason for recommendation
-
-This feature should be simple enough to maintain manually.
-
----
-
-# 12. Exhibitions
-
-Exhibitions should represent temporary or permanent curated collections.
-
-An exhibition could contain:
-
-* Title
-* Description
-* Curator's note
-* Selected books
-* Optional start date
-* Optional end date
-* Optional visual treatment
-
-Examples:
-
-> **THE END OF THE WORLD**
->
-> Books about civilization, collapse, survival, and what comes afterward.
-
-or:
-
-> **BOOKS THAT CHANGED MY MIND**
-
-or:
-
-> **THE 1930s**
-
-An exhibition is essentially a curated collection with a stronger editorial presentation.
-
-The initial implementation should not require a complex content-management system.
-
----
-
-# 13. Wishlist / Donations
-
-Create a dedicated area for books the library would like to acquire.
-
-Potential statuses:
-
-* Suggested
-* Wishlist
-* High priority
-* Ordered
-* Acquired
-
-Potential fields:
-
-* Title
-* Author
-* ISBN
-* Notes
-* Priority
-* Status
-
-The V2 version should remain simple.
-
-Potential future versions could add:
-
-* Purchase links
-* External book APIs
-* Donation tracking
-* Acquisition workflow
-
----
-
-# 14. Browse by Shelf
-
-Users should be able to browse the collection according to its physical shelf organization.
-
-Each shelf should display:
-
-* Shelf name/label
-* Number of books
 * Capacity
 * Percentage full
-* Books currently on shelf
-* Read/unread information
-
-The initial V2 implementation should be **data-driven rather than spatial**.
+* Read/unread information on the shelf surface
+* Optional in-shelf book grid (data-driven, not spatial)
 
 Example:
 
@@ -480,7 +217,6 @@ SHELF 04 — PHILOSOPHY
 73% capacity
 
 [Book] [Book] [Book] [Book]
-[Book] [Book] [Book] [Book]
 ...
 ```
 
@@ -488,7 +224,7 @@ Do not attempt to render a fully interactive physical shelf in V2.
 
 ---
 
-# 15. Surprise Me / Serendipity
+# 8. Surprise Me / Serendipity
 
 Add a simple discovery mechanism that allows the user to randomly select books from the collection.
 
@@ -508,7 +244,7 @@ A more elaborate physical "pull a book from the shelf" animation can be deferred
 
 ---
 
-# 16. Forgotten / Neglected Books
+# 9. Forgotten / Neglected Books
 
 Create a way to surface books that have received little attention.
 
@@ -527,11 +263,11 @@ Possible presentation:
 >
 > These books have been sitting quietly for a while.
 
-This turns existing metadata into a discovery feature.
+Resolve the senior-engineer definition question before ticketing (narrow rules vs new metadata).
 
 ---
 
-# 17. Weather-Based Recommendations
+# 10. Weather-Based Recommendations
 
 V2 may incorporate the current weather into recommendations.
 
@@ -541,42 +277,29 @@ Examples:
 
 ### Rain
 
-Recommend:
-
-* Cozy fiction
-* Horror
-* Mystery
-* Atmospheric books
+Recommend cozy fiction, horror, mystery, or atmospheric books.
 
 ### Snow
 
-Recommend:
-
-* Classics
-* Fantasy
-* Long novels
+Recommend classics, fantasy, or long novels.
 
 ### Sunny weather
 
-Recommend:
-
-* Adventure
-* Travel
-* Outdoor reading
+Recommend adventure, travel, or outdoor reading.
 
 Potential presentation:
 
-> 🌧 **A rainy evening in Tulsa**
+> A rainy evening in Tulsa
 >
 > We think you should read...
 
-This feature should remain lightweight.
+This feature should remain lightweight. Personality, not a complex recommendation engine.
 
-The goal is personality, not a complex recommendation engine.
+Keep this separate from weather-driven quote selection (`PRODUCT_REQS.V2.quote-bucket.md`).
 
 ---
 
-# 18. Book of the Day
+# 11. Book of the Day
 
 Create a daily featured book.
 
@@ -591,11 +314,9 @@ Potential information:
 
 Selection could initially be deterministic or random.
 
-Future versions could use more sophisticated recommendation logic.
-
 ---
 
-# 19. Library Journal
+# 12. Library Journal
 
 Create a chronological history of significant library events.
 
@@ -606,7 +327,7 @@ Potential events:
 * Book checked out
 * Book returned
 * Book restored
-* Exhibition opened
+* Exhibition / collection opened
 * Book added to Staff Picks
 * Wishlist item acquired
 
@@ -626,11 +347,11 @@ AUGUST 3, 2026
 Finished The Master and Margarita.
 ```
 
-This should primarily be built from existing event/date information.
+Decide manual vs automated (automated is largely a chronological view of existing event/date data).
 
 ---
 
-# 20. "On This Day"
+# 13. "On This Day"
 
 Use historical library dates to surface past activity.
 
@@ -646,11 +367,11 @@ or:
 >
 > You finished your 12th book of the year.
 
-This is a lightweight historical feature with high personality value.
+Decide host page (Home, Journal, Dashboard, or shared component) before implementation.
 
 ---
 
-# 21. Seasonal Themes
+# 14. Seasonal Themes
 
 The application should support seasonal visual themes without changing its core information architecture.
 
@@ -671,13 +392,11 @@ Potential effects:
 * Seasonal illustrations
 * Seasonal recommendations
 
-The core UI should remain stable.
-
-The theme should change the atmosphere, not the functionality.
+The core UI should remain stable. The theme should change atmosphere, not functionality.
 
 ---
 
-# 22. Environmental / Decorative Design
+# 15. Environmental / Decorative Design
 
 V2 should introduce a sense of place through decorative UI elements rather than photographs.
 
@@ -695,13 +414,11 @@ Potential visual motifs:
 * Clock
 * Subtle architectural framing
 
-These should initially be primarily decorative.
-
-They should not become required navigation mechanisms.
+These should initially be primarily decorative. They should not become required navigation mechanisms.
 
 ---
 
-# 23. Time and Weather Awareness
+# 16. Time and Weather Awareness
 
 V2 can have light environmental awareness.
 
@@ -719,26 +436,9 @@ A fully reactive environment belongs in V3.
 
 ---
 
-# 24. Author Quotes
+# 17. Empty States (personality copy)
 
-Display rotating quotes from authors/writers.
-
-Potential implementation:
-
-* Curated quote collection
-* Random or rotating selection
-* Author attribution
-* Optional quote category/theme
-
-Quotes can appear throughout the application as small environmental elements.
-
-They should not dominate the UI.
-
----
-
-# 25. Empty States
-
-Empty states should have library-specific language rather than generic application messages.
+Empty states exist functionally today. Remaining work is library-specific language rather than generic messages.
 
 Examples:
 
@@ -758,11 +458,9 @@ Examples:
 
 > **Even libraries need empty spaces.**
 
-These are small details but contribute significantly to the personality of the application.
-
 ---
 
-# 26. Visual Language
+# 18. Visual Language
 
 The interface should combine:
 
@@ -783,65 +481,32 @@ The goal is **inspired by physical libraries**, not pretending to literally be o
 
 ---
 
-# 27. Suggested V2 Navigation
+# 19. Suggested remaining navigation / Discover surface
 
-The exact navigation should be determined during implementation planning, but a possible structure is:
+Current primary navigation already covers Dashboard, Collection (Browse, Manage, Collections, Wishlists), and
+Circulation (Loans). Remaining Discover-oriented IA (illustrative):
 
 ```text
-LIBRARY
-
-Home
-Collection
-  ├── All Books
-  ├── Shelves
-  ├── Categories
-  └── Staff Picks
-
-Reading
-  ├── Currently Reading
-  ├── Read
-  └── Reading History
-
-Circulation
-  ├── Checked Out
-  └── Loan History
-
 Discover
-  ├── New Additions
   ├── New Releases
-  ├── Exhibitions
   ├── Forgotten Books
   └── Surprise Me
 
-Wishlist
-Dashboard
 Library Journal
+On This Day (host TBD)
 ```
 
-This is illustrative rather than prescriptive.
+Featured Exhibition / Book of the Day / weather personality may live on Home rather than as top-level nav.
 
 ---
 
-# 28. Data-First Principle
-
-Where possible, V2 should derive UI features from data the backend already maintains.
-
-Examples:
+# 20. Data-First Principle (remaining features)
 
 | UI Feature              | Existing/Primary Data              |
 | ----------------------- | ---------------------------------- |
-| New Additions           | Acquisition date                   |
 | New Releases            | Publication date                   |
-| Staff Picks             | Recommendation flag/field          |
-| Ratings                 | Rating                             |
-| Reader Notes            | Notes                              |
-| Shelf browsing          | Shelf                              |
-| Capacity                | Shelf + capacity                   |
-| Read statistics         | Reading status/history             |
+| Capacity                | Shelf + capacity (if retained)     |
 | Pages read              | Page count + reading history       |
-| Loan status             | Loans                              |
-| Loan history            | Loans                              |
-| Wishlist                | Wishlist records                   |
 | Library Journal         | Existing event/date data           |
 | On This Day             | Historical dates                   |
 | Forgotten Books         | Existing reading metadata          |
@@ -849,48 +514,35 @@ Examples:
 | Book of the Day         | Existing collection                |
 | Seasonal themes         | UI-only                            |
 
-If a feature requires substantial new external data infrastructure, it should be reviewed for V3 scope.
+If a feature requires substantial new external data infrastructure, review it for V3 scope.
 
 ---
 
-# 29. V2 Ticketing Guidance
+# 21. Remaining V2 Ticketing Guidance
 
-The goal of ticket decomposition should be to create independently testable pieces of functionality rather than one
-giant "build the UI" ticket.
+Likely remaining ticket areas:
 
-Likely ticket areas include:
+1. Dashboard visualizations beyond current summary / category breakdowns
+2. Shelf browsing depth (capacity / read-unread) if retained
+3. New Releases
+4. Surprise Me
+5. Forgotten Books
+6. Weather recommendations
+7. Book of the Day
+8. Library Journal
+9. On This Day
+10. Seasonal themes
+11. Environmental / decorative UI
+12. Empty-state personality copy
+13. Home density / remaining Home sections
+14. Responsive polish for new Discover surfaces
+15. Accessibility/polish on new surfaces
 
-1. V2 UI foundation / layout
-2. Book collection browsing
-3. Book detail redesign
-4. Shelf browsing
-5. Dashboard metrics
-6. Dashboard visualizations
-7. Reading history
-8. Reader notes and ratings
-9. Staff Picks
-10. New Additions
-11. New Releases
-12. Exhibitions
-13. Wishlist
-14. Surprise Me
-15. Forgotten Books
-16. Weather recommendations
-17. Book of the Day
-18. Library Journal
-19. On This Day
-20. Seasonal themes
-21. Author quote system
-22. Environmental/decorative UI
-23. Empty-state copy/design
-24. Responsive/mobile presentation
-25. Accessibility/polish
-
-The senior developer should determine the actual ticket boundaries based on the existing architecture.
+Ticket boundaries should follow the existing feature-module architecture under `src/features/*/routes/`.
 
 ---
 
-# 30. Explicit V2 Non-Goals
+# 22. Explicit V2 Non-Goals
 
 The following should **not** be required for V2 acceptance:
 
@@ -913,11 +565,9 @@ These can be recorded as V3 candidates.
 
 ---
 
-# 31. V3 Concepts to Preserve for Future Design
+# 23. V3 Concepts to Preserve for Future Design
 
 V2 should avoid architectural choices that make the following impossible later.
-
-Potential V3 features:
 
 ### Spatial Library
 
@@ -961,33 +611,24 @@ unnecessarily preventing them later.
 
 ---
 
-# 32. Overall Success Criteria
+# 24. Remaining Success Criteria
 
-V2 should succeed if a user can:
+V2 remaining work should succeed if a user can:
 
-1. Quickly understand the state of the library.
-2. Browse the collection more naturally than they could in the spreadsheet.
-3. Find a particular book quickly.
-4. Discover books they had forgotten about.
-5. See what has recently entered the collection.
-6. Understand which shelves/categories are full or underused.
-7. See reading and circulation history.
-8. Record personal notes and ratings.
-9. Identify recommended/staff-pick books.
-10. Maintain a wishlist.
-11. Discover curated exhibitions.
-12. Get useful recommendations from the existing collection.
-13. Feel that the interface represents **this particular library**, rather than a generic book-management application.
-14. Enjoy spending time browsing the collection even when they aren't looking for a specific book.
+1. Discover books they had forgotten about.
+2. Understand which shelves/categories are full or underused (if capacity work is retained).
+3. Discover curated exhibitions / featured collections beyond Staff Picks when product asks for that presentation.
+4. Get useful recommendations from the existing collection (weather, Surprise Me, Book of the Day).
+5. Feel that the interface represents **this particular library**, rather than a generic book-management application
+   (seasonal/environmental personality, empty-state voice, decorative atmosphere).
+6. Enjoy spending time browsing the collection even when they aren't looking for a specific book.
 
-The final goal is not simply:
+Already largely met by the shipped app (kept here only as context, not open work): understand library state, browse
+and find books, see recent additions, see reading/circulation history, record notes/ratings, Staff Picks, and
+wishlist maintenance.
 
-> **"A spreadsheet with a nicer interface."**
-
-It is:
+The final goal remains:
 
 > **"A digital library built from the information that used to live in a spreadsheet."**
 
-V2 should establish the collection, visual language, and personality.
-
-V3 can then turn that foundation into a place.
+V2 should finish collection personality and discovery. V3 can then turn that foundation into a place.

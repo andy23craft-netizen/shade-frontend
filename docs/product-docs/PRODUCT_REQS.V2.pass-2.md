@@ -1,146 +1,46 @@
-# Library V2 — UI Design & Feature Priorities
+# Library V2 — UI Design & Feature Priorities (Remaining)
 
-## 0. Response from Senior Engineer
+**Already shipped (removed from this brief):** global layout/navigation, Collection browse with core filters,
+Book Details (data-oriented), Shelves catalog, Loans (active + history), Dashboard summary and category breakdowns,
+New Additions and Staff Picks on Home, rotating frontend quotes, Collections CRUD/membership UI, Wishlists
+(create/add/move-to-shelf), reader notes/ratings/mark-read, covers, and Staff Picks-as-Collection.
+
+**Status:** Remaining V2 priorities and open backend questions for ticket planning.
+
+## 0. Response from Senior Engineer (still open)
 
 Summarized Notes:
-* For each page, we want to specify how the features/data will be displayed to the user. How will the user interact with
-  the page?
-* I think it may be best to work the current tickets, and then revisit this document
+* For each remaining page or section, specify how features/data will be displayed and how the user will interact.
+* Prefer finishing current tickets, then revisiting this document.
 
-Detailed Notes:
-* You may focus on the UI at this step, and then we can back into the required DB and BE changes to support the UI you 
-  want.
-* Are you writing into the Library journal manually? Or are you expecting a summary of the events made via this tool?
-* I think section 2 is more important than section 1 right meow
-* On the UI, you have:
-  ```
-  Collection
-  ├── All Books
-  ├── Shelves
-  └── Categories
-  ```
-  Does that mean that the Categories and the Shelves are on the same page? Or separate pages? What does it mean **in the
-  UI** for those two concepts to be "children of Collection"?
-* Do you want a special shelf/table for the staff picks? Or is a staff pick represented by a ribbon on that book or
-  something?
-* In the lower sections (e.g., § 4 Home) you list the data you want on that page. But how do you want those data shown 
-  to the user?
-* Maybe start with something concrete, like the weather-driven author quotes. Do you want those at the top of the
-  screen? At the bottom of the screen? In a certain place on the page that the user can scroll to/past? As a pop-up
-  modal/toast?
-* I like the effort that has gone into fleshing out the Collections and a few of the other features. This work will
-  likely come in very handy down the road when we get closer to implementation.
+Detailed Notes (unresolved):
+* You may focus on the UI first, then back into required DB/BE changes.
+* Is the Library Journal manual, or an automated summary of events created through this tool?
+* Home and Discover still risk packing too much onto mobile. How should remaining modules scroll or defer?
+* Remaining Home items need concrete presentation (weather recommendation, Surprise Me, On This Day, etc.): placement,
+  scroll behavior, modal vs inline.
+* Weather-driven author quotes (backend + weather tags) are higher priority than weather book recommendations; keep
+  them separate. Current Home quotes are a hardcoded frontend bucket, not weather-aware.
+* Dashboard is more for desktop (charts). Homepage is more for mobile.
+
+Resolved by shipping (removed): Collection vs Shelves vs Categories IA as separate Collection-drawer destinations
+(Browse, Shelves, Collections, Wishlists); Staff Picks as a named Collection rather than a special shelf/ribbon;
+Circulation consolidated on `/loans`; multiple named wishlists.
 
 ---
 
-* Dashboard is more for the desktop.
-  * Charts
-* Homepage is more for mobile
-  * Open question: How do we scroll around the content? 
+## 1. Backend Work Required (remaining)
 
-## 1. Backend Work Required
+### 1.1 Quotes
 
-The following V2 features require new database models or meaningful backend changes.
-
-These should be considered before frontend tickets are finalized.
-
-### 1.1 Collections
-
-**Purpose:** Support curated groups of books such as Exhibitions, Staff Picks, seasonal collections, or other custom
-groupings.
-
-**New table: `collections`**
-
-* `collection_id`
-* `created_date`
-* `name`
-* `description`
-* `last_updated_date`
-
-**Book membership:**
-
-The initial proposal used `book_ids` directly on the collection. Prefer a normalized join table if the backend
-conventions support it:
-
-`collection_books`
-
-* `collection_id`
-* `book_id`
-* `created_date`
-
-This allows a book to belong to multiple collections.
-
-**Frontend uses:**
-
-* Discover → Collections
-* Home → Featured Collection
-* Book Details → Collections this book belongs to
-
-**Examples:**
-
-* Staff Picks
-* Exhibitions
-* Books That Changed My Mind
-* Seasonal collections
-* Thematic collections
-
----
-
-### 1.2 Wishlists
-
-A single wishlist is probably too restrictive. Support multiple named wishlists.
-
-**New table: `wishlists`**
-
-* `wishlist_id`
-* `created_date`
-* `name`
-* `description`
-* `last_updated_date`
-
-**New table: `wishlist_books`**
-
-* `wishlist_id`
-* `created_date`
-* `book_id`
-* `priority`
-* `status`
-* `notes`
-* `url`
-
-Potential statuses:
-
-* Suggested
-* Wishlist
-* High Priority
-* Ordered
-* Acquired
-
-**Frontend uses:**
-
-* Wishlist page
-* Book Details
-* Potentially Discover
-
-Examples:
-
-* Books to Buy
-* Donations
-* Complete the Collection
-* Philosophy Wishlist
-
----
-
-### 1.3 Quotes
-
-If quotes are stored and associated with books, they should be represented in the backend rather than hardcoded into the
-frontend.
+If quotes are stored and associated with books/weather, they should be represented in the backend rather than hardcoded
+in the frontend (`homeQuotes` today).
 
 **New table: `quotes`**
 
 * `quote_id`
 * `created_date`
-* `book_id`
+* `book_id` (optional if quotes are not always book-linked)
 * `quote_text`
 * `weather_options`
 * `last_displayed_date`
@@ -159,14 +59,16 @@ Potential weather options:
 **Frontend uses:**
 
 * Home
-* Book Details
+* Book Details (optional)
 * Potentially Dashboard
 
 Weather-based quote selection should remain separate from weather-based book recommendations.
 
+See also `PRODUCT_REQS.V2.quote-bucket.md`.
+
 ---
 
-### 1.4 Library Journal
+### 1.2 Library Journal
 
 Determine the backend representation before implementing the UI.
 
@@ -182,8 +84,7 @@ Potential events:
 * Collection created/updated
 * Wishlist item added/acquired
 
-The implementation should determine whether these events can be derived from existing tables or require a dedicated
-journal/event table.
+Determine whether these events can be derived from existing tables or require a dedicated journal/event table.
 
 **Frontend uses:**
 
@@ -192,370 +93,204 @@ journal/event table.
 
 ---
 
-### 1.5 Additional Book Metadata
+### 1.3 Additional Book Metadata
 
 Review existing book fields before creating new models.
 
-Potential fields needed for V2:
+Potential fields still needed for remaining V2 features:
 
-* Staff Pick / collection membership
-* Reader review
-* Reading date/history
-* Last discussed date, only if "neglected books" remains a desired feature
-* Other recommendation metadata
+* Last discussed date, only if "neglected books" / Surprise Me "neglected" mode remains desired
+* Other recommendation metadata only when a specific remaining feature requires it
 
-Do not add fields unless a specific V2 feature requires them.
+Do not add fields unless a specific V2 feature requires them. Staff Pick / collection membership, reader review, and
+reading date already ship via Collections and book reading fields.
 
 ---
 
-# 2. V2 Site Structure
+# 2. Remaining Site Structure
 
-The frontend should be organized around a small number of primary destinations.
+Shipped primary destinations: Home, Collection (Browse, Manage, Collections, Wishlists), Circulation (Loans),
+Dashboard, Book Details.
 
-Recommended structure:
+Remaining destinations / surfaces (illustrative, not all must be top-level routes):
 
 ```text
-Home
-Collection
-  ├── All Books
-  ├── Shelves
-  └── Categories
-
-Book Details
-  └── accessed from Collection / search / recommendations
-
-Discover
-  ├── New Additions
+Discover (or Home modules)
   ├── New Releases
-  ├── Collections
   └── Surprise Me
 
 Reading
-  └── Reading History
+  └── Reading History (single page; optional if Books `is_read` filters suffice)
 
-Circulation
-  └── Loans / Checked Out
-
-Wishlist
-  └── Named Wishlists
-
-Dashboard
+Collection
+  └── Categories (dedicated browse, if product wants more than Books filters + Home drawers)
 
 Library Journal
+On This Day (component; host TBD)
 ```
 
-This is a starting point for ticket planning, not a requirement that every item becomes a separate route.
-
-### Consolidations
+### Still-open consolidations / rules
 
 **Reading**
 
-Do not create separate "Read" and "Reading History" pages.
+If a Reading surface is added, do not create separate "Read" and "Reading History" pages. Use one page with
+filters/statuses (Currently Reading / Read / Unread), or deepen Books `is_read` filtering instead.
 
-Use a single **Reading History** page with filters/statuses such as:
+**Staff Picks / Exhibitions**
 
-* Currently Reading
-* Read
-* Unread
-
-**Circulation**
-
-Do not create separate "Checked Out" and "Loan History" pages.
-
-Use a single **Loans** page with:
-
-* Currently Checked Out
-* Active loans
-* Historical loans
-
-**Staff Picks**
-
-Treat Staff Picks as a collection rather than a separate top-level data type.
+Continue treating these as Collections. Optional: stronger exhibition presentation and Home featuring beyond Staff
+Picks.
 
 ---
 
 # 3. Responsive / Mobile Requirement
 
-Every page and feature should specify:
+Every remaining feature ticket should specify:
 
 1. What is displayed?
 2. What is interactive?
 3. What happens on mobile?
 4. What is hidden, collapsed, or moved at smaller widths?
 
-The design should not assume that desktop dashboard layouts can simply be stacked vertically on mobile.
+Do not assume desktop dashboard layouts can simply stack on mobile.
 
-Avoid putting every feature on the Home page.
-
-Home should contain a curated subset of the available information, with links to deeper pages.
+Avoid putting every remaining feature on Home. Home should stay a curated subset with links to deeper pages.
 
 ---
 
-# 4. Home
+# 4. Home (remaining modules)
 
 **Primary purpose:** Library overview and discovery.
 
-### Recommended contents
+### Remaining recommended contents
 
-Prioritize:
+Prioritize among:
 
-1. New Additions
-2. Featured Collection
-3. Weather recommendation
-4. Currently Checked Out / Reading
-5. Random Book / Surprise Me
-6. Author quote
+1. Weather recommendation (book)
+2. Currently Checked Out / Reading
+3. Random Book / Surprise Me
+4. Featured Exhibition (beyond Staff Picks), if desired
+5. Weather-aware quote upgrade (when Quotes backend exists)
+6. On This Day (small component)
 
-Lower-priority content should be accessible elsewhere rather than stacked onto the Home page.
+Already on Home: New Additions, Staff Picks, category drawers, rotating frontend quotes.
 
-### New Additions
+### Weather-aware Author Quote (upgrade)
 
-**Display:**
+**Display:** Small quote block (placement already exists on Home; may move).
 
-* Horizontal book-card carousel on desktop
-* Horizontally scrollable carousel on mobile
-* Cover
-* Title
-* Author
-* Acquisition date
+**Backend:** Quotes model with `weather_options`.
 
-**Interaction:**
-
-* Select book → Book Details
-* "View All" → Collection filtered by recent acquisition
-
-### Featured Collection
-
-**Display:**
-
-* Collection name
-* Description
-* Small selection of book covers
-* "View Collection"
-
-**Interaction:**
-
-* Select collection → Collection view
-
-Possible collections:
-
-* Staff Picks
-* Current Exhibition
-* Seasonal collection
-
-
-### Author Quote
-
-**Display:**
-
-Small quote block.
-
-Potential location:
-
-* Bottom of Home
-* Sidebar on desktop
-* Between sections on mobile
-
-**Interaction:**
-
-None required.
+**Interaction:** None required.
 
 ---
 
-# 5. Dashboard
+# 5. Dashboard (remaining)
 
 **Primary purpose:** High-level collection analytics.
 
-**Best fit:** Top-level Dashboard.
+Summary metrics (totals, read/unread, checked out, recently added) and category donut already ship.
 
-The dashboard should prioritize useful metrics rather than attempting to display every V2 feature.
+### Remaining analytics
 
-### Collection
-
-* Total books
-* Books read
-* Books unread
-* Books checked out
-* Recent acquisitions
-
-### Reading
+**Reading**
 
 * Books read over time
 * Pages read
-* Read by category
+* Read by category (beyond current breakdowns if product wants more)
 * Read by shelf
 
-### Collection composition
+**Collection composition**
 
-* Books by category
-* Books by shelf
+* Stronger books-by-shelf visualization on Dashboard (Shelves page already maps `by_shelf` counts)
 
 ### Visualization
 
 Use conventional charts unless a book metaphor clearly improves readability.
 
-Possible visual treatments:
+Possible additions:
 
-* Bar charts
-* Donut/pie charts where appropriate
 * Timeline charts
+* Additional bar/donut treatments
 * Book-cover visualizations
 
-Book-shaped bar charts should only be used if they fit the established visual design.
+Book-shaped bar charts only if they fit the established visual design and stay readable.
 
 ### Weather Quote
 
-**Display:**
-
-Short quote from a novel that describes the current weather 
+**Display:** Short quote from a novel that describes the current weather.
 
 Example:
 
 > Snowy today
-> "The snow fell quietly without, and the fire crackeld cheerfully within." -- Louisa May Alcott, Little women
+> "The snow fell quietly without, and the fire crackled cheerfully within." -- Louisa May Alcott, Little Women
 
-**Interaction:**
-
-* Maybe link to outside weather service, though not required
-
+**Interaction:** Optional link to an outside weather service.
 
 ### Mobile
 
-Dashboard cards should stack or become horizontally scrollable.
-
-Avoid requiring a large desktop canvas.
+Dashboard cards should stack or become horizontally scrollable. Avoid requiring a large desktop canvas.
 
 ---
 
+# 6. Collection (remaining depth)
 
-# 6. Collection
+Core All Books browse, URL-backed filters (category / author / title / ISBN / shelf / read status), sort, infinite
+scroll, and covers already ship.
 
-**Primary purpose:** Browse and manage the library's books.
+### Remaining display options
 
-This should be the main V2 replacement for the spreadsheet.
+* Grid (covers and titles)
+* List / card density variants
+* Compact catalog view (if product defines it)
 
-### All Books
+### Remaining filters (only if product explicitly needs them)
 
-**Display options:**
-
-* Grid - Covers and titles only
-* List -- Cards (picture Doordash, with the cover on the side, the title across the top, and the rest of the information
-  listed below it, like ingredients)
-* Potentially compact catalog view -- ???
-
-Each book card should display enough information to identify the book without opening it.
-
-Potential fields:
-
-* Cover
-* Title
-* Author
-* Shelf
-* Category
-* Reading status
-* Loan status
-* Rating
-
-### Filters
-
-Potential filters:
-
-* Author
-* Category
-* Shelf
-* Read/unread
-* Checked out/available
+* Checked out / available (`status`)
 * Rating
 * Publication year
 * Acquisition date
-* Collection
+* Collection membership
 
-### Search
+Do not invent a second filter stack. Prefer extending the existing Books URL model.
 
-Search should support at minimum:
+### Remaining search
 
-* Title
-* Author
-* Category
-* ISBN
-
-Potentially:
-
-* Notes
-* Shelf
-
-### Sorting
-
-Potential options:
-
-* Title
-* Author
-* Publication date
-* Acquisition date
-* Rating
-* Shelf
+Potentially notes (currently intentionally not a normal V1 list filter per `docs/AGENTS.md`).
 
 ### Mobile
 
-Prioritize:
-
-* Search
-* Filters
-* Book cards
-
-Filters can open as a drawer/modal rather than occupying permanent screen space.
+Filters as drawer/modal remain the right pattern for any new controls.
 
 ---
 
-# 7. Shelves
+# 7. Shelves (remaining depth)
 
-**Primary purpose:** Browse the physical organization of the collection.
+Shelf catalog, counts, and `/books?shelf_name=` deep links already ship.
 
-**Best fit:** Collection → Shelves.
+Optional remaining depth:
 
-### Display
+* Utilization information **only if** capacity is actually tracked in the database
+* In-shelf book grid/list on the shelf surface (vs deep-link-only)
 
-Each shelf should show:
+Do **not** invent capacity percentages from arbitrary book counts.
 
-* Shelf name
-* Number of books
-* Books currently assigned
-* Optional utilization information if meaningful
-
-Do **not** assume physical shelf capacity unless that data is actually tracked.
-
-If capacity is not represented in the database, do not build a capacity percentage based on arbitrary book counts.
-
-### Book display
-
-Books can be displayed in:
-
-* Grid
-* List
-* Shelf-oriented layout if useful
-
-A physical shelf illustration is optional visual treatment, not a required V2 feature.
-
-### Future/V3
-
-Actual interactive physical shelves are V3.
+Interactive physical shelves remain V3.
 
 ---
 
-# 8. Categories
+# 8. Categories (dedicated browse)
 
-**Primary purpose:** Browse the collection by subject/category.
+Category vocabulary, Books multi-`category_id` filters, Home featured category drawers, and Dashboard category
+breakdown already ship.
 
-**Best fit:** Collection → Categories.
+**Still open:** a dedicated Collection → Categories browse surface, if product wants more than filters/drawers.
 
-### Display
-
-Potential options:
+### Display options
 
 * Category list with book counts
 * Category cards
-* Category → filtered collection
-* Possibly different skins for different collections?
+* Category → filtered collection (`/books?category_id=`)
 
 Potential metrics:
 
@@ -563,95 +298,44 @@ Potential metrics:
 * Read
 * Unread
 
-Avoid building complex category visualizations here if they are already represented in the Dashboard.
+Avoid duplicating Dashboard category visualizations.
 
 ---
 
-# 9. Book Details
+# 9. Book Details (remaining polish)
 
-**Primary purpose:** Provide the complete record for an individual book.
+Core identity, bibliographic fields, location, reading, current loan, acquisition, covers, checkout, mark-read /
+edit reading, soft delete, and Add to Collection already ship.
 
-### Display
-
-Sections:
-
-**Identity**
-
-* Cover
-* Title
-* Author
-* ISBN
-* Library ID
-
-**Bibliographic data**
-
-* Publisher
-* Publication date
-* Pages
-* Category
-
-**Location**
-
-* Shelf
-
-**Reading**
-
-* Read/unread/currently reading
-* Reading history
-* Rating
-* Reader notes/review
-
-**Circulation**
-
-* Current loan status
-* Borrower
-* Loan history
+### Remaining display
 
 **Collections**
 
-* Collections containing the book
+* Lightweight "collections containing this book" readout (beyond the add dialog)
 
 **Wishlist**
 
-* Wishlist membership, if applicable
-
-### Actions
-
-Depending on existing backend functionality:
-
-* Edit
-* Mark read/unread
-* Add/edit notes
-* Add rating
-* Check out
-* Return
-* Restore
-* Add to collection
-* Add to wishlist
+* Wishlist membership display, if applicable (add-from-detail may stay out unless product asks; shelf/wishlist
+  exclusivity still applies)
 
 ### Digital Library Record
 
-The book detail page can visually incorporate:
+Optional visual treatment (library ID emphasis, richer history presentation). A more elaborate digital checkout
+card/signature treatment should not block other work; full skeuomorphic checkout card can wait.
 
-* Library ID
-* Acquisition date
-* Reading history
-* Loan history
-
-A more elaborate digital checkout card/signature treatment is optional and should not block the basic Book Details
-implementation.
+Mark-unread remains out of scope unless explicitly requested.
 
 ---
 
 # 10. Reading History
 
-**Primary purpose:** Show reading activity.
+**Primary purpose:** Show reading activity as a first-class surface (optional if Books `is_read` filters are enough).
 
 **Best fit:** Reading.
 
 ### Display
 
-Use a single page with filters/statuses:
+Single page with filters/statuses:
 
 * Currently Reading
 * Read
@@ -676,112 +360,30 @@ These may link to the Dashboard for more detailed visualization.
 
 ---
 
-# 11. Loans / Circulation
+# 11. Discover (remaining)
 
-**Primary purpose:** Manage current and historical circulation.
+**Primary purpose:** Browse without knowing exactly what you want.
 
-**Best fit:** Circulation → Loans.
+Remaining sections:
 
-### Display
-
-Separate active and historical information within one page.
-
-**Active loans**
-
-* Book
-* Borrower
-* Checkout date
-* Due/return information
-
-**History**
-
-* Book
-* Borrower
-* Checkout date
-* Return date
-
-### Actions
-
-* Check out
-* Return
-* View Book Details
-
-The current checkout system should remain the primary implementation.
-
-A full signature/checkout-card experience can be treated as visual enhancement rather than a separate system.
-
----
-
-# 12. Discover
-
-**Primary purpose:** Help users browse the collection without knowing exactly what they want.
-
-Recommended sections:
-
-* New Additions
 * New Releases
-* Collections
 * Surprise Me
 
-These should not all necessarily appear simultaneously.
+New Additions and Collections already ship (Home / Collection drawer).
 
 ---
 
-## 12.1 New Additions
+## 11.1 New Releases
 
-**Display:**
+**Display:** Books in the collection sorted/filterable by publication date.
 
-Book cards sorted by acquisition date.
-
-**Interaction:**
-
-Select book → Book Details.
+Initially based only on existing book metadata. Do not introduce external release APIs for V2.
 
 ---
 
-## 12.2 New Releases
+## 11.2 Surprise Me
 
-**Display:**
-
-Books in the collection sorted/filterable by publication date.
-
-This is initially based only on existing book metadata.
-
-Do not introduce external release APIs for V2.
-
----
-
-## 12.3 Collections
-
-**Display:**
-
-Collection cards containing:
-
-* Name
-* Description
-* Representative book covers
-* Book count
-
-**Interaction:**
-
-Select collection → collection book listing.
-
-Examples:
-
-* Staff Picks
-* Exhibitions
-* Seasonal collections
-* Personal curated lists
-
-This feature requires the Collections backend model.
-
----
-
-## 12.4 Surprise Me
-
-**Display:**
-
-A simple action/button rather than a full page if possible.
+**Display:** A simple action/button rather than a full page if possible.
 
 Potential modes:
 
@@ -790,110 +392,44 @@ Potential modes:
 * Random category
 * Random shelf
 
-**Interaction:**
+**Interaction:** Select option → randomly selected Book Details.
 
-Select option → randomly selected Book Details.
-
-The visual metaphor of physically pulling a book from a shelf is not required for V2.
+Physical "pull from shelf" animation is not required for V2.
 
 ---
 
-# 13. Staff Picks
+# 12. Exhibitions (optional presentation)
 
-**Implementation:** Collection.
+Collections already provide curated groupings. Remaining work is stronger exhibition presentation if desired:
 
-Do not create a separate Staff Picks data model unless future requirements justify it.
+* Optional active date range (likely needs backend fields)
+* Home featuring of an active exhibition beyond Staff Picks
+* Editorial visual treatment
 
-Create a collection named something like:
-
-> Staff Picks
-
-Display it under Discover and potentially feature it on Home.
-
-This allows Staff Picks to use the same infrastructure as Exhibitions and other curated collections.
+**Best fit:** Discover → Collections / Home feature slot.
 
 ---
 
-# 14. Exhibitions
+# 13. Wishlists (remaining gaps)
 
-**Implementation:** Collection.
+Multiple named wishlists, add unshelved book, display priority/status/notes/url, and move-to-shelf already ship.
 
-An exhibition is a curated collection with additional presentation.
+### Remaining if product asks
 
-Potential fields:
-
-* Name
-* Description
-* Books
-* Created date
-* Last updated
-* Optional active date range
-
-**Best fit:**
-
-Discover → Collections.
-
-Potentially feature the active exhibition on Home.
-
----
-
-# 15. Wishlists
-
-**Primary purpose:** Track books the library wants to acquire.
-
-**Best fit:** Top-level Wishlist page.
-
-Multiple wishlists should be supported.
-
-Example:
-
-```
-Wishlist
-
-Books to Buy
-Donations
-Philosophy
-Complete a Series
-```
-
-### Wishlist display
-
-Each wishlist shows:
-
-* Name
-* Description
-* Number of books
-* Priority/status summary
-
-### Wishlist book display
-
-* Cover
-* Title
-* Author
-* Priority
-* Status
-* Notes
-* Optional URL
-
-### Actions
-
-* Add book
-* Edit wishlist
-* Add existing book
-* Remove book
-* Change priority
-* Change status
+* Membership field edit (priority/status/notes/url after add)
+* Standalone membership remove without move-to-shelf
+* Book Details wishlist membership display
+* Add existing shelved catalog book (blocked today by shelf/wishlist exclusivity **412**; do not invent a bypass)
 
 Acquisition/purchase workflows beyond this are V3.
 
 ---
 
-# 16. Weather Features
+# 14. Weather Features
 
-There are two separate features and they should remain separate.
+Two separate features; keep them separate.
 
-## 16.1 Weather-Based Quote
-```Higher Priority of the two```
+## 14.1 Weather-Based Quote (higher priority)
 
 **Best fit:** Home / Dashboard.
 
@@ -903,14 +439,11 @@ Example:
 
 > Rainy weather → quote tagged `rainy`
 
-This feature requires the Quotes model.
-
-The quote system should not be coupled to the book recommendation system.
+Requires the Quotes model. Do not couple to book recommendations.
 
 ---
 
-## 16.2 Weather-Based Book Recommendation 
-```Lower Priority of the two```
+## 14.2 Weather-Based Book Recommendation (lower priority)
 
 **Best fit:** Home.
 
@@ -925,109 +458,63 @@ Then display a book.
 
 ---
 
-
-# 17. Seasonal Themes
+# 15. Seasonal Themes
 
 **Backend:** None.
 
 **Best fit:** Global UI/theme system.
 
-Seasonal themes should affect the overall visual treatment without changing navigation or data.
+Potential themes: Spring, Summer, Autumn, Winter.
 
-Potential themes:
+Potential visual changes: background, decorative elements, accent treatments, small animations.
 
-* Spring
-* Summer
-* Autumn
-* Winter
-
-Potential visual changes:
-
-* Background
-* Decorative elements
-* Accent treatments
-* Small animations
-
-Keep this lightweight enough that it does not become a core feature dependency.
+Keep lightweight; not a core feature dependency.
 
 ---
 
-# 18. Time-of-Day Behavior
+# 16. Time-of-Day Behavior
 
 **Backend:** None.
 
 **Best fit:** Global UI.
 
-Potential behavior:
+Potential behavior: morning / daytime / evening / night treatments.
 
-* Morning visual treatment
-* Daytime treatment
-* Evening treatment
-* Night treatment
-
-Possible elements:
-
-* Lighting
-* Background
-* Window appearance
-* Greeting
+Possible elements: lighting, background, window appearance, greeting.
 
 Do not create separate page layouts for different times.
 
 ---
 
-# 19. Decorative Library Environment
+# 17. Decorative Library Environment
 
 **Backend:** None.
 
 **Best fit:** Home initially; potentially global layout.
 
-Possible elements:
+Possible elements: plants, desk, window, clock, catalog cards, library labels, paper textures, book-spine motifs.
 
-* Plants
-* Desk
-* Window
-* Clock
-* Catalog cards
-* Library labels
-* Paper textures
-* Book-spine motifs
-
-These are visual elements rather than functional navigation.
-
-Do not build a fully spatial environment in V2.
+Visual only; not functional navigation. No fully spatial environment in V2.
 
 ---
 
-# 20. Author Quotes
+# 18. Author Quotes (remaining)
 
-**Backend:** Quotes model.
+Basic rotating Home quotes ship via frontend `homeQuotes`.
 
-**Best fit:** Home and potentially Book Details.
-
-Possible display:
-
-* Small quote block
-* Author attribution
-* Optional book title
-
-Quotes should be unobtrusive.
-
-Weather-aware quotes can be selected using `weather_options`.
+**Remaining:** Quotes backend, weather-aware selection, optional Book Details placement, unobtrusive reuse elsewhere.
 
 ---
 
-# 21. Library Journal
+# 19. Library Journal
 
-**Backend:** Requires investigation / likely new journal event model.
+**Backend:** Requires investigation / likely new journal event model (or derived events).
 
 **Best fit:** Dashboard or dedicated Journal page.
 
-The purpose is to show significant historical library events.
-
 Potential display:
 
-```
+```text
 August 8
 Added 4 books
 
@@ -1049,13 +536,11 @@ Do not treat git commit history as the Library Journal.
 
 ---
 
-# 22. On This Day
+# 20. On This Day
 
 **Backend:** Depends on existing historical dates.
 
-**Best fit:** Home or Dashboard.
-
-This should be a small component rather than a dedicated page.
+**Best fit:** Home or Dashboard (small component, not a dedicated page).
 
 Potential examples:
 
@@ -1063,17 +548,13 @@ Potential examples:
 * Book read on this date
 * Loan event on this date
 
-If sufficient historical data exists, display:
-
-> **On this day...**
-
-If not, defer until the Library Journal/history model exists.
+If sufficient historical data exists, display **On this day...**. If not, defer until Journal/history model exists.
 
 ---
 
-# 23. Responsive Design Requirements
+# 21. Responsive Design Requirements
 
-Every feature ticket should explicitly define desktop and mobile behavior.
+Every remaining feature ticket should explicitly define desktop and mobile behavior.
 
 ### General rules
 
@@ -1085,63 +566,47 @@ Every feature ticket should explicitly define desktop and mobile behavior.
 * Preserve access to primary actions without requiring horizontal desktop layouts.
 * Ensure book covers and metadata remain legible at small sizes.
 
-Mobile should be treated as a first-class layout, not a desktop layout compressed into a phone.
+Mobile is a first-class layout, not a compressed desktop layout.
 
 ---
 
-# 24. Recommended V2 Priority
+# 22. Recommended Remaining V2 Priority
 
-The following is the recommended implementation order.
+## Priority 1 — Collection depth & optional Reading/Categories surfaces
 
-## Priority 1 — Core UI
-
-These replace the spreadsheet experience and should establish the basic application structure.
-
-1. Global layout/navigation
-2. Responsive design foundation
-3. Collection / All Books
-4. Search and filtering
-5. Book Details
-6. Shelves
-7. Categories
-8. Reading History
-9. Loans / Circulation
+1. Remaining Books filters/views only when product explicitly needs them
+2. Dedicated Categories browse (optional)
+3. Reading History page (optional vs Books `is_read` filters)
+4. Book Details membership readouts (collections / wishlist)
 
 ---
 
-## Priority 2 — Dashboard & Core Discovery
+## Priority 2 — Discovery
 
-Once the basic collection UI works:
-
-10. Dashboard
-11. New Additions
-12. New Releases
-13. Collections backend + UI
-14. Staff Picks collection
-15. Exhibitions
-16. Wishlist backend + UI
-17. Surprise Me
+5. New Releases
+6. Surprise Me
+7. Exhibition presentation / Home featuring beyond Staff Picks (optional)
+8. Wishlist membership edit gaps (only if product asks)
 
 ---
 
-## Priority 3 — Personalization & Analytics
+## Priority 3 — Personalization & analytics
 
-18. Reader notes / reviews / ratings
-19. Weather-based book recommendations
-20. Author quotes / Quotes backend
-21. Seasonal themes
-22. Time-of-day UI
-23. Empty states
-24. Decorative library environment
-25. Book of the Day
-26. On This Day
+9. Dashboard timelines / pages-read / richer composition charts
+10. Weather-based quotes + Quotes backend
+11. Weather-based book recommendations
+12. Seasonal themes
+13. Time-of-day UI
+14. Empty-state personality copy
+15. Decorative library environment
+16. Book of the Day
+17. On This Day
 
 ---
 
-## Priority 4 — Historical / Experimental Features
+## Priority 4 — Historical / experimental
 
-27. Library Journal
-28. Additional environmental polish
+18. Library Journal
+19. Additional environmental polish
 
-These should not block the core V2 UI.
-
+These should not block core remaining discovery UI.
