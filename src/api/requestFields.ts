@@ -3,6 +3,7 @@
 import type {
     BookCreate,
     BookUpdate,
+    BulkShelfMoveRequest,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -58,6 +59,11 @@ export const BOOK_UPDATE_KEYS = [
     'tags',
     'title',
 ] as const satisfies readonly (keyof BookUpdate)[]
+
+export const BULK_SHELF_MOVE_REQUEST_KEYS = [
+    'book_ids',
+    'shelf_name',
+] as const satisfies readonly (keyof BulkShelfMoveRequest)[]
 
 export const CHECKOUT_REQUEST_KEYS = [
     'borrower',
@@ -158,6 +164,15 @@ export function pickBookUpdate(
     return pickDocumentedRequestFields(
         book,
         BOOK_UPDATE_KEYS,
+    )
+}
+
+export function pickBulkShelfMoveRequest(
+    request: BulkShelfMoveRequest,
+): BulkShelfMoveRequest {
+    return pickDocumentedRequestFields(
+        request,
+        BULK_SHELF_MOVE_REQUEST_KEYS,
     )
 }
 

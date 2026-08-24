@@ -11,6 +11,8 @@ import type {
     BookLookupResponse,
     BookRead,
     BookUpdate,
+    BulkShelfMoveRequest,
+    BulkShelfMoveResponse,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -873,4 +875,91 @@ describe('createBooksApi', () => {
             },
         )
     })
+
+    it(
+        'moves selected books to a shelf with one bulk request',
+        async () => {
+            const request: BulkShelfMoveRequest = {
+                book_ids: [
+                    'book-1',
+                    'book-2',
+                ],
+                shelf_name: 'a1',
+            }
+
+            const response: BulkShelfMoveResponse = {
+                book_ids: [
+                    'book-1',
+                    'book-2',
+                ],
+                moved_count: 2,
+                shelf_name: 'a1',
+            }
+
+            const client = createMockClient()
+
+            vi.mocked(client.requestJson)
+                .mockResolvedValue(response)
+
+            const api = createBooksApi(client)
+
+            const result =
+                await api.moveToShelf(request)
+
+            expect(
+                client.requestJson,
+            ).toHaveBeenCalledTimes(1)
+
+            expect(
+                client.requestJson,
+            ).toHaveBeenCalledWith(
+                '/books/bulk/move-to-shelf',
+                {
+                    method: 'POST',
+                    body: request,
+                },
+            )
+
+            expect(result).toBe(response)
+        },
+    )
+
+    it(
+        'strips undocumented fields from bulk shelf move requests',
+        async () => {
+            const response: BulkShelfMoveResponse = {
+                book_ids: ['book-1'],
+                moved_count: 1,
+                shelf_name: 'a1',
+            }
+
+            const client = createMockClient()
+
+            vi.mocked(client.requestJson)
+                .mockResolvedValue(response)
+
+            const api = createBooksApi(client)
+
+            await api.moveToShelf({
+                book_ids: ['book-1'],
+                shelf_name: 'a1',
+                unexpected_field: 'nope',
+            } as BulkShelfMoveRequest & {
+                unexpected_field: string
+            })
+
+            expect(
+                client.requestJson,
+            ).toHaveBeenCalledWith(
+                '/books/bulk/move-to-shelf',
+                {
+                    method: 'POST',
+                    body: {
+                        book_ids: ['book-1'],
+                        shelf_name: 'a1',
+                    },
+                },
+            )
+        },
+    )
 })

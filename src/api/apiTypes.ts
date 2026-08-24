@@ -7,6 +7,12 @@ export type BookUpdate = Schemas['BookUpdate']
 export type BookRead = Schemas['BookRead']
 export type BookList = Schemas['BookList']
 
+export type BulkShelfMoveRequest =
+    Schemas['BulkShelfMoveRequest']
+
+export type BulkShelfMoveResponse =
+    Schemas['BulkShelfMoveResponse']
+
 export type BookLookupDraft =
     Schemas['BookLookupDraft']
 

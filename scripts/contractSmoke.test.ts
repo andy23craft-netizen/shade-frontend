@@ -34,6 +34,7 @@ const generatedTypesPath = join(
 const expectedPaths = [
     '/backup',
     '/books',
+    '/books/bulk/move-to-shelf',
     '/books/lookup',
     '/books/{id}',
     '/books/{id}/checkin',

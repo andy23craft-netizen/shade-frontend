@@ -161,4 +161,32 @@ describe('ConfirmationDialog', () => {
       expect(cancelButton).toHaveFocus()
     })
   })
+
+  it('can disable dialog actions while an operation is pending', () => {
+    render(
+        <ConfirmationDialog
+            open
+            title="Confirm move"
+            confirmLabel="Move books"
+            confirmDisabled
+            cancelDisabled
+            onConfirm={() => {}}
+            onCancel={() => {}}
+        >
+          Move these books?
+        </ConfirmationDialog>,
+    )
+
+    expect(
+        screen.getByRole('button', {
+          name: 'Move books',
+        }),
+    ).toBeDisabled()
+
+    expect(
+        screen.getByRole('button', {
+          name: 'Cancel',
+        }),
+    ).toBeDisabled()
+  })
 })

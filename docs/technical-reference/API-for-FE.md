@@ -63,10 +63,11 @@ can still reach the server, but browser JS cannot read the response.
 |        | partial or invalid `skip`/`take` on list endpoints; |
 |        | invalid `sortBy` or `sortOrder` on `GET /books`; invalid or blank `field` on |
 |        | `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book create/update; |
-|        | `shelf_name` that normalizes to `removed` on book create/update; |
+|        | `shelf_name` that normalizes to `removed` on book create/update or bulk shelf move; |
+|        | malformed or empty book GUID in a bulk shelf-move request; unknown destination `shelf_name` on bulk shelf move; |
 |        | create/rename/delete of system shelves `unknown` / `removed`, or rename to those names |
 | `403`  | Missing or invalid Bearer token |
-| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / second delete; |
+| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / bulk shelf move / second delete; |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
 |        | unknown wishlist, unknown book when adding a wishlist membership, or unknown wishlist book on remove; |
 |        | unknown collection, unknown book when adding a collection membership, or unknown |
@@ -77,12 +78,12 @@ can still reach the server, but browser JS cannot read the response.
 | `412`  | Checkout when the book has `status=display_only` (`"Book is display only"`); |
 |        | add a book with any shelf membership, including `unknown` / `removed`, to a wishlist |
 |        | (`"Existing books cannot be added to a wishlist"`); |
-|        | assign `shelf_name` on book create/update when the book is on any wishlist |
+|        | assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist |
 |        | (`"The book must be removed from the wishlist before it can be placed on a shelf"`) |
 | `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body; |
 |        | unsupported wishlist membership `status`; blank `shelf_name` on book create; |
-|        | null or blank `shelf_name` on book update; |
 |        | null or blank shelf `common_name` on shelf create/update; |
+|        | empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; |
 |        | blank collection `name` on create/update; non-positive `order_num` on collection add/reorder |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
@@ -282,6 +283,35 @@ the book is on any wishlist returns **412**. After soft-delete, expect `shelf_na
 with `GET /books/{id}` (response `shelf_name` is `unknown` when membership is missing).
 
 Dashboard incomplete-shelf / `missing_shelf` means membership on `unknown` (not `removed`).
+
+### Bulk book movement
+
+Use the bulk shelf-move operation documented in OpenAPI when moving an explicit frontend selection of books to one
+destination shelf. Do **not** implement bulk movement by looping over individual `PATCH /books/{id}` requests.
+
+Bulk movement is atomic: the API validates the destination and every selected book before changing any shelf
+membership. If any selected book is missing, soft-deleted, or still belongs to a wishlist, the entire operation fails
+and every selected book remains on its original shelf.
+
+The destination uses the same `shelf_name` rules as ordinary book assignment: surrounding whitespace is trimmed,
+letters are lowercased, the normalized value is limited to 32 characters, unknown shelves are rejected, and
+`removed` cannot be assigned. The system shelf `unknown` remains a valid destination.
+
+The request contains explicit book GUIDs only. Duplicate IDs are rejected rather than silently deduplicated. A
+malformed GUID uses the normal Books API **400** behavior; a well-formed but missing book, or a soft-deleted book,
+causes the operation to fail with **404**.
+
+A selected book that is already on the destination shelf is valid and is still counted as successfully processed.
+The successful response preserves the supplied book order, identifies the normalized destination shelf, and reports
+the number of processed books.
+
+If any selected book is on a wishlist, the operation returns **412**:
+
+`{"detail": "The book must be removed from the wishlist before it can be placed on a shelf"}`
+
+The API does not remove wishlist membership automatically. The frontend should surface the failure, allow the
+wishlist conflict to be resolved, and retry the bulk move when appropriate.
+
 
 ---
 
@@ -489,12 +519,14 @@ URL.revokeObjectURL(objectUrl);
 | Shelf picker UI from `GET /shelves`; submit chosen `common_name` as `shelf_name` | Frontend |
 | Category picker/filter UI from `GET /categories`; submit category GUIDs as `category_ids` | Frontend |
 | Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
+| Bulk selection and Move to Shelf interaction; send explicit selected book IDs in one bulk request | Frontend |
 | Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist | Frontend |
 | Collection list/create/add/reorder UI | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
 | Canonical project version (`../../ci/VERSION` via `GET /version`) | API |
 | Soft delete/restore, loan records, checkout/check-in, reading state | API |
 | Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
+| Atomic bulk shelf movement, including validation of every selected book and destination | API |
 | Category catalog (`GET /categories`), normalized book memberships, and category intersection filtering | API |
 | Wishlist/shelf mutual exclusion (**412** when both would apply) | API |
 | Collections CRUD and ordered membership (`/collections`) | API |
@@ -510,6 +542,16 @@ row. If assign returns **412** `"The book must be removed from the wishlist befo
 the book is still on a wishlist; delete that wishlist before placing it on a shelf. Manage the catalog with
 `POST` / `PATCH` / `DELETE /shelves`, then refresh `GET /shelves`. After delete/restore, re-read the book (or list)
 for updated `shelf_name` and `deletion_date`; do not assume the prior shelf is restored.
+
+Recommended bulk shelf assignment: FE maintains the explicit selected book IDs → user chooses a destination from
+`GET /shelves` → send the entire selection in one bulk shelf-move request as defined by OpenAPI → on success, refresh
+the affected book/list/shelf queries. Do not issue one `PATCH /books/{id}` per selected book.
+
+Treat the operation as all-or-nothing. A **404** means at least one selected book is missing or soft-deleted; a
+**412** with `"The book must be removed from the wishlist before it can be placed on a shelf"` means at least one
+selected book still has wishlist membership. In either case, assume none of the selected books moved. Destination
+validation follows ordinary shelf assignment: `unknown` is allowed, while an unknown shelf or `removed` returns
+**400**.
 
 Recommended wishlist add: `POST /books` without `shelf_name` → `POST /wishlists/{wishlist_id}/books` with
 `{ "book_id" }`. Adding a book that already has shelf membership returns **412**

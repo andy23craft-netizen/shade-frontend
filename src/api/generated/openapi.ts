@@ -39,6 +39,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/bulk/move-to-shelf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Move Books To Shelf */
+        post: operations["bulk_move_books_to_shelf_books_bulk_move_to_shelf_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/lookup": {
         parameters: {
             query?: never;
@@ -661,6 +678,22 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** BulkShelfMoveRequest */
+        BulkShelfMoveRequest: {
+            /** Book Ids */
+            book_ids: string[];
+            /** Shelf Name */
+            shelf_name: string;
+        };
+        /** BulkShelfMoveResponse */
+        BulkShelfMoveResponse: {
+            /** Book Ids */
+            book_ids: string[];
+            /** Moved Count */
+            moved_count: number;
+            /** Shelf Name */
+            shelf_name: string;
+        };
         /** CategoryRead */
         CategoryRead: {
             /** Category Id */
@@ -1188,6 +1221,75 @@ export interface operations {
             };
             /** @description Authentication failure */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_move_books_to_shelf_books_bulk_move_to_shelf_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkShelfMoveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkShelfMoveResponse"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -320,6 +320,25 @@
   gap: var(--space-3);
 }
 
+.books-bulk-move {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: min(100%, 17rem);
+}
+
+.books-bulk-move__field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.books-bulk-move__field label {
+  font-weight: 700;
+}
+
+.books-bulk-move__field select {
+  inline-size: 100%;
+}
+
 .books-page__controls {
   display: grid;
   gap: var(--space-4);

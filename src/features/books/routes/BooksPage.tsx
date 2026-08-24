@@ -441,6 +441,11 @@ export function BooksPage() {
 
             {isBulkSelectionMode ? (
                 <BooksBulkActions
+                    selectedBookIds={
+                        bulkSelection.selectedBooks.map(
+                            (book) => book.id,
+                        )
+                    }
                     selectedCount={
                         bulkSelection.selectedCount
                     }

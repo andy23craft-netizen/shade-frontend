@@ -780,6 +780,55 @@
         "title": "BookUpdate",
         "type": "object"
       },
+      "BulkShelfMoveRequest": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "shelf_name": {
+            "maxLength": 32,
+            "title": "Shelf Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_ids",
+          "shelf_name"
+        ],
+        "title": "BulkShelfMoveRequest",
+        "type": "object"
+      },
+      "BulkShelfMoveResponse": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "moved_count": {
+            "title": "Moved Count",
+            "type": "integer"
+          },
+          "shelf_name": {
+            "title": "Shelf Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shelf_name",
+          "moved_count",
+          "book_ids"
+        ],
+        "title": "BulkShelfMoveResponse",
+        "type": "object"
+      },
       "CategoryRead": {
         "properties": {
           "category_id": {
@@ -2665,6 +2714,92 @@
           }
         ],
         "summary": "Create Book",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/bulk/move-to-shelf": {
+      "post": {
+        "operationId": "bulk_move_books_to_shelf_books_bulk_move_to_shelf_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkShelfMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkShelfMoveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "The book must be removed from the wishlist before it can be placed on a shelf"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Move Books To Shelf",
         "tags": [
           "books"
         ]

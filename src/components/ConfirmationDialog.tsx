@@ -9,6 +9,8 @@ export interface ConfirmationDialogProps {
   confirmLabel?: string
   cancelLabel?: string
   confirmVariant?: 'primary' | 'danger'
+  confirmDisabled?: boolean
+  cancelDisabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -24,15 +26,17 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 }
 
 export function ConfirmationDialog({
-  open,
-  title,
-  children,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
-  confirmVariant = 'danger',
-  onConfirm,
-  onCancel,
-}: ConfirmationDialogProps) {
+                                     open,
+                                     title,
+                                     children,
+                                     confirmLabel = 'Confirm',
+                                     cancelLabel = 'Cancel',
+                                     confirmVariant = 'danger',
+                                     confirmDisabled = false,
+                                     cancelDisabled = false,
+                                     onConfirm,
+                                     onCancel,
+                                   }: ConfirmationDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -144,18 +148,20 @@ export function ConfirmationDialog({
 
         <div className="confirmation-dialog__actions">
           <Button
-            ref={cancelButtonRef}
-            variant="secondary"
-            type="button"
-            onClick={onCancel}
+              ref={cancelButtonRef}
+              variant="secondary"
+              type="button"
+              onClick={onCancel}
+              disabled={cancelDisabled}
           >
             {cancelLabel}
           </Button>
 
           <Button
-            variant={confirmVariant}
-            type="button"
-            onClick={onConfirm}
+              variant={confirmVariant}
+              type="button"
+              onClick={onConfirm}
+              disabled={confirmDisabled}
           >
             {confirmLabel}
           </Button>

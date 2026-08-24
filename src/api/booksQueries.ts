@@ -25,6 +25,7 @@ import type {
     BookList,
     BookRead,
     BookUpdate,
+    BulkShelfMoveRequest,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -72,6 +73,35 @@ async function invalidateBookCaches(
 
     await queryClient.invalidateQueries({
         queryKey: queryKeys.dashboard.all,
+    })
+}
+
+async function invalidateBulkShelfMoveCaches(
+    queryClient: ReturnType<
+        typeof useQueryClient
+    >,
+    bookIds: readonly string[],
+): Promise<void> {
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.books.all,
+    })
+
+    for (const bookId of bookIds) {
+        await queryClient.invalidateQueries({
+            queryKey: queryKeys.books.detail(bookId),
+        })
+    }
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.shelves.all,
+    })
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.all,
+    })
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.collections.all,
     })
 }
 
@@ -353,6 +383,32 @@ export function useUpdateBook() {
             await invalidateBookCaches(
                 queryClient,
                 book.id,
+            )
+        },
+    })
+}
+
+export function useBulkMoveBooksToShelf() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (
+            request: BulkShelfMoveRequest,
+        ) =>
+            booksApi.moveToShelf(request),
+
+        onSuccess: async (response) => {
+            await invalidateBulkShelfMoveCaches(
+                queryClient,
+                response.book_ids,
             )
         },
     })

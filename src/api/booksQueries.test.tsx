@@ -23,6 +23,8 @@ import type {
     BookLookupResponse,
     BookRead,
     BookUpdate,
+    BulkShelfMoveRequest,
+    BulkShelfMoveResponse,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -34,6 +36,7 @@ import {
     useBooks,
     useCreateBook,
     useUpdateBook,
+    useBulkMoveBooksToShelf,
     useDeleteBook,
     useRestoreBook,
     useCheckoutBook,
@@ -52,6 +55,7 @@ const mockRestore = vi.fn()
 const mockCheckout = vi.fn()
 const mockCheckin = vi.fn()
 const mockMarkRead = vi.fn()
+const mockMoveToShelf = vi.fn()
 
 vi.mock('./booksApi', () => ({
     createBooksApi: () => ({
@@ -60,6 +64,7 @@ vi.mock('./booksApi', () => ({
         lookup: mockLookup,
         create: mockCreate,
         update: mockUpdate,
+        moveToShelf: mockMoveToShelf,
         remove: mockRemove,
         restore: mockRestore,
         checkout: mockCheckout,
@@ -803,6 +808,208 @@ it(
         queryClient.clear()
     },
 )
+
+    it(
+        'bulk moves books and invalidates affected caches',
+        async () => {
+            const request: BulkShelfMoveRequest = {
+                book_ids: [
+                    'book-1',
+                    'book-2',
+                ],
+                shelf_name: 'a1',
+            }
+
+            const response: BulkShelfMoveResponse = {
+                book_ids: [
+                    'book-1',
+                    'book-2',
+                ],
+                moved_count: 2,
+                shelf_name: 'a1',
+            }
+
+            mockMoveToShelf.mockResolvedValueOnce(
+                response,
+            )
+
+            const {
+                Wrapper,
+                queryClient,
+            } = createWrapper()
+
+            const invalidateQueries =
+                vi.spyOn(
+                    queryClient,
+                    'invalidateQueries',
+                )
+
+            const { result } =
+                renderHook(
+                    () =>
+                        useBulkMoveBooksToShelf(),
+                    {
+                        wrapper: Wrapper,
+                    },
+                )
+
+            const resultResponse =
+                await result.current.mutateAsync(
+                    request,
+                )
+
+            expect(
+                mockMoveToShelf,
+            ).toHaveBeenCalledWith(request)
+
+            expect(resultResponse).toEqual(response)
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['books'],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: [
+                    'books',
+                    'book-1',
+                ],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: [
+                    'books',
+                    'book-2',
+                ],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['shelves'],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['dashboard'],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['collections'],
+            })
+
+            queryClient.clear()
+        },
+    )
+
+    it(
+        'bulk moves books and invalidates affected caches',
+        async () => {
+            const request: BulkShelfMoveRequest = {
+                book_ids: [
+                    'book-1',
+                    'book-2',
+                ],
+                shelf_name: 'a1',
+            }
+
+            const response: BulkShelfMoveResponse = {
+                book_ids: [
+                    'book-1',
+                    'book-2',
+                ],
+                moved_count: 2,
+                shelf_name: 'a1',
+            }
+
+            mockMoveToShelf.mockResolvedValueOnce(
+                response,
+            )
+
+            const {
+                Wrapper,
+                queryClient,
+            } = createWrapper()
+
+            const invalidateQueries =
+                vi.spyOn(
+                    queryClient,
+                    'invalidateQueries',
+                )
+
+            const { result } =
+                renderHook(
+                    () =>
+                        useBulkMoveBooksToShelf(),
+                    {
+                        wrapper: Wrapper,
+                    },
+                )
+
+            const resultResponse =
+                await result.current.mutateAsync(
+                    request,
+                )
+
+            expect(
+                mockMoveToShelf,
+            ).toHaveBeenCalledWith(request)
+
+            expect(resultResponse).toEqual(response)
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['books'],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: [
+                    'books',
+                    'book-1',
+                ],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: [
+                    'books',
+                    'book-2',
+                ],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['shelves'],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['dashboard'],
+            })
+
+            expect(
+                invalidateQueries,
+            ).toHaveBeenCalledWith({
+                queryKey: ['collections'],
+            })
+
+            queryClient.clear()
+        },
+    )
 
 it(
     'deletes a book and invalidates book caches',

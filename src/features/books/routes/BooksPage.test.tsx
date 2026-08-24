@@ -28,10 +28,14 @@ const mockUseInfiniteBooks = vi.fn()
 const mockUseInfiniteIncompleteMetadataBooks =
     vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
+const mockUseBulkMoveBooksToShelf = vi.fn()
 
 vi.mock('../../../api/booksQueries', () => ({
     useInfiniteBooks: (options: unknown) =>
         mockUseInfiniteBooks(options),
+
+    useBulkMoveBooksToShelf: () =>
+        mockUseBulkMoveBooksToShelf(),
 }))
 
 vi.mock('../../../api/dashboardQueries', () => ({
@@ -153,6 +157,12 @@ describe('BooksPage', () => {
         mockUseInfiniteIncompleteMetadataBooks.mockReset()
         mockUseInfiniteScrollTrigger.mockReset()
         mockUseCategories.mockReset()
+        mockUseBulkMoveBooksToShelf.mockReset()
+
+        mockUseBulkMoveBooksToShelf.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+        })
 
         mockUseInfiniteScrollTrigger.mockReturnValue({
             getRowRef: () => undefined,

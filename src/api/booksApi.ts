@@ -4,6 +4,8 @@ import type {
     BookLookupResponse,
     BookRead,
     BookUpdate,
+    BulkShelfMoveRequest,
+    BulkShelfMoveResponse,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -17,6 +19,7 @@ import type {
 import {
     pickBookCreate,
     pickBookUpdate,
+    pickBulkShelfMoveRequest,
     pickCheckinRequest,
     pickCheckoutRequest,
     pickMarkReadRequest,
@@ -89,6 +92,7 @@ export function createBooksApi(
     client: ReturnType<typeof createApiClient>,
 ) {
     return {
+
         async list(
             options: ListBooksOptions = {},
         ): Promise<BookList> {
@@ -203,6 +207,18 @@ export function createBooksApi(
                     method: 'POST',
                     body: pickBookCreate(book),
                     ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async moveToShelf(
+            request: BulkShelfMoveRequest,
+        ): Promise<BulkShelfMoveResponse> {
+            return client.requestJson<BulkShelfMoveResponse>(
+                '/books/bulk/move-to-shelf',
+                {
+                    method: 'POST',
+                    body: pickBulkShelfMoveRequest(request),
                 },
             )
         },

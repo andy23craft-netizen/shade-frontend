@@ -1,6 +1,10 @@
 import { Button } from '../../../components/Button'
+import {
+    BulkMoveToShelfControl,
+} from './BulkMoveToShelfControl'
 
 interface BooksBulkActionsProps {
+    selectedBookIds: readonly string[]
     selectedCount: number
     onSelectVisible: () => void
     onClear: () => void
@@ -8,6 +12,7 @@ interface BooksBulkActionsProps {
 }
 
 export function BooksBulkActions({
+                                     selectedBookIds,
                                      selectedCount,
                                      onSelectVisible,
                                      onClear,
@@ -36,6 +41,11 @@ export function BooksBulkActions({
                 >
                     Select all loaded books
                 </Button>
+
+                <BulkMoveToShelfControl
+                    selectedBookIds={selectedBookIds}
+                    onSuccess={onClear}
+                />
 
                 <Button
                     type="button"
