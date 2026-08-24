@@ -58,7 +58,7 @@ current single-library behavior.
 | Status | Meaning beyond the OpenAPI label |
 | ------ | -------------------------------- |
 | `400`  | Malformed or empty GUID on book path `{id}` (`GET` / `PATCH` / `DELETE` / restore / |
-|        | checkout / check-in / mark-read); malformed or empty GUID on loan reads |
+|        | checkout / check-in / mark-read / cover get/upload/delete); malformed or empty GUID on loan reads |
 |        | (`GET /loans/{id}` path, or `book_id` query); |
 |        | malformed or empty `wishlist_id` / membership `wishlist_book_id` / membership `book_id` on wishlist routes; |
 |        | malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on |
@@ -72,7 +72,10 @@ current single-library behavior.
 |        | malformed or duplicate `category_id` on `GET /books`; |
 |        | create/rename/delete of system shelves `unknown` / `removed`, or rename to those names |
 | `403`  | Missing or invalid Bearer token |
-| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / bulk shelf move / second delete; |
+| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / bulk shelf move / |
+|        | cover get/upload/delete / second delete; |
+|        | no local cover and no usable ISBN cover fallback on `GET /books/{id}/cover` |
+|        | (`"Book cover not found"`); |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
 |        | unknown wishlist, unknown book when adding a wishlist membership, or unknown wishlist book on remove; |
 |        | unknown collection, unknown book when adding a collection membership, or unknown |
@@ -91,7 +94,8 @@ current single-library behavior.
 |        | unsupported wishlist membership `status`; blank `shelf_name` on book create; |
 |        | null or blank shelf `common_name` on shelf create/update; |
 |        | empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; |
-|        | blank collection `name` on create/update; non-positive `order_num` on collection add/reorder |
+|        | blank collection `name` on create/update; non-positive `order_num` on collection add/reorder; |
+|        | cover upload rejected (unsupported type, empty file, over 10 MB, or bytes/type mismatch) |
 | `500`  | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | `502`  | ISBN metadata provider transport/`5xx` failure |
 | `504`  | ISBN metadata provider timeout |
@@ -104,8 +108,9 @@ validate format, timezone, ordering, or calendar correctness. Clients should sti
 UTC timestamps as ISO 8601 (e.g., `2026-08-08T10:00:00.000Z`), because borrowing statistics parse them as datetimes.
 Malformed stored loan timestamps can later cause an unhandled **500** when those statistics run.
 
-There are no WebSocket, SSE, subscription, or push endpoints. `GET /backup` is the only streaming response (a finite
-SQL attachment).
+There are no WebSocket, SSE, subscription, or push endpoints. Non-JSON binary responses today are `GET /backup`
+(SQL attachment) and `GET /books/{id}/cover` (local image bytes, or a **307** redirect to Open Library). OpenAPI
+lists cover `GET` as **200** only; the **307** ISBN fallback is behavioral (see Book covers).
 
 List endpoints (`GET /books`, `GET /loans`, `GET /wishlists`, `GET /wishlists/{wishlist_id}/books`,
 `GET /collections`, `GET /collections/{collection_id}/books`, and `GET /dashboard/incomplete-metadata/books`) support
@@ -136,7 +141,7 @@ Soft-deleted books:
 * are omitted from `GET /books` unless `include_deleted=true` (then they count in `total` too, still only if
   shelved)
 * remain readable via `GET /books/{id}` (including `shelf_name` of `removed` and a non-null `deletion_date`)
-* are rejected by checkout, check-in, mark-read, `PATCH`, and bulk shelf move (**404**)
+* are rejected by checkout, check-in, mark-read, `PATCH`, bulk shelf move, and cover get/upload/delete (**404**)
 * keep loan and reading data
 * have shelf membership moved to the system shelf `removed` on delete; restore moves membership to `unknown`
   (the pre-delete shelf is not restored)
@@ -147,14 +152,15 @@ Deleting an on-loan book leaves its active loan open; restore the book before ch
 
 Prefer dedicated endpoints over reproducing their effects with `PATCH`:
 
-* checkout / check-in / mark-read / restore / lookup / bulk shelf move
+* checkout / check-in / mark-read / restore / lookup / bulk shelf move / cover upload or delete
 
 `PATCH` bumps `updated_date` via a SQLite trigger when the handler does not set it explicitly (the column still
 changes on successful update). Do not send `null` for DB-required fields such as `title`, `authors`, `is_read`, or
-`status`. Category membership is replaced only when `category_ids` is present: omit `category_ids` to preserve
-existing memberships, send `[]` to clear all memberships, or send a list of category GUIDs to replace them.
-`shelf_name` must not be JSON `null` on update (**422**); omit the field to leave membership unchanged. Assigning
-`shelf_name` on create or update returns **412**
+`status`. Do not set covers through create/update JSON -- `cover_image_path` is read-only on `BookRead`; use
+`PUT` / `DELETE /books/{id}/cover`. Category membership is replaced only when `category_ids` is present: omit
+`category_ids` to preserve existing memberships, send `[]` to clear all memberships, or send a list of category
+GUIDs to replace them. `shelf_name` must not be JSON `null` on update (**422**); omit the field to leave
+membership unchanged. Assigning `shelf_name` on create or update returns **412**
 `{"detail": "The book must be removed from the wishlist before it can be placed on a shelf"}` when the book is on
 any wishlist; remove the membership with `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` first (then
 assign via `PATCH` or bulk shelf move).
@@ -174,7 +180,7 @@ required.
 
 Path `{id}` must be a GUID: **400** when empty or malformed (including legacy spreadsheet codes
 like `SL-0001`); **404** when the GUID is well-formed but unknown. Soft-delete rules for
-checkout / check-in / mark-read / `PATCH` / bulk shelf move are unchanged.
+checkout / check-in / mark-read / `PATCH` / bulk shelf move / cover get/upload/delete are unchanged.
 
 Optional filters on `GET /books` form one composable catalog-query surface. Different filter types use **AND**
 semantics: a book must satisfy every supplied predicate. Filters compose with `include_deleted`, all supported
@@ -253,6 +259,57 @@ matching rows before pagination.
 For alternate-copy lookup, use the existing `isbn` filter to find copies sharing an ISBN. To look for another
 edition of the same work, use `author` and `title`; the API has no dedicated alternate-edition or work resource.
 The frontend should exclude the current book and prefer `status=available` when presenting a checkout substitute.
+
+---
+
+# Book covers
+
+Cover routes are authenticated book routes. OpenAPI documents `GET` / `PUT` / `DELETE /books/{id}/cover` and the
+multipart upload body; this section covers FE semantics OpenAPI does not fully express.
+
+`BookRead.cover_image_path` is an optional **filename** (for example `{book_id}.webp`), not a URL and not a
+browser-ready path. It is set only by successful `PUT /books/{id}/cover` and cleared by `DELETE`. Create/update
+JSON cannot set it. A non-null `cover_image_path` means a local file exists for that book; `null` does not mean "no
+cover available" -- `GET /books/{id}/cover` may still **307** to Open Library when `isbn13` is present.
+
+`PUT /books/{id}/cover`:
+
+* multipart form field name is `file` (required)
+* accepted types: JPEG, PNG, WebP only (`image/jpeg`, `image/png`, `image/webp`); max **10 MB**; empty bodies and
+  bytes that do not match the declared content type are rejected with **422** (string `detail`)
+* success returns **200** `BookRead` with updated `cover_image_path`
+* replacing a cover deletes any prior on-disk file for that book (including a different extension)
+* soft-deleted or missing book → **404** `"Book not found"`
+
+`DELETE /books/{id}/cover` removes on-disk files and clears `cover_image_path` (**204**). Soft-deleted or missing
+book → **404**.
+
+`GET /books/{id}/cover` response shapes (OpenAPI lists **200** only; treat **307** as live behavior):
+
+1. Local uploaded file → **200** with image bytes and matching `Content-Type` (`image/jpeg` / `image/png` /
+   `image/webp`)
+2. No local file, but book has `isbn13` → **307** `Location` to
+   `https://covers.openlibrary.org/b/isbn/{isbn13}-L.jpg?default=false` (public; no Bearer token needed for that
+   host)
+3. Otherwise → **404** `"Book cover not found"`
+4. Soft-deleted or missing book → **404** `"Book not found"` (same as other mutating book routes)
+
+Uploaded local covers take priority over the ISBN redirect.
+
+Browser display cannot put `Authorization` on an `<img src>`. Prefer authenticated `fetch` to
+`GET /books/{id}/cover`:
+
+* **200** → `response.blob()` and an object URL for `<img>`
+* **307** → use the `Location` header as a public image URL (or let the browser follow redirects when that fits
+  your fetch mode)
+* **404** → show a placeholder
+
+Do not invent cover URLs from `cover_image_path` alone. Do not treat Open Library redirect targets as authenticated
+API assets.
+
+Recommended cover upload: FE picks an image file → `PUT /books/{id}/cover` with `FormData` field `file` and Bearer
+auth → refresh book state from the returned `BookRead` (or re-fetch `GET /books/{id}`). On **422**, surface the
+string `detail` (type/size/mismatch). After soft-delete, cover routes return **404** until restore.
 
 ---
 
@@ -532,6 +589,8 @@ URL.revokeObjectURL(objectUrl);
 | Category picker/filter UI from `GET /categories`; submit category GUIDs as `category_ids` | Frontend |
 | Shelf catalog management UI (create / rename / edit metadata / delete empty shelves) | Frontend |
 | Bulk selection and Move to Shelf interaction; send explicit selected book IDs in one bulk request | Frontend |
+| Cover display via authenticated `GET /books/{id}/cover` (blob URL and/or **307** `Location`) | Frontend |
+| Cover upload/delete UI (`PUT`/`DELETE` multipart `file`; do not PATCH `cover_image_path`) | Frontend |
 | Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist | Frontend |
 | Collection list/create/add/reorder UI | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
@@ -540,6 +599,7 @@ URL.revokeObjectURL(objectUrl);
 | Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
 | Atomic bulk shelf movement, including validation of every selected book and destination | API |
 | Category catalog (`GET /categories`), normalized book memberships, and category intersection filtering | API |
+| Cover storage under `COVER_DIR`, `cover_image_path`, and ISBN Open Library redirect fallback | API |
 | Wishlist/shelf mutual exclusion (**412** when both would apply) | API |
 | Collections CRUD and ordered membership (`/collections`) | API |
 | Borrowing and dashboard statistics | API |
@@ -575,4 +635,9 @@ Recommended collection add: `POST /collections/{collection_id}/books` with `{ "b
 `notes`). Shelved and wishlisted books may be added without **412**. List memberships for `shelf_name` and
 `on_wishlist`; join `book_id` to `GET /books/{id}` for title/authors. Reorder with
 `PATCH /collections/{collection_id}/books/{collection_book_id}` and `{ "order_num" }`; remove with membership
+`DELETE`.
+
+Recommended cover display: authenticated `fetch` to `GET /books/{id}/cover` → on **200** use a blob object URL; on
+**307** use `Location` as a public Open Library image URL; on **404** show a placeholder. Treat non-null
+`cover_image_path` as "local file exists," not as a browser path. Upload with `PUT` multipart `file`; clear with
 `DELETE`.
