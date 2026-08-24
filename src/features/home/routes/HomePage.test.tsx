@@ -360,10 +360,13 @@ describe('HomePage', () => {
         )
 
         expect(
-            screen.getByText(
-                'Find something worth reading.',
-            ),
-        ).toBeInTheDocument()
+            screen.getByRole('link', {
+                name: 'About Shade Library',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/about',
+        )
 
         await waitFor(() => {
             expect(document.title).toBe(

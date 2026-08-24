@@ -1226,10 +1226,8 @@
 .home-page__intro {
   display: grid;
   justify-items: center;
-  width: min(100%, 52rem);
+  width: 100%;
   margin-inline: auto;
-  padding-block:
-          clamp(var(--space-5), 5vw, var(--space-8));
   text-align: center;
 }
 
@@ -1282,6 +1280,54 @@
   );
 
   opacity: 0.82;
+}
+
+.home-page__hero-link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: min(100%, 52rem);
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.home-page__hero-link::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+
+  background:
+          linear-gradient(
+                  115deg,
+                  transparent 38%,
+                  rgb(255 244 190 / 0%) 43%,
+                  rgb(255 244 190 / 35%) 49%,
+                  rgb(255 255 225 / 55%) 50%,
+                  rgb(255 244 190 / 35%) 51%,
+                  rgb(255 244 190 / 0%) 57%,
+                  transparent 62%
+          );
+
+  transform: translateX(-75%);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.home-page__hero-link:hover::after,
+.home-page__hero-link:focus-visible::after {
+  opacity: 1;
+  transform: translateX(75%);
+  transition:
+          transform 900ms ease,
+          opacity 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page__hero-link::after {
+    display: none;
+  }
 }
 
 .home-page__tagline {
@@ -1341,6 +1387,47 @@
   .home-category-drawers {
     grid-template-columns: 1fr;
   }
+}
+
+.home-page__hero-link {
+  display: block;
+  width: min(100%, 52rem);
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.home-page__hero-link:hover {
+  background: transparent;
+}
+
+.home-page__hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.home-page__quote {
+  position: relative;
+  z-index: 1;
+  max-width: 38rem;
+  margin:
+          var(--space-5)
+          auto
+          0;
+
+  color: var(--color-text);
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.home-page__quote cite {
+  font-style: normal;
+  white-space: nowrap;
 }
 
 .book-details-card {

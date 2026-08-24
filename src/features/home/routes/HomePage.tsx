@@ -34,6 +34,7 @@ import {
 import {
     HomeRecentBook,
 } from '../components/HomeRecentBook'
+import shadeLibrarySign from '../../../assets/Shade_Library_Hero.webp'
 
 const STAFF_PICKS_NAME = 'Staff Picks'
 
@@ -102,18 +103,24 @@ export function HomePage() {
     return (
         <section className="route-page home-page">
             <div className="home-page__intro">
-                <h1 tabIndex={-1}>
+                <AppLink
+                    to="/about"
+                    className="home-page__hero-link"
+                    aria-label="About Shade Library"
+                >
+                    <img
+                        src={shadeLibrarySign}
+                        alt=""
+                        className="home-page__hero-image"
+                    />
+                </AppLink>
+
+                <h1
+                    className="sr-only"
+                    tabIndex={-1}
+                >
                     Shade Library
                 </h1>
-
-                <div
-                    className="home-page__title-rule"
-                    aria-hidden="true"
-                />
-
-                <p className="home-page__tagline">
-                    Find something worth reading.
-                </p>
 
                 <p className="home-page__quote">
                     A book must be the axe for the frozen sea
