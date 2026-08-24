@@ -2,11 +2,20 @@
 
 ## Objective
 
-Investigate and, only if low-risk, add book cover art to Book Details using data already available on `BookRead`, preferably ISBN.
+Investigate and, only if low-risk, add book cover art to Book Details using data already available on `BookRead`,
+preferably `isbn13`.
 
-This ticket is a **stretch goal**. V1 completion does not depend on it.
+This ticket is a **stretch goal**. V1 completion does not depend on it (FEAT-35 must not block on this work).
 
 Stop and defer rather than creating a new image infrastructure project.
+
+## Current status
+
+Not started in the SPA.
+
+- `BookRead` exposes nullable `isbn13` and has no cover URL / image field.
+- `BookDetailsPage` (`/books/:bookId`) renders metadata and actions with no cover image, placeholder, or resolver.
+- No cover helper, provider client, or cover-related styles/tests exist under `src/`.
 
 ## Release rule
 
@@ -25,13 +34,13 @@ Defer implementation if reliable cover support requires:
 
 Before writing product code, identify a candidate source and document:
 
-- how it resolves a cover from existing book data;
-- whether ISBN-10/ISBN-13 handling is reliable enough;
+- how it resolves a cover from existing book data (`BookRead.isbn13` is the primary candidate);
+- whether ISBN-10/ISBN-13 handling is reliable enough given stored `isbn13` only;
 - HTTPS support;
 - URL stability;
 - terms/attribution requirements;
 - relevant request/rate limits;
-- behavior for unknown ISBNs and missing covers;
+- behavior for missing `isbn13`, unknown ISBNs, and missing covers;
 - whether direct browser requests are acceptable.
 
 Use current provider documentation; do not rely on stale assumptions.
@@ -40,7 +49,7 @@ Use current provider documentation; do not rely on stale assumptions.
 
 ### Book Details integration
 
-- Cover loading is independent from the core Book Details API request.
+- Cover loading is independent from the core `useBook` / Book Details API request.
 - The title/actions/details remain usable while a cover loads or fails.
 - Render a cover only when confidently available.
 - Missing ISBN, no cover, network failure, and broken image must all have deterministic behavior.
@@ -73,15 +82,18 @@ Book Details must remain stable with:
 
 ## Likely implementation areas
 
+Verify before editing.
+
 | Area | Expected change |
 | --- | --- |
-| cover resolver/helper | ISBN -> provider URL/request state, no secret material. |
-| Book Details | Non-blocking image/fallback rendering. |
-| styles | Stable responsive cover/details layout. |
-| tests | URL resolution, missing ISBN, load failure/fallback, accessibility behavior. |
+| cover resolver/helper (new, e.g. under `src/features/books/`) | `isbn13` -> provider URL/request state; no secret material. |
+| `src/features/books/routes/BookDetailsPage.tsx` | Non-blocking image/fallback rendering beside existing card layout. |
+| `src/styles/components.css` (`.book-details-*`) | Stable responsive cover/details layout. |
+| colocated tests | URL resolution, missing ISBN, load failure/fallback, accessibility behavior. |
 | docs | Record provider dependency/attribution if implementation ships. |
 
-Do not add a global image cache/library unless the investigation proves it is already necessary and still within the ticket's release rule; otherwise defer.
+Do not add a global image cache/library unless the investigation proves it is already necessary and still within the
+ticket's release rule; otherwise defer.
 
 ## Acceptance criteria if implemented
 

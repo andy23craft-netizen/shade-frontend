@@ -1,6 +1,6 @@
 {
   "name": "shade-frontend",
-  "version": "0.2.29",
+  "version": "0.2.33",
   "private": true,
   "type": "module",
   "packageManager": "yarn@4.18.0",
