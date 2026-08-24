@@ -11,8 +11,8 @@ interface HomeBookCarouselProps {
     children: ReactNode
 }
 
-const AUTO_ADVANCE_MS = 5000
-const INTERACTION_PAUSE_MS = 8000
+const AUTO_ADVANCE_MS = 4000
+const INTERACTION_PAUSE_MS = 6000
 
 export function HomeBookCarousel({
                                      ariaLabel,

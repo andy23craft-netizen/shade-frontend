@@ -35,6 +35,13 @@ import {
     HomeRecentBook,
 } from '../components/HomeRecentBook'
 import shadeLibrarySign from '../../../assets/Shade_Library_Hero.webp'
+import {
+    useState,
+} from 'react'
+
+import {
+    randomHomeQuote,
+} from '../homeQuotes'
 
 const STAFF_PICKS_NAME = 'Staff Picks'
 
@@ -50,6 +57,15 @@ export function HomePage() {
 
     const recentBooksQuery =
         useRecentBooks()
+
+    const [quote] = useState(
+        randomHomeQuote,
+    )
+
+    const [
+        quoteContextOpen,
+        setQuoteContextOpen,
+    ] = useState(false)
 
     const staffPicksCollection =
         collectionsQuery.data?.items.find(
@@ -122,12 +138,133 @@ export function HomePage() {
                     Shade Library
                 </h1>
 
-                <p className="home-page__quote">
-                    A book must be the axe for the frozen sea
-                    within us.
-                    <cite> — Franz Kafka</cite>
-                </p>
+                <div className="home-page__quote">
+                    <button
+                        type="button"
+                        className="home-page__quote-trigger"
+                        aria-expanded={quoteContextOpen}
+                        aria-controls="home-quote-context"
+                        onClick={() => {
+                            setQuoteContextOpen(
+                                (current) => !current,
+                            )
+                        }}
+                    >
+        <span className="home-page__quote-text">
+            {quote.text}
+        </span>
+
+                        <cite className="home-page__quote-author">
+                            — {quote.author}
+                        </cite>
+                    </button>
+
+                    {quoteContextOpen ? (
+                        <p
+                            id="home-quote-context"
+                            className="home-page__quote-context"
+                        >
+                            {quote.context}
+                        </p>
+                    ) : null}
+                </div>
             </div>
+
+            <section
+                aria-labelledby="home-recent-heading"
+            >
+                <h2 id="home-recent-heading">
+                    New Additions
+                </h2>
+
+                {recentBooksQuery.isPending ? (
+                    <LoadingState label="Loading new additions…" />
+                ) : null}
+
+                {recentBooksQuery.isError ? (
+                    <p role="alert">
+                        New additions could not be
+                        loaded.
+                    </p>
+                ) : null}
+
+                {!recentBooksQuery.isPending &&
+                !recentBooksQuery.isError &&
+                recentBooks.length === 0 ? (
+                    <p>
+                        No new additions are
+                        available yet.
+                    </p>
+                ) : null}
+
+                {recentBooks.length > 0 ? (
+                    <HomeBookCarousel ariaLabel="New additions books">
+                        {recentBooks.map(
+                            (book) => (
+                                <HomeRecentBook
+                                    key={book.id}
+                                    book={book}
+                                />
+                            ),
+                        )}
+                    </HomeBookCarousel>
+                ) : null}
+            </section>
+
+            <section
+                aria-labelledby="home-categories-heading"
+            >
+                <h2 id="home-categories-heading">
+                    Browse the Stacks
+                </h2>
+
+                {categoriesPending ? (
+                    <LoadingState label="Loading categories…" />
+                ) : null}
+
+                {categoriesError ? (
+                    <p role="alert">
+                        Featured categories could
+                        not be loaded.
+                    </p>
+                ) : null}
+
+                {!categoriesPending &&
+                !categoriesError &&
+                categories.length === 0 ? (
+                    <p>
+                        No featured categories are
+                        available yet.
+                    </p>
+                ) : null}
+
+                {categories.length > 0 ? (
+                    <ul className="home-category-drawers">
+                        {categories.map(
+                            (category) => (
+                                <HomeCategoryDrawer
+                                    key={
+                                        category.categoryId
+                                    }
+                                    name={
+                                        category.name
+                                    }
+                                    count={
+                                        category.count
+                                    }
+                                    href={homeCategoryHref(
+                                        category.categoryId,
+                                    )}
+                                />
+                            ),
+                        )}
+                    </ul>
+                ) : null}
+
+                <AppLink to="/books">
+                    Browse All Books
+                </AppLink>
+            </section>
 
             <section
                 aria-labelledby="home-staff-picks-heading"
@@ -192,102 +329,6 @@ export function HomePage() {
                 <AppLink to="/collections">
                     Browse Collections
                 </AppLink>
-            </section>
-
-            <section
-                aria-labelledby="home-categories-heading"
-            >
-                <h2 id="home-categories-heading">
-                    Browse the Stacks
-                </h2>
-
-                {categoriesPending ? (
-                    <LoadingState label="Loading categories…" />
-                ) : null}
-
-                {categoriesError ? (
-                    <p role="alert">
-                        Featured categories could
-                        not be loaded.
-                    </p>
-                ) : null}
-
-                {!categoriesPending &&
-                !categoriesError &&
-                categories.length === 0 ? (
-                    <p>
-                        No featured categories are
-                        available yet.
-                    </p>
-                ) : null}
-
-                {categories.length > 0 ? (
-                    <ul className="home-category-drawers">
-                        {categories.map(
-                            (category) => (
-                                <HomeCategoryDrawer
-                                    key={
-                                        category.categoryId
-                                    }
-                                    name={
-                                        category.name
-                                    }
-                                    count={
-                                        category.count
-                                    }
-                                    href={homeCategoryHref(
-                                        category.categoryId,
-                                    )}
-                                />
-                            ),
-                        )}
-                    </ul>
-                ) : null}
-
-                <AppLink to="/books">
-                    Browse All Books
-                </AppLink>
-            </section>
-
-            <section
-                aria-labelledby="home-recent-heading"
-            >
-                <h2 id="home-recent-heading">
-                    New Additions
-                </h2>
-
-                {recentBooksQuery.isPending ? (
-                    <LoadingState label="Loading new additions…" />
-                ) : null}
-
-                {recentBooksQuery.isError ? (
-                    <p role="alert">
-                        New additions could not be
-                        loaded.
-                    </p>
-                ) : null}
-
-                {!recentBooksQuery.isPending &&
-                !recentBooksQuery.isError &&
-                recentBooks.length === 0 ? (
-                    <p>
-                        No new additions are
-                        available yet.
-                    </p>
-                ) : null}
-
-                {recentBooks.length > 0 ? (
-                    <HomeBookCarousel ariaLabel="New additions books">
-                        {recentBooks.map(
-                            (book) => (
-                                <HomeRecentBook
-                                    key={book.id}
-                                    book={book}
-                                />
-                            ),
-                        )}
-                    </HomeBookCarousel>
-                ) : null}
             </section>
 
             <nav aria-label="Home shortcuts">
