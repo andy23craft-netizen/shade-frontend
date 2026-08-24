@@ -13,31 +13,28 @@ introduce new product scope.
 Gate not yet passed.
 
 Product blockers FEAT-27 through FEAT-33 are implemented in the SPA (those ticket files are removed). FEAT-34 cover
-images remain optional stretch and are not started. Unit/integration coverage and mock-backed Playwright journeys exist
-for much of the surface, but this ticket still requires contract/environment validation against the final V1 backend
-and rebuilt database, plus an authoritative `make check` / acceptance record.
+images remain optional stretch: backend `GET` / `PUT` / `DELETE /books/{id}/cover` and `BookRead.cover_image_path` are
+in the checked-in contract (OpenAPI `0.2.10`); SPA helpers and Book Details cover UI are not started. Unit/integration
+coverage and mock-backed Playwright journeys (`e2e/`) exist for much of the surface, but this ticket still requires
+contract/environment validation against the final V1 backend and rebuilt database, plus an authoritative `make check` /
+acceptance record.
 
 Do not declare V1 complete from fixture/mock evidence alone.
 
 ## Dependencies
 
-Required blocker features are complete in the SPA:
+Required SPA product blockers (FEAT-27 through FEAT-33) are complete.
 
-- FEAT-27 Curated Collections;
-- FEAT-28 Collections follow-up;
-- FEAT-29 Dynamic multi-category frontend support;
-- FEAT-30 V1 catalog filter plumbing;
-- FEAT-31 Bulk-selection framework;
-- FEAT-32 Atomic bulk move to shelf (`POST /books/bulk/move-to-shelf`);
-- FEAT-33 Home discovery page (`/` Home, `/about` About).
+Also required before calling the gate passed:
 
-Also required:
-
-- final backend category/filter/Collections contracts are deployed to the validation environment;
+- final backend category / filter / Collections / bulk-move / cover contracts are deployed to the validation
+  environment;
 - final V0 -> V1 database rebuild/import is complete;
-- checked-in OpenAPI matches the backend being validated.
+- checked-in OpenAPI (`docs/technical-reference/openapi.json`, currently `info.version` `0.2.10`) matches the backend
+  being validated (compare running `/openapi.json`).
 
-FEAT-34 cover images is optional and must not block this ticket.
+FEAT-34 cover UI is optional and must not block this ticket. Absence of cover display is expected unless FEAT-34 ships
+separately; do not invent FE-only cover clients or `cover_image_path` browser URLs during gate fixes.
 
 ## Contract and environment checks
 
@@ -47,19 +44,22 @@ Before product regression:
 2. verify running `/openapi.json` against the checked-in frontend contract
    (`docs/technical-reference/openapi.json`);
 3. regenerate generated TypeScript types only if the checked-in contract intentionally changed
-   (`src/api/generated/openapi.ts`);
-4. ensure no handwritten API/query layer still assumes an obsolete contract;
+   (`yarn api:generate` → `src/api/generated/openapi.ts`);
+4. ensure no handwritten API/query layer still assumes an obsolete contract (singular `category` / `?category=`,
+   non-atomic bulk shelf loops, inventing cover URLs from `cover_image_path`, etc.);
 5. use the final rebuilt V1 data, not an older pre-migration development database.
 
 ## Required regression scenarios
 
 ### Home and browsing
 
-- `/` -> featured category -> correctly filtered Books (`/books?category_id=`).
+- `/` -> featured category -> correctly filtered Books (`/books?category_id=` via `homeCategoryHref`).
+- Home New Additions / Staff Picks / secondary Browse, Collections, Wishlists, and About links remain reachable.
 - Back/forward and refresh preserve the filtered destination.
-- `/about` preserves the relocated About content (`AboutPage` + `CatalogGuide`).
-- Books supports at least two composed filters plus sorting (centralized `booksListModel` URL state).
-- Multi-category filtering follows backend AND/intersection semantics (repeated `category_id`).
+- `/about` preserves the relocated About content (`AboutPage` + `CatalogGuide`); brand recovers to `/` (Home).
+- Books URL state (`booksListModel`) supports composed filters plus sorting: at least multi-`category_id` (AND /
+  intersection), author, title, and sort; also verify URL-backed `shelf_name`, `is_read`, `isbn`, and
+  `cleanup_field` deep links where applicable.
 - No-match and empty-library states remain distinct.
 - Shelf -> canonical shelf-filtered Books view (`/books?shelf_name=`).
 - Existing hardware ISBN collection jump still works on `/dashboard`, `/books`, and `/loans`.
@@ -67,16 +67,16 @@ Before product regression:
 ### Category model
 
 - Add Book with multiple categories (`category_ids` from `GET /categories`).
-- Edit Book add/remove categories.
+- Edit Book add/remove/clear categories (`category_ids: []` clears).
 - Books list and Book Details display multiple categories (`formatBookCategories`).
 - Dynamic category options come from the backend (no hard-coded taxonomy).
-- Dashboard category breakdown remains backend-driven.
+- Dashboard category breakdown remains backend-driven; incomplete-metadata "missing category" means no memberships.
 
 ### Collections
 
 - Create a collection.
 - Edit its name/description (`useUpdateCollection`; blank description clears via explicit `null`).
-- Add at least two existing catalog books.
+- Add at least two existing catalog books (shelved search via `GET /books`, then membership `POST`).
 - Reorder memberships.
 - Remove one membership.
 - Add the current Book Details book to a collection (`AddBookToCollectionDialog`).
@@ -88,10 +88,11 @@ Before product regression:
 ### Wishlists
 
 - Create/use existing wishlist flow.
-- Unshelved wishlist behavior remains distinct from Collections.
+- Unshelved wishlist behavior remains distinct from Collections (memberships joined via `GET /books/{id}`, not
+  `GET /books`).
 - Move a wishlist book to a shelf still performs its documented lifecycle (membership `DELETE` then
-  `PATCH { shelf_name }`).
-- Collection changes have not reintroduced shelf/wishlist overlap mistakes.
+  `PATCH { shelf_name }`; partial-failure retry via `membershipRemoved`).
+- Collection changes have not reintroduced shelf/wishlist overlap mistakes (**412** exclusivity).
 
 ### Bulk shelf movement
 
@@ -108,22 +109,21 @@ Bulk move is **atomic** (`POST /books/bulk/move-to-shelf`). Do not expect per-ro
 
 ### Existing library lifecycle
 
-Re-run existing critical flows after category/filter changes:
+Re-run existing critical flows against the final V1 backend/database:
 
-- manual Add Book;
+- manual Add Book (and ISBN / camera create paths if the environment supports them);
 - Book Details;
 - edit;
 - checkout on Book Details (`CheckoutDialog`; `/checkout` remains a compatibility redirect only);
 - Loans/check-in (`CheckinForm` on `/loans`; `/checkin` remains a compatibility redirect only);
-- mark read;
-- delete;
-- restore;
+- mark read / edit reading;
+- delete / restore;
 - wishlist move-to-shelf;
 - Collections membership;
-- Dashboard/healing metadata refresh behavior.
+- Dashboard/healing metadata refresh and cleanup deep links.
 
 Dedicated lifecycle endpoints remain authoritative; do not replace them with generic PATCH shortcuts during
-regression fixes.
+regression fixes. Soft-deleted books reject lifecycle and cover routes (**404**) as documented.
 
 ### Navigation, accessibility, responsive behavior
 
@@ -139,7 +139,8 @@ Verify:
 - 320 px layouts for changed surfaces;
 - top-level route error recovery.
 
-Use the existing accessibility/e2e architecture rather than creating a parallel test harness.
+Use the existing accessibility/e2e architecture rather than creating a parallel test harness. Record unavailable
+manual browser environments explicitly (see AGENTS evergreen browser table) rather than assuming they passed.
 
 ## Automated release gate
 
@@ -148,8 +149,8 @@ The authoritative project-wide gate must pass via `make check` (`yarn check`), i
 - lint;
 - strict type checking;
 - generated OpenAPI drift checking (`yarn api:check`);
-- Vitest suite and enforced coverage thresholds;
-- Playwright journeys;
+- Vitest suite and enforced coverage thresholds (statements 87%, branches 80%, functions 92%, lines 87%);
+- Playwright journeys (`yarn test:e2e`);
 - automated axe checks;
 - production build;
 - bundle-size enforcement (soft warn 120 kB gzip main entry; hard fail 150 kB).
@@ -171,19 +172,16 @@ Update only the frontend-owned current documentation needed to describe the fina
 At minimum review:
 
 - `README.md`;
-- `docs/ToDo.md`;
-- `docs/AGENTS.md` / `docs/full-project-context.md` if those are part of the repository's normal completion workflow.
+- `docs/AGENTS.md` / `docs/full-project-context.md` if those are part of the repository's normal completion workflow;
+- ticket presence under `docs/tickets/` (prefer over stale `docs/ToDo.md` when judging what remains open).
 
 Documentation should reflect:
 
-- Home `/`;
-- About `/about`;
-- final category/filter behavior;
-- shelf deep links;
-- Collections;
-- Book Details add-to-collection;
+- Home `/` (discovery) and About `/about`;
+- final category / filter / shelf / `is_read` / cleanup deep-link behavior;
+- Collections and Book Details add-to-collection;
 - atomic bulk shelf movement;
-- optional cover-image status (FEAT-34 still open / not started unless that changes).
+- optional cover-image status (FEAT-34: backend contract ready; SPA UI not started unless that changes).
 
 Do not claim unavailable browser/platform validation passed.
 
@@ -214,7 +212,7 @@ At completion, record each major scenario in the ticket using the repository's n
 Also record:
 
 - backend/database version or identifying revision used for smoke testing;
-- frontend commit/release version;
+- frontend commit/release version (`package.json` `version`);
 - `make check` result;
 - production build/bundle result;
 - browser/manual environments actually tested;
@@ -228,3 +226,5 @@ Also record:
 - New deployment infrastructure owned outside the frontend repository.
 - Making cover images a release blocker.
 - Claiming the gate passed from mock/fixture suites alone.
+- Inventing FE-only cover providers or `cover_image_path` browser URLs.
+)
