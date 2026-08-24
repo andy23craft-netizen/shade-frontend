@@ -19,11 +19,19 @@ import { AboutPage } from '../features/about/routes/AboutPage'
 import { ManageCollectionPage } from '../features/collection/routes/ManageCollectionPage'
 import { WishlistsPage } from '../features/wishlists/routes/WishlistsPage'
 import { CollectionsPage } from '../features/collections/routes/CollectionsPage'
+import { HomePage } from '../features/home/routes/HomePage'
 
 export const routeConfig = [
     {
         element: <AppShell />,
         children: [
+            {
+                path: routeMetadata.home.path,
+                handle: {
+                    title: routeMetadata.home.title,
+                },
+                element: <HomePage />,
+            },
             {
                 path: routeMetadata.about.path,
                 handle: {

@@ -90,14 +90,20 @@ describe('AppShell layout and navigation', () => {
             'true',
         )
 
+        const primaryNav = within(
+            screen.getByRole('navigation', {
+                name: 'Primary navigation',
+            }),
+        )
+
         expect(
-            screen.getByRole('link', {
+            primaryNav.getByRole('link', {
                 name: 'Browse',
             }),
         ).toHaveAttribute('href', '/books')
 
         expect(
-            screen.getByRole('link', {
+            primaryNav.getByRole('link', {
                 name: 'Manage',
             }),
         ).toHaveAttribute(
@@ -106,13 +112,16 @@ describe('AppShell layout and navigation', () => {
         )
 
         expect(
-            screen.getByRole('link', {
+            primaryNav.getByRole('link', {
                 name: 'Wishlists',
             }),
-        ).toHaveAttribute('href', '/wishlists')
+        ).toHaveAttribute(
+            'href',
+            '/wishlists',
+        )
 
         expect(
-            screen.getByRole('link', {
+            primaryNav.getByRole('link', {
                 name: 'Collections',
             }),
         ).toHaveAttribute(
@@ -121,11 +130,7 @@ describe('AppShell layout and navigation', () => {
         )
 
         expect(
-            within(
-                screen.getByRole('navigation', {
-                    name: 'Primary navigation',
-                }),
-            ).queryByRole('link', {
+            primaryNav.queryByRole('link', {
                 name: /backup/i,
             }),
         ).not.toBeInTheDocument()

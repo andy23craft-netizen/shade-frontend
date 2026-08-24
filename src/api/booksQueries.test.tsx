@@ -43,6 +43,7 @@ import {
     useCheckinBook,
     useMarkBookRead,
     useInfiniteBooks,
+    useRecentBooks,
 } from './booksQueries'
 
 const mockList = vi.fn()
@@ -191,6 +192,46 @@ describe('book queries', () => {
                 sortOrder: 'desc',
             }),
         )
+
+        queryClient.clear()
+    })
+
+    it('loads the ten newest books for Home discovery', async () => {
+        const books: BookList = {
+            items: [],
+            total: 10,
+        }
+
+        mockList.mockResolvedValueOnce(books)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const { result } = renderHook(
+            () => useRecentBooks(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                result.current.isSuccess,
+            ).toBe(true),
+        )
+
+        expect(mockList).toHaveBeenCalledWith(
+            expect.objectContaining({
+                skip: 0,
+                take: 10,
+                sortBy: 'creationDate',
+                sortOrder: 'desc',
+            }),
+        )
+
+        expect(result.current.data).toEqual(books)
 
         queryClient.clear()
     })

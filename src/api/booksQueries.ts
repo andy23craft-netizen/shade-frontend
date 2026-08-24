@@ -281,6 +281,20 @@ export function useBook(
     })
 }
 
+export function useRecentBooks(
+    options: {
+        enabled?: boolean
+    } = {},
+) {
+    return useBooks({
+        skip: 0,
+        take: 10,
+        sortBy: 'creationDate',
+        sortOrder: 'desc',
+        enabled: options.enabled,
+    })
+}
+
 export function useBookLookup(
     isbn: string,
 ) {

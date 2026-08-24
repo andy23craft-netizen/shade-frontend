@@ -18,26 +18,29 @@ assume this document replaces the ticket or the checked-in API contract.
 
 Load only what the task needs.
 
-
 Always:
-  - this Master Implementation Context
-  - the current feature ticket, when one exists
+
+- this Master Implementation Context;
+- the current feature ticket, when one exists.
 
 If work touches API behavior:
-  - docs/technical-reference/openapi.json
-  - docs/technical-reference/API-for-FE.md
-  - running backend /openapi.json when drift verification is useful
+
+- `docs/technical-reference/openapi.json`;
+- `docs/technical-reference/API-for-FE.md`;
+- running backend `/openapi.json` when drift verification is useful.
 
 If UI/design is in question:
-  - docs/product-docs/UI_DESIGN_NOTES.MD
+
+- `docs/product-docs/UI_DESIGN_NOTES.MD`.
 
 If repository contents are not visible:
-  - request only the minimum exact files / command output needed
+
+- request only the minimum exact files / command output needed.
 
 If deployment / packaging is involved:
-  - README.md
-  - docs/MAINTAINERS.md when production-host ownership matters
 
+- `README.md`;
+- `docs/MAINTAINERS.md` when production-host ownership matters.
 
 Do not paste a full API re-synthesis or large requirements documents into every
 conversation. Prefer the checked-in contract and the minimum relevant source
@@ -54,18 +57,18 @@ still has exactly the shape described here.
 
 Unless the relevant current file or command output is available:
 
-* Do not pretend to have inspected it.
-* Do not invent current implementation details.
-* Do not assume a planned file exists.
-* Do not tell the user to edit unseen code when its current contents matter.
-* Ask for the minimum repository evidence required to continue safely.
+- do not pretend to have inspected it;
+- do not invent current implementation details;
+- do not assume a planned file exists;
+- do not tell the user to edit unseen code when its current contents matter;
+- ask for the minimum repository evidence required to continue safely.
 
 When files are needed, give a concise **What I need from you** list with:
 
-* exact paths;
-* why each file is needed;
-* whether the entire file or a section is enough;
-* exact terminal commands when command output is better than a file.
+- exact paths;
+- why each file is needed;
+- whether the entire file or a section is enough;
+- exact terminal commands when command output is better than a file.
 
 Do not request the whole repository.
 
@@ -96,13 +99,13 @@ Prefer:
 
 Provide:
 
-* exact file paths;
-* complete copy/pasteable snippets;
-* explicit "add this after X" / "replace Y with Z" instructions;
-* complete contents when creating a new file;
-* exact terminal commands;
-* expected results;
-* manageable implementation steps.
+- exact file paths;
+- complete copy/pasteable snippets;
+- explicit "add this after X" / "replace Y with Z" instructions;
+- complete contents when creating a new file;
+- exact terminal commands;
+- expected results;
+- manageable implementation steps.
 
 Do not say "update the component accordingly."
 
@@ -123,19 +126,19 @@ Do not silently expand the scope of the current ticket.
 
 ## Stack
 
-* React 19
-* TypeScript 6 strict
-* Vite 8
-* React Router 7
-* TanStack React Query 5
-* generated OpenAPI TypeScript types
-* Yarn 4 / Corepack
-* Node.js 26.7.0
-* ESLint flat config
-* Vitest + Testing Library + jsdom
-* Playwright + axe
-* plain CSS with project design tokens
-* native ESM
+- React 19
+- TypeScript 6 strict
+- Vite 8
+- React Router 7
+- TanStack React Query 5
+- generated OpenAPI TypeScript types
+- Yarn 4 / Corepack
+- Node.js 26.7.0
+- ESLint flat config
+- Vitest + Testing Library + jsdom
+- Playwright + axe
+- plain CSS with project design tokens
+- native ESM
 
 No Next.js, Tailwind, component library, Redux/alternate state store, or form
 library.
@@ -146,9 +149,9 @@ Separate FastAPI repository.
 
 Default local URL:
 
-
+```text
 http://127.0.0.1:8000
-
+````
 
 No `/api` prefix.
 
@@ -159,7 +162,14 @@ docs/technical-reference/openapi.json
 docs/technical-reference/API-for-FE.md
 ```
 
-Checked-in OpenAPI baseline is currently `0.2.8`.
+Generated types:
+
+```text
+src/api/generated/openapi.ts
+```
+
+Regenerate generated types from the checked-in OpenAPI contract; never edit
+them manually.
 
 ---
 
@@ -173,26 +183,26 @@ Current registered product routes include:
 
 ```text
 /
- /dashboard
- /books
- /books/new
- /books/:bookId
- /books/:bookId/edit
- /books/:bookId/delete
- /books/:bookId/mark-read
- /books/:bookId/reading
- /collection/manage
- /collections
- /wishlists
- /shelves
- /loans
- /admin/deleted
- /checkout        compatibility redirect
- /checkin         compatibility redirect
- *
+/dashboard
+/books
+/books/new
+/books/:bookId
+/books/:bookId/edit
+/books/:bookId/delete
+/books/:bookId/mark-read
+/books/:bookId/reading
+/collection/manage
+/collections
+/wishlists
+/shelves
+/loans
+/admin/deleted
+/checkout        compatibility redirect
+/checkin         compatibility redirect
+*
 ```
 
-### Navigation
+## Navigation
 
 * `/` is the About page.
 * Dashboard is `/dashboard`.
@@ -246,8 +256,8 @@ window.__SHADE_CONFIG__
 
 including:
 
-* `apiBaseUrl`
-* optional diagnostics configuration
+* `apiBaseUrl`;
+* optional diagnostics configuration.
 
 Application version comes from `package.json` via `APP_VERSION`, not runtime
 config.
@@ -275,7 +285,7 @@ Do not use `/protected` as the startup health check.
 
 Reuse `src/api/apiClient.ts`.
 
-It already handles:
+It handles:
 
 * Bearer auth;
 * `Library-Username`;
@@ -292,14 +302,6 @@ Do not invent a second transport layer.
 
 # 6. API / React Query architecture
 
-Generated OpenAPI types live under:
-
-```text
-src/api/generated/openapi.ts
-```
-
-Regenerate them; never hand-edit them.
-
 Shared API/types/query infrastructure includes:
 
 ```text
@@ -310,6 +312,7 @@ src/api/apiErrors.ts
 src/api/apiRedaction.ts
 src/api/queryKeys.ts
 src/api/requestFields.ts
+src/api/generated/openapi.ts
 ```
 
 Server state uses React Query. Extend existing query-key families and hooks;
@@ -338,9 +341,9 @@ src/features/books/components/BooksListControls.tsx
 src/features/books/routes/BooksPage.tsx
 ```
 
-## Current URL-backed filtering
+## URL-backed filtering
 
-The Books list now supports:
+Books currently understands:
 
 ```text
 category_id   repeated, AND semantics
@@ -353,8 +356,6 @@ cleanup_field
 sortBy
 sortOrder
 ```
-
-### Visible controls
 
 Visible Books controls include:
 
@@ -369,19 +370,7 @@ Visible Books controls include:
 * Sort field
 * Sort direction
 
-Read status maps to:
-
-```text
-/books?is_read=true
-/books?is_read=false
-```
-
-Clearing Read status removes the parameter.
-
-### Intentionally hidden filters
-
-`shelf_name` is URL-driven only. There is no visible shelf filter on the Books
-page.
+`shelf_name` is URL-driven rather than a visible general Books filter.
 
 Example:
 
@@ -389,15 +378,11 @@ Example:
 /books?shelf_name=e4
 ```
 
-The page shows a contextual shelf-filter notice and a clear action.
-
 Shelf and Read may compose:
 
 ```text
 /books?shelf_name=e4&is_read=false
 ```
-
-### ISBN
 
 ISBN remains URL/hardware-driven rather than a typed filter control.
 
@@ -431,20 +416,93 @@ While `cleanup_field` is active:
 * ordinary Books filter controls are hidden;
 * the normal catalog query is disabled;
 * the cleanup infinite query supplies the list;
-* a contextual "Showing books missing …" notice appears;
+* a contextual missing-field notice appears;
 * Clear cleanup filter returns to normal Books browsing;
 * stale ISBN/shelf notices are not shown;
 * ISBN unique-auto-open does not run.
 
 The same normal Book cards/details navigation are reused.
 
-## Remaining filter note
+## Bulk selection
 
-This session plumbed `shelf_name` and `is_read`.
+Books supports explicit bulk-selection mode.
 
-A visible/general `status` filter was **not** added during this work. If the
-current FEAT-30 ticket still requires `status`, verify that acceptance criterion
-before declaring FEAT-30 complete.
+Relevant implementation:
+
+```text
+src/features/books/useBulkSelection.ts
+src/features/books/utils/bulkSelectionModel.ts
+src/features/books/components/BookSelectionControl.tsx
+src/features/books/components/BooksBulkActions.tsx
+src/features/books/routes/BooksPage.tsx
+```
+
+Behavior:
+
+* selection controls are absent until bulk-selection mode is entered;
+* individual loaded books can be selected/deselected;
+* Select All selects currently loaded eligible books only;
+* Clear Selection clears the current selection;
+* exiting selection mode clears selection;
+* changing catalog filter identity clears selection;
+* sorting alone preserves selection;
+* selection is ID-based rather than tied to card instances.
+
+Do not silently change Select All into an all-pages/server-wide operation.
+
+## Bulk move to shelf
+
+Bulk-selected Books may be moved to a destination shelf through the backend
+atomic mutation:
+
+```text
+POST /books/bulk/move-to-shelf
+```
+
+Request:
+
+```json
+{
+  "book_ids": ["..."],
+  "shelf_name": "a1"
+}
+```
+
+Response includes:
+
+```text
+book_ids
+moved_count
+shelf_name
+```
+
+Frontend support includes:
+
+```text
+booksApi bulk move method
+useBulkMoveBooksToShelf
+BulkMoveToShelfControl
+BooksBulkActions
+```
+
+Behavior:
+
+* destination shelves come from the live shelf catalog;
+* `unknown` is assignable;
+* `removed` is excluded from ordinary assignment;
+* no destination is assumed automatically;
+* Move to Shelf stays disabled until a destination is chosen;
+* confirmation displays selected-book count and destination;
+* all selected IDs are sent in one atomic backend request;
+* duplicate submission is blocked while pending;
+* success displays confirmation and clears the completed selection;
+* failure displays the error and preserves selection/destination for recovery;
+* relevant Books/shelf/dashboard server state is invalidated after mutation.
+
+Do not replace this with one PATCH request per selected book.
+
+The bulk-move UI has been manually verified at normal and narrow responsive
+layouts.
 
 ---
 
@@ -506,7 +564,7 @@ useDeleteShelf
 ShelvesPage
 ```
 
-Book payloads use:
+Book placement payloads use:
 
 ```text
 shelf_name: string
@@ -519,6 +577,7 @@ There is no hard-coded Shelf enum.
 * Add/Edit Book shelf options come from the API.
 * UI retains `shelf_id` for selection but submits `common_name` as
   `shelf_name`.
+* Bulk Move follows the same live shelf catalog and assignment rules.
 * Shelf names are displayed in Title Case.
 * Create requires an explicit shelf selection.
 * `unknown` is selectable.
@@ -529,7 +588,7 @@ There is no hard-coded Shelf enum.
 
 ## Shelves page counts and navigation
 
-`ShelvesPage` now also uses:
+`ShelvesPage` uses:
 
 ```text
 useDashboardBreakdowns()
@@ -542,22 +601,17 @@ For each shelf:
 * its current book count is displayed;
 * omitted breakdown buckets display `0`;
 * singular/plural `book` / `books` is handled;
-* shelf name links to:
-  `/books?shelf_name=<common_name>`;
-* count links to the same filtered Books list.
+* shelf name and count link to:
+  `/books?shelf_name=<common_name>`.
 
 If the breakdown-count query fails, Shelves shows a retryable count error
 instead of pretending all counts are zero.
 
-## Layout
-
-The Shelves catalog is a responsive grid:
+The Shelves catalog is responsive:
 
 * desktop: 3 cards per row;
 * medium: 2;
 * small/mobile: 1.
-
-This replaced the visually sparse single-column card list.
 
 ---
 
@@ -573,8 +627,8 @@ useDashboardBreakdowns()
 useDashboardIncompleteMetadata()
 ```
 
-`useInfiniteIncompleteMetadataBooks()` is **no longer mounted by Dashboard**.
-It is now consumed by Books cleanup mode.
+`useInfiniteIncompleteMetadataBooks()` is consumed by Books cleanup mode rather
+than mounted by Dashboard.
 
 ## Drawer I — Collection
 
@@ -592,61 +646,38 @@ Loan history links to `/loans`.
 
 Contains the Read/Unread visualization and metrics.
 
-Both Read and Unread counts now deep-link to Books:
+Both Read and Unread counts deep-link to Books:
 
 ```text
 Read   -> /books?is_read=true
 Unread -> /books?is_read=false
 ```
 
-The links are present in both the chart legend and metric values.
-
-API top-level `read` / `unread` values remain the display source. If duplicate
-nested API totals disagree, show the existing contract warning rather than
-recalculating.
+API top-level `read` / `unread` values remain the display source.
 
 ## Drawer IV — Basic Stats
 
 Uses `useDashboardBreakdowns()`.
 
-Currently displays:
+Displays:
 
-* Total Books
-* On Loan
-* category-assignment donut
+* Total Books;
+* On Loan;
+* category-assignment donut.
 
-### Category donut
+The category donut:
 
-The previous long category bucket list was replaced because a large category
-catalog made Drawer IV excessively tall.
+* sorts buckets descending;
+* shows the top 7 dynamically;
+* combines the rest into `Other`;
+* hard-codes no category names;
+* represents category assignments, not mutually-exclusive shares of books.
 
-Current behavior:
+Creation Year is intentionally not rendered.
 
-* sort category buckets descending by count;
-* show the top **7** categories dynamically;
-* combine every category after #7 into `Other`;
-* no category names are hard-coded;
-* as collection composition changes, the displayed top categories change
-  automatically;
-* donut wedges are proportional to category assignment counts;
-* center shows total category assignments;
-* legend shows category name and count;
-* muted multi-slice palette is defined through CSS custom properties;
-* note explicitly says books may belong to more than one category.
-
-The chart represents **category assignments**, not mutually-exclusive shares of
-books.
-
-Creation Year is currently **not rendered** in Drawer IV. The backend
-`by_creation_year` data remains available but was intentionally removed from
-the UI because it is not currently useful.
-
-Backend `by_shelf` is also not rendered on Dashboard; it is consumed by
-`ShelvesPage` for counts.
+`by_shelf` is consumed by `ShelvesPage`, not rendered here.
 
 ## Drawer V — Healing Metadata
-
-Uses only the incomplete-metadata count summary on Dashboard.
 
 Displays:
 
@@ -658,20 +689,9 @@ Displays:
 * missing Publication Year;
 * missing ISBN.
 
-Each per-field count is a link to Books cleanup mode.
+Each per-field count links to Books cleanup mode.
 
-The old Dashboard-local:
-
-* field dropdown;
-* inline affected-book list;
-* Edit links;
-* infinite scrolling;
-* pagination retry UI
-
-have been removed.
-
-Affected books now belong on the normal Books route through
-`cleanup_field`.
+The old Dashboard-local affected-book browser has been removed.
 
 ## Refresh/error behavior
 
@@ -681,14 +701,8 @@ Unified Refresh refetches:
 * dashboard breakdowns;
 * incomplete-metadata summary.
 
-It no longer refetches an inline cleanup-book query.
-
-Preserve:
-
-* paused/offline state;
-* stale-state notice;
-* drawer-level query errors;
-* summary drawers remaining visible when a report query fails.
+Preserve offline/stale state, drawer-level errors, and independent report
+failure behavior.
 
 ---
 
@@ -699,11 +713,6 @@ Preserve:
 Product checkout lives on Book Details through `CheckoutDialog`.
 
 `/checkout` is compatibility routing only.
-
-Eligible active/available books get a Check Out button.
-
-Display-only **412** is surfaced without restoring the retired alternate-copy
-chooser.
 
 Do not simulate checkout with generic PATCH.
 
@@ -725,8 +734,6 @@ Unread active books may be marked read through the dedicated mark-read route.
 Already-read books use Reading Edit for later completion/rating/review changes.
 
 Do not introduce Mark Unread unless explicitly requested.
-
-Do not simulate initial mark-read with generic PATCH.
 
 ---
 
@@ -767,8 +774,7 @@ Do not add `shelf_name` before removing wishlist membership.
 
 Book Details has Add to Collection.
 
-Collections are orthogonal to shelf placement; do not copy the wishlist
-move-to-shelf workflow onto collections.
+Collections are orthogonal to shelf placement.
 
 ---
 
@@ -814,6 +820,11 @@ Hardware wedge collection scanning is mounted on:
 
 Do not add checkout camera scanning or a second scanner architecture.
 
+A NewBookPage camera-scanner test has shown occasional full-suite timing
+flakiness while passing independently. Do not treat an isolated timeout waiting
+for the asynchronously loaded scanner as a product regression without
+reproduction.
+
 ---
 
 # 15. Testing and quality gate
@@ -852,23 +863,34 @@ warn above 120 kB gzip main entry
 fail above 150 kB gzip main entry
 ```
 
-Preserve the existing:
+Preserve the existing test architecture.
 
-* Vitest / Testing Library architecture;
-* `renderAppTree` / project test helpers;
-* stateful Playwright mock API;
-* axe helper.
+## Current verification state
 
-Do not invent a parallel fake API/test system.
+FEAT-31/32 focused tests are green, including:
 
-## Latest reported gate
+* API bulk mutation;
+* React Query bulk mutation;
+* bulk-selection model/hook;
+* `BulkMoveToShelfControl`;
+* `BooksPage` bulk-selection integration;
+* `ConfirmationDialog`.
 
-After the 2026-08-23 Books / Dashboard / Shelves work:
+Bulk Move has also been manually exercised successfully in the browser.
 
-* Dashboard targeted suite: green, 23/23.
-* Books and Shelves targeted suites: green.
-* The full project gate was rerun after stale Dashboard assertions were
-  corrected and was reported passing.
+The backend OpenAPI contract now includes:
+
+```text
+POST /books/bulk/move-to-shelf
+```
+
+The frontend checked-in OpenAPI and generated types have been updated to match.
+
+`contractSmoke.test.ts` required the new path to be added to its expected path
+list after the contract update.
+
+The final full-project `make check` rerun is not yet recorded as green for this
+baseline. Do not claim the final gate passed until the current run confirms it.
 
 ---
 
@@ -886,6 +908,11 @@ Preserve:
 * no color-only status information;
 * 320px usability;
 * long-content wrapping.
+
+Bulk Move uses the existing accessible confirmation-dialog architecture.
+
+Success messaging uses a polite status announcement; errors use alert
+semantics.
 
 Automated axe complements manual keyboard/responsive checks; it does not replace
 them.
@@ -919,16 +946,11 @@ Card-catalog surfaces use light cardstock tokens such as:
 --color-surface-text-muted
 ```
 
-Do not use the dark-page `--color-text` token for text/links sitting on the
-light cardstock surface.
+Do not use dark-page `--color-text` for text/links on light cardstock surfaces.
 
-Current targeted contrast overrides exist for linked values on:
-
-* Healing Metadata counts;
-* Shelf cards.
-
-Dashboard IV/V may use larger minimum drawer height than I–III to accommodate
-their denser report content.
+Bulk-selection actions use the existing card-catalog visual language.
+`BulkMoveToShelfControl` has its own grid spacing so its status, destination
+field, and action do not crowd each other.
 
 ---
 
@@ -944,6 +966,8 @@ their denser report content.
 * Do not silently recalculate API-owned dashboard metrics.
 * Preserve tenant header behavior.
 * Prefer dedicated lifecycle endpoints.
+* Bulk shelf movement must use the dedicated atomic endpoint, not repeated
+  single-book PATCH requests.
 
 ## Product behavior
 
@@ -956,6 +980,7 @@ their denser report content.
 * No Mark Unread unless explicitly requested.
 * No wishlist/shelf overlap.
 * Collections do not replace shelf placement.
+* `removed` is not an ordinary shelf-assignment destination.
 
 ## Scope discipline
 
@@ -968,33 +993,39 @@ than guessing.
 
 # 19. Current ticket / remaining-work status
 
-Completed historical product tickets through FEAT-29 should not be
-reimplemented.
+Completed historical product work through FEAT-29 should not be reimplemented.
 
-Current FEAT-30-era work now includes:
+Recent V1 work now includes:
 
-* Books `shelf_name` query plumbing;
-* hidden shelf deep links;
-* Books visible Read status filter;
-* `is_read` URL plumbing;
+* expanded Books filtering/deep-link plumbing;
 * Books cleanup mode;
-* Dashboard Read/Unread deep links;
-* Dashboard Healing Metadata deep links;
-* removal of Dashboard inline cleanup-book browser;
-* Shelves book counts from dashboard `by_shelf`;
-* Shelves deep links into filtered Books;
-* responsive Shelves grid;
-* Drawer IV category-assignment donut;
-* Creation Year removed from current Dashboard presentation.
+* Dashboard metadata/read deep links;
+* Shelves counts and filtered-Books navigation;
+* Dashboard category-assignment donut;
+* FEAT-31 bulk-selection infrastructure;
+* FEAT-32 atomic bulk move-to-shelf UI and API integration.
 
-Verify the current FEAT-30 ticket before marking it complete, especially whether
-a `status` filter/control remains required.
+## FEAT-31 — implemented
 
-Later planned work in the previous V1 outline:
+Bulk selection is integrated into Books with loaded-row Select All, individual
+selection, selection clearing, and filter/sort lifecycle behavior.
+
+## FEAT-32 — implementation complete; final gate pending
+
+Bulk Move to Shelf is implemented against:
 
 ```text
-FEAT-31 bulk selection
-FEAT-32 bulk move-to-shelf
+POST /books/bulk/move-to-shelf
+```
+
+Focused tests and manual UI verification are green.
+
+The final authoritative `make check` result still needs to be recorded after
+the OpenAPI/contract-smoke synchronization and unrelated scanner-test rerun.
+
+## Remaining planned V1 work
+
+```text
 FEAT-33 Home discovery
 FEAT-34 cover images stretch
 FEAT-35 V1 regression / deployment gate
@@ -1038,7 +1069,12 @@ src/api/wishlistsQueries.ts
 
 ```text
 src/features/books/booksListModel.ts
+src/features/books/useBulkSelection.ts
+src/features/books/utils/bulkSelectionModel.ts
+src/features/books/components/BookSelectionControl.tsx
+src/features/books/components/BooksBulkActions.tsx
 src/features/books/components/BooksListControls.tsx
+src/features/books/components/BulkMoveToShelfControl.tsx
 src/features/books/routes/BooksPage.tsx
 src/features/books/routes/BookDetailsPage.tsx
 src/features/books/routes/NewBookPage.tsx
@@ -1086,6 +1122,14 @@ src/styles/components.css
 src/styles/tokens.css
 ```
 
+## Contract verification
+
+```text
+docs/technical-reference/openapi.json
+docs/technical-reference/API-for-FE.md
+scripts/contractSmoke.test.ts
+```
+
 ---
 
 # 21. Ticket implementation procedure
@@ -1107,7 +1151,7 @@ For a feature ticket:
 
 3. **Plan**
 
-   * break the work into small architectural steps;
+   * break work into small architectural steps;
    * identify tests that should change before coding.
 
 4. **Implement**
@@ -1130,7 +1174,7 @@ For a feature ticket:
 7. **Update docs only where behavior/baseline genuinely changed.**
 
 Treat failing old assertions carefully: determine whether they expose a real
-regression or merely describe intentionally retired behavior.
+regression, expected contract drift, or intentionally retired behavior.
 
 ---
 
@@ -1170,4 +1214,3 @@ Do not silently revive retired behavior.
 Do not implement later tickets early.
 
 When information is missing, request the minimum evidence needed to proceed.
-

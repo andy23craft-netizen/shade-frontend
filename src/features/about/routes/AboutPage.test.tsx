@@ -26,8 +26,8 @@ describe('AboutPage', () => {
         vi.restoreAllMocks()
     })
 
-    it('renders as the application homepage', async () => {
-        renderAppTree(['/'])
+    it('renders at the About route', async () => {
+        renderAppTree(['/about'])
 
         const heading = screen.getByRole('heading', {
             level: 1,
@@ -42,13 +42,13 @@ describe('AboutPage', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                'Shade Library — Shade',
+                'About — Shade',
             )
         })
     })
 
     it('does not load dashboard data from the About route', async () => {
-        renderAppTree(['/'])
+        renderAppTree(['/about'])
 
         await screen.findByRole('heading', {
             level: 1,
@@ -102,7 +102,7 @@ describe('AboutPage', () => {
     })
 
     it('explains the library, its dedication, lending policy, and how to use it', () => {
-        renderAppTree(['/'])
+        renderAppTree(['/about'])
 
         expect(
             screen.getByRole('heading', {
@@ -146,7 +146,7 @@ describe('AboutPage', () => {
     })
 
     it('links to the primary library workflows', async () => {
-        renderAppTree(['/'])
+        renderAppTree(['/about'])
 
         fireEvent.click(
             screen.getByRole('button', {
