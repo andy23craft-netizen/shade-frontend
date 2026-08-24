@@ -1,5 +1,3 @@
-# FEAT-15 Podman build context.
-#
 # The image consumes only the already-built static site and its container
 # configuration. Source, dependencies, repository metadata, and secrets must
 # not enter the build context.

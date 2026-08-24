@@ -1,8 +1,14 @@
 # Quote Bucket
 
+**Status:** Not implemented. Kept as the candidate corpus and selection model for weather-aware quotes.
+
+**Shipped today (separate feature):** Home shows a random quote from a hardcoded non-weather pool in
+`src/features/home/homeQuotes.ts`. That pool does not use these weather buckets, condition tags, `weight` /
+`last_used` selection, or a Quotes backend. Do not treat Home quotes as fulfillment of this document.
+
 ## Human-Written Summary
 
-Below this horizontal divider is the copied output of an LLM. This output was in a conversation arounda new feature for
+Below this horizontal divider is the copied output of an LLM. This output was in a conversation around a new feature for
 this library. The new feature displays book quotes based on the current weather.
 
 ---

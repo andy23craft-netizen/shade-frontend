@@ -1,18 +1,17 @@
 # Shade Frontend -- Master Implementation Context
 
-Slim always-on context for ChatGPT or any assistant without direct repository
-access.
+Slim always-on context for ChatGPT or any assistant without direct repository access.
 
-This document is the complete self-contained operating baseline for the Shade
-frontend. It covers working rules, architecture, non-negotiables, current
-product state, the backend contract summary, and the minimum reference index
-needed to continue development safely. Start from this file alone for that
-baseline. Do not require, request, or defer to any other LLM prompt or project
-agents guide. Attach the current feature ticket and the checked-in API contract
-only when the task needs them.
+This document is the complete self-contained operating baseline for the Shade frontend. It covers working rules,
+architecture, non-negotiables, current product state, the backend contract summary, and the minimum reference index
+needed to continue development safely. Start from this file alone for that baseline. Do not require, request, or defer
+to any other LLM prompt, project agents guide, or companion context file. Everything needed for day-to-day
+implementation guidance is in this document. Attach the current feature ticket (when one exists) and the checked-in API
+contract only when the task needs them.
 
-A current feature ticket, when one exists, is supplied separately. Do not
-assume this document replaces the ticket or the checked-in API contract.
+A current feature ticket, when one exists, is supplied separately. Do not assume this document replaces the ticket or
+the checked-in API contract. When `docs/tickets/` is empty (aside from `.gitkeep`), no sequenced feature ticket is
+open -- ask which work to take next rather than inventing a follow-on feature.
 
 **Context pack version:** 2026-08-24
 
@@ -46,9 +45,8 @@ If deployment / packaging is involved:
 - `README.md`;
 - `docs/MAINTAINERS.md` when production-host ownership matters.
 
-Do not paste a full API re-synthesis or large requirements documents into every
-conversation. Prefer the checked-in contract and the minimum relevant source
-files.
+Do not paste a full API re-synthesis or large requirements documents into every conversation. Prefer the checked-in
+contract and the minimum relevant source files.
 
 ---
 
@@ -56,8 +54,8 @@ files.
 
 ChatGPT does not automatically have access to the repository.
 
-This context is a dated baseline. It does not prove that a specific source file
-still has exactly the shape described here.
+This context is a dated baseline. It does not prove that a specific source file still has exactly the shape described
+here.
 
 Unless the relevant current file or command output is available:
 
@@ -88,8 +86,7 @@ When sources disagree:
 6. This context
 7. Older plans / historical docs
 
-Explain discrepancies rather than silently forcing an older plan onto the
-current codebase.
+Explain discrepancies rather than silently forcing an older plan onto the current codebase.
 
 ---
 
@@ -113,8 +110,8 @@ Provide:
 
 Do not say "update the component accordingly."
 
-Avoid unnecessary theory, but explain architectural decisions and relevant
-React / TypeScript / API / testing / accessibility concepts.
+Avoid unnecessary theory, but explain architectural decisions and relevant React / TypeScript / API / testing /
+accessibility concepts.
 
 If multiple approaches are reasonable, explain the tradeoff and recommend one.
 
@@ -144,8 +141,7 @@ Do not silently expand the scope of the current ticket.
 - plain CSS with project design tokens
 - native ESM
 
-No Next.js, Tailwind, component library, Redux/alternate state store, or form
-library.
+No Next.js, Tailwind, component library, Redux/alternate state store, or form library.
 
 ## Backend
 
@@ -166,10 +162,10 @@ docs/technical-reference/openapi.json
 docs/technical-reference/API-for-FE.md
 ```
 
-Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.10`
-(includes many-to-many categories, expanded `GET /books` filters,
-`POST /books/bulk/move-to-shelf`, `BookRead.cover_image_path`, and
-`GET` / `PUT` / `DELETE /books/{id}/cover`).
+Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.11` (includes many-to-many categories, expanded `GET
+/books` filters, `POST /books/bulk/move-to-shelf`, `BookRead.cover_image_path`, and `GET` / `PUT` /
+`DELETE /books/{id}/cover`). Cover resolution -- including the Open Library ISBN fallback -- happens server-side; `GET
+/books/{id}/cover` returns **200** image bytes or **404**.
 
 Generated types:
 
@@ -177,18 +173,17 @@ Generated types:
 src/api/generated/openapi.ts
 ```
 
-Regenerate generated types from the checked-in OpenAPI contract
-(`yarn api:generate` / `yarn api:check`); never edit them manually.
+Regenerate generated types from the checked-in OpenAPI contract (`yarn api:generate` / `yarn api:check`); never edit
+them manually.
 
-Prefer dedicated lifecycle endpoints over generic `PATCH` for restore,
-checkout, check-in, initial mark-read, bulk shelf move, and cover
-upload/delete.
+Prefer dedicated lifecycle endpoints over generic `PATCH` for restore, checkout, check-in, initial mark-read, bulk shelf
+move, and cover upload/delete.
 
 ---
 
 # 4. Current product baseline
 
-The core V1 application is live rather than placeholder UI.
+The core V1 application uses dedicated product pages (not route placeholders).
 
 ## Routes
 
@@ -222,8 +217,7 @@ Current registered product routes include:
 * `/about` is library information (`AboutPage` + `CatalogGuide`).
 * Brand link recovers to Home (`/`).
 * Dashboard is `/dashboard` (direct primary-nav link).
-* About is reachable from Home (hero and secondary links), not a separate
-  primary-nav item.
+* About is reachable from Home (hero and secondary links), not a separate primary-nav item.
 * Collection drawer:
 
   * Browse
@@ -239,8 +233,8 @@ Current registered product routes include:
   * Shelves
   * Deleted Books
 
-Do not restore dedicated Checkout / Check-in navigation.
-Do not move Dashboard back to `/`.
+Circulation has no Checkout or Check-in nav items. Dashboard lives at
+`/dashboard`, not `/`.
 
 ## Home and About
 
@@ -262,18 +256,15 @@ Home includes:
 * hero image linking to `/about`;
 * randomized quote bucket (`homeQuotes`);
 * New Additions via `useRecentBooks` (newest 10 by `creationDate` desc);
-* featured category drawers from top `by_category` buckets joined to
-  `useCategories` (`topHomeCategories` / `homeCategoryHref` →
-  `/books?category_id=`);
-* Staff Picks carousel from the Collections membership named
-  `Staff Picks`;
-* secondary links to Browse, Collections, Wishlists, and About.
+* featured category drawers from top `by_category` buckets joined to `useCategories` (`topHomeCategories` /
+  `homeCategoryHref` → `/books?category_id=`);
+* Staff Picks carousel from the Collections membership named `Staff Picks`;
+* secondary links to Browse, Collections, Wishlists, and About;
+* cover thumbnails on New Additions and Staff Picks via shared `BookCover`.
 
 Optional counts/metadata failures must not blank core category browsing.
 
-About retains dedication, lending policy, purpose, and the accessible
-Catalog Guide. Cover UI remains FEAT-34 (backend cover routes are already in
-OpenAPI `0.2.10`; SPA helpers and Book Details cover display are not started).
+About retains dedication, lending policy, purpose, and the accessible Catalog Guide.
 
 ---
 
@@ -309,8 +300,7 @@ including:
 * `apiBaseUrl`;
 * optional diagnostics configuration.
 
-Application version comes from `package.json` via `APP_VERSION`, not runtime
-config.
+Application version comes from `package.json` via `APP_VERSION`, not runtime config.
 
 ## Connection behavior
 
@@ -341,15 +331,14 @@ It handles:
 * `Library-Username`;
 * timeout;
 * abort signals;
-* JSON helpers;
+* JSON helpers (`getJson` / `requestJson`);
+* authenticated `get` / `request` for non-JSON bodies;
 * unauthorized handling;
 * typed API errors;
 * diagnostics reporting.
 
-Helpers today are JSON-oriented. FEAT-34 cover work needs authenticated binary
-`GET` (blob / **307** `Location`) and multipart `PUT` beyond `requestJson` --
-extend the existing client carefully rather than inventing a second HTTP
-stack.
+Cover get uses authenticated `client.get` + `response.blob()`. Cover upload uses `client.request` with multipart
+`FormData` (field `file`). Do not force cover bytes through JSON parsers, and do not invent a second HTTP stack.
 
 Do not invent a second transport layer.
 
@@ -370,8 +359,8 @@ src/api/requestFields.ts
 src/api/generated/openapi.ts
 ```
 
-Server state uses React Query. Extend existing query-key families and hooks;
-do not create a parallel cache/state system.
+Server state uses React Query. Extend existing query-key families and hooks; do not create a parallel cache/state
+system.
 
 Global query behavior includes:
 
@@ -393,6 +382,7 @@ src/api/booksApi.ts
 src/api/booksQueries.ts
 src/features/books/booksListModel.ts
 src/features/books/components/BooksListControls.tsx
+src/features/books/components/BookCover.tsx
 src/features/books/routes/BooksPage.tsx
 ```
 
@@ -507,8 +497,7 @@ Do not silently change Select All into an all-pages/server-wide operation.
 
 ## Bulk move to shelf
 
-Bulk-selected Books may be moved to a destination shelf through the backend
-atomic mutation:
+Bulk-selected Books may be moved to a destination shelf through the backend atomic mutation:
 
 ```text
 POST /books/bulk/move-to-shelf
@@ -556,8 +545,7 @@ Behavior:
 
 Do not replace this with one PATCH request per selected book.
 
-The bulk-move UI has been manually verified at normal and narrow responsive
-layouts.
+Bulk-move UI supports normal and narrow responsive layouts.
 
 ---
 
@@ -588,16 +576,15 @@ with AND semantics.
 
 Do not:
 
-* restore a singular hard-coded category enum;
-* revive `?category=`;
+* use a singular hard-coded category enum;
+* use `?category=`;
 * hard-code the taxonomy into the SPA.
 
-Frontend category administration remains outside V1 unless explicitly added by
-a later ticket.
+Frontend category administration is outside V1 unless explicitly requested.
 
 ---
 
-# 9. Book covers (contract ready; SPA still FEAT-34)
+# 9. Book covers
 
 Authenticated cover routes:
 
@@ -607,48 +594,48 @@ PUT    /books/{id}/cover
 DELETE /books/{id}/cover
 ```
 
-Behavioral detail beyond OpenAPI schemas lives in
-`docs/technical-reference/API-for-FE.md` (Book covers). OpenAPI lists cover
-`GET` as **200** only; treat **307** as live behavior.
+Behavioral detail beyond OpenAPI schemas lives in `docs/technical-reference/API-for-FE.md` (Book covers). Cover
+resolution -- including the Open Library ISBN fallback -- happens server-side behind the authenticated cover endpoint
+(OpenAPI `0.2.11+`).
 
 Rules:
 
-* `BookRead.cover_image_path` is an optional **filename** (e.g.,
-  `{book_id}.webp`), not a URL and not browser-ready.
+* `BookRead.cover_image_path` is an optional **filename** (e.g., `{book_id}.webp`), not a URL and not browser-ready.
 * It is set only by successful `PUT` and cleared by `DELETE`.
 * Create/update JSON cannot set it. Never PATCH `cover_image_path`.
-* Non-null `cover_image_path` means a local file exists. `null` does **not**
-  mean "no cover available" -- `GET` may still **307** to Open Library when
-  `isbn13` is present.
-* `PUT` uses multipart form field `file` (required); JPEG / PNG / WebP only;
-  max **10 MB**; empty or bytes/type mismatch → **422** (string `detail`);
-  success → **200** `BookRead`.
+* Non-null `cover_image_path` means a local file exists. `null` does **not** mean "no cover available" -- `GET` may
+  still return an ISBN-derived cover fetched server-side.
+* `PUT` uses multipart form field `file` (required); JPEG / PNG / WebP only; max **10 MB**; empty or bytes/type
+  mismatch → **422** (string `detail`); success → **200** `BookRead`.
 * `DELETE` clears on-disk files and `cover_image_path` (**204**).
-* `GET` shapes:
+* `GET` behavior:
   1. local file → **200** image bytes + matching `Content-Type`;
-  2. no local file but `isbn13` → **307** `Location` to
-     `https://covers.openlibrary.org/b/isbn/{isbn13}-L.jpg?default=false`
-     (public; no Bearer on that host);
+  2. no local file, but `isbn13` and Open Library returns usable artwork → backend fetches server-side and returns
+     **200** image bytes;
   3. otherwise → **404** `"Book cover not found"`;
   4. soft-deleted / missing book → **404** `"Book not found"`.
-* Local uploads take priority over the ISBN redirect.
+* Local uploads always take priority over ISBN-derived artwork.
+* Open Library timeout / network / missing / non-image responses resolve to the normal **404** cover state.
 * Soft-deleted books reject cover get/upload/delete (**404**).
 
-Browser display cannot put `Authorization` on an `<img src>`. Prefer
-authenticated `fetch` to `GET /books/{id}/cover`:
+Browser display cannot put `Authorization` on an `<img src>`. Use authenticated `fetch` to `GET /books/{id}/cover`:
 
-* **200** → `response.blob()` and an object URL for `<img>`;
-* **307** → use the `Location` header as a public image URL (or follow
-  redirects when fetch mode allows);
-* **404** → placeholder.
+* **200** → `response.blob()` and an object URL for `<img>` (revoke on cleanup);
+* **404** → intentional placeholder.
 
-Do not invent cover URLs from `cover_image_path`. Do not treat Open Library
-redirect targets as authenticated API assets. Do not invent a separate FE-only
-Open Library client when implementing FEAT-34 -- use these backend routes.
+Do not invent cover URLs from `cover_image_path`. Do not call Open Library from the SPA. The backend owns
+local-versus-ISBN resolution.
 
-SPA status: generated OpenAPI includes the cover paths and
-`cover_image_path`; `booksApi` cover helpers and Book Details cover UI are
-**not** shipped yet. Non-JSON binary responses today are `GET /backup` and
+SPA surface:
+
+* `booksApi.getCover` / `uploadCover` / `removeCover`;
+* `queryKeys.bookCovers`, `useBookCover`, `useUploadBookCover`, `useRemoveBookCover`;
+* shared `BookCover` (lazy IntersectionObserver load unless `eager`, blob object URL, status stamp, placeholder) on Book
+  Details, Books list, Home New Additions / Staff Picks, and Collections memberships;
+* `BookCoverManager` upload/remove on Book Details;
+* styles under `.book-cover*` in `src/styles/components.css`.
+
+Cover loading stays independent of core book queries. Non-JSON binary responses today are `GET /backup` and
 `GET /books/{id}/cover`.
 
 ---
@@ -686,16 +673,14 @@ There is no hard-coded Shelf enum.
 ## Shelf behavior
 
 * Add/Edit Book shelf options come from the API.
-* UI retains `shelf_id` for selection but submits `common_name` as
-  `shelf_name`.
+* UI retains `shelf_id` for selection but submits `common_name` as `shelf_name`.
 * Bulk Move follows the same live shelf catalog and assignment rules.
 * Shelf names are displayed in Title Case.
 * Create requires an explicit shelf selection.
 * `unknown` is selectable.
 * `removed` is excluded from ordinary assignment.
 * Edit may preserve/surface current `removed` membership.
-* System shelves `unknown` and `removed` cannot be renamed or deleted;
-  allowed metadata edits remain supported.
+* System shelves `unknown` and `removed` cannot be renamed or deleted; allowed metadata edits remain supported.
 
 ## Shelves page counts and navigation
 
@@ -712,11 +697,9 @@ For each shelf:
 * its current book count is displayed;
 * omitted breakdown buckets display `0`;
 * singular/plural `book` / `books` is handled;
-* shelf name and count link to:
-  `/books?shelf_name=<common_name>`.
+* shelf name and count link to: `/books?shelf_name=<common_name>`.
 
-If the breakdown-count query fails, Shelves shows a retryable count error
-instead of pretending all counts are zero.
+If the breakdown-count query fails, Shelves shows a retryable count error instead of pretending all counts are zero.
 
 The Shelves catalog is responsive:
 
@@ -728,7 +711,7 @@ The Shelves catalog is responsive:
 
 # 11. Dashboard -- current state
 
-`/dashboard` remains a five-drawer card-catalog dashboard.
+`/dashboard` is a five-drawer card-catalog dashboard.
 
 Queries:
 
@@ -738,8 +721,7 @@ useDashboardBreakdowns()
 useDashboardIncompleteMetadata()
 ```
 
-`useInfiniteIncompleteMetadataBooks()` is consumed by Books cleanup mode rather
-than mounted by Dashboard.
+`useInfiniteIncompleteMetadataBooks()` is consumed by Books cleanup mode rather than mounted by Dashboard.
 
 ## Drawer I -- Collection
 
@@ -800,9 +782,7 @@ Displays:
 * missing Publication Year;
 * missing ISBN.
 
-Each per-field count links to Books cleanup mode.
-
-The old Dashboard-local affected-book browser has been removed.
+Each per-field count links to Books cleanup mode. There is no Dashboard-local affected-book browser.
 
 ## Refresh/error behavior
 
@@ -812,8 +792,7 @@ Unified Refresh refetches:
 * dashboard breakdowns;
 * incomplete-metadata summary.
 
-Preserve offline/stale state, drawer-level errors, and independent report
-failure behavior.
+Preserve offline/stale state, drawer-level errors, and independent report failure behavior.
 
 ---
 
@@ -827,19 +806,18 @@ Product checkout lives on Book Details through `CheckoutDialog`.
 
 Do not simulate checkout with generic PATCH.
 
-Book Details currently has no cover image, placeholder, or authenticated cover
-fetch. That UI is FEAT-34.
+Book Details shows cover art via shared `BookCover` (eager) and upload/remove via `BookCoverManager` when the book is
+active. Cover fetch stays independent of the core `useBook` query. Never use `cover_image_path` as a browser URL.
 
 ## Check-in
 
 Product check-in lives on `/loans`.
 
-`/checkin` is compatibility routing only and redirects to Loans while
-preserving search.
+`/checkin` is compatibility routing only and redirects to Loans while preserving search.
 
 `/loans?bookId=...` opens the relevant check-in workflow.
 
-No strict user-facing due-date workflow should be reintroduced.
+There is no strict user-facing due-date workflow.
 
 ## Reading
 
@@ -890,6 +868,10 @@ Book Details has Add to Collection.
 
 Collections are orthogonal to shelf placement.
 
+Membership rows join title/authors via `GET /books/{id}` and show shared `BookCover`. Location uses
+`displayCollectionBookLocation`: **Wishlist** when `on_wishlist`; otherwise Title Case shelf. Membership `shelf_name`
+may be JSON `null` for unshelved rows -- do not expect BookRead's synthesized `"unknown"`.
+
 ---
 
 # 14. Delete / restore and backup boundary
@@ -904,7 +886,7 @@ Deleted Books admin lives at:
 /admin/deleted
 ```
 
-Authenticated SQL backup remains an API-host concern.
+Authenticated SQL backup is an API-host concern.
 
 There is no browser Backup page/API caller.
 
@@ -914,7 +896,7 @@ Never inspect, log, cache, or upload backup contents from frontend code.
 
 # 15. Scanner behavior
 
-Camera ISBN scanning remains on `/books/new` only.
+Camera ISBN scanning is on `/books/new` only.
 
 Hardware wedge collection scanning is mounted on:
 
@@ -934,10 +916,8 @@ Hardware wedge collection scanning is mounted on:
 
 Do not add checkout camera scanning or a second scanner architecture.
 
-A NewBookPage camera-scanner test has shown occasional full-suite timing
-flakiness while passing independently. Do not treat an isolated timeout waiting
-for the asynchronously loaded scanner as a product regression without
-reproduction.
+A NewBookPage camera-scanner test has shown occasional full-suite timing flakiness while passing independently. Do not 
+treat an isolated timeout waiting for the asynchronously loaded scanner as a product regression without reproduction.
 
 ---
 
@@ -979,10 +959,9 @@ fail above 150 kB gzip main entry
 
 Preserve the existing test architecture.
 
-## Current verification state
+## Current verification coverage
 
-FEAT-30 through FEAT-32 product work is implemented and covered by focused
-tests, including:
+Focused coverage includes:
 
 * Books URL filters (`shelf_name` / `is_read` / `cleanup_field`);
 * Shelves / Dashboard deep links into filtered Books;
@@ -991,10 +970,10 @@ tests, including:
 * bulk-selection model/hook;
 * `BulkMoveToShelfControl`;
 * `BooksPage` bulk-selection integration;
-* `ConfirmationDialog`.
-
-Home discovery (FEAT-33) is complete: `HomePage` at `/`, About at `/about`,
-with colocated Home / discovery-model tests (ticket file removed).
+* `ConfirmationDialog`;
+* Home discovery (`HomePage` / discovery-model tests);
+* cover helpers / hooks / `BookCover` / `BookCoverManager` and cover wiring on Books, Home, Collections, and Book
+  Details.
 
 The backend OpenAPI contract includes:
 
@@ -1005,11 +984,11 @@ PUT  /books/{id}/cover
 DELETE /books/{id}/cover
 ```
 
-Checked-in OpenAPI (`info.version` `0.2.10`) and generated types match.
-`contractSmoke.test.ts` includes the bulk-move path and `/books/{id}/cover`.
+Checked-in OpenAPI (`info.version` `0.2.11`) and generated types match. `contractSmoke.test.ts` includes the bulk-move
+path and `/books/{id}/cover`.
 
-Do not claim the final V1 regression gate (FEAT-35) passed until the current
-`make check` run confirms it for that ticket's acceptance criteria.
+Treat an empty `docs/tickets/` (aside from `.gitkeep`) plus a green `make check` as the current open-work signal. Re-run
+`make check` before claiming a new change is release-ready.
 
 ---
 
@@ -1030,11 +1009,9 @@ Preserve:
 
 Bulk Move uses the existing accessible confirmation-dialog architecture.
 
-Success messaging uses a polite status announcement; errors use alert
-semantics.
+Success messaging uses a polite status announcement; errors use alert semantics.
 
-Automated axe complements manual keyboard/responsive checks; it does not replace
-them.
+Automated axe complements manual keyboard/responsive checks; it does not replace them.
 
 Do not claim untested browsers/devices passed.
 
@@ -1054,7 +1031,8 @@ Primary component styling lives in:
 src/styles/components.css
 ```
 
-Use existing design tokens where possible.
+That file also owns dashboard, collections, and book-cover (`.book-cover*`)
+layout classes. Use existing design tokens where possible.
 
 Card-catalog surfaces use light cardstock tokens such as:
 
@@ -1067,9 +1045,8 @@ Card-catalog surfaces use light cardstock tokens such as:
 
 Do not use dark-page `--color-text` for text/links on light cardstock surfaces.
 
-Bulk-selection actions use the existing card-catalog visual language.
-`BulkMoveToShelfControl` has its own grid spacing so its status, destination
-field, and action do not crowd each other.
+Bulk-selection actions use the existing card-catalog visual language. `BulkMoveToShelfControl` has its own grid spacing
+so its status, destination field, and action do not crowd each other.
 
 ---
 
@@ -1084,13 +1061,13 @@ field, and action do not crowd each other.
 * Do not duplicate server state into a second state store.
 * Do not silently recalculate API-owned dashboard metrics.
 * Preserve tenant header behavior.
-* Prefer dedicated lifecycle endpoints (restore, checkout, check-in, mark-read,
-  bulk shelf move, cover upload/delete -- never simulate those with generic
-  `PATCH`).
-* Bulk shelf movement must use the dedicated atomic endpoint, not repeated
-  single-book PATCH requests.
-* Covers use `GET` / `PUT` / `DELETE /books/{id}/cover` only. Never invent
-  browser URLs from `cover_image_path` or set covers through create/update JSON.
+* Prefer dedicated lifecycle endpoints (restore, checkout, check-in, mark-read, bulk shelf move, cover upload/delete --
+  never simulate those with generic `PATCH`).
+* Bulk shelf movement must use the dedicated atomic endpoint, not repeated single-book PATCH requests.
+* Covers use `GET` / `PUT` / `DELETE /books/{id}/cover` only. Never invent browser URLs from `cover_image_path`, call
+  Open Library from the SPA, or set covers through create/update JSON.
+* JSON `null` `shelf_name` or `category_ids` on book update is **422** -- omit those fields instead (OpenAPI may still
+  show `null` as a schema option).
 
 ## Product behavior
 
@@ -1106,89 +1083,40 @@ field, and action do not crowd each other.
 * No wishlist/shelf overlap.
 * Collections do not replace shelf placement.
 * `removed` is not an ordinary shelf-assignment destination.
+* Cover display/upload stays on the authenticated cover routes and shared `BookCover` / `BookCoverManager` surfaces.
 
 ## Scope discipline
 
-Do not implement later tickets merely because the API already supports them
-(for example, cover routes exist before FEAT-34 ships UI).
+Do not invent the next product feature merely because the API already supports it. When `docs/tickets/` is empty (aside
+from `.gitkeep`), no sequenced feature ticket is open.
 
-When no current ticket is supplied, ask which work should be taken next rather
-than guessing.
+When no current ticket is supplied, ask which work should be taken next rather than guessing.
 
 ---
 
-# 20. Current ticket / remaining-work status
+# 20. Open work / tickets
 
-Completed historical product work through FEAT-32 should not be reimplemented.
+When `docs/tickets/` holds only `.gitkeep`, no sequenced feature ticket is open. Prefer an explicit user request or
+product docs when choosing further work. Ticket presence under `docs/tickets/` is more authoritative than stale
+`docs/ToDo.md` entries.
 
-Recent V1 work now includes:
+Current product capabilities are described in the sections above, including:
 
-* expanded Books filtering/deep-link plumbing (FEAT-30);
-* Books cleanup mode;
-* Dashboard metadata/read deep links;
-* Shelves counts and filtered-Books navigation;
-* Dashboard category-assignment donut;
-* FEAT-31 bulk-selection infrastructure;
-* FEAT-32 atomic bulk move-to-shelf UI and API integration;
-* FEAT-33 discovery Home at `/` with About at `/about` (complete; ticket file
-  removed).
+* Books URL filters and cleanup mode;
+* Shelves / Dashboard deep links;
+* bulk selection and atomic bulk move-to-shelf;
+* discovery Home at `/` with About at `/about`;
+* book covers on Book Details, Books, Home, and Collections;
+* the canonical `make check` quality gate.
 
-## FEAT-30 -- implemented
-
-Centralized Books URL model wires `category_id` / `author` / `title` / `isbn` /
-`shelf_name` / `is_read` / `cleanup_field` plus sort. Visible controls cover
-category, author, title, read status, and sort. `shelf_name` and ISBN remain
-URL / deep-link / hardware driven.
-
-## FEAT-31 -- implemented
-
-Bulk selection is integrated into Books with loaded-row Select All, individual
-selection, selection clearing, and filter/sort lifecycle behavior.
-
-## FEAT-32 -- implemented
-
-Bulk Move to Shelf is implemented against:
-
-```text
-POST /books/bulk/move-to-shelf
-```
-
-Do not replace it with per-book `PATCH` loops. Documented wishlist **412**
-conflicts must be resolved before retry.
-
-## FEAT-33 -- implemented
-
-Home discovery is complete:
-
-* `/` → `HomePage` (featured category drawers, New Additions, Staff Picks,
-  quotes, secondary Browse / Collections / Wishlists / About links)
-* `/about` → `AboutPage` + `CatalogGuide`
-
-Featured categories are the top buckets from dashboard breakdowns joined to
-`GET /categories` (`topHomeCategories` / `homeCategoryHref` →
-`/books?category_id=`). Optional counts/metadata failures must not blank core
-Home browsing.
-
-## FEAT-34 -- not started (stretch)
-
-Backend cover contract is ready (`cover_image_path` +
-`GET` / `PUT` / `DELETE /books/{id}/cover` in OpenAPI `0.2.10` /
-`API-for-FE.md`). SPA cover display/upload is not started. Prefer authenticated
-cover routes (blob / **307** `Location` / multipart `file`) over inventing
-FE-only Open Library clients or `cover_image_path` browser paths. V1 completion
-does not block on this ticket.
+Do not invent the next product feature merely because the API already supports it. Keep covers on the authenticated
+cover routes.
 
 ## Remaining planned V1 work
 
 ```text
-FEAT-34 cover images stretch (optional; backend ready, SPA not started)
-FEAT-35 V1 regression / deployment gate
+(none -- docs/tickets/ is empty aside from .gitkeep)
 ```
-
-Ticket presence under `docs/tickets/` is more authoritative than stale
-`docs/ToDo.md` entries. FEAT-34 ticket prose may still describe a
-pre-cover-API investigation path -- prefer the checked-in OpenAPI and
-`API-for-FE.md` Book covers section when implementing.
 
 ---
 
@@ -1228,6 +1156,8 @@ src/api/wishlistsQueries.ts
 src/features/books/booksListModel.ts
 src/features/books/useBulkSelection.ts
 src/features/books/utils/bulkSelectionModel.ts
+src/features/books/components/BookCover.tsx
+src/features/books/components/BookCoverManager.tsx
 src/features/books/components/BookSelectionControl.tsx
 src/features/books/components/BooksBulkActions.tsx
 src/features/books/components/BooksListControls.tsx
@@ -1302,7 +1232,7 @@ scripts/contractSmoke.test.ts
 
 # 22. Ticket implementation procedure
 
-For a feature ticket:
+When a feature ticket exists under `docs/tickets/`:
 
 1. **Understand**
 
@@ -1339,10 +1269,14 @@ For a feature ticket:
    make check
    ```
 
-7. **Update docs only where behavior/baseline genuinely changed.**
+7. **Update this context** (and any other frontend-owned docs that describe the changed baseline) only where behavior
+   genuinely changed.
 
-Treat failing old assertions carefully: determine whether they expose a real
-regression, expected contract drift, or intentionally retired behavior.
+When no ticket is supplied and `docs/tickets/` is empty, ask which work to take next rather than inventing a follow-on
+feature.
+
+Treat failing assertions carefully: determine whether they expose a real regression, expected contract drift, or
+intentional current behavior.
 
 ---
 
@@ -1354,15 +1288,16 @@ regression, expected contract drift, or intentionally retired behavior.
 | API behavioral guidance (incl. covers) | `docs/technical-reference/API-for-FE.md` |
 | UI/design decisions                    | `docs/product-docs/UI_DESIGN_NOTES.MD`   |
 | Category architecture notes            | `docs/product-docs/CATEGORY_NOTES.md`    |
-| Current product work                   | relevant file under `docs/tickets/`      |
+| Current product work (when open)       | relevant file under `docs/tickets/`      |
 | Setup / local development / release    | `README.md`                              |
 | Production-host ownership              | `docs/MAINTAINERS.md`                    |
 | Build checklist                        | `docs/ToDo.md` -- may lag tickets        |
 
-This Master Implementation Context is the complete always-on baseline. Do not
-require any other project agents guide. Attach the rows above only when the
-task needs them. Prefer the current ticket and API contract over old planning
-notes.
+This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own: do not
+require, request, or defer to any other project agents guide or companion LLM context file. Attach the rows above only
+when the task needs their contents (API schemas, design notes, an open ticket, or deployment ownership). Prefer the
+current ticket (when one exists) and the checked-in API contract over planning notes that may lag. When `docs/tickets/`
+is empty, ask which work to take next.
 
 ---
 
@@ -1370,9 +1305,8 @@ notes.
 
 Build Shade incrementally and in a way the user understands.
 
-Be explicit, practical, conservative about architecture, honest about what
-repository state is visible, respectful of the backend contract, and focused on
-the current work.
+Be explicit, practical, conservative about architecture, honest about what repository state is visible, respectful of
+the backend contract, and focused on the current work.
 
 Use complete code and exact paths.
 
@@ -1380,8 +1314,8 @@ Explain why.
 
 Do not invent requirements.
 
-Do not silently revive retired behavior.
+Do not invent undocumented behavior that contradicts this baseline.
 
-Do not implement later tickets early.
+Do not invent the next product feature merely because the API already supports it.
 
 When information is missing, request the minimum evidence needed to proceed.

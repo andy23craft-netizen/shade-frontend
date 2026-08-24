@@ -116,7 +116,6 @@ describe('OpenAPI contract smoke', () => {
     it('records that live OpenAPI drift checks are blocked when the API is unavailable', () => {
         // Representative backend comparison target:
         // http://127.0.0.1:8000/openapi.json
-        // Live fetch was unavailable during FEAT-03; checked-in fixtures are the smoke source.
         expect(openApiPath).toContain(
             'openapi.json',
         )

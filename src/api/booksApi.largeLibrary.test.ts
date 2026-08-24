@@ -70,7 +70,7 @@ describe('large-library list baseline fixture', () => {
         expect(result.items).toHaveLength(2_000)
         expect(elapsedMs).toBeLessThan(250)
 
-        // Practical responsiveness baseline for FEAT-12 regressions:
+        // Practical responsiveness baseline for regressions:
         // typed list helper over a 2_000-item fixture should stay under 250ms
         // in local Vitest/jsdom. BooksPage uses paginated requests; this guard
         // covers unpaginated callers.
