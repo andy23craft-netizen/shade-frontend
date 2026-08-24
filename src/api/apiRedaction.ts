@@ -89,7 +89,7 @@ function hasSensitiveValue(
 
 /**
  * Assert that a diagnostic payload does not retain sensitive client data.
- * Intended for unit tests and FEAT-12 reporting seam checks.
+ * Intended for unit tests and reporting seam checks.
  */
 export function assertSafeApiDiagnostic(
     value: unknown,

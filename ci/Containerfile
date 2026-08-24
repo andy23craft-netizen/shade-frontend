@@ -1,10 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# FEAT-15 dev-deployment image.
-#
-# The application is built on the host with `make build`. This image serves
-# that optimized Vite `dist/` output only; it does not run Node, Yarn, Vite,
-# or a hot-reload development server.
+# The application is built on the host with `make build`. This image serves that optimized Vite `dist/` output only; it
+# does not run Node, Yarn, Vite, or a hot-reload development server.
 #
 # TLS and multi-service orchestration are external to this image.
 FROM docker.io/library/nginx:1.31-alpine
