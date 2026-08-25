@@ -503,59 +503,6 @@
   font-style: italic;
 }
 
-/* --------------------------------------------------------------------------
- * Books decorative reading glasses
- *
- * The glasses sit in the outer margin like an object left beside the catalog.
- * They remain stationary while the record/list scrolls beneath them.
- * -------------------------------------------------------------------------- */
-
-.books-page--decorated,
-.book-details-page--decorated {
-  position: relative;
-}
-
-.books-reading-glasses {
-  position: fixed;
-  z-index: 2;
-
-  /*
-   * Place the glasses in the right-hand margin of the application's broad
-   * desktop canvas rather than over useful catalog content.
-   */
-  top: clamp(12rem, 22vh, 17rem);
-
-  right: max(
-          -16rem,
-          calc((100vw - 88rem) / 2 - 12.5rem)
-  );
-
-  width: clamp(
-          13rem,
-          18vw,
-          21rem
-  );
-
-  height: auto;
-
-  pointer-events: none;
-
-  filter:
-          drop-shadow(
-                  0 0.35rem 0.28rem
-                  rgb(10 8 6 / 18%)
-          );
-
-  transform: rotate(70deg);
-
-  opacity: 0.94;
-}
-
-@media (max-width: 82rem) {
-  .books-reading-glasses {
-    display: none;
-  }
-}
 
 @media (min-width: 40rem) {
   .books-page__filters {
@@ -2358,16 +2305,6 @@
           0 0.8rem 1.4rem rgb(10 8 6 / 18%);
 
   color: var(--color-surface-text);
-}
-
-.wishlists-list__item:nth-child(even)
-.wishlist-card {
-  transform: rotate(0.12deg);
-}
-
-.wishlists-list__item:nth-child(odd)
-.wishlist-card {
-  transform: rotate(-0.12deg);
 }
 
 /*
@@ -5219,47 +5156,6 @@
   color: var(--color-surface-text-muted);
 }
 
-.loans-page--decorated {
-  position: relative;
-}
-
-.loans-library-stamp {
-  position: fixed;
-  z-index: 2;
-
-  top: clamp(12rem, 22vh, 17rem);
-
-  right: max(
-          -15rem,
-          calc((100vw - 88rem) / 2 - 11.5rem)
-  );
-
-  width: clamp(
-          16.5rem,
-          22.5vw,
-          25.5rem
-  );
-
-  height: auto;
-
-  pointer-events: none;
-
-  filter:
-          drop-shadow(
-                  0 0.35rem 0.28rem
-                  rgb(10 8 6 / 18%)
-          );
-
-  transform: rotate(69deg);
-
-  opacity: 0.95;
-}
-
-@media (max-width: 82rem) {
-  .loans-library-stamp {
-    display: none;
-  }
-}
 
 .loans-page > section {
   display: grid;
@@ -6453,6 +6349,7 @@
   background: var(--color-card);
   color: var(--color-surface-text);
   min-width: 0;
+  transform: none;
 }
 
 .wishlist-card__header {
