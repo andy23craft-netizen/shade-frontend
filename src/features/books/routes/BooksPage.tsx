@@ -424,20 +424,6 @@ export function BooksPage() {
                 <p>
                     {total} books in the library.
                 </p>
-
-                {!isBulkSelectionMode ? (
-                    <div className="books-page__bulk-entry">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => {
-                                setIsBulkSelectionMode(true)
-                            }}
-                        >
-                            Select books
-                        </Button>
-                    </div>
-                ) : null}
             </div>
 
             {isBulkSelectionMode ? (
@@ -473,6 +459,35 @@ export function BooksPage() {
                 isRead={isRead}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
+                selectionMode={
+                    isBulkSelectionMode
+                }
+                onEnterSelectionMode={() => {
+                    setIsBulkSelectionMode(true)
+                }}
+
+                onSearch={(search) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                /*
+                                 * First pass: route unified
+                                 * search through author.
+                                 *
+                                 * The next pass adds the
+                                 * author → title fallback.
+                                 */
+                                author: search,
+                                title: undefined,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+
                 onCategoryIdsChange={(
                     nextCategoryIds,
                 ) => {
@@ -489,6 +504,7 @@ export function BooksPage() {
                         },
                     )
                 }}
+
                 onReadStatusChange={(nextIsRead) => {
                     setSearchParams(
                         updateListParams(
@@ -502,27 +518,18 @@ export function BooksPage() {
                         },
                     )
                 }}
-                onSortByChange={(nextSortBy) => {
-                    setSearchParams(
-                        updateListParams(
-                            searchParams,
-                            {
-                                sortBy: nextSortBy,
-                            },
-                        ),
-                        {
-                            replace: true,
-                        },
-                    )
-                }}
-                onSortOrderChange={(
+
+                onSortChange={(
+                    nextSortBy,
                     nextSortOrder,
                 ) => {
                     setSearchParams(
                         updateListParams(
                             searchParams,
                             {
-                                sortOrder: nextSortOrder,
+                                sortBy: nextSortBy,
+                                sortOrder:
+                                nextSortOrder,
                             },
                         ),
                         {
@@ -530,20 +537,7 @@ export function BooksPage() {
                         },
                     )
                 }}
-                onApply={(nextAuthor, nextTitle) => {
-                    setSearchParams(
-                        updateListParams(
-                            searchParams,
-                            {
-                                author: nextAuthor,
-                                title: nextTitle,
-                            },
-                        ),
-                        {
-                            replace: true,
-                        },
-                    )
-                }}
+
                 onClear={() => {
                     setSearchParams(
                         updateListParams(

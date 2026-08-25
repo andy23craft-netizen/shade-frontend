@@ -253,8 +253,28 @@ describe('CollectionsPage', () => {
         ).toBeInTheDocument()
     })
 
-    it('renders the add-book control', () => {
+    it('renders the add-book control in the collection actions dialog', () => {
         renderPage()
+
+        const heading =
+            screen.getByRole('heading', {
+                name: 'Collection actions',
+                hidden: true,
+            })
+
+        const dialog =
+            heading.closest('dialog')
+
+        expect(dialog).not.toBeNull()
+        expect(dialog).not.toHaveAttribute('open')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage collections',
+            }),
+        )
+
+        expect(dialog).toHaveAttribute('open')
 
         expect(
             screen.getByTestId(
@@ -288,6 +308,12 @@ describe('CollectionsPage', () => {
         >)
 
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage collections',
+            }),
+        )
 
         fireEvent.change(
             screen.getByLabelText('Name'),
@@ -330,6 +356,12 @@ describe('CollectionsPage', () => {
 
     it('shows client validation for a blank collection name', () => {
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage collections',
+            }),
+        )
 
         fireEvent.click(
             screen.getByRole('button', {
@@ -387,6 +419,12 @@ describe('CollectionsPage', () => {
         >)
 
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage collections',
+            }),
+        )
 
         fireEvent.change(
             screen.getByLabelText('Name'),

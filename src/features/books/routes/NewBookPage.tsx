@@ -3,7 +3,10 @@ import {
     Suspense,
     useState,
 } from 'react'
-import { useNavigate } from 'react-router-dom'
+import {
+    useNavigate,
+    useSearchParams,
+} from 'react-router-dom'
 
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
@@ -127,20 +130,27 @@ function lookupFailureMessage(
 export function NewBookPage() {
     const navigate = useNavigate()
 
+    const [searchParams] = useSearchParams()
+    const initialLookupIsbn =
+        searchParams.get('isbn') ?? ''
+
     const shelvesQuery = useShelves()
     const categoriesQuery = useCategories()
 
     const [
         values,
         setValues,
-    ] = useState<BookFormValues>(
-        bookFormDefaults,
-    )
+    ] = useState<BookFormValues>(() => ({
+        ...bookFormDefaults,
+        isbn13: isValidIsbn(initialLookupIsbn)
+            ? initialLookupIsbn.trim()
+            : '',
+    }))
 
     const [
         lookupInput,
         setLookupInput,
-    ] = useState('')
+    ] = useState(initialLookupIsbn)
 
     const [
         isScannerOpen,
@@ -150,7 +160,11 @@ export function NewBookPage() {
     const [
         activeLookupIsbn,
         setActiveLookupIsbn,
-    ] = useState('')
+    ] = useState(() =>
+        isValidIsbn(initialLookupIsbn)
+            ? initialLookupIsbn.trim()
+            : '',
+    )
 
     const [
         lookupClientError,

@@ -345,6 +345,12 @@ describe('WishlistsPage', () => {
 
         renderPage()
 
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage wishlists',
+            }),
+        )
+
         fireEvent.change(
             screen.getByLabelText('Name'),
             {
@@ -471,6 +477,12 @@ describe('WishlistsPage', () => {
         } as unknown as ReturnType<typeof useCreateBook>)
 
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage wishlists',
+            }),
+        )
 
         fireEvent.change(
             screen.getByLabelText('Title'),
@@ -630,6 +642,12 @@ describe('WishlistsPage', () => {
 
         renderPage()
 
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage wishlists',
+            }),
+        )
+
         fireEvent.change(
             screen.getByLabelText('Name'),
             {
@@ -672,6 +690,12 @@ describe('WishlistsPage', () => {
         >)
 
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Manage wishlists',
+            }),
+        )
 
         fireEvent.click(
             screen.getByRole('button', {

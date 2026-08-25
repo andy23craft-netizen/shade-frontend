@@ -1,49 +1,89 @@
-import { useState } from 'react'
-
-import type { CategoryRead } from '../../../api/apiTypes'
-import { Button } from '../../../components/Button'
-import { Field } from '../../../components/Field'
 import {
-    sortByLabel,
-    sortOrderLabel,
+    useEffect,
+    useRef,
+    useState,
+    type FormEvent,
+} from 'react'
+
+import type {
+    CategoryRead,
+} from '../../../api/apiTypes'
+import { Button } from '../../../components/Button'
+import {
     type BookSortBy,
     type BookSortOrder,
 } from '../booksListModel'
-import { sortCategoriesByName } from '../categoryDisplay'
-
-const SORT_BY_OPTIONS: readonly BookSortBy[] = [
-    'author',
-    'title',
-    'creationDate',
-    'shelf',
-]
-
-const SORT_ORDER_OPTIONS: readonly BookSortOrder[] = [
-    'asc',
-    'desc',
-]
+import {
+    sortCategoriesByName,
+} from '../categoryDisplay'
 
 export interface BooksListControlsProps {
     categories: readonly CategoryRead[]
     categoryIds: readonly string[]
-    author: string
-    title: string
+    author?: string
+    title?: string
     isRead: boolean | undefined
     sortBy: BookSortBy
     sortOrder: BookSortOrder
+    selectionMode: boolean
     onCategoryIdsChange: (
         categoryIds: string[],
     ) => void
     onReadStatusChange: (
         isRead: boolean | undefined,
     ) => void
-    onApply: (
-        author: string,
-        title: string,
+    onSearch: (
+        search: string,
     ) => void
     onClear: () => void
-    onSortByChange: (sortBy: BookSortBy) => void
-    onSortOrderChange: (sortOrder: BookSortOrder) => void
+    onSortChange: (
+        sortBy: BookSortBy,
+        sortOrder: BookSortOrder,
+    ) => void
+    onEnterSelectionMode: () => void
+}
+
+type SortState =
+    | 'none'
+    | 'asc'
+    | 'desc'
+
+function getSortState(
+    field: BookSortBy,
+    sortBy: BookSortBy,
+    sortOrder: BookSortOrder,
+): SortState {
+    if (sortBy !== field) {
+        return 'none'
+    }
+
+    return sortOrder
+}
+
+function nextSortState(
+    current: SortState,
+): SortState {
+    switch (current) {
+        case 'none':
+            return 'asc'
+        case 'asc':
+            return 'desc'
+        case 'desc':
+            return 'none'
+    }
+}
+
+function sortStateLabel(
+    state: SortState,
+): string {
+    switch (state) {
+        case 'none':
+            return 'None'
+        case 'asc':
+            return 'Asc'
+        case 'desc':
+            return 'Desc'
+    }
 }
 
 export function BooksListControls({
@@ -54,45 +94,151 @@ export function BooksListControls({
                                       isRead,
                                       sortBy,
                                       sortOrder,
+                                      selectionMode,
                                       onCategoryIdsChange,
                                       onReadStatusChange,
-                                      onApply,
+                                      onSearch,
                                       onClear,
-                                      onSortByChange,
-                                      onSortOrderChange,
+                                      onSortChange,
+                                      onEnterSelectionMode,
                                   }: BooksListControlsProps) {
-    const [authorDraft, setAuthorDraft] = useState(author)
-    const [titleDraft, setTitleDraft] = useState(title)
-    const [categoryPickerOpen, setCategoryPickerOpen] =
-        useState(false)
-    const [categorySearch, setCategorySearch] =
-        useState('')
+    /*
+     * Legacy URLs may still contain separate author/title
+     * filters. Prefer author as the value for the new
+     * unified search box.
+     */
+    const normalizedAuthor =
+        author ?? ''
+
+    const normalizedTitle =
+        title ?? ''
+
+    const initialSearch =
+        normalizedAuthor.trim() !== ''
+            ? normalizedAuthor
+            : normalizedTitle
+
+    const [
+        searchDraft,
+        setSearchDraft,
+    ] = useState<string>(
+        () => initialSearch,
+    )
+
+    const [
+        categoryPickerOpen,
+        setCategoryPickerOpen,
+    ] = useState(false)
+
+    const [
+        categorySearch,
+        setCategorySearch,
+    ] = useState('')
+
+    const [
+        mobileControlsOpen,
+        setMobileControlsOpen,
+    ] = useState(false)
 
     const sortedCategories =
         sortCategoriesByName(categories)
-    const selected = new Set(categoryIds)
 
-    const selectedCategories =
-        sortedCategories.filter((category) =>
-            selected.has(category.category_id),
-        )
+    const selected =
+        new Set(categoryIds)
 
     const normalizedCategorySearch =
-        categorySearch.trim().toLowerCase()
+        categorySearch
+            .trim()
+            .toLowerCase()
 
     const visibleCategories =
         normalizedCategorySearch === ''
             ? sortedCategories
-            : sortedCategories.filter((category) =>
-                category.name
-                    .toLowerCase()
-                    .includes(normalizedCategorySearch),
+            : sortedCategories.filter(
+                (category) =>
+                    category.name
+                        .toLowerCase()
+                        .includes(
+                            normalizedCategorySearch,
+                        ),
             )
+
+    const authorSortState =
+        getSortState(
+            'author',
+            sortBy,
+            sortOrder,
+        )
+
+    const titleSortState =
+        getSortState(
+            'title',
+            sortBy,
+            sortOrder,
+        )
+
+    const categoryPickerRef =
+        useRef<HTMLDivElement | null>(null)
+
+    useEffect(() => {
+        if (!categoryPickerOpen) {
+            return
+        }
+
+        function handlePointerDown(
+            event: PointerEvent,
+        ) {
+            const target =
+                event.target
+
+            if (
+                !(target instanceof Node) ||
+                categoryPickerRef.current?.contains(
+                    target,
+                )
+            ) {
+                return
+            }
+
+            setCategoryPickerOpen(false)
+        }
+
+        function handleEscape(
+            event: KeyboardEvent,
+        ) {
+            if (event.key === 'Escape') {
+                setCategoryPickerOpen(false)
+            }
+        }
+
+        document.addEventListener(
+            'pointerdown',
+            handlePointerDown,
+        )
+
+        document.addEventListener(
+            'keydown',
+            handleEscape,
+        )
+
+        return () => {
+            document.removeEventListener(
+                'pointerdown',
+                handlePointerDown,
+            )
+
+            document.removeEventListener(
+                'keydown',
+                handleEscape,
+            )
+        }
+    }, [categoryPickerOpen])
 
     function toggleCategoryId(
         categoryId: string,
     ) {
-        const next = new Set(selected)
+        const next =
+            new Set(selected)
 
         if (next.has(categoryId)) {
             next.delete(categoryId)
@@ -105,176 +251,199 @@ export function BooksListControls({
         )
     }
 
-    function clearCategoryId(
-        categoryId: string,
+    function handleSearchSubmit(
+        event: FormEvent<HTMLFormElement>,
     ) {
-        onCategoryIdsChange(
-            categoryIds
-                .filter(
-                    (selectedCategoryId) =>
-                        selectedCategoryId !==
-                        categoryId,
-                )
-                .sort(),
+        event.preventDefault()
+
+        onSearch(searchDraft)
+    }
+
+    function cycleSort(
+        field: BookSortBy,
+        currentState: SortState,
+    ) {
+        const next =
+            nextSortState(
+                currentState,
+            )
+
+        if (next === 'none') {
+            onSortChange(
+                'author',
+                'asc',
+            )
+            return
+        }
+
+        onSortChange(
+            field,
+            next,
         )
     }
 
+    function handleClear() {
+        setSearchDraft('')
+        setCategorySearch('')
+        setCategoryPickerOpen(false)
+
+        onClear()
+    }
+
     return (
-        <div className="books-page__controls">
-            <div className="books-page__filters">
-                <div className="books-page__category-filter">
-                    <div className="books-page__category-filter-heading">
-                        <div>
-                            <span className="books-page__category-filter-label">
-                                Categories
-                            </span>
+        <div className="books-toolbar">
+            <button
+                type="button"
+                className="books-toolbar__mobile-toggle"
+                aria-expanded={
+                    mobileControlsOpen
+                }
+                aria-controls="books-toolbar-controls"
+                onClick={() => {
+                    setMobileControlsOpen(
+                        (open) => !open,
+                    )
+                }}
+            >
+                Filters &amp; sort
+            </button>
 
-                            <p className="books-page__category-filter-help">
-                                Choose multiple categories to
-                                match books in all selected
-                                categories.
-                            </p>
-                        </div>
+            <div
+                id="books-toolbar-controls"
+                className={
+                    mobileControlsOpen
+                        ? 'books-toolbar__controls books-toolbar__controls--open'
+                        : 'books-toolbar__controls'
+                }
+            >
+                <form
+                    className="books-toolbar__search"
+                    role="search"
+                    onSubmit={
+                        handleSearchSubmit
+                    }
+                >
+                    <label
+                        htmlFor="books-toolbar-search"
+                        className="visually-hidden"
+                    >
+                        Search author or title
+                    </label>
 
-                        <button
-                            type="button"
-                            className="books-page__category-picker-toggle"
-                            aria-expanded={
-                                categoryPickerOpen
-                            }
-                            aria-controls="books-category-picker"
-                            onClick={() => {
-                                setCategoryPickerOpen(
-                                    (open) => !open,
-                                )
-                            }}
-                        >
-                            {categoryPickerOpen
-                                ? 'Close'
-                                : selected.size > 0
-                                    ? `Select (${selected.size})`
-                                    : 'Select'}
-                            <span
-                                aria-hidden="true"
-                                className="books-page__category-picker-chevron"
-                            >
-                                {categoryPickerOpen
-                                    ? '▴'
-                                    : '▾'}
-                            </span>
-                        </button>
-                    </div>
+                    <input
+                        id="books-toolbar-search"
+                        type="search"
+                        value={searchDraft}
+                        placeholder="Search author or title…"
+                        autoComplete="off"
+                        onChange={(event) => {
+                            setSearchDraft(
+                                event.target.value,
+                            )
+                        }}
+                    />
 
-                    {selectedCategories.length > 0 ? (
-                        <div
-                            className="books-page__selected-categories"
-                            aria-label="Selected categories"
-                        >
-                            {selectedCategories.map(
-                                (category) => (
-                                    <button
-                                        key={
-                                            category.category_id
-                                        }
-                                        type="button"
-                                        className="books-page__selected-category"
-                                        aria-label={`Remove ${category.name} category filter`}
-                                        onClick={() => {
-                                            clearCategoryId(
-                                                category.category_id,
-                                            )
-                                        }}
-                                    >
-                                        <span>
-                                            {
-                                                category.name
-                                            }
-                                        </span>
-                                        <span
-                                            aria-hidden="true"
-                                            className="books-page__selected-category-remove"
-                                        >
-                                            ×
-                                        </span>
-                                    </button>
-                                ),
-                            )}
-                        </div>
-                    ) : (
-                        <p className="books-page__category-filter-empty">
-                            All categories
-                        </p>
-                    )}
+                    <Button
+                        type="submit"
+                        variant="primary"
+                    >
+                        Search
+                    </Button>
+                </form>
+
+                <div
+                    ref={categoryPickerRef}
+                    className="books-toolbar__category"
+                >
+                    <button
+                        type="button"
+                        className="books-toolbar__button"
+                        aria-expanded={
+                            categoryPickerOpen
+                        }
+                        aria-controls="books-toolbar-category-picker"
+                        onClick={() => {
+                            setCategoryPickerOpen(
+                                (open) => !open,
+                            )
+                        }}
+                    >
+                        Categories
+                        {selected.size > 0
+                            ? ` (${selected.size})`
+                            : ''}
+                    </button>
 
                     {categoryPickerOpen ? (
                         <div
-                            id="books-category-picker"
-                            className="books-page__category-picker"
+                            id="books-toolbar-category-picker"
+                            className="books-toolbar__category-picker"
                         >
-                            <Field label="Find a category">
-                                <input
-                                    className="field__control"
-                                    type="search"
-                                    value={
-                                        categorySearch
-                                    }
-                                    autoComplete="off"
-                                    onChange={(
-                                        event,
-                                    ) => {
-                                        setCategorySearch(
-                                            event.target
-                                                .value,
-                                        )
-                                    }}
-                                />
-                            </Field>
+                            <label
+                                htmlFor="books-toolbar-category-search"
+                                className="visually-hidden"
+                            >
+                                Find a category
+                            </label>
 
-                            <fieldset className="books-page__category-options">
+                            <input
+                                id="books-toolbar-category-search"
+                                type="search"
+                                placeholder="Find category…"
+                                value={
+                                    categorySearch
+                                }
+                                autoComplete="off"
+                                onChange={(
+                                    event,
+                                ) => {
+                                    setCategorySearch(
+                                        event.target
+                                            .value,
+                                    )
+                                }}
+                            />
+
+                            <fieldset className="books-toolbar__category-options">
                                 <legend className="visually-hidden">
                                     Category filters
                                 </legend>
 
                                 {visibleCategories.length >
                                 0 ? (
-                                    <div className="books-page__category-options-list">
-                                        {visibleCategories.map(
-                                            (
-                                                category,
-                                            ) => (
-                                                <label
-                                                    key={
-                                                        category.category_id
-                                                    }
-                                                    htmlFor={`books-filter-category-${category.category_id}`}
-                                                    className="books-page__category-option"
-                                                >
-                                                    <input
-                                                        id={`books-filter-category-${category.category_id}`}
-                                                        type="checkbox"
-                                                        checked={selected.has(
+                                    visibleCategories.map(
+                                        (
+                                            category,
+                                        ) => (
+                                            <label
+                                                key={
+                                                    category.category_id
+                                                }
+                                                className="books-toolbar__category-option"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selected.has(
+                                                        category.category_id,
+                                                    )}
+                                                    onChange={() => {
+                                                        toggleCategoryId(
                                                             category.category_id,
-                                                        )}
-                                                        onChange={() =>
-                                                            toggleCategoryId(
-                                                                category.category_id,
-                                                            )
-                                                        }
-                                                    />
+                                                        )
+                                                    }}
+                                                />
 
-                                                    <span>
-                                                        {
-                                                            category.name
-                                                        }
-                                                    </span>
-                                                </label>
-                                            ),
-                                        )}
-                                    </div>
+                                                <span>
+                                                    {
+                                                        category.name
+                                                    }
+                                                </span>
+                                            </label>
+                                        ),
+                                    )
                                 ) : (
-                                    <p className="books-page__category-no-results">
-                                        No categories match
-                                        that search.
+                                    <p>
+                                        No categories match.
                                     </p>
                                 )}
                             </fieldset>
@@ -282,143 +451,86 @@ export function BooksListControls({
                     ) : null}
                 </div>
 
-                <Field label="Author">
+                <label className="books-toolbar__read">
                     <input
-                        className="field__control"
-                        type="search"
-                        value={authorDraft}
-                        onChange={(event) => {
-                            setAuthorDraft(
-                                event.target.value,
-                            )
-                        }}
-                    />
-                </Field>
-
-                <Field label="Title">
-                    <input
-                        className="field__control"
-                        type="search"
-                        value={titleDraft}
-                        onChange={(event) => {
-                            setTitleDraft(
-                                event.target.value,
-                            )
-                        }}
-                    />
-                </Field>
-
-                <Field label="Read status">
-                    <select
-                        className="field__control"
-                        value={
-                            isRead === undefined
-                                ? ''
-                                : String(isRead)
+                        type="checkbox"
+                        checked={
+                            isRead === true
                         }
                         onChange={(event) => {
-                            const value = event.target.value
-
-                            if (value === 'true') {
-                                onReadStatusChange(true)
-                                return
-                            }
-
-                            if (value === 'false') {
-                                onReadStatusChange(false)
-                                return
-                            }
-
-                            onReadStatusChange(undefined)
+                            onReadStatusChange(
+                                event.target
+                                    .checked
+                                    ? true
+                                    : undefined,
+                            )
                         }}
-                    >
-                        <option value="">All</option>
-                        <option value="true">Read</option>
-                        <option value="false">Unread</option>
-                    </select>
-                </Field>
-            </div>
+                    />
 
-            <div className="books-page__filter-actions">
-                <Button
+                    <span>Read</span>
+                </label>
+
+                <button
                     type="button"
-                    variant="primary"
+                    className="books-toolbar__button books-toolbar__sort"
+                    aria-label={`Author sort: ${sortStateLabel(
+                        authorSortState,
+                    )}`}
                     onClick={() => {
-                        onApply(
-                            authorDraft,
-                            titleDraft,
+                        cycleSort(
+                            'author',
+                            authorSortState,
                         )
                     }}
                 >
-                    Apply
-                </Button>
+                    <span>Author</span>
+                    <strong>
+                        {sortStateLabel(
+                            authorSortState,
+                        )}
+                    </strong>
+                </button>
 
-                <Button
+                <button
                     type="button"
-                    variant="secondary"
+                    className="books-toolbar__button books-toolbar__sort"
+                    aria-label={`Title sort: ${sortStateLabel(
+                        titleSortState,
+                    )}`}
                     onClick={() => {
-                        setAuthorDraft('')
-                        setTitleDraft('')
-                        setCategorySearch('')
-                        onClear()
+                        cycleSort(
+                            'title',
+                            titleSortState,
+                        )
                     }}
                 >
+                    <span>Title</span>
+                    <strong>
+                        {sortStateLabel(
+                            titleSortState,
+                        )}
+                    </strong>
+                </button>
+
+                {!selectionMode ? (
+                    <button
+                        type="button"
+                        className="books-toolbar__button"
+                        onClick={
+                            onEnterSelectionMode
+                        }
+                    >
+                        Select
+                    </button>
+                ) : null}
+
+                <button
+                    type="button"
+                    className="books-toolbar__clear"
+                    onClick={handleClear}
+                >
                     Clear
-                </Button>
-            </div>
-
-            <div className="books-page__sort">
-                <Field label="Sort by">
-                    <select
-                        className="field__control"
-                        value={sortBy}
-                        onChange={(event) => {
-                            onSortByChange(
-                                event.target
-                                    .value as BookSortBy,
-                            )
-                        }}
-                    >
-                        {SORT_BY_OPTIONS.map(
-                            (value) => (
-                                <option
-                                    key={value}
-                                    value={value}
-                                >
-                                    {sortByLabel(
-                                        value,
-                                    )}
-                                </option>
-                            ),
-                        )}
-                    </select>
-                </Field>
-
-                <Field label="Sort direction">
-                    <select
-                        className="field__control"
-                        value={sortOrder}
-                        onChange={(event) => {
-                            onSortOrderChange(
-                                event.target
-                                    .value as BookSortOrder,
-                            )
-                        }}
-                    >
-                        {SORT_ORDER_OPTIONS.map(
-                            (value) => (
-                                <option
-                                    key={value}
-                                    value={value}
-                                >
-                                    {sortOrderLabel(
-                                        value,
-                                    )}
-                                </option>
-                            ),
-                        )}
-                    </select>
-                </Field>
+                </button>
             </div>
         </div>
     )

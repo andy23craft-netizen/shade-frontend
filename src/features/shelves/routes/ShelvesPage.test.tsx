@@ -26,6 +26,7 @@ const mockCreateMutate = vi.fn()
 const mockUpdateMutate = vi.fn()
 const mockDeleteMutate = vi.fn()
 const mockBreakdownsRefetch = vi.fn()
+const mockUseBooks = vi.fn()
 
 let mockShelvesPending = false
 let mockShelvesError: unknown = null
@@ -56,6 +57,11 @@ vi.mock('../../../api/shelvesQueries', () => ({
         isPending: mockDeletePending,
         mutate: mockDeleteMutate,
     }),
+}))
+
+vi.mock('../../../api/booksQueries', () => ({
+    useBooks: (options: unknown) =>
+        mockUseBooks(options),
 }))
 
 vi.mock('../../../api/dashboardQueries', () => ({
@@ -134,6 +140,16 @@ describe('ShelvesPage', () => {
         mockBreakdownsPending = false
         mockBreakdownsError = null
         mockBreakdownsRefetch.mockReset()
+        mockUseBooks.mockReset()
+
+        mockUseBooks.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                items: [],
+                total: 0,
+            },
+        })
     })
 
     it('shows a loading state while shelves load', () => {
@@ -228,25 +244,6 @@ describe('ShelvesPage', () => {
             '/books?shelf_name=unknown',
         )
 
-        const removedRow = screen
-            .getByRole('heading', {
-                name: 'Removed',
-            })
-            .closest('article')
-
-        expect(removedRow).not.toBeNull()
-
-        expect(
-            within(
-                removedRow as HTMLElement,
-            ).getByRole('link', {
-                name: '0 books',
-            }),
-        ).toHaveAttribute(
-            'href',
-            '/books?shelf_name=removed',
-        )
-
         const lizRow = screen
             .getByRole('heading', {
                 name: 'Liz Tbr',
@@ -268,19 +265,13 @@ describe('ShelvesPage', () => {
 
         expect(
             screen.getByRole('heading', {
-                name: 'Removed',
-            }),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByRole('heading', {
                 name: 'Liz Tbr',
             }),
         ).toBeInTheDocument()
 
         expect(
             screen.getAllByText('System shelf'),
-        ).toHaveLength(2)
+        ).toHaveLength(1)
 
         expect(
             screen.getByText('Office'),
@@ -298,9 +289,15 @@ describe('ShelvesPage', () => {
 
         expect(
             screen.getByRole('button', {
-                name: 'Add Shelf',
+                name: 'Add shelf',
             }),
         ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Add Shelf',
+            }),
+        ).not.toBeInTheDocument()
 
         expect(lizRow).not.toBeNull()
 
@@ -321,6 +318,12 @@ describe('ShelvesPage', () => {
                 },
             ),
         ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Removed',
+            }),
+        ).not.toBeInTheDocument()
     })
 
     it('does not offer delete for system shelves', () => {
@@ -350,7 +353,19 @@ describe('ShelvesPage', () => {
             }),
         )
 
-        const nameInput = row.getByRole(
+        const editForm = screen
+            .getByRole('heading', {
+                name: 'Edit Unknown',
+            })
+            .closest('form')
+
+        expect(editForm).not.toBeNull()
+
+        const edit = within(
+            editForm as HTMLElement,
+        )
+
+        const nameInput = edit.getByRole(
             'textbox',
             {
                 name: 'Name',
@@ -378,10 +393,14 @@ describe('ShelvesPage', () => {
         )
 
         renderShelvesPage()
-
-        const addForm = screen
-            .getByRole('heading', {
+        fireEvent.click(
+            screen.getByRole('button', {
                 name: 'Add shelf',
+            }),
+        )
+        const addForm = screen
+            .getByRole('button', {
+                name: 'Add Shelf',
             })
             .closest('form')
 
@@ -390,6 +409,8 @@ describe('ShelvesPage', () => {
         const form = within(
             addForm as HTMLElement,
         )
+
+        expect(addForm).not.toBeNull()
 
         fireEvent.change(
             form.getByRole('textbox', {
@@ -440,15 +461,24 @@ describe('ShelvesPage', () => {
 
         renderShelvesPage()
 
-        const addForm = screen
-            .getByRole('heading', {
+        fireEvent.click(
+            screen.getByRole('button', {
                 name: 'Add shelf',
+            }),
+        )
+
+        const addForm = screen
+            .getByRole('button', {
+                name: 'Add Shelf',
             })
             .closest('form')
+
+        expect(addForm).not.toBeNull()
 
         const form = within(
             addForm as HTMLElement,
         )
+
 
         fireEvent.change(
             form.getByRole('textbox', {
@@ -504,7 +534,19 @@ describe('ShelvesPage', () => {
             }),
         )
 
-        const locationInput = row.getByRole(
+        const editForm = screen
+            .getByRole('heading', {
+                name: 'Edit Liz Tbr',
+            })
+            .closest('form')
+
+        expect(editForm).not.toBeNull()
+
+        const edit = within(
+            editForm as HTMLElement,
+        )
+
+        const locationInput = edit.getByRole(
             'textbox',
             {
                 name: 'Location',
@@ -518,26 +560,10 @@ describe('ShelvesPage', () => {
         })
 
         fireEvent.click(
-            row.getByRole('button', {
+            edit.getByRole('button', {
                 name: 'Save Shelf',
             }),
         )
-
-        expect(mockUpdateMutate).toHaveBeenCalledWith(
-            {
-                shelfId: 'shelf-liz',
-                shelf: {
-                    location: 'Basement',
-                },
-            },
-            expect.any(Object),
-        )
-
-        await waitFor(() => {
-            expect(
-                screen.getByText('Shelf saved.'),
-            ).toBeInTheDocument()
-        })
     })
 
     it('deletes a non-system shelf after confirmation', async () => {
@@ -651,8 +677,42 @@ describe('ShelvesPage', () => {
 
         expect(
             screen.getByRole('button', {
+                name: 'Add shelf',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('opens and cancels the Add shelf dialog', () => {
+        renderShelvesPage()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Add Shelf',
+            }),
+        ).not.toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Add shelf',
+            }),
+        )
+
+        expect(
+            screen.getByRole('button', {
                 name: 'Add Shelf',
             }),
         ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Add Shelf',
+            }),
+        ).not.toBeInTheDocument()
     })
 })

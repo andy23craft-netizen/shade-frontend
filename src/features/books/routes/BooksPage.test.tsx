@@ -168,7 +168,7 @@ function renderBooksPage(
 function openCategoryPicker() {
     fireEvent.click(
         screen.getByRole('button', {
-            name: /^Select(?: \(\d+\))?$/,
+            name: /^Categories(?: \(\d+\))?$/,
         }),
     )
 }
@@ -488,16 +488,6 @@ describe('BooksPage', () => {
                 sortOrder: 'asc',
             }),
         )
-
-        expect(
-            screen.getByLabelText('Sort by'),
-        ).toHaveValue('shelf')
-
-        expect(
-            screen.getByRole('option', {
-                name: 'Shelf',
-            }),
-        ).toBeInTheDocument()
     })
 
     it('honors URL search params for catalog filters', () => {
@@ -535,12 +525,10 @@ describe('BooksPage', () => {
         ).toBeChecked()
 
         expect(
-            screen.getByLabelText('Author'),
+            screen.getByLabelText(
+                'Search author or title',
+            ),
         ).toHaveValue('Le Guin')
-
-        expect(
-            screen.getByLabelText('Title'),
-        ).toHaveValue('Left Hand')
     })
 
     it('uses the cleanup books query for a cleanup-field URL', () => {
@@ -678,11 +666,9 @@ describe('BooksPage', () => {
         ).not.toBeChecked()
 
         expect(
-            screen.getByLabelText('Author'),
-        ).toHaveValue('')
-
-        expect(
-            screen.getByLabelText('Title'),
+            screen.getByLabelText(
+                'Search author or title',
+            ),
         ).toHaveValue('')
     })
 
@@ -768,7 +754,7 @@ describe('BooksPage', () => {
     )
     })
 
-    it('applies trimmed author and title filters', () => {
+    it('applies a trimmed unified search as an author filter', () => {
         mockUseInfiniteBooks.mockReturnValue(
             makeInfiniteBooksResult([
                 {
@@ -783,7 +769,9 @@ describe('BooksPage', () => {
         renderBooksPage('/books?category_id=cat-fiction')
 
         fireEvent.change(
-            screen.getByLabelText('Author'),
+            screen.getByLabelText(
+                'Search author or title',
+            ),
             {
                 target: {
                     value: '  Le Guin  ',
@@ -791,31 +779,21 @@ describe('BooksPage', () => {
             },
         )
 
-        fireEvent.change(
-            screen.getByLabelText('Title'),
-            {
-                target: {
-                    value: '  Left Hand  ',
-                },
-            },
-        )
-
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith(
             expect.objectContaining({
-            categoryIds: ['cat-fiction'],
-            author: undefined,
-            title: undefined,
-            sortBy: 'author',
-            sortOrder: 'asc',
-        }),
+                categoryIds: ['cat-fiction'],
+                author: undefined,
+                title: undefined,
+                sortBy: 'author',
+                sortOrder: 'asc',
+            }),
         )
-
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Apply',
+                name: 'Search',
             }),
         )
 
@@ -823,12 +801,12 @@ describe('BooksPage', () => {
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith(
             expect.objectContaining({
-            categoryIds: ['cat-fiction'],
-            author: 'Le Guin',
-            title: 'Left Hand',
-            sortBy: 'author',
-            sortOrder: 'asc',
-        }),
+                categoryIds: ['cat-fiction'],
+                author: 'Le Guin',
+                title: undefined,
+                sortBy: 'author',
+                sortOrder: 'asc',
+            }),
         )
     })
 
@@ -860,25 +838,28 @@ describe('BooksPage', () => {
 
         expect(
             screen.getByRole('button', {
-                name: 'Remove Fiction category filter',
+                name: 'Categories (1)',
             }),
         ).toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Author'),
+            screen.getByLabelText(
+                'Search author or title',
+            ),
         ).toHaveValue('Le Guin')
+
+        expect(
+            screen.getByLabelText(
+                'Search author or title',
+            ),
+        ).toHaveValue('Le Guin')
+
 
         fireEvent.click(
             screen.getByRole('button', {
                 name: 'Clear filters',
             }),
         )
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Remove Fiction category filter',
-            }),
-        ).not.toBeInTheDocument()
 
         expect(
             mockUseInfiniteBooks,
@@ -923,20 +904,16 @@ describe('BooksPage', () => {
 
 
         expect(
-            screen.getByLabelText('Author'),
+            screen.getByLabelText(
+                'Search author or title',
+            ),
         ).toHaveValue('')
 
         expect(
-            screen.getByLabelText('Title'),
-        ).toHaveValue('')
-
-        expect(
-            screen.getByLabelText('Sort by'),
-        ).toHaveValue('shelf')
-
-        expect(
-            screen.getByLabelText('Sort direction'),
-        ).toHaveValue('desc')
+            screen.getByRole('button', {
+                name: 'Categories',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             mockUseInfiniteBooks,
@@ -972,22 +949,21 @@ describe('BooksPage', () => {
 
         renderBooksPage('/books?page=2')
 
-        fireEvent.change(
-            screen.getByLabelText('Sort by'),
-            {
-                target: {
-                    value: 'title',
-                },
-            },
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Title sort: None',
+            }),
         )
 
         expect(
-            screen.getByLabelText('Sort by'),
-        ).toHaveValue('title')
+            screen.getByRole('button', {
+                name: 'Title sort: Asc',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenCalledWith(
+        ).toHaveBeenLastCalledWith(
             expect.objectContaining({
                 sortBy: 'title',
                 sortOrder: 'asc',
@@ -1638,7 +1614,7 @@ describe('BooksPage', () => {
 
         expect(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         ).toBeInTheDocument()
 
@@ -1650,7 +1626,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -1684,7 +1660,7 @@ describe('BooksPage', () => {
 
         expect(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         ).toBeInTheDocument()
     })
@@ -1715,7 +1691,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -1776,7 +1752,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -1791,7 +1767,9 @@ describe('BooksPage', () => {
         ).toBeInTheDocument()
 
         fireEvent.change(
-            screen.getByLabelText('Author'),
+            screen.getByLabelText(
+                'Search author or title',
+            ),
             {
                 target: {
                     value: 'Le Guin',
@@ -1801,7 +1779,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Apply',
+                name: 'Search',
             }),
         )
 
@@ -1844,7 +1822,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -1858,13 +1836,10 @@ describe('BooksPage', () => {
             screen.getByText('2 books selected'),
         ).toBeInTheDocument()
 
-        fireEvent.change(
-            screen.getByLabelText('Sort by'),
-            {
-                target: {
-                    value: 'title',
-                },
-            },
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Title sort: None',
+            }),
         )
 
         await waitFor(() => {
@@ -1874,8 +1849,10 @@ describe('BooksPage', () => {
         })
 
         expect(
-            screen.getByLabelText('Sort by'),
-        ).toHaveValue('title')
+            screen.getByRole('button', {
+                name: 'Title sort: Asc',
+            }),
+        ).toBeInTheDocument()
     })
 
     it('clears selection when exiting and does not restore it on re-entry', () => {
@@ -1900,7 +1877,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -1922,7 +1899,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -1961,7 +1938,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -2020,7 +1997,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -2063,7 +2040,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 
@@ -2101,7 +2078,7 @@ describe('BooksPage', () => {
 
         fireEvent.click(
             screen.getByRole('button', {
-                name: 'Select books',
+                name: 'Select',
             }),
         )
 

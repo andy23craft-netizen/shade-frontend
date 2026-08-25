@@ -14,6 +14,7 @@ import {
     EmptyState,
     Field,
     LoadingState,
+    ModalDialog,
     QueryErrorState,
 } from '../../../components'
 import {
@@ -474,6 +475,11 @@ export function WishlistsPage() {
         setDeleteError,
     ] = useState<string | null>(null)
 
+    const [
+        wishlistActionsOpen,
+        setWishlistActionsOpen,
+    ] = useState(false)
+
     function handleConfirmDelete() {
         if (
             pendingDelete === null ||
@@ -552,11 +558,6 @@ export function WishlistsPage() {
                 </p>
             </header>
 
-            <div className="wishlists-page__workbench">
-                <CreateWishlistForm />
-
-                <AddWishlistBookControl />
-            </div>
 
             {deleteError ? (
                 <Alert variant="error">
@@ -592,6 +593,40 @@ export function WishlistsPage() {
                     ))}
                 </ul>
             )}
+
+            <button
+                type="button"
+                className="page-add-tab"
+                aria-label="Manage wishlists"
+                onClick={() => {
+                    setWishlistActionsOpen(true)
+                }}
+            >
+    <span
+        className="page-add-tab__plus"
+        aria-hidden="true"
+    >
+        +
+    </span>
+
+                <span className="page-add-tab__label">
+        Wishlist
+    </span>
+            </button>
+
+            <ModalDialog
+                open={wishlistActionsOpen}
+                title="Wishlist actions"
+                onClose={() => {
+                    setWishlistActionsOpen(false)
+                }}
+            >
+                <div className="wishlists-page__workbench wishlists-page__workbench--dialog">
+                    <CreateWishlistForm />
+
+                    <AddWishlistBookControl />
+                </div>
+            </ModalDialog>
 
             <ConfirmationDialog
                 open={pendingDelete !== null}

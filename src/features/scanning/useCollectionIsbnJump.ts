@@ -1,5 +1,4 @@
 import {
-    useLocation,
     useNavigate,
 } from 'react-router-dom'
 import { useRef } from 'react'
@@ -15,7 +14,6 @@ import {
 
 export function useCollectionIsbnJump(): void {
     const navigate = useNavigate()
-    const location = useLocation()
     const {
         apiClient,
     } = useConnection()
@@ -60,42 +58,13 @@ export function useCollectionIsbnJump(): void {
                         return
                     }
 
-                    if (
-                        location.pathname ===
-                        '/books'
-                    ) {
-                        const nextSearch =
-                            new URLSearchParams(
-                                location.search,
-                            )
-
-                        nextSearch.set(
-                            'isbn',
-                            compacted,
-                        )
-                        nextSearch.delete('page')
-
-                        navigate(
-                            {
-                                pathname: '/books',
-                                search:
-                                    `?${nextSearch.toString()}`,
-                            },
-                            {
-                                replace: true,
-                            },
-                        )
-
-                        return
-                    }
-
                     const nextSearch =
                         new URLSearchParams({
                             isbn: compacted,
                         })
 
                     navigate({
-                        pathname: '/books',
+                        pathname: '/books/new',
                         search:
                             `?${nextSearch.toString()}`,
                     })

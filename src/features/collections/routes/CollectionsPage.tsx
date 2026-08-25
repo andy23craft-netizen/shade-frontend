@@ -7,6 +7,7 @@ import {
 } from 'react'
 
 import {
+    ModalDialog,
     Alert,
     Button,
     ConfirmationDialog,
@@ -740,6 +741,11 @@ export function CollectionsPage() {
         setDeleteError,
     ] = useState<string | null>(null)
 
+    const [
+        collectionActionsOpen,
+        setCollectionActionsOpen,
+    ] = useState(false)
+
     function handleConfirmDelete() {
         if (
             pendingDelete === null ||
@@ -830,9 +836,6 @@ export function CollectionsPage() {
                 </p>
             </header>
 
-            <CreateCollectionForm />
-
-            <AddCollectionBookControl />
 
             {deleteError ? (
                 <Alert variant="error">
@@ -874,6 +877,40 @@ export function CollectionsPage() {
                     )}
                 </ul>
             )}
+
+            <button
+                type="button"
+                className="page-add-tab"
+                aria-label="Manage collections"
+                onClick={() => {
+                    setCollectionActionsOpen(true)
+                }}
+            >
+    <span
+        className="page-add-tab__plus"
+        aria-hidden="true"
+    >
+        +
+    </span>
+
+                <span className="page-add-tab__label">
+        Collection
+    </span>
+            </button>
+
+            <ModalDialog
+                open={collectionActionsOpen}
+                title="Collection actions"
+                onClose={() => {
+                    setCollectionActionsOpen(false)
+                }}
+            >
+                <div className="collections-page__workbench collections-page__workbench--dialog">
+                    <CreateCollectionForm />
+
+                    <AddCollectionBookControl />
+                </div>
+            </ModalDialog>
 
             <ConfirmationDialog
                 open={pendingDelete !== null}

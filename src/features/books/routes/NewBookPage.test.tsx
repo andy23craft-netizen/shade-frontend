@@ -25,6 +25,7 @@ const mockMutate = vi.fn()
 const mockRefetch = vi.fn()
 const mockShelvesRefetch = vi.fn()
 const mockCategoriesRefetch = vi.fn()
+const mockUseBookLookup = vi.fn()
 
 const TEST_SHELVES: ShelfRead[] = [
     {
@@ -107,10 +108,14 @@ vi.mock('../../../api/booksQueries', () => ({
         isError: false,
         error: null,
     }),
-    useBookLookup: () => ({
-        ...lookupState,
-        refetch: mockRefetch,
-    }),
+    useBookLookup: (isbn: string) => {
+        mockUseBookLookup(isbn)
+
+        return {
+            ...lookupState,
+            refetch: mockRefetch,
+        }
+    },
 }))
 
 vi.mock('../../../api/shelvesQueries', () => ({
@@ -156,9 +161,13 @@ vi.mock('../../scanning/IsbnCameraScanner', () => ({
 }))
 
 
-function renderNewBookPage() {
+function renderNewBookPage(
+    initialEntry = '/books/new',
+) {
     return render(
-        <MemoryRouter>
+        <MemoryRouter
+            initialEntries={[initialEntry]}
+        >
             <NewBookPage />
         </MemoryRouter>,
     )
@@ -171,6 +180,7 @@ describe('NewBookPage', () => {
         mockRefetch.mockReset()
         mockShelvesRefetch.mockReset()
         mockCategoriesRefetch.mockReset()
+        mockUseBookLookup.mockReset()
         shelvesState.data = TEST_SHELVES
         shelvesState.isPending = false
         shelvesState.isError = false
@@ -490,6 +500,44 @@ describe('NewBookPage', () => {
         ).toHaveValue('9780441172719')
 
         expect(mockMutate).not.toHaveBeenCalled()
+    })
+
+    it('starts ISBN lookup from the scanned ISBN in the route', () => {
+        renderNewBookPage(
+            '/books/new?isbn=9780441172719',
+        )
+
+        expect(
+            screen.getByLabelText('Lookup ISBN'),
+        ).toHaveValue('9780441172719')
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('9780441172719')
+
+        expect(
+            mockUseBookLookup,
+        ).toHaveBeenCalledWith(
+            '9780441172719',
+        )
+    })
+
+    it('does not start lookup for an invalid ISBN in the route', () => {
+        renderNewBookPage(
+            '/books/new?isbn=not-an-isbn',
+        )
+
+        expect(
+            screen.getByLabelText('Lookup ISBN'),
+        ).toHaveValue('not-an-isbn')
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('')
+
+        expect(
+            mockUseBookLookup,
+        ).toHaveBeenCalledWith('')
     })
 
     it('closes the scanner when scanner cancel is clicked', () => {

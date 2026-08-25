@@ -204,7 +204,7 @@ describe('useCollectionIsbnJump', () => {
         })
     })
 
-    it('navigates to an ISBN-filtered list for zero matches', async () => {
+    it('navigates to Add Book with the ISBN for zero matches', async () => {
         mockList.mockResolvedValue({
             items: [],
             total: 0,
@@ -218,12 +218,12 @@ describe('useCollectionIsbnJump', () => {
             expect(
                 screen.getByTestId('location'),
             ).toHaveTextContent(
-                '/books?isbn=9780441172719',
+                '/books/new?isbn=9780441172719',
             )
         })
     })
 
-    it('navigates to an ISBN-filtered list for multiple matches', async () => {
+    it('navigates to Add Book with the ISBN for multiple matches', async () => {
         mockList.mockResolvedValue({
             items: [
                 {
@@ -244,12 +244,12 @@ describe('useCollectionIsbnJump', () => {
             expect(
                 screen.getByTestId('location'),
             ).toHaveTextContent(
-                '/books?isbn=9780441172719',
+                '/books/new?isbn=9780441172719',
             )
         })
     })
 
-    it('preserves existing books search parameters', async () => {
+    it('does not carry Books filters into the Add Book route', async () => {
         mockList.mockResolvedValue({
             items: [],
             total: 0,
@@ -266,16 +266,15 @@ describe('useCollectionIsbnJump', () => {
                 screen.getByTestId('location')
 
             expect(location).toHaveTextContent(
-                '/books?',
+                '/books/new?isbn=9780441172719',
             )
-            expect(location).toHaveTextContent(
+
+            expect(location).not.toHaveTextContent(
                 'sortBy=title',
             )
-            expect(location).toHaveTextContent(
+
+            expect(location).not.toHaveTextContent(
                 'category=fiction',
-            )
-            expect(location).toHaveTextContent(
-                'isbn=9780441172719',
             )
         })
     })

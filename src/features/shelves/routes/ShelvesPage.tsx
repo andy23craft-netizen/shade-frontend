@@ -8,13 +8,16 @@ import {
 } from 'react'
 
 import {
+    ShelfShowcase,
+} from '../components/ShelfShowcase'
+import {
     Alert,
-    AppLink,
     Button,
     ConfirmationDialog,
     EmptyState,
     Field,
     LoadingState,
+    ModalDialog,
     QueryErrorState,
 } from '../../../components'
 import {
@@ -192,11 +195,13 @@ function ShelfFields({
 }
 
 function CreateShelfForm({
-    disabled,
-    onCreated,
-}: {
+                             disabled,
+                             onCreated,
+                             onCancel,
+                         }: {
     disabled: boolean
     onCreated: () => void
+    onCancel: () => void
 }) {
     const createShelf = useCreateShelf()
     const summaryRef =
@@ -368,6 +373,15 @@ function CreateShelfForm({
                     {createShelf.isPending
                         ? 'Adding…'
                         : 'Add Shelf'}
+                </Button>
+
+                <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isSubmitting}
+                    onClick={onCancel}
+                >
+                    Cancel
                 </Button>
             </div>
         </form>
@@ -607,6 +621,11 @@ export function ShelvesPage() {
     const deleteShelf = useDeleteShelf()
 
     const [
+        createShelfOpen,
+        setCreateShelfOpen,
+    ] = useState(false)
+
+    const [
         editingShelfId,
         setEditingShelfId,
     ] = useState<string | null>(null)
@@ -686,7 +705,12 @@ export function ShelvesPage() {
         )
     }
 
-    const shelves = shelvesQuery.data ?? []
+    const shelves = (
+        shelvesQuery.data ?? []
+    ).filter(
+        (shelf) =>
+            shelf.common_name !== 'removed',
+    )
 
     const shelfCounts = new Map(
         breakdownsQuery.data.by_shelf.map(
@@ -779,8 +803,9 @@ export function ShelvesPage() {
                 </h1>
                 <p>
                     Manage the shelf catalog used
-                    when placing books. System
-                    shelves Unknown and Removed
+                    when placing books. The Unknown
+                    shelf is reserved for books
+                    without an assigned shelf and
                     cannot be renamed or deleted.
                 </p>
             </header>
@@ -803,24 +828,14 @@ export function ShelvesPage() {
                 </Alert>
             ) : null}
 
-            <CreateShelfForm
-                disabled={mutationBusy}
-                onCreated={() => {
-                    setActionError(null)
-                    setActionNotice(
-                        'Shelf added.',
-                    )
-                }}
-            />
-
             {shelves.length === 0 ? (
                 <EmptyState title="No shelves yet">
                     The API returned an empty shelf
                     catalog.
                 </EmptyState>
             ) : (
-                <ul
-                    className="shelves-list"
+                <div
+                    className="shelves-showcases"
                     aria-label="Shelves"
                 >
                     {shelves.map((shelf) => {
@@ -828,63 +843,26 @@ export function ShelvesPage() {
                             isSystemShelfCommonName(
                                 shelf.common_name,
                             )
+
                         const isEditing =
                             editingShelfId ===
                             shelf.shelf_id
+
                         const bookCount =
                             shelfCounts.get(
                                 shelf.common_name,
                             ) ?? 0
 
                         return (
-                            <li
-                                key={
-                                    shelf.shelf_id
-                                }
-                                className="shelves-list__item"
+                            <div
+                                key={shelf.shelf_id}
+                                className="shelves-showcases__item"
                             >
-                                <article className="shelf-row">
-                                    <header className="shelf-row__heading">
-                                        <h2 className="shelf-row__name">
-                                            <AppLink
-                                                to={`/books?shelf_name=${encodeURIComponent(
-                                                    shelf.common_name,
-                                                )}`}
-                                            >
-                                                {formatShelfCommonNameForDisplay(
-                                                    shelf.common_name,
-                                                )}
-                                            </AppLink>
-                                        </h2>
-
-                                        <p className="shelf-row__count">
-                                            <AppLink
-                                                to={`/books?shelf_name=${encodeURIComponent(
-                                                    shelf.common_name,
-                                                )}`}
-                                            >
-                                                {bookCount}{' '}
-                                                {bookCount === 1
-                                                    ? 'book'
-                                                    : 'books'}
-                                            </AppLink>
-                                        </p>
-
-                                        {isSystem ? (
-                                            <p className="shelf-row__badge">
-                                                System shelf
-                                            </p>
-                                        ) : null}
-                                    </header>
-
-                                    {isEditing ? (
+                                {isEditing ? (
+                                    <section className="shelf-showcase shelf-showcase--editing">
                                         <EditShelfForm
-                                            shelf={
-                                                shelf
-                                            }
-                                            disabled={
-                                                mutationBusy
-                                            }
+                                            shelf={shelf}
+                                            disabled={mutationBusy}
                                             onCancel={() => {
                                                 setEditingShelfId(
                                                     null,
@@ -916,82 +894,87 @@ export function ShelvesPage() {
                                                 void shelvesQuery.refetch()
                                             }}
                                         />
-                                    ) : (
-                                        <>
-                                            <dl className="shelf-row__metadata">
-                                                {shelf.location ? (
-                                                    <div className="shelf-row__field">
-                                                        <dt>
-                                                            Location
-                                                        </dt>
-                                                        <dd>
-                                                            {
-                                                                shelf.location
-                                                            }
-                                                        </dd>
-                                                    </div>
-                                                ) : null}
-
-                                                {shelf.description ? (
-                                                    <div className="shelf-row__field">
-                                                        <dd>
-                                                            {
-                                                                shelf.description
-                                                            }
-                                                        </dd>
-                                                    </div>
-                                                ) : null}
-                                            </dl>
-
-                                            <div className="shelf-row__actions">
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    disabled={
-                                                        mutationBusy
-                                                    }
-                                                    onClick={() => {
-                                                        setActionError(
-                                                            null,
-                                                        )
-                                                        setActionNotice(
-                                                            null,
-                                                        )
-                                                        setEditingShelfId(
-                                                            shelf.shelf_id,
-                                                        )
-                                                    }}
-                                                >
-                                                    Edit
-                                                </Button>
-
-                                                {canDeleteShelf(
-                                                    shelf,
-                                                ) ? (
-                                                    <Button
-                                                        type="button"
-                                                        variant="danger"
-                                                        disabled={
-                                                            mutationBusy
-                                                        }
-                                                        onClick={() => {
-                                                            handleDeleteRequest(
-                                                                shelf,
-                                                            )
-                                                        }}
-                                                    >
-                                                        Delete
-                                                    </Button>
-                                                ) : null}
-                                            </div>
-                                        </>
-                                    )}
-                                </article>
-                            </li>
+                                    </section>
+                                ) : (
+                                    <ShelfShowcase
+                                        shelf={shelf}
+                                        bookCount={bookCount}
+                                        isSystem={isSystem}
+                                        mutationBusy={
+                                            mutationBusy
+                                        }
+                                        canDelete={
+                                            canDeleteShelf(
+                                                shelf,
+                                            )
+                                        }
+                                        onEdit={() => {
+                                            setActionError(
+                                                null,
+                                            )
+                                            setActionNotice(
+                                                null,
+                                            )
+                                            setEditingShelfId(
+                                                shelf.shelf_id,
+                                            )
+                                        }}
+                                        onDelete={() => {
+                                            handleDeleteRequest(
+                                                shelf,
+                                            )
+                                        }}
+                                    />
+                                )}
+                            </div>
                         )
                     })}
-                </ul>
+                </div>
             )}
+
+            <button
+                type="button"
+                className="page-add-tab"
+                aria-label="Add shelf"
+                onClick={() => {
+                    setActionError(null)
+                    setActionNotice(null)
+                    setCreateShelfOpen(true)
+                }}
+            >
+    <span
+        className="page-add-tab__plus"
+        aria-hidden="true"
+    >
+        +
+    </span>
+
+                <span className="page-add-tab__label">
+        Shelf
+    </span>
+            </button>
+
+            <ModalDialog
+                open={createShelfOpen}
+                title="Add shelf"
+                onClose={() => {
+                    setCreateShelfOpen(false)
+                }}
+            >
+                <CreateShelfForm
+                    disabled={mutationBusy}
+                    onCancel={() => {
+                        setCreateShelfOpen(false)
+                    }}
+                    onCreated={() => {
+                        setCreateShelfOpen(false)
+                        setActionError(null)
+                        setActionNotice(
+                            'Shelf added.',
+                        )
+                    }}
+                />
+            </ModalDialog>
 
             <ConfirmationDialog
                 open={pendingDelete !== null}
