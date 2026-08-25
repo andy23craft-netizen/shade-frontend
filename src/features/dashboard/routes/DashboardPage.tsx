@@ -345,9 +345,9 @@ export function DashboardPage() {
                             <dd>
                                 <AppLink
                                     to="/loans"
-                                    aria-label={`${dashboard.borrowing.active_loans} active loan records — view loans`}
+                                    aria-label={`${dashboard.checked_out} checked out books — view loans`}
                                 >
-                                    {dashboard.borrowing.active_loans}
+                                    {dashboard.checked_out}
                                 </AppLink>
                             </dd>
 

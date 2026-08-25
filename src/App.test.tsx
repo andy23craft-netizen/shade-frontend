@@ -48,12 +48,6 @@ describe('application routing effects', () => {
   it('updates the title and focuses the heading after client-side navigation', async () => {
     renderAppTree(['/books'])
 
-    const circulationButton = screen.getByRole('button', {
-      name: 'Circulation',
-    })
-
-    fireEvent.click(circulationButton)
-
     const loansLink = screen.getByRole('link', {
       name: 'Loans',
     })
