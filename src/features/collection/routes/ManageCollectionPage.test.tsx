@@ -19,8 +19,8 @@ describe('ManageCollectionPage', () => {
         mockReachableApi()
     })
 
-    it('offers the supported collection maintenance destinations', () => {
-        renderAppTree(['/collection/manage'])
+    it('offers the supported collection maintenance destinations', async () => {
+        await renderAppTree(['/collection/manage'])
 
         const main = screen.getByRole('main')
 

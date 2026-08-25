@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import {
     NavLink,
     Outlet,
@@ -6,6 +6,7 @@ import {
     useMatches,
 } from 'react-router-dom'
 import { useVersion } from '../api/versionQueries'
+import { LoadingState } from '../components/LoadingState'
 import { APP_VERSION } from '../config/appVersion'
 import { DrawerNavMenu } from './DrawerNavMenu'
 import shadeLibraryHeader from '../assets/Shade_Library_Header.webp'
@@ -146,7 +147,13 @@ export function AppShell() {
                 className="app-main"
                 tabIndex={-1}
             >
-                <Outlet />
+                <Suspense
+                    fallback={
+                        <LoadingState label="Loading page…" />
+                    }
+                >
+                    <Outlet />
+                </Suspense>
             </main>
 
             <footer className="app-footer">

@@ -347,7 +347,7 @@ describe('HomePage', () => {
     })
 
     it('renders as the application homepage', async () => {
-        renderAppTree(['/'])
+        await renderAppTree(['/'])
 
         const heading = screen.getByRole('heading', {
             level: 1,
@@ -377,8 +377,8 @@ describe('HomePage', () => {
         })
     })
 
-    it('renders the five largest categories with canonical Books links', () => {
-        renderAppTree(['/'])
+    it('renders the five largest categories with canonical Books links', async () => {
+        await renderAppTree(['/'])
 
         const section = screen
             .getByRole('heading', {
@@ -442,8 +442,8 @@ describe('HomePage', () => {
         ).not.toBeInTheDocument()
     })
 
-    it('resolves Staff Picks and renders only shelved memberships', () => {
-        renderAppTree(['/'])
+    it('resolves Staff Picks and renders only shelved memberships', async () => {
+        await renderAppTree(['/'])
 
         expect(
             mockUseCollectionBooks,
@@ -479,8 +479,8 @@ describe('HomePage', () => {
         )
     })
 
-    it('renders the recent additions returned by the newest-books query', () => {
-        renderAppTree(['/'])
+    it('renders the recent additions returned by the newest-books query', async () => {
+        await renderAppTree(['/'])
 
         const section = screen
             .getByRole('heading', {
@@ -519,14 +519,14 @@ describe('HomePage', () => {
         )
     })
 
-    it('keeps core Home navigation available when category metadata fails', () => {
+    it('keeps core Home navigation available when category metadata fails', async () => {
         mockBreakdownsQuery({
             data: undefined,
             error: new Error('failed'),
             isError: true,
         })
 
-        renderAppTree(['/'])
+        await renderAppTree(['/'])
 
         expect(
             screen.getByText(
@@ -566,7 +566,7 @@ describe('HomePage', () => {
         )
     })
 
-    it('shows an explicit fallback when Staff Picks is absent', () => {
+    it('shows an explicit fallback when Staff Picks is absent', async () => {
         mockCollectionsQuery({
             data: {
                 items: [],
@@ -574,7 +574,7 @@ describe('HomePage', () => {
             },
         })
 
-        renderAppTree(['/'])
+        await renderAppTree(['/'])
 
         expect(
             screen.getByText(
@@ -596,8 +596,8 @@ describe('HomePage', () => {
         )
     })
 
-    it('provides the required secondary discovery destinations', () => {
-        renderAppTree(['/'])
+    it('provides the required secondary discovery destinations', async () => {
+        await renderAppTree(['/'])
 
         const shortcuts = screen.getByRole(
             'navigation',
@@ -655,8 +655,8 @@ describe('HomePage', () => {
         )
     })
 
-    it('does not render the relocated About content', () => {
-        renderAppTree(['/'])
+    it('does not render the relocated About content', async () => {
+        await renderAppTree(['/'])
 
         expect(
             screen.queryByRole('heading', {

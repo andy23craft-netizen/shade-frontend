@@ -27,8 +27,8 @@ describe('AppShell layout and navigation', () => {
         vi.restoreAllMocks()
     })
 
-    it('exposes skip link, landmarks, and primary navigation', () => {
-        renderAppTree(['/'])
+    it('exposes skip link, landmarks, and primary navigation', async () => {
+        await renderAppTree(['/'])
 
         expect(
             screen.getByRole('link', {
@@ -73,8 +73,8 @@ describe('AppShell layout and navigation', () => {
         ).toBeInTheDocument()
     })
 
-    it('opens the Collection menu with browse and manage destinations', () => {
-        renderAppTree(['/'])
+    it('opens the Collection menu with browse and manage destinations', async () => {
+        await renderAppTree(['/'])
 
         const collectionButton = screen.getByRole(
             'button',
@@ -137,8 +137,8 @@ describe('AppShell layout and navigation', () => {
     })
 
 
-    it('marks the active navigation trunk for child routes', () => {
-        renderAppTree(['/books'])
+    it('marks the active navigation trunk for child routes', async () => {
+        await renderAppTree(['/books'])
 
         expect(
             screen.getByRole('button', {
@@ -159,8 +159,8 @@ describe('AppShell layout and navigation', () => {
         ).not.toHaveAttribute('aria-current')
     })
 
-    it('marks the Collection trunk as active on /wishlists', () => {
-        renderAppTree(['/wishlists'])
+    it('marks the Collection trunk as active on /wishlists', async () => {
+        await renderAppTree(['/wishlists'])
 
         expect(
             screen.getByRole('button', {
@@ -175,8 +175,8 @@ describe('AppShell layout and navigation', () => {
         ).not.toHaveAttribute('aria-current')
     })
 
-    it('marks Dashboard as current at /dashboard', () => {
-        renderAppTree(['/dashboard'])
+    it('marks Dashboard as current at /dashboard', async () => {
+        await renderAppTree(['/dashboard'])
 
         expect(
             screen.getByRole('link', {
@@ -192,7 +192,7 @@ describe('AppShell layout and navigation', () => {
     })
 
     it('navigates through a primary link and focuses the destination heading', async () => {
-        renderAppTree(['/books'])
+        await renderAppTree(['/books'])
 
         const historyLengthBefore =
             window.history.length
@@ -219,7 +219,7 @@ describe('AppShell layout and navigation', () => {
     })
 
     it('shows the package.json release and API version in the footer', async () => {
-        renderAppTree(['/'])
+        await renderAppTree(['/'])
 
         const footer = screen.getByRole('contentinfo')
 
@@ -232,8 +232,8 @@ describe('AppShell layout and navigation', () => {
         ).toBeInTheDocument()
     })
 
-    it('marks the Collection trunk as active on /collections', () => {
-        renderAppTree(['/collections'])
+    it('marks the Collection trunk as active on /collections', async () => {
+        await renderAppTree(['/collections'])
 
         expect(
             screen.getByRole('button', {
@@ -251,8 +251,8 @@ describe('AppShell layout and navigation', () => {
         ).not.toHaveAttribute('aria-current')
     })
 
-    it('recovers from unknown routes with a home link', () => {
-        renderAppTree(['/does-not-exist'])
+    it('recovers from unknown routes with a home link', async () => {
+        await renderAppTree(['/does-not-exist'])
 
         expect(
             screen.getByRole('heading', {
@@ -268,8 +268,8 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('href', '/')
     })
 
-    it('marks Loans as current at /loans', () => {
-        renderAppTree(['/loans'])
+    it('marks Loans as current at /loans', async () => {
+        await renderAppTree(['/loans'])
 
         expect(
             screen.getByRole('link', {
@@ -290,8 +290,8 @@ describe('AppShell layout and navigation', () => {
         ).not.toHaveAttribute('aria-current')
     })
 
-    it('treats the removed backup route as not found', () => {
-        renderAppTree(['/admin/backup'])
+    it('treats the removed backup route as not found', async () => {
+        await renderAppTree(['/admin/backup'])
 
         expect(
             screen.getByRole('heading', {
@@ -309,7 +309,7 @@ describe('AppShell layout and navigation', () => {
     })
 
     it('redirects legacy check-in URLs to loans and preserves the book ID', async () => {
-        const router = renderAppTree([
+        const router = await renderAppTree([
             '/checkin?bookId=test-book-id',
         ])
 
@@ -336,7 +336,7 @@ describe('AppShell layout and navigation', () => {
     })
 
     it('redirects legacy checkout URLs to books', async () => {
-        const router = renderAppTree([
+        const router = await renderAppTree([
             '/checkout',
         ])
 
@@ -352,7 +352,7 @@ describe('AppShell layout and navigation', () => {
     })
 
     it('redirects legacy checkout book URLs to details with the checkout flag', async () => {
-        const router = renderAppTree([
+        const router = await renderAppTree([
             '/checkout?bookId=test-book-id',
         ])
 

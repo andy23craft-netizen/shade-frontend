@@ -414,7 +414,7 @@ index.html
                         -> ConnectionProvider (createApiClient + onRequestFailure reporter, token, GET /health)
                              -> RouterProvider(router from src/routes/routes.tsx)
                                   -> AppShell (layout route)
-                                       -> feature route pages via Outlet
+                                       -> Suspense + Outlet (lazy feature route pages)
        -> src/index.css
             -> src/styles/tokens.css
             -> src/styles/base.css
@@ -628,11 +628,15 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/routes/routeMetadata.ts`: Path, document-title fragment, and heading metadata for every registered route
   (`home` `/`, `about` `/about`, `dashboard`, books/wishlists/collections/shelves/loans/admin routes, plus path-only
   compatibility `checkout` / `checkin`).
-- `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Registered paths are
-  `/`, `/dashboard`, `/books`, `/collection/manage`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`,
-  `/books/:bookId/reading`, `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout` (`LegacyCheckoutRedirect`),
-  `/checkin` (`LegacyCheckinRedirect` to `/loans`), `/loans`, `/wishlists`, `/collections`, `/shelves`,
-  `/admin/deleted`, and `*` (not found).
+- `src/routes/routes.tsx`: `createBrowserRouter` configuration. `AppShell` is the parent layout. Feature route pages
+  and `NotFoundPage` load via `React.lazy` wrappers in `lazyRoutePages.tsx` so they stay out of the main JS entry;
+  legacy checkout/checkin redirects stay eager. Registered paths are `/`, `/dashboard`, `/books`,
+  `/collection/manage`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`,
+  `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout` (`LegacyCheckoutRedirect`), `/checkin`
+  (`LegacyCheckinRedirect` to `/loans`), `/loans`, `/wishlists`, `/collections`, `/shelves`, `/admin/deleted`, and
+  `*` (not found).
+- `src/routes/lazyRoutePages.tsx`: `React.lazy` / dynamic `import()` wrappers for every feature route page and
+  `NotFoundPage` (keeps route config free of Fast Refresh export conflicts).
 - `src/routes/LegacyCheckoutRedirect.tsx`: Compatibility path only. Replace-navigates `/checkout?bookId=` to
   `/books/{id}?checkout=1` and bare `/checkout` to `/books`. `routeMetadata.checkout` is path-only (no title/heading).
 - `src/routes/LegacyCheckinRedirect.tsx`: Compatibility path only. Replace-navigates `/checkin` to `/loans` and
@@ -644,8 +648,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/layout/AppShell.tsx`: Application frame with skip link, header (brand `NavLink` to Home `/` rendering
   `Shade_Library_Header.webp` via `.app-brand__image`; no text "est. 2026" label), primary navigation (Dashboard
   link; Collection `DrawerNavMenu` Browse/Manage/Collections/Wishlists; Circulation `DrawerNavMenu` Loans only),
-  `Outlet` main region, footer (`Release ${APP_VERSION}` from `package.json`, plus `API {version}` from `useVersion`
-  / `GET /version` when available, joined with a middle dot), document title, and heading focus on location change.
+  `Suspense` around `Outlet` (`LoadingState` fallback while a lazy route chunk loads), footer
+  (`Release ${APP_VERSION}` from `package.json`, plus `API {version}` from `useVersion` / `GET /version` when
+  available, joined with a middle dot), document title, and heading focus on location change.
   Collection `activePrefixes` include `/books`, `/shelves`, `/admin/deleted`, `/collection` (covers
   `/collection/manage` and `/collections`), and `/wishlists`.
 - `src/layout/DrawerNavMenu.tsx`: Accessible drawer-style dropdown for grouped nav items (`aria-expanded`, outside click
@@ -1162,7 +1167,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,
   `testRuntimeConfig`) that mount under `AppProviders` with a mocked reachable API (including dashboard report routes,
-  empty wishlists, and empty collections) and a diagnostic reporter.
+  empty wishlists, and empty collections) and a diagnostic reporter. `renderAppTree` is async and waits until the
+  AppShell route `Suspense` fallback (`Loading page…`) clears so callers see the settled lazy page.
 - `scripts/productionBuildTokenInspection.test.ts`: Production build env inspection; asserts `.env` is not copied into
   `dist/` or the release tarball and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles (accepted risk).
 - `scripts/packRelease.ts` / `packRelease.test.ts`: Deterministic `dist/` tarball, SHA-256 sidecar, and release

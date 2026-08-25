@@ -33,7 +33,7 @@ describe('application routing effects', () => {
     focusTarget.focus()
 
     try {
-      renderAppTree(['/books'])
+      await renderAppTree(['/books'])
 
       await waitFor(() => {
         expect(document.title).toBe('Books — Shade')
@@ -46,7 +46,7 @@ describe('application routing effects', () => {
   })
 
   it('updates the title and focuses the heading after client-side navigation', async () => {
-    renderAppTree(['/books'])
+    await renderAppTree(['/books'])
 
     const loansLink = screen.getByRole('link', {
       name: 'Loans',
@@ -55,7 +55,7 @@ describe('application routing effects', () => {
     fireEvent.click(loansLink)
 
     expect(
-        screen.getByRole('heading', {
+        await screen.findByRole('heading', {
           level: 1,
           name: 'Loans',
         }),
@@ -69,8 +69,8 @@ describe('application routing effects', () => {
     })
   })
 
-  it('makes route headings programmatically focusable', () => {
-    renderAppTree(['/books'])
+  it('makes route headings programmatically focusable', async () => {
+    await renderAppTree(['/books'])
 
     const heading = screen.getByRole('heading', {
       level: 1,

@@ -23,3 +23,5 @@
 * The dashboard page does not need a refresh button. The browser already has this functionality.
 * On the dashboard page, the background image for `section class="route-page dashboard-page"` has been enlarged too much for its low resolution. Find a higher resolution image for this.
 * "Shade Library" in the footer is adding no value. Consider a "last-updated" date instead, maybe
+* `/shelves` looks more like a straight-on view of a card catalog than a side view of library shelves. Perhaps each shelf should be its own horizontal scrolling section that starts wtih the shelf's info. That way it looks more like you're peering down a list of shelves
+  * This may be extra weird since I'm on a desktop, not mobile
