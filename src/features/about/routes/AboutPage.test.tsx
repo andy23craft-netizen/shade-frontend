@@ -27,7 +27,7 @@ describe('AboutPage', () => {
     })
 
     it('renders at the About route', async () => {
-        renderAppTree(['/about'])
+        await renderAppTree(['/about'])
 
         const heading = screen.getByRole('heading', {
             level: 1,
@@ -48,7 +48,7 @@ describe('AboutPage', () => {
     })
 
     it('does not load dashboard data from the About route', async () => {
-        renderAppTree(['/about'])
+        await renderAppTree(['/about'])
 
         await screen.findByRole('heading', {
             level: 1,
@@ -81,7 +81,7 @@ describe('AboutPage', () => {
     })
 
     it('keeps the dashboard available at its relocated route', async () => {
-        renderAppTree(['/dashboard'])
+        await renderAppTree(['/dashboard'])
 
         await screen.findByText(
             'The library at a glance.',
@@ -101,8 +101,8 @@ describe('AboutPage', () => {
         })
     })
 
-    it('explains the library, its dedication, lending policy, and how to use it', () => {
-        renderAppTree(['/about'])
+    it('explains the library, its dedication, lending policy, and how to use it', async () => {
+        await renderAppTree(['/about'])
 
         expect(
             screen.getByRole('heading', {
@@ -146,7 +146,7 @@ describe('AboutPage', () => {
     })
 
     it('links to the primary library workflows', async () => {
-        renderAppTree(['/about'])
+        await renderAppTree(['/about'])
 
         fireEvent.click(
             screen.getByRole('button', {

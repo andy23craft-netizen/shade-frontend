@@ -1,25 +1,27 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { LegacyCheckinRedirect } from './LegacyCheckinRedirect'
 import { AppShell } from '../layout/AppShell'
-import { BookDetailsPage } from '../features/books/routes/BookDetailsPage'
-import { BooksPage } from '../features/books/routes/BooksPage'
-import { DeletedBooksPage } from '../features/books/routes/DeletedBooksPage'
-import { EditBookPage } from '../features/books/routes/EditBookPage'
-import { MarkReadPage } from '../features/books/routes/MarkReadPage'
-import { NewBookPage } from '../features/books/routes/NewBookPage'
 import { LegacyCheckoutRedirect } from './LegacyCheckoutRedirect'
-import { LoansPage } from '../features/loans/routes/LoansPage'
-import { ShelvesPage } from '../features/shelves/routes/ShelvesPage'
-import { DashboardPage } from '../features/dashboard/routes/DashboardPage'
-import { NotFoundPage } from './NotFoundPage'
+import {
+    AboutPage,
+    BookDetailsPage,
+    BooksPage,
+    CollectionsPage,
+    DashboardPage,
+    DeleteBookPage,
+    DeletedBooksPage,
+    EditBookPage,
+    HomePage,
+    LoansPage,
+    ManageCollectionPage,
+    MarkReadPage,
+    NewBookPage,
+    NotFoundPage,
+    ReadingEditPage,
+    ShelvesPage,
+    WishlistsPage,
+} from './lazyRoutePages'
 import { routeMetadata } from './routeMetadata'
-import { ReadingEditPage } from '../features/books/routes/ReadingEditPage'
-import { DeleteBookPage } from '../features/books/routes/DeleteBookPage'
-import { AboutPage } from '../features/about/routes/AboutPage'
-import { ManageCollectionPage } from '../features/collection/routes/ManageCollectionPage'
-import { WishlistsPage } from '../features/wishlists/routes/WishlistsPage'
-import { CollectionsPage } from '../features/collections/routes/CollectionsPage'
-import { HomePage } from '../features/home/routes/HomePage'
 
 export const routeConfig = [
     {

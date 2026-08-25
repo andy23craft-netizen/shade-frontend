@@ -1,7 +1,11 @@
 import { StrictMode, type ReactNode } from 'react'
-import { render } from '@testing-library/react'
+import {
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react'
 import { RouterProvider } from 'react-router-dom'
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
 import { AppProviders } from '../AppProviders'
 import type { RuntimeConfig } from '../config/runtimeConfig'
 import { createTestRouter } from '../routes/createMemoryRouter'
@@ -253,7 +257,7 @@ export function mockReachableApi() {
         )
 }
 
-export function renderAppTree(
+export async function renderAppTree(
     initialEntries: string[] = ['/'],
     runtimeConfig: RuntimeConfig = testRuntimeConfig,
 ) {
@@ -273,6 +277,12 @@ export function renderAppTree(
             </AppProviders>
         </StrictMode>,
     )
+
+    await waitFor(() => {
+        expect(
+            screen.queryByText('Loading page…'),
+        ).not.toBeInTheDocument()
+    })
 
     return router
 }
