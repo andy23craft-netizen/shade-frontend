@@ -5,15 +5,17 @@ Slim always-on context for ChatGPT or any assistant without direct repository ac
 This document is the complete self-contained operating baseline for the Shade frontend. It covers working rules,
 architecture, non-negotiables, current product state, the backend contract summary, and the minimum reference index
 needed to continue development safely. Start from this file alone for that baseline. Do not require, request, or defer
-to any other LLM prompt, project agents guide, or companion context file. Everything needed for day-to-day
-implementation guidance is in this document. Attach the current feature ticket (when one exists) and the checked-in API
-contract only when the task needs them.
+to any other LLM prompt, project agents guide, inventory file, or companion context file -- this pack already includes
+the guidance those files would provide. Everything needed for day-to-day implementation guidance is in this document.
+Attach the current feature ticket (when one exists) and the checked-in API contract only when the task needs them.
 
-A current feature ticket, when one exists, is supplied separately. Do not assume this document replaces the ticket or
-the checked-in API contract. When `docs/tickets/` is empty (aside from `.gitkeep`), no sequenced feature ticket is
-open -- ask which work to take next rather than inventing a follow-on feature.
+A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
+ticket or the checked-in API contract. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build
+ticket -- treat it as notes unless the user asks to implement items from it. When no sequenced feature ticket remains
+(directory holds only `.gitkeep` and/or informal notes), ask which work to take next rather than inventing a follow-on
+feature.
 
-**Context pack version:** 2026-08-24
+**Context pack version:** 2026-08-25
 
 ---
 
@@ -215,7 +217,7 @@ Current registered product routes include:
 
 * `/` is discovery Home (`HomePage`).
 * `/about` is library information (`AboutPage` + `CatalogGuide`).
-* Brand link recovers to Home (`/`).
+* Brand recovers to Home (`/`): `AppShell` renders `Shade_Library_Header.webp` (no text "est. 2026" label).
 * Dashboard is `/dashboard` (direct primary-nav link).
 * About is reachable from Home (hero and secondary links), not a separate primary-nav item.
 * Collection drawer:
@@ -233,6 +235,8 @@ Current registered product routes include:
   * Shelves
   * Deleted Books
 
+  plus decorative `Manage_Collection_Pen.webp`.
+
 Circulation has no Checkout or Check-in nav items. Dashboard lives at
 `/dashboard`, not `/`.
 
@@ -249,12 +253,13 @@ src/features/home/homeQuotes.ts
 src/features/home/components/
 src/features/about/routes/AboutPage.tsx
 src/features/about/components/CatalogGuide.tsx
+src/features/collection/routes/ManageCollectionPage.tsx
 ```
 
 Home includes:
 
-* hero image linking to `/about`;
-* randomized quote bucket (`homeQuotes`);
+* hero brand image (`Shade_Library_Hero.webp`) linking to `/about`, with an `sr-only` "Shade Library" heading;
+* randomized quote with optional expandable context (`homeQuotes`);
 * New Additions via `useRecentBooks` (newest 10 by `creationDate` desc);
 * featured category drawers from top `by_category` buckets joined to `useCategories` (`topHomeCategories` /
   `homeCategoryHref` → `/books?category_id=`);
@@ -711,7 +716,8 @@ The Shelves catalog is responsive:
 
 # 11. Dashboard -- current state
 
-`/dashboard` is a five-drawer card-catalog dashboard.
+`/dashboard` is a desk layout with five indexed paper panels (`.dashboard-desk` / `.dashboard-paper*`). The desk
+background uses `Dashboard_Background.webp` via CSS variable `--dashboard-desk-image`.
 
 Queries:
 
@@ -723,19 +729,19 @@ useDashboardIncompleteMetadata()
 
 `useInfiniteIncompleteMetadataBooks()` is consumed by Books cleanup mode rather than mounted by Dashboard.
 
-## Drawer I -- Collection
+## Paper I -- Collection
 
 Shows API-provided collection statistics.
 
 Do not recalculate dashboard statistics from `GET /books`.
 
-## Drawer II -- Circulation
+## Paper II -- Circulation
 
 Shows borrowing/circulation summary.
 
 Loan history links to `/loans`.
 
-## Drawer III -- Reading Record
+## Paper III -- Reading Record
 
 Contains the Read/Unread visualization and metrics.
 
@@ -748,7 +754,7 @@ Unread -> /books?is_read=false
 
 API top-level `read` / `unread` values remain the display source.
 
-## Drawer IV -- Basic Stats
+## Paper IV -- Basic Stats
 
 Uses `useDashboardBreakdowns()`.
 
@@ -770,7 +776,7 @@ Creation Year is intentionally not rendered.
 
 `by_shelf` is consumed by `ShelvesPage`, not rendered here.
 
-## Drawer V -- Healing Metadata
+## Paper V -- Healing Metadata
 
 Displays:
 
@@ -782,7 +788,8 @@ Displays:
 * missing Publication Year;
 * missing ISBN.
 
-Each per-field count links to Books cleanup mode. There is no Dashboard-local affected-book browser.
+Each per-field count links to Books cleanup mode (`/books?cleanup_field=`). There is no Dashboard-local affected-book
+browser, field filter, or infinite cleanup list on this page.
 
 ## Refresh/error behavior
 
@@ -792,7 +799,8 @@ Unified Refresh refetches:
 * dashboard breakdowns;
 * incomplete-metadata summary.
 
-Preserve offline/stale state, drawer-level errors, and independent report failure behavior.
+Preserve offline/stale state, paper-level errors, and independent report failure behavior. Hardware collection ISBN jump
+(`useCollectionIsbnJump`) is also wired on Dashboard.
 
 ---
 
@@ -987,7 +995,8 @@ DELETE /books/{id}/cover
 Checked-in OpenAPI (`info.version` `0.2.11`) and generated types match. `contractSmoke.test.ts` includes the bulk-move
 path and `/books/{id}/cover`.
 
-Treat an empty `docs/tickets/` (aside from `.gitkeep`) plus a green `make check` as the current open-work signal. Re-run
+Treat no sequenced feature ticket (directory holds only `.gitkeep` and/or informal notes such as `ui-nits.md`) plus a
+green `make check` as the current open-work signal. Re-run
 `make check` before claiming a new change is release-ready.
 
 ---
@@ -1031,10 +1040,15 @@ Primary component styling lives in:
 src/styles/components.css
 ```
 
-That file also owns dashboard, collections, and book-cover (`.book-cover*`)
-layout classes. Use existing design tokens where possible.
+That file also owns Home (`.home-page*`), Manage Collection (`.manage-collection-page*`), dashboard desk/paper layout
+(`.dashboard-desk`, `.dashboard-paper*`, `.dashboard-metric*`, `.dashboard-breakdowns`, `.dashboard-healing*`),
+collections, wishlists, and book-cover (`.book-cover*`) layout classes. Shell owns brand image classes
+(`.app-brand` / `.app-brand__image`). Use existing design tokens where possible.
 
-Card-catalog surfaces use light cardstock tokens such as:
+Leftover `.dashboard-drawer*` rules may still appear in `components.css` but are unused by current `DashboardPage`
+markup -- prefer `.dashboard-paper*` when extending the dashboard.
+
+Card-catalog / paper surfaces use light cardstock tokens such as:
 
 ```css
 --color-surface
@@ -1047,6 +1061,14 @@ Do not use dark-page `--color-text` for text/links on light cardstock surfaces.
 
 Bulk-selection actions use the existing card-catalog visual language. `BulkMoveToShelfControl` has its own grid spacing
 so its status, destination field, and action do not crowd each other.
+
+Bundled WebP imagery under `src/assets/`:
+
+* `Shade_Library_Header.webp` -- `AppShell` brand
+* `Shade_Library_Hero.webp` -- Home hero → `/about`
+* `Dashboard_Background.webp` -- Dashboard desk background
+* `Manage_Collection_Pen.webp` -- Manage Collection decorative pen
+* `Books_List_Glasses.webp` / `Loans_Stamp.webp` -- present but currently unused (removed from Books / Loans pages)
 
 ---
 
@@ -1072,7 +1094,7 @@ so its status, destination field, and action do not crowd each other.
 ## Product behavior
 
 * `/` is discovery Home; `/about` is library information.
-* Brand recovers to Home, not About.
+* Brand recovers to Home via the header image, not About.
 * No strict lending due-date pressure.
 * No standalone Checkout page.
 * No standalone Check-in page.
@@ -1087,8 +1109,9 @@ so its status, destination field, and action do not crowd each other.
 
 ## Scope discipline
 
-Do not invent the next product feature merely because the API already supports it. When `docs/tickets/` is empty (aside
-from `.gitkeep`), no sequenced feature ticket is open.
+Do not invent the next product feature merely because the API already supports it. When no sequenced feature ticket
+remains under `docs/tickets/` (only `.gitkeep` and/or informal notes such as `ui-nits.md`), ask which work should be
+taken next rather than guessing.
 
 When no current ticket is supplied, ask which work should be taken next rather than guessing.
 
@@ -1096,9 +1119,10 @@ When no current ticket is supplied, ask which work should be taken next rather t
 
 # 20. Open work / tickets
 
-When `docs/tickets/` holds only `.gitkeep`, no sequenced feature ticket is open. Prefer an explicit user request or
-product docs when choosing further work. Ticket presence under `docs/tickets/` is more authoritative than stale
-`docs/ToDo.md` entries.
+Sequenced feature tickets live under `docs/tickets/` while open and are removed after completion. Informal UI feedback
+such as `ui-nits.md` may also live there; it is not a sequenced build ticket unless the user asks to implement items
+from it. When no sequenced feature ticket remains, prefer an explicit user request or product docs when choosing
+further work.
 
 Current product capabilities are described in the sections above, including:
 
@@ -1106,6 +1130,8 @@ Current product capabilities are described in the sections above, including:
 * Shelves / Dashboard deep links;
 * bulk selection and atomic bulk move-to-shelf;
 * discovery Home at `/` with About at `/about`;
+* desk/paper Dashboard with healing deep links into Books cleanup mode;
+* brand/header and page imagery under `src/assets/`;
 * book covers on Book Details, Books, Home, and Collections;
 * the canonical `make check` quality gate.
 
@@ -1115,9 +1141,8 @@ cover routes.
 ## Remaining planned V1 work
 
 ```text
-(none -- docs/tickets/ is empty aside from .gitkeep)
+(none -- no sequenced feature tickets; docs/tickets/ holds .gitkeep and informal ui-nits.md feedback only)
 ```
-
 ---
 
 # 21. Condensed source inventory
@@ -1213,13 +1238,20 @@ src/features/wishlists/
 ```text
 src/components/
 src/layout/AppShell.tsx
+src/layout/DrawerNavMenu.tsx
 src/routes/routes.tsx
 src/routes/routeMetadata.ts
 src/styles/components.css
+src/styles/shell.css
 src/styles/tokens.css
+src/assets/Shade_Library_Header.webp
 src/assets/Shade_Library_Hero.webp
+src/assets/Dashboard_Background.webp
+src/assets/Manage_Collection_Pen.webp
+src/assets/Books_List_Glasses.webp
+src/assets/Loans_Stamp.webp
+src/features/collection/routes/ManageCollectionPage.tsx
 ```
-
 ## Contract verification
 
 ```text
@@ -1272,8 +1304,8 @@ When a feature ticket exists under `docs/tickets/`:
 7. **Update this context** (and any other frontend-owned docs that describe the changed baseline) only where behavior
    genuinely changed.
 
-When no ticket is supplied and `docs/tickets/` is empty, ask which work to take next rather than inventing a follow-on
-feature.
+When no ticket is supplied and no sequenced feature ticket remains under `docs/tickets/`, ask which work to take next
+rather than inventing a follow-on feature.
 
 Treat failing assertions carefully: determine whether they expose a real regression, expected contract drift, or
 intentional current behavior.
@@ -1287,17 +1319,18 @@ intentional current behavior.
 | API paths, schemas, methods, enums     | `docs/technical-reference/openapi.json`  |
 | API behavioral guidance (incl. covers) | `docs/technical-reference/API-for-FE.md` |
 | UI/design decisions                    | `docs/product-docs/UI_DESIGN_NOTES.MD`   |
-| Category architecture notes            | `docs/product-docs/CATEGORY_NOTES.md`    |
-| Current product work (when open)       | relevant file under `docs/tickets/`      |
+| Product requirements drafts            | `docs/product-docs/PRODUCT_REQS.*.md`    |
+| Current sequenced product work         | relevant ticket under `docs/tickets/`    |
+| Informal UI feedback (not a ticket)    | `docs/tickets/ui-nits.md`                |
 | Setup / local development / release    | `README.md`                              |
 | Production-host ownership              | `docs/MAINTAINERS.md`                    |
-| Build checklist                        | `docs/ToDo.md` -- may lag tickets        |
 
 This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own: do not
-require, request, or defer to any other project agents guide or companion LLM context file. Attach the rows above only
-when the task needs their contents (API schemas, design notes, an open ticket, or deployment ownership). Prefer the
-current ticket (when one exists) and the checked-in API contract over planning notes that may lag. When `docs/tickets/`
-is empty, ask which work to take next.
+require, request, or defer to any other project prompt, agents guide, or companion LLM context file for day-to-day
+implementation guidance. Everything needed for that baseline is in this document. Attach the rows above only when the
+task needs their contents (API schemas, design notes, an open ticket, or deployment ownership). Prefer the current
+sequenced ticket (when one exists) and the checked-in API contract over planning notes that may lag. When no sequenced
+feature ticket remains, ask which work to take next.
 
 ---
 

@@ -22,3 +22,4 @@
   * I think all controls should live on a single row above the table on the desktop, and should be collapsed on mobile
 * The dashboard page does not need a refresh button. The browser already has this functionality.
 * On the dashboard page, the background image for `section class="route-page dashboard-page"` has been enlarged too much for its low resolution. Find a higher resolution image for this.
+* "Shade Library" in the footer is adding no value. Consider a "last-updated" date instead, maybe

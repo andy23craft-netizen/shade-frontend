@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-24 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-25 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -18,22 +18,26 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
 - Diagnostics via `createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `APP_VERSION` (from `package.json`
   `version`), wired through `RootErrorBoundary`, `AppProviders`, `ConnectionProvider`, and `apiClient`
   `onRequestFailure`; allowlisted/redacted via `assertSafeApiDiagnostic`; defaults disabled in `public/config.js`.
-- Discovery Home on `/` (`HomePage`): featured category drawers (top buckets from `useDashboardBreakdowns` joined to
+- Discovery Home on `/` (`HomePage`): hero brand image (`Shade_Library_Hero.webp`) linking to `/about` with an
+  `sr-only` "Shade Library" heading, featured category drawers (top buckets from `useDashboardBreakdowns` joined to
   `useCategories` via `homeDiscoveryModel`), New Additions (`useRecentBooks`), Staff Picks (named Collections
-  membership carousel), randomized quote header (`homeQuotes`), and secondary links to Browse / Collections /
-  Wishlists / About. About library-information content lives at `/about` (`AboutPage` + `CatalogGuide`). Brand link
-  recovers to `/` (Home). About is reachable from Home (hero and secondary links), not as a separate primary-nav item.
+  membership carousel), randomized quote with optional expandable context (`homeQuotes`), and secondary links to
+  Browse / Collections / Wishlists / About. About library-information content lives at `/about` (`AboutPage` +
+  `CatalogGuide`). Brand image in `AppShell` recovers to `/` (Home). About is reachable from Home (hero and secondary
+  links), not as a separate primary-nav item.
 - Primary navigation: Dashboard plus Collection and Circulation `DrawerNavMenu` drawers (`AppShell` /
   `DrawerNavMenu`). Collection includes Browse, Manage, Collections, and Wishlists; Circulation is Loans only.
   `/collection/manage` links Add Book, Shelves, and Deleted Books only.
-- Dashboard on `/dashboard` (`DashboardPage`): five card-catalog drawers -- summary metrics (`useDashboard` /
-  `GET /dashboard`) for Collection, Circulation, and Reading Record (read/unread pie with deep links to
-  `/books?is_read=`); catalog breakdowns (`useDashboardBreakdowns` / `GET /dashboard/breakdowns`, including category
-  donut); and incomplete-metadata healing (`useDashboardIncompleteMetadata`,
-  `useInfiniteIncompleteMetadataBooks` / `GET /dashboard/incomplete-metadata`) plus Books cleanup-mode deep links
-  (`/books?cleanup_field=`). Unified Refresh refetches summary and report queries; drawer-level errors do not blank
-  summary drawers. Display API numbers only (null averages as "Not enough data"; contract warnings without inventing
-  totals).
+- Dashboard on `/dashboard` (`DashboardPage`): desk layout with five indexed paper panels
+  (`.dashboard-desk` / `.dashboard-paper*`, background `Dashboard_Background.webp`) -- summary metrics
+  (`useDashboard` / `GET /dashboard`) for Collection, Circulation, and Reading Record (read/unread pie with deep
+  links to `/books?is_read=`); catalog breakdowns (`useDashboardBreakdowns` / `GET /dashboard/breakdowns`, including
+  category donut); and incomplete-metadata healing (`useDashboardIncompleteMetadata` /
+  `GET /dashboard/incomplete-metadata`) showing per-field counts that deep-link into Books cleanup mode
+  (`/books?cleanup_field=`). The infinite incomplete-metadata book list lives on `/books` cleanup mode
+  (`useInfiniteIncompleteMetadataBooks`), not on the Dashboard itself. Unified Refresh refetches summary and report
+  queries; panel-level errors do not blank other papers. Display API numbers only (null averages as "Not enough
+  data"; contract warnings without inventing totals).
 - Active collection and book details (`/books`, `/books/:bookId`) with infinite scroll, URL-backed multi-`category_id`
   (AND/intersection) / author / title / ISBN / `shelf_name` / `is_read` filtering, optional `cleanup_field` mode,
   shelf sort, Read/Unread, and ratings. Visible Books controls cover category / author / title / read status / sort;
@@ -127,14 +131,15 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   HTTPS/CSP, atomic install, supervision, and rollback remain host-owned (`README.md`).
 
 Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in, initial mark-read, or cover
-upload/delete with generic `PATCH`. Prefer ticket presence under `docs/tickets/` over `docs/ToDo.md` when judging what
-is still open (the checklist can lag; an empty `docs/tickets/` means no sequenced feature tickets remain). Do not invent
+upload/delete with generic `PATCH`. Sequenced feature tickets live under `docs/tickets/` while open and are removed
+after completion. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build ticket -- treat it as
+notes unless the user asks to implement items from it. When no sequenced feature ticket remains (directory holds only
+`.gitkeep` and/or informal notes), wait for an explicit request rather than inventing the next feature. Do not invent
 undocumented routes, realtime channels, or lifecycle shortcuts. Never invent a second telemetry transport or fabricate
 correlation IDs.
 
-Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current ticket (when one exists),
-then the product requirements docs when deciding what to build next. With `docs/tickets/` empty, wait for an explicit
-request rather than inventing the next feature.
+Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current sequenced ticket (when one
+exists), then the product requirements docs when deciding what to build next.
 
 ## Technology
 
@@ -355,10 +360,9 @@ quality gate (`make check`).
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, overdue notifications,
 Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, and remote
 Ansible/systemd/TLS/rollback orchestration. Categories are many-to-many via `GET /categories` and `category_ids` -- do
-not implement taxonomy from `docs/product-docs/CATEGORY_NOTES.md` alone (architecture notes that may lag the contract)
-and do not invent a second filter stack. Broader catalog filters beyond the current Books controls stay out unless a
-product need explicitly requires them. Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite
-scroll with backend pagination; other callers still fetch unpaginated full lists when needed.
+not hard-code taxonomy or invent a second filter stack. Broader catalog filters beyond the current Books controls stay
+out unless a product need explicitly requires them. Collection browse (`BooksPage`) and loan history (`LoansPage`) use
+infinite scroll with backend pagination; other callers still fetch unpaginated full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not invent the next product feature merely because the API
 supports it.
@@ -424,14 +428,15 @@ and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeCo
 
 `AppShell` owns document title updates (`{route title}` plus an em dash and ` Shade`), skip link, primary navigation
 (Dashboard link; Collection `DrawerNavMenu` Browse/Manage/Collections/Wishlists; Circulation `DrawerNavMenu` Loans
-only; brand link to Home `/` includes "est. 2026"), the main `Outlet`, footer (`Release` from `package.json` `version`
-via `APP_VERSION`, plus API version from public `GET /version` when available), and heading focus after client-side
-navigations. Live product UI today: `/` (`HomePage` discovery with featured categories, New Additions, Staff Picks,
-quotes, and cover display), `/about` (`AboutPage` + `CatalogGuide`), `/dashboard` (`DashboardPage` with summary,
-breakdown, incomplete-metadata drawers, deep links into Books, and hardware collection ISBN jump), `/books`
-(`BooksPage`, including cover thumbnails, Read/Unread and rating on collection cards, URL-backed filters including
-`?isbn=` / `?shelf_name=` / `?is_read=` / `?cleanup_field=`, bulk selection / bulk move-to-shelf, and collection ISBN
-jump), `/collection/manage` (`ManageCollectionPage` hub for Add Book / Shelves / Deleted Books),
+only; brand is `Shade_Library_Header.webp` linking to Home `/`), the main `Outlet`, footer (`Release` from
+`package.json` `version` via `APP_VERSION`, plus API version from public `GET /version` when available), and heading
+focus after client-side navigations. Live product UI today: `/` (`HomePage` discovery with hero brand image, featured
+categories, New Additions, Staff Picks, quotes, and cover display), `/about` (`AboutPage` + `CatalogGuide`),
+`/dashboard` (`DashboardPage` with desk/paper panels for summary, breakdown, and incomplete-metadata counts, Books
+cleanup deep links, and hardware collection ISBN jump), `/books` (`BooksPage`, including cover thumbnails, Read/Unread
+and rating on collection cards, URL-backed filters including `?isbn=` / `?shelf_name=` / `?is_read=` /
+`?cleanup_field=`, bulk selection / bulk move-to-shelf, and collection ISBN jump), `/collection/manage`
+(`ManageCollectionPage` hub for Add Book / Shelves / Deleted Books, with decorative pen asset),
 `/books/:bookId` (`BookDetailsPage`, including `BookCover` / `BookCoverManager`, reading-field display, gated Check
 Out via `CheckoutDialog`, Check In, Mark Read / Edit Reading / Edit Book / Delete Book), `/books/new` (`NewBookPage`
 + `BookForm` / `bookFormModel` with ISBN lookup plus camera/hardware scanner capture), `/books/:bookId/edit`
@@ -472,6 +477,11 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   redacted render failures through `diagnosticReporter.reportRenderFailure()`.
 - `src/vite-env.d.ts`: Adds Vite client, asset, `__APP_VERSION__`, and `window.__SHADE_CONFIG__`
   (`diagnostics?: unknown`) declarations to TypeScript. It has no runtime behavior.
+- `src/assets/`: Bundled WebP brand and page imagery imported by feature/layout modules:
+  `Shade_Library_Header.webp` (`AppShell` brand), `Shade_Library_Hero.webp` (Home hero → `/about`),
+  `Dashboard_Background.webp` (Dashboard desk CSS variable), `Manage_Collection_Pen.webp` (Manage Collection
+  decorative pen). `Books_List_Glasses.webp` and `Loans_Stamp.webp` remain in the tree but are currently unused
+  (removed from Books / Loans page markup).
 
 ### Runtime Configuration
 
@@ -631,11 +641,12 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   routes; keep only if a future ticket needs a temporary placeholder.
 - `src/routes/NotFoundPage.tsx`: Not-found message plus a link back home (`/`).
 - `src/routes/createMemoryRouter.ts`: Exports `createTestRouter` for tests; builds a memory router from `routeConfig`.
-- `src/layout/AppShell.tsx`: Application frame with skip link, header (brand link to Home `/` plus "est. 2026"),
-  primary navigation (Dashboard link; Collection `DrawerNavMenu` Browse/Manage/Collections/Wishlists; Circulation
-  `DrawerNavMenu` Loans only), `Outlet` main region, footer (`Release ${APP_VERSION}` from `package.json`, plus
-  `API {version}` from `useVersion` / `GET /version` when available), document title, and heading focus on location
-  change. Collection `activePrefixes` include `/books`, `/shelves`, `/admin/deleted`, `/collection` (covers
+- `src/layout/AppShell.tsx`: Application frame with skip link, header (brand `NavLink` to Home `/` rendering
+  `Shade_Library_Header.webp` via `.app-brand__image`; no text "est. 2026" label), primary navigation (Dashboard
+  link; Collection `DrawerNavMenu` Browse/Manage/Collections/Wishlists; Circulation `DrawerNavMenu` Loans only),
+  `Outlet` main region, footer (`Release ${APP_VERSION}` from `package.json`, plus `API {version}` from `useVersion`
+  / `GET /version` when available, joined with a middle dot), document title, and heading focus on location change.
+  Collection `activePrefixes` include `/books`, `/shelves`, `/admin/deleted`, `/collection` (covers
   `/collection/manage` and `/collections`), and `/wishlists`.
 - `src/layout/DrawerNavMenu.tsx`: Accessible drawer-style dropdown for grouped nav items (`aria-expanded`, outside click
   and Escape dismiss, `data-active` when a child route prefix matches). Used for Collection and Circulation menus.
@@ -696,12 +707,13 @@ Implemented:
 - `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`): `useBooks({ includeDeleted: true })`
   filtered to non-null `deletion_date`; restore via `ConfirmationDialog` + `useRestoreBook` / `booksApi.restore`;
   empty / loading / retryable error states; `404`/`409` restore messaging with refetch.
-- `src/features/home/routes/HomePage.tsx` (`/`): discovery front door with hero (links to `/about`), randomized quote
-  (`homeQuotes`), New Additions (`useRecentBooks` / `HomeBookTrack` with `BookCover`), featured category drawers
-  (`topHomeCategories` from breakdowns + `useCategories`; `homeCategoryHref` → `/books?category_id=`), Staff Picks
-  carousel (Collections named "Staff Picks"; `HomeStaffPick` with `BookCover`), and secondary Browse / Collections /
-  Wishlists / About links. Optional counts/metadata failures must not blank core category browsing. Colocated
-  `HomePage.test.tsx`.
+- `src/features/home/routes/HomePage.tsx` (`/`): discovery front door with hero brand image
+  (`Shade_Library_Hero.webp` linking to `/about`), `sr-only` "Shade Library" heading, randomized quote with optional
+  expandable context (`homeQuotes`), New Additions (`useRecentBooks` / `HomeBookTrack` with `BookCover`), featured
+  category drawers (`topHomeCategories` from breakdowns + `useCategories`; `homeCategoryHref` →
+  `/books?category_id=`), Staff Picks carousel (Collections named "Staff Picks"; `HomeStaffPick` with `BookCover`),
+  and secondary Browse / Collections / Wishlists / About links. Optional counts/metadata failures must not blank core
+  category browsing. Colocated `HomePage.test.tsx`.
 - `src/features/home/homeDiscoveryModel.ts` / `homeQuotes.ts`: featured-category selection / href helpers and quote
   bucket; colocated `homeDiscoveryModel.test.ts`.
 - `src/features/home/components/`: `HomeCategoryDrawer`, `HomeBookTrack`, `HomeBookCarousel`, `HomeRecentBook`,
@@ -710,16 +722,18 @@ Implemented:
   information (dedication, lending policy, purpose) and accessible card-catalog-style How to Use dialog with in-app
   workflow links (Administration links restore deleted books only; no `/admin/backup`).
 - `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage`): collection maintenance hub with
-  links to Add Book, Shelves, and Deleted Books only. Colocated `ManageCollectionPage.test.tsx` asserts those links
-  and the absence of any Backup Library affordance.
-- `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`): `useDashboard` summary drawers (Collection,
-  Circulation, Reading Record with read/unread pie chart and `/books?is_read=` deep links); `useDashboardBreakdowns`
-  Basic Stats drawer (totals plus category donut / creation-year buckets; API `by_shelf` is not rendered here);
-  `useDashboardIncompleteMetadata` and `useInfiniteIncompleteMetadataBooks` Healing Metadata drawer (per-field counts,
-  field filter, infinite-scroll cleanup list with detail/edit links, plus `/books?cleanup_field=` deep links).
-  `useCollectionIsbnJump` for hardware wedge jump to a unique book or `/books?isbn=`. Null averages as "Not enough
-  data"; API inconsistency warning without recalculation; unified Refresh; offline/stale status; drawer-level
-  `QueryErrorState` recovery. Styles in `src/styles/components.css`.
+  links to Add Book, Shelves, and Deleted Books only, plus decorative `Manage_Collection_Pen.webp`. Colocated
+  `ManageCollectionPage.test.tsx` asserts those links and the absence of any Backup Library affordance.
+- `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`): desk/paper UI (`Dashboard_Background.webp` via
+  `--dashboard-desk-image`) with `useDashboard` summary papers (Collection, Circulation, Reading Record with
+  read/unread pie chart and `/books?is_read=` deep links); `useDashboardBreakdowns` Basic Stats paper (totals plus
+  category donut; Creation Year is not rendered; API `by_shelf` is not rendered here); `useDashboardIncompleteMetadata`
+  Healing Metadata paper (per-field counts deep-linking to `/books?cleanup_field=` only -- no in-dashboard infinite
+  cleanup list or field filter). Incomplete-metadata book rows load on Books cleanup mode via
+  `useInfiniteIncompleteMetadataBooks`. `useCollectionIsbnJump` for hardware wedge jump to a unique book or
+  `/books?isbn=`. Null averages as "Not enough data"; API inconsistency warning without recalculation; unified
+  Refresh; offline/stale status; paper-level `QueryErrorState` recovery. Styles in `src/styles/components.css`
+  (`.dashboard-desk`, `.dashboard-paper*`, `.dashboard-metric*`, `.dashboard-breakdowns`, `.dashboard-healing*`).
 - `src/features/books/routes/MarkReadPage.tsx` / `markReadModel.ts` (`/books/:bookId/mark-read`): initial
   unread-to-read via `useMarkBookRead` / `booksApi.markRead` / `pickMarkReadRequest`; optional
   date-only completion date, rating 1-5, and review; omit blanks; `ConfirmationDialog` before mutate; Field-linked
@@ -965,15 +979,18 @@ API errors); keep reusing these primitives rather than inventing parallel UI kit
 - `src/styles/tokens.css`: Design tokens for typography, spacing, sizing, colors, borders, focus, shadows, and motion.
 - `src/styles/base.css`: Element defaults and accessibility foundations, including box sizing, controls, links, focus
   visibility, page typography, skip links, and reduced motion.
-- `src/styles/shell.css`: Application-frame classes for header, navigation (including `.drawer-nav-menu` drawer panels),
-  main content, footer, route pages, and responsive layouts.
+- `src/styles/shell.css`: Application-frame classes for header (including `.app-brand` / `.app-brand__image`),
+  navigation (including `.drawer-nav-menu` drawer panels), main content, footer, route pages, and responsive layouts.
 - `src/styles/components.css`: Shared class-based primitives for buttons, links, forms, alerts, status views, dialogs,
-  notifications, dashboard layout (`.dashboard-page`, `.dashboard-drawer-bank`, `.dashboard-drawer`,
-  `.dashboard-metric`, `.dashboard-breakdowns`, `.dashboard-healing`, and related), collections layout
-  (`.collections-page*`, `.collection-card*`, `.collection-form*`, `.collection-membership*`, including
-  `.collection-membership--wishlist`), and book covers (`.book-cover*`). They use BEM-like naming and are referenced by
-  the shared component modules, `DashboardPage`, `CollectionsPage`, and `BookCover`. Long-content wrapping
-  (`overflow-wrap: anywhere`, `min-width: 0` on book/circulation cards and details) lives here.
+  notifications, Home (`.home-page*`), Manage Collection (`.manage-collection-page*`), dashboard desk/paper layout
+  (`.dashboard-page`, `.dashboard-desk`, `.dashboard-paper*`, `.dashboard-metric*`, `.dashboard-breakdowns`,
+  `.dashboard-healing*`, and related charts), collections layout (`.collections-page*`, `.collection-card*`,
+  `.collection-form*`, `.collection-membership*`, including `.collection-membership--wishlist`), wishlists layout
+  (`.wishlists-page*`, `.wishlist-*`), and book covers (`.book-cover*`). They use BEM-like naming and are referenced by
+  the shared component modules, `HomePage`, `DashboardPage`, `ManageCollectionPage`, `CollectionsPage`,
+  `WishlistsPage`, and `BookCover`. Long-content wrapping (`overflow-wrap: anywhere`, `min-width: 0` on
+  book/circulation cards and details) lives here. Leftover `.dashboard-drawer*` rules may still appear in this file
+  but are unused by current `DashboardPage` markup -- prefer `.dashboard-paper*` when extending the dashboard.
 
 Choose the CSS layer based on responsibility:
 
@@ -982,7 +999,8 @@ Choose the CSS layer based on responsibility:
 - Application frame and navigation layout belong in `shell.css`.
 - Reusable UI patterns belong in `components.css`.
 - Feature-specific styles may be colocated once a feature needs styles that do not belong in the shared layers;
-  dashboard, collections, and book-cover styles currently live in `components.css`.
+  home, manage-collection, dashboard, collections, wishlists, and book-cover styles currently live in
+  `components.css`.
 
 Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
@@ -1075,10 +1093,11 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/features/collection/routes/ManageCollectionPage.test.tsx`: Manage Collection hub links (Add Book, Shelves,
   Deleted Books) and no Backup Library / backup affordance
 - `src/features/dashboard/routes/DashboardPage.test.tsx`: Summary metric rendering, breakdown buckets, category /
-  read-status deep links, incomplete metadata counts (without summing field totals into `total_incomplete`), field
-  filter and book links, `/books?cleanup_field=` healing deep links, healing empty state, drawer-level error recovery,
-  unified Refresh, null-average "Not enough data", inconsistency warning without recalculation, offline / stale
-  status, summary `QueryErrorState` recovery, and hardware collection ISBN jump wiring
+  read-status deep links, incomplete metadata counts (without summing field totals into `total_incomplete`),
+  `/books?cleanup_field=` healing deep links, healing empty state, paper-level error recovery, unified Refresh, null-
+  average "Not enough data", inconsistency warning without recalculation, offline / stale status, summary
+  `QueryErrorState` recovery, and hardware collection ISBN jump wiring. (Dashboard does not mount the incomplete-
+  metadata infinite list; that belongs to Books cleanup mode.)
 - `src/features/books/routes/MarkReadPage.test.tsx` / `markReadModel.test.ts`: Mark-read eligibility (active unread
   only; deleted / already-read warnings), confirmation, success navigation, client validation, rating bounds, request
   conversion, Field-linked `422`, mutation `404`, pending disable, and form conversion
@@ -1298,13 +1317,10 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Prefer ticket
-  presence under `docs/tickets/` over `docs/ToDo.md` when judging what is still open. When the directory holds only
-  `.gitkeep`, ask which work to take next rather than inventing a follow-on feature.
-- `docs/ToDo.md`: Human checklist of ticket completion status (may lag).
-- `docs/product-docs/CATEGORY_NOTES.md`: Architectural category notes that may lag the live contract. Prefer
-  checked-in `openapi.json` + `API-for-FE.md` for many-to-many categories; do not hard-code taxonomy from this notes
-  file alone.
+- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Informal UI
+  feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket unless the user asks to
+  implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask which work to take next
+  rather than inventing a follow-on feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
@@ -1397,9 +1413,10 @@ make build
   `apiClient` `onRequestFailure` and optional runtime config (`public/config.js` / `RuntimeConfig.diagnostics`); never
   fabricate correlation IDs, invent a second telemetry transport, or log denylisted fields. Leave primary navigation
   under `AppShell` / `DrawerNavMenu` (Dashboard link; Collection Browse/Manage/Collections/Wishlists and Circulation
-  Loans only; brand link to Home `/`). Leave discovery Home under `HomePage` / `homeDiscoveryModel` / `homeQuotes` and
-  About under `AboutPage` / `CatalogGuide` at `/about`. Leave `/collection/manage` under `ManageCollectionPage` (Add
-  Book, Shelves, Deleted Books only). Leave Books catalog filtering / bulk actions under `BooksPage` /
+  Loans only; brand image link to Home `/`). Leave discovery Home under `HomePage` / `homeDiscoveryModel` /
+  `homeQuotes` and About under `AboutPage` / `CatalogGuide` at `/about`. Leave `/collection/manage` under
+  `ManageCollectionPage` (Add Book, Shelves, Deleted Books only). Leave Books catalog filtering / bulk actions under
+  `BooksPage` /
   `booksListModel` / `BooksListControls` / `useBulkSelection` / `BooksBulkActions` / `BulkMoveToShelfControl` /
   `booksApi.moveToShelf` / `useBulkMoveBooksToShelf` (centralized URL filters including `shelf_name` / `is_read` /
   `cleanup_field`; atomic `POST /books/bulk/move-to-shelf` only -- never per-book `PATCH` loops). Leave edit under
@@ -1408,9 +1425,10 @@ make build
   block when `status === 'on_loan'` or `findActiveLoan` is present; invalidate `queryKeys.collections.all` on success).
   Leave `/admin/deleted` under `DeletedBooksPage`. There is no browser backup page (`/admin/backup`,
   `BackupLibraryPage`, or `backupApi`); never inspect, log, cache, or upload SQL dump contents. Leave dashboard under
-  `DashboardPage` / `useDashboard` / `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` /
-  `useInfiniteIncompleteMetadataBooks` (display API stats only; null averages as "Not enough data"; do not recalculate
-  from `GET /books`; deep-link into Books filters / cleanup mode). Leave reading flows under `MarkReadPage` /
+  `DashboardPage` / `useDashboard` / `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` (display API stats
+  only; null averages as "Not enough data"; do not recalculate from `GET /books`; deep-link into Books filters /
+  cleanup mode; incomplete-metadata infinite list stays on Books via `useInfiniteIncompleteMetadataBooks`). Leave
+  reading flows under `MarkReadPage` /
   `markReadModel` / `ReadingEditPage` / `readingEditModel`. Leave scanner code under `src/features/scanning/`: camera
   lazy-loaded from `/books/new` only; create-path hardware on `NewBookPage`; collection jump via
   `useCollectionIsbnJump` on `/dashboard`, `/books`, and `/loans` (unique match opens detail; otherwise
