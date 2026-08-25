@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
+import booksListGlasses from '../../../assets/Books_List_Glasses.webp'
 import {
     BookCover,
 } from '../components/BookCover'
@@ -275,7 +276,13 @@ export function BookDetailsPage() {
         book.is_read
 
     return (
-        <section className="route-page">
+        <section className="route-page book-details-page book-details-page--decorated">
+            <img
+                className="books-reading-glasses"
+                src={booksListGlasses}
+                alt=""
+                aria-hidden="true"
+            />
             <div className="book-details__topbar">
                 <AppLink
                     to="/books"

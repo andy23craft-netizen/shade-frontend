@@ -18,6 +18,7 @@ import {
 import {
     useCollectionIsbnJump,
 } from '../../scanning/useCollectionIsbnJump'
+import dashboardBackground from '../../../assets/Dashboard_Background.webp'
 
 
 function displayAverage(
@@ -216,7 +217,13 @@ export function DashboardPage() {
         )
 
     return (
-        <section className="route-page dashboard-page">
+        <section
+            className="route-page dashboard-page"
+            style={{
+                '--dashboard-desk-image':
+                    `url(${dashboardBackground})`,
+            } as CSSProperties}
+        >
             <header className="dashboard-page__heading">
                 <div>
                     <p className="dashboard-page__eyebrow">
@@ -296,19 +303,18 @@ export function DashboardPage() {
                 </div>
             ) : null}
 
-            <div className="dashboard-drawer-bank">
+            <div className="dashboard-desk">
                 <section
-                    className="dashboard-drawer"
+                    className="dashboard-paper dashboard-paper--collection"
                     aria-labelledby="dashboard-collection-heading"
                 >
-
-                    <header className="dashboard-drawer__heading">
-                        <span
-                            className="dashboard-drawer__index"
-                            aria-hidden="true"
-                        >
-                            I
-                        </span>
+                    <header className="dashboard-paper__heading">
+            <span
+                className="dashboard-paper__index"
+                aria-hidden="true"
+            >
+                I
+            </span>
 
                         <h2 id="dashboard-collection-heading">
                             Collection
@@ -322,18 +328,28 @@ export function DashboardPage() {
                     <dl className="dashboard-metrics">
                         <div className="dashboard-metric">
                             <dt>Total Books</dt>
-                            <dd>{dashboard.total_books}</dd>
 
-                            <dd className="dashboard-metric__description">
-                                <AppLink to="/books">
-                                    Browse collection
+                            <dd>
+                                <AppLink
+                                    to="/books"
+                                    aria-label={`${dashboard.total_books} total books — browse collection`}
+                                >
+                                    {dashboard.total_books}
                                 </AppLink>
                             </dd>
                         </div>
 
                         <div className="dashboard-metric">
                             <dt>Checked Out Books</dt>
-                            <dd>{dashboard.checked_out}</dd>
+
+                            <dd>
+                                <AppLink
+                                    to="/loans"
+                                    aria-label={`${dashboard.borrowing.active_loans} active loan records — view loans`}
+                                >
+                                    {dashboard.borrowing.active_loans}
+                                </AppLink>
+                            </dd>
 
                             <dd className="dashboard-metric__description">
                                 Books whose current catalog status is on loan.
@@ -347,31 +363,28 @@ export function DashboardPage() {
                                 days
                             </dt>
 
-                            <dd>{dashboard.recently_added}</dd>
+                            <dd>
+                                {dashboard.recently_added}
+                            </dd>
 
                             <dd className="dashboard-metric__description">
                                 Recent additions reported by the library.
                             </dd>
                         </div>
                     </dl>
-
-                    <div
-                        className="dashboard-drawer__pull"
-                        aria-hidden="true"
-                    />
                 </section>
 
                 <section
-                    className="dashboard-drawer"
+                    className="dashboard-paper dashboard-paper--circulation"
                     aria-labelledby="dashboard-circulation-heading"
                 >
-                    <header className="dashboard-drawer__heading">
-        <span
-            className="dashboard-drawer__index"
-            aria-hidden="true"
-        >
-            II
-        </span>
+                    <header className="dashboard-paper__heading">
+            <span
+                className="dashboard-paper__index"
+                aria-hidden="true"
+            >
+                II
+            </span>
 
                         <h2 id="dashboard-circulation-heading">
                             Circulation
@@ -387,7 +400,12 @@ export function DashboardPage() {
                             <dt>Active Loan Records</dt>
 
                             <dd>
-                                {dashboard.borrowing.active_loans}
+                                <AppLink
+                                    to="/loans"
+                                    aria-label={`${dashboard.borrowing.active_loans} active loan records — view loans`}
+                                >
+                                    {dashboard.borrowing.active_loans}
+                                </AppLink>
                             </dd>
 
                             <dd className="dashboard-metric__description">
@@ -399,12 +417,11 @@ export function DashboardPage() {
                             <dt>Lifetime Loans</dt>
 
                             <dd>
-                                {dashboard.borrowing.lifetime_loans}
-                            </dd>
-
-                            <dd className="dashboard-metric__description">
-                                <AppLink to="/loans">
-                                    View loan history
+                                <AppLink
+                                    to="/loans"
+                                    aria-label={`${dashboard.borrowing.lifetime_loans} lifetime loans — view loan history`}
+                                >
+                                    {dashboard.borrowing.lifetime_loans}
                                 </AppLink>
                             </dd>
                         </div>
@@ -424,20 +441,15 @@ export function DashboardPage() {
                             </dd>
                         </div>
                     </dl>
-
-                    <div
-                        className="dashboard-drawer__pull"
-                        aria-hidden="true"
-                    />
                 </section>
 
                 <section
-                    className="dashboard-drawer"
+                    className="dashboard-paper dashboard-paper--reading"
                     aria-labelledby="dashboard-reading-heading"
                 >
-                    <header className="dashboard-drawer__heading">
+                    <header className="dashboard-paper__heading">
         <span
-            className="dashboard-drawer__index"
+            className="dashboard-paper__index"
             aria-hidden="true"
         >
             III
@@ -543,20 +555,15 @@ export function DashboardPage() {
                             </dd>
                         </div>
                     </dl>
-
-                    <div
-                        className="dashboard-drawer__pull"
-                        aria-hidden="true"
-                    />
                 </section>
 
                 <section
-                    className="dashboard-drawer"
+                    className="dashboard-paper dashboard-paper--stats"
                     aria-labelledby="dashboard-basic-stats-heading"
                 >
-                    <header className="dashboard-drawer__heading">
+                    <header className="dashboard-paper__heading">
         <span
-            className="dashboard-drawer__index"
+            className="dashboard-paper__index"
             aria-hidden="true"
         >
             IV
@@ -665,20 +672,15 @@ export function DashboardPage() {
                             </section>
                         </div>
                     )}
-
-                    <div
-                        className="dashboard-drawer__pull"
-                        aria-hidden="true"
-                    />
                 </section>
 
                 <section
-                    className="dashboard-drawer"
+                    className="dashboard-paper dashboard-paper--healing"
                     aria-labelledby="dashboard-healing-heading"
                 >
-                    <header className="dashboard-drawer__heading">
+                    <header className="dashboard-paper__heading">
         <span
-            className="dashboard-drawer__index"
+            className="dashboard-paper__index"
             aria-hidden="true"
         >
             V
@@ -692,6 +694,13 @@ export function DashboardPage() {
                             Books with catalog information that still needs attention.
                         </p>
                     </header>
+
+                    <div
+                        className="dashboard-healing__stamp"
+                        aria-hidden="true"
+                    >
+                        ATTN: LIBRARIAN
+                    </div>
 
                     {incompleteMetadataQuery.isPending ? (
                         <LoadingState label="Loading metadata cleanup counts…" />
@@ -804,11 +813,6 @@ export function DashboardPage() {
                             </p>
                         </div>
                     )}
-
-                    <div
-                        className="dashboard-drawer__pull"
-                        aria-hidden="true"
-                    />
                 </section>
             </div>
         </section>

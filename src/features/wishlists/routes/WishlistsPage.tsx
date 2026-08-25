@@ -552,9 +552,11 @@ export function WishlistsPage() {
                 </p>
             </header>
 
-            <CreateWishlistForm />
+            <div className="wishlists-page__workbench">
+                <CreateWishlistForm />
 
-            <AddWishlistBookControl />
+                <AddWishlistBookControl />
+            </div>
 
             {deleteError ? (
                 <Alert variant="error">

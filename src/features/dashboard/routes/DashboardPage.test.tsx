@@ -762,7 +762,7 @@ describe('DashboardPage', () => {
 
         expect(
             screen.getByRole('link', {
-                name: 'Browse collection',
+                name: '542 total books — browse collection',
             }),
         ).toHaveAttribute(
             'href',
@@ -771,7 +771,16 @@ describe('DashboardPage', () => {
 
         expect(
             screen.getByRole('link', {
-                name: 'View loan history',
+                name: '6 active loan records — view loans',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/loans',
+        )
+
+        expect(
+            screen.getByRole('link', {
+                name: '84 lifetime loans — view loan history',
             }),
         ).toHaveAttribute(
             'href',

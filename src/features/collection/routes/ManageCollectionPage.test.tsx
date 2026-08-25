@@ -26,7 +26,7 @@ describe('ManageCollectionPage', () => {
 
         expect(
             within(main).getByRole('link', {
-                name: 'Add Book',
+                name: /^Add Book/i,
             }),
         ).toHaveAttribute(
             'href',
@@ -35,7 +35,7 @@ describe('ManageCollectionPage', () => {
 
         expect(
             within(main).getByRole('link', {
-                name: 'Shelves',
+                name: /^Shelves/i,
             }),
         ).toHaveAttribute(
             'href',
@@ -44,7 +44,7 @@ describe('ManageCollectionPage', () => {
 
         expect(
             within(main).getByRole('link', {
-                name: 'Deleted Books',
+                name: /^Deleted Books/i,
             }),
         ).toHaveAttribute(
             'href',

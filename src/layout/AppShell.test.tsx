@@ -59,10 +59,10 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('aria-expanded', 'false')
 
         expect(
-            within(primaryNav).getByRole('button', {
-                name: 'Circulation',
+            within(primaryNav).getByRole('link', {
+                name: 'Loans',
             }),
-        ).toHaveAttribute('aria-expanded', 'false')
+        ).toHaveAttribute('href', '/loans')
 
         expect(
             screen.getByRole('main'),
@@ -136,41 +136,6 @@ describe('AppShell layout and navigation', () => {
         ).not.toBeInTheDocument()
     })
 
-    it('opens the Circulation menu with lending destinations', () => {
-        renderAppTree(['/'])
-
-        const circulationButton = screen.getByRole(
-            'button',
-            {
-                name: 'Circulation',
-            },
-        )
-
-        fireEvent.click(circulationButton)
-
-        expect(circulationButton).toHaveAttribute(
-            'aria-expanded',
-            'true',
-        )
-
-        expect(
-            screen.queryByRole('link', {
-                name: 'Check Out',
-            }),
-        ).not.toBeInTheDocument()
-
-        expect(
-            screen.queryByRole('link', {
-                name: 'Check In',
-            }),
-        ).not.toBeInTheDocument()
-
-        expect(
-            screen.getByRole('link', {
-                name: 'Loans',
-            }),
-        ).toHaveAttribute('href', '/loans')
-    })
 
     it('marks the active navigation trunk for child routes', () => {
         renderAppTree(['/books'])
@@ -182,10 +147,10 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('data-active', 'true')
 
         expect(
-            screen.getByRole('button', {
-                name: 'Circulation',
+            screen.getByRole('link', {
+                name: 'Loans',
             }),
-        ).not.toHaveAttribute('data-active')
+        ).not.toHaveAttribute('aria-current')
 
         expect(
             screen.getByRole('link', {
@@ -204,10 +169,10 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('data-active', 'true')
 
         expect(
-            screen.getByRole('button', {
-                name: 'Circulation',
+            screen.getByRole('link', {
+                name: 'Loans',
             }),
-        ).not.toHaveAttribute('data-active')
+        ).not.toHaveAttribute('aria-current')
     })
 
     it('marks Dashboard as current at /dashboard', () => {
@@ -220,29 +185,18 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('aria-current', 'page')
 
         expect(
-            screen.getByRole('button', {
-                name: 'Collection',
+            screen.getByRole('link', {
+                name: 'Loans',
             }),
-        ).not.toHaveAttribute('data-active')
-
-        expect(
-            screen.getByRole('button', {
-                name: 'Circulation',
-            }),
-        ).not.toHaveAttribute('data-active')
+        ).not.toHaveAttribute('aria-current')
     })
 
-    it('navigates through a drawer menu and focuses the destination heading', async () => {
+    it('navigates through a primary link and focuses the destination heading', async () => {
         renderAppTree(['/books'])
 
         const historyLengthBefore =
             window.history.length
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Circulation',
-            }),
-        )
 
         fireEvent.click(
             screen.getByRole('link', {
@@ -291,12 +245,10 @@ describe('AppShell layout and navigation', () => {
         )
 
         expect(
-            screen.getByRole('button', {
-                name: 'Circulation',
+            screen.getByRole('link', {
+                name: 'Loans',
             }),
-        ).not.toHaveAttribute(
-            'data-active',
-        )
+        ).not.toHaveAttribute('aria-current')
     })
 
     it('recovers from unknown routes with a home link', () => {
@@ -314,6 +266,28 @@ describe('AppShell layout and navigation', () => {
                 name: 'Return home',
             }),
         ).toHaveAttribute('href', '/')
+    })
+
+    it('marks Loans as current at /loans', () => {
+        renderAppTree(['/loans'])
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Loans',
+            }),
+        ).toHaveAttribute('aria-current', 'page')
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Collection',
+            }),
+        ).not.toHaveAttribute('data-active')
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Dashboard',
+            }),
+        ).not.toHaveAttribute('aria-current')
     })
 
     it('treats the removed backup route as not found', () => {

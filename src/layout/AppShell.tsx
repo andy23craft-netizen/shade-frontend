@@ -8,6 +8,7 @@ import {
 import { useVersion } from '../api/versionQueries'
 import { APP_VERSION } from '../config/appVersion'
 import { DrawerNavMenu } from './DrawerNavMenu'
+import shadeLibraryHeader from '../assets/Shade_Library_Header.webp'
 
 interface RouteHandle {
     title?: string
@@ -57,14 +58,17 @@ export function AppShell() {
 
             <header className="app-header">
                 <div className="app-header__inner">
-                    <NavLink className="app-brand" to="/" end>
-                        <span className="app-brand__name">
-                            Shade Library
-                        </span>
-
-                        <span className="app-brand__established">
-                            est. 2026
-                        </span>
+                    <NavLink
+                        className="app-brand"
+                        to="/"
+                        end
+                        aria-label="Shade Library"
+                    >
+                        <img
+                            src={shadeLibraryHeader}
+                            alt=""
+                            className="app-brand__image"
+                        />
                     </NavLink>
 
                     <nav
@@ -117,18 +121,21 @@ export function AppShell() {
                             ]}
                         />
 
-                        <DrawerNavMenu
-                            label="Circulation"
-                            activePrefixes={[
-                                '/loans',
-                            ]}
-                            items={[
-                                {
-                                    label: 'Loans',
-                                    to: '/loans',
-                                },
-                            ]}
-                        />
+                        <NavLink
+                            className="app-nav__link"
+                            to="/loans"
+                        >
+    <span className="drawer-nav-menu__label-holder">
+        <span className="drawer-nav-menu__label">
+            Loans
+        </span>
+    </span>
+
+                            <span
+                                className="drawer-nav-menu__pull"
+                                aria-hidden="true"
+                            />
+                        </NavLink>
                     </nav>
                 </div>
             </header>

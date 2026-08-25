@@ -171,6 +171,7 @@ export function HomePage() {
             </div>
 
             <section
+                className="home-section home-section--recent"
                 aria-labelledby="home-recent-heading"
             >
                 <h2 id="home-recent-heading">
@@ -212,6 +213,7 @@ export function HomePage() {
             </section>
 
             <section
+                className="home-section home-section--categories"
                 aria-labelledby="home-categories-heading"
             >
                 <h2 id="home-categories-heading">
@@ -267,6 +269,7 @@ export function HomePage() {
             </section>
 
             <section
+                className="home-section home-section--staff"
                 aria-labelledby="home-staff-picks-heading"
             >
                 <h2 id="home-staff-picks-heading">
@@ -331,7 +334,10 @@ export function HomePage() {
                 </AppLink>
             </section>
 
-            <nav aria-label="Home shortcuts">
+            <nav
+                className="home-shortcuts"
+                aria-label="Home shortcuts"
+            >
                 <AppLink to="/books">
                     Browse
                 </AppLink>

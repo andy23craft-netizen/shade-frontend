@@ -503,6 +503,60 @@
   font-style: italic;
 }
 
+/* --------------------------------------------------------------------------
+ * Books decorative reading glasses
+ *
+ * The glasses sit in the outer margin like an object left beside the catalog.
+ * They remain stationary while the record/list scrolls beneath them.
+ * -------------------------------------------------------------------------- */
+
+.books-page--decorated,
+.book-details-page--decorated {
+  position: relative;
+}
+
+.books-reading-glasses {
+  position: fixed;
+  z-index: 2;
+
+  /*
+   * Place the glasses in the right-hand margin of the application's broad
+   * desktop canvas rather than over useful catalog content.
+   */
+  top: clamp(12rem, 22vh, 17rem);
+
+  right: max(
+          -16rem,
+          calc((100vw - 88rem) / 2 - 12.5rem)
+  );
+
+  width: clamp(
+          13rem,
+          18vw,
+          21rem
+  );
+
+  height: auto;
+
+  pointer-events: none;
+
+  filter:
+          drop-shadow(
+                  0 0.35rem 0.28rem
+                  rgb(10 8 6 / 18%)
+          );
+
+  transform: rotate(70deg);
+
+  opacity: 0.94;
+}
+
+@media (max-width: 82rem) {
+  .books-reading-glasses {
+    display: none;
+  }
+}
+
 @media (min-width: 40rem) {
   .books-page__filters {
     grid-template-columns:
@@ -814,6 +868,280 @@
   font-size: 0.55rem;
   letter-spacing: 0.025em;
   white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+ * Manage Collection
+ *
+ * A librarian's working sheet with a decorative pen resting beside it.
+ * -------------------------------------------------------------------------- */
+
+.manage-collection-page {
+  display: grid;
+  justify-items: center;
+}
+
+.manage-collection-page__workspace {
+  position: relative;
+
+  width: min(100%, 62rem);
+  padding:
+          clamp(1rem, 3vw, 2rem)
+          clamp(1rem, 4vw, 3rem)
+          clamp(4rem, 8vw, 6rem);
+}
+
+.manage-collection-sheet {
+  position: relative;
+
+  width: min(100%, 46rem);
+  margin-inline: auto;
+  padding:
+          clamp(1.5rem, 4vw, 2.75rem);
+
+  border: 1px solid var(--color-card-border);
+  border-radius: 0.15rem;
+
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(87 62 39 / 2%) 0,
+                  rgb(87 62 39 / 2%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          var(--color-card);
+
+  box-shadow:
+          var(--shadow-card);
+
+  color: var(--color-surface-text);
+
+  transform: rotate(-0.2deg);
+}
+
+.manage-collection-page__heading {
+  display: grid;
+  gap: var(--space-2);
+
+  margin-block-end: var(--space-8);
+  padding-block-end: var(--space-5);
+
+  border-bottom:
+          2px solid
+          var(--color-card-rule);
+}
+
+.manage-collection-page__heading h1 {
+  margin: 0;
+
+  color: var(--color-surface-text);
+
+  font-family: var(--font-family-sans);
+}
+
+.manage-collection-page__heading > p:last-child {
+  margin: 0;
+
+  color: var(--color-surface-text-muted);
+  font-style: italic;
+}
+
+.manage-collection-page__eyebrow {
+  margin: 0;
+
+  color: var(--color-wood);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.manage-collection-page__actions {
+  display: grid;
+  gap: 0;
+
+  border-top:
+          1px solid
+          var(--color-card-rule);
+}
+
+.manage-collection-action {
+  position: relative;
+
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  grid-template-areas:
+    "title arrow"
+    "description arrow";
+
+  gap:
+          var(--space-1)
+          var(--space-4);
+
+  min-height: auto;
+  padding:
+          var(--space-5)
+          var(--space-3);
+
+  border: 0;
+  border-bottom:
+          1px solid
+          var(--color-card-rule);
+  border-radius: 0;
+
+  background: transparent;
+  color: var(--color-surface-text);
+
+  text-decoration: none;
+}
+
+.manage-collection-action:hover {
+  background:
+          rgb(138 100 47 / 6%);
+  color: var(--color-link-hover);
+}
+
+.manage-collection-action:focus-visible {
+  outline:
+          var(--focus-width) solid
+          var(--color-focus);
+  outline-offset:
+          var(--focus-offset);
+}
+
+.manage-collection-action__title {
+  grid-area: title;
+
+  font-family: var(--font-family-heading);
+  font-size: 1rem;
+  font-weight: 700;
+
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.manage-collection-action__description {
+  grid-area: description;
+
+  color: var(--color-surface-text-muted);
+
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-small);
+  font-style: italic;
+}
+
+.manage-collection-action__arrow {
+  grid-area: arrow;
+
+  align-self: center;
+
+  color: var(--color-brass);
+  font-family: var(--font-family-heading);
+  font-size: 1.4rem;
+
+  transition:
+          transform var(--duration-normal) ease;
+}
+
+.manage-collection-action:hover
+.manage-collection-action__arrow {
+  transform: translateX(0.2rem);
+}
+
+/*
+ * The pen is intentionally outside the working sheet, like it has been set
+ * down beside the form rather than printed into the interface.
+ */
+.manage-collection-page__pen {
+  position: absolute;
+  z-index: 2;
+
+  right: clamp(-2rem, -3vw, -0.5rem);
+  bottom: 0;
+
+  width: clamp(
+          11rem,
+          28vw,
+          19rem
+  );
+  height: auto;
+
+  pointer-events: none;
+
+  filter:
+          drop-shadow(
+                  0 0.7rem 0.45rem
+                  rgb(10 8 6 / 28%)
+          );
+
+  transform:
+          rotate(-13deg);
+  transform-origin: center;
+}
+
+@media (max-width: 48rem) {
+  .manage-collection-page__workspace {
+    padding-inline: 0;
+  }
+
+  .manage-collection-sheet {
+    width: 100%;
+    transform: none;
+  }
+
+  .manage-collection-page__pen {
+    right: -1rem;
+
+    width: clamp(
+            9rem,
+            36vw,
+            13rem
+    );
+
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 32rem) {
+  .manage-collection-page__workspace {
+    padding-bottom: var(--space-8);
+  }
+
+  .manage-collection-sheet {
+    padding:
+            var(--space-6)
+            var(--space-4);
+  }
+
+  .manage-collection-action {
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto;
+
+    padding-inline:
+            var(--space-2);
+  }
+
+  .manage-collection-page__pen {
+    position: static;
+
+    display: block;
+
+    width: min(60%, 11rem);
+    margin:
+            var(--space-5)
+            0
+            0
+            auto;
+
+    transform: rotate(-9deg);
+  }
 }
 
 .home-book-deck {
@@ -1346,42 +1674,6 @@
   background: transparent;
 }
 
-.home-page__hero-link::after {
-  content: "";
-  position: absolute;
-  inset: -50%;
-
-  background:
-          linear-gradient(
-                  115deg,
-                  transparent 38%,
-                  rgb(255 244 190 / 0%) 43%,
-                  rgb(255 244 190 / 35%) 49%,
-                  rgb(255 255 225 / 55%) 50%,
-                  rgb(255 244 190 / 35%) 51%,
-                  rgb(255 244 190 / 0%) 57%,
-                  transparent 62%
-          );
-
-  transform: translateX(-75%);
-  pointer-events: none;
-  opacity: 0;
-}
-
-.home-page__hero-link:hover::after,
-.home-page__hero-link:focus-visible::after {
-  opacity: 1;
-  transform: translateX(75%);
-  transition:
-          transform 900ms ease,
-          opacity 150ms ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-page__hero-link::after {
-    display: none;
-  }
-}
 
 .home-page__tagline {
   margin: 0;
@@ -1410,59 +1702,224 @@
 }
 
 .home-page__quote {
-  width: min(100%, 38rem);
+  position: relative;
+  width: min(100%, 42rem);
+  max-width: 42rem;
   margin:
-          var(--space-5)
+          clamp(var(--space-6), 4vw, var(--space-10))
           auto
           0;
+  padding:
+          var(--space-5)
+          clamp(var(--space-5), 5vw, var(--space-10));
+
   text-align: center;
+}
+
+.home-page__quote::before,
+.home-page__quote::after {
+  position: absolute;
+  left: 50%;
+  width: min(70%, 20rem);
+  height: 1px;
+
+  background:
+          linear-gradient(
+                  90deg,
+                  transparent,
+                  var(--color-brass) 25%,
+                  var(--color-brass-light) 50%,
+                  var(--color-brass) 75%,
+                  transparent
+          );
+
+  content: "";
+  transform: translateX(-50%);
+  opacity: 0.65;
+}
+
+.home-page__quote::before {
+  top: 0;
+}
+
+.home-page__quote::after {
+  bottom: 0;
 }
 
 .home-page__quote-trigger {
   display: grid;
-  gap: var(--space-2);
   width: 100%;
-  padding: var(--space-2);
+  gap: var(--space-3);
+  padding: 0;
   border: 0;
 
   background: transparent;
   color: var(--color-text);
 
   font: inherit;
-  line-height: 1.6;
   text-align: center;
 
   cursor: help;
-}
-
-.home-page__quote-text {
-  font-style: italic;
-}
-
-.home-page__quote-author {
-  font-style: normal;
-  white-space: nowrap;
 }
 
 .home-page__quote-trigger:hover {
   background: transparent;
 }
 
+.home-page__quote-text {
+  font-family: var(--font-family-sans);
+  font-size: clamp(
+          1.05rem,
+          2.5vw,
+          1.3rem
+  );
+  font-style: italic;
+  line-height: 1.65;
+  text-wrap: balance;
+}
+
+.home-page__quote-author {
+  color: var(--color-brass-light);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-style: normal;
+  letter-spacing: 0.055em;
+  white-space: nowrap;
+}
+
 .home-page__quote-trigger:focus-visible {
-  outline: 2px solid var(--color-brass);
-  outline-offset: 0.25rem;
+  border-radius: var(--radius-small);
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
 }
 
 .home-page__quote-context {
+  width: min(100%, 34rem);
   margin:
-          var(--space-2)
+          var(--space-4)
           auto
           0;
 
   color: var(--color-text-muted);
+
+  font-family: var(--font-family-sans);
   font-size: var(--font-size-small);
   font-style: italic;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.home-shortcuts {
+  position: relative;
+
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+
+  width: min(100%, 46rem);
+  margin-inline: auto;
+  padding:
+          var(--space-6)
+          var(--space-6)
+          var(--space-5);
+
+  border: 1px solid var(--color-card-border);
+  border-radius: 0.15rem;
+
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(87 62 39 / 3%) 0,
+                  rgb(87 62 39 / 3%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          var(--color-card);
+
+  box-shadow:
+          var(--shadow-card);
+
+  color: var(--color-surface-text);
+}
+
+/*
+ * A little file-tab silhouette gives this the appearance of a directory
+ * card pulled from the catalog.
+ */
+.home-shortcuts::before {
+  position: absolute;
+  top: -0.72rem;
+  left: var(--space-6);
+
+  width: 7rem;
+  height: 0.75rem;
+
+  border: 1px solid var(--color-card-border);
+  border-bottom: 0;
+
+  background: var(--color-card);
+
+  content: "";
+
+  clip-path: polygon(
+          10% 0,
+          88% 0,
+          100% 100%,
+          0 100%
+  );
+}
+
+.home-shortcuts .app-link {
+  min-width: 0;
+  border-color: transparent;
+
+  background: transparent;
+  color: var(--color-surface-text);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.home-shortcuts .app-link:hover {
+  border-color: var(--color-card-rule);
+  background: var(--color-surface-muted);
+  color: var(--color-link-hover);
+}
+
+@media (max-width: 42rem) {
+  .home-shortcuts {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    padding-inline: var(--space-4);
+  }
+}
+
+@media (max-width: 24rem) {
+  .home-shortcuts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 36rem) {
+  .home-section {
+    gap: var(--space-5);
+  }
+
+  .home-section > h2 {
+    font-size: clamp(
+            1.6rem,
+            8vw,
+            2rem
+    );
+  }
+
+  .home-page__quote {
+    padding-inline: var(--space-3);
+  }
 }
 
 .home-page > section {
@@ -1474,11 +1931,6 @@
 
 .home-page > section > h2 {
   margin: 0;
-}
-
-.home-page__quote cite {
-  font-style: normal;
-  white-space: nowrap;
 }
 
 @media (max-width: 58rem) {
@@ -1515,27 +1967,667 @@
   width: 100%;
   height: auto;
   margin-inline: auto;
+  transition:
+          transform var(--duration-normal) ease,
+          filter var(--duration-normal) ease;
 }
 
-.home-page__quote {
+.home-page__hero-link:hover .home-page__hero-image {
+  transform: translateY(-0.08rem);
+  filter: drop-shadow(
+          0 0.45rem 0.35rem rgb(10 8 6 / 28%)
+  );
+}
+
+.home-page__hero-link:active .home-page__hero-image {
+  transform: translateY(0.12rem);
+  filter: drop-shadow(
+          0 0.12rem 0.12rem rgb(10 8 6 / 22%)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page__hero-image {
+    transition: none;
+  }
+
+  .home-page__hero-link:hover .home-page__hero-image,
+  .home-page__hero-link:active .home-page__hero-image {
+    transform: none;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+ * Home personality
+ *
+ * Home is the most expressive discovery surface in Shade. These treatments
+ * use the existing library materials rather than introducing a separate
+ * design system.
+ * -------------------------------------------------------------------------- */
+
+.home-page {
+  --home-rule-brass: var(--color-brass-light);
+  --home-accent-recent: #a98648;
+  --home-accent-categories: #557469;
+  --home-accent-staff: #7a4b47;
+
+  gap: clamp(
+          4.5rem,
+          9vw,
+          7.5rem
+  );
+}
+
+/*
+ * Each discovery area remains structurally simple. The heading and rule do
+ * the visual work rather than wrapping the entire section in another card.
+ */
+.home-section {
   position: relative;
-  z-index: 1;
-  max-width: 38rem;
-  margin:
-          var(--space-5)
-          auto
-          0;
+  display: grid;
+  min-width: 0;
+  gap: var(--space-6);
+  padding-block-start: var(--space-4);
+}
+
+.home-section::before {
+  width: min(100%, 42rem);
+  height: 1px;
+  margin-inline: auto;
+
+  background:
+          linear-gradient(
+                  90deg,
+                  transparent,
+                  var(--home-section-accent) 18%,
+                  var(--home-rule-brass) 50%,
+                  var(--home-section-accent) 82%,
+                  transparent
+          );
+
+  content: "";
+  opacity: 0.8;
+}
+
+.home-section--recent {
+  --home-section-accent:
+          var(--home-accent-recent);
+}
+
+.home-section--categories {
+  --home-section-accent:
+          var(--home-accent-categories);
+}
+
+.home-section--staff {
+  --home-section-accent:
+          var(--home-accent-staff);
+}
+
+.home-section > h2 {
+  position: relative;
+  justify-self: center;
+  max-width: 100%;
+  margin: 0;
 
   color: var(--color-text);
-  font-size: 1rem;
-  font-style: italic;
-  line-height: 1.6;
+
+  font-family: var(--font-family-sans);
+  font-size: clamp(
+          1.75rem,
+          4vw,
+          2.65rem
+  );
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  line-height: 1.1;
   text-align: center;
 }
 
-.home-page__quote cite {
-  font-style: normal;
-  white-space: nowrap;
+/*
+ * Small centered ornament beneath each heading. It reads as a printer's
+ * ornament / brass rule without introducing another image asset.
+ */
+.home-section > h2::after {
+  display: block;
+  width: 4.5rem;
+  height: 0.18rem;
+  margin:
+          var(--space-3)
+          auto
+          0;
+
+  background:
+          linear-gradient(
+                  90deg,
+                  transparent,
+                  var(--home-section-accent) 20%,
+                  var(--color-brass-light) 50%,
+                  var(--home-section-accent) 80%,
+                  transparent
+          );
+
+  content: "";
+  opacity: 0.95;
+}
+
+/*
+ * The final discovery links belong to their section, but should read more
+ * quietly than the primary objects above them.
+ */
+.home-section > .app-link {
+  justify-self: center;
+}
+
+/* --------------------------------------------------------------------------
+ * Wishlists
+ *
+ * Acquisition notes and request slips for books not yet shelved.
+ * -------------------------------------------------------------------------- */
+
+.wishlists-page__workbench {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  align-items: start;
+
+  gap:
+          clamp(var(--space-5), 4vw, var(--space-8));
+
+  width: min(100%, 62rem);
+}
+
+.wishlists-page {
+  gap: var(--space-7);
+}
+
+.wishlists-page__heading {
+  display: grid;
+  gap: var(--space-2);
+
+  width: min(100%, 48rem);
+}
+
+.wishlists-page__heading h1 {
+  margin: 0;
+}
+
+.wishlists-page__heading p {
+  max-width: 42rem;
+  margin: 0;
+
+  color: var(--color-text-muted);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/*
+ * The creation and add-book forms read as small acquisition slips rather
+ * than generic application cards.
+ */
+.wishlist-form,
+.add-to-wishlist {
+  position: relative;
+
+  display: grid;
+  min-width: 0;
+  gap: var(--space-4);
+
+  width: 100%;
+  margin-top: 0;
+  padding:
+          var(--space-6)
+          clamp(var(--space-4), 4vw, var(--space-7));
+
+  border: 1px solid rgb(111 83 53 / 58%);
+  border-radius: 0.12rem;
+
+  background:
+          linear-gradient(
+                  90deg,
+                  transparent 2.6rem,
+                  rgb(151 76 66 / 15%) 2.6rem,
+                  rgb(151 76 66 / 15%) 2.68rem,
+                  transparent 2.68rem
+          ),
+          repeating-linear-gradient(
+                  180deg,
+                  transparent 0,
+                  transparent 1.72rem,
+                  rgb(92 104 108 / 9%) 1.72rem,
+                  rgb(92 104 108 / 9%) 1.77rem
+          ),
+          #eee7d1;
+
+  box-shadow:
+          0 0.18rem 0.25rem rgb(10 8 6 / 14%),
+          0 0.6rem 1rem rgb(10 8 6 / 16%);
+
+  color: var(--color-surface-text);
+}
+
+.wishlist-form {
+  transform: rotate(-0.15deg);
+}
+
+.add-to-wishlist {
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(87 62 39 / 2%) 0,
+                  rgb(87 62 39 / 2%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          #e6dfc8;
+
+  transform: rotate(0.15deg);
+}
+
+.wishlist-form h2,
+.add-to-wishlist h2 {
+  margin: 0;
+  padding-bottom: var(--space-3);
+
+  border-bottom:
+          1px solid
+          rgb(113 84 52 / 32%);
+
+  color: var(--color-wood-dark);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-h3);
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.wishlist-form .field > label,
+.wishlist-form .field__label,
+.add-to-wishlist .field > label,
+.add-to-wishlist .field__label {
+  color: var(--color-wood-dark);
+
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.wishlist-form input,
+.wishlist-form textarea,
+.wishlist-form select,
+.add-to-wishlist input,
+.add-to-wishlist textarea,
+.add-to-wishlist select {
+  background:
+          rgb(255 252 239 / 58%);
+
+  color: var(--color-surface-text);
+
+  border-color:
+          rgb(113 84 52 / 42%);
+
+  box-shadow:
+          inset 0 1px 0
+          rgb(77 50 29 / 6%);
+}
+
+.wishlist-form textarea,
+.add-to-wishlist textarea {
+  background:
+          repeating-linear-gradient(
+                  180deg,
+                  transparent 0,
+                  transparent 1.65rem,
+                  rgb(113 84 52 / 12%) 1.65rem,
+                  rgb(113 84 52 / 12%) calc(1.65rem + 1px)
+          ),
+          rgb(255 252 239 / 58%);
+
+  line-height: 1.65rem;
+}
+
+.add-to-wishlist__lookup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+@media (max-width: 52rem) {
+  .wishlists-page__workbench {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * Each wishlist is a larger acquisition file. The member rows become the
+ * individual request entries recorded inside it.
+ */
+.wishlists-list {
+  display: grid;
+  gap: clamp(
+          var(--space-6),
+          6vw,
+          var(--space-10)
+  );
+
+  margin:
+          var(--space-4)
+          0
+          0;
+
+  padding: 0;
+  list-style: none;
+}
+
+.wishlists-list__item {
+  margin: 0;
+}
+
+.wishlist-card {
+  position: relative;
+
+  display: grid;
+  min-width: 0;
+  gap: var(--space-5);
+
+  width: min(100%, 58rem);
+  margin-inline: auto;
+
+  padding:
+          clamp(var(--space-5), 4vw, var(--space-8));
+
+  border: 1px solid rgb(111 83 53 / 62%);
+  border-radius: 0.12rem;
+
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(87 62 39 / 2%) 0,
+                  rgb(87 62 39 / 2%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          #e9e1c9;
+
+  box-shadow:
+          0 0.2rem 0.3rem rgb(10 8 6 / 14%),
+          0 0.8rem 1.4rem rgb(10 8 6 / 18%);
+
+  color: var(--color-surface-text);
+}
+
+.wishlists-list__item:nth-child(even)
+.wishlist-card {
+  transform: rotate(0.12deg);
+}
+
+.wishlists-list__item:nth-child(odd)
+.wishlist-card {
+  transform: rotate(-0.12deg);
+}
+
+/*
+ * File-tab cue at the top edge.
+ */
+.wishlist-card::before {
+  position: absolute;
+
+  top: -0.7rem;
+  left: clamp(
+          var(--space-4),
+          6vw,
+          var(--space-8)
+  );
+
+  width: 7.5rem;
+  height: 0.72rem;
+
+  border: 1px solid rgb(111 83 53 / 62%);
+  border-bottom: 0;
+
+  background: #e9e1c9;
+
+  content: "";
+
+  clip-path: polygon(
+          10% 0,
+          88% 0,
+          100% 100%,
+          0 100%
+  );
+}
+
+.wishlist-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+
+  gap:
+          var(--space-4)
+          var(--space-6);
+
+  padding-bottom: var(--space-5);
+
+  border-bottom:
+          2px solid
+          rgb(113 84 52 / 34%);
+}
+
+.wishlist-card__header > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.wishlist-card h2 {
+  margin: 0;
+
+  overflow-wrap: anywhere;
+
+  color: var(--color-wood-dark);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-h2);
+
+  letter-spacing: 0.035em;
+}
+
+.wishlist-card__header p {
+  margin: 0;
+
+  color: var(--color-surface-text-muted);
+}
+
+.wishlist-card__header p:last-child {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+/*
+ * Individual requested books read like entries on the acquisition sheet.
+ */
+.wishlist-memberships {
+  display: grid;
+  gap: 0;
+
+  margin: 0;
+  padding: 0;
+
+  border-top:
+          1px solid
+          rgb(113 84 52 / 20%);
+
+  list-style: none;
+}
+
+.wishlist-membership {
+  display: grid;
+  min-width: 0;
+
+  gap:
+          var(--space-4)
+          var(--space-6);
+
+  padding:
+          var(--space-5)
+          var(--space-2);
+
+  border-bottom:
+          1px solid
+          rgb(113 84 52 / 22%);
+
+  overflow-wrap: anywhere;
+}
+
+.wishlist-membership:last-child {
+  border-bottom: 0;
+}
+
+.wishlist-membership > div:first-child {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.wishlist-membership > div:first-child p {
+  margin: 0;
+
+  color: var(--color-surface-text-muted);
+  font-style: italic;
+}
+
+.wishlist-membership dl {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(8rem, 1fr)
+    );
+
+  gap:
+          var(--space-3)
+          var(--space-5);
+
+  margin: 0;
+}
+
+.wishlist-membership dl > div {
+  min-width: 0;
+}
+
+.wishlist-membership dt {
+  color: var(--color-surface-text-muted);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.wishlist-membership dd {
+  margin:
+          var(--space-1)
+          0
+          0;
+
+  overflow-wrap: anywhere;
+}
+
+.wishlist-membership .app-link {
+  min-height: auto;
+  justify-content: flex-start;
+
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+  color: var(--color-surface-text);
+
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+}
+
+.wishlist-membership .app-link:hover {
+  background: transparent;
+  color: var(--color-link);
+
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.wishlist-membership__move {
+  display: grid;
+  gap: var(--space-2);
+
+  padding-top: var(--space-3);
+
+  border-top:
+          1px dashed
+          rgb(113 84 52 / 28%);
+}
+
+.wishlist-membership__move form {
+  display: grid;
+  align-items: end;
+
+  gap: var(--space-2);
+}
+
+@media (min-width: 40rem) {
+  .wishlist-membership__move form {
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto;
+  }
+}
+
+@media (min-width: 54rem) {
+  .wishlist-membership {
+    grid-template-columns:
+      minmax(12rem, 0.9fr)
+      minmax(0, 1.4fr);
+
+    align-items: start;
+  }
+
+  .wishlist-membership__move {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .wishlist-form,
+  .add-to-wishlist,
+  .wishlist-card {
+    width: 100%;
+    transform: none;
+  }
+
+  .wishlist-card::before {
+    width: 5.5rem;
+  }
+
+  .wishlist-card__header {
+    display: grid;
+  }
+
+  .wishlist-card__header .button {
+    justify-self: start;
+  }
+
+  .wishlist-membership dl {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -1795,13 +2887,18 @@
 .book-details-card__field {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(7rem, auto) 1fr;
+  grid-template-columns:
+    minmax(0, 7.5rem)
+    minmax(0, 1fr);
   gap: var(--space-3);
   padding-block: var(--space-3);
   border-bottom: 1px dotted var(--color-card-rule);
 }
 
 .book-details-card__field dt {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
   color: var(--color-surface-text);
   font-family: var(--font-family-heading);
   font-size: var(--font-size-small);
@@ -1894,20 +2991,110 @@
 }
 
 .dashboard-page__heading {
+  position: relative;
+  z-index: 2;
+
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--color-border);
+  align-items: center;
+  justify-content: space-between;
+
+  gap: var(--space-6);
+
+  width: min(100%, 78rem);
+
+  margin:
+          0
+          auto
+          clamp(2.5rem, 5vw, 4rem);
+
+  color: var(--color-text);
 }
 
 .dashboard-page__heading > div {
+  position: relative;
+
   display: grid;
-  gap: var(--space-2);
+  gap: 0.15rem;
+
+  padding:
+          var(--space-4)
+          clamp(var(--space-5), 4vw, var(--space-8));
+
+  border:
+          1px solid
+          var(--color-brass);
+
+  border-radius:
+          0.2rem
+          0.2rem
+          0.45rem
+          0.45rem;
+
+  background:
+          linear-gradient(
+                  180deg,
+                  rgb(255 255 255 / 6%),
+                  transparent 30%
+          ),
+          linear-gradient(
+                  180deg,
+                  #593923,
+                  var(--color-wood-dark)
+          );
+
+  box-shadow:
+          inset 0 0 0 0.22rem
+          rgb(179 138 72 / 14%),
+          0 0.2rem 0
+          rgb(39 23 12 / 70%),
+          0 0.55rem 0.8rem
+          rgb(10 6 3 / 30%);
+
+  text-align: center;
 }
 
 .dashboard-page__heading h1 {
   margin: 0;
+
+  color: var(--color-brass-light);
+
+  font-family: var(--font-family-sans);
+  font-size: clamp(
+          1.65rem,
+          4vw,
+          2.5rem
+  );
+  font-weight: 700;
+
+  letter-spacing: 0.055em;
+
+  text-shadow:
+          0 1px 0 rgb(255 255 255 / 10%),
+          0 2px 2px rgb(10 6 3 / 60%);
+}
+
+.dashboard-page__heading > div > p:last-child {
+  margin: 0;
+
+  color: var(--color-text);
+
+  font-family: var(--font-family-sans);
+  font-style: italic;
+}
+
+.dashboard-page__eyebrow {
+  margin: 0;
+
+  color: var(--color-brass-light) !important;
+
+  font-family: var(--font-family-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  opacity: 0.8;
 }
 
 .dashboard-page__heading p {
@@ -1919,13 +3106,80 @@
   align-self: flex-start;
 }
 
-.dashboard-page__eyebrow {
-  color: var(--color-brass-light) !important;
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-small);
+.dashboard-page__heading > .button {
+  border:
+          1px solid
+          #6d4e22;
+
+  background:
+          linear-gradient(
+                  180deg,
+                  #c8a45b,
+                  #8a642f 55%,
+                  #6c4b1f
+          );
+
+  box-shadow:
+          inset 0 1px 0
+          rgb(255 255 255 / 25%),
+          inset 0 -1px 0
+          rgb(52 30 12 / 35%),
+          0 0.2rem 0.35rem
+          rgb(10 6 3 / 35%);
+
+  color:
+          #2d2114;
+
+  font-family:
+          var(--font-family-heading);
+
   font-weight: 700;
+
+  letter-spacing:
+          0.045em;
+
+  text-shadow:
+          0 1px 0
+          rgb(255 255 255 / 18%);
+}
+
+.dashboard-page__heading > .button:hover:not(:disabled) {
+  border-color:
+          var(--color-brass-light);
+
+  background:
+          linear-gradient(
+                  180deg,
+                  #d4b36a,
+                  #9a7434 55%,
+                  #795624
+          );
+}
+
+.dashboard-page__heading > .button:active:not(:disabled) {
+  transform:
+          translateY(0.08rem);
+
+  box-shadow:
+          inset 0 1px 0
+          rgb(52 30 12 / 22%),
+          0 0.08rem 0.15rem
+          rgb(10 6 3 / 30%);
+}
+
+.dashboard-page__eyebrow {
+  margin: 0;
+
+  color: var(--color-brass-light) !important;
+
+  font-family: var(--font-family-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+
   letter-spacing: 0.12em;
   text-transform: uppercase;
+
+  opacity: 0.8;
 }
 
 .dashboard-page__refresh-status {
@@ -1942,6 +3196,64 @@
   background: var(--color-warning-background);
   color: var(--color-warning);
   box-shadow: var(--shadow-small);
+}
+
+@media (max-width: 52rem) {
+  .dashboard-desk {
+    grid-template-columns:
+      minmax(0, 1fr);
+
+    grid-template-areas:
+      "collection"
+      "circulation"
+      "reading"
+      "stats"
+      "healing";
+
+    gap: var(--space-7);
+  }
+
+  .dashboard-paper--collection,
+  .dashboard-paper--circulation,
+  .dashboard-paper--reading,
+  .dashboard-paper--stats,
+  .dashboard-paper--healing {
+    width: 100%;
+    transform: none;
+  }
+
+  .dashboard-healing__stamp {
+    transform: rotate(-3deg);
+  }
+}
+
+@media (max-width: 36rem) {
+  .dashboard-page__heading {
+    display: grid;
+  }
+
+  .dashboard-page__heading > div {
+    width: 100%;
+  }
+
+  .dashboard-page__heading > .button {
+    justify-self: start;
+  }
+
+  .dashboard-healing__stamp {
+    position: static;
+
+    justify-self: start;
+
+    width: max-content;
+    margin:
+            0
+            0
+            var(--space-4)
+            auto;
+
+    transform: rotate(-2deg);
+  }
 }
 
 /*
@@ -2359,12 +3671,7 @@
 
   border-bottom: 1px solid rgb(113 84 52 / 18%);
 
-  background:
-          linear-gradient(
-                  180deg,
-                  rgb(255 255 255 / 11%),
-                  transparent
-          );
+  background: transparent;
 }
 
 .dashboard-metric:last-child {
@@ -2414,6 +3721,31 @@
   background: transparent;
   color: var(--color-link-hover);
   text-decoration: underline;
+}
+
+.dashboard-metric__value--link {
+  width: fit-content;
+
+  color: inherit;
+  text-decoration: none;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.14em;
+
+  transition:
+          color var(--duration-fast) ease,
+          text-decoration-color var(--duration-fast) ease;
+}
+
+.dashboard-metric__value--link:hover {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-color: var(--color-brass);
+}
+
+.dashboard-metric__value--link:focus-visible {
+  border-radius: var(--radius-small);
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
 }
 
 .dashboard-breakdowns {
@@ -2832,6 +4164,522 @@
 
   .dashboard-metric dd {
     font-size: clamp(2rem, 3vw, 2.75rem);
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Dashboard desk
+ *
+ * Unlike the rest of the application, the Dashboard is presented as the
+ * librarian's working desk: five distinct records laid across a wood surface.
+ * -------------------------------------------------------------------------- */
+
+.dashboard-page {
+  position: relative;
+  isolation: isolate;
+
+  width: min(
+          calc(100% + 4rem),
+          88rem
+  );
+  margin-inline: auto;
+  padding:
+          clamp(2rem, 4vw, 4rem)
+          clamp(1rem, 4vw, 4rem)
+          clamp(4rem, 8vw, 7rem);
+
+  border: 1px solid rgb(31 20 12 / 75%);
+  border-radius: var(--radius-medium);
+
+  background:
+          linear-gradient(
+                  rgb(22 13 8 / 12%),
+                  rgb(22 13 8 / 24%)
+          ),
+          var(--dashboard-desk-image)
+          center / cover;
+
+  box-shadow:
+          inset 0 0 4rem rgb(13 8 4 / 24%),
+          0 1rem 2.5rem rgb(13 8 4 / 24%);
+}
+
+
+/*
+ * The desk itself is intentionally spacious. Grid areas give us controlled
+ * asymmetry without absolute positioning, so the layout remains resilient.
+ */
+.dashboard-desk {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+  grid-template-columns:
+    minmax(0, 0.92fr)
+    minmax(0, 1.08fr);
+
+  grid-template-areas:
+    "collection circulation"
+    "reading stats"
+    "healing stats";
+
+  align-items: start;
+
+  gap:
+          clamp(1.5rem, 3vw, 2.75rem)
+          clamp(1.5rem, 3vw, 3rem);
+
+  width: min(100%, 78rem);
+  margin-inline: auto;
+}
+
+/*
+ * Shared paper stock.
+ */
+.dashboard-paper {
+  position: relative;
+  min-width: 0;
+  padding:
+          clamp(1.5rem, 3vw, 2.4rem);
+
+  border: 1px solid rgb(87 62 39 / 40%);
+
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(87 62 39 / 2%) 0,
+                  rgb(87 62 39 / 2%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          var(--color-card);
+
+  box-shadow:
+          0 0.2rem 0.3rem rgb(17 10 5 / 18%),
+          0 0.8rem 1.5rem rgb(17 10 5 / 22%);
+
+  color: var(--color-surface-text);
+
+  transform-origin: center;
+}
+
+/*
+ * Different records get slightly different paper tones.
+ */
+.dashboard-paper--collection {
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(87 62 39 / 2%) 0,
+                  rgb(87 62 39 / 2%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          #eee5c9;
+}
+
+.dashboard-paper--circulation {
+  grid-area: circulation;
+
+  background:
+          linear-gradient(
+                  90deg,
+                  transparent 3.25rem,
+                  rgb(145 72 66 / 24%) 3.25rem,
+                  rgb(145 72 66 / 24%) 3.34rem,
+                  transparent 3.34rem
+          ),
+          repeating-linear-gradient(
+                  180deg,
+                  transparent 0,
+                  transparent 1.7rem,
+                  rgb(83 104 111 / 16%) 1.7rem,
+                  rgb(83 104 111 / 16%) 1.77rem
+          ),
+          #f1ead6;
+
+  transform: rotate(0.3deg);
+}
+
+.dashboard-paper--reading {
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(79 102 82 / 3%) 0,
+                  rgb(79 102 82 / 3%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          #e8e2c9;
+}
+
+.dashboard-paper--stats {
+  background:
+          repeating-linear-gradient(
+                  0deg,
+                  rgb(82 109 120 / 3%) 0,
+                  rgb(82 109 120 / 3%) 1px,
+                  transparent 1px,
+                  transparent 5px
+          ),
+          #ece5cf;
+}
+
+.dashboard-paper--healing {
+  grid-area: healing;
+
+  background:
+          linear-gradient(
+                  90deg,
+                  transparent 2.6rem,
+                  rgb(180 84 69 / 23%) 2.6rem,
+                  rgb(180 84 69 / 23%) 2.68rem,
+                  transparent 2.68rem
+          ),
+          repeating-linear-gradient(
+                  180deg,
+                  transparent 0,
+                  transparent 1.65rem,
+                  rgb(100 116 118 / 14%) 1.65rem,
+                  rgb(100 116 118 / 14%) 1.72rem
+          ),
+          #f2dda0;
+
+  border-color: #b69a55;
+
+  box-shadow:
+          0 0.2rem 0.3rem rgb(17 10 5 / 16%),
+          0 0.8rem 1.5rem rgb(17 10 5 / 22%);
+
+  transform: rotate(-0.3deg);
+}
+
+.dashboard-paper--healing {
+  overflow: hidden;
+}
+
+.dashboard-healing__stamp {
+  position: absolute;
+  z-index: 2;
+
+  top: 5.25rem;
+  right: 1.5rem;
+
+  padding:
+          0.35rem
+          0.65rem;
+
+  border:
+          0.18rem solid
+          rgb(126 43 38 / 72%);
+  border-radius: 0.22rem;
+
+  color:
+          rgb(126 43 38 / 78%);
+
+  font-family:
+          var(--font-family-heading);
+  font-size:
+          clamp(
+                  0.72rem,
+                  1.5vw,
+                  0.95rem
+          );
+  font-weight: 700;
+
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+
+  transform: rotate(-5deg);
+
+  opacity: 0.88;
+
+  pointer-events: none;
+}
+
+.dashboard-paper--healing .dashboard-healing {
+  padding-block-start: var(--space-4);
+}
+
+/*
+ * Document headings replace the old drawer faces.
+ */
+.dashboard-paper__heading {
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    auto
+    minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+
+  margin:
+          0
+          0
+          var(--space-6);
+
+  padding:
+          0
+          0
+          var(--space-4);
+
+  border: 0;
+  border-bottom:
+          2px solid
+          rgb(87 62 39 / 42%);
+
+  border-radius: 0;
+
+  background: transparent;
+  box-shadow: none;
+
+  transform: none;
+  clip-path: none;
+}
+
+
+.dashboard-paper__heading::before,
+.dashboard-paper__heading::after {
+  content: none;
+}
+
+
+.dashboard-paper__index {
+  grid-row: 1 / 3;
+
+  align-self: start;
+
+  min-width: auto;
+  min-height: auto;
+  padding:
+          0.15rem
+          var(--space-2)
+          0.1rem
+          0;
+
+  border: 0;
+  border-right:
+          1px solid
+          rgb(87 62 39 / 35%);
+  border-radius: 0;
+
+  background: transparent;
+  color: var(--color-surface-text);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-paper__heading h2 {
+  margin: 0;
+
+  color: var(--color-surface-text);
+
+  font-family: var(--font-family-heading);
+  font-size: clamp(
+          1.1rem,
+          2.5vw,
+          1.4rem
+  );
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-paper__heading p {
+  grid-column: 2;
+
+  margin: 0;
+
+  color: var(--color-surface-text-muted);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-small);
+  font-style: italic;
+}
+
+/*
+ * COLLECTION — accession / inventory sheet
+ */
+.dashboard-paper--collection .dashboard-metrics {
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-paper--collection .dashboard-metric {
+  border-right:
+          1px solid
+          var(--color-card-rule);
+
+  background: transparent;
+}
+
+.dashboard-paper--collection .dashboard-metric:last-child {
+  border-right: 0;
+}
+
+/*
+ * CIRCULATION — ruled lending slip
+ */
+.dashboard-paper--circulation .dashboard-metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.dashboard-paper--circulation .dashboard-metric {
+  padding-inline-start: 2rem;
+}
+
+/*
+ * READING — reading record with chart as its central object.
+ */
+.dashboard-paper--reading .dashboard-reading-chart {
+  margin-block-end: var(--space-6);
+  padding-block-end: var(--space-5);
+
+  border-bottom:
+          1px solid
+          var(--color-card-rule);
+}
+
+/*
+ * BASIC STATS — report sheet. Give the category visualization room.
+ */
+.dashboard-paper--stats .dashboard-breakdowns {
+  gap: var(--space-7);
+}
+
+.dashboard-paper--stats .dashboard-category-chart {
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+/*
+ * HEALING — catalog work order.
+ */
+.dashboard-paper--healing .dashboard-healing__total {
+  border:
+          2px solid
+          rgb(111 68 54 / 38%);
+  border-radius: var(--radius-small);
+
+  background:
+          rgb(111 68 54 / 5%);
+}
+
+.dashboard-paper--healing .dashboard-healing__note {
+  padding-block-start: var(--space-4);
+  border-top:
+          1px dashed
+          var(--color-card-rule);
+
+  font-style: italic;
+}
+
+@media (max-width: 52rem) {
+  .dashboard-page {
+    width: 100%;
+    padding:
+            var(--space-6)
+            var(--space-4)
+            var(--space-8);
+  }
+
+  .dashboard-page__heading {
+    align-items: start;
+    margin-block-end: var(--space-8);
+  }
+
+  .dashboard-desk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "collection"
+      "circulation"
+      "reading"
+      "stats"
+      "healing";
+
+    gap: var(--space-7);
+  }
+
+  .dashboard-paper--collection {
+    grid-area: collection;
+    width: 100%;
+    transform: rotate(-0.25deg);
+  }
+
+  .dashboard-paper--circulation {
+    grid-area: circulation;
+    width: 100%;
+    transform: rotate(0.3deg);
+  }
+
+  .dashboard-paper--reading {
+    grid-area: reading;
+    width: 100%;
+    transform: rotate(0.25deg);
+  }
+
+  .dashboard-paper--stats {
+    grid-area: stats;
+    width: 100%;
+    transform: rotate(-0.2deg);
+  }
+
+  .dashboard-paper--healing {
+    grid-area: healing;
+    width: 100%;
+    transform: rotate(-0.3deg);
+  }
+
+  .dashboard-paper--collection .dashboard-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-paper--collection .dashboard-metric {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 36rem) {
+  .dashboard-page {
+    padding:
+            var(--space-5)
+            var(--space-3)
+            var(--space-7);
+  }
+
+  .dashboard-page__heading {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .dashboard-page__heading .button {
+    justify-self: start;
+  }
+
+  .dashboard-paper {
+    padding:
+            var(--space-5)
+            var(--space-4);
+  }
+
+  .dashboard-paper__heading {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-paper__index {
+    grid-row: auto;
+    justify-self: start;
+  }
+
+  .dashboard-paper__heading p {
+    grid-column: 1;
+  }
+
+  .dashboard-paper--circulation .dashboard-metric {
+    padding-inline-start: 0;
   }
 }
 
@@ -3371,6 +5219,48 @@
   color: var(--color-surface-text-muted);
 }
 
+.loans-page--decorated {
+  position: relative;
+}
+
+.loans-library-stamp {
+  position: fixed;
+  z-index: 2;
+
+  top: clamp(12rem, 22vh, 17rem);
+
+  right: max(
+          -15rem,
+          calc((100vw - 88rem) / 2 - 11.5rem)
+  );
+
+  width: clamp(
+          16.5rem,
+          22.5vw,
+          25.5rem
+  );
+
+  height: auto;
+
+  pointer-events: none;
+
+  filter:
+          drop-shadow(
+                  0 0.35rem 0.28rem
+                  rgb(10 8 6 / 18%)
+          );
+
+  transform: rotate(69deg);
+
+  opacity: 0.95;
+}
+
+@media (max-width: 82rem) {
+  .loans-library-stamp {
+    display: none;
+  }
+}
+
 .loans-page > section {
   display: grid;
   gap: var(--space-5);
@@ -3405,31 +5295,409 @@
 
 
 
+/* --------------------------------------------------------------------------
+ * Shelves
+ *
+ * Shelf cards read like the labeled end of a wooden bookcase section:
+ * square brown surfaces with a simple cream identification label.
+ * -------------------------------------------------------------------------- */
+
 .shelves-page__heading {
   display: grid;
   gap: var(--space-2);
 }
 
 .shelves-page__heading p {
+  max-width: 46rem;
   margin: 0;
+
+  color: var(--color-text-muted);
+  line-height: 1.6;
 }
 
 .shelves-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
-  margin: var(--space-6) 0 0;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: var(--space-5);
+
+  margin:
+          var(--space-7)
+          0
+          0;
+
   padding: 0;
   list-style: none;
 }
 
 .shelves-list__item {
+  min-width: 0;
   margin: 0;
+}
+
+.shelf-row {
+  display: grid;
+  min-width: 0;
+  height: 100%;
+
+  gap: var(--space-5);
+
+  padding: var(--space-5);
+
+  border:
+          2px solid
+          rgb(20 15 11 / 92%);
+
+  border-radius: 0.08rem;
+
+  background:
+          linear-gradient(
+                  180deg,
+                  var(--color-wood),
+                  var(--color-wood-dark)
+          );
+
+  color: var(--color-text);
+
+  box-shadow:
+          0 0.15rem 0
+          rgb(10 8 6 / 65%),
+          0 0.45rem 0.8rem
+          rgb(10 8 6 / 22%);
+}
+
+.shelf-row__actions .button {
+  min-height: 2.35rem;
+
+  padding:
+          0.45rem
+          0.85rem;
+
+  border:
+          1px solid
+          rgb(20 15 11 / 78%);
+
+  border-radius: 0.05rem;
+
+  font-family:
+          var(--font-family-heading);
+  font-size:
+          var(--font-size-small);
+  font-weight: 700;
+
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+
+  box-shadow:
+          0 0.1rem 0
+          rgb(10 8 6 / 30%);
+}
+
+.shelf-row__actions .button--secondary {
+  background:
+          #e7dfca;
+
+  color:
+          var(--color-wood-dark);
+
+  border-color:
+          rgb(29 21 15 / 80%);
+}
+
+.shelf-row__actions .button--secondary:hover:not(:disabled) {
+  background:
+          #f0ead8;
+
+  color:
+          var(--color-wood-dark);
+}
+
+.shelf-row__actions .button--danger {
+  background:
+          #4b2420;
+
+  color:
+          #f0e7d8;
+
+  border-color:
+          #24110f;
+
+  box-shadow:
+          inset 0 1px 0
+          rgb(255 255 255 / 7%),
+          0 0.1rem 0
+          rgb(10 8 6 / 35%);
+}
+
+.shelf-row__actions .button--danger:hover:not(:disabled) {
+  background:
+          #5a2b25;
+
+  color:
+          #fff4e7;
+}
+
+/*
+ * The heading behaves like the small paper/painted label fixed to the
+ * end of a shelf or bookcase.
+ */
+.shelf-row__heading {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  grid-template-areas:
+    "name count"
+    "badge badge";
+
+  align-items: center;
+
+  gap:
+          var(--space-2)
+          var(--space-4);
+
+  min-width: 0;
+}
+
+.shelf-row__name {
+  grid-area: name;
+
+  min-width: 0;
+  margin: 0;
+
+  padding:
+          var(--space-3)
+          var(--space-4);
+
+  border:
+          1px solid
+          rgb(70 52 38 / 75%);
+
+  border-radius: 0.05rem;
+
+  background:
+          #f0ead8;
+
+  box-shadow:
+          inset 0 0 0 1px
+          rgb(255 255 255 / 35%),
+          0 0.12rem 0.15rem
+          rgb(10 8 6 / 22%);
+
+  color: var(--color-surface-text);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-h3);
+
+  overflow-wrap: anywhere;
+}
+
+.shelf-row__name .app-link {
+  display: block;
+
+  min-height: auto;
+
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+  color: var(--color-surface-text);
+
+  text-decoration: none;
+}
+
+.shelf-row__name .app-link:hover {
+  background: transparent;
+  color: var(--color-link);
+
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.shelf-row__count {
+  grid-area: count;
+
+  margin: 0;
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.shelf-row__count .app-link {
+  min-height: auto;
+
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+  color: var(--color-brass-light);
+
+  text-decoration: none;
+}
+
+.shelf-row__count .app-link:hover {
+  background: transparent;
+  color: var(--color-text);
+
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.shelf-row__badge {
+  grid-area: badge;
+
+  width: fit-content;
+  margin: 0;
+
+  padding:
+          0.2rem
+          var(--space-2);
+
+  border:
+          1px solid
+          rgb(232 221 198 / 28%);
+
+  color:
+          rgb(246 240 220 / 78%);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.shelf-row__metadata {
+  display: grid;
+  gap: var(--space-3);
+
+  margin: 0;
+
+  color: var(--color-text);
+}
+
+.shelf-row__field {
+  display: grid;
+  min-width: 0;
+
+  gap: var(--space-1);
+}
+
+.shelf-row__field dt {
+  color:
+          rgb(246 240 220 / 68%);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.shelf-row__field dd {
+  margin: 0;
+
+  color: var(--color-text);
+
+  overflow-wrap: anywhere;
+}
+
+.shelf-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+
+  align-self: end;
+
+  gap: var(--space-3);
+
+  padding-top: var(--space-3);
+
+  border-top:
+          1px solid
+          rgb(246 240 220 / 16%);
+}
+
+/*
+ * The edit form lives inside the dark shelf card, so its field labels and
+ * editable surfaces need their own high-contrast treatment.
+ */
+.shelf-form {
+  display: grid;
+  min-width: 0;
+
+  gap: var(--space-4);
+
+  margin-top: var(--space-6);
+
+  padding:
+          var(--space-5);
+
+  border:
+          1px solid
+          var(--color-card-border);
+
+  border-radius: 0.12rem;
+
+  background:
+          var(--color-card);
+
+  color:
+          var(--color-surface-text);
+}
+
+.shelf-form--edit {
+  margin-top: 0;
+
+  padding:
+          var(--space-4);
+
+  border:
+          1px solid
+          rgb(246 240 220 / 24%);
+
+  border-radius: 0.08rem;
+
+  background:
+          rgb(246 240 220 / 92%);
+
+  color:
+          var(--color-surface-text);
+}
+
+.shelf-form__heading {
+  margin: 0;
+
+  color: var(--color-surface-text);
+
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-h3);
+}
+
+.shelf-form .field__label {
+  color: var(--color-surface-text);
+
+  font-weight: 700;
+}
+
+.shelf-form .field__help {
+  color: var(--color-surface-text-muted);
+
+  font-size: inherit;
+  font-style: italic;
 }
 
 @media (max-width: 64rem) {
   .shelves-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -3437,111 +5705,21 @@
   .shelves-list {
     grid-template-columns: 1fr;
   }
-}
 
-.shelf-row {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--color-card-border);
-  border-radius: var(--radius-card);
-  background: var(--color-card);
-  color: var(--color-surface-text);
-  min-width: 0;
-}
+  .shelf-row__heading {
+    grid-template-columns: 1fr;
 
-.shelf-row__heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-3);
-  min-width: 0;
-}
+    grid-template-areas:
+      "name"
+      "count"
+      "badge";
 
-.shelf-row__name {
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--color-surface-text);
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-h3);
-}
+    align-items: start;
+  }
 
-.shelf-row__badge {
-  margin: 0;
-  color: var(--color-surface-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.shelf-row__metadata {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-}
-
-.shelf-row__field {
-  display: grid;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.shelf-row__field dt {
-  color: var(--color-surface-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.shelf-row__field dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.shelf-row__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.shelf-row .app-link {
-  color: var(--color-surface-text);
-}
-
-.shelf-row .app-link:hover {
-  color: var(--color-link-hover);
-}
-
-.shelf-form {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-6);
-  padding: var(--space-4);
-  border: 1px solid var(--color-card-border);
-  border-radius: var(--radius-card);
-  background: var(--color-card);
-  color: var(--color-surface-text);
-  min-width: 0;
-}
-
-.shelf-form--edit {
-  margin-top: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.shelf-form__heading {
-  margin: 0;
-  font-size: var(--font-size-h3);
-}
-
-.shelf-form .field__label {
-  color: var(--color-surface-text);
-  font-weight: 700;
-}
-
-.shelf-form .field__help {
-  color: var(--color-surface-text-muted);
-  font-size: inherit;
-  font-style: italic;
+  .shelf-row__count {
+    white-space: normal;
+  }
 }
 
 /* About / card-catalog guide */

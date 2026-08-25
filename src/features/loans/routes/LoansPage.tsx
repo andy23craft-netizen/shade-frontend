@@ -3,6 +3,7 @@ import {
     useSearchParams,
 } from 'react-router-dom'
 
+import loansStamp from '../../../assets/Loans_Stamp.webp'
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
@@ -430,7 +431,13 @@ export function LoansPage() {
     }
 
     return (
-        <section className="route-page circulation-page loans-page">
+        <section className="route-page circulation-page loans-page loans-page--decorated">
+            <img
+                className="loans-library-stamp"
+                src={loansStamp}
+                alt=""
+                aria-hidden="true"
+            />
             <header>
                 <h1 tabIndex={-1}>Loans</h1>
 

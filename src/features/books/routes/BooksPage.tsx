@@ -8,6 +8,7 @@ import {
     useState,
 } from 'react'
 
+import booksListGlasses from '../../../assets/Books_List_Glasses.webp'
 import { BookCover } from '../components/BookCover'
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
@@ -418,7 +419,13 @@ export function BooksPage() {
     }
 
     return (
-        <section className="route-page">
+        <section className="route-page books-page books-page--decorated">
+            <img
+                className="books-reading-glasses"
+                src={booksListGlasses}
+                alt=""
+                aria-hidden="true"
+            />
             <div className="books-page__heading">
                 <h1 tabIndex={-1}>Books</h1>
                 <p>
