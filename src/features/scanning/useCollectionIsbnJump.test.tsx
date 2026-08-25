@@ -223,7 +223,7 @@ describe('useCollectionIsbnJump', () => {
         })
     })
 
-    it('navigates to Add Book with the ISBN for multiple matches', async () => {
+    it('navigates to the books list with the ISBN for multiple matches', async () => {
         mockList.mockResolvedValue({
             items: [
                 {
@@ -244,7 +244,7 @@ describe('useCollectionIsbnJump', () => {
             expect(
                 screen.getByTestId('location'),
             ).toHaveTextContent(
-                '/books/new?isbn=9780441172719',
+                '/books?isbn=9780441172719',
             )
         })
     })

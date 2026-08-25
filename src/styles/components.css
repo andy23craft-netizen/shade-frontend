@@ -7705,8 +7705,10 @@
 
   white-space: nowrap;
 
-  color:
-          var(--color-surface-text);
+  color: #2f2117;
+  background: #f2ead2;
+  border: 1px solid rgb(45 30 20 / 70%);
+  border-radius: 0.1rem;
 
   font-family:
           var(--font-family-heading);
