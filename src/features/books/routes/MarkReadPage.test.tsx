@@ -82,7 +82,6 @@ const unreadBook: BookRead = {
         '2026-08-01T12:00:00.000Z',
     updated_date:
         '2026-08-01T12:00:00.000Z',
-    deletion_date: null,
 }
 
 function createQueryClient() {
@@ -256,28 +255,6 @@ describe('MarkReadPage', () => {
             screen.getByRole('status'),
         ).toHaveTextContent(
             'This book could not be found.',
-        )
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Mark Read',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('does not offer mark-read for a deleted book', () => {
-        setupSuccessfulBook({
-            ...unreadBook,
-            deletion_date:
-                '2026-08-14T12:00:00Z',
-        })
-
-        renderPage()
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'Deleted books cannot be marked as read.',
         )
 
         expect(

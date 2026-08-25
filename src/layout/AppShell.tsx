@@ -98,7 +98,6 @@ export function AppShell() {
                             activePrefixes={[
                                 '/books',
                                 '/shelves',
-                                '/admin/deleted',
                                 '/collection',
                                 '/wishlists',
                             ]}

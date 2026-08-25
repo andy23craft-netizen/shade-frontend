@@ -180,7 +180,6 @@ export function makeBook(
         average_loan_days: null,
         creation_date: NOW,
         updated_date: NOW,
-        deletion_date: null,
         ...overrides,
     }
 }
@@ -250,8 +249,6 @@ function listBooks(
     state: MockApiState,
     url: URL,
 ) {
-    const includeDeleted =
-        url.searchParams.get('include_deleted') === 'true'
     const isbn = url.searchParams.get('isbn')
     const author = url.searchParams.get('author')
     const title = url.searchParams.get('title')
@@ -265,11 +262,7 @@ function listBooks(
             ? -1
             : 1
 
-    let books = state.books.filter(
-        (book) =>
-            includeDeleted ||
-            book.deletion_date === null,
-    )
+    let books = [...state.books]
 
     if (isbn !== null) {
         books = books.filter(
@@ -430,9 +423,7 @@ function average(
 function calculateDashboard(
     state: MockApiState,
 ): DashboardSummary {
-    const activeBooks = state.books.filter(
-        (book) => book.deletion_date === null,
-    )
+    const activeBooks = state.books
 
     const activeBookIds = new Set(
         activeBooks.map((book) => book.id),
@@ -638,7 +629,6 @@ function createBookFromRequest(
         average_loan_days: null,
         creation_date: NOW,
         updated_date: NOW,
-        deletion_date: null,
     })
 
     state.books.push(book)
@@ -670,6 +660,19 @@ function updateBookFromRequest(
             categoryIds,
         )
     }
+}
+
+function removeBookFromState(
+    state: MockApiState,
+    id: string,
+): void {
+    state.books = state.books.filter(
+        (book) => book.id !== id,
+    )
+
+    state.loans = state.loans.filter(
+        (loan) => loan.book_id !== id,
+    )
 }
 
 function recordRequest(
@@ -889,56 +892,6 @@ export async function installMockApi(
                 return
             }
 
-            const restoreMatch =
-                url.pathname.match(
-                    /^\/books\/([^/]+)\/restore$/,
-                )
-
-            if (
-                method === 'POST' &&
-                restoreMatch
-            ) {
-                const id =
-                    decodeURIComponent(
-                        restoreMatch[1],
-                    )
-                const book =
-                    findBook(state, id)
-
-                if (!book) {
-                    await fulfillJson(route, {
-                        status: 404,
-                        body: {
-                            detail:
-                                'Book not found',
-                        },
-                    })
-                    return
-                }
-
-                if (
-                    book.deletion_date ===
-                    null
-                ) {
-                    await fulfillJson(route, {
-                        status: 409,
-                        body: {
-                            detail:
-                                'Book is not deleted',
-                        },
-                    })
-                    return
-                }
-
-                book.deletion_date = null
-                book.updated_date = NOW
-
-                await fulfillJson(route, {
-                    body: cloneBook(book),
-                })
-                return
-            }
-
             const checkoutMatch =
                 url.pathname.match(
                     /^\/books\/([^/]+)\/checkout$/,
@@ -955,11 +908,7 @@ export async function installMockApi(
                 const book =
                     findBook(state, id)
 
-                if (
-                    !book ||
-                    book.deletion_date !==
-                    null
-                ) {
+                if (!book) {
                     await fulfillJson(route, {
                         status: 404,
                         body: {
@@ -1056,11 +1005,7 @@ export async function installMockApi(
                 const book =
                     findBook(state, id)
 
-                if (
-                    !book ||
-                    book.deletion_date !==
-                    null
-                ) {
+                if (!book) {
                     await fulfillJson(route, {
                         status: 404,
                         body: {
@@ -1143,11 +1088,7 @@ export async function installMockApi(
                 const book =
                     findBook(state, id)
 
-                if (
-                    !book ||
-                    book.deletion_date !==
-                    null
-                ) {
+                if (!book) {
                     await fulfillJson(route, {
                         status: 404,
                         body: {
@@ -1239,25 +1180,10 @@ export async function installMockApi(
                 }
 
                 if (method === 'DELETE') {
-                    if (
-                        book.deletion_date !==
-                        null
-                    ) {
-                        await fulfillJson(
-                            route,
-                            {
-                                status: 404,
-                                body: {
-                                    detail:
-                                        'Book already deleted',
-                                },
-                            },
-                        )
-                        return
-                    }
-
-                    book.deletion_date = NOW
-                    book.updated_date = NOW
+                    removeBookFromState(
+                        state,
+                        id,
+                    )
 
                     await fulfillNoContent(
                         route,

@@ -100,7 +100,7 @@ describe('BookCoverManager', () => {
         )
     })
 
-    it('removes the custom cover for the current book', () => {
+    it('does not remove the cover before confirmation', () => {
         const mutate = vi.fn()
 
         mockedUseRemoveBookCover.mockReturnValue({
@@ -122,10 +122,201 @@ describe('BookCoverManager', () => {
             }),
         )
 
+        expect(mutate).not.toHaveBeenCalled()
+
+        expect(
+            screen.getByRole('dialog'),
+        ).toBeInTheDocument()
+    })
+
+    it('removes the custom cover after confirmation', () => {
+        const mutate = vi.fn()
+
+        mockedUseRemoveBookCover.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useRemoveBookCover
+        >)
+
+        render(
+            <BookCoverManager
+                bookId="book-123"
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Custom Cover',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Cover',
+            }),
+        )
+
         expect(mutate).toHaveBeenCalledWith(
             'book-123',
             expect.any(Object),
         )
+    })
+
+    it('closes the confirmation dialog without removing when cancelled', () => {
+        const mutate = vi.fn()
+
+        mockedUseRemoveBookCover.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useRemoveBookCover
+        >)
+
+        render(
+            <BookCoverManager
+                bookId="book-123"
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Custom Cover',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
+
+        expect(mutate).not.toHaveBeenCalled()
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
+    })
+
+    it('closes the confirmation dialog after a successful remove', () => {
+        const mutate = vi.fn(
+            (
+                _variables,
+                options,
+            ) => {
+                options?.onSuccess?.()
+            },
+        )
+
+        mockedUseRemoveBookCover.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useRemoveBookCover
+        >)
+
+        render(
+            <BookCoverManager
+                bookId="book-123"
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Custom Cover',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Cover',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
+    })
+
+    it('does not open remove confirmation while another cover action is pending', () => {
+        mockedUseUploadBookCover.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: true,
+        } as unknown as ReturnType<
+            typeof useUploadBookCover
+        >)
+
+        render(
+            <BookCoverManager
+                bookId="book-123"
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Custom Cover',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
+    })
+
+    it('closes remove confirmation when cancelled', () => {
+        mockedUseRemoveBookCover.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useRemoveBookCover
+        >)
+
+        render(
+            <BookCoverManager
+                bookId="book-123"
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Custom Cover',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
+    })
+
+    it('does not open remove confirmation while removal is pending', () => {
+        mockedUseRemoveBookCover.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: true,
+        } as unknown as ReturnType<
+            typeof useRemoveBookCover
+        >)
+
+        render(
+            <BookCoverManager
+                bookId="book-123"
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Removing…',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
     })
 
     it('disables both actions while uploading', () => {
@@ -265,6 +456,12 @@ describe('BookCoverManager', () => {
         fireEvent.click(
             screen.getByRole('button', {
                 name: 'Remove Custom Cover',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Cover',
             }),
         )
 

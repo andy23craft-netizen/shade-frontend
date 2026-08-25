@@ -10,7 +10,6 @@ import { isCheckoutEligible } from './checkoutEligibility'
 const availableBook = {
     id: 'book-1',
     status: 'available',
-    deletion_date: null,
 } as BookRead
 
 describe('isCheckoutEligible', () => {
@@ -18,16 +17,6 @@ describe('isCheckoutEligible', () => {
         expect(
             isCheckoutEligible(availableBook),
         ).toBe(true)
-    })
-
-    it('rejects a deleted available book', () => {
-        expect(
-            isCheckoutEligible({
-                ...availableBook,
-                deletion_date:
-                    '2026-08-19T12:00:00Z',
-            }),
-        ).toBe(false)
     })
 
     it('rejects an on-loan book', () => {

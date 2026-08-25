@@ -72,13 +72,6 @@ describe('booksApi conflict responses', () => {
         )
     }
 
-    it('surfaces restore 409 bodies as ApiError', async () => {
-        await expectConflict(
-            '/books/book-1/restore',
-            (api) => api.restore('book-1'),
-        )
-    })
-
     it('surfaces checkout 409 bodies as ApiError', async () => {
         await expectConflict(
             '/books/book-1/checkout',

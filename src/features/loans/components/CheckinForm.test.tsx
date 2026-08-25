@@ -39,7 +39,6 @@ const book = {
     title: 'The Pale Fire',
     authors: 'Vladimir Nabokov',
     status: 'on_loan',
-    deletion_date: null,
 } as BookRead
 
 const activeLoan = {

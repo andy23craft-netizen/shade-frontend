@@ -84,7 +84,6 @@ const book: BookRead = {
     purchase_price: null,
     acquisition_source: null,
     notes: null,
-    deletion_date: null,
     completion_date: null,
     rating: null,
     review: null,
@@ -245,22 +244,20 @@ describe('CollectionMembershipRow', () => {
         )
     })
 
-    it('omits a soft-deleted joined book', () => {
-        mockBookSuccess({
-            ...book,
-            deletion_date:
-                '2026-08-20T00:00:00Z',
-        })
+    it('shows an error row when the joined book cannot be loaded', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: new Error('Book not found'),
+        } as ReturnType<typeof useBook>)
 
-        const {
-            container,
-        } = renderRow()
+        renderRow()
 
         expect(
-            container.querySelector(
-                '.collection-membership',
+            screen.getByText(
+                'Book details could not be loaded.',
             ),
-        ).not.toBeInTheDocument()
+        ).toBeInTheDocument()
     })
 
     it('disables move up at the beginning', () => {
@@ -482,5 +479,144 @@ describe('CollectionMembershipRow', () => {
         )
 
         expect(refetch).toHaveBeenCalled()
+    })
+
+    it('cancels remove confirmation without mutating', () => {
+        const mutate = vi.fn()
+
+        mockUseRemoveCollectionBook.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useRemoveCollectionBook
+        >)
+
+        renderRow()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
+
+        expect(mutate).not.toHaveBeenCalled()
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
+    })
+
+    it('surfaces reorder errors', () => {
+        mockUseReorderCollectionBook.mockReturnValue({
+            mutate: vi.fn(
+                (
+                    _variables,
+                    options,
+                ) => {
+                    options?.onError?.(
+                        new Error(
+                            'Reorder failed',
+                        ),
+                    )
+                },
+            ),
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useReorderCollectionBook
+        >)
+
+        renderRow()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Move Down',
+            }),
+        )
+
+        expect(
+            screen.getByRole('alert'),
+        ).toHaveTextContent(
+            'Reorder failed',
+        )
+    })
+
+    it('surfaces remove errors', () => {
+        mockUseRemoveCollectionBook.mockReturnValue({
+            mutate: vi.fn(
+                (
+                    _variables,
+                    options,
+                ) => {
+                    options?.onError?.(
+                        new Error(
+                            'Remove failed',
+                        ),
+                    )
+                },
+            ),
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useRemoveCollectionBook
+        >)
+
+        renderRow()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Book',
+            }),
+        )
+
+        expect(
+            screen.getByRole('alert'),
+        ).toHaveTextContent(
+            'Remove failed',
+        )
+    })
+
+    it('closes remove confirmation after success', () => {
+        mockUseRemoveCollectionBook.mockReturnValue({
+            mutate: vi.fn(
+                (
+                    _variables,
+                    options,
+                ) => {
+                    options?.onSuccess?.()
+                },
+            ),
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useRemoveCollectionBook
+        >)
+
+        renderRow()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove Book',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
     })
 })

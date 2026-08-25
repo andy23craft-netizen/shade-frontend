@@ -110,7 +110,6 @@ const completeBook: BookRead = {
     average_loan_days: 14.5,
     creation_date: '2026-08-01T12:00:00.000Z',
     updated_date: '2026-08-10T12:00:00.000Z',
-    deletion_date: null,
 }
 
 const activeLoan = {
@@ -207,30 +206,6 @@ describe('BookDetailsPage', () => {
             isPending: false,
             isError: false,
             data: completeBook,
-        } as ReturnType<typeof useBook>)
-
-        renderBookDetails()
-
-        expect(
-            screen.queryByRole('link', {
-                name: 'Mark Read',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('does not offer Mark Read for a deleted unread book', () => {
-        mockedUseBook.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: {
-                ...completeBook,
-                is_read: false,
-                completion_date: null,
-                rating: null,
-                review: null,
-                deletion_date:
-                    '2026-08-14T12:00:00.000Z',
-            },
         } as ReturnType<typeof useBook>)
 
         renderBookDetails()
@@ -430,7 +405,6 @@ describe('BookDetailsPage', () => {
             tags: null,
             last_borrowed_at: null,
             average_loan_days: null,
-            deletion_date: null,
         }
 
         mockedUseBook.mockReturnValue({
@@ -652,7 +626,6 @@ describe('BookDetailsPage', () => {
                 ...completeBook,
                 status: 'reserved',
                 is_read: false,
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -673,7 +646,6 @@ describe('BookDetailsPage', () => {
                 ...completeBook,
                 status: 'display_only',
                 is_read: false,
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -686,58 +658,13 @@ describe('BookDetailsPage', () => {
         ).not.toBeInTheDocument()
     })
 
-    it('hides lifecycle actions for a soft-deleted book', () => {
-        mockedUseLoans.mockReturnValue({
-            data: {
-                items: [activeLoan],
-                total: 1,
-            },
-            isPending: false,
-            isError: false,
-            error: null,
-        } as ReturnType<typeof useLoans>)
-
-        mockedUseBook.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: {
-                ...completeBook,
-                deletion_date:
-                    '2026-08-12T12:00:00.000Z',
-                status: 'available',
-                is_read: false,
-            },
-        } as ReturnType<typeof useBook>)
-
-        renderBookDetails()
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'This book has been deleted',
-        )
-
-        expect(
-            screen.queryByRole('navigation', {
-                name: 'Book actions',
-            }),
-        ).not.toBeInTheDocument()
-
-        expect(
-            screen.queryByTestId(
-                'book-cover-manager',
-            ),
-        ).not.toBeInTheDocument()
-    })
-
-    it('offers check-in when an active loan exists even if book status is inconsistent', () => {
+    it('does not offer checkout for a display-only book', () => {
         mockedUseBook.mockReturnValue({
             isPending: false,
             isError: false,
             data: {
                 ...completeBook,
                 status: 'available',
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -772,7 +699,6 @@ describe('BookDetailsPage', () => {
             data: {
                 ...completeBook,
                 status: 'on_loan',
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -802,7 +728,6 @@ describe('BookDetailsPage', () => {
             data: {
                 ...completeBook,
                 status: 'available',
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -832,7 +757,6 @@ describe('BookDetailsPage', () => {
             data: {
                 ...completeBook,
                 status: 'on_loan',
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -863,7 +787,6 @@ describe('BookDetailsPage', () => {
                 ...completeBook,
                 status: 'available',
                 is_read: false,
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -915,7 +838,6 @@ describe('BookDetailsPage', () => {
             data: {
                 ...completeBook,
                 is_read: true,
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -947,7 +869,6 @@ describe('BookDetailsPage', () => {
                 completion_date: null,
                 rating: null,
                 review: null,
-                deletion_date: null,
             },
         } as ReturnType<typeof useBook>)
 
@@ -1007,27 +928,6 @@ describe('BookDetailsPage', () => {
 
         expect(
             screen.queryByLabelText(/checkout date/i),
-        ).not.toBeInTheDocument()
-    })
-
-    it('does not offer Edit Reading for a deleted read book', () => {
-        mockedUseBook.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: {
-                ...completeBook,
-                is_read: true,
-                deletion_date:
-                    '2026-08-14T12:00:00.000Z',
-            },
-        } as ReturnType<typeof useBook>)
-
-        renderBookDetails()
-
-        expect(
-            screen.queryByRole('link', {
-                name: 'Edit Reading',
-            }),
         ).not.toBeInTheDocument()
     })
 
@@ -1142,23 +1042,4 @@ describe('BookDetailsPage', () => {
         )
     })
 
-    it('does not offer Add to Collection for a deleted book', () => {
-        mockedUseBook.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: {
-                ...completeBook,
-                deletion_date:
-                    '2026-08-14T12:00:00.000Z',
-            },
-        } as ReturnType<typeof useBook>)
-
-        renderBookDetails()
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Add to Collection',
-            }),
-        ).not.toBeInTheDocument()
-    })
 })

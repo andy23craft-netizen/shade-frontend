@@ -249,13 +249,6 @@ export function ReadingEditPage() {
             return
         }
 
-        if (book.deletion_date !== null) {
-            setFormError(
-                'Deleted books cannot be edited here.',
-            )
-            return
-        }
-
         if (!book.is_read) {
             setFormError(
                 'Reading completion has not been recorded for this book.',
@@ -305,7 +298,6 @@ export function ReadingEditPage() {
 
         if (
             !book ||
-            book.deletion_date !== null ||
             !book.is_read
         ) {
             setIsConfirmationOpen(false)
@@ -427,10 +419,7 @@ export function ReadingEditPage() {
 
     const book = bookQuery.data
 
-    const isDeleted =
-        book.deletion_date !== null
-
-    if (isDeleted || !book.is_read) {
+    if (!book.is_read) {
         return (
             <section className="route-page">
                 <div className="book-details__topbar">
@@ -448,15 +437,9 @@ export function ReadingEditPage() {
 
                 <Alert
                     variant="warning"
-                    title={
-                        isDeleted
-                            ? 'This book has been deleted'
-                            : 'This book has not been marked as read'
-                    }
+                    title="This book has not been marked as read"
                 >
-                    {isDeleted
-                        ? 'Deleted books cannot be edited here.'
-                        : 'Mark this book as read before editing its reading details.'}
+                    Mark this book as read before editing its reading details.
                 </Alert>
             </section>
         )

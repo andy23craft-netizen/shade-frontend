@@ -120,14 +120,6 @@ export const ShelvesPage = lazy(() =>
     ),
 )
 
-export const DeletedBooksPage = lazy(() =>
-    import(
-        '../features/books/routes/DeletedBooksPage'
-    ).then((module) => ({
-        default: module.DeletedBooksPage,
-    })),
-)
-
 export const NotFoundPage = lazy(() =>
     import('./NotFoundPage').then((module) => ({
         default: module.NotFoundPage,

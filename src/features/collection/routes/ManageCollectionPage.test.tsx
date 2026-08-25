@@ -25,6 +25,12 @@ describe('ManageCollectionPage', () => {
         const main = screen.getByRole('main')
 
         expect(
+            within(main).getByText(
+                /organize shelves, and maintain your library/i,
+            ),
+        ).toBeInTheDocument()
+
+        expect(
             within(main).getByRole('link', {
                 name: /^Add Book/i,
             }),
@@ -40,15 +46,6 @@ describe('ManageCollectionPage', () => {
         ).toHaveAttribute(
             'href',
             '/shelves',
-        )
-
-        expect(
-            within(main).getByRole('link', {
-                name: /^Deleted Books/i,
-            }),
-        ).toHaveAttribute(
-            'href',
-            '/admin/deleted',
         )
 
         expect(

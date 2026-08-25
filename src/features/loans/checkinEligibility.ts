@@ -18,8 +18,5 @@ export function isCheckinEligible(
     book: BookRead,
     loans: readonly LoanRead[],
 ): boolean {
-    return (
-        book.deletion_date === null &&
-        findActiveLoan(book.id, loans) !== undefined
-    )
+    return findActiveLoan(book.id, loans) !== undefined
 }

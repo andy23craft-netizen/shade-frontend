@@ -88,7 +88,6 @@ const book: BookRead = {
     purchase_price: null,
     acquisition_source: null,
     notes: null,
-    deletion_date: null,
     completion_date: null,
     rating: null,
     review: null,
@@ -499,75 +498,6 @@ describe('AddBookToCollectionDialog', () => {
                 'Collection',
             ),
         ).toHaveValue('collection-1')
-    })
-
-    it('surfaces soft-deleted 412 errors and refreshes relevant state', async () => {
-        mockUseAddCollectionBook.mockReturnValue({
-            mutate: vi.fn(
-                (
-                    _variables: unknown,
-                    options: {
-                        onError?: (
-                            error: unknown,
-                        ) => void
-                    },
-                ) => {
-                    options.onError?.(
-                        new ApiError({
-                            kind: 'http',
-                            status: 412,
-                            message:
-                                'Soft-deleted books cannot be added to a collection',
-                            detail:
-                                'Soft-deleted books cannot be added to a collection',
-                        }),
-                    )
-                },
-            ),
-            isPending: false,
-        } as unknown as ReturnType<
-            typeof useAddCollectionBook
-        >)
-
-        const {
-            invalidateQueries,
-        } = renderDialog()
-
-        const dialog =
-            await screen.findByRole('dialog', {
-                name: 'Add to Collection',
-            })
-
-        fireEvent.change(
-            within(dialog).getByLabelText(
-                'Collection',
-            ),
-            {
-                target: {
-                    value: 'collection-1',
-                },
-            },
-        )
-
-        fireEvent.click(
-            within(dialog).getByRole('button', {
-                name: 'Add to Collection',
-            }),
-        )
-
-        await waitFor(() => {
-            expect(
-                within(dialog).getByRole(
-                    'alert',
-                ),
-            ).toHaveTextContent(
-                'Soft-deleted books cannot be added to a collection',
-            )
-        })
-
-        expect(
-            invalidateQueries,
-        ).toHaveBeenCalled()
     })
 
     it('provides a collections link when none exist', async () => {

@@ -226,11 +226,11 @@ export function CatalogGuide() {
                         </p>
 
                         <p>
-                            Under Administration,{' '}
-                            <AppLink to="/admin/deleted">
-                                restore deleted books
+                            Under Administration, use{' '}
+                            <AppLink to="/collection/manage">
+                                Manage Collection
                             </AppLink>
-                            .
+                            {' '}to add books and organize shelves.
                         </p>
 
                         <p className="catalog-guide__signature">

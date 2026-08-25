@@ -67,7 +67,6 @@ const book: BookRead = {
     purchase_price: null,
     acquisition_source: null,
     notes: null,
-    deletion_date: null,
     completion_date: null,
     rating: null,
     review: null,

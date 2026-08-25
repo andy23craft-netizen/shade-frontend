@@ -131,7 +131,6 @@ async function invalidateBookCover(
 
 export function useBooks(
     options: {
-        includeDeleted?: boolean
         isbn?: string
         author?: string
         title?: string
@@ -152,8 +151,6 @@ export function useBooks(
     const booksApi =
         createBooksApi(apiClient)
 
-    const includeDeleted =
-        options.includeDeleted ?? false
     const isbn = options.isbn
     const author = options.author
     const title = options.title
@@ -168,7 +165,6 @@ export function useBooks(
 
     return useQuery({
         queryKey: queryKeys.books.list({
-            includeDeleted,
             isbn,
             author,
             title,
@@ -184,7 +180,6 @@ export function useBooks(
                       signal,
                   }) =>
             booksApi.list({
-                includeDeleted,
                 isbn,
                 author,
                 title,
@@ -203,7 +198,6 @@ export function useBooks(
 
 export function useInfiniteBooks(
     options: {
-        includeDeleted?: boolean
         isbn?: string
         author?: string
         title?: string
@@ -222,8 +216,6 @@ export function useInfiniteBooks(
     const booksApi =
         createBooksApi(apiClient)
 
-    const includeDeleted =
-        options.includeDeleted ?? false
     const isbn = options.isbn
     const author = options.author
     const title = options.title
@@ -236,7 +228,6 @@ export function useInfiniteBooks(
 
     return useInfiniteQuery({
         queryKey: queryKeys.books.infiniteList({
-            includeDeleted,
             isbn,
             author,
             title,
@@ -253,7 +244,6 @@ export function useInfiniteBooks(
             signal,
         }) =>
             booksApi.list({
-                includeDeleted,
                 isbn,
                 author,
                 title,
@@ -577,36 +567,6 @@ export function useDeleteBook() {
         },
     })
 }
-export function useRestoreBook() {
-    const {
-        apiClient,
-    } = useConnection()
-
-    const queryClient =
-        useQueryClient()
-
-    const booksApi =
-        createBooksApi(apiClient)
-
-    return useMutation({
-        mutationFn: (
-            id: string,
-        ) =>
-            booksApi.restore(id),
-
-        onSuccess: async (book) => {
-            writeBookDetailCache(
-                queryClient,
-                book,
-            )
-            await invalidateBookCaches(
-                queryClient,
-                book.id,
-            )
-        },
-    })
-}
-
 export function useCheckoutBook() {
     const {
         apiClient,

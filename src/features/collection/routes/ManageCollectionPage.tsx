@@ -16,7 +16,7 @@ export function ManageCollectionPage() {
                         </h1>
 
                         <p>
-                            Add books, organize shelves, restore records,
+                            Add books, organize shelves,
                             and maintain your library.
                         </p>
                     </header>
@@ -65,25 +65,6 @@ export function ManageCollectionPage() {
                             </span>
                         </AppLink>
 
-                        <AppLink
-                            to="/admin/deleted"
-                            className="manage-collection-action"
-                        >
-                            <span className="manage-collection-action__title">
-                                Deleted Books
-                            </span>
-
-                            <span className="manage-collection-action__description">
-                                Review and restore removed records.
-                            </span>
-
-                            <span
-                                className="manage-collection-action__arrow"
-                                aria-hidden="true"
-                            >
-                                →
-                            </span>
-                        </AppLink>
                     </nav>
                 </article>
 

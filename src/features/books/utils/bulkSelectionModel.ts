@@ -1,7 +1,6 @@
 export interface BulkSelectableBook {
     id: string
     title: string
-    deletion_date: string | null
 }
 
 export interface SelectedBookIdentity {
@@ -12,7 +11,7 @@ export interface SelectedBookIdentity {
 export function isBookBulkSelectable(
     book: BulkSelectableBook,
 ): boolean {
-    return book.deletion_date === null
+    return Boolean(book.id)
 }
 
 export function toggleSelectedBookId(

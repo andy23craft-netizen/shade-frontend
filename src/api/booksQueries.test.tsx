@@ -42,7 +42,6 @@ import {
     useRemoveBookCover,
     useBulkMoveBooksToShelf,
     useDeleteBook,
-    useRestoreBook,
     useCheckoutBook,
     useCheckinBook,
     useMarkBookRead,
@@ -59,7 +58,6 @@ const mockLookup = vi.fn()
 const mockCreate = vi.fn()
 const mockUpdate = vi.fn()
 const mockRemove = vi.fn()
-const mockRestore = vi.fn()
 const mockCheckout = vi.fn()
 const mockCheckin = vi.fn()
 const mockMarkRead = vi.fn()
@@ -77,7 +75,6 @@ vi.mock('./booksApi', () => ({
         update: mockUpdate,
         moveToShelf: mockMoveToShelf,
         remove: mockRemove,
-        restore: mockRestore,
         checkout: mockCheckout,
         checkin: mockCheckin,
         markRead: mockMarkRead,
@@ -1129,84 +1126,6 @@ it(
             invalidateQueries,
         ).toHaveBeenCalledWith({
             queryKey: ['collections'],
-        })
-
-        queryClient.clear()
-    },
-)
-
-it(
-    'restores a book and writes the returned BookRead into detail cache',
-    async () => {
-        const restoredBook = {
-            id: 'book-123',
-        } as BookRead
-
-        mockRestore.mockResolvedValueOnce(
-            restoredBook,
-        )
-
-        const {
-            Wrapper,
-            queryClient,
-        } = createWrapper()
-
-        const setQueryData =
-            vi.spyOn(
-                queryClient,
-                'setQueryData',
-            )
-
-        const invalidateQueries =
-            vi.spyOn(
-                queryClient,
-                'invalidateQueries',
-            )
-
-        const { result } =
-            renderHook(
-                () => useRestoreBook(),
-                {
-                    wrapper: Wrapper,
-                },
-            )
-
-        await result.current.mutateAsync(
-            'book-123',
-        )
-
-        expect(
-            mockRestore,
-        ).toHaveBeenCalledWith(
-            'book-123',
-        )
-
-        expect(
-            setQueryData,
-        ).toHaveBeenCalledWith(
-            ['books', 'book-123'],
-            restoredBook,
-        )
-
-        expect(
-            invalidateQueries,
-        ).toHaveBeenCalledWith({
-            queryKey: ['books'],
-        })
-
-        expect(
-            invalidateQueries,
-        ).toHaveBeenCalledWith({
-            queryKey: [
-                'books',
-                'book-123',
-            ],
-        })
-
-        expect(
-            invalidateQueries,
-        ).toHaveBeenCalledWith({
-            queryKey: ['dashboard'],
         })
 
         queryClient.clear()

@@ -389,22 +389,6 @@ export function AddCollectionBookControl() {
 
                     if (
                         isApiError(error) &&
-                        error.status === 412
-                    ) {
-                        setFormError(
-                            error.detail ??
-                            'Soft-deleted books cannot be added to a collection.',
-                        )
-
-                        if (hasSearched) {
-                            void booksQuery.refetch()
-                        }
-
-                        return
-                    }
-
-                    if (
-                        isApiError(error) &&
                         error.status === 422 &&
                         error.fieldErrors.length > 0
                     ) {

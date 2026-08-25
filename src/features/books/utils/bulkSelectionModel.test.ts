@@ -20,7 +20,6 @@ function makeBook(
     return {
         id: 'book-1',
         title: 'The Left Hand of Darkness',
-        deletion_date: null,
         ...overrides,
     }
 }
@@ -30,17 +29,6 @@ describe('bulkSelectionModel', () => {
         expect(
             isBookBulkSelectable(makeBook()),
         ).toBe(true)
-    })
-
-    it('treats soft-deleted books as ineligible for bulk selection', () => {
-        expect(
-            isBookBulkSelectable(
-                makeBook({
-                    deletion_date:
-                        '2026-08-23T12:00:00Z',
-                }),
-            ),
-        ).toBe(false)
     })
 
     it('adds an unselected book when toggled', () => {
@@ -97,24 +85,6 @@ describe('bulkSelectionModel', () => {
         expect([...selectedIds]).toEqual([
             'book-1',
             'book-2',
-        ])
-    })
-
-    it('excludes soft-deleted books from Select All', () => {
-        const selectedIds =
-            selectVisibleEligibleBookIds([
-                makeBook({
-                    id: 'active-book',
-                }),
-                makeBook({
-                    id: 'deleted-book',
-                    deletion_date:
-                        '2026-08-23T12:00:00Z',
-                }),
-            ])
-
-        expect([...selectedIds]).toEqual([
-            'active-book',
         ])
     })
 
@@ -206,8 +176,6 @@ describe('bulkSelectionModel', () => {
                     }),
                     makeBook({
                         id: 'book-2',
-                        deletion_date:
-                            '2026-08-23T12:00:00Z',
                     }),
                 ],
                 false,
@@ -215,6 +183,7 @@ describe('bulkSelectionModel', () => {
 
         expect([...selectedIds]).toEqual([
             'book-1',
+            'book-2',
         ])
     })
 
@@ -249,35 +218,6 @@ describe('bulkSelectionModel', () => {
             {
                 id: 'book-3',
                 title: 'Invisible Cities',
-            },
-        ])
-    })
-
-    it('does not expose soft-deleted selected books to downstream actions', () => {
-        const selectedBooks =
-            getSelectedBookIdentities(
-                [
-                    makeBook({
-                        id: 'active-book',
-                        title: 'Active Book',
-                    }),
-                    makeBook({
-                        id: 'deleted-book',
-                        title: 'Deleted Book',
-                        deletion_date:
-                            '2026-08-23T12:00:00Z',
-                    }),
-                ],
-                new Set([
-                    'active-book',
-                    'deleted-book',
-                ]),
-            )
-
-        expect(selectedBooks).toEqual([
-            {
-                id: 'active-book',
-                title: 'Active Book',
             },
         ])
     })

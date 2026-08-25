@@ -162,23 +162,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/books/{id}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Restore Book */
-        post: operations["restore_book_books__id__restore_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/categories": {
         parameters: {
             query?: never;
@@ -624,8 +607,6 @@ export interface components {
             cover_image_path?: string | null;
             /** Creation Date */
             creation_date: string;
-            /** Deletion Date */
-            deletion_date: string | null;
             /** Id */
             id: string;
             /**
@@ -1138,7 +1119,6 @@ export interface operations {
     list_books_books_get: {
         parameters: {
             query?: {
-                include_deleted?: boolean;
                 isbn?: string | null;
                 author?: string | null;
                 title?: string | null;
@@ -1975,73 +1955,6 @@ export interface operations {
             };
         };
     };
-    restore_book_books__id__restore_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookRead"];
-                };
-            };
-            /** @description Malformed or missing identifier */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Resource not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description State conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_categories_categories_get: {
         parameters: {
             query?: never;
@@ -2395,15 +2308,6 @@ export interface operations {
             };
             /** @description Collection membership conflict (duplicate book or order number) */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Soft-deleted books cannot be added to a collection */
-            412: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3394,7 +3298,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
-            /** @description Soft-deleted books cannot be added to a wishlist */
+            /** @description Existing books cannot be added to a wishlist */
             412: {
                 headers: {
                     [name: string]: unknown;

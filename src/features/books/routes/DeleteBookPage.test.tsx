@@ -91,7 +91,6 @@ const book: BookRead = {
         '2026-08-01T12:00:00.000Z',
     updated_date:
         '2026-08-10T12:00:00.000Z',
-    deletion_date: null,
 }
 
 const activeLoan: LoanRead = {
@@ -218,7 +217,7 @@ describe('DeleteBookPage', () => {
         >)
     })
 
-    it('renders the soft-delete explanation', () => {
+    it('renders the hard-delete explanation', () => {
         renderPage()
 
         expect(
@@ -230,13 +229,13 @@ describe('DeleteBookPage', () => {
         expect(
             screen.getByRole('status'),
         ).toHaveTextContent(
-            'This is a soft deletion',
+            'This permanently removes the book',
         )
 
         expect(
             screen.getByRole('status'),
         ).toHaveTextContent(
-            'reading history',
+            'cannot be restored',
         )
     })
 
@@ -258,19 +257,24 @@ describe('DeleteBookPage', () => {
         })
     })
 
-    it('does not allow deleting an already-deleted book', () => {
-        setupBook({
-            ...book,
-            deletion_date:
-                '2026-08-14T12:00:00Z',
-        })
+    it('shows not found when the book is missing', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: new ApiError({
+                kind: 'http',
+                status: 404,
+                message: 'Book not found',
+                detail: 'Book not found',
+            }),
+        } as unknown as ReturnType<typeof useBook>)
 
         renderPage()
 
         expect(
             screen.getByRole('status'),
         ).toHaveTextContent(
-            'This book has already been deleted',
+            'Book not found',
         )
 
         expect(
@@ -324,6 +328,29 @@ describe('DeleteBookPage', () => {
                 name: 'Delete Book',
             }),
         ).not.toBeInTheDocument()
+    })
+
+    it('shows permanent-removal copy in the confirmation dialog', () => {
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Delete Book',
+            }),
+        )
+
+        const dialog =
+            screen.getByRole('dialog', {
+                name: 'Confirm book deletion',
+            })
+
+        expect(dialog).toHaveTextContent(
+            'cannot be undone',
+        )
+
+        expect(dialog).toHaveTextContent(
+            'Permanently delete',
+        )
     })
 
     it('does not delete when confirmation is cancelled', () => {
@@ -467,6 +494,71 @@ describe('DeleteBookPage', () => {
                 'missing or has already been deleted',
             )
         })
+    })
+
+    it('handles generic delete failures', async () => {
+        const mutate = vi.fn(
+            (
+                _id: string,
+                options: {
+                    onError?: (
+                        error: unknown,
+                    ) => void
+                },
+            ) => {
+                options.onError?.(
+                    new Error(
+                        'Network exploded',
+                    ),
+                )
+            },
+        )
+
+        mockUseDeleteBook.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useDeleteBook
+        >)
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Delete Book',
+            }),
+        )
+
+        confirmDelete()
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('alert'),
+            ).toHaveTextContent(
+                'Network exploded',
+            )
+        })
+    })
+
+    it('does not open confirmation while delete is pending', () => {
+        mockUseDeleteBook.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: true,
+        } as unknown as ReturnType<
+            typeof useDeleteBook
+        >)
+
+        renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Delete Book',
+            }),
+        )
+
+        expect(
+            screen.queryByRole('dialog'),
+        ).not.toBeInTheDocument()
     })
 
     it('disables destructive submission while pending', () => {

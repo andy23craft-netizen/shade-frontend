@@ -27,7 +27,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   links), not as a separate primary-nav item.
 - Primary navigation: Dashboard plus Collection and Circulation `DrawerNavMenu` drawers (`AppShell` /
   `DrawerNavMenu`). Collection includes Browse, Manage, Collections, and Wishlists; Circulation is Loans only.
-  `/collection/manage` links Add Book, Shelves, and Deleted Books only.
+  `/collection/manage` links Add Book and Shelves only.
 - Dashboard on `/dashboard` (`DashboardPage`): desk layout with five indexed paper panels
   (`.dashboard-desk` / `.dashboard-paper*`, background `Dashboard_Background.webp`) -- summary metrics
   (`useDashboard` / `GET /dashboard`) for Collection, Circulation, and Reading Record (read/unread pie with deep
@@ -60,7 +60,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   (`useCollectionIsbnJump`). Collection jump opens a unique match or filters `/books?isbn=`; it never creates or
   checks out from scan success alone. There is no checkout capture surface.
 - Checkout on book details via `CheckoutDialog` (`POST /books/{id}/checkout`); eligibility via `isCheckoutEligible`
-  (`deletion_date === null` and `status === 'available'`); borrower and notes only (timestamps computed client-side);
+  (`status === 'available'`); borrower and notes only (timestamps computed client-side);
   Field-linked **422**; `404`/`409`/`412` stale-state refetch with preserved borrower/notes. Display-only **412** does
   not offer alternate copies. `/checkout` is a compatibility redirect (`LegacyCheckoutRedirect`), not a product page.
 - Check-in and loan history on `/loans` via `CheckinForm` (`POST /books/{id}/checkin`); eligibility via
@@ -70,8 +70,8 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
 - Reading completion and later edits (`/books/:bookId/mark-read`, `/books/:bookId/reading`); initial unread-to-read
   via `POST /books/{id}/mark-read` only; later edits via `PATCH`; no mark-unread. Collection cards show Read/Unread
   plus rating (`N / 5`, or an em dash when null).
-- Soft delete/restore and deleted admin (`/books/:bookId/delete`, `/admin/deleted`). On-loan blocking via
-  `status === 'on_loan'` or `findActiveLoan`. Soft-delete also invalidates `queryKeys.collections.all` (server removes
+- Hard delete on `/books/:bookId/delete` (`DELETE /books/{id}` permanently removes the book). On-loan blocking via
+  `status === 'on_loan'` or `findActiveLoan`. Hard delete also invalidates `queryKeys.collections.all` (server removes
   collection memberships). Authenticated SQL backup is an API-host concern (`GET /backup`), not a browser product
   page; never inspect, log, cache, or upload dump contents.
 - Shelves catalog CRUD on `/shelves` (`shelvesApi` / `useShelves` / write mutations) with system-shelf protection
@@ -90,7 +90,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `POST /collections/{id}/books`, reorder/remove memberships, and join title/authors via `GET /books/{id}`.
   Membership lists show shelved and wishlisted books (**Wishlist** location when `on_wishlist`; membership
   `shelf_name` may be JSON `null` for unshelved rows -- do not expect BookRead's synthesized `"unknown"`);
-  soft-deleted add is **412**; duplicate add is **409**; library delete drops memberships server-side
+  duplicate add is **409**; library delete drops memberships server-side
   (`useDeleteBook` invalidates `queryKeys.collections.all`). Orthogonal to shelf/wishlist placement (no
   shelf/wishlist overlap **412**; no move-to-shelf on collection rows). Book Details adds the current active book via
   `AddBookToCollectionDialog` (`useAddCollectionBook` with the detail `book.id`; no catalog search).
@@ -130,7 +130,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   (not default CI upload). Production is the tarball plus the deployment repository, not another Podman image.
   HTTPS/CSP, atomic install, supervision, and rollback remain host-owned (`README.md`).
 
-Prefer dedicated lifecycle endpoints; never simulate restore, checkout, check-in, initial mark-read, or cover
+Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, or cover
 upload/delete with generic `PATCH`. Sequenced feature tickets live under `docs/tickets/` while open and are removed
 after completion. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build ticket -- treat it as
 notes unless the user asks to implement items from it. When no sequenced feature ticket remains (directory holds only
@@ -220,7 +220,7 @@ URL filters, and list/detail display. Do not use a singular `category` / `Catego
 ### Catalog list filters (`GET /books`)
 
 Optional filters form one composable catalog-query surface (AND across different filter types). They compose with
-`include_deleted`, supported sorting, and `skip` / `take`. No matches → empty `BookList` (`items: []`, `total: 0`),
+  supported sorting, and `skip` / `take`. No matches → empty `BookList` (`items: []`, `total: 0`),
 not **404**. When paginated, `total` remains the full matching count.
 
 Documented filter families (see OpenAPI + `API-for-FE.md` for exact params and status codes):
@@ -234,8 +234,8 @@ Documented filter families (see OpenAPI + `API-for-FE.md` for exact params and s
 - Inclusive `YYYY-MM-DD` date ranges (either bound alone; invalid syntax → **422**; inverted → **400**):
   `purchase_date_*`, `completion_date_*`, `creation_date_*`, `updated_date_*`.
 
-Intentionally not normal V1 list filters: `notes`, `review`, `tags` (JSON text), `deletion_date` (use
-`include_deleted`), and derived loan stats (`times_borrowed`, `last_borrowed_at`, `average_loan_days`).
+Intentionally not normal V1 list filters: `notes`, `review`, `tags` (JSON text), and derived loan stats
+(`times_borrowed`, `last_borrowed_at`, `average_loan_days`).
 
 **Books URL filters:** collection browse wires `author` / `title` / repeated `category_id` / `isbn` / `shelf_name` /
 `is_read` / `cleanup_field` (plus sort) through the centralized Books URL model. Visible controls cover category /
@@ -257,10 +257,10 @@ Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{id}/cover`. Behavior
 - `DELETE /books/{id}/cover`: clears on-disk files and `cover_image_path` (**204**).
 - `GET /books/{id}/cover`: (1) local file → **200** image bytes + matching `Content-Type`; (2) no local file but
   `isbn13` and Open Library returns usable artwork → backend fetches server-side and returns **200** image bytes;
-  (3) otherwise → **404** `"Book cover not found"`; soft-deleted / missing book → **404** `"Book not found"`. Local
+  (3) otherwise → **404** `"Book cover not found"`; missing book → **404** `"Book not found"`. Local
   uploads win over ISBN-derived artwork. Open Library timeout/network/missing/non-image responses resolve to the
   normal **404** cover state.
-- Soft-deleted books reject cover get/upload/delete (**404**), same as checkout / check-in / mark-read / `PATCH` /
+- Missing books reject cover get/upload/delete (**404**), same as checkout / check-in / mark-read / `PATCH` /
   bulk shelf move.
 - Browser `<img src>` cannot send `Authorization`. Use authenticated `fetch` to `GET /books/{id}/cover`: **200** →
   `response.blob()` + object URL (revoke on cleanup); **404** → intentional placeholder. Do not invent URLs from
@@ -306,7 +306,6 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 | Create             | `POST /books`                                  |
 | Edit metadata      | `PATCH /books/{id}`                            |
 | Delete             | `DELETE /books/{id}`                           |
-| Restore            | `POST /books/{id}/restore`                     |
 | Checkout           | `POST /books/{id}/checkout`                    |
 | Check-in           | `POST /books/{id}/checkin`                     |
 | Mark read          | `POST /books/{id}/mark-read`                   |
@@ -350,7 +349,7 @@ incomplete-metadata reports and Books deep links), active books with multi-`cate
 `shelf_name` / `is_read` / cleanup-mode filtering and URL-backed sorting, bulk selection and atomic bulk
 move-to-shelf, detail (including cover display/upload), manual/ISBN/camera/scanner add flows, hardware ISBN
 collection jump on Dashboard / Books / Loans, edit, checkout on book details (display-only **412** messaging without
-alternate-copy offers), check-in, loan history, reading tracking, soft delete/restore, deleted admin, authenticated
+alternate-copy offers), check-in, loan history, reading tracking, hard delete, authenticated
 SQL backup at the API host (not a browser download), runtime API config, CI, Podman preview, versioned production
 artifacts, wishlists, wishlist move-to-shelf, curated Collections (create/edit/delete/add/reorder/remove on
 `/collections`, plus Book Details add-to-collection), dynamic multi-category UI, Books filter plumbing through
@@ -436,7 +435,7 @@ categories, New Additions, Staff Picks, quotes, and cover display), `/about` (`A
 cleanup deep links, and hardware collection ISBN jump), `/books` (`BooksPage`, including cover thumbnails, Read/Unread
 and rating on collection cards, URL-backed filters including `?isbn=` / `?shelf_name=` / `?is_read=` /
 `?cleanup_field=`, bulk selection / bulk move-to-shelf, and collection ISBN jump), `/collection/manage`
-(`ManageCollectionPage` hub for Add Book / Shelves / Deleted Books, with decorative pen asset),
+(`ManageCollectionPage` hub for Add Book / Shelves, with decorative pen asset),
 `/books/:bookId` (`BookDetailsPage`, including `BookCover` / `BookCoverManager`, reading-field display, gated Check
 Out via `CheckoutDialog`, Check In, Mark Read / Edit Reading / Edit Book / Delete Book), `/books/new` (`NewBookPage`
 + `BookForm` / `bookFormModel` with ISBN lookup plus camera/hardware scanner capture), `/books/:bookId/edit`
@@ -444,8 +443,7 @@ Out via `CheckoutDialog`, Check In, Mark Read / Edit Reading / Edit Book / Delet
 (`MarkReadPage` + `markReadModel`), `/books/:bookId/reading` (`ReadingEditPage` + `readingEditModel`), `/checkout`
 (`LegacyCheckoutRedirect` to `/books` or `/books/{id}?checkout=1`), `/checkin` (`LegacyCheckinRedirect` to `/loans`,
 forwards search), `/loans` (`LoansPage` + `CheckinForm` + `loanTemporal` + collection ISBN jump), `/shelves`
-(`ShelvesPage` + `useShelves` / write mutations + `by_shelf` counts / Books deep links), `/admin/deleted`
-(`DeletedBooksPage`), `/wishlists` (`WishlistsPage` + `AddWishlistBookControl` + `MoveWishlistBookToShelfControl`;
+(`ShelvesPage` + `useShelves` / write mutations + `by_shelf` counts / Books deep links), `/wishlists` (`WishlistsPage` + `AddWishlistBookControl` + `MoveWishlistBookToShelfControl`;
 memberships via `useBook` / `GET /books/{id}`), and `/collections` (`CollectionsPage` + `AddCollectionBookControl` +
 `CollectionMembershipRow` with cover display; memberships via `useBook` / `GET /books/{id}`). Feature routes use
 dedicated page components; `RoutePlaceholder.tsx` exists as an unused helper only.
@@ -560,12 +558,12 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `health`, `version`, `wishlists`, `collections`) plus the underlying `client`.
 - `src/api/categoriesApi.ts` / `categoriesQueries.ts`: `list()` (`GET /categories`) returns a plain `CategoryRead[]`
   array (no pagination params); `useCategories({ enabled? })` keyed by `queryKeys.categories.list()`.
-- `src/api/booksApi.ts`: `list` (optional `includeDeleted`, `isbn`, `author`, `title`, `categoryIds` as repeated
+- `src/api/booksApi.ts`: `list` (optional `isbn`, `author`, `title`, `categoryIds` as repeated
   `category_id`, `shelfName` → `shelf_name`, `isRead` → `is_read`, `skip`, `take`, `sortBy` including `shelf`,
   `sortOrder`; omit empty/whitespace text filters and blank category IDs; send `skip`/`take` together when
   paginating), `create`, `moveToShelf` (`POST /books/bulk/move-to-shelf`), `lookup`, `get`, `getCover` (authenticated
   binary → `Blob`), `uploadCover` (multipart `FormData` field `file` → `BookRead`), `removeCover` (**204**), `update`,
-  `remove`, `restore`, `checkout` (including documented **412** `Book is display only`), `checkin` (optional body),
+  `remove`, `checkout` (including documented **412** `Book is display only`), `checkin` (optional body),
   `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and serialize only documented request fields
   (including `shelf_name`, `category_ids`, and bulk `book_ids` / `shelf_name`). Do not use singular `category`
   query/body fields. Do not implement bulk move as per-book `PATCH` loops. Do not invent cover URLs from
@@ -583,18 +581,18 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useVersion` for the AppShell footer API release string (not a health probe).
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
   query retry that skips validation / auth / cancelled / invalid-response errors, and `mutations.retry: false`.
-- `src/api/booksQueries.ts`: `useBooks` (optional `{ includeDeleted, isbn, author, title, categoryIds, shelfName,
-  isRead, skip, take, sortBy, sortOrder, enabled }`), `useInfiniteBooks` (optional `{ includeDeleted, isbn, author,
+- `src/api/booksQueries.ts`: `useBooks` (optional `{ isbn, author, title, categoryIds, shelfName,
+  isRead, skip, take, sortBy, sortOrder, enabled }`), `useInfiniteBooks` (optional `{ isbn, author,
   title, categoryIds, shelfName, isRead, sortBy, sortOrder, enabled }`; batch size 30 via shared config),
   `useRecentBooks` (newest 10 by `creationDate` desc for Home), `useBook`, `useBookCover` (authenticated cover blob;
   `retry: false`; optional `enabled` for lazy load), `useBookLookup` (query), `useLookupBook` (lookup mutation for
-  wishlist add), plus mutations (including `useCreateBook`, `useUpdateBook`, `useDeleteBook`, `useRestoreBook`,
+  wishlist add), plus mutations (including `useCreateBook`, `useUpdateBook`, `useDeleteBook`,
   `useCheckoutBook`, `useCheckinBook`, `useMarkBookRead`, `useBulkMoveBooksToShelf`, `useUploadBookCover`, and
   `useRemoveBookCover`) that write returned `BookRead` into the detail cache (except delete / bulk move / cover
-  remove) and invalidate lists (including `include_deleted` via the `['books']` prefix), detail, dashboard, and loans
+  remove) and invalidate lists via the `['books']` prefix, detail, dashboard, and loans
   on checkout/check-in. Bulk move invalidates books / shelves / dashboard caches. Cover upload/remove invalidate
   `queryKeys.bookCovers.detail(id)` (and book detail after upload). `useDeleteBook` also invalidates
-  `queryKeys.collections.all` (server removes collection memberships on soft-delete).
+  `queryKeys.collections.all` (server removes collection memberships on hard delete).
 - `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId, enabled }`),
   `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size 30 via shared config), `useLoan(id)` (disabled when
   falsy), `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
@@ -619,7 +617,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useCreateCollection`, `useUpdateCollection`, `useDeleteCollection`, `useAddCollectionBook`,
   `useReorderCollectionBook`, `useRemoveCollectionBook`. Create/update/delete invalidate `queryKeys.collections.all`;
   membership add/reorder/remove invalidate that collection's books key. `useDeleteBook` also invalidates
-  `queryKeys.collections.all` (server drops memberships on soft-delete). Product UI uses create/edit/delete/add/
+  `queryKeys.collections.all` (server drops memberships on hard delete). Product UI uses create/edit/delete/add/
   reorder/remove on `/collections` plus Book Details `AddBookToCollectionDialog` (`useUpdateCollection` /
   `useAddCollectionBook`).
 
@@ -633,7 +631,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   legacy checkout/checkin redirects stay eager. Registered paths are `/`, `/dashboard`, `/books`,
   `/collection/manage`, `/books/new`, `/books/:bookId`, `/books/:bookId/mark-read`, `/books/:bookId/reading`,
   `/books/:bookId/edit`, `/books/:bookId/delete`, `/checkout` (`LegacyCheckoutRedirect`), `/checkin`
-  (`LegacyCheckinRedirect` to `/loans`), `/loans`, `/wishlists`, `/collections`, `/shelves`, `/admin/deleted`, and
+  (`LegacyCheckinRedirect` to `/loans`), `/loans`, `/wishlists`, `/collections`, `/shelves`, and
   `*` (not found).
 - `src/routes/lazyRoutePages.tsx`: `React.lazy` / dynamic `import()` wrappers for every feature route page and
   `NotFoundPage` (keeps route config free of Fast Refresh export conflicts).
@@ -651,7 +649,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `Suspense` around `Outlet` (`LoadingState` fallback while a lazy route chunk loads), footer
   (`Release ${APP_VERSION}` from `package.json`, plus `API {version}` from `useVersion` / `GET /version` when
   available, joined with a middle dot), document title, and heading focus on location change.
-  Collection `activePrefixes` include `/books`, `/shelves`, `/admin/deleted`, `/collection` (covers
+  Collection `activePrefixes` include `/books`, `/shelves`, `/collection` (covers
   `/collection/manage` and `/collections`), and `/wishlists`.
 - `src/layout/DrawerNavMenu.tsx`: Accessible drawer-style dropdown for grouped nav items (`aria-expanded`, outside click
   and Escape dismiss, `data-active` when a child route prefix matches). Used for Collection and Circulation menus.
@@ -703,15 +701,12 @@ Implemented:
   `categories`); minimal patch via `bookFormValuesToUpdate` (blank ISBN → `null`; omit unchanged `shelf_name` /
   `category_ids`; send `category_ids: []` to clear; never send `status`, reading fields, or loan-driving values);
   reject no-op submits; Field-linked `422` / **400** shelf errors; `404` refetch with preserved form input; in-flight
-  disable; success to detail; deleted-book warning UI; full-page shelves and categories load/error gates before the
+  disable; success to detail; full-page shelves and categories load/error gates before the
   form. Reading fields stay on mark-read / reading-edit flows.
-- `src/features/books/routes/DeleteBookPage.tsx` (`/books/:bookId/delete`): soft delete via `useDeleteBook` /
+- `src/features/books/routes/DeleteBookPage.tsx` (`/books/:bookId/delete`): hard delete via `useDeleteBook` /
   `booksApi.remove` with `ConfirmationDialog`; blocks when `status === 'on_loan'` or `findActiveLoan` is present;
-  soft-deleted / not-found / loan-status error recovery; success navigates away from the deleted detail. Never
+  not-found / loan-status error recovery; success navigates away from the deleted detail. Never
   simulate delete with generic `PATCH`.
-- `src/features/books/routes/DeletedBooksPage.tsx` (`/admin/deleted`): `useBooks({ includeDeleted: true })`
-  filtered to non-null `deletion_date`; restore via `ConfirmationDialog` + `useRestoreBook` / `booksApi.restore`;
-  empty / loading / retryable error states; `404`/`409` restore messaging with refetch.
 - `src/features/home/routes/HomePage.tsx` (`/`): discovery front door with hero brand image
   (`Shade_Library_Hero.webp` linking to `/about`), `sr-only` "Shade Library" heading, randomized quote with optional
   expandable context (`homeQuotes`), New Additions (`useRecentBooks` / `HomeBookTrack` with `BookCover`), featured
@@ -725,9 +720,9 @@ Implemented:
   `HomeStaffPick` (plus colocated component tests where present; cover display via shared `BookCover`).
 - `src/features/about/routes/AboutPage.tsx` (`/about`) + `src/features/about/components/CatalogGuide.tsx`: library
   information (dedication, lending policy, purpose) and accessible card-catalog-style How to Use dialog with in-app
-  workflow links (Administration links restore deleted books only; no `/admin/backup`).
+  workflow links (Administration links Manage Collection only; no `/admin/backup`).
 - `src/features/collection/routes/ManageCollectionPage.tsx` (`/collection/manage`): collection maintenance hub with
-  links to Add Book, Shelves, and Deleted Books only, plus decorative `Manage_Collection_Pen.webp`. Colocated
+  links to Add Book and Shelves only, plus decorative `Manage_Collection_Pen.webp`. Colocated
   `ManageCollectionPage.test.tsx` asserts those links and the absence of any Backup Library affordance.
 - `src/features/dashboard/routes/DashboardPage.tsx` (`/dashboard`): desk/paper UI (`Dashboard_Background.webp` via
   `--dashboard-desk-image`) with `useDashboard` summary papers (Collection, Circulation, Reading Record with
@@ -803,14 +798,14 @@ Implemented:
   / `checkoutModel` / `checkoutEligibility`. Native `<dialog>` with borrower and notes only (`checked_out_at` and
   `due_at` computed client-side via `dueAtOneYearFrom`); Field-linked `422`; `404`/`409`/`412` stale-state refetch
   with preserved borrower/notes (`412` for `display_only`, without alternate-copy offers); in-flight disable; success
-  closes the dialog and stays on detail. Soft-deleted / non-`available` books (including `display_only`) do not get a
+  closes the dialog and stays on detail. Non-`available` books (including `display_only`) do not get a
   Check Out button. `CheckoutPage` is gone. Colocated `CheckoutDialog.test.tsx`
 - `src/features/loans/checkoutModel.ts`: borrower validation, optional notes, omit blank notes, set `checked_out_at`
   to now and `due_at` via `dueAtOneYearFrom`; colocated `checkoutModel.test.ts`
-- `src/features/loans/checkoutEligibility.ts`: `isCheckoutEligible` (`deletion_date === null` and
-  `status === 'available'`); used by `BookDetailsPage` and `CheckoutDialog`; colocated `checkoutEligibility.test.ts`
-- `src/features/loans/checkinEligibility.ts`: `findActiveLoan` and `isCheckinEligible` (active loan on a non-deleted
-  book; eligibility is not book `status` alone); colocated `checkinEligibility.test.ts`
+- `src/features/loans/checkoutEligibility.ts`: `isCheckoutEligible` (`status === 'available'`); used by
+  `BookDetailsPage` and `CheckoutDialog`; colocated `checkoutEligibility.test.ts`
+- `src/features/loans/checkinEligibility.ts`: `findActiveLoan` and `isCheckinEligible` (active loan on the book;
+  eligibility is not book `status` alone); colocated `checkinEligibility.test.ts`
 - `src/features/loans/checkinModel.ts`: blank return time → omitted body, supplied values as UTC ISO 8601, client
   validation; colocated `checkinModel.test.ts`
 - `src/features/loans/loanTemporal.ts`: `displayLoanDate`, `getLoanDueState`, and `LoanDueState` for due/overdue
@@ -819,7 +814,7 @@ Implemented:
   `checkinModel` / `checkinEligibility`. Shows borrower / checked-out from `findActiveLoan`; blank return time omits
   body / supplied values as UTC ISO 8601; `ConfirmationDialog` before mutate; Field-linked `422`; documented `409`
   detail messaging (`Book is not checked out`); in-flight disable; success clears `bookId` and stays on `/loans`;
-  soft-deleted / non-eligible warning UI; `404`/`409` refetch with preserved return-time input. Colocated
+  non-eligible warning UI; `404`/`409` refetch with preserved return-time input. Colocated
   `CheckinForm.test.tsx`. `CheckinPage` is gone.
 - `src/features/loans/loansListModel.ts`: re-exports shared infinite-scroll constants and loan page flattening helper
 - `src/features/loans/routes/LoansPage.tsx` (`/loans`, infinite scroll + check-in + collection ISBN jump):
@@ -854,15 +849,15 @@ Implemented:
   `useUpdateCollection` (name/description; blank description → explicit `null`; cancel without mutation;
   Field-linked **422**); add via `AddCollectionBookControl` (shelved-only `GET /books` search by ISBN / title /
   author, then `useAddCollectionBook`); membership rows via `CollectionMembershipRow` (join `useBook` /
-  `GET /books/{id}`, durable `Book {id}` fallback, omit soft-deleted, shared `BookCover`, **Wishlist** vs Title Case
+  `GET /books/{id}`, durable `Book {id}` fallback, missing-book error row, shared `BookCover`, **Wishlist** vs Title Case
   shelf location -- membership `shelf_name` may be JSON `null` for unshelved rows; do not treat as BookRead
   `"unknown"`), Move up/down, Remove with `ConfirmationDialog`); permanent collection delete via
   `ConfirmationDialog` + `useDeleteCollection` (memberships removed, catalog books remain). Intro copy distinguishes
   curated lists from Browse and Wishlists. No shelf pickers or move-to-shelf on collection rows.
 - `src/features/collections/components/AddCollectionBookControl.tsx` /
   `src/features/collections/collectionFormModel.ts` / `src/features/collections/collectionDisplay.ts`: shelved
-  catalog find (`useBooks`, no `include_deleted`, no unshelved wishlist-only rows) then membership add with optional
-  notes; **404** / **409** duplicate / **412** soft-deleted / Field-linked **422**; location helpers
+  catalog find (`useBooks`, no unshelved wishlist-only rows) then membership add with optional
+  notes; **404** / **409** duplicate / Field-linked **422**; location helpers
   (`displayCollectionBookLocation` treats membership `shelf_name: null` as Unknown, not BookRead `"unknown"`;
   wishlist emphasis class); create and edit form validation/conversion
   (`collectionEditFormValuesFromCollection`, `formValuesToCollectionUpdate`). Copy links to `/wishlists` for books
@@ -870,7 +865,7 @@ Implemented:
 - `src/features/collections/components/AddBookToCollectionDialog.tsx`: Book Details dialog to add the current active
   book to a chosen collection (`useCollections` picker, optional notes, `useAddCollectionBook` with `book.id`; no
   catalog search or create). Empty-collections state links to `/collections`. Surfaces **409** duplicate and **412**
-  soft-deleted honestly; does not change shelf, wishlist, reading, or circulation state. Distinct from wishlist
+  **412** exclusivity honestly; does not change shelf, wishlist, reading, or circulation state. Distinct from wishlist
   move-to-shelf "Add to Collection" copy on `MoveWishlistBookToShelfControl`. Colocated
   `AddBookToCollectionDialog.test.tsx`.
 
@@ -974,7 +969,7 @@ Import shared UI from `src/components/index.ts` rather than deep paths when writ
 - `src/components/index.ts`: Barrel re-exports for the shared components and notifications API.
 
 These components apply the class names defined in `src/styles/components.css`. Books list/detail (including covers),
-create/edit form, scanner capture, checkout, check-in, loan history, mark-read, reading edit, delete/restore admin,
+create/edit form, scanner capture, checkout, check-in, loan history, mark-read, reading edit, hard delete,
 wishlists, collections, home discovery, and dashboard already use them in product UI (including `QueryErrorState` for
 API errors); keep reusing these primitives rather than inventing parallel UI kits.
 
@@ -1037,7 +1032,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
   `dashboardApi.test.ts` / `healthApi.test.ts` / `versionApi.test.ts` / `categoriesApi.test.ts`: Typed route helper
   coverage including dashboard summary and report paths, lookup `found: false`, mark-read `{}`, omitted check-in body,
-  restore/checkout/check-in `409` bodies, repeated `category_id` list filters, cover get blob / multipart upload /
+  checkout/check-in `409` bodies, repeated `category_id` list filters, cover get blob / multipart upload /
   delete, and a 2_000-row list timing guard.
 - `src/api/requestFields.test.ts` / `dateTime.test.ts`: Request-field picking and date/time normalizer coverage.
 - `src/api/queryClient.test.ts` / `booksQueries.test.tsx` / `serverStateQueries.test.tsx` / `queryStaleGuard.test.tsx`:
@@ -1067,7 +1062,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   Clear Filters, `formatBookCategories`, URL `isbn` filter / Clear ISBN / unique-match auto-open, collection jump,
   bulk selection / bulk move wiring, `BookCover` wiring), detail (including `BookCover` / `BookCoverManager`, gated
   Check Out via `CheckoutDialog` / `?checkout=1`, Mark Read / Edit Reading / Edit Book / Delete Book with active-loan
-  gating, soft-deleted action gating, and multi-category display), and create-route behavior (shelves and categories
+  gating, and multi-category display), and create-route behavior (shelves and categories
   load gates / failure blocks form, loading/error/empty, navigation, create success with `shelf_name` and
   `category_ids`, lookup success / `found: false` / provider failure / checksum rejection, create `422` field mapping,
   camera and hardware scanner handoff into lookup)
@@ -1077,17 +1072,15 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   catalog loading/error/empty, Title Case labels, system-shelf badges and rename/delete guards, create/edit/delete
   flows with Field-linked errors and confirmation, `by_shelf` counts and `/books?shelf_name=` deep links, plus
   display/assignable/form-model helper coverage
-- `src/features/books/routes/EditBookPage.test.tsx` / `bookEditModel.test.ts`: Edit eligibility (active books only;
-  deleted warning), shelves and categories load gates, populate-from-book (including `categoryIds`), minimal
+- `src/features/books/routes/EditBookPage.test.tsx` / `bookEditModel.test.ts`: Edit eligibility (active books only),
+  shelves and categories load gates, populate-from-book (including `categoryIds`), minimal
   changed-fields patch (blank ISBN → `null`; omit unchanged `category_ids`; send `[]` to clear; no status/reading/loan
   fields), no-op rejection, Field-linked `422`, mutation `404`, pending disable, and success navigation
 - `src/features/books/categoryDisplay.test.ts`: `formatBookCategories`, `categoryIdsEqual`, and `sortCategoriesByName`
 - `src/features/books/useBulkSelection.test.ts` / `utils/bulkSelectionModel.test.ts` /
   `components/BulkMoveToShelfControl.test.tsx`: bulk selection lifecycle and atomic move-to-shelf control behavior
 - `src/features/books/routes/DeleteBookPage.test.tsx`: Delete confirmation, on-loan blocking via status and
-  `findActiveLoan`, soft-deleted / not-found warnings, success navigation, and mutation error recovery
-- `src/features/books/routes/DeletedBooksPage.test.tsx`: Deleted list filtering, empty state, restore confirmation,
-  restore success / `404`/`409` messaging, and pending disable
+  `findActiveLoan`, not-found warnings, success navigation, and mutation error recovery
 - `src/features/home/routes/HomePage.test.tsx` / `homeDiscoveryModel.test.ts`: Home discovery rendering, featured
   category hrefs, optional metadata failure fallbacks, secondary links, and About content living at `/about` (not on
   `/`)
@@ -1095,8 +1088,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   and focus management, in-app workflow links (no Backup Library / `/admin/backup`), and document title / heading focus
 - `src/features/about/components/CatalogGuide.test.tsx`: Catalog guide dialog open/close, labelled description,
   keyboard focus trap and restoration, and in-app workflow links
-- `src/features/collection/routes/ManageCollectionPage.test.tsx`: Manage Collection hub links (Add Book, Shelves,
-  Deleted Books) and no Backup Library / backup affordance
+- `src/features/collection/routes/ManageCollectionPage.test.tsx`: Manage Collection hub links (Add Book, Shelves)
+  and no Backup Library / backup affordance
 - `src/features/dashboard/routes/DashboardPage.test.tsx`: Summary metric rendering, breakdown buckets, category /
   read-status deep links, incomplete metadata counts (without summing field totals into `total_incomplete`),
   `/books?cleanup_field=` healing deep links, healing empty state, paper-level error recovery, unified Refresh, null-
@@ -1104,10 +1097,10 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `QueryErrorState` recovery, and hardware collection ISBN jump wiring. (Dashboard does not mount the incomplete-
   metadata infinite list; that belongs to Books cleanup mode.)
 - `src/features/books/routes/MarkReadPage.test.tsx` / `markReadModel.test.ts`: Mark-read eligibility (active unread
-  only; deleted / already-read warnings), confirmation, success navigation, client validation, rating bounds, request
+  only; already-read warnings), confirmation, success navigation, client validation, rating bounds, request
   conversion, Field-linked `422`, mutation `404`, pending disable, and form conversion
 - `src/features/books/routes/ReadingEditPage.test.tsx` / `readingEditModel.test.ts`: Reading-edit eligibility (active
-  already-read only; deleted / unread warnings), populate-from-book, changed-fields-only patch (including clearing
+  already-read only; unread warnings), populate-from-book, changed-fields-only patch (including clearing
   fields to `null`), no-op rejection, confirmation, success navigation, Field-linked `422`, mutation `404`, and pending
   disable
 - `src/features/loans/components/CheckoutDialog.test.tsx` / `checkoutModel.test.ts` / `checkoutEligibility.test.ts`:
@@ -1116,7 +1109,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   substitutes), network failure, and `?checkout=1` deep-link open on eligible books only
 - `src/features/loans/components/CheckinForm.test.tsx` / `checkinModel.test.ts` / `checkinEligibility.test.ts`:
   Check-in on `/loans` (`?bookId=` Return Card), active-loan eligibility (including status-independent cases),
-  soft-delete / non-eligible warnings, blank and supplied return time, confirmation, success staying on `/loans`,
+  non-eligible warnings, blank and supplied return time, confirmation, success staying on `/loans`,
   Field-linked `422`, documented `409` detail messaging, generic mutation errors, pending disable, and form conversion
 - `src/features/loans/routes/LoansPage.test.tsx` / `loanTemporal.test.ts`: Infinite loan pagination into active vs
   returned sections, Check In on eligible Active Loans rows, due/overdue labels, durable missing-book fallback, empty /
@@ -1132,7 +1125,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `CollectionMembershipRow.test.tsx` / `collectionFormModel.test.ts` / `collectionDisplay.test.ts`: collections
   loading/error/empty, create, nested memberships with `GET /books/{id}` join and missing-book fallback, shelved vs
   **Wishlist** location labels, shelved-only add search / select, reorder bounds, remove confirm, collection delete,
-  **409** / **412** / Field-linked **422**, and soft-deleted membership omission
+  **409** / Field-linked **422**, and missing-book membership error row
 - `src/features/books/components/BookForm.test.tsx` / `bookFormModel.test.ts`: Form field rendering, API-fed shelf
   options (Title Case labels; `removed` excluded; required shelf), gated create controls, initial values, empty
   title/authors and ISBN rejection, submit payload shaping via `formValuesToBookCreate` (`shelf_name`),
@@ -1152,7 +1145,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `e2e/book.creation.spec.ts`: Manual book-creation journey through `/books/new` into the created detail page
 - `e2e/isbn-collection-jump.spec.ts`: Hardware collection jump from `/dashboard` -- unique match opens detail (Back
   returns to dashboard); multiple matches land on `/books?isbn=` with Clear ISBN
-- `e2e/library.lifecycle.spec.ts`: Checkout/check-in, mark-read, and delete/restore browser journeys against the
+- `e2e/library.lifecycle.spec.ts`: Checkout/check-in, mark-read, and hard-delete browser journeys against the
   stateful mock API (dedicated lifecycle endpoints, not generic `PATCH`). Checkout follows detail "Check Out" into
   `CheckoutDialog`; check-in follows detail "Check In" onto `/loans?bookId=` (`CheckinForm` Return Card). Neither
   uses a dedicated `/checkout` or `/checkin` page.
@@ -1421,7 +1414,7 @@ make build
   under `AppShell` / `DrawerNavMenu` (Dashboard link; Collection Browse/Manage/Collections/Wishlists and Circulation
   Loans only; brand image link to Home `/`). Leave discovery Home under `HomePage` / `homeDiscoveryModel` /
   `homeQuotes` and About under `AboutPage` / `CatalogGuide` at `/about`. Leave `/collection/manage` under
-  `ManageCollectionPage` (Add Book, Shelves, Deleted Books only). Leave Books catalog filtering / bulk actions under
+  `ManageCollectionPage` (Add Book, Shelves only). Leave Books catalog filtering / bulk actions under
   `BooksPage` /
   `booksListModel` / `BooksListControls` / `useBulkSelection` / `BooksBulkActions` / `BulkMoveToShelfControl` /
   `booksApi.moveToShelf` / `useBulkMoveBooksToShelf` (centralized URL filters including `shelf_name` / `is_read` /
@@ -1429,7 +1422,7 @@ make build
   `EditBookPage` / `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; never send `status=on_loan`,
   reading fields, or loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`;
   block when `status === 'on_loan'` or `findActiveLoan` is present; invalidate `queryKeys.collections.all` on success).
-  Leave `/admin/deleted` under `DeletedBooksPage`. There is no browser backup page (`/admin/backup`,
+  There is no browser backup page (`/admin/backup`,
   `BackupLibraryPage`, or `backupApi`); never inspect, log, cache, or upload SQL dump contents. Leave dashboard under
   `DashboardPage` / `useDashboard` / `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` (display API stats
   only; null averages as "Not enough data"; do not recalculate from `GET /books`; deep-link into Books filters /
@@ -1454,7 +1447,7 @@ make build
   `EditCollectionForm` / `AddCollectionBookControl` / `AddBookToCollectionDialog` / `CollectionMembershipRow` /
   `collectionFormModel` / `collectionDisplay` / `collectionsApi` / `collectionsQueries` (`/collections` owns
   create/edit/delete, shelved-only add search, reorder/remove; Book Details owns add-current-book via
-  `AddBookToCollectionDialog`; memberships via `useBook` / `GET /books/{id}`; soft-deleted add **412**; duplicate
+  `AddBookToCollectionDialog`; memberships via `useBook` / `GET /books/{id}`; duplicate
   **409**; no shelf/wishlist overlap **412**; no move-to-shelf on collection rows). Keep Vitest / Testing Library /
   `renderAppTree` coverage, Playwright `e2e/` (`playwright.config.ts`, stateful `mockApi`, axe helper), enforced
   coverage floors, and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites
@@ -1464,7 +1457,7 @@ make build
   targets; do not add containerized Vite/HMR or a Compose file in this repo. Keep `scripts/packRelease.ts`, Make
   `pack`, gitignored `ci/artifacts/`, and the production-like host inspection tests; do not upload secret-bearing
   archives from default CI or treat the Compose image as production. Do not invent FE-only cover providers. Never
-  simulate restore, checkout, check-in, initial mark-read, or cover upload/delete with generic `PATCH`. Never
+  simulate checkout, check-in, initial mark-read, or cover upload/delete with generic `PATCH`. Never
   implement bulk shelf moves as per-book `PATCH` loops.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a product need explicitly requires it.

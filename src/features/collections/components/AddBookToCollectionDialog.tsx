@@ -5,7 +5,6 @@ import {
     useState,
     type FormEvent,
 } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 
 import {
     AppLink,
@@ -24,7 +23,6 @@ import {
     useAddCollectionBook,
     useCollections,
 } from '../../../api/collectionsQueries'
-import { queryKeys } from '../../../api/queryKeys'
 import {
     emptyAddCollectionBookFormValues,
     formValuesToCollectionBookCreate,
@@ -56,8 +54,6 @@ export function AddBookToCollectionDialog({
                                               open,
                                               onClose,
                                           }: AddBookToCollectionDialogProps) {
-    const queryClient = useQueryClient()
-
     const collectionsQuery =
         useCollections()
 
@@ -322,30 +318,6 @@ export function AddBookToCollectionDialog({
                             error.detail ??
                             'That book is already in this collection.',
                         )
-                        return
-                    }
-
-                    if (
-                        isApiError(error) &&
-                        error.status === 412
-                    ) {
-                        setFormError(
-                            error.detail ??
-                            'Soft-deleted books cannot be added to a collection.',
-                        )
-
-                        void queryClient.invalidateQueries({
-                            queryKey:
-                                queryKeys.books.detail(
-                                    book.id,
-                                ),
-                        })
-
-                        void queryClient.invalidateQueries({
-                            queryKey:
-                            queryKeys.collections.all,
-                        })
-
                         return
                     }
 

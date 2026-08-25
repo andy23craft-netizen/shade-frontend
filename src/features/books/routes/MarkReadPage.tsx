@@ -231,13 +231,6 @@ export function MarkReadPage() {
             return
         }
 
-        if (book.deletion_date !== null) {
-            setFormError(
-                'Deleted books cannot be marked as read.',
-            )
-            return
-        }
-
         if (book.is_read) {
             setFormError(
                 'This book has already been marked as read.',
@@ -273,7 +266,6 @@ export function MarkReadPage() {
 
         if (
             !book ||
-            book.deletion_date !== null ||
             book.is_read
         ) {
             setIsConfirmationOpen(false)
@@ -395,13 +387,10 @@ export function MarkReadPage() {
 
     const book = bookQuery.data
 
-    const isDeleted =
-        book.deletion_date !== null
-
     const isAlreadyRead =
         book.is_read
 
-    if (isDeleted || isAlreadyRead) {
+    if (isAlreadyRead) {
         return (
             <section className="route-page">
                 <div className="book-details__topbar">
@@ -419,15 +408,9 @@ export function MarkReadPage() {
 
                 <Alert
                     variant="warning"
-                    title={
-                        isDeleted
-                            ? 'This book has been deleted'
-                            : 'This book is already marked as read'
-                    }
+                    title="This book is already marked as read"
                 >
-                    {isDeleted
-                        ? 'Deleted books cannot be marked as read.'
-                        : 'Initial reading completion has already been recorded for this book.'}
+                    Initial reading completion has already been recorded for this book.
                 </Alert>
             </section>
         )

@@ -10,6 +10,7 @@ import {
 import {
     Alert,
     Button,
+    ConfirmationDialog,
 } from '../../../components'
 import {
     isApiError,
@@ -46,6 +47,11 @@ export function BookCoverManager({
 
     const [errorMessage, setErrorMessage] =
         useState<string | null>(null)
+
+    const [
+        confirmOpen,
+        setConfirmOpen,
+    ] = useState(false)
 
     const uploadCover =
         useUploadBookCover()
@@ -93,13 +99,38 @@ export function BookCoverManager({
         event.target.value = ''
     }
 
+    function handleOpenRemoveConfirmation() {
+        if (isPending) {
+            return
+        }
+
+        setErrorMessage(null)
+        setConfirmOpen(true)
+    }
+
+    function handleCancelRemoveConfirmation() {
+        if (isPending) {
+            return
+        }
+
+        setConfirmOpen(false)
+    }
+
     function handleRemove() {
+        if (removeCover.isPending) {
+            return
+        }
+
         setErrorMessage(null)
 
         removeCover.mutate(
             bookId,
             {
+                onSuccess: () => {
+                    setConfirmOpen(false)
+                },
                 onError: (error) => {
+                    setConfirmOpen(false)
                     setErrorMessage(
                         coverErrorMessage(
                             error,
@@ -138,7 +169,7 @@ export function BookCoverManager({
                     type="button"
                     variant="secondary"
                     disabled={isPending}
-                    onClick={handleRemove}
+                    onClick={handleOpenRemoveConfirmation}
                 >
                     {removeCover.isPending
                         ? 'Removing…'
@@ -154,6 +185,25 @@ export function BookCoverManager({
                     {errorMessage}
                 </Alert>
             ) : null}
+
+            <ConfirmationDialog
+                open={confirmOpen}
+                title="Remove custom cover"
+                confirmLabel="Remove Cover"
+                confirmVariant="danger"
+                onConfirm={handleRemove}
+                onCancel={handleCancelRemoveConfirmation}
+            >
+                <p>
+                    Remove the custom cover for this book?
+                </p>
+
+                <p>
+                    The uploaded cover file will be cleared.
+                    The book may still show an ISBN-based
+                    fallback cover when one is available.
+                </p>
+            </ConfirmationDialog>
         </div>
     )
 }

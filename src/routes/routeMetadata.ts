@@ -80,11 +80,6 @@ export const routeMetadata = {
     title: 'Shelves',
     heading: 'Shelves',
   },
-  deletedBooks: {
-    path: '/admin/deleted',
-    title: 'Deleted Books',
-    heading: 'Deleted Books',
-  },
   notFound: {
     path: '*',
     title: 'Page Not Found',

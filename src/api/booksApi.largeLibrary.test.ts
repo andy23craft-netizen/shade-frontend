@@ -29,7 +29,6 @@ function createBook(
         is_read: false,
         creation_date: '2026-01-01T00:00:00Z',
         updated_date: '2026-01-01T00:00:00Z',
-        deletion_date: null,
         times_borrowed: 0,
         last_borrowed_at: null,
         average_loan_days: null,

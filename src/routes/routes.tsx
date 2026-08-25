@@ -9,7 +9,6 @@ import {
     CollectionsPage,
     DashboardPage,
     DeleteBookPage,
-    DeletedBooksPage,
     EditBookPage,
     HomePage,
     LoansPage,
@@ -139,13 +138,6 @@ export const routeConfig = [
                     title: routeMetadata.shelves.title,
                 },
                 element: <ShelvesPage />,
-            },
-            {
-                path: routeMetadata.deletedBooks.path,
-                handle: {
-                    title: routeMetadata.deletedBooks.title,
-                },
-                element: <DeletedBooksPage />,
             },
             {
                 path: routeMetadata.notFound.path,

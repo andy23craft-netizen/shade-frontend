@@ -204,11 +204,11 @@ describe('AboutPage', () => {
 
         expect(
             guide.getByRole('link', {
-                name: 'restore deleted books',
+                name: 'Manage Collection',
             }),
         ).toHaveAttribute(
             'href',
-            '/admin/deleted',
+            '/collection/manage',
         )
     })
 })

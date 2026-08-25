@@ -84,7 +84,6 @@ const bookFixture = {
     authors: 'Vladimir Nabokov',
     publication_date: '1962-01-01',
     shelf_name: 'e4',
-    deletion_date: null,
 } as BookRead
 
 describe('HomeStaffPick', () => {
@@ -202,19 +201,4 @@ describe('HomeStaffPick', () => {
         expect(container).toBeEmptyDOMElement()
     })
 
-    it('renders nothing for a deleted book', () => {
-        mockBookQuery({
-            data: {
-                ...bookFixture,
-                deletion_date:
-                    '2026-08-20T00:00:00Z',
-            },
-        })
-
-        const {
-            container,
-        } = renderPick()
-
-        expect(container).toBeEmptyDOMElement()
-    })
 })

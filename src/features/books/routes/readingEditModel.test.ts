@@ -41,7 +41,6 @@ const readBook: BookRead = {
         '2026-08-01T12:00:00.000Z',
     updated_date:
         '2026-08-10T12:00:00.000Z',
-    deletion_date: null,
 }
 
 describe('readingEditModel', () => {
