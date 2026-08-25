@@ -401,17 +401,6 @@
             "title": "Creation Date",
             "type": "string"
           },
-          "deletion_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Deletion Date"
-          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -580,7 +569,6 @@
           "id",
           "creation_date",
           "updated_date",
-          "deletion_date",
           "times_borrowed",
           "last_borrowed_at",
           "average_loan_days"
@@ -2044,7 +2032,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "0.2.11"
+    "version": "0.2.12"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2107,16 +2095,6 @@
       "get": {
         "operationId": "list_books_books_get",
         "parameters": [
-          {
-            "in": "query",
-            "name": "include_deleted",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Include Deleted",
-              "type": "boolean"
-            }
-          },
           {
             "in": "query",
             "name": "isbn",
@@ -3673,93 +3651,6 @@
         ]
       }
     },
-    "/books/{id}/restore": {
-      "post": {
-        "operationId": "restore_book_books__id__restore_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "title": "Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BookRead"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Malformed or missing identifier"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Authentication failure"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Resource not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "State conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Restore Book",
-        "tags": [
-          "books"
-        ]
-      }
-    },
     "/categories": {
       "get": {
         "operationId": "list_categories_categories_get",
@@ -4280,16 +4171,6 @@
               }
             },
             "description": "Collection membership conflict (duplicate book or order number)"
-          },
-          "412": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Soft-deleted books cannot be added to a collection"
           },
           "422": {
             "content": {
@@ -5709,7 +5590,7 @@
                 }
               }
             },
-            "description": "Soft-deleted books cannot be added to a wishlist"
+            "description": "Existing books cannot be added to a wishlist"
           },
           "422": {
             "content": {

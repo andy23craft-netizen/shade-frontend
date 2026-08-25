@@ -58,7 +58,7 @@ current single-library behavior.
 
 | Status | Meaning beyond the OpenAPI label |
 | ------ | -------------------------------- |
-| `400`  | Malformed or empty GUID on book path `{id}` (`GET` / `PATCH` / `DELETE` / restore / |
+| `400`  | Malformed or empty GUID on book path `{id}` (`GET` / `PATCH` / `DELETE` / |
 |        | checkout / check-in / mark-read / cover get/upload/delete); malformed or empty GUID on loan reads |
 |        | (`GET /loans/{id}` path, or `book_id` query); |
 |        | malformed or empty `wishlist_id` / membership `wishlist_book_id` / membership `book_id` on wishlist routes; |
@@ -68,27 +68,24 @@ current single-library behavior.
 |        | partial or invalid `skip`/`take` on list endpoints; |
 |        | invalid `sortBy` or `sortOrder` on `GET /books`; invalid or blank `field` on |
 |        | `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book create/update; |
-|        | `shelf_name` that normalizes to `removed` on book create/update or bulk shelf move; |
 |        | malformed or empty book GUID in a bulk shelf-move request; unknown destination `shelf_name` on bulk shelf move; |
 |        | malformed or duplicate `category_id` on `GET /books`; |
-|        | create/rename/delete of system shelves `unknown` / `removed`, or rename to those names |
+|        | create/rename/delete of system shelf `unknown`, or rename to that name |
 | `403`  | Missing or invalid Bearer token |
-| `404`  | Book missing, or soft-deleted on checkout / check-in / mark-read / `PATCH` / bulk shelf move / |
-|        | cover get/upload/delete / second delete; |
+| `404`  | Book missing or already deleted on checkout / check-in / mark-read / `PATCH` / bulk shelf move / |
+|        | cover get/upload/delete / second delete / `GET /books/{id}`; |
 |        | no local cover and no usable ISBN cover fallback on `GET /books/{id}/cover` |
 |        | (`"Book cover not found"`); |
 |        | unknown book for `GET /loans?book_id=...`; unknown loan for `GET /loans/{id}`; |
 |        | unknown wishlist, unknown book when adding a wishlist membership, or unknown wishlist book on remove; |
 |        | unknown collection, unknown book when adding a collection membership, or unknown |
 |        | collection book on reorder/remove; unknown shelf for `PATCH` / `DELETE /shelves/{shelf_id}` |
-| `409`  | Restore an active book; checkout when already on loan; check-in with no active loan; |
+| `409`  | Checkout when already on loan; check-in with no active loan; |
 |        | duplicate shelf `common_name` on create/rename; delete shelf while books remain; |
 |        | duplicate book or `order_num` in the same collection |
 | `412`  | Checkout when the book has `status=display_only` (`"Book is display only"`); |
-|        | add a book with any shelf membership, including `unknown` / `removed`, to a wishlist |
+|        | add a book with any shelf membership, including `unknown`, to a wishlist |
 |        | (`"Existing books cannot be added to a wishlist"`); |
-|        | add a soft-deleted book to a wishlist (`"Soft-deleted books cannot be added to a wishlist"`) or |
-|        | collection (`"Soft-deleted books cannot be added to a collection"`); |
 |        | assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist |
 |        | (`"The book must be removed from the wishlist before it can be placed on a shelf"`) |
 | `422`  | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read body; |
@@ -129,32 +126,23 @@ Shelves / categories guidance below).
 
 # Book lifecycle (behavioral)
 
-Loan status and reading status are independent of soft-delete:
+Loan status and reading status are independent of delete:
 
 ```text
 available --checkout--> on_loan --check-in--> available
 unread --mark-read--> read
-active --DELETE--> soft-deleted --restore--> active
+active --DELETE--> gone (hard delete; no restore)
 ```
 
-Soft-deleted books:
+`DELETE /books/{id}` is permanent. It removes the book row, dependent wishlist/collection memberships, category
+links, shelf membership, loan rows, and any on-disk cover file. A second delete or any read/write route for that id
+returns **404** `"Book not found"`. After delete, the same catalog fields may be used to create a new book (new `id`).
 
-* set `deletion_date` on delete; restore clears `deletion_date`
-* are omitted from `GET /books` unless `include_deleted=true` (then they count in `total` too, still only if
-  shelved)
-* remain readable via `GET /books/{id}` (including `shelf_name` of `removed` and a non-null `deletion_date`)
-* are rejected by checkout, check-in, mark-read, `PATCH`, bulk shelf move, and cover get/upload/delete (**404**)
-* keep loan and reading data
-* have shelf membership moved to the system shelf `removed` on delete; restore moves membership to `unknown`
-  (the pre-delete shelf is not restored)
-* are removed from all wishlists and collections on delete (collection order numbers are renumbered)
-* cannot be added to a wishlist or collection until restored (**412**)
-
-Deleting an on-loan book leaves its active loan open; restore the book before check-in will complete that loan.
+Delete is allowed while the book is checked out; associated loan rows are removed with the book.
 
 Prefer dedicated endpoints over reproducing their effects with `PATCH`:
 
-* checkout / check-in / mark-read / restore / lookup / bulk shelf move / cover upload or delete
+* checkout / check-in / mark-read / lookup / bulk shelf move / cover upload or delete
 
 `PATCH` bumps `updated_date` via a SQLite trigger when the handler does not set it explicitly (the column still
 changes on successful update). Do not send `null` for DB-required fields such as `title`, `authors`, `is_read`, or
@@ -170,9 +158,8 @@ assign via `PATCH` or bulk shelf move).
 
 Books use `shelf_name` (maps to `shelves.common_name`), not a hard-coded shelf enum and not a book-level `shelf`
 column. Create may omit `shelf_name` to leave the book with no `books_shelves` membership (required for wishlist
-add). Incoming names are trimmed then lowercased (max length 32 after trim). Unknown names and names that
-normalize to `removed` return **400** on create/update / bulk shelf move -- only `DELETE /books/{id}` assigns
-`removed`. JSON `null` `shelf_name` on create is treated as omitted. `shelf_name` must not be JSON `null` on update
+add). Incoming names are trimmed then lowercased (max length 32 after trim). Unknown names return **400** on
+create/update / bulk shelf move. JSON `null` `shelf_name` on create is treated as omitted. `shelf_name` must not be JSON `null` on update
 (**422**); omit the field to leave membership unchanged. See Shelves for list and catalog CRUD behavior.
 
 Books default to author ascending (`sortBy=author`, `sortOrder=asc` when omitted). Allowed `sortBy` values:
@@ -182,11 +169,12 @@ consistent. The previous implicit title sort is no longer the default; pass `sor
 required.
 
 Path `{id}` must be a GUID: **400** when empty or malformed (including legacy spreadsheet codes
-like `SL-0001`); **404** when the GUID is well-formed but unknown. Soft-delete rules for
-checkout / check-in / mark-read / `PATCH` / bulk shelf move / cover get/upload/delete are unchanged.
+like `SL-0001`); **404** when the GUID is well-formed but the book is missing or has been hard-deleted.
+Deleted books return **404** on checkout, check-in, mark-read, `PATCH`, bulk shelf move, and cover
+get/upload/delete as well as on `GET /books/{id}` and a second `DELETE`.
 
 Optional filters on `GET /books` form one composable catalog-query surface. Different filter types use **AND**
-semantics: a book must satisfy every supplied predicate. Filters compose with `include_deleted`, all supported
+semantics: a book must satisfy every supplied predicate. Filters compose with all supported
 sorting modes, and `skip` / `take` pagination. No matches return an empty `BookList`
 (`items: []`, `total: 0`), not **404**. When paginated, `total` remains the full number of matching **shelved**
 books before pagination (item and count queries share the shelf join).
@@ -233,11 +221,10 @@ The following Book data is intentionally not exposed as normal `GET /books` filt
 * `notes` and `review` are free-form prose rather than useful catalog dimensions.
 * `tags` are currently serialized JSON in a SQLite text column; proper tag-membership filtering is not implemented
   as a JSON substring query.
-* `deletion_date` is represented by the existing `include_deleted` behavior rather than a second deletion filter.
 * `times_borrowed`, `last_borrowed_at`, and `average_loan_days` are derived loan statistics rather than persisted
   Book fields.
   
-The filters compose with each other, repeated `category_id`, `include_deleted`, pagination, and sorting. When
+The filters compose with each other, repeated `category_id`, pagination, and sorting. When
 different filter types are supplied, all predicates must match. No matches return an empty `BookList`
 (`items: []`, `total: 0`), not **404**. When paginated, `total` remains the count of all matching **shelved**
 rows before pagination.
@@ -255,7 +242,7 @@ assigned to either category. Duplicate category IDs return **400**
 **400** (`"Invalid category id"`). A well-formed but unknown category ID is not an error: it simply yields no
 matches (`items: []`, `total: 0`).
 
-Category filtering composes with `isbn`, `author`, `title`, `include_deleted`, pagination, and sorting. When
+Category filtering composes with `isbn`, `author`, `title`, pagination, and sorting. When
 paginated, `total` uses the same shelf join and category intersection predicates and remains the count of all
 matching rows before pagination.
 
@@ -282,9 +269,9 @@ cover available" -- `GET /books/{id}/cover` may still return an ISBN-derived cov
   bytes that do not match the declared content type are rejected with **422** (string `detail`)
 * success returns **200** `BookRead` with updated `cover_image_path`
 * replacing a cover deletes any prior on-disk file for that book (including a different extension)
-* soft-deleted or missing book → **404** `"Book not found"`
+* missing or deleted book → **404** `"Book not found"`
 
-`DELETE /books/{id}/cover` removes on-disk files and clears `cover_image_path` (**204**). Soft-deleted or missing
+`DELETE /books/{id}/cover` removes on-disk files and clears `cover_image_path` (**204**). Missing or deleted
 book → **404**.
 
 `GET /books/{id}/cover` response behavior:
@@ -294,7 +281,7 @@ book → **404**.
 2. No local file, but the book has `isbn13` and Open Library returns a usable cover → the backend fetches the
    image server-side and returns **200** with the image bytes and matching image `Content-Type`.
 3. No usable local or ISBN-derived cover → **404** `"Book cover not found"`.
-4. Soft-deleted or missing book → **404** `"Book not found"`.
+4. Missing or deleted book → **404** `"Book not found"`.
 
 Uploaded local covers always take priority over ISBN-derived artwork. Open Library timeout, network failure,
 missing artwork, non-200 response, empty response, or non-image response is treated as an unavailable cover and
@@ -310,7 +297,7 @@ Do not invent cover URLs from `cover_image_path` alone. The frontend must not ca
 
 Recommended cover upload: FE picks an image file → `PUT /books/{id}/cover` with `FormData` field `file` and Bearer
 auth → refresh book state from the returned `BookRead` (or re-fetch `GET /books/{id}`). On **422**, surface the
-string `detail` (type/size/mismatch). After soft-delete, cover routes return **404** until restore.
+string `detail` (type/size/mismatch). After hard delete, cover routes return **404**.
 
 ---
 
@@ -323,13 +310,13 @@ Shelves are a separate catalog resource. Book placement is membership (`books_sh
 
 * requires Bearer authentication (same as other business routes)
 * returns an unpaginated JSON **array** of `ShelfRead` objects (fields in OpenAPI), not `{ "items", "total" }`
-* includes system shelves `unknown` and `removed`
+* includes system shelf `unknown`
 * orders by `common_name` ascending, then `shelf_id` ascending
 
 Write routes (same Bearer auth):
 
 * `POST /shelves` -- create with required `common_name` (trimmed/lowercased, max 32) and optional
-  `location` / `description`; returns **201** `ShelfRead`. Reserved names `unknown` / `removed` are **400**;
+  `location` / `description`; returns **201** `ShelfRead`. Reserved name `unknown` is **400**;
   duplicate `common_name` is **409**.
 * `PATCH /shelves/{shelf_id}` -- update provided fields; returns **200** `ShelfRead`. Malformed id **400**;
   missing **404**. System shelves cannot be renamed (**400**), but `location` / `description` may change.
@@ -340,16 +327,15 @@ Write routes (same Bearer auth):
 Refresh `GET /shelves` after create/update/delete so pickers stay current. New `common_name` values are
 immediately assignable on book create/update via `shelf_name`.
 
-For book forms: load `GET /shelves`, present `common_name` values (exclude `removed` for create/update), and
-submit the chosen name as `shelf_name`. Omit `shelf_name` on `POST /books` when creating a wishlist-only catalog
-row (no membership). Omit `shelf_name` on `PATCH` when membership should not change. Assigning `shelf_name` while
-the book is on any wishlist returns **412**. After soft-delete, expect `shelf_name: "removed"` and a non-null
-`deletion_date`; after restore, expect `shelf_name: "unknown"` and `deletion_date: null`.
+For book forms: load `GET /shelves`, present `common_name` values, and submit the chosen name as `shelf_name`.
+Omit `shelf_name` on `POST /books` when creating a wishlist-only catalog row (no membership). Omit `shelf_name`
+on `PATCH` when membership should not change. Assigning `shelf_name` while the book is on any wishlist returns
+**412**.
 
 `GET /books` inner-joins shelf membership, so unshelved (wishlist-only) books are omitted from both `items` and
 `total`. Fetch them with `GET /books/{id}` (response `shelf_name` is `unknown` when membership is missing).
 
-Dashboard incomplete-shelf / `missing_shelf` means membership on `unknown` (not `removed`). Dashboard summary,
+Dashboard incomplete-shelf / `missing_shelf` means membership on `unknown`. Dashboard summary,
 breakdowns, and incomplete-metadata counts also exclude unshelved books (see Dashboard below).
 
 ### Bulk book movement
@@ -358,16 +344,16 @@ Use the bulk shelf-move operation documented in OpenAPI when moving an explicit 
 destination shelf. Do **not** implement bulk movement by looping over individual `PATCH /books/{id}` requests.
 
 Bulk movement is atomic: the API validates the destination and every selected book before changing any shelf
-membership. If any selected book is missing, soft-deleted, or still belongs to a wishlist, the entire operation fails
+membership. If any selected book is missing or still belongs to a wishlist, the entire operation fails
 and every selected book remains on its original shelf.
 
 The destination uses the same `shelf_name` rules as ordinary book assignment: surrounding whitespace is trimmed,
-letters are lowercased, the normalized value is limited to 32 characters, unknown shelves are rejected, and
-`removed` cannot be assigned. The system shelf `unknown` remains a valid destination.
+letters are lowercased, the normalized value is limited to 32 characters, and unknown shelves are rejected.
+The system shelf `unknown` remains a valid destination.
 
 The request contains explicit book GUIDs only. Duplicate IDs are rejected rather than silently deduplicated. A
-malformed GUID uses the normal Books API **400** behavior; a well-formed but missing book, or a soft-deleted book,
-causes the operation to fail with **404**.
+malformed GUID uses the normal Books API **400** behavior; a well-formed but missing or deleted book causes the
+operation to fail with **404**.
 
 A selected book that is already on the destination shelf is valid and is still counted as successfully processed.
 The successful response preserves the supplied book order, identifies the normalized destination shelf, and reports
@@ -421,13 +407,12 @@ loan row. A book with `status=display_only` is rejected with **412**
 
 **Check-in:** body optional (`{}`, omit, or `null`). Omitted or explicit-null `returned_at` uses current UTC.
 Completes the active loan and sets book `status=available`. Conflict is based on active loan existence, not only
-book `status`: `{"detail": "Book is not checked out"}`. Soft-deleted or missing book → **404**.
+book `status`: `{"detail": "Book is not checked out"}`. Missing or deleted book → **404**.
 
-**Loans:** `GET /loans` returns all loans (active and returned), including loans for soft-deleted books, unless
-`skip`/`take` paginate the result. Default order is stored `checked_out_at` text descending, then loan `id` descending
-(chronological only when clients use one consistent timestamp format). Optional `book_id` filters to that book's loans
-(including soft-deleted books; empty list when the book exists but has no loans). `GET /loans/{id}` returns a single
-loan.
+**Loans:** `GET /loans` returns all loans (active and returned) unless `skip`/`take` paginate the result.
+Default order is stored `checked_out_at` text descending, then loan `id` descending (chronological only when clients
+use one consistent timestamp format). Optional `book_id` filters to that book's loans; **404** when the book does
+not exist. `GET /loans/{id}` returns a single loan.
 For both the path `{id}` and the `book_id` query param: **400** when the value is empty or not a valid GUID;
 **404** when the GUID is well-formed but unknown (book for `book_id`, loan for `{id}`). No create/update/delete
 loan HTTP endpoints; loans are created by checkout and completed by check-in. Active loan ⇒ `returned_at: null`.
@@ -440,36 +425,35 @@ Prefer loan reads over book fields for borrower and checkout timing:
 **Mark-read:** body required but all fields optional -- send at least `{}` (omitted body → **422**). Sets
 `is_read=true`; uses supplied `completion_date` or today's UTC date when unset; applies `rating` / `review` when
 supplied. Explicit `null` clears those fields; a cleared `completion_date` is not replaced with today in that
-request. Soft-deleted or missing book → **404**.
+request. Missing or deleted book → **404**.
 
 **BookRead borrow stats:** `times_borrowed` counts loan rows; `last_borrowed_at` is the lexically greatest stored
 `checked_out_at` (chronologically latest only with consistent formatting); `average_loan_days` uses returned loans
 only (`null` when none).
 
 **Dashboard:** `GET /dashboard` remains the high-level summary used for collection, borrowing, and reading widgets.
-Soft-deleted books and unshelved books (no `books_shelves` row; typically wishlist-only catalog rows) are excluded
-from all dashboard summary counts, catalog breakdowns, and incomplete-metadata counts / drill-downs. Loan metrics
-use only loans tied to non-deleted books. Averages are `null` when there is insufficient data.
+Unshelved books (no `books_shelves` row; typically wishlist-only catalog rows) are excluded from all dashboard summary
+counts, catalog breakdowns, and incomplete-metadata counts / drill-downs. Averages are `null` when there is
+insufficient data.
 `recent_window_days` is currently `30`. `reading.books_read` / `books_unread` match top-level `read` / `unread`.
 
-`GET /dashboard/breakdowns` provides active **shelved**-catalog totals plus counts by category, shelf, and creation
-year. `on_loan` uses active shelved books whose stored `status` is `on_loan`, matching the summary's `checked_out`
+`GET /dashboard/breakdowns` provides shelved-catalog totals plus counts by category, shelf, and creation
+year. `on_loan` uses shelved books whose stored `status` is `on_loan`, matching the summary's `checked_out`
 definition. Category buckets are built from normalized category memberships and use category display names as keys.
 A book with multiple categories contributes once to each applicable category bucket. Shelf buckets use
 `shelves.common_name` via membership. Creation-year buckets are derived from `creation_date`. Zero-count buckets are
 omitted because the response is built from existing grouped rows.
 
 `GET /dashboard/incomplete-metadata` reports cleanup counts for missing category, shelf, pages, publisher,
-publication year, and ISBN among active shelved books. Category is missing when a book has no category memberships.
-Shelf is missing when membership is on `common_name = unknown` (not `removed`). Publisher, `publication_date`, and
+publication year, and ISBN among shelved books. Category is missing when a book has no category memberships.
+Shelf is missing when membership is on `common_name = unknown`. Publisher, `publication_date`, and
 `isbn13` are missing when `null` or blank; pages are missing when `null`.
 `missing_year` refers to `publication_date`, while the breakdown's creation-year chart uses `creation_date`.
-`total_incomplete` counts distinct active shelved books missing at least one tracked field and is not the sum of the
+`total_incomplete` counts distinct shelved books missing at least one tracked field and is not the sum of the
 individual field counts.
 
 `GET /dashboard/incomplete-metadata/books` returns the full `BookList` / `BookRead` representation for shelved books
-missing at least one tracked field, including calculated borrow statistics. Soft-deleted and unshelved books are
-excluded. Optional `field` values are `category`, `shelf`, `pages`, `publisher`, `year`, and `isbn`. Invalid or blank
+missing at least one tracked field, including calculated borrow statistics. Unshelved books are excluded. Optional `field` values are `category`, `shelf`, `pages`, `publisher`, `year`, and `isbn`. Invalid or blank
 values return **400**. There is no `section` metadata field or query value. Default order is `creation_date`
 descending, then book `id` ascending. Optional `skip` / `take` pagination follows the normal paired-parameter rules,
 and `total` remains the unpaginated matching count.
@@ -492,10 +476,8 @@ permanently deletes its membership rows before deleting the wishlist itself; cat
 `POST /wishlists/{wishlist_id}/books` adds a catalog book that has **no** `books_shelves` membership. `status`
 defaults to `wanted`; allowed values are `wanted`, `ordered`, `owned`, and `dropped` (see `WishlistBookStatus` in
 OpenAPI). Duplicate `(wishlist_id, book_id)` memberships are permitted. A book that is already on any shelf
-(including system shelves `unknown` and `removed`) is rejected with **412**
-`{"detail": "Existing books cannot be added to a wishlist"}`. Soft-deleted books are rejected with **412**
-`{"detail": "Soft-deleted books cannot be added to a wishlist"}`. OpenAPI may list only one of those **412**
-descriptions for this route; both `detail` strings are live behavior. Create the catalog row with omitted
+(including system shelf `unknown`) is rejected with **412**
+`{"detail": "Existing books cannot be added to a wishlist"}`. Create the catalog row with omitted
 `shelf_name`, then add it to the wishlist. The current API does not provide membership-level PATCH.
 `DELETE /wishlists/{wishlist_id}/books/{wishlist_book_id}` removes one membership (**204**); the catalog book is
 not deleted. To place a wishlisted book on a shelf, remove its membership (or delete the whole wishlist), then
@@ -503,7 +485,7 @@ assign `shelf_name` via `PATCH /books/{id}` or `POST /books/bulk/move-to-shelf`.
 
 For path `wishlist_id`, membership `wishlist_book_id`, and membership `book_id` on add: **400** when empty or not a
 valid GUID; **404** when the GUID is well-formed but unknown (`Wishlist book not found` for a missing membership row).
-Soft-deleting a catalog book removes all of its wishlist memberships.
+Deleting a catalog book removes all of its wishlist memberships.
 
 ---
 
@@ -544,15 +526,14 @@ together, `{ items, total }` wrapper).
 
 For path `collection_id`, membership `collection_book_id`, and membership `book_id`: **400** when empty or not a valid
 GUID; **404** when the GUID is well-formed but unknown (`"Collection not found"`, `"Book not found"`, or
-`"Collection book not found"` as appropriate). Soft-deleted catalog books are rejected with **412**
-`{"detail": "Soft-deleted books cannot be added to a collection"}`. Soft-deleting a catalog book removes all of its
-collection memberships and renumbers remaining rows in each affected collection.
+`"Collection book not found"` as appropriate). Hard-deleting a catalog book removes all of its collection
+memberships and renumbers remaining rows in each affected collection.
 
 ---
 
 # Backup download (browser)
 
-`GET /backup` returns an `application/sql` attachment (not JSON), including soft-deleted books and historical loans.
+`GET /backup` returns an `application/sql` attachment (not JSON) of the current database contents.
 Filename pattern: `Shade Library - YYYY-mm-dd_HH-MM-SS_Z.sql` (UTC; literal `Z`). Dump failure → **500** with
 `{"detail": "Failed to generate database backup"}`.
 
@@ -601,7 +582,7 @@ URL.revokeObjectURL(objectUrl);
 | Collection list/create/add/reorder UI | Frontend |
 | Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence | API |
 | Canonical project version (`../../ci/VERSION` via `GET /version`) | API |
-| Soft delete/restore, loan records, checkout/check-in, reading state | API |
+| Hard delete, loan records, checkout/check-in, reading state | API |
 | Shelf catalog CRUD (`/shelves`) and book membership via `shelf_name` | API |
 | Atomic bulk shelf movement, including validation of every selected book and destination | API |
 | Category catalog (`GET /categories`), normalized book memberships, and category intersection filtering | API |
@@ -614,22 +595,20 @@ Recommended borrowing/returning: FE collects borrower (or selects loan/book) →
 `POST .../checkin` → refresh loan state via `GET /loans?book_id=...` (or `GET /loans/{id}`) and display returned
 `BookRead` status. Do not drive loan state through generic `PATCH`.
 
-Recommended shelf assignment: FE loads `GET /shelves` → user picks a `common_name` (not `removed` for create/update)
-→ send as `shelf_name` on `POST /books` or `PATCH /books/{id}`. Omit `shelf_name` on create for a wishlist-only
-row. If assign returns **412** `"The book must be removed from the wishlist before it can be placed on a shelf"`,
-the book still has wishlist membership; remove that membership (or delete the wishlist), then retry. Manage the
-catalog with `POST` / `PATCH` / `DELETE /shelves`, then refresh `GET /shelves`. After delete/restore, re-read the book
-(or list) for updated `shelf_name` and `deletion_date`; do not assume the prior shelf is restored.
+Recommended shelf assignment: FE loads `GET /shelves` → user picks a `common_name` → send as `shelf_name` on
+`POST /books` or `PATCH /books/{id}`. Omit `shelf_name` on create for a wishlist-only row. If assign returns **412**
+`"The book must be removed from the wishlist before it can be placed on a shelf"`, the book still has wishlist
+membership; remove that membership (or delete the wishlist), then retry. Manage the catalog with `POST` / `PATCH` /
+`DELETE /shelves`, then refresh `GET /shelves`.
 
 Recommended bulk shelf assignment: FE maintains the explicit selected book IDs → user chooses a destination from
 `GET /shelves` → send the entire selection in one bulk shelf-move request as defined by OpenAPI → on success,
 refresh the affected book/list/shelf queries. Do not issue one `PATCH /books/{id}` per selected book.
 
-Treat the operation as all-or-nothing. A **404** means at least one selected book is missing or soft-deleted; a
+Treat the operation as all-or-nothing. A **404** means at least one selected book is missing or deleted; a
 **412** with `"The book must be removed from the wishlist before it can be placed on a shelf"` means at least one
 selected book still has wishlist membership. In either case, assume none of the selected books moved. Destination
-validation follows ordinary shelf assignment: `unknown` is allowed, while an unknown shelf or `removed` returns
-**400**.
+validation follows ordinary shelf assignment: `unknown` is allowed, while an unknown shelf name returns **400**.
 
 Recommended wishlist add: `POST /books` without `shelf_name` → `POST /wishlists/{wishlist_id}/books` with
 `{ "book_id" }`. Adding a book that already has shelf membership returns **412**
