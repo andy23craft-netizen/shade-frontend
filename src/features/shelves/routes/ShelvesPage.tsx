@@ -8,6 +8,9 @@ import {
 } from 'react'
 
 import {
+    useInfiniteScrollTrigger,
+} from '../../../hooks/useInfiniteScrollTrigger'
+import {
     ShelfShowcase,
 } from '../components/ShelfShowcase'
 import {
@@ -68,6 +71,8 @@ const FIELD_LABELS: Record<
     location: 'Location',
     description: 'Description',
 }
+
+const SHELF_RENDER_BATCH_SIZE = 6
 
 function mapShelfFieldErrors(
     fieldErrors: readonly ApiFieldError[],
@@ -621,6 +626,11 @@ export function ShelvesPage() {
     const deleteShelf = useDeleteShelf()
 
     const [
+        visibleShelfCount,
+        setVisibleShelfCount,
+    ] = useState(SHELF_RENDER_BATCH_SIZE)
+
+    const [
         createShelfOpen,
         setCreateShelfOpen,
     ] = useState(false)
@@ -647,6 +657,43 @@ export function ShelvesPage() {
 
     const mutationBusy =
         deleteShelf.isPending
+
+    const shelves = (
+        shelvesQuery.data ?? []
+    ).filter(
+        (shelf) =>
+            shelf.common_name !== 'removed',
+    )
+
+    const visibleShelves = shelves.slice(
+        0,
+        visibleShelfCount,
+    )
+
+    const hasMoreShelves =
+        visibleShelves.length < shelves.length
+
+    function exposeNextShelfBatch() {
+        setVisibleShelfCount((currentCount) =>
+            Math.min(
+                currentCount +
+                SHELF_RENDER_BATCH_SIZE,
+                shelves.length,
+            ),
+        )
+    }
+
+    const {
+        getRowRef,
+    } = useInfiniteScrollTrigger({
+        enabled:
+            visibleShelves.length > 0 &&
+            hasMoreShelves,
+        hasNextPage: hasMoreShelves,
+        isFetchingNextPage: false,
+        fetchNextPage: exposeNextShelfBatch,
+        itemCount: visibleShelves.length,
+    })
 
     if (
         shelvesQuery.isPending ||
@@ -704,13 +751,6 @@ export function ShelvesPage() {
             </section>
         )
     }
-
-    const shelves = (
-        shelvesQuery.data ?? []
-    ).filter(
-        (shelf) =>
-            shelf.common_name !== 'removed',
-    )
 
     const shelfCounts = new Map(
         breakdownsQuery.data.by_shelf.map(
@@ -838,7 +878,8 @@ export function ShelvesPage() {
                     className="shelves-showcases"
                     aria-label="Shelves"
                 >
-                    {shelves.map((shelf) => {
+                    {visibleShelves.map(
+                        (shelf, index) => {
                         const isSystem =
                             isSystemShelfCommonName(
                                 shelf.common_name,
@@ -856,6 +897,7 @@ export function ShelvesPage() {
                         return (
                             <div
                                 key={shelf.shelf_id}
+                                ref={getRowRef(index)}
                                 className="shelves-showcases__item"
                             >
                                 {isEditing ? (
@@ -928,7 +970,8 @@ export function ShelvesPage() {
                                 )}
                             </div>
                         )
-                    })}
+                    },
+                    )}
                 </div>
             )}
 

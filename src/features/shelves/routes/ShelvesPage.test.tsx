@@ -6,6 +6,7 @@ import {
     vi,
 } from 'vitest'
 import {
+    act,
     fireEvent,
     render,
     screen,
@@ -27,6 +28,8 @@ const mockUpdateMutate = vi.fn()
 const mockDeleteMutate = vi.fn()
 const mockBreakdownsRefetch = vi.fn()
 const mockUseBooks = vi.fn()
+const mockUseInfiniteScrollTrigger = vi.fn()
+const mockGetRowRef = vi.fn()
 
 let mockShelvesPending = false
 let mockShelvesError: unknown = null
@@ -90,6 +93,32 @@ vi.mock('../../../api/dashboardQueries', () => ({
     }),
 }))
 
+vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
+    useInfiniteScrollTrigger: (
+        options: unknown,
+    ) => {
+        mockUseInfiniteScrollTrigger(options)
+
+        const itemCount = (
+            options as {
+                itemCount: number
+            }
+        ).itemCount
+
+        return {
+            sentinelIndex: Math.max(
+                0,
+                itemCount - 1,
+            ),
+            getRowRef: (index: number) => {
+                mockGetRowRef(index)
+
+                return () => undefined
+            },
+        }
+    },
+}))
+
 const sampleShelves: ShelfRead[] = [
     {
         shelf_id: 'shelf-unknown',
@@ -117,12 +146,62 @@ const sampleShelves: ShelfRead[] = [
     },
 ]
 
+function makeShelf(
+    commonName: string,
+    index: number,
+): ShelfRead {
+    return {
+        shelf_id: `shelf-${index}`,
+        common_name: commonName,
+        location: null,
+        description: null,
+        created_date:
+            '2026-01-01T00:00:00Z',
+        updated_date:
+            '2026-01-01T00:00:00Z',
+    }
+}
+
+const incrementalShelves: ShelfRead[] = [
+    makeShelf('removed', 0),
+    makeShelf('shelf_1', 1),
+    makeShelf('shelf_2', 2),
+    makeShelf('shelf_3', 3),
+    makeShelf('shelf_4', 4),
+    makeShelf('shelf_5', 5),
+    makeShelf('shelf_6', 6),
+    makeShelf('shelf_7', 7),
+    makeShelf('shelf_8', 8),
+    makeShelf('shelf_9', 9),
+    makeShelf('shelf_10', 10),
+    makeShelf('shelf_11', 11),
+    makeShelf('shelf_12', 12),
+    makeShelf('shelf_13', 13),
+]
+
 function renderShelvesPage() {
     return render(
         <MemoryRouter>
             <ShelvesPage />
         </MemoryRouter>,
     )
+}
+
+function getLatestInfiniteScrollOptions() {
+    const latestCall =
+        mockUseInfiniteScrollTrigger.mock.calls.at(
+            -1,
+        )
+
+    expect(latestCall).toBeDefined()
+
+    return latestCall?.[0] as {
+        enabled: boolean
+        hasNextPage: boolean
+        isFetchingNextPage: boolean
+        fetchNextPage: () => void
+        itemCount: number
+    }
 }
 
 describe('ShelvesPage', () => {
@@ -141,6 +220,8 @@ describe('ShelvesPage', () => {
         mockBreakdownsError = null
         mockBreakdownsRefetch.mockReset()
         mockUseBooks.mockReset()
+        mockUseInfiniteScrollTrigger.mockReset()
+        mockGetRowRef.mockReset()
 
         mockUseBooks.mockReturnValue({
             isPending: false,
@@ -714,5 +795,203 @@ describe('ShelvesPage', () => {
                 name: 'Add Shelf',
             }),
         ).not.toBeInTheDocument()
+    })
+
+    it('renders only the initial shelf batch', () => {
+        mockShelvesData = incrementalShelves
+
+        renderShelvesPage()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 1',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 6',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Shelf 7',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Removed',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            getLatestInfiniteScrollOptions(),
+        ).toMatchObject({
+            enabled: true,
+            hasNextPage: true,
+            itemCount: 6,
+        })
+    })
+
+    it('exposes the next shelf batch when infinite scroll triggers', () => {
+        mockShelvesData = incrementalShelves
+
+        renderShelvesPage()
+
+        act(() => {
+            getLatestInfiniteScrollOptions()
+                .fetchNextPage()
+        })
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 12',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Shelf 13',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            getLatestInfiniteScrollOptions(),
+        ).toMatchObject({
+            enabled: true,
+            hasNextPage: true,
+            itemCount: 12,
+        })
+    })
+
+    it('continues exposing shelf batches until the complete catalog is rendered', () => {
+        mockShelvesData = incrementalShelves
+
+        renderShelvesPage()
+
+        act(() => {
+            getLatestInfiniteScrollOptions()
+                .fetchNextPage()
+        })
+
+        act(() => {
+            getLatestInfiniteScrollOptions()
+                .fetchNextPage()
+        })
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 13',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Removed',
+            }),
+        ).not.toBeInTheDocument()
+
+        expect(
+            getLatestInfiniteScrollOptions(),
+        ).toMatchObject({
+            enabled: false,
+            hasNextPage: false,
+            itemCount: 13,
+        })
+    })
+
+    it('does not expose shelves beyond the complete catalog', () => {
+        mockShelvesData = incrementalShelves
+
+        renderShelvesPage()
+
+        act(() => {
+            getLatestInfiniteScrollOptions()
+                .fetchNextPage()
+        })
+
+        act(() => {
+            getLatestInfiniteScrollOptions()
+                .fetchNextPage()
+        })
+
+        expect(
+            getLatestInfiniteScrollOptions()
+                .itemCount,
+        ).toBe(13)
+
+        act(() => {
+            getLatestInfiniteScrollOptions()
+                .fetchNextPage()
+        })
+
+        expect(
+            getLatestInfiniteScrollOptions()
+                .itemCount,
+        ).toBe(13)
+    })
+
+    it('does not reset the visible shelf batch while editing', () => {
+        mockShelvesData = incrementalShelves
+
+        renderShelvesPage()
+
+        act(() => {
+            getLatestInfiniteScrollOptions()
+                .fetchNextPage()
+        })
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 12',
+            }),
+        ).toBeInTheDocument()
+
+        const shelfEight = screen
+            .getByRole('heading', {
+                name: 'Shelf 8',
+            })
+            .closest('article')
+
+        expect(shelfEight).not.toBeNull()
+
+        fireEvent.click(
+            within(
+                shelfEight as HTMLElement,
+            ).getByRole('button', {
+                name: 'Edit',
+            }),
+        )
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Edit Shelf 8',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 12',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel',
+            }),
+        )
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 12',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            getLatestInfiniteScrollOptions()
+                .itemCount,
+        ).toBe(12)
     })
 })

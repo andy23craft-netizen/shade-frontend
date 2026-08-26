@@ -202,4 +202,61 @@ describe('useInfiniteScrollTrigger', () => {
 
         expect(observe).not.toHaveBeenCalled()
     })
+
+    it('allows another request after the sentinel moves', () => {
+        const fetchNextPage = vi.fn()
+
+        const { result, rerender } =
+            renderHook(
+                ({
+                     itemCount,
+                 }: {
+                    itemCount: number
+                }) =>
+                    useInfiniteScrollTrigger({
+                        enabled: true,
+                        hasNextPage: true,
+                        isFetchingNextPage: false,
+                        fetchNextPage,
+                        itemCount,
+                    }),
+                {
+                    initialProps: {
+                        itemCount: 10,
+                    },
+                },
+            )
+
+        const firstSentinel =
+            document.createElement('li')
+
+        result.current.getRowRef(
+            result.current.sentinelIndex,
+        )(firstSentinel)
+
+        triggerIntersection(true)
+
+        expect(fetchNextPage).toHaveBeenCalledOnce()
+
+        triggerIntersection(true)
+
+        expect(fetchNextPage).toHaveBeenCalledOnce()
+
+        rerender({
+            itemCount: 20,
+        })
+
+        const secondSentinel =
+            document.createElement('li')
+
+        result.current.getRowRef(
+            result.current.sentinelIndex,
+        )(secondSentinel)
+
+        triggerIntersection(true)
+
+        expect(fetchNextPage).toHaveBeenCalledTimes(
+            2,
+        )
+    })
 })
