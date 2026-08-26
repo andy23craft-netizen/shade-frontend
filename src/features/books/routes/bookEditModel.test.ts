@@ -63,7 +63,6 @@ const BOOK: BookRead = {
     completion_date: '2026-02-01',
     rating: 5,
     review: 'Great.',
-    deletion_date: null,
     times_borrowed: 3,
     last_borrowed_at: null,
     average_loan_days: null,

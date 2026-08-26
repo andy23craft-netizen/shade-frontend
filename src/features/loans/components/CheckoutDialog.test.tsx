@@ -41,7 +41,6 @@ const availableBook = {
     title: 'The Left Hand of Darkness',
     authors: 'Ursula K. Le Guin',
     status: 'available',
-    deletion_date: null,
 } as BookRead
 
 const displayOnlyBook = {

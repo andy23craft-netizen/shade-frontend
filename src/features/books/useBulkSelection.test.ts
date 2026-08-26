@@ -21,7 +21,6 @@ function makeBook(
     return {
         id: 'book-1',
         title: 'The Left Hand of Darkness',
-        deletion_date: null,
         ...overrides,
     }
 }
@@ -91,8 +90,6 @@ describe('useBulkSelection', () => {
             makeBook({
                 id: 'deleted-book',
                 title: 'Deleted Book',
-                deletion_date:
-                    '2026-08-23T12:00:00Z',
             }),
         ]
 
@@ -109,20 +106,21 @@ describe('useBulkSelection', () => {
             result.current.selectVisible()
         })
 
-        expect(result.current.selectedCount).toBe(2)
+        expect(result.current.selectedCount).toBe(3)
 
         expect(
             [...result.current.selectedIds],
         ).toEqual([
             'book-1',
             'book-2',
+            'deleted-book',
         ])
 
         expect(
             result.current.isSelected(
                 'deleted-book',
             ),
-        ).toBe(false)
+        ).toBe(true)
     })
 
     it('clears the current selection', () => {

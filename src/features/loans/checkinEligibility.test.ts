@@ -18,7 +18,6 @@ const book = {
     title: 'Pale Fire',
     authors: 'Vladimir Nabokov',
     status: 'on_loan',
-    deletion_date: null,
 } as BookRead
 
 const activeLoan = {
@@ -100,16 +99,4 @@ describe('checkinEligibility', () => {
         ).toBe(false)
     })
 
-    it('rejects a deleted book even when an active loan exists', () => {
-        expect(
-            isCheckinEligible(
-                {
-                    ...book,
-                    deletion_date:
-                        '2026-08-13T12:00:00Z',
-                },
-                [activeLoan],
-            ),
-        ).toBe(false)
-    })
 })

@@ -257,8 +257,8 @@ test('checks out and checks in a book through the browser', async ({
         api.state.books.find(
             (candidate) =>
                 candidate.id === book.id,
-        )?.deletion_date,
-    ).not.toBeNull()
+        ),
+    ).toBeUndefined()
 
     expect(
         api.state.requests.some(
@@ -269,78 +269,22 @@ test('checks out and checks in a book through the browser', async ({
         ),
     ).toBe(true)
 
-    /*
-     * RESTORE
-     */
-
-    await page.goto('/admin/deleted')
+    await page.goto(`/books/${book.id}`)
 
     await expect(
         page.getByRole('heading', {
             level: 1,
-            name: 'Deleted Books',
+            name: 'Book Not Found',
         }),
     ).toBeVisible()
-
-    await page.getByRole('button', {
-        name: 'Restore Book',
-    }).click()
-
-    await expect(
-        page.getByRole('dialog'),
-    ).toBeVisible()
-
-    await page.getByRole('button', {
-        name: 'Restore Book',
-    }).last().click()
-
-    expect(
-        api.state.books.find(
-            (candidate) =>
-                candidate.id === book.id,
-        )?.deletion_date,
-    ).toBeNull()
-
-    expect(
-        api.state.requests.some(
-            (request) =>
-                request.method === 'POST' &&
-                request.pathname ===
-                `/books/${book.id}/restore`,
-        ),
-    ).toBe(true)
 
     /*
      * No lifecycle transition should use generic PATCH.
      */
 
-    await expect(
-        page.getByRole('heading', {
-            level: 1,
-            name: 'Deleted Books',
-        }),
-    ).toBeVisible()
-
-    await expect(
-        page.getByRole('link', {
-            name: book.title,
-        }),
-    ).not.toBeVisible()
-
-    expect(
-        api.state.books.find(
-            (candidate) =>
-                candidate.id === book.id,
-        )?.status,
-    ).toBe('available')
-
     expect(
         api.state.loans,
-    ).toHaveLength(1)
-
-    expect(
-        api.state.loans[0]?.returned_at,
-    ).not.toBeNull()
+    ).toHaveLength(0)
 
     expect(
         api.state.requests.some(

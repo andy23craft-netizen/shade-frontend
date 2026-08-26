@@ -140,7 +140,6 @@ const book: BookRead = {
         '2026-08-01T12:00:00.000Z',
     updated_date:
         '2026-08-10T12:00:00.000Z',
-    deletion_date: null,
 }
 
 function createQueryClient() {
@@ -248,6 +247,27 @@ describe('EditBookPage', () => {
         >)
     })
 
+    it('shows not found when the book is missing', () => {
+        mockUseBook.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: new ApiError({
+                kind: 'http',
+                status: 404,
+                message: 'Book not found',
+                detail: 'Book not found',
+            }),
+        } as unknown as ReturnType<typeof useBook>)
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'Book not found',
+            ),
+        ).toBeInTheDocument()
+    })
+
     it('loads existing metadata into the form', () => {
         renderPage()
 
@@ -298,20 +318,29 @@ describe('EditBookPage', () => {
         )
     })
 
-    it('does not offer metadata editing for a deleted book', () => {
-        setupSuccessfulBook({
-            ...book,
-            deletion_date:
-                '2026-08-14T12:00:00Z',
-        })
+    it('blocks the page when shelves fail to load', () => {
+        mockUseShelves.mockReturnValue({
+            data: undefined,
+            isPending: false,
+            isError: true,
+            error: new ApiError({
+                kind: 'unreachable',
+                message:
+                    'The API could not be reached',
+            }),
+            isSuccess: false,
+            refetch: vi.fn(),
+        } as unknown as ReturnType<
+            typeof useShelves
+        >)
 
         renderPage()
 
         expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'Deleted books cannot be edited here.',
-        )
+            screen.getByText(
+                'Unable to load shelves',
+            ),
+        ).toBeInTheDocument()
 
         expect(
             screen.queryByRole('button', {

@@ -38,7 +38,6 @@ export const queryKeys = {
 
         infiniteList: (
             options: {
-                includeDeleted?: boolean
                 isbn?: string
                 author?: string
                 title?: string
@@ -50,8 +49,6 @@ export const queryKeys = {
                 take: number
             },
         ) => {
-            const includeDeleted =
-                options.includeDeleted ?? false
             const isbn = nonEmptyFilter(
                 options.isbn,
             )
@@ -69,7 +66,6 @@ export const queryKeys = {
                 options.shelfName,
             )
             const key: {
-                includeDeleted: boolean
                 isbn?: string
                 author?: string
                 title?: string
@@ -81,7 +77,6 @@ export const queryKeys = {
                 take: number
                 infinite: true
             } = {
-                includeDeleted,
                 take: options.take,
                 infinite: true,
             }
@@ -126,7 +121,6 @@ export const queryKeys = {
 
         list: (
             options: {
-                includeDeleted?: boolean
                 isbn?: string
                 author?: string
                 title?: string
@@ -139,8 +133,6 @@ export const queryKeys = {
                 sortOrder?: string
             } = {},
         ) => {
-            const includeDeleted =
-                options.includeDeleted ?? false
             const isbn = nonEmptyFilter(
                 options.isbn,
             )
@@ -159,7 +151,6 @@ export const queryKeys = {
             )
 
             const key: {
-                includeDeleted: boolean
                 isbn?: string
                 author?: string
                 title?: string
@@ -171,7 +162,6 @@ export const queryKeys = {
                 sortBy?: string
                 sortOrder?: string
             } = {
-                includeDeleted,
             }
 
             if (isbn !== undefined) {

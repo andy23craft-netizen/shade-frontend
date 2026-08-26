@@ -85,7 +85,6 @@ const catalogBook: BookRead = {
     purchase_price: null,
     acquisition_source: null,
     notes: null,
-    deletion_date: null,
     completion_date: null,
     rating: null,
     review: null,
@@ -499,93 +498,6 @@ describe('AddCollectionBookControl', () => {
                 'Book is already in this collection',
             )
         })
-    })
-
-    it('surfaces soft-deleted 412 errors and refetches search', async () => {
-        const refetchBooks = vi.fn()
-
-        mockUseBooks.mockReturnValue({
-            isPending: false,
-            isFetching: false,
-            isError: false,
-            isSuccess: true,
-            data: bookList,
-            refetch: refetchBooks,
-        } as unknown as ReturnType<
-            typeof useBooks
-        >)
-
-        mockUseAddCollectionBook.mockReturnValue({
-            mutate: vi.fn(
-                (
-                    _variables: unknown,
-                    options: {
-                        onError?: (
-                            error: unknown,
-                        ) => void
-                    },
-                ) => {
-                    options.onError?.(
-                        new ApiError({
-                            kind: 'http',
-                            status: 412,
-                            message:
-                                'Soft-deleted books cannot be added to a collection',
-                            detail:
-                                'Soft-deleted books cannot be added to a collection',
-                        }),
-                    )
-                },
-            ),
-            isPending: false,
-        } as unknown as ReturnType<
-            typeof useAddCollectionBook
-        >)
-
-        renderControl()
-
-        fireEvent.change(
-            screen.getByLabelText('Title'),
-            {
-                target: {
-                    value: 'Dispossessed',
-                },
-            },
-        )
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Find Books',
-            }),
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('Book'),
-            {
-                target: {
-                    value: 'book-1',
-                },
-            },
-        )
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name:
-                    'Add Book to Collection',
-            }),
-        )
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('alert'),
-            ).toHaveTextContent(
-                'Soft-deleted books cannot be added to a collection',
-            )
-        })
-
-        expect(
-            refetchBooks,
-        ).toHaveBeenCalled()
     })
 
     it('refetches collections and search after a stale 404', async () => {

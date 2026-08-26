@@ -97,7 +97,6 @@ function makeBookList(
                 purchase_price: null,
                 acquisition_source: null,
                 notes: null,
-                deletion_date: null,
                 completion_date: null,
                 rating: null,
                 review: null,
@@ -467,39 +466,6 @@ describe('LoansPage', () => {
             isPending: false,
             isError: false,
             data: makeBookList(),
-        })
-
-        renderPage()
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Check In',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('does not offer check-in for a deleted book', () => {
-        const bookList = makeBookList()
-
-        mockUseInfiniteLoans.mockReturnValue(
-            makeInfiniteLoansResult([
-                makeLoanList(),
-            ]),
-        )
-
-        mockUseBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: {
-                ...bookList,
-                items: bookList.items.map(
-                    (book) => ({
-                        ...book,
-                        deletion_date:
-                            '2026-08-13T15:30:00Z',
-                    }),
-                ),
-            },
         })
 
         renderPage()

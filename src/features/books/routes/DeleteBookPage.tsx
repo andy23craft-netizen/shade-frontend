@@ -130,34 +130,6 @@ export function DeleteBookPage() {
 
     const book = bookQuery.data
 
-    if (book.deletion_date !== null) {
-        return (
-            <section className="route-page">
-                <div className="book-details__topbar">
-                    <AppLink
-                        to={`/books/${book.id}`}
-                        variant="secondary"
-                    >
-                        ← Back to Book
-                    </AppLink>
-                </div>
-
-                <h1 tabIndex={-1}>
-                    Delete Book
-                </h1>
-
-                <Alert
-                    variant="warning"
-                    title="This book has already been deleted"
-                >
-                    Deleted books cannot be deleted again.
-                    Use Deleted Books if you want to restore
-                    this record.
-                </Alert>
-            </section>
-        )
-    }
-
     if (loansQuery.isPending) {
         return (
             <section className="route-page">
@@ -255,10 +227,7 @@ export function DeleteBookPage() {
 
         const currentBook = bookQuery.data
 
-        if (
-            !currentBook ||
-            currentBook.deletion_date !== null
-        ) {
+        if (!currentBook) {
             setIsConfirmationOpen(false)
             setDeleteError(
                 'This book is no longer available to delete.',
@@ -338,12 +307,12 @@ export function DeleteBookPage() {
 
             <Alert
                 variant="warning"
-                title="This is a soft deletion"
+                title="This permanently removes the book"
             >
-                The book will be removed from normal
-                browsing, but its record, reading history,
-                and loan history will be retained. It can
-                later be restored from Deleted Books.
+                The book record, loan history, collection
+                memberships, categories, shelf placement, and
+                any custom cover file will be removed and
+                cannot be restored.
             </Alert>
 
             {deleteError ? (
@@ -386,13 +355,15 @@ export function DeleteBookPage() {
                 onCancel={handleCancelConfirmation}
             >
                 <p>
-                    Delete{' '}
+                    Permanently delete{' '}
                     <strong>{book.title}</strong>?
                 </p>
 
                 <p>
-                    This removes the book from normal
-                    browsing but preserves its history.
+                    This removes the book record, loans,
+                    memberships, categories, shelf placement,
+                    and any custom cover file. This action
+                    cannot be undone.
                 </p>
             </ConfirmationDialog>
         </section>

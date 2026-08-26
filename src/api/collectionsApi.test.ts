@@ -338,29 +338,4 @@ describe('createCollectionsApi', () => {
             ),
         ).rejects.toBe(error)
     })
-
-    it('propagates soft-deleted-add 412 errors', async () => {
-        const client = createMockClient()
-
-        const error = new ApiError({
-            kind: 'http',
-            status: 412,
-            message:
-                'Soft-deleted books cannot be added to a collection',
-        })
-
-        vi.mocked(client.requestJson)
-            .mockRejectedValue(error)
-
-        const api = createCollectionsApi(client)
-
-        await expect(
-            api.addBook(
-                'collection-1',
-                {
-                    book_id: 'book-1',
-                },
-            ),
-        ).rejects.toBe(error)
-    })
 })

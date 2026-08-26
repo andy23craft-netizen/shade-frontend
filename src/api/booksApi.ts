@@ -27,7 +27,6 @@ import {
 
 export interface ListBooksOptions
     extends ApiCallOptions {
-    includeDeleted?: boolean
     isbn?: string
     author?: string
     title?: string
@@ -97,18 +96,6 @@ export function createBooksApi(
             options: ListBooksOptions = {},
         ): Promise<BookList> {
             const params = new URLSearchParams()
-
-            if (
-                options.includeDeleted !==
-                undefined
-            ) {
-                params.set(
-                    'include_deleted',
-                    String(
-                        options.includeDeleted,
-                    ),
-                )
-            }
 
             setOptionalStringParam(
                 params,
@@ -346,19 +333,6 @@ export function createBooksApi(
                 `/books/${encodeURIComponent(id)}`,
                 {
                     method: 'DELETE',
-                    ...withSignal(options.signal),
-                },
-            )
-        },
-
-        async restore(
-            id: string,
-            options: ApiCallOptions = {},
-        ): Promise<BookRead> {
-            return client.requestJson<BookRead>(
-                `/books/${encodeURIComponent(id)}/restore`,
-                {
-                    method: 'POST',
                     ...withSignal(options.signal),
                 },
             )

@@ -82,7 +82,6 @@ const readBook: BookRead = {
         '2026-08-01T12:00:00.000Z',
     updated_date:
         '2026-08-10T12:00:00.000Z',
-    deletion_date: null,
 }
 
 function createQueryClient() {
@@ -223,28 +222,6 @@ describe('ReadingEditPage', () => {
             screen.getByRole('status'),
         ).toHaveTextContent(
             'Mark this book as read before editing its reading details.',
-        )
-
-        expect(
-            screen.queryByRole('button', {
-                name: 'Save Reading',
-            }),
-        ).not.toBeInTheDocument()
-    })
-
-    it('does not offer reading edits for a deleted book', () => {
-        setupSuccessfulBook({
-            ...readBook,
-            deletion_date:
-                '2026-08-14T12:00:00Z',
-        })
-
-        renderPage()
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'Deleted books cannot be edited here.',
         )
 
         expect(

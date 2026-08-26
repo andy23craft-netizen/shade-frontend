@@ -263,7 +263,18 @@ export function BooksPage() {
         searchParams.get('isbn'),
     )
 
-    const catalogBooksQuery = useInfiniteBooks({
+    const isUnifiedSearch =
+        author !== undefined &&
+        title === undefined
+
+    /*
+     * Unified catalog search tries the entered value
+     * against authors first.
+     *
+     * Explicit title URLs and legacy author+title URLs
+     * continue to use their filters literally.
+     */
+    const authorBooksQuery = useInfiniteBooks({
         categoryIds:
             categoryIds.length === 0
                 ? undefined
@@ -277,6 +288,42 @@ export function BooksPage() {
         sortOrder,
         enabled: cleanupField === undefined,
     })
+
+    const authorSearchTotal =
+        authorBooksQuery.data?.pages[0]?.total
+
+    const shouldTryTitleSearch =
+        cleanupField === undefined &&
+        isUnifiedSearch &&
+        authorBooksQuery.isSuccess &&
+        authorSearchTotal === 0
+
+    /*
+     * Only make the fallback request after the author
+     * search has completed successfully with zero matches.
+     *
+     * All other active catalog filters remain applied.
+     */
+    const titleFallbackBooksQuery =
+        useInfiniteBooks({
+            categoryIds:
+                categoryIds.length === 0
+                    ? undefined
+                    : categoryIds,
+            author: undefined,
+            title: author,
+            isbn,
+            shelfName,
+            isRead,
+            sortBy,
+            sortOrder,
+            enabled: shouldTryTitleSearch,
+        })
+
+    const catalogBooksQuery =
+        shouldTryTitleSearch
+            ? titleFallbackBooksQuery
+            : authorBooksQuery
 
     const cleanupBooksQuery =
         useInfiniteIncompleteMetadataBooks({
@@ -472,11 +519,10 @@ export function BooksPage() {
                             searchParams,
                             {
                                 /*
-                                 * First pass: route unified
-                                 * search through author.
-                                 *
-                                 * The next pass adds the
-                                 * author → title fallback.
+                                    * A unified search is represented
+                                    * by author alone. BooksPage tries
+                                    * author first and falls back to
+                                    * title when author has no matches.
                                  */
                                 author: search,
                                 title: undefined,

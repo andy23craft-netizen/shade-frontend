@@ -120,10 +120,7 @@ export function CollectionMembershipRow({
         )
     }
 
-    if (
-        book === undefined ||
-        book.deletion_date !== null
-    ) {
+    if (book === undefined) {
         return null
     }
 

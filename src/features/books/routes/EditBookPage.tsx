@@ -186,14 +186,6 @@ export function EditBookPage() {
             return
         }
 
-        if (book.deletion_date !== null) {
-            setFormError(
-                'Deleted books cannot be edited here.',
-            )
-            void refetchBookState()
-            return
-        }
-
         const request =
             bookFormValuesToUpdate(
                 book,
@@ -413,32 +405,6 @@ export function EditBookPage() {
     const shelves = shelvesQuery.data ?? []
     const categories =
         categoriesQuery.data ?? []
-
-    if (book.deletion_date !== null) {
-        return (
-            <section className="route-page">
-                <div className="book-details__topbar">
-                    <AppLink
-                        to={`/books/${book.id}`}
-                        variant="secondary"
-                    >
-                        ← Back to Book
-                    </AppLink>
-                </div>
-
-                <h1 tabIndex={-1}>
-                    Edit Book
-                </h1>
-
-                <Alert
-                    variant="warning"
-                    title="This book has been deleted"
-                >
-                    Deleted books cannot be edited here.
-                </Alert>
-            </section>
-        )
-    }
 
     if (values === null) {
         return (

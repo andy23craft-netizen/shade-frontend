@@ -60,30 +60,6 @@ describe('createBooksApi', () => {
         expect(result).toEqual(books)
     })
 
-    it('lists deleted books when requested', async () => {
-        const books: BookList = {
-            items: [],
-            total: 0,
-        }
-
-        const client = createMockClient()
-
-        vi.mocked(client.getJson)
-            .mockResolvedValue(books)
-
-        const api = createBooksApi(client)
-
-        await api.list({
-            includeDeleted: true,
-        })
-
-        expect(
-            client.getJson,
-        ).toHaveBeenCalledWith(
-            '/books?include_deleted=true',
-        )
-    })
-
     it('lists books filtered by isbn', async () => {
         const books: BookList = {
             items: [],
@@ -490,31 +466,6 @@ describe('createBooksApi', () => {
         )
     })
 
-    it('combines isbn and includeDeleted query params', async () => {
-        const books: BookList = {
-            items: [],
-            total: 0,
-        }
-
-        const client = createMockClient()
-
-        vi.mocked(client.getJson)
-            .mockResolvedValue(books)
-
-        const api = createBooksApi(client)
-
-        await api.list({
-            includeDeleted: true,
-            isbn: '0441',
-        })
-
-        expect(
-            client.getJson,
-        ).toHaveBeenCalledWith(
-            '/books?include_deleted=true&isbn=0441',
-        )
-    })
-
     it('lists books with pagination params', async () => {
         const books: BookList = {
             items: [],
@@ -869,33 +820,6 @@ describe('createBooksApi', () => {
                 method: 'DELETE',
             },
         )
-    })
-
-    it('restores a book', async () => {
-        const response =
-            {} as BookRead
-
-        const client = createMockClient()
-
-        vi.mocked(client.requestJson)
-            .mockResolvedValue(response)
-
-        const api = createBooksApi(client)
-
-        const result = await api.restore(
-            'book/123',
-        )
-
-        expect(
-            client.requestJson,
-        ).toHaveBeenCalledWith(
-            '/books/book%2F123/restore',
-            {
-                method: 'POST',
-            },
-        )
-
-        expect(result).toBe(response)
     })
 
     it('checks out a book', async () => {

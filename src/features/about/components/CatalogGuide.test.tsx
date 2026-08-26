@@ -144,4 +144,86 @@ describe('CatalogGuide', () => {
             expect(openButton).toHaveFocus()
         })
     })
+
+    it('links administration guidance to Manage Collection', async () => {
+        renderCatalogGuide()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'How to Use This Library',
+            }),
+        )
+
+        const dialog =
+            await screen.findByRole('dialog')
+
+        expect(
+            dialog.querySelector(
+                'a[href="/collection/manage"]',
+            ),
+        ).toHaveTextContent(
+            'Manage Collection',
+        )
+    })
+
+    it('wraps focus from the first dialog control on Shift+Tab', async () => {
+        renderCatalogGuide()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'How to Use This Library',
+            }),
+        )
+
+        const dialog =
+            await screen.findByRole('dialog')
+
+        const firstLink =
+            screen.getByRole('link', {
+                name: 'Browse the collection',
+            })
+
+        firstLink.focus()
+
+        fireEvent.keyDown(dialog, {
+            key: 'Tab',
+            shiftKey: true,
+        })
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Return Card',
+            }),
+        ).toHaveFocus()
+    })
+
+    it('wraps focus from the last dialog control on Tab', async () => {
+        renderCatalogGuide()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'How to Use This Library',
+            }),
+        )
+
+        const dialog =
+            await screen.findByRole('dialog')
+
+        const returnButton =
+            screen.getByRole('button', {
+                name: 'Return Card',
+            })
+
+        returnButton.focus()
+
+        fireEvent.keyDown(dialog, {
+            key: 'Tab',
+        })
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Browse the collection',
+            }),
+        ).toHaveFocus()
+    })
 })

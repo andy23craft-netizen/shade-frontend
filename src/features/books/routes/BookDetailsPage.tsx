@@ -197,8 +197,7 @@ export function BookDetailsPage() {
                     >
                         The book is no longer available
                         from the API, or the book id is
-                        not a valid GUID. It may have been
-                        removed rather than soft-deleted.
+                        not a valid GUID.
                     </Alert>
 
                     <AppLink
@@ -234,14 +233,10 @@ export function BookDetailsPage() {
 
     const book = bookQuery.data
 
-    const isDeleted =
-        book.deletion_date !== null
-
     const isOnLoan =
         book.status === 'on_loan'
 
-    const canShowActiveActions =
-        !isDeleted
+    const canShowActiveActions = true
 
     const canCheckout =
         isCheckoutEligible(book)
@@ -284,17 +279,6 @@ export function BookDetailsPage() {
                     ← Back to Books
                 </AppLink>
             </div>
-
-            {isDeleted ? (
-                <Alert
-                    variant="warning"
-                    title="This book has been deleted"
-                >
-                    The book remains available here for
-                    historical reference. Its loan and
-                    reading history has been retained.
-                </Alert>
-            ) : null}
 
             <article className="book-details-card">
                 <div className="book-details-card__cover">

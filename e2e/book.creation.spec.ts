@@ -56,7 +56,6 @@ test('adds a book manually and opens the created book', async ({
         shelf_name: 'a1',
         status: 'available',
         is_read: false,
-        deletion_date: null,
     })
 
     const createRequest =

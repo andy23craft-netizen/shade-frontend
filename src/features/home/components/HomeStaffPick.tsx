@@ -33,8 +33,7 @@ export function HomeStaffPick({
 
     if (
         bookQuery.isError ||
-        bookQuery.data === undefined ||
-        bookQuery.data.deletion_date !== null
+        bookQuery.data === undefined
     ) {
         return null
     }

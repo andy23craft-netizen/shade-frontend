@@ -63,8 +63,18 @@ export function useCollectionIsbnJump(): void {
                             isbn: compacted,
                         })
 
+                    if (result.total === 0) {
+                        navigate({
+                            pathname: '/books/new',
+                            search:
+                                `?${nextSearch.toString()}`,
+                        })
+
+                        return
+                    }
+
                     navigate({
-                        pathname: '/books/new',
+                        pathname: '/books',
                         search:
                             `?${nextSearch.toString()}`,
                     })

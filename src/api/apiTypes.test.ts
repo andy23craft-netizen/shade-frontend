@@ -35,7 +35,6 @@ describe('API transport types', () => {
             is_read: false,
             creation_date: '2026-08-01T00:00:00Z',
             updated_date: '2026-08-02T00:00:00Z',
-            deletion_date: null,
             times_borrowed: 3,
             last_borrowed_at: '2026-07-01T00:00:00Z',
             average_loan_days: 4.5,

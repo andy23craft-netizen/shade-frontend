@@ -19,9 +19,7 @@ describe('queryKeys.books list filters', () => {
             }),
         ).toEqual([
             'books',
-            {
-                includeDeleted: false,
-            },
+            {},
         ])
     })
 
@@ -35,7 +33,6 @@ describe('queryKeys.books list filters', () => {
         ).toEqual([
             'books',
             {
-                includeDeleted: false,
                 author: 'Le Guin',
                 title: 'Darkness',
                 categoryIds: ['fiction', 'religion'],
