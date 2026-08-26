@@ -44,6 +44,36 @@ vi.mock('../../../api/wishlistsQueries', () => ({
     useWishlists: vi.fn(),
     useAddWishlistBook: vi.fn(),
 }))
+vi.mock(
+    '../../scanning/IsbnCameraScanner',
+    () => ({
+        IsbnCameraScanner: ({
+                                onDetected,
+                                onCancel,
+                            }: {
+            onDetected: (isbn: string) => void
+            onCancel: () => void
+        }) => (
+            <div data-testid="isbn-camera-scanner">
+                <button
+                    type="button"
+                    onClick={() => {
+                        onDetected('9780441172719')
+                    }}
+                >
+                    Detect ISBN
+                </button>
+
+                <button
+                    type="button"
+                    onClick={onCancel}
+                >
+                    Cancel Scanner
+                </button>
+            </div>
+        ),
+    }),
+)
 
 const mockUseCreateBook = vi.mocked(useCreateBook)
 const mockUseLookupBook = vi.mocked(useLookupBook)
@@ -1008,5 +1038,114 @@ describe('AddWishlistBookControl', () => {
         expect(
             screen.getByLabelText('Wishlist'),
         ).toHaveValue('wishlist-2')
+    })
+
+    it('hands a camera-scanned ISBN into the existing lookup flow', async () => {
+        const lookupMutate = vi.fn(
+            (
+                isbn: string,
+                options: {
+                    onSuccess?: (result: {
+                        found: boolean
+                        draft: {
+                            title: string
+                            authors: string
+                        } | null
+                    }) => void
+                },
+            ) => {
+                options.onSuccess?.({
+                    found: true,
+                    draft: {
+                        title: 'Dune',
+                        authors: 'Frank Herbert',
+                    },
+                })
+            },
+        )
+
+        mockUseLookupBook.mockReturnValue({
+            mutate: lookupMutate,
+            isPending: false,
+        } as unknown as ReturnType<
+            typeof useLookupBook
+        >)
+
+        renderControl()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Scan ISBN',
+            }),
+        )
+
+        expect(
+            await screen.findByTestId(
+                'isbn-camera-scanner',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Detect ISBN',
+            }),
+        )
+
+        expect(
+            lookupMutate,
+        ).toHaveBeenCalledWith(
+            '9780441172719',
+            expect.any(Object),
+        )
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('9780441172719')
+
+        expect(
+            screen.getByLabelText('Title'),
+        ).toHaveValue('Dune')
+
+        expect(
+            screen.getByLabelText('Authors'),
+        ).toHaveValue('Frank Herbert')
+
+        expect(
+            screen.queryByTestId(
+                'isbn-camera-scanner',
+            ),
+        ).not.toBeInTheDocument()
+    })
+
+    it('closes the camera scanner without changing the form when cancelled', async () => {
+        renderControl()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Scan ISBN',
+            }),
+        )
+
+        expect(
+            await screen.findByTestId(
+                'isbn-camera-scanner',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel Scanner',
+            }),
+        )
+
+        expect(
+            screen.queryByTestId(
+                'isbn-camera-scanner',
+            ),
+        ).not.toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('ISBN'),
+        ).toHaveValue('')
     })
 })

@@ -1,4 +1,6 @@
 import {
+    lazy,
+    Suspense,
     useEffect,
     useId,
     useRef,
@@ -49,6 +51,15 @@ const ADD_BOOK_FIELDS = new Set<string>([
     'status',
     'book_id',
 ])
+
+const IsbnCameraScanner = lazy(
+    () =>
+        import('../../scanning/IsbnCameraScanner').then(
+            (module) => ({
+                default: module.IsbnCameraScanner,
+            }),
+        ),
+)
 
 function mapAddBookFieldErrors(
     fieldErrors: readonly ApiFieldError[],
@@ -116,6 +127,11 @@ export function AddWishlistBookControl() {
     ] = useState<string | null>(null)
 
     const [
+        isScannerOpen,
+        setIsScannerOpen,
+    ] = useState(false)
+
+    const [
         lookupError,
         setLookupError,
     ] = useState<string | null>(null)
@@ -174,8 +190,8 @@ export function AddWishlistBookControl() {
         })
     }
 
-    function handleLookup() {
-        const isbn = values.isbn13.trim()
+    function startLookup(isbnInput: string) {
+        const isbn = isbnInput.trim()
 
         setLookupError(null)
         setNotice(null)
@@ -191,6 +207,11 @@ export function AddWishlistBookControl() {
             )
             return
         }
+
+        setValues((current) => ({
+            ...current,
+            isbn13: isbn,
+        }))
 
         lookupBook.mutate(isbn, {
             onSuccess: (result) => {
@@ -216,12 +237,22 @@ export function AddWishlistBookControl() {
                     isbn13: isbn,
                 }))
             },
+
             onError: () => {
                 setLookupError(
                     'ISBN lookup failed. You can still enter the book manually.',
                 )
             },
         })
+    }
+
+    function handleLookup() {
+        startLookup(values.isbn13)
+    }
+
+    function handleIsbnDetected(isbn: string) {
+        setIsScannerOpen(false)
+        startLookup(isbn)
     }
 
     function handleSubmit(
@@ -570,7 +601,36 @@ export function AddWishlistBookControl() {
                         ? 'Looking up…'
                         : 'Look up ISBN'}
                 </Button>
+
+                <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={
+                        disabled ||
+                        isScannerOpen
+                    }
+                    onClick={() => {
+                        setIsScannerOpen(true)
+                    }}
+                >
+                    Scan ISBN
+                </Button>
             </div>
+
+            {isScannerOpen ? (
+                <Suspense
+                    fallback={
+                        <LoadingState label="Loading camera scanner…" />
+                    }
+                >
+                    <IsbnCameraScanner
+                        onDetected={handleIsbnDetected}
+                        onCancel={() => {
+                            setIsScannerOpen(false)
+                        }}
+                    />
+                </Suspense>
+            ) : null}
 
             {lookupError ? (
                 <Alert variant="warning">
