@@ -30,7 +30,9 @@ import {
     findActiveLoan,
     isCheckinEligible,
 } from '../checkinEligibility'
-import { CheckinForm } from '../components/CheckinForm'
+import {
+    CheckinDialog,
+} from '../components/CheckinDialog'
 import {
     flattenInfiniteListPages,
 } from '../loansListModel'
@@ -90,11 +92,11 @@ function SelectedCheckin({
         )
     ) {
         return (
-            <CheckinForm
+            <CheckinDialog
                 book={cachedBook}
                 loans={loadedLoans}
-                onCancel={onClose}
-                onSuccess={onClose}
+                open
+                onClose={onClose}
             />
         )
     }
@@ -107,7 +109,6 @@ function SelectedCheckin({
         />
     )
 }
-
 interface TargetedCheckinProps {
     bookId: string
     cachedBook?: BookRead
@@ -244,11 +245,11 @@ function TargetedCheckin({
     }
 
     return (
-        <CheckinForm
+        <CheckinDialog
             book={book}
             loans={loansQuery.data.items}
-            onCancel={onClose}
-            onSuccess={onClose}
+            open
+            onClose={onClose}
         />
     )
 }

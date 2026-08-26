@@ -105,6 +105,26 @@ export function BookForm({
         setClientErrors,
     ] = useState<BookFormFieldErrors>({})
 
+    const [
+        categoryPickerOpen,
+        setCategoryPickerOpen,
+    ] = useState(false)
+
+    const [
+        categorySearch,
+        setCategorySearch,
+    ] = useState('')
+
+    const [
+        shelfPickerOpen,
+        setShelfPickerOpen,
+    ] = useState(false)
+
+    const [
+        shelfSearch,
+        setShelfSearch,
+    ] = useState('')
+
     const assignableShelves =
         filterAssignableShelves(shelves)
 
@@ -127,8 +147,57 @@ export function BookForm({
         ]
         : assignableShelves
 
+    const normalizedShelfSearch =
+        shelfSearch.trim().toLowerCase()
+
+    const visibleShelfOptions =
+        normalizedShelfSearch === ''
+            ? shelfOptions
+            : shelfOptions.filter((shelf) =>
+                formatShelfCommonNameForDisplay(
+                    shelf.common_name,
+                )
+                    .toLowerCase()
+                    .includes(
+                        normalizedShelfSearch,
+                    ),
+            )
+
+    const selectedShelfLabel =
+        selectedShelf === undefined
+            ? 'Select a shelf'
+            : formatShelfCommonNameForDisplay(
+                selectedShelf.common_name,
+            )
+
     const sortedCategories =
         sortCategoriesByName(categories)
+
+    const selectedCategoryIds =
+        new Set(values.categoryIds)
+
+    const selectedCategories =
+        sortedCategories.filter(
+            (category) =>
+                selectedCategoryIds.has(
+                    category.category_id,
+                ),
+        )
+
+    const normalizedCategorySearch =
+        categorySearch.trim().toLowerCase()
+
+    const visibleCategories =
+        normalizedCategorySearch === ''
+            ? sortedCategories
+            : sortedCategories.filter(
+                (category) =>
+                    category.name
+                        .toLowerCase()
+                        .includes(
+                            normalizedCategorySearch,
+                        ),
+            )
 
     const fieldErrors: BookFormFieldErrors = {
         ...serverFieldErrors,
@@ -282,7 +351,11 @@ export function BookForm({
     ])
 
     return (
-        <form onSubmit={handleSubmit} noValidate>
+        <form
+            className="book-form"
+            onSubmit={handleSubmit}
+            noValidate
+        >
             {hasSummary ? (
                 <div
                     ref={summaryRef}
@@ -476,86 +549,260 @@ export function BookForm({
                         </p>
                     ) : null}
 
-                    <div className="book-form__categories-list">
-                        {sortedCategories.map(
-                            (category) => {
-                                const inputId =
-                                    `${fieldId('categoryIds')}-${category.category_id}`
-
-                                return (
-                                    <label
+                    {selectedCategories.length > 0 ? (
+                        <div
+                            className="book-form__selected-categories"
+                            aria-label="Selected categories"
+                        >
+                            {selectedCategories.map(
+                                (category) => (
+                                    <Button
                                         key={
                                             category.category_id
                                         }
-                                        htmlFor={inputId}
-                                        className="book-form__category-option"
-                                    >
-                                        <input
-                                            id={inputId}
-                                            type="checkbox"
-                                            checked={values.categoryIds.includes(
+                                        type="button"
+                                        variant="secondary"
+                                        aria-label={`Remove ${category.name} category`}
+                                        onClick={() => {
+                                            toggleCategoryId(
                                                 category.category_id,
-                                            )}
-                                            onChange={() =>
-                                                toggleCategoryId(
-                                                    category.category_id,
-                                                )
-                                            }
-                                        />
-                                        {category.name}
-                                    </label>
+                                            )
+                                        }}
+                                    >
+                                        {category.name} ×
+                                    </Button>
+                                ),
+                            )}
+                        </div>
+                    ) : (
+                        <p className="book-form__categories-empty">
+                            No categories selected.
+                        </p>
+                    )}
+
+                    <div className="book-form__category-picker">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            aria-expanded={
+                                categoryPickerOpen
+                            }
+                            aria-controls={`${fieldId(
+                                'categoryIds',
+                            )}-picker`}
+                            onClick={() => {
+                                setCategoryPickerOpen(
+                                    (open) => !open,
                                 )
-                            },
-                        )}
+                            }}
+                        >
+                            {categoryPickerOpen
+                                ? 'Close categories'
+                                : selectedCategories.length > 0
+                                    ? `Select categories (${selectedCategories.length})`
+                                    : 'Select categories'}
+                        </Button>
+
+                        {categoryPickerOpen ? (
+                            <div
+                                id={`${fieldId(
+                                    'categoryIds',
+                                )}-picker`}
+                                className="book-form__category-dropdown"
+                            >
+                                <Field label="Search categories">
+                                    <input
+                                        type="search"
+                                        value={categorySearch}
+                                        onChange={(event) => {
+                                            setCategorySearch(
+                                                event.target.value,
+                                            )
+                                        }}
+                                        autoComplete="off"
+                                    />
+                                </Field>
+
+                                <div className="book-form__category-dropdown-list">
+                                    {visibleCategories.length >
+                                    0 ? (
+                                        visibleCategories.map(
+                                            (category) => {
+                                                const inputId =
+                                                    `${fieldId(
+                                                        'categoryIds',
+                                                    )}-${category.category_id}`
+
+                                                return (
+                                                    <label
+                                                        key={
+                                                            category.category_id
+                                                        }
+                                                        htmlFor={
+                                                            inputId
+                                                        }
+                                                        className="book-form__category-option"
+                                                    >
+                                                        <input
+                                                            id={
+                                                                inputId
+                                                            }
+                                                            type="checkbox"
+                                                            checked={values.categoryIds.includes(
+                                                                category.category_id,
+                                                            )}
+                                                            onChange={() => {
+                                                                toggleCategoryId(
+                                                                    category.category_id,
+                                                                )
+                                                            }}
+                                                        />
+
+                                                        <span>
+                                            {
+                                                category.name
+                                            }
+                                        </span>
+                                                    </label>
+                                                )
+                                            },
+                                        )
+                                    ) : (
+                                        <p className="book-form__category-no-results">
+                                            No categories match
+                                            your search.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </fieldset>
 
                 <Field
                     label="Shelf"
-                    id={fieldId('shelfId')}
                     error={fieldErrors.shelfId}
                 >
-                    <select
-                        value={values.shelfId}
-                        onChange={(event) =>
-                            updateField(
+                    <div className="book-form__shelf-picker">
+                        <button
+                            id={fieldId('shelfId')}
+                            type="button"
+                            className="book-form__shelf-picker-trigger"
+                            aria-label="Shelf"
+                            aria-expanded={shelfPickerOpen}
+                            aria-controls={`${fieldId(
                                 'shelfId',
-                                event.target
-                                    .value,
-                            )
-                        }
-                    >
-                        <option value="">
-                            Select a shelf
-                        </option>
-                        {shelfOptions.map(
-                            (shelf) => {
-                                const isRemoved =
-                                    normalizeShelfCommonName(
-                                        shelf.common_name,
-                                    ) ===
-                                    'removed'
-
-                                return (
-                                    <option
-                                        key={
-                                            shelf.shelf_id
-                                        }
-                                        value={
-                                            shelf.shelf_id
-                                        }
-                                        disabled={
-                                            isRemoved
-                                        }
-                                    >
-                                        {formatShelfCommonNameForDisplay(
-                                            shelf.common_name,
-                                        )}
-                                    </option>
+                            )}-picker`}
+                            aria-invalid={
+                                fieldErrors.shelfId
+                                    ? true
+                                    : undefined
+                            }
+                            onClick={() => {
+                                setShelfPickerOpen(
+                                    (open) => !open,
                                 )
-                            },
-                        )}
-                    </select>
+                            }}
+                        >
+            <span>
+                {selectedShelfLabel}
+            </span>
+
+                            <span aria-hidden="true">
+                {shelfPickerOpen
+                    ? '▴'
+                    : '▾'}
+            </span>
+                        </button>
+
+                        {shelfPickerOpen ? (
+                            <div
+                                id={`${fieldId(
+                                    'shelfId',
+                                )}-picker`}
+                                className="book-form__shelf-dropdown"
+                            >
+                                <Field label="Search shelves">
+                                    <input
+                                        type="search"
+                                        value={shelfSearch}
+                                        onChange={(event) => {
+                                            setShelfSearch(
+                                                event.target.value,
+                                            )
+                                        }}
+                                        autoComplete="off"
+                                    />
+                                </Field>
+
+                                <div className="book-form__shelf-dropdown-list">
+                                    {visibleShelfOptions.length >
+                                    0 ? (
+                                        visibleShelfOptions.map(
+                                            (shelf) => {
+                                                const isRemoved =
+                                                    normalizeShelfCommonName(
+                                                        shelf.common_name,
+                                                    ) ===
+                                                    'removed'
+
+                                                const selected =
+                                                    shelf.shelf_id ===
+                                                    values.shelfId
+
+                                                return (
+                                                    <button
+                                                        key={
+                                                            shelf.shelf_id
+                                                        }
+                                                        type="button"
+                                                        className="book-form__shelf-option"
+                                                        disabled={
+                                                            isRemoved
+                                                        }
+                                                        aria-pressed={
+                                                            selected
+                                                        }
+                                                        onClick={() => {
+                                                            updateField(
+                                                                'shelfId',
+                                                                shelf.shelf_id,
+                                                            )
+
+                                                            setShelfPickerOpen(
+                                                                false,
+                                                            )
+
+                                                            setShelfSearch(
+                                                                '',
+                                                            )
+                                                        }}
+                                                    >
+                                                        {formatShelfCommonNameForDisplay(
+                                                            shelf.common_name,
+                                                        )}
+
+                                                        {selected ? (
+                                                            <span
+                                                                aria-hidden="true"
+                                                            >
+                                                ✓
+                                            </span>
+                                                        ) : null}
+                                                    </button>
+                                                )
+                                            },
+                                        )
+                                    ) : (
+                                        <p className="book-form__shelf-no-results">
+                                            No shelves match
+                                            your search.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
                 </Field>
             </section>
 

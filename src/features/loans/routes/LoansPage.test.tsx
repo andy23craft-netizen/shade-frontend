@@ -40,34 +40,36 @@ vi.mock('../../../hooks/useInfiniteScrollTrigger', () => ({
         mockUseInfiniteScrollTrigger(options),
 }))
 
-vi.mock('../components/CheckinForm', () => ({
-    CheckinForm: ({
-                      book,
-                      onCancel,
-                      onSuccess,
-                  }: {
+vi.mock('../components/CheckinDialog', () => ({
+    CheckinDialog: ({
+                        book,
+                        onClose,
+                    }: {
         book: {
             id: string
             title: string
         }
-        onCancel: () => void
-        onSuccess: () => void
+        onClose: () => void
     }) => (
-        <div data-testid="checkin-form">
+        <div
+            role="dialog"
+            aria-label="Check In"
+            data-testid="checkin-form"
+        >
             <p>
                 Returning {book.title}
             </p>
 
             <button
                 type="button"
-                onClick={onCancel}
+                onClick={onClose}
             >
                 Cancel return
             </button>
 
             <button
                 type="button"
-                onClick={onSuccess}
+                onClick={onClose}
             >
                 Complete return
             </button>
@@ -499,10 +501,10 @@ describe('LoansPage', () => {
         )
 
         expect(
-            screen.getByTestId('checkin-form'),
-        ).toHaveTextContent(
-            'Returning The Left Hand of Darkness',
-        )
+            screen.getByRole('dialog', {
+                name: 'Check In',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             mockUseLoans,

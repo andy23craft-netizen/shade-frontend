@@ -299,7 +299,7 @@ describe('EditBookPage', () => {
 
         expect(
             screen.getByLabelText('Shelf'),
-        ).toHaveValue('id-a1')
+        ).toHaveTextContent('A1')
 
         expect(
             screen.getByLabelText('Tags'),
@@ -764,13 +764,14 @@ describe('EditBookPage', () => {
 
         renderPage()
 
-        fireEvent.change(
+        fireEvent.click(
             screen.getByLabelText('Shelf'),
-            {
-                target: {
-                    value: 'id-a2',
-                },
-            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'A2',
+            }),
         )
 
         fireEvent.click(

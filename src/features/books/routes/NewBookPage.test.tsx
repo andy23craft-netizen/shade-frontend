@@ -316,13 +316,14 @@ describe('NewBookPage', () => {
             },
         )
 
-        fireEvent.change(
+        fireEvent.click(
             screen.getByLabelText('Shelf'),
-            {
-                target: {
-                    value: 'id-unknown',
-                },
-            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Unknown',
+            }),
         )
 
         fireEvent.click(
@@ -369,13 +370,14 @@ describe('NewBookPage', () => {
             },
         )
 
-        fireEvent.change(
+        fireEvent.click(
             screen.getByLabelText('Shelf'),
-            {
-                target: {
-                    value: 'id-unknown',
-                },
-            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Unknown',
+            }),
         )
 
         fireEvent.click(
@@ -742,13 +744,14 @@ describe('NewBookPage', () => {
             },
         )
 
-        fireEvent.change(
+        fireEvent.click(
             screen.getByLabelText('Shelf'),
-            {
-                target: {
-                    value: 'id-unknown',
-                },
-            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Unknown',
+            }),
         )
 
         fireEvent.click(

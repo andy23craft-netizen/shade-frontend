@@ -716,33 +716,346 @@
   }
 }
 
+/*
+ * Shared Add/Edit Book form.
+ * Labels sit on the dark page, while editable surfaces
+ * resemble cream paper with dark ink.
+ */
+
+.book-form .field > label,
+.book-form .field__label,
+.book-form legend {
+  color: rgb(255 252 239 / 92%);
+}
+
+.book-form input,
+.book-form textarea,
+.book-form select {
+  background: rgb(255 252 239 / 92%);
+  color: var(--color-surface-text);
+
+  border-color:
+          rgb(113 84 52 / 48%);
+}
+
+.book-form input::placeholder,
+.book-form textarea::placeholder {
+  color:
+          color-mix(
+                  in srgb,
+                  var(--color-surface-text) 58%,
+                  transparent
+          );
+}
+
+
+/*
+ * Category selection.
+ */
+
 .book-form__categories {
+  position: relative;
+
   margin: 0;
   padding: 0;
   border: 0;
+
   min-inline-size: 0;
 }
 
-.book-form__categories legend {
-  padding: 0;
-  margin-block-end: var(--space-2);
-  font-weight: 600;
+.book-form__selected-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  margin-block:
+          var(--space-2)
+          var(--space-3);
 }
 
-.book-form__categories-list {
+.book-form__categories-empty {
+  margin:
+          var(--space-2)
+          0
+          var(--space-3);
+
+  color: rgb(255 252 239 / 72%);
+  font-style: italic;
+}
+
+
+/*
+ * The Select/Close button is the only dropdown trigger.
+ */
+
+.book-form__category-picker {
+  position: relative;
+
+  width: fit-content;
+  max-width: 100%;
+}
+
+
+/*
+ * Floating category dropdown.
+ */
+
+.book-form__category-dropdown {
+  position: absolute;
+  z-index: 50;
+
+  top: calc(100% + 0.35rem);
+  left: 0;
+
+  width:
+          min(
+                  28rem,
+                  calc(100vw - 3rem)
+          );
+
+  padding: var(--space-3);
+
+  border:
+          1px solid
+          rgb(113 84 52 / 48%);
+
+  border-radius: 0.2rem;
+
+  background:
+          rgb(255 252 239 / 96%);
+
+  color:
+          var(--color-surface-text);
+
+  box-shadow:
+          0 0.55rem 1rem
+          rgb(0 0 0 / 22%);
+}
+
+
+/*
+ * Labels inside the cream dropdown need dark ink,
+ * overriding the cream BookForm labels above.
+ */
+
+.book-form__category-dropdown .field > label,
+.book-form__category-dropdown .field__label,
+.book-form__category-dropdown label,
+.book-form__category-dropdown p {
+  color: var(--color-surface-text);
+}
+
+.book-form__category-dropdown input[type="search"] {
+  width: 100%;
+
+  background:
+          rgb(255 252 239 / 100%);
+
+  color:
+          var(--color-surface-text);
+}
+
+
+/*
+ * The category list scrolls internally rather than
+ * growing down the entire form.
+ */
+
+.book-form__category-dropdown-list {
   display: grid;
   gap: var(--space-2);
-  max-block-size: 12rem;
-  overflow: auto;
-  padding-block: var(--space-1);
-  padding-inline: var(--space-1);
+
+  max-height: 16rem;
+
+  margin-top: var(--space-3);
+
+  overflow-y: auto;
 }
 
 .book-form__category-option {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  min-inline-size: 0;
+
+  color:
+          var(--color-surface-text);
+}
+
+.book-form__category-option input[type="checkbox"] {
+  flex: 0 0 auto;
+
+  width: auto;
+
+  margin-top: 0.15em;
+
+  accent-color:
+          var(--color-brass);
+}
+
+.book-form__category-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.book-form__category-no-results {
+  margin: 0;
+  padding-block: var(--space-2);
+
+  color:
+          var(--color-surface-text);
+
+  font-style: italic;
+}
+
+/*
+ * Shelf picker uses the same cream-paper dropdown language
+ * as the category picker, but permits only one selection.
+ */
+
+.book-form__shelf-picker {
+  position: relative;
+}
+
+.book-form__shelf-picker-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  padding:
+          var(--space-2)
+          var(--space-3);
+
+  border:
+          1px solid
+          rgb(113 84 52 / 48%);
+
+  border-radius: 0.2rem;
+
+  background:
+          rgb(255 252 239 / 92%);
+
+  color:
+          var(--color-surface-text);
+
+  text-align: left;
+}
+
+.book-form__shelf-picker-trigger > span:first-child {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-form__shelf-dropdown {
+  position: absolute;
+  z-index: 50;
+
+  top: calc(100% + 0.35rem);
+  left: 0;
+
+  width:
+          min(
+                  28rem,
+                  calc(100vw - 3rem)
+          );
+
+  padding: var(--space-3);
+
+  border:
+          1px solid
+          rgb(113 84 52 / 48%);
+
+  border-radius: 0.2rem;
+
+  background:
+          rgb(255 252 239 / 96%);
+
+  color:
+          var(--color-surface-text);
+
+  box-shadow:
+          0 0.55rem 1rem
+          rgb(0 0 0 / 22%);
+}
+
+.book-form__shelf-dropdown .field > label,
+.book-form__shelf-dropdown .field__label,
+.book-form__shelf-dropdown p {
+  color:
+          var(--color-surface-text);
+}
+
+.book-form__shelf-dropdown input[type="search"] {
+  width: 100%;
+
+  background:
+          rgb(255 252 239 / 100%);
+
+  color:
+          var(--color-surface-text);
+}
+
+.book-form__shelf-dropdown-list {
+  display: grid;
+  gap: var(--space-1);
+
+  max-height: 16rem;
+
+  margin-top: var(--space-3);
+
+  overflow-y: auto;
+}
+
+.book-form__shelf-option {
+  display: flex;
+  width: 100%;
+
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  padding:
+          var(--space-2)
+          var(--space-3);
+
+  border: 0;
+
+  background: transparent;
+  color:
+          var(--color-surface-text);
+
+  text-align: left;
+}
+
+.book-form__shelf-option:hover:not(:disabled),
+.book-form__shelf-option:focus-visible:not(:disabled) {
+  background:
+          rgb(113 84 52 / 10%);
+}
+
+.book-form__shelf-option[aria-pressed="true"] {
+  font-weight: 700;
+}
+
+.book-form__shelf-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.book-form__shelf-no-results {
+  margin: 0;
+  padding-block: var(--space-2);
+
+  color:
+          var(--color-surface-text);
+
+  font-style: italic;
 }
 
 .books-page__sort {
@@ -7656,7 +7969,7 @@
   border-radius: 0.12rem;
 
   background:
-          var(--color-wood-dark);
+          rgb(255 252 239 / 92%);
 
   box-shadow:
           0 0.2rem 0.45rem
@@ -7712,6 +8025,14 @@
 .books-toolbar__button:focus-visible {
   color: #1f160f;
   background: #fff8df;
+}
+
+.books-toolbar__sort {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  white-space: nowrap;
 }
 
 .books-toolbar__sort strong {
@@ -7848,9 +8169,38 @@
 }
 
 .books-toolbar__mobile-toggle {
-  display: none;
+  width: 100%;
+
+  padding:
+          var(--space-3)
+          var(--space-4);
+
+  border:
+          1px solid
+          rgb(113 84 52 / 48%);
+
+  border-radius: 0.15rem;
+
+  background:
+          rgb(255 252 239 / 92%);
+
+  color:
+          #2f2117;
+
+  font-family:
+          var(--font-family-heading);
+
+  font-weight: 700;
+  text-align: left;
+
+  cursor: pointer;
 }
 
+.books-toolbar__mobile-toggle:hover,
+.books-toolbar__mobile-toggle:focus-visible {
+  background:
+          rgb(255 248 223 / 100%);
+}
 @media (max-width: 52rem) {
   .books-toolbar__mobile-toggle {
     display: block;
@@ -7896,7 +8246,29 @@
   }
 
   .books-toolbar__search {
+    display: flex;
+    align-items: stretch;
+
+    flex: 1 1 22rem;
+
     min-width: 0;
+    margin: 0;
+  }
+
+  .books-toolbar__search input {
+    flex: 1 1 auto;
+
+    width: 100%;
+    min-width: 0;
+
+    color: #2f2117;
+    background: #fff9e7;
+
+    border-radius:
+            0.1rem
+            0
+            0
+            0.1rem;
   }
 
   .books-toolbar__button,
@@ -7938,4 +8310,32 @@
   color: #1f160f;
 }
 
+.visually-hidden {
+  position: absolute;
 
+  width: 1px;
+  height: 1px;
+
+  padding: 0;
+  margin: -1px;
+
+  overflow: hidden;
+
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+
+  border: 0;
+}
+
+.add-to-collection__wishlist-link {
+  color: #2f2117;
+  font-weight: 700;
+  text-decoration-color:
+          rgb(255 252 239 / 70%);
+}
+
+.add-to-collection__wishlist-link:hover,
+.add-to-collection__wishlist-link:focus-visible {
+  color: #fff8df;
+  text-decoration-color: currentColor;
+}

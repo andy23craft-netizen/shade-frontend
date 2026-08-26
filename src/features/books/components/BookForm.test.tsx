@@ -5,7 +5,6 @@ import {
     fireEvent,
     render,
     screen,
-    within,
 } from '@testing-library/react'
 import {
     describe,
@@ -160,6 +159,12 @@ describe('BookForm', () => {
             }),
         ).toBeInTheDocument()
 
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: /Select categories/,
+            }),
+        )
+
         expect(
             screen.getByLabelText('Fiction'),
         ).toBeInTheDocument()
@@ -194,24 +199,24 @@ describe('BookForm', () => {
             />,
         )
 
-        const shelf = screen.getByLabelText(
-            'Shelf',
-        )
+        const shelf = screen.getByLabelText('Shelf')
+
+        fireEvent.click(shelf)
 
         expect(
-            within(shelf).getByRole('option', {
+            screen.getByRole('button', {
                 name: 'Unknown',
             }),
         ).toBeInTheDocument()
 
         expect(
-            within(shelf).getByRole('option', {
-                name: 'Liz Tbr',
+            screen.getByRole('button', {
+                name: 'A1',
             }),
         ).toBeInTheDocument()
 
         expect(
-            within(shelf).queryByRole('option', {
+            screen.queryByRole('button', {
                 name: 'Removed',
             }),
         ).not.toBeInTheDocument()
@@ -253,16 +258,20 @@ describe('BookForm', () => {
         ).toHaveValue(180)
 
         expect(
-            screen.getByLabelText('Fiction'),
-        ).toBeChecked()
+            screen.getByRole('button', {
+                name: 'Remove Fiction category',
+            }),
+        ).toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Nonfiction'),
-        ).not.toBeChecked()
+            screen.getByRole('button', {
+                name: 'Select categories (1)',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             screen.getByLabelText('Shelf'),
-        ).toHaveValue('id-a1')
+        ).toHaveTextContent('A1')
 
         expect(
             screen.getByLabelText('Notes'),
@@ -421,16 +430,23 @@ describe('BookForm', () => {
         )
 
         fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select categories',
+            }),
+        )
+
+        fireEvent.click(
             screen.getByLabelText('Fiction'),
         )
 
-        fireEvent.change(
+        fireEvent.click(
             screen.getByLabelText('Shelf'),
-            {
-                target: {
-                    value: 'id-a1',
-                },
-            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'A1',
+            }),
         )
 
         fireEvent.change(
@@ -584,13 +600,15 @@ describe('BookForm', () => {
         expect(bookFormDefaults.tags).toBe('')
     })
 
-    it('toggles category checkboxes in the submitted values', () => {
+    it('toggles categories through the category picker', () => {
         const onSubmit = vi.fn()
 
         render(
             <ControlledBookForm
                 initialValues={makeBook({
-                    categoryIds: ['cat-fiction'],
+                    categoryIds: [
+                        'cat-fiction',
+                    ],
                     shelfId: 'id-a1',
                 })}
                 onSubmit={onSubmit}
@@ -598,12 +616,29 @@ describe('BookForm', () => {
         )
 
         expect(
+            screen.getByRole('button', {
+                name: 'Remove Fiction category',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select categories (1)',
+            }),
+        )
+
+        expect(
             screen.getByLabelText('Fiction'),
         ).toBeChecked()
+
+        expect(
+            screen.getByLabelText('Nonfiction'),
+        ).not.toBeChecked()
 
         fireEvent.click(
             screen.getByLabelText('Fiction'),
         )
+
         fireEvent.click(
             screen.getByLabelText('Nonfiction'),
         )
@@ -616,7 +651,9 @@ describe('BookForm', () => {
 
         expect(onSubmit).toHaveBeenCalledWith(
             expect.objectContaining({
-                categoryIds: ['cat-nonfiction'],
+                categoryIds: [
+                    'cat-nonfiction',
+                ],
             }),
         )
     })

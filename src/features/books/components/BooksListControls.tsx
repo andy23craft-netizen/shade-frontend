@@ -483,7 +483,7 @@ export function BooksListControls({
                         )
                     }}
                 >
-                    <span>Author</span>
+                    <span>Author:</span>
                     <strong>
                         {sortStateLabel(
                             authorSortState,
@@ -504,12 +504,13 @@ export function BooksListControls({
                         )
                     }}
                 >
-                    <span>Title</span>
+                    <span>Title:</span>
                     <strong>
                         {sortStateLabel(
                             titleSortState,
                         )}
                     </strong>
+
                 </button>
 
                 {!selectionMode ? (

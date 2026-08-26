@@ -487,7 +487,10 @@ export function AddCollectionBookControl() {
             <p>
                 Books that are not on a shelf are managed
                 through{' '}
-                <AppLink to="/wishlists">
+                <AppLink
+                    to="/wishlists"
+                    className="add-to-collection__wishlist-link"
+                >
                     Wishlists
                 </AppLink>
                 .
