@@ -34,6 +34,7 @@ import {
     useAddWishlistBook,
     useCreateWishlist,
     useDeleteWishlist,
+    useInfiniteWishlistBooks,
     useWishlistBooks,
     useWishlists,
 } from '../../../api/wishlistsQueries'
@@ -50,11 +51,11 @@ vi.mock('../../../api/booksQueries', () => ({
 vi.mock('../../../api/wishlistsQueries', () => ({
     useWishlists: vi.fn(),
     useWishlistBooks: vi.fn(),
+    useInfiniteWishlistBooks: vi.fn(),
     useCreateWishlist: vi.fn(),
     useDeleteWishlist: vi.fn(),
     useAddWishlistBook: vi.fn(),
 }))
-
 vi.mock(
     '../components/MoveWishlistBookToShelfControl',
     () => ({
@@ -79,6 +80,65 @@ vi.mock(
         ),
     }),
 )
+vi.mock(
+    '../components/MoveWishlistBookControl',
+    () => ({
+        MoveWishlistBookControl: ({
+                                      sourceWishlistId,
+                                      membership,
+                                      bookTitle,
+                                  }: {
+            sourceWishlistId: string
+            membership: {
+                wishlist_book_id: string
+                wishlist_id: string
+                book_id: string
+                status: string
+                priority: number | null
+                notes?: string | null
+                url?: string | null
+                created_date: string
+            }
+            bookTitle: string
+        }) => (
+            <div
+                data-testid="move-wishlist-book-to-wishlist"
+                data-source-wishlist-id={
+                    sourceWishlistId
+                }
+                data-membership-id={
+                    membership.wishlist_book_id
+                }
+                data-book-id={
+                    membership.book_id
+                }
+                data-status={
+                    membership.status
+                }
+                data-priority={
+                    membership.priority ?? ''
+                }
+                data-notes={
+                    membership.notes ?? ''
+                }
+                data-url={
+                    membership.url ?? ''
+                }
+                data-book-title={
+                    bookTitle
+                }
+            />
+        ),
+    }),
+)
+vi.mock(
+    '../../../hooks/useInfiniteScrollTrigger',
+    () => ({
+        useInfiniteScrollTrigger: () => ({
+            getRowRef: () => undefined,
+        }),
+    }),
+)
 
 const mockUseBook = vi.mocked(useBook)
 const mockUseCreateBook = vi.mocked(useCreateBook)
@@ -93,9 +153,9 @@ const mockUseCreateWishlist = vi.mocked(
 const mockUseDeleteWishlist = vi.mocked(
     useDeleteWishlist,
 )
-const mockUseAddWishlistBook = vi.mocked(
-    useAddWishlistBook,
-)
+const mockUseAddWishlistBook = vi.mocked(useAddWishlistBook)
+const mockUseInfiniteWishlistBooks =
+    vi.mocked(useInfiniteWishlistBooks)
 
 const sampleWishlist: WishlistRead = {
     wishlist_id: 'wishlist-1',
@@ -196,6 +256,27 @@ function mockIdleWrites() {
             typeof useAddWishlistBook
         >,
     )
+    mockUseInfiniteWishlistBooks.mockReturnValue({
+        data: {
+            pages: [
+                memberships,
+            ],
+            pageParams: [
+                0,
+            ],
+        },
+        isPending: false,
+        isLoadingError: false,
+        isSuccess: true,
+        isFetchingNextPage: false,
+        isFetchNextPageError: false,
+        hasNextPage: false,
+        fetchNextPage: vi.fn(),
+        refetch: vi.fn(),
+        error: null,
+    } as unknown as ReturnType<
+        typeof useInfiniteWishlistBooks
+    >)
 }
 
 function renderPage() {
@@ -377,6 +458,12 @@ describe('WishlistsPage', () => {
     it('joins memberships with GET /books/{id} and falls back when missing', () => {
         renderPage()
 
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
+
         expect(
             screen.getByRole('heading', {
                 name: 'TBR',
@@ -458,7 +545,36 @@ describe('WishlistsPage', () => {
             typeof useWishlistBooks
         >)
 
+        mockUseInfiniteWishlistBooks.mockReturnValue({
+            data: {
+                pages: [
+                    {
+                        items: [],
+                        total: 0,
+                    },
+                ],
+                pageParams: [0],
+            },
+            isPending: false,
+            isLoadingError: false,
+            isSuccess: true,
+            isFetchingNextPage: false,
+            isFetchNextPageError: false,
+            hasNextPage: false,
+            fetchNextPage: vi.fn(),
+            refetch: vi.fn(),
+            error: null,
+        } as unknown as ReturnType<
+            typeof useInfiniteWishlistBooks
+        >)
+
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
 
         expect(
             screen.getByText(
@@ -559,22 +675,35 @@ describe('WishlistsPage', () => {
     it('shows membership loading and retryable errors without blocking the page', () => {
         const refetch = vi.fn()
 
-        mockUseWishlistBooks.mockReturnValue({
-            isPending: true,
-            isError: false,
-            isSuccess: false,
+        mockUseInfiniteWishlistBooks.mockReturnValue({
             data: undefined,
-            refetch,
+            isPending: true,
+            isLoadingError: false,
+            isSuccess: false,
+            isFetchingNextPage: false,
+            isFetchNextPageError: false,
+            hasNextPage: false,
+            fetchNextPage: vi.fn(),
+            refetch: vi.fn(),
             error: null,
         } as unknown as ReturnType<
-            typeof useWishlistBooks
+            typeof useInfiniteWishlistBooks
         >)
 
-        const { unmount } = renderPage()
+        const {
+            unmount,
+        } = renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
 
         expect(
             screen.getByText('Loading TBR…'),
         ).toBeInTheDocument()
+
         expect(
             screen.getByRole('heading', {
                 name: 'TBR',
@@ -583,21 +712,43 @@ describe('WishlistsPage', () => {
 
         unmount()
 
-        mockUseWishlistBooks.mockReturnValue({
-            isPending: false,
-            isError: true,
-            isSuccess: false,
+        mockUseInfiniteWishlistBooks.mockReturnValue({
             data: undefined,
+            isPending: false,
+            isLoadingError: true,
+            isSuccess: false,
+            isFetchingNextPage: false,
+            isFetchNextPageError: false,
+            hasNextPage: false,
+            fetchNextPage: vi.fn(),
             refetch,
             error: new ApiError({
                 kind: 'unreachable',
                 message: 'The API could not be reached',
             }),
         } as unknown as ReturnType<
-            typeof useWishlistBooks
+            typeof useInfiniteWishlistBooks
         >)
 
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
+
+        expect(
+            screen.getByText(
+                'Unable to load TBR',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'TBR',
+            }),
+        ).toBeInTheDocument()
 
         fireEvent.click(
             screen.getByRole('button', {
@@ -607,7 +758,6 @@ describe('WishlistsPage', () => {
 
         expect(refetch).toHaveBeenCalled()
     })
-
     it('links create 422 errors to the name field', () => {
         const mutate = vi.fn(
             (
@@ -817,6 +967,12 @@ describe('WishlistsPage', () => {
     it('provides wishlist membership identity to the move control', () => {
         renderPage()
 
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
+
         const membershipRow =
             document.querySelector(
                 '[data-membership-id="membership-1"]',
@@ -850,5 +1006,108 @@ describe('WishlistsPage', () => {
             'data-book-title',
             'The Dispossessed',
         )
+    })
+
+    it('keeps wishlist memberships collapsed until explicitly expanded', () => {
+        renderPage()
+
+        expect(
+            screen.queryByText('2 books'),
+        ).not.toBeInTheDocument()
+
+        expect(
+            document.querySelector(
+                '[data-membership-id="membership-1"]',
+            ),
+        ).toBeNull()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
+
+        expect(
+            screen.getByText('2 books'),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Collapse',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('keeps only one wishlist expanded at a time', () => {
+        mockUseWishlists.mockReturnValue({
+            isPending: false,
+            isError: false,
+            isSuccess: true,
+            data: {
+                items: [
+                    sampleWishlist,
+                    {
+                        wishlist_id: 'wishlist-2',
+                        name: 'Fiction',
+                        description: null,
+                        created_date:
+                            '2026-08-02T00:00:00Z',
+                        last_updated_date:
+                            '2026-08-02T00:00:00Z',
+                    },
+                ],
+                total: 2,
+            },
+            refetch: vi.fn(),
+        } as unknown as ReturnType<
+            typeof useWishlists
+        >)
+
+        renderPage()
+
+        const expandButtons =
+            screen.getAllByRole('button', {
+                name: 'Expand',
+            })
+
+        expect(expandButtons).toHaveLength(2)
+
+        fireEvent.click(expandButtons[0])
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Collapse',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getAllByRole('button', {
+                name: 'Expand',
+            }),
+        ).toHaveLength(1)
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Collapse',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getAllByRole('button', {
+                name: 'Expand',
+            }),
+        ).toHaveLength(1)
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Fiction',
+            }),
+        ).toBeInTheDocument()
     })
 })

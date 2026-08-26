@@ -18,10 +18,14 @@ import {
     QueryErrorState,
 } from '../../../components'
 import {
+    useInfiniteScrollTrigger,
+} from '../../../hooks/useInfiniteScrollTrigger'
+import {
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
 import type {
+    WishlistBookRead,
     WishlistRead,
 } from '../../../api/apiTypes'
 import {
@@ -30,9 +34,12 @@ import {
 import {
     useCreateWishlist,
     useDeleteWishlist,
-    useWishlistBooks,
+    useInfiniteWishlistBooks,
     useWishlists,
 } from '../../../api/wishlistsQueries'
+import {
+    MoveWishlistBookControl,
+} from '../components/MoveWishlistBookControl'
 import {
     AddWishlistBookControl,
 } from '../components/AddWishlistBookControl'
@@ -88,22 +95,24 @@ function focusSummary(
 }
 
 function WishlistMembershipRow({
-                                   wishlistId,
-                                   bookId,
-                                   status,
-                                   priority,
-                                   notes,
-                                   url,
-                                   membershipId,
+                                   membership,
+                                   rowRef,
                                }: {
-    wishlistId: string
-    bookId: string
-    status: string
-    priority: number | null
-    notes: string | null | undefined
-    url: string | null | undefined
-    membershipId: string
+    membership: WishlistBookRead
+    rowRef?: (
+        node: HTMLLIElement | null,
+    ) => void
 }) {
+    const {
+        wishlist_book_id: membershipId,
+        wishlist_id: wishlistId,
+        book_id: bookId,
+        status,
+        priority,
+        notes,
+        url,
+    } = membership
+
     const bookQuery = useBook(bookId)
     const book = bookQuery.data
     const title = book?.title ?? `Book ${bookId}`
@@ -112,6 +121,7 @@ function WishlistMembershipRow({
 
     return (
         <li
+            ref={rowRef}
             className="wishlist-membership"
             data-membership-id={membershipId}
         >
@@ -169,6 +179,12 @@ function WishlistMembershipRow({
                 ) : null}
             </dl>
 
+            <MoveWishlistBookControl
+                sourceWishlistId={wishlistId}
+                membership={membership}
+                bookTitle={title}
+            />
+
             <MoveWishlistBookToShelfControl
                 wishlistId={wishlistId}
                 wishlistBookId={membershipId}
@@ -181,19 +197,55 @@ function WishlistMembershipRow({
 }
 
 function WishlistSection({
-    wishlist,
-    onDelete,
-    deletePending,
-}: {
+                             wishlist,
+                             expanded,
+                             onToggle,
+                             onDelete,
+                             deletePending,
+                         }: {
     wishlist: WishlistRead
+    expanded: boolean
+    onToggle: () => void
     onDelete: (wishlist: WishlistRead) => void
     deletePending: boolean
 }) {
-    const membershipsQuery = useWishlistBooks(
-        wishlist.wishlist_id,
-    )
-    const total = membershipsQuery.data?.total
-    const items = membershipsQuery.data?.items ?? []
+    const membershipsQuery =
+        useInfiniteWishlistBooks(
+            wishlist.wishlist_id,
+            {
+                enabled: expanded,
+            },
+        )
+
+    const pages =
+        membershipsQuery.data?.pages ?? []
+
+    const items =
+        pages.flatMap(
+            (page) => page.items,
+        )
+
+    const total =
+        pages[0]?.total ?? 0
+
+    const fetchNextMembershipsPage =
+        membershipsQuery.fetchNextPage
+
+    const {
+        getRowRef,
+    } = useInfiniteScrollTrigger({
+        enabled:
+            expanded &&
+            membershipsQuery.isSuccess,
+        hasNextPage:
+        membershipsQuery.hasNextPage,
+        isFetchingNextPage:
+        membershipsQuery.isFetchingNextPage,
+        fetchNextPage: () => {
+            void fetchNextMembershipsPage()
+        },
+        itemCount: items.length,
+    })
 
     return (
         <article className="wishlist-card">
@@ -205,80 +257,124 @@ function WishlistSection({
                         <p>{wishlist.description}</p>
                     ) : null}
 
-                    {membershipsQuery.isSuccess ? (
+                    {expanded &&
+                    membershipsQuery.isSuccess ? (
                         <p>
                             {total === 1
                                 ? '1 book'
-                                : `${total ?? 0} books`}
+                                : `${total} books`}
                         </p>
                     ) : null}
                 </div>
 
-                <Button
-                    type="button"
-                    variant="danger"
-                    disabled={deletePending}
-                    onClick={() => {
-                        onDelete(wishlist)
-                    }}
-                >
-                    Delete Wishlist
-                </Button>
+                <div className="wishlist-card__actions">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={onToggle}
+                    >
+                        {expanded
+                            ? 'Collapse'
+                            : 'Expand'}
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="danger"
+                        disabled={deletePending}
+                        onClick={() => {
+                            onDelete(wishlist)
+                        }}
+                    >
+                        Delete Wishlist
+                    </Button>
+                </div>
             </header>
 
-            {membershipsQuery.isPending ? (
-                <LoadingState
-                    label={`Loading ${wishlist.name}…`}
-                />
-            ) : null}
-
-            {membershipsQuery.isError ? (
-                <QueryErrorState
-                    title={`Unable to load ${wishlist.name}`}
-                    error={membershipsQuery.error}
-                    onRetry={() => {
-                        void membershipsQuery.refetch()
-                    }}
-                />
-            ) : null}
-
-            {membershipsQuery.isSuccess &&
-            items.length === 0 ? (
-                <p>
-                    No books have been added to this
-                    wishlist yet.
-                </p>
-            ) : null}
-
-            {membershipsQuery.isSuccess &&
-            items.length > 0 ? (
-                <ul
-                    className="wishlist-memberships"
-                    aria-label={`${wishlist.name} books`}
-                >
-                    {items.map((membership) => (
-                        <WishlistMembershipRow
-                            key={
-                                membership.wishlist_book_id
-                            }
-                            wishlistId={
-                                wishlist.wishlist_id
-                            }
-                            membershipId={
-                                membership.wishlist_book_id
-                            }
-                            bookId={membership.book_id}
-                            status={membership.status}
-                            priority={
-                                membership.priority ??
-                                null
-                            }
-                            notes={membership.notes}
-                            url={membership.url}
+            {!expanded ? null : (
+                <>
+                    {membershipsQuery.isPending ? (
+                        <LoadingState
+                            label={`Loading ${wishlist.name}…`}
                         />
-                    ))}
-                </ul>
-            ) : null}
+                    ) : null}
+
+                    {membershipsQuery.isLoadingError ? (
+                        <QueryErrorState
+                            title={`Unable to load ${wishlist.name}`}
+                            error={
+                                membershipsQuery.error
+                            }
+                            onRetry={() => {
+                                void membershipsQuery.refetch()
+                            }}
+                        />
+                    ) : null}
+
+                    {membershipsQuery.isSuccess &&
+                    total === 0 ? (
+                        <p>
+                            No books have been added to this
+                            wishlist yet.
+                        </p>
+                    ) : null}
+
+                    {membershipsQuery.isSuccess &&
+                    items.length > 0 ? (
+                        <ul
+                            className="wishlist-memberships"
+                            aria-label={`${wishlist.name} books`}
+                        >
+                            {items.map(
+                                (
+                                    membership,
+                                    index,
+                                ) => (
+                                    <WishlistMembershipRow
+                                        key={
+                                            membership.wishlist_book_id
+                                        }
+                                        membership={
+                                            membership
+                                        }
+                                        rowRef={
+                                            getRowRef(
+                                                index,
+                                            )
+                                        }
+                                    />
+                                ),
+                            )}
+                        </ul>
+                    ) : null}
+
+                    {membershipsQuery.isFetchingNextPage ? (
+                        <div className="infinite-scroll__footer">
+                            <LoadingState
+                                label={`Loading more ${wishlist.name} books…`}
+                            />
+                        </div>
+                    ) : null}
+
+                    {membershipsQuery.isFetchNextPageError ? (
+                        <div className="infinite-scroll__footer">
+                            <Alert variant="error">
+                                Unable to load more books.
+                            </Alert>
+
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => {
+                                    void fetchNextMembershipsPage()
+                                }}
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    ) : null}
+                </>
+            )}
         </article>
     )
 }
@@ -480,6 +576,11 @@ export function WishlistsPage() {
         setWishlistActionsOpen,
     ] = useState(false)
 
+    const [
+        activeWishlistId,
+        setActiveWishlistId,
+    ] = useState<string | null>(null)
+
     function handleConfirmDelete() {
         if (
             pendingDelete === null ||
@@ -582,6 +683,19 @@ export function WishlistsPage() {
                         >
                             <WishlistSection
                                 wishlist={wishlist}
+                                expanded={
+                                    activeWishlistId ===
+                                    wishlist.wishlist_id
+                                }
+                                onToggle={() => {
+                                    setActiveWishlistId(
+                                        (current) =>
+                                            current ===
+                                            wishlist.wishlist_id
+                                                ? null
+                                                : wishlist.wishlist_id,
+                                    )
+                                }}
                                 onDelete={
                                     setPendingDelete
                                 }

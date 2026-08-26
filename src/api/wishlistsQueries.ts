@@ -1,4 +1,5 @@
 import {
+    useInfiniteQuery,
     useMutation,
     useQuery,
     useQueryClient,
@@ -7,9 +8,14 @@ import {
 import type {
     BookRead,
     WishlistBookCreate,
+    WishlistBookList,
+    WishlistBookRead,
     WishlistCreate,
     WishlistUpdate,
 } from './apiTypes'
+import {
+    INFINITE_SCROLL_BATCH_SIZE,
+} from '../features/shared/infiniteScrollConfig'
 import {
     createBooksApi,
 } from './booksApi'
@@ -44,6 +50,90 @@ export class MoveWishlistBookToShelfError extends Error {
         this.cause = cause
         this.membershipRemoved = membershipRemoved
     }
+}
+
+export class MoveWishlistBookError extends Error {
+    readonly cause: unknown
+    readonly destinationMembershipCreated: boolean
+
+    constructor({
+                    cause,
+                    destinationMembershipCreated,
+                }: {
+        cause: unknown
+        destinationMembershipCreated: boolean
+    }) {
+        super(
+            cause instanceof Error
+                ? cause.message
+                : 'Unable to move the book to another wishlist.',
+        )
+
+        this.name = 'MoveWishlistBookError'
+        this.cause = cause
+        this.destinationMembershipCreated =
+            destinationMembershipCreated
+    }
+}
+
+function getNextWishlistBooksPageParam(
+    lastPage: WishlistBookList,
+    allPages: WishlistBookList[],
+): number | undefined {
+    const loaded = allPages.reduce(
+        (count, page) =>
+            count + page.items.length,
+        0,
+    )
+
+    return loaded < lastPage.total
+        ? loaded
+        : undefined
+}
+
+export function useInfiniteWishlistBooks(
+    wishlistId: string,
+    options: {
+        enabled?: boolean
+    } = {},
+) {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const wishlistsApi =
+        createWishlistsApi(apiClient)
+
+    const enabled =
+        Boolean(wishlistId) &&
+        (options.enabled ?? true)
+
+    return useInfiniteQuery({
+        queryKey: [
+            ...queryKeys.wishlists.books(
+                wishlistId,
+            ),
+            'infinite',
+            INFINITE_SCROLL_BATCH_SIZE,
+        ],
+        initialPageParam: 0,
+        queryFn: ({
+                      pageParam,
+                      signal,
+                  }) =>
+            wishlistsApi.listBooks(
+                wishlistId,
+                {
+                    skip: pageParam,
+                    take:
+                    INFINITE_SCROLL_BATCH_SIZE,
+                    signal,
+                },
+            ),
+        getNextPageParam:
+        getNextWishlistBooksPageParam,
+        enabled,
+    })
 }
 
 export function useWishlists(
@@ -196,6 +286,124 @@ export function useMoveWishlistBookToShelf() {
             await queryClient.invalidateQueries({
                 queryKey: queryKeys.dashboard.all,
             })
+        },
+    })
+}
+
+export function useMoveWishlistBook() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const wishlistsApi =
+        createWishlistsApi(apiClient)
+
+    return useMutation({
+        mutationFn: async ({
+                               sourceWishlistId,
+                               sourceWishlistBookId,
+                               destinationWishlistId,
+                               wishlistBook,
+                               destinationMembershipCreated = false,
+                           }: {
+            sourceWishlistId: string
+            sourceWishlistBookId: string
+            destinationWishlistId: string
+            wishlistBook: WishlistBookCreate
+            destinationMembershipCreated?: boolean
+        }): Promise<WishlistBookRead> => {
+            let destinationCreated =
+                destinationMembershipCreated
+
+            let destinationMembership:
+                WishlistBookRead | null = null
+
+            if (!destinationCreated) {
+                try {
+                    destinationMembership =
+                        await wishlistsApi.addBook(
+                            destinationWishlistId,
+                            wishlistBook,
+                        )
+
+                    destinationCreated = true
+                } catch (error) {
+                    throw new MoveWishlistBookError({
+                        cause: error,
+                        destinationMembershipCreated:
+                            false,
+                    })
+                }
+            }
+
+            try {
+                await wishlistsApi.removeBook(
+                    sourceWishlistId,
+                    sourceWishlistBookId,
+                )
+            } catch (error) {
+                throw new MoveWishlistBookError({
+                    cause: error,
+                    destinationMembershipCreated:
+                    destinationCreated,
+                })
+            }
+
+            if (destinationMembership !== null) {
+                return destinationMembership
+            }
+
+            /*
+             * A retry may skip destination creation because
+             * that step succeeded previously. In that case,
+             * refresh the destination list and recover the
+             * moved membership from server state.
+             */
+            const destinationBooks =
+                await wishlistsApi.listBooks(
+                    destinationWishlistId,
+                )
+
+            const movedMembership =
+                destinationBooks.items.find(
+                    (membership) =>
+                        membership.book_id ===
+                        wishlistBook.book_id,
+                )
+
+            if (movedMembership === undefined) {
+                throw new MoveWishlistBookError({
+                    cause: new Error(
+                        'The book was moved, but the destination membership could not be confirmed.',
+                    ),
+                    destinationMembershipCreated: true,
+                })
+            }
+
+            return movedMembership
+        },
+
+        onSuccess: async (
+            _membership,
+            variables,
+        ) => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey:
+                        queryKeys.wishlists.books(
+                            variables.sourceWishlistId,
+                        ),
+                }),
+                queryClient.invalidateQueries({
+                    queryKey:
+                        queryKeys.wishlists.books(
+                            variables.destinationWishlistId,
+                        ),
+                }),
+            ])
         },
     })
 }

@@ -27,15 +27,18 @@ import type {
     WishlistRead,
 } from './apiTypes'
 import {
+    MoveWishlistBookError,
+    MoveWishlistBookToShelfError,
     useAddWishlistBook,
     useCreateWishlist,
     useDeleteWishlist,
+    useMoveWishlistBook,
+    useMoveWishlistBookToShelf,
     useRemoveWishlistBook,
     useUpdateWishlist,
     useWishlistBooks,
     useWishlists,
-    MoveWishlistBookToShelfError,
-    useMoveWishlistBookToShelf,
+    useInfiniteWishlistBooks,
 } from './wishlistsQueries'
 import {
     queryKeys,
@@ -626,4 +629,413 @@ describe('useMoveWishlistBookToShelf', () => {
         )
     })
 })
+
+describe('useMoveWishlistBook', () => {
+    const wishlistBook: WishlistBookCreate = {
+        book_id: 'book-1',
+        status: 'wanted',
+        priority: 2,
+        notes: 'Hardcover if possible',
+        url: 'https://example.com/book',
+    }
+
+    const destinationMembership: WishlistBookRead = {
+        wishlist_book_id: 'membership-2',
+        wishlist_id: 'wishlist-2',
+        book_id: 'book-1',
+        status: 'wanted',
+        priority: 2,
+        notes: 'Hardcover if possible',
+        url: 'https://example.com/book',
+        created_date: '2026-08-02T00:00:00Z',
+    }
+
+    it('adds the destination membership before removing the source membership', async () => {
+        const calls: string[] = []
+
+        mockAddBook.mockImplementation(
+            async () => {
+                calls.push('add')
+                return destinationMembership
+            },
+        )
+
+        mockRemoveBook.mockImplementation(
+            async () => {
+                calls.push('remove')
+            },
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const invalidateQueries = vi.spyOn(
+            queryClient,
+            'invalidateQueries',
+        )
+
+        const {
+            result,
+        } = renderHook(
+            () => useMoveWishlistBook(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await result.current.mutateAsync({
+            sourceWishlistId: 'wishlist-1',
+            sourceWishlistBookId: 'membership-1',
+            destinationWishlistId: 'wishlist-2',
+            wishlistBook,
+        })
+
+        expect(calls).toEqual([
+            'add',
+            'remove',
+        ])
+
+        expect(mockAddBook).toHaveBeenCalledWith(
+            'wishlist-2',
+            wishlistBook,
+        )
+
+        expect(mockRemoveBook).toHaveBeenCalledWith(
+            'wishlist-1',
+            'membership-1',
+        )
+
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey:
+                queryKeys.wishlists.books(
+                    'wishlist-1',
+                ),
+        })
+
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey:
+                queryKeys.wishlists.books(
+                    'wishlist-2',
+                ),
+        })
+
+        queryClient.clear()
+    })
+
+    it('does not remove the source membership when destination creation fails', async () => {
+        const addError =
+            new Error('Destination add failed.')
+
+        mockAddBook.mockRejectedValue(addError)
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () => useMoveWishlistBook(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        let thrownError: unknown
+
+        try {
+            await result.current.mutateAsync({
+                sourceWishlistId: 'wishlist-1',
+                sourceWishlistBookId:
+                    'membership-1',
+                destinationWishlistId:
+                    'wishlist-2',
+                wishlistBook,
+            })
+        } catch (error) {
+            thrownError = error
+        }
+
+        expect(thrownError).toBeInstanceOf(
+            MoveWishlistBookError,
+        )
+
+        expect(
+            mockRemoveBook,
+        ).not.toHaveBeenCalled()
+
+        expect(
+            (
+                thrownError as MoveWishlistBookError
+            ).destinationMembershipCreated,
+        ).toBe(false)
+    })
+
+    it('reports when destination creation succeeded before source removal failed', async () => {
+        mockAddBook.mockResolvedValue(
+            destinationMembership,
+        )
+
+        const removeError =
+            new Error('Source removal failed.')
+
+        mockRemoveBook.mockRejectedValue(
+            removeError,
+        )
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () => useMoveWishlistBook(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        let thrownError: unknown
+
+        try {
+            await result.current.mutateAsync({
+                sourceWishlistId: 'wishlist-1',
+                sourceWishlistBookId:
+                    'membership-1',
+                destinationWishlistId:
+                    'wishlist-2',
+                wishlistBook,
+            })
+        } catch (error) {
+            thrownError = error
+        }
+
+        expect(thrownError).toBeInstanceOf(
+            MoveWishlistBookError,
+        )
+
+        expect(
+            (
+                thrownError as MoveWishlistBookError
+            ).destinationMembershipCreated,
+        ).toBe(true)
+
+        expect(mockAddBook).toHaveBeenCalledTimes(1)
+        expect(mockRemoveBook).toHaveBeenCalledTimes(1)
+    })
+
+    it('skips destination creation when retrying after a partial failure', async () => {
+        mockRemoveBook.mockResolvedValue(undefined)
+
+        mockListBooks.mockResolvedValue({
+            items: [
+                destinationMembership,
+            ],
+            total: 1,
+        } satisfies WishlistBookList)
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () => useMoveWishlistBook(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        const moved =
+            await result.current.mutateAsync({
+                sourceWishlistId: 'wishlist-1',
+                sourceWishlistBookId:
+                    'membership-1',
+                destinationWishlistId:
+                    'wishlist-2',
+                wishlistBook,
+                destinationMembershipCreated:
+                    true,
+            })
+
+        expect(
+            mockAddBook,
+        ).not.toHaveBeenCalled()
+
+        expect(mockRemoveBook).toHaveBeenCalledWith(
+            'wishlist-1',
+            'membership-1',
+        )
+
+        expect(mockListBooks).toHaveBeenCalledWith(
+            'wishlist-2',
+        )
+
+        expect(moved).toEqual(
+            destinationMembership,
+        )
+    })
+})
+
+describe('useInfiniteWishlistBooks', () => {
+    it('loads wishlist memberships in batches', async () => {
+        mockListBooks.mockResolvedValue({
+            items: [
+                {
+                    wishlist_book_id:
+                        'membership-1',
+                    wishlist_id: 'wishlist-1',
+                    book_id: 'book-1',
+                    status: 'wanted',
+                    priority: null,
+                    notes: null,
+                    url: null,
+                    created_date:
+                        '2026-08-01T00:00:00Z',
+                },
+            ],
+            total: 31,
+        })
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () =>
+                useInfiniteWishlistBooks(
+                    'wishlist-1',
+                ),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() => {
+            expect(
+                result.current.isSuccess,
+            ).toBe(true)
+        })
+
+        expect(
+            mockListBooks,
+        ).toHaveBeenCalledWith(
+            'wishlist-1',
+            expect.objectContaining({
+                skip: 0,
+                take: 30,
+            }),
+        )
+    })
+
+    it('loads the next page after the memberships already loaded', async () => {
+        const firstPageItems =
+            Array.from(
+                {
+                    length: 30,
+                },
+                (_, index) => ({
+                    wishlist_book_id:
+                        `membership-${index}`,
+                    wishlist_id: 'wishlist-1',
+                    book_id: `book-${index}`,
+                    status: 'wanted' as const,
+                    priority: null,
+                    notes: null,
+                    url: null,
+                    created_date:
+                        '2026-08-01T00:00:00Z',
+                }),
+            )
+
+        mockListBooks
+            .mockResolvedValueOnce({
+                items: firstPageItems,
+                total: 31,
+            })
+            .mockResolvedValueOnce({
+                items: [
+                    {
+                        wishlist_book_id:
+                            'membership-30',
+                        wishlist_id:
+                            'wishlist-1',
+                        book_id: 'book-30',
+                        status: 'wanted',
+                        priority: null,
+                        notes: null,
+                        url: null,
+                        created_date:
+                            '2026-08-01T00:00:00Z',
+                    },
+                ],
+                total: 31,
+            })
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () =>
+                useInfiniteWishlistBooks(
+                    'wishlist-1',
+                ),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() => {
+            expect(
+                result.current.isSuccess,
+            ).toBe(true)
+        })
+
+        await result.current.fetchNextPage()
+
+        expect(
+            mockListBooks,
+        ).toHaveBeenLastCalledWith(
+            'wishlist-1',
+            expect.objectContaining({
+                skip: 30,
+                take: 30,
+            }),
+        )
+    })
+
+    it('does not load memberships while disabled', () => {
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        renderHook(
+            () =>
+                useInfiniteWishlistBooks(
+                    'wishlist-1',
+                    {
+                        enabled: false,
+                    },
+                ),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        expect(
+            mockListBooks,
+        ).not.toHaveBeenCalled()
+    })
+})
+
+
 
