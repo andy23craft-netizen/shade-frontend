@@ -798,14 +798,124 @@ describe('BooksPage', () => {
 
         expect(
             mockUseInfiniteBooks,
-        ).toHaveBeenLastCalledWith(
+        ).toHaveBeenCalledWith(
             expect.objectContaining({
                 categoryIds: ['cat-fiction'],
                 author: 'Le Guin',
                 title: undefined,
                 sortBy: 'author',
                 sortOrder: 'asc',
+                enabled: true,
             }),
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                categoryIds: ['cat-fiction'],
+                author: undefined,
+                title: 'Le Guin',
+                sortBy: 'author',
+                sortOrder: 'asc',
+                enabled: false,
+            }),
+        )
+    })
+
+    it('falls back to title search when author search returns no matches', async () => {
+        mockUseInfiniteBooks.mockImplementation(
+            (options) => {
+                if (
+                    options.author === 'Dune' &&
+                    options.title === undefined
+                ) {
+                    return {
+                        isPending: false,
+                        isLoadingError: false,
+                        isSuccess: true,
+                        hasNextPage: false,
+                        isFetchingNextPage: false,
+                        isFetchNextPageError: false,
+                        fetchNextPage: vi.fn(),
+                        refetch: vi.fn(),
+                        data: {
+                            pages: [
+                                {
+                                    items: [],
+                                    total: 0,
+                                },
+                            ],
+                        },
+                    }
+                }
+
+                if (
+                    options.author === undefined &&
+                    options.title === 'Dune'
+                ) {
+                    return {
+                        isPending: false,
+                        isLoadingError: false,
+                        isSuccess: true,
+                        hasNextPage: false,
+                        isFetchingNextPage: false,
+                        isFetchNextPageError: false,
+                        fetchNextPage: vi.fn(),
+                        refetch: vi.fn(),
+                        data: {
+                            pages: [
+                                {
+                                    items: [
+                                        makeBook({
+                                            id: 'book-dune',
+                                            title: 'Dune',
+                                            authors:
+                                                'Frank Herbert',
+                                        }),
+                                    ],
+                                    total: 1,
+                                },
+                            ],
+                        },
+                    }
+                }
+
+                return makeInfiniteBooksResult()
+            },
+        )
+
+        renderBooksPage(
+            '/books?author=Dune',
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                author: 'Dune',
+                title: undefined,
+                enabled: true,
+            }),
+        )
+
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({
+                author: undefined,
+                title: 'Dune',
+                enabled: true,
+            }),
+        )
+
+        expect(
+            await screen.findByRole('link', {
+                name: 'Dune',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books/book-dune',
         )
     })
 
