@@ -737,26 +737,6 @@ describe('DashboardPage', () => {
         expect(refetch).toHaveBeenCalledOnce()
     })
 
-    it('disables explicit refresh while a request is already in progress', () => {
-        mockDashboardQuery({
-            isFetching: true,
-        })
-
-        renderDashboard()
-
-        expect(
-            screen.getByRole('button', {
-                name: 'Refreshing…',
-            }),
-        ).toBeDisabled()
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'Refreshing dashboard…',
-        )
-    })
-
     it('links only to existing routes that preserve the statistic meaning', () => {
         renderDashboard()
 

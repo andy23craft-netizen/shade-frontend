@@ -125,19 +125,6 @@ export function DashboardPage() {
         useDashboardIncompleteMetadata()
 
 
-    const isDashboardRefreshing =
-        dashboardQuery.isFetching ||
-        breakdownsQuery.isFetching ||
-        incompleteMetadataQuery.isFetching
-
-    function refreshDashboard() {
-        void Promise.all([
-            dashboardQuery.refetch(),
-            breakdownsQuery.refetch(),
-            incompleteMetadataQuery.refetch(),
-        ])
-    }
-
     if (
         dashboardQuery.isPending &&
         dashboardQuery.fetchStatus === 'paused'
@@ -239,16 +226,6 @@ export function DashboardPage() {
                     </p>
                 </div>
 
-                <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={isDashboardRefreshing}
-                    onClick={refreshDashboard}
-                >
-                    {isDashboardRefreshing
-                        ? 'Refreshing…'
-                        : 'Refresh'}
-                </Button>
             </header>
 
             {dashboardQuery.isRefetchError ? (
@@ -269,15 +246,6 @@ export function DashboardPage() {
                 >
                     Offline. Showing the last available dashboard
                     data.
-                </p>
-            ) : isDashboardRefreshing &&
-            !dashboardQuery.isRefetchError ? (
-                <p
-                    className="dashboard-page__refresh-status"
-                    role="status"
-                    aria-live="polite"
-                >
-                    Refreshing dashboard…
                 </p>
             ) : dashboardQuery.isStale ? (
                 <p

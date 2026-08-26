@@ -880,8 +880,12 @@ describe('BooksPage', () => {
                         },
                     }
                 }
-
-                return makeInfiniteBooksResult()
+                return makeInfiniteBooksResult([
+                    {
+                        items: [],
+                        total: 0,
+                    },
+                ])
             },
         )
 

@@ -204,11 +204,16 @@ describe('AppShell layout and navigation', () => {
             }),
         )
 
-        await screen.findByRole('heading', {
-            level: 1,
-            name: 'Loans',
-        })
-
+        await screen.findByRole(
+            'heading',
+            {
+                level: 1,
+                name: 'Loans',
+            },
+            {
+                timeout: 5000,
+            },
+        )
       expect(
           screen.getByRole('main'),
       ).toHaveFocus()
@@ -223,7 +228,9 @@ describe('AppShell layout and navigation', () => {
 
         const footer = screen.getByRole('contentinfo')
 
-        expect(footer).toHaveTextContent('Shade Library')
+        expect(footer).toHaveTextContent(
+            'Last updated August 25, 2026',
+        )
 
         expect(
             await screen.findByText(

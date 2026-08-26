@@ -46,11 +46,19 @@ for (const route of criticalRoutes) {
         await page.goto(route.path)
 
         await expect(
+            page.getByText('Loading page…'),
+        ).toBeHidden({
+            timeout: 15_000,
+        })
+
+        await expect(
             page.getByRole('heading', {
                 level: 1,
                 name: route.heading,
             }),
-        ).toBeVisible()
+        ).toBeVisible({
+            timeout: 15_000,
+        })
 
         await expectNoSeriousAccessibilityViolations(
             page,

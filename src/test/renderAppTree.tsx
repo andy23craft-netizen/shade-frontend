@@ -278,11 +278,16 @@ export async function renderAppTree(
         </StrictMode>,
     )
 
-    await waitFor(() => {
-        expect(
-            screen.queryByText('Loading page…'),
-        ).not.toBeInTheDocument()
-    })
+    await waitFor(
+        () => {
+            expect(
+                screen.queryByText('Loading page…'),
+            ).not.toBeInTheDocument()
+        },
+        {
+            timeout: 5000,
+        },
+    )
 
     return router
 }

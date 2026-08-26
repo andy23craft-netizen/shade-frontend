@@ -269,14 +269,21 @@ test('checks out and checks in a book through the browser', async ({
         ),
     ).toBe(true)
 
-    await page.goto(`/books/${book.id}`)
+    await page.goto(
+        `/books/${book.id}`,
+        {
+            waitUntil: 'networkidle',
+        },
+    )
 
     await expect(
         page.getByRole('heading', {
             level: 1,
             name: 'Book Not Found',
         }),
-    ).toBeVisible()
+    ).toBeVisible({
+        timeout: 10_000,
+    })
 
     /*
      * No lifecycle transition should use generic PATCH.

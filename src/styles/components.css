@@ -4348,13 +4348,24 @@
   border: 1px solid rgb(31 20 12 / 75%);
   border-radius: var(--radius-medium);
 
-  background:
+  background-image:
           linear-gradient(
                   rgb(22 13 8 / 12%),
                   rgb(22 13 8 / 24%)
           ),
-          var(--dashboard-desk-image)
-          center / cover;
+          var(--dashboard-desk-image);
+
+  background-position:
+          center,
+          top center;
+
+  background-size:
+          auto,
+          100% auto;
+
+  background-repeat:
+          repeat,
+          repeat-y;
 
   box-shadow:
           inset 0 0 4rem rgb(13 8 4 / 24%),
@@ -4418,6 +4429,48 @@
   color: var(--color-surface-text);
 
   transform-origin: center;
+}
+
+/*
+ * Small aged-brass brads pin the dashboard records to the desk.
+ */
+.dashboard-paper::before,
+.dashboard-paper::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0.7rem;
+
+  width: 0.55rem;
+  height: 0.55rem;
+
+  border:
+          1px solid
+          rgb(74 52 29 / 75%);
+  border-radius: 50%;
+
+  background:
+          radial-gradient(
+                  circle at 35% 30%,
+                  #e0c987 0 12%,
+                  #b18b49 38%,
+                  #806238 72%,
+                  #554126 100%
+          );
+
+  box-shadow:
+          0 0.08rem 0.12rem rgb(20 12 7 / 45%),
+          inset 0 0.05rem 0.08rem rgb(255 242 194 / 45%);
+
+  pointer-events: none;
+}
+
+.dashboard-paper::before {
+  left: 0.75rem;
+}
+
+.dashboard-paper::after {
+  right: 0.75rem;
 }
 
 /*

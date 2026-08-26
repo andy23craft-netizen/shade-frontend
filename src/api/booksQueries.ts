@@ -5,6 +5,7 @@ import {
     useQueryClient,
 } from '@tanstack/react-query'
 
+import { isBookIdentityError } from './bookIdentity'
 import {
     createBooksApi,
 } from './booksApi'
@@ -280,6 +281,16 @@ export function useBook(
                 signal,
             }),
         enabled: Boolean(id),
+        retry: (
+            failureCount,
+            error,
+        ) => {
+            if (isBookIdentityError(error)) {
+                return false
+            }
+
+            return failureCount < 3
+        },
     })
 }
 

@@ -15,6 +15,8 @@ interface RouteHandle {
     title?: string
 }
 
+const LAST_UPDATED = 'August 25, 2026'
+
 export function AppShell() {
     const { data: versionData } = useVersion()
     const location = useLocation()
@@ -157,7 +159,10 @@ export function AppShell() {
 
             <footer className="app-footer">
                 <div className="app-footer__inner">
-                    <span>Shade Library</span>
+        <span>
+            Last updated {LAST_UPDATED}
+        </span>
+
                     <span>{releaseLabel}</span>
                 </div>
             </footer>
