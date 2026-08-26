@@ -269,12 +269,7 @@ test('checks out and checks in a book through the browser', async ({
         ),
     ).toBe(true)
 
-    await page.goto(
-        `/books/${book.id}`,
-        {
-            waitUntil: 'networkidle',
-        },
-    )
+    await page.goto(`/books/${book.id}`)
 
     await expect(
         page.getByRole('heading', {
