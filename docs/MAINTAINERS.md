@@ -265,7 +265,8 @@ yarn test
 - `yarn.lock`: Records exact dependency resolutions for repeatable installs. Yarn generates this file; do not edit
   it by hand.
 - `Makefile`: Provides short, consistent wrappers around Yarn commands. For example, `make run` calls `yarn dev`,
-  `make check` calls `yarn check`, and `make pack` writes the versioned production tarball.
+  `make check` calls `yarn check`, `make ci` builds the local Podman image, and `make publish` writes the versioned
+  production tarball.
 - `.nvmrc`: Pins the project's Node.js version. `nvm use` reads this file.
 - `.yarnrc.yml`: Configures Yarn to install packages into `node_modules/` rather than use Plug'n'Play.
 
@@ -273,7 +274,7 @@ The available commands are:
 
 - `make install`: Installs the exact locked dependencies. It fails if `package.json` and `yarn.lock` disagree.
 - `make run`: Starts Vite's development server with hot reloading.
-- `make preview`: Serves an existing production build locally.
+- `yarn preview`: Serves an existing production build locally.
 - `make lint`: Checks code with ESLint and treats warnings as failures.
 - `make typecheck`: Checks application and tooling TypeScript.
 - `make test`: Runs the test suite once.
@@ -283,10 +284,11 @@ The available commands are:
 - `make build`: Type-checks and creates the optimized `dist/` output.
 - `make bundle-check`: Checks the built main JavaScript entry against the 120 kB gzip warning budget and 150 kB hard
   failure budget.
-- `make container-build` / `container-run` / `container-stop` / `container-clean`: Podman/Compose-oriented nginx
-  preview image (`ci/Containerfile`); not production.
-- `make pack`: Type-checks, builds `dist/`, and writes `ci/artifacts/shade-frontend-<package.json version>.tar.gz`
-  plus SHA-256 and manifest sidecars. Opt-in; packing is not a default CI upload.
+- `make ci`: Runs `ci/build-local.sh` to build the Podman/Compose-oriented nginx preview image (`ci/Containerfile`);
+  not production.
+- `make publish`: Runs `ci/build-prod.sh` to type-check, build `dist/`, and write
+  `ci/artifacts/shade-frontend-<package.json version>.tar.gz` plus SHA-256 and manifest sidecars. Opt-in; packing is not
+  a default CI upload.
 - `make check`: Runs linting, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright
   browser/accessibility tests, the production build, and the bundle-size gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
@@ -337,7 +339,7 @@ the production host must:
 - Provide atomic install, rollback, process/service supervision, and health checks.
 - Retain and verify the tarball checksum and release manifest.
 
-These are deployment requirements, not frontend implementations. `make pack` produces the versioned archive under
+These are deployment requirements, not frontend implementations. `make publish` produces the versioned archive under
 `ci/artifacts/`; the deployment repository owns concrete static-server, TLS, CSP/security-header, Ansible, systemd,
 and rollback configuration. Production verification must confirm these controls rather than treating a successful
 frontend build as evidence that they are present. See `README.md` for artifact names and the smoke checklist, and

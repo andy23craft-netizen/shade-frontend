@@ -2,19 +2,25 @@
 
 ## Summary
 
-Add Progressive Web App (PWA) support to the Shade Library frontend so the deployed application can be installed to a supported phone's Home Screen and launched in a standalone, app-like experience.
+Add Progressive Web App (PWA) support to the Shade Library frontend so the deployed application can be installed to a
+supported phone's Home Screen and launched in a standalone, app-like experience.
 
-The initial PWA implementation should remain a thin layer over the existing responsive React application. It must **not** create a separate mobile frontend or duplicate existing pages.
+The initial PWA implementation should remain a thin layer over the existing responsive React application. It must
+**not** create a separate mobile frontend or duplicate existing pages.
 
-The feature will also introduce a dedicated mobile-oriented ISBN scanner route and expose high-value mobile destinations as PWA shortcuts:
+The feature will also introduce a dedicated mobile-oriented ISBN scanner route and expose high-value mobile destinations
+as PWA shortcuts:
 
 * **Scan ISBN**
 * **Wishlists**
 * **Loans**
 
-The PWA may cache application/static assets necessary to load the frontend, but **library/API data must remain network-authoritative in V1**. Offline library operation, background synchronization, push notifications, and native OS widgets are explicitly outside this ticket.
+The PWA may cache application/static assets necessary to load the frontend, but **library/API data must remain
+network-authoritative in V1**. Offline library operation, background synchronization, push notifications, and native OS 
+widgets are explicitly outside this ticket.
 
-Production PWA functionality depends on the application eventually being served over HTTPS. The feature should nevertheless be implemented and testable locally before production HTTPS is available.
+Production PWA functionality depends on the application eventually being served over HTTPS. The feature should
+nevertheless be implemented and testable locally before production HTTPS is available.
 
 ---
 
@@ -27,11 +33,14 @@ Shade Library already contains several workflows that are particularly useful fr
 * Viewing and managing loans.
 * Viewing the responsive library application generally.
 
-The existing New Book workflow already provides a reusable camera ISBN scanner and immediately hands a detected ISBN into the application's lookup workflow. The PWA implementation should reuse this capability rather than introducing another scanner implementation. 
+The existing New Book workflow already provides a reusable camera ISBN scanner and immediately hands a detected ISBN 
+into the application's lookup workflow. The PWA implementation should reuse this capability rather than introducing 
+another scanner implementation. 
 
 Loans also already mounts collection ISBN scanning behavior, making it an intentionally useful mobile destination. 
 
-The objective is therefore not to build a mobile application. It is to make the existing application installable and provide efficient mobile entry points into workflows that already exist.
+The objective is therefore not to build a mobile application. It is to make the existing application installable and 
+provide efficient mobile entry points into workflows that already exist.
 
 ---
 
@@ -39,7 +48,8 @@ The objective is therefore not to build a mobile application. It is to make the 
 
 ## Installing Shade Library
 
-Once the production application is available over HTTPS, a user should be able to install/add Shade Library to the device Home Screen using the browser/platform's supported PWA installation mechanism.
+Once the production application is available over HTTPS, a user should be able to install/add Shade Library to the 
+device Home Screen using the browser/platform's supported PWA installation mechanism.
 
 The installed application should:
 
@@ -69,7 +79,8 @@ start_url: /
 display: standalone
 ```
 
-Theme/background colors should be selected from the existing Shade Library visual system rather than introducing a new PWA-specific palette.
+Theme/background colors should be selected from the existing Shade Library visual system rather than introducing a new 
+PWA-specific palette.
 
 Include the appropriate application/icon metadata for supported mobile browsers.
 
@@ -107,7 +118,9 @@ Introduce:
 
 The scanner should be registered through the application's existing centralized route architecture.
 
-The application currently defines its route configuration under `AppShell` and derives individual paths/titles from `routeMetadata`; the scanner should follow the same pattern rather than being introduced as an exceptional top-level implementation. 
+The application currently defines its route configuration under `AppShell` and derives individual paths/titles from 
+`routeMetadata`; the scanner should follow the same pattern rather than being introduced as an exceptional top-level 
+implementation. 
 
 Expected changes will therefore include the appropriate entries in:
 
@@ -119,7 +132,8 @@ src/routes/routes.tsx
 
 Exact filenames should follow the existing project structure.
 
-`routes.tsx` currently imports lazy route pages through `lazyRoutePages` and associates them with metadata-driven paths, so `ScanIsbnPage` should be integrated the same way. 
+`routes.tsx` currently imports lazy route pages through `lazyRoutePages` and associates them with metadata-driven paths, 
+so `ScanIsbnPage` should be integrated the same way. 
 
 ---
 
@@ -139,7 +153,8 @@ Scan ISBN
 Cancel
 ```
 
-Opening `/scan` should make the scanner immediately available without requiring the user to navigate through the full New Book form first.
+Opening `/scan` should make the scanner immediately available without requiring the user to navigate through the full 
+New Book form first.
 
 Reuse the existing:
 
@@ -151,7 +166,8 @@ Do **not** introduce a second camera/barcode implementation.
 
 After an ISBN is successfully detected, hand the detected ISBN into the application's established ISBN/book workflow.
 
-The scanner route should not independently reimplement metadata lookup rules, ISBN validation, duplicate-book behavior, or other book business logic already owned elsewhere.
+The scanner route should not independently reimplement metadata lookup rules, ISBN validation, duplicate-book behavior, 
+or other book business logic already owned elsewhere.
 
 ---
 
@@ -159,7 +175,8 @@ The scanner route should not independently reimplement metadata lookup rules, IS
 
 The dedicated scanner is an **entry point**, not a separate book-management system.
 
-After successful detection, route the user into the appropriate existing application workflow with the scanned ISBN supplied to it.
+After successful detection, route the user into the appropriate existing application workflow with the scanned ISBN 
+supplied to it.
 
 At minimum, the implementation should support the existing New Book lookup path.
 
@@ -179,7 +196,8 @@ existing application UI
 
 If the current routing/query-parameter contract already allows New Book to receive an ISBN, reuse it.
 
-If a small extraction/refactor is necessary to share existing ISBN-handling logic cleanly between `NewBookPage` and `ScanIsbnPage`, perform that extraction rather than duplicating logic.
+If a small extraction/refactor is necessary to share existing ISBN-handling logic cleanly between `NewBookPage` and 
+`ScanIsbnPage`, perform that extraction rather than duplicating logic.
 
 The New Book route is already registered as a normal application route and should remain the owner of book creation. 
 
@@ -199,9 +217,11 @@ Examples include:
 
 The user must never become trapped on `/scan`.
 
-Provide an obvious path back into Shade Library and, where appropriate, allow the user to fall back to the existing manual ISBN/book-entry workflow.
+Provide an obvious path back into Shade Library and, where appropriate, allow the user to fall back to the existing 
+manual ISBN/book-entry workflow.
 
-Do not invent PWA-specific camera permissions. Continue using the browser/device permission model already used by `IsbnCameraScanner`.
+Do not invent PWA-specific camera permissions. Continue using the browser/device permission model already used by 
+`IsbnCameraScanner`.
 
 ---
 
@@ -220,7 +240,8 @@ Add and configure a Web App Manifest containing, at minimum:
 * Wishlists shortcut.
 * Loans shortcut.
 
-The manifest should be generated/managed using the project's selected Vite PWA integration where practical rather than maintaining redundant configuration in multiple locations.
+The manifest should be generated/managed using the project's selected Vite PWA integration where practical rather than 
+maintaining redundant configuration in multiple locations.
 
 ---
 
@@ -228,7 +249,8 @@ The manifest should be generated/managed using the project's selected Vite PWA i
 
 Add PWA support to the existing Vite build.
 
-Prefer an established Vite-compatible PWA integration rather than implementing a custom service-worker build pipeline unless the project architecture gives a concrete reason not to.
+Prefer an established Vite-compatible PWA integration rather than implementing a custom service-worker build pipeline 
+unless the project architecture gives a concrete reason not to.
 
 Expected implementation areas include:
 
