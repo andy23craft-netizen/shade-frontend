@@ -2,18 +2,28 @@
 
 set -euo pipefail
 
-# Build the local Podman image that approximates bare-metal Raspberry Pi OS. Prod on the Pi is not containerized; this
-# script is for local development only.
+# Build the versioned production static tarball under ci/artifacts/. The deployment repository owns install, HTTPS, and
+# rollback.
 #
-# PROJ_DIR may be set by the caller (e.g., Ansible). IMAGE_NAME / IMAGE_TAG_LATEST / IMAGE_TAG_VERSION may override
-# image tags.
+# PROJ_DIR may be set by the caller (e.g., Ansible).
 
-SCRIPTS_DIR="${PROJ_DIR:-$(cd "$(dirname "$0")" && pwd)}"
-PROJ_DIR="${PROJ_DIR:-$(cd "$SCRIPTS_DIR/.." && pwd)}"
-CI_DIR="${PROJ_DIR:-$(cd "$SCRIPTS_DIR/ci" && pwd)}"
-ARTIFACTS_DIR="$CI_DIR/artifacts"
-APP_VERSION := $(shell node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")
+PROJ_DIR="${PROJ_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+PACKAGE_JSON="$PROJ_DIR/package.json"
+ARTIFACTS_DIR="$PROJ_DIR/ci/artifacts"
 
 cd "$PROJ_DIR"
-yarn build
+
+if [[ ! -f "$PACKAGE_JSON" ]]; then
+    printf 'error: missing %s\n' "$PACKAGE_JSON" >&2
+    exit 1
+fi
+
+APP_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('$PACKAGE_JSON', 'utf8')).version")"
+
+make build
 yarn release:pack
+
+TARBALL="$ARTIFACTS_DIR/shade-frontend-${APP_VERSION}.tar.gz"
+
+printf '\nDone! Version: %s\n' "$APP_VERSION"
+printf 'Artifact: %s\n' "$TARBALL"

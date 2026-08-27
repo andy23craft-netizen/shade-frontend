@@ -121,13 +121,13 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `dist/`, no Node/Yarn/Vite stage, no `.env` COPY), `ci/nginx.conf` (SPA `try_files`, no-cache `index.html` /
   `config.js`, long-lived hashed `/assets/`), `ci/container-entrypoint.sh` (start-time `config.js` from
   `SHADE_API_BASE_URL`, `SHADE_DIAGNOSTICS_ENABLED`, `SHADE_DIAGNOSTICS_ENDPOINT`), `.containerignore`, and Make
-  `container-build` / `container-run` / `container-stop` / `container-clean` (image `shade-frontend`, tags `latest`
-  and `package.json` `version`). This is Compose-oriented development with the backend, not host Vite and not
-  production. Do not add containerized Vite/HMR or collapse production into this image.
-- Versioned release artifacts: `scripts/packRelease.ts` and Make `pack` (`yarn release:pack`) package host-built
-  `dist/` as gitignored `ci/artifacts/shade-frontend-<package.json version>.tar.gz` plus a SHA-256 sidecar and a
-  release manifest (version, commit, build time, runtime-config shape, hosting requirements). Packing is opt-in
-  (not default CI upload). Production is the tarball plus the deployment repository, not another Podman image.
+  `ci` / `ci/build-local.sh` (image `shade-frontend`, tags `latest` and `package.json` `version`). This is
+  Compose-oriented development with the backend, not host Vite and not production. Do not add containerized Vite/HMR or
+  collapse production into this image.
+- Versioned release artifacts: `scripts/packRelease.ts` and Make `publish` / `ci/build-prod.sh` (`yarn release:pack`)
+  package host-built `dist/` as gitignored `ci/artifacts/shade-frontend-<package.json version>.tar.gz` plus a SHA-256
+  sidecar and a release manifest (version, commit, build time, runtime-config shape, hosting requirements). Packing is
+  opt-in (not default CI upload). Production is the tarball plus the deployment repository, not another Podman image.
   HTTPS/CSP, atomic install, supervision, and rollback remain host-owned (`README.md`).
 
 Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, or cover
@@ -1165,7 +1165,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/productionBuildTokenInspection.test.ts`: Production build env inspection; asserts `.env` is not copied into
   `dist/` or the release tarball and that `VITE_API_SECRET_KEY` is embedded in generated JS bundles (accepted risk).
 - `scripts/packRelease.ts` / `packRelease.test.ts`: Deterministic `dist/` tarball, SHA-256 sidecar, and release
-  manifest (`make pack` / `yarn release:pack`; gitignored `ci/artifacts/shade-frontend-<version>.tar.gz`).
+  manifest (`make publish` / `yarn release:pack`; gitignored `ci/artifacts/shade-frontend-<version>.tar.gz`).
 - `scripts/productionLikeHost.ts` / `productionLikeHost.test.ts`: Production-like static host plus mock API checks
   for SPA fallback, HTML/config revalidation, immutable `/assets/`, CORS preflight, Bearer access, and backup
   `Content-Disposition`.
@@ -1227,8 +1227,8 @@ make check / yarn check
   `release:pack`), runtime dependencies, and development dependencies.
 - `yarn.lock`: Yarn-generated exact dependency resolutions and checksums. Never edit it manually.
 - `Makefile`: Stable wrappers around Yarn scripts for installation, development, checks, tests, builds,
-  `bundle-check`, Podman image targets (`container-build` / `container-run` / `container-stop` /
-  `container-clean`), and `pack` (versioned production tarball under `ci/artifacts/`).
+  `bundle-check`, `ci` (Podman image via `ci/build-local.sh`), and `publish` (versioned production tarball via
+  `ci/build-prod.sh`).
 - `.nvmrc`: Exact Node.js version used by `nvm use`.
 - `.yarnrc.yml`: Configures Yarn to use the `node_modules` linker instead of Plug'n'Play.
 
@@ -1247,14 +1247,14 @@ make check / yarn check
 - `tsconfig.node.json`: Strict Node-side type checking for `vite.config.ts` and `scripts/**/*.ts`. It emits no files.
 - `scripts/checkBundleSize.mjs`: Main-entry gzip budget enforcement after `dist/` exists; warns above 120 kB and fails
   above 150 kB (`yarn bundle:check` / `make bundle-check`; also part of `make check`).
-- `scripts/packRelease.ts`: Opt-in production tarball from `dist/` (`yarn release:pack` / `make pack`). Writes
+- `scripts/packRelease.ts`: Opt-in production tarball from `dist/` (`yarn release:pack` / `make publish`). Writes
   `ci/artifacts/shade-frontend-<package.json version>.tar.gz`, `.sha256`, and `.manifest.json`. Not part of default
   CI artifact upload.
 
 ### Podman image (extend, do not replace)
 
 Deployed-development image for Compose with the backend. Not host Vite (`make run`) and not the production
-tarball (`make pack`). Preserve (do not rebuild or regress):
+tarball (`make publish`). Preserve (do not rebuild or regress):
 
 - `ci/Containerfile`: Runtime-only `nginx:1.31-alpine`. HTTP on 8080. Copies host-built `dist/`. No Node/Yarn/Vite
   stage. Does not `COPY` `.env`. Healthcheck is `wget` against `http://127.0.0.1:8080/` and `/config.js` (no protected
@@ -1265,10 +1265,10 @@ tarball (`make pack`). Preserve (do not rebuild or regress):
   `SHADE_DIAGNOSTICS_ENABLED` (`true`/`false`), and `SHADE_DIAGNOSTICS_ENDPOINT` (empty → `null`). Changing those
   values does not require an image rebuild. Application release stays `package.json` `version` from the image build.
 - `.containerignore`: Build context is the repo root; only `dist/` and the `ci/` files above are included.
-- Make targets:   `container-build` (runs `make build`, tags `shade-frontend:latest` and
-  `shade-frontend:<package.json version>`), `container-run` (port 8080, `--rm`, the runtime-config env vars above),
-  `container-stop`, `container-clean`. Compose should pull `shade-frontend`. The Compose file lives in the
-  orchestrator, not this repo. Optional `SHADE_API_PROXY=1` remains host `make run` only.
+- Make `ci` / `ci/build-local.sh`: runs `make build`, tags `shade-frontend:latest` and
+  `shade-frontend:<package.json version>`. Compose should pull `shade-frontend`. The Compose file lives in the
+  orchestrator, not this repo. Optional `SHADE_API_PROXY=1` remains host `make run` only. Local smoke testing outside
+  Compose uses direct `podman run` / `podman stop` / `podman rm` / `podman rmi` commands (see `README.md`).
 
 ### Production tarball (extend, do not replace)
 
@@ -1277,7 +1277,7 @@ Versioned static archive for the deployment repository. Not host Vite and not th
 - `scripts/packRelease.ts`: Deterministic gzip/ustar of `dist/` (sorted members, zero mtime, portable gzip header).
   Refuses `.env`, source trees, `node_modules/`, coverage, Playwright output, Podman/dev files, SQL dumps, and
   database files. Requires `index.html` and `config.js`.
-- Make `pack` / `yarn release:pack`: runs `make build`, writes gitignored
+- Make `publish` / `ci/build-prod.sh` / `yarn release:pack`: runs `make build`, writes gitignored
   `ci/artifacts/shade-frontend-<package.json version>.tar.gz`, `.sha256`, and `.manifest.json`.
 - Manifest fields: `version` / `appVersion` (same as `APP_VERSION`), `commit`, `buildTime`, `checksumSha256`,
   runtime-config shape (`apiBaseUrl` plus optional `diagnostics`), hosting requirements (SPA fallback, HTML/config
@@ -1294,7 +1294,7 @@ Versioned static archive for the deployment repository. Not host Vite and not th
   deployment repository) -- plus prerequisites (including Podman for the image path), setup, local CORS-or-proxy
   options, `.env` token configuration (build-time for the image and tarball; bind-mounting `.env` at container
   start does not change the baked token), checks, Playwright Chromium install, CI, image name/tags/Make
-  targets/port 8080/runtime-config env vars/CORS/healthcheck/cleanup, `make pack` artifact names/checksum/manifest,
+  `ci` / port 8080/runtime-config env vars/CORS/healthcheck/podman cleanup, `make publish` artifact names/checksum/manifest,
   production-host HTTPS / CSP / SPA fallback / cache headers / network restriction / atomic install, and the
   production smoke checklist. Browser support and scanner hardware checks live in this document.
 -   `.github/workflows/check.yml`: GitHub Actions quality gate for pull requests and pushes to `main`. Uses the Node
@@ -1349,7 +1349,7 @@ Common commands:
 
 - `make install`: Runs `yarn install --immutable`; fails when the manifest and lockfile disagree.
 - `make run`: Starts the Vite development server with hot reloading.
-- `make preview`: Serves an existing production build.
+- `yarn preview`: Serves an existing production build.
 - `make lint`: Runs ESLint with zero warnings allowed.
 - `make typecheck`: Runs TypeScript build mode across both TypeScript configurations.
 - `make test`: Runs all Vitest tests once.
@@ -1359,12 +1359,9 @@ Common commands:
 - `yarn test:coverage`: Runs Vitest with V8 coverage and enforced global thresholds (also part of `make check`).
 - `make build`: Type-checks and writes an optimized application to `dist/`.
 - `make bundle-check`: Enforces the main-entry gzip budget against an existing `dist/` (`yarn bundle:check`).
-- `make container-build`: Runs `make build`, then builds `shade-frontend:latest` and
-  `shade-frontend:<package.json version>` from `ci/Containerfile`.
-- `make container-run`: Runs `shade-frontend:latest` on port 8080 with start-time runtime-config env vars (`--rm`).
-- `make container-stop`: Stops the `shade-frontend-dev` container.
-- `make container-clean`: Removes that container and both image tags.
-- `make pack`: Runs `make build`, then writes `ci/artifacts/shade-frontend-<package.json version>.tar.gz` plus
+- `make ci`: Runs `ci/build-local.sh` (`make build`, then builds `shade-frontend:latest` and
+  `shade-frontend:<package.json version>` from `ci/Containerfile`).
+- `make publish`: Runs `ci/build-prod.sh`, then writes `ci/artifacts/shade-frontend-<package.json version>.tar.gz` plus
   SHA-256 and manifest sidecars (`yarn release:pack`). Opt-in; not part of `make check` beyond inspection tests.
 - `make check`: Runs lint, type checking, generated OpenAPI drift checking, Vitest with coverage, Playwright e2e, the
   production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
@@ -1453,10 +1450,11 @@ make build
   coverage floors, and `make check` integration (`test:coverage` + `test:e2e` + `bundle:check`). Extend those suites
   rather than inventing a parallel fake-API stack or removing them from the gate. Keep `.github/workflows/check.yml`
   and `scripts/checkBundleSize.mjs` in the canonical gate; do not add secret-bearing CI artifacts. Keep
-  `ci/Containerfile`, `ci/nginx.conf`, `ci/container-entrypoint.sh`, `.containerignore`, and Make `container-*`
-  targets; do not add containerized Vite/HMR or a Compose file in this repo. Keep `scripts/packRelease.ts`, Make
-  `pack`, gitignored `ci/artifacts/`, and the production-like host inspection tests; do not upload secret-bearing
-  archives from default CI or treat the Compose image as production. Do not invent FE-only cover providers. Never
+  `ci/Containerfile`, `ci/nginx.conf`, `ci/container-entrypoint.sh`, `.containerignore`, and Make `ci` /
+  `ci/build-local.sh`; do not add containerized Vite/HMR or a Compose file in this repo. Keep `scripts/packRelease.ts`,
+  Make `publish` / `ci/build-prod.sh`, gitignored `ci/artifacts/`, and the production-like host inspection tests; do
+  not upload secret-bearing archives from default CI or treat the Compose image as production. Do not invent FE-only
+  cover providers. Never
   simulate checkout, check-in, initial mark-read, or cover upload/delete with generic `PATCH`. Never
   implement bulk shelf moves as per-book `PATCH` loops.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second

@@ -6,7 +6,7 @@ There are three ways to interact with this project:
 
 1. **Local development** -- run Vite on the host with hot reload (`make run`).
 2. **Deployed development** -- build this repository's Podman image and run it in Compose with the Shade backend.
-3. **Deployed production** -- pack the versioned static tarball (`make pack`) and install it from the deployment
+3. **Deployed production** -- pack the versioned static tarball (`make publish`) and install it from the deployment
    repository. Production is not another Podman image.
 
 Do not collapse those paths. Local development does not use Podman. The Podman image serves the optimized static `dist/`
@@ -70,8 +70,8 @@ Create an optimized production build:
 make build
 ```
 
-Production output is written to `dist/`. Host `make preview` can serve that directory locally; it is not the Compose
-path and is not deployed production. Package `dist/` for the deployment repository with `make pack` (see Deployed
+Production output is written to `dist/`. Host `yarn preview` can serve that directory locally; it is not the Compose
+path and is not deployed production. Package `dist/` for the deployment repository with `make publish` (see Deployed
 production).
 
 ## API token
@@ -119,7 +119,7 @@ do not require a live protected backend or the real deployment Bearer token.
 
 ## Deployed development
 
-This is the Compose/dev-deployment path. Compose should pull **`shade-frontend`**. `make container-build` tags
+This is the Compose/dev-deployment path. Compose should pull **`shade-frontend`**. `make ci` tags
 `shade-frontend:latest` and `shade-frontend:<package.json version>` (the same version string as `APP_VERSION`).
 
 The image is runtime-only `nginx:1.31-alpine`. It serves host-built `dist/` over HTTP on container port **8080** and
@@ -129,18 +129,35 @@ public HTTP entry on host **80**; this nginx port is not published on the host i
 
 ### Build, run, and clean up
 
+Build the Podman image (requires Podman):
+
 ```sh
-make container-build
-make container-run
-make container-stop
-make container-clean
+make ci
 ```
 
-- `make container-build` runs host `make build`, then builds the image with `ci/Containerfile`.
-- `make container-run` starts `shade-frontend:latest` as `shade-frontend-dev`, publishes **8080**, passes the
-  runtime-config env vars below, and uses `--rm`.
-- `make container-stop` stops that named container.
-- `make container-clean` removes the container and both image tags.
+Or run the script directly:
+
+```sh
+./ci/build-local.sh
+```
+
+`make ci` runs host `make build`, then builds the image with `ci/Containerfile`.
+
+To run the image outside orchestrator Compose for local smoke testing:
+
+```sh
+podman run --rm \
+  --name shade-frontend-dev \
+  -p 8080:8080 \
+  -e SHADE_API_BASE_URL="${SHADE_API_BASE_URL:-http://127.0.0.1:8000}" \
+  -e SHADE_DIAGNOSTICS_ENABLED="${SHADE_DIAGNOSTICS_ENABLED:-false}" \
+  -e SHADE_DIAGNOSTICS_ENDPOINT="${SHADE_DIAGNOSTICS_ENDPOINT:-}" \
+  shade-frontend:latest
+```
+
+Stop or remove that named container with `podman stop shade-frontend-dev` or
+`podman rm -f shade-frontend-dev`. Remove both image tags with
+`podman rmi shade-frontend:latest shade-frontend:<package.json version>`.
 
 Startup and shutdown must not leave generated root-owned files in this repository. The image copies `dist/` at build
 time and does not bind-mount the working tree.
@@ -173,14 +190,20 @@ call protected API routes.
 
 ## Deployed production
 
-This is the versioned tarball path for the deployment repository. It is not `make run`, `make preview`, or the Podman
+This is the versioned tarball path for the deployment repository. It is not `make run`, `yarn preview`, or the Podman
 Compose image. HTTPS, TLS, host install, supervision, and rollback stay with the deployment repository.
 
 ```sh
-make pack
+make publish
 ```
 
-`make pack` runs `make build`, then writes gitignored files under `ci/artifacts/`:
+Or run the script directly:
+
+```sh
+./ci/build-prod.sh
+```
+
+`make publish` runs `make build`, then writes gitignored files under `ci/artifacts/`:
 
 | File                                                  | Role                                                                    |
 |-------------------------------------------------------|-------------------------------------------------------------------------|
