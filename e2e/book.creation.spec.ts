@@ -19,16 +19,24 @@ test('adds a book manually and opens the created book', async ({
         'Ursula K. Le Guin',
     )
 
-    await page
-        .getByRole('checkbox', {
-            name: 'Fiction',
-            exact: true,
-        })
-        .check()
+    await page.getByRole('button', {
+        name: /Select categories/,
+    }).click()
+
+    await page.getByRole('checkbox', {
+        name: 'Fiction',
+        exact: true,
+    }).check()
 
     await page
         .getByLabel('Shelf')
-        .selectOption(lifecycleShelf.shelf_id)
+        .click()
+
+    await page
+        .getByRole('button', {
+            name: lifecycleShelf.common_name,
+        })
+        .click()
 
     await page.getByRole('button', {
         name: 'Save Book',

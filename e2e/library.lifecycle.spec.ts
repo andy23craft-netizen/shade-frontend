@@ -27,8 +27,8 @@ test('checks out and checks in a book through the browser', async ({
     ).toBeVisible()
 
     /*
- * CHECKOUT
- */
+     * CHECKOUT
+     */
 
     await page
         .getByLabel('Book actions')
@@ -43,9 +43,9 @@ test('checks out and checks in a book through the browser', async ({
         }),
     ).toBeVisible()
 
-    await page.getByLabel('Borrower').fill(
-        'Jane Reader',
-    )
+    await page
+        .getByLabel('Borrower')
+        .fill('Jane Reader')
 
     await page.getByRole('button', {
         name: 'Check Out Book',
@@ -89,8 +89,8 @@ test('checks out and checks in a book through the browser', async ({
     ).toBe(true)
 
     /*
- * CHECK-IN
- */
+     * CHECK-IN
+     */
 
     await page
         .getByLabel('Book actions')
@@ -113,17 +113,30 @@ test('checks out and checks in a book through the browser', async ({
     )
 
     await expect(
+        page.getByRole('dialog', {
+            name: 'Check In',
+        }),
+    ).toBeVisible()
+
+    await expect(
         page.getByRole('heading', {
             name: 'Return Card',
         }),
     ).toBeVisible()
+
+    /*
+     * Submit the return card first.
+     * This opens the nested confirmation dialog.
+     */
 
     await page.getByRole('button', {
         name: 'Check In Book',
     }).click()
 
     await expect(
-        page.getByRole('dialog'),
+        page.getByRole('dialog', {
+            name: 'Confirm check-in',
+        }),
     ).toBeVisible()
 
     await page.getByRole('button', {
@@ -141,6 +154,36 @@ test('checks out and checks in a book through the browser', async ({
         }),
     ).toBeVisible()
 
+    expect(
+        api.state.books.find(
+            (candidate) =>
+                candidate.id === book.id,
+        )?.status,
+    ).toBe('available')
+
+    expect(
+        api.state.loans[0],
+    ).toEqual(
+        expect.objectContaining({
+            book_id: book.id,
+            borrower: 'Jane Reader',
+            returned_at: expect.any(String),
+        }),
+    )
+
+    expect(
+        api.state.requests.some(
+            (request) =>
+                request.method === 'POST' &&
+                request.pathname ===
+                `/books/${book.id}/checkin`,
+        ),
+    ).toBe(true)
+
+    /*
+     * MARK READ
+     */
+
     await page.getByRole('link', {
         name: book.title,
     }).click()
@@ -152,16 +195,13 @@ test('checks out and checks in a book through the browser', async ({
         }),
     ).toBeVisible()
 
-    /*
-     * MARK READ
-     */
-
     await page
         .getByLabel('Book actions')
         .getByRole('link', {
             name: 'Mark Read',
         })
         .click()
+
     await expect(
         page.getByRole('heading', {
             level: 1,
@@ -169,11 +209,15 @@ test('checks out and checks in a book through the browser', async ({
         }),
     ).toBeVisible()
 
-    await page.getByLabel('Rating').selectOption('5')
+    await page
+        .getByLabel('Rating')
+        .selectOption('5')
 
-    await page.getByLabel('Review').fill(
-        'A brilliant, strange novel.',
-    )
+    await page
+        .getByLabel('Review')
+        .fill(
+            'A brilliant, strange novel.',
+        )
 
     await page
         .locator('form')
@@ -187,7 +231,9 @@ test('checks out and checks in a book through the browser', async ({
     ).toBeVisible()
 
     await page
-        .getByLabel('Confirm reading completion')
+        .getByLabel(
+            'Confirm reading completion',
+        )
         .getByRole('button', {
             name: 'Mark Read',
         })
@@ -281,25 +327,8 @@ test('checks out and checks in a book through the browser', async ({
     })
 
     /*
-     * No lifecycle transition should use generic PATCH.
-     */
-
-    expect(
-        api.state.loans,
-    ).toHaveLength(0)
-
-    expect(
-        api.state.requests.some(
-            (request) =>
-                request.method === 'POST' &&
-                request.pathname ===
-                `/books/${book.id}/checkin`,
-        ),
-    ).toBe(true)
-
-    /*
-     * Guard against implementing lifecycle transitions
-     * through the generic edit endpoint.
+     * Guard against implementing lifecycle
+     * transitions through generic PATCH.
      */
 
     const lifecyclePatchRequests =
@@ -310,5 +339,7 @@ test('checks out and checks in a book through the browser', async ({
                 `/books/${book.id}`,
         )
 
-    expect(lifecyclePatchRequests).toEqual([])
+    expect(
+        lifecyclePatchRequests,
+    ).toEqual([])
 })

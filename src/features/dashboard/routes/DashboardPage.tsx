@@ -247,14 +247,6 @@ export function DashboardPage() {
                     Offline. Showing the last available dashboard
                     data.
                 </p>
-            ) : dashboardQuery.isStale ? (
-                <p
-                    className="dashboard-page__refresh-status"
-                    role="status"
-                    aria-live="polite"
-                >
-                    Dashboard data may be out of date.
-                </p>
             ) : null}
 
             {!readingCountsMatch ? (

@@ -1799,6 +1799,121 @@
   height: 100%;
 }
 
+@media (max-width: 36rem) {
+  /*
+   * Recent Additions
+   *
+   * Center the controls beneath the mobile carousel rather than
+   * retaining the desktop right alignment.
+   */
+  .home-book-carousel__controls {
+    justify-content: center;
+  }
+
+  /*
+   * Compact discovery cards
+   *
+   * The desktop compact card reserves 8rem for its cover. On a
+   * phone that leaves too little room for metadata, so reduce the
+   * cover column and let metadata labels stack over their values.
+   */
+  .home-book-carousel__item .book-card--compact {
+    grid-template-columns:
+            minmax(5.5rem, 6.5rem)
+            minmax(0, 1fr);
+  }
+
+  .home-book-carousel__item
+  .book-card--compact
+  .book-card__field {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  /*
+   * Staff Picks
+   *
+   * Preserve the physical card stack on larger screens. On phones,
+   * keep the deck interaction but place the waiting cards directly
+   * behind the active card so they cannot collide with surrounding UI.
+   */
+  .home-book-deck__stack {
+    min-height: 19rem;
+  }
+
+  .home-book-deck__card[data-position='1'],
+  .home-book-deck__card[data-position='2'] {
+    transform: translate(0, 0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .home-book-deck .book-card--compact {
+    width: 100%;
+    grid-template-columns:
+            minmax(5.5rem, 6.5rem)
+            minmax(0, 1fr);
+  }
+
+  .home-book-deck
+  .book-card--compact
+  .book-card__field {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  /*
+   * Category drawers
+   *
+   * Keep the existing three-column composition, but allow the brass
+   * holder and paper label to contract with the available width.
+   */
+  .home-category-drawer__label-holder {
+    width: min(92%, 15rem);
+    min-width: 0;
+  }
+
+  .home-category-drawer__label {
+    min-width: 0;
+    padding-inline: var(--space-2);
+  }
+}
+
+@media (max-width: 36rem) {
+  .checkin-dialog {
+    width: calc(100% - 1rem);
+    max-width: calc(100% - 1rem);
+    margin-inline: auto;
+  }
+
+  .checkin-dialog .confirmation-dialog__content,
+  .checkin-dialog .circulation-card,
+  .checkin-dialog .circulation-card__book,
+  .checkin-dialog .field {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .checkin-dialog input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .checkin-dialog .circulation-card__metadata {
+    grid-template-columns: 1fr;
+  }
+
+  .checkin-dialog .circulation-card__actions {
+    flex-wrap: wrap;
+  }
+
+  .checkin-dialog .circulation-card__metadata dd {
+    overflow-wrap: anywhere;
+  }
+}
+
+
 @media (max-width: 34rem) {
   .home-book-carousel__item .book-card--compact {
     width: min(

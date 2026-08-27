@@ -639,32 +639,6 @@ describe('DashboardPage', () => {
         ).toBeInTheDocument()
     })
 
-    it('marks cached dashboard data as stale without hiding it', () => {
-        mockDashboardQuery({
-            isStale: true,
-        })
-
-        renderDashboard()
-
-        expect(
-            screen.getByRole('status'),
-        ).toHaveTextContent(
-            'Dashboard data may be out of date.',
-        )
-
-        const collectionDrawer = screen
-            .getByRole('heading', {
-                name: 'Collection',
-            })
-            .closest('section')
-
-        expect(collectionDrawer).not.toBeNull()
-
-        expect(
-            within(collectionDrawer!).getByText('542'),
-        ).toBeInTheDocument()
-    })
-
     it('shows a retryable initial query failure', () => {
         const refetch = vi.fn()
 
