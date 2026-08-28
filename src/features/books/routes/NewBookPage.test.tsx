@@ -29,6 +29,7 @@ const mockCategoriesRefetch = vi.fn()
 const mockAuthorsRefetch = vi.fn()
 const mockCreateAuthor = vi.fn()
 const mockUseBookLookup = vi.fn()
+const mockCreateCategoryMutateAsync = vi.fn()
 
 const TEST_SHELVES: ShelfRead[] = [
     {
@@ -117,6 +118,8 @@ const lookupState = {
     error: null as unknown,
 }
 
+
+
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual<
         typeof import('react-router-dom')
@@ -154,8 +157,16 @@ vi.mock('../../../api/shelvesQueries', () => ({
 
 vi.mock('../../../api/categoriesQueries', () => ({
     useCategories: () => ({
-        ...categoriesState,
+        data: categoriesState.data,
+        isPending: categoriesState.isPending,
+        isError: categoriesState.isError,
+        isSuccess: categoriesState.isSuccess,
+        error: categoriesState.error,
         refetch: mockCategoriesRefetch,
+    }),
+    useCreateCategory: () => ({
+        mutateAsync: mockCreateCategoryMutateAsync,
+        isPending: false,
     }),
 }))
 
@@ -221,6 +232,7 @@ describe('NewBookPage', () => {
         mockAuthorsRefetch.mockReset()
         mockCreateAuthor.mockReset()
         mockUseBookLookup.mockReset()
+        mockCreateCategoryMutateAsync.mockReset()
         shelvesState.data = TEST_SHELVES
         shelvesState.isPending = false
         shelvesState.isError = false
