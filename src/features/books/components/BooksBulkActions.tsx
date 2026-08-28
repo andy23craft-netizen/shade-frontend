@@ -1,3 +1,6 @@
+import type {
+    BulkShelfMoveResponse,
+} from '../../../api/apiTypes'
 import { Button } from '../../../components/Button'
 import {
     BulkMoveToShelfControl,
@@ -9,6 +12,7 @@ interface BooksBulkActionsProps {
     onSelectVisible: () => void
     onClear: () => void
     onExit: () => void
+    onMoveSuccess?: (response: BulkShelfMoveResponse) => void
 }
 
 export function BooksBulkActions({
@@ -17,7 +21,8 @@ export function BooksBulkActions({
                                      onSelectVisible,
                                      onClear,
                                      onExit,
-                                 }: BooksBulkActionsProps) {
+    onMoveSuccess,
+}: BooksBulkActionsProps) {
     return (
         <section
             className="books-bulk-actions"
@@ -44,7 +49,10 @@ export function BooksBulkActions({
 
                 <BulkMoveToShelfControl
                     selectedBookIds={selectedBookIds}
-                    onSuccess={onClear}
+                    onSuccess={(response) => {
+                        onClear()
+                        onMoveSuccess?.(response)
+                    }}
                 />
 
                 <Button

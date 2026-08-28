@@ -15,9 +15,18 @@ test('adds a book manually and opens the created book', async ({
         'The Left Hand of Darkness',
     )
 
-    await page.getByLabel('Authors').fill(
-        'Ursula K. Le Guin',
-    )
+    await page.getByRole('button', {
+        name: /Select authors/,
+    }).click()
+
+    await page.getByRole('searchbox', {
+        name: 'Search authors',
+    }).fill('Ursula K. Le Guin')
+
+    await page.getByRole('checkbox', {
+        name: 'Ursula K. Le Guin',
+        exact: true,
+    }).check()
 
     await page.getByRole('button', {
         name: /Select categories/,
@@ -53,7 +62,13 @@ test('adds a book manually and opens the created book', async ({
 
     expect(api.state.books[0]).toMatchObject({
         title: 'The Left Hand of Darkness',
-        authors: 'Ursula K. Le Guin',
+        authors: [
+            {
+                author_id: 'author-le-guin',
+                first_name: 'Ursula K.',
+                surname: 'Le Guin',
+            },
+        ],
         categories: [
             {
                 category_id: 'cat-fiction',
@@ -77,7 +92,7 @@ test('adds a book manually and opens the created book', async ({
 
     expect(createRequest?.body).toMatchObject({
         title: 'The Left Hand of Darkness',
-        authors: 'Ursula K. Le Guin',
+        author_ids: ['author-le-guin'],
         category_ids: ['cat-fiction'],
         shelf_name: 'a1',
     })

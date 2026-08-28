@@ -9,6 +9,9 @@ import {
     Button,
     ConfirmationDialog,
 } from '../../../components'
+import type {
+    BulkShelfMoveResponse,
+} from '../../../api/apiTypes'
 import {
     useBulkMoveBooksToShelf,
 } from '../../../api/booksQueries'
@@ -23,7 +26,7 @@ import {
 
 export interface BulkMoveToShelfControlProps {
     selectedBookIds: readonly string[]
-    onSuccess: () => void
+    onSuccess: (response: BulkShelfMoveResponse) => void
 }
 
 function errorMessage(error: unknown): string {
@@ -153,7 +156,7 @@ export function BulkMoveToShelfControl({
                         } moved to ${destination}.`,
                     )
 
-                    onSuccess()
+                    onSuccess(response)
                 },
                 onError: (mutationError) => {
                     setError(

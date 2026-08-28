@@ -10,7 +10,13 @@ test('checks out and checks in a book through the browser', async ({
     const book = makeBook({
         id: 'lifecycle-book',
         title: 'Pale Fire',
-        authors: 'Vladimir Nabokov',
+        authors: [
+            {
+                author_id: 'author-nabokov',
+                first_name: 'Vladimir',
+                surname: 'Nabokov',
+            },
+        ],
     })
 
     const api = await installMockApi(page, {

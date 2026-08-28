@@ -1,5 +1,6 @@
 import type { Page, Route } from '@playwright/test'
 import type {
+    AuthorRead,
     BookCategoryRead,
     BookRead,
     CategoryRead,
@@ -28,6 +29,7 @@ export interface MockApiState {
     loans: LoanRead[]
     shelves: ShelfRead[]
     categories: CategoryRead[]
+    authors: AuthorRead[]
     requests: MockApiRequest[]
 }
 
@@ -62,6 +64,7 @@ interface InstallMockApiOptions {
     loans?: LoanRead[]
     shelves?: ShelfRead[]
     categories?: CategoryRead[]
+    authors?: AuthorRead[]
 }
 
 interface CheckoutBody {
@@ -131,6 +134,11 @@ function cloneBook(
 ): BookRead {
     return {
         ...book,
+        authors: book.authors
+            ? book.authors.map((author) => ({
+                ...author,
+            }))
+            : book.authors,
         tags: book.tags ? [...book.tags] : book.tags,
         categories: book.categories
             ? [...book.categories]
@@ -152,7 +160,13 @@ export function makeBook(
     return {
         id: 'e2e-book-1',
         title: 'Pale Fire',
-        authors: 'Vladimir Nabokov',
+        authors: [
+            {
+                author_id: 'author-nabokov',
+                first_name: 'Vladimir',
+                surname: 'Nabokov',
+            },
+        ],
         isbn13: '9780679723427',
         categories: [
             {
@@ -225,6 +239,37 @@ export const lifecycleCategories: CategoryRead[] = [
     },
 ]
 
+export const lifecycleAuthors: AuthorRead[] = [
+    {
+        author_id: 'author-nabokov',
+        first_name: 'Vladimir',
+        surname: 'Nabokov',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        author_id: 'author-le-guin',
+        first_name: 'Ursula K.',
+        surname: 'Le Guin',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
+function bookAuthorNames(
+    book: BookRead,
+): string {
+    return (book.authors ?? [])
+        .map((author) =>
+            [
+                author.first_name,
+                author.surname,
+            ]
+                .filter(Boolean)
+                .join(' '),
+        )
+        .join(', ')
+}
 function findBook(
     state: MockApiState,
     id: string,
@@ -273,11 +318,10 @@ function listBooks(
     if (author !== null) {
         const needle = author.toLowerCase()
 
-        books = books.filter(
-            (book) =>
-                book.authors
-                    .toLowerCase()
-                    .includes(needle),
+        books = books.filter((book) =>
+            bookAuthorNames(book)
+                .toLowerCase()
+                .includes(needle),
         )
     }
 
@@ -314,8 +358,8 @@ function listBooks(
 
             switch (sortBy) {
                 case 'author':
-                    leftValue = left.authors
-                    rightValue = right.authors
+                    leftValue = bookAuthorNames(left)
+                    rightValue = bookAuthorNames(right)
                     break
 
                 case 'title':
@@ -555,6 +599,38 @@ function resolveCategoriesFromIds(
     return resolved
 }
 
+function resolveAuthorsFromIds(
+    state: MockApiState,
+    authorIds: unknown,
+): BookRead['authors'] {
+    if (!Array.isArray(authorIds)) {
+        return []
+    }
+
+    return authorIds.flatMap((value) => {
+        if (typeof value !== 'string') {
+            return []
+        }
+
+        const author = state.authors.find(
+            (entry) =>
+                entry.author_id === value,
+        )
+
+        if (author === undefined) {
+            return []
+        }
+
+        return [
+            {
+                author_id: author.author_id,
+                first_name: author.first_name,
+                surname: author.surname,
+            },
+        ]
+    })
+}
+
 function createBookFromRequest(
     state: MockApiState,
     body: Record<string, unknown>,
@@ -568,10 +644,10 @@ function createBookFromRequest(
             typeof body.title === 'string'
                 ? body.title
                 : '',
-        authors:
-            typeof body.authors === 'string'
-                ? body.authors
-                : '',
+        authors: resolveAuthorsFromIds(
+            state,
+            body.author_ids,
+        ),
         isbn13:
             typeof body.isbn13 === 'string'
                 ? body.isbn13
@@ -709,6 +785,7 @@ export async function installMockApi(
         loans = [],
         shelves = [lifecycleShelf],
         categories = lifecycleCategories,
+        authors = lifecycleAuthors,
     }: InstallMockApiOptions = {},
 ): Promise<MockApiController> {
     const state: MockApiState = {
@@ -719,6 +796,9 @@ export async function installMockApi(
         })),
         categories: categories.map((category) => ({
             ...category,
+        })),
+        authors: authors.map((author) => ({
+            ...author,
         })),
         requests: [],
     }
@@ -766,6 +846,19 @@ export async function installMockApi(
             ) {
                 await fulfillJson(route, {
                     body: state.categories,
+                })
+                return
+            }
+
+            if (
+                method === 'GET' &&
+                url.pathname === '/authors'
+            ) {
+                await fulfillJson(route, {
+                    body: {
+                        items: state.authors,
+                        total: state.authors.length,
+                    },
                 })
                 return
             }

@@ -24,8 +24,10 @@ import { BulkAddPage } from './BulkAddPage'
 
 const mockShelvesRefetch = vi.fn()
 const mockCategoriesRefetch = vi.fn()
+const mockCreateCategoryMutateAsync = vi.fn()
 const mockLookupMutateAsync = vi.fn()
 const mockImportMutateAsync = vi.fn()
+const mockUseInfiniteBooks = vi.fn()
 
 let shelvesData: ShelfRead[] | undefined
 let shelvesPending = false
@@ -60,9 +62,15 @@ vi.mock('../../../api/categoriesQueries', () => ({
         error: categoriesError,
         refetch: mockCategoriesRefetch,
     }),
+    useCreateCategory: () => ({
+        mutateAsync: mockCreateCategoryMutateAsync,
+        isPending: false,
+    }),
 }))
 
 vi.mock('../../../api/booksQueries', () => ({
+    useInfiniteBooks: (options: unknown) =>
+        mockUseInfiniteBooks(options),
     useBulkBookLookup: () => ({
         mutateAsync: mockLookupMutateAsync,
         isPending: lookupPending,
@@ -194,8 +202,18 @@ describe('BulkAddPage', () => {
 
         mockShelvesRefetch.mockReset()
         mockCategoriesRefetch.mockReset()
+        mockCreateCategoryMutateAsync.mockReset()
         mockLookupMutateAsync.mockReset()
         mockImportMutateAsync.mockReset()
+        mockUseInfiniteBooks.mockReset()
+        mockUseInfiniteBooks.mockReturnValue({
+            data: {
+                pages: [{ total: 0, items: [] }],
+            },
+            isPending: false,
+            isSuccess: true,
+            isError: false,
+        })
 
         vi.restoreAllMocks()
     })
@@ -397,6 +415,101 @@ describe('BulkAddPage', () => {
         ).toBeInTheDocument()
     })
 
+    it('adds and saves a book without an ISBN through manual entry', async () => {
+        mockImportMutateAsync.mockResolvedValue({
+            items: [
+                {
+                    client_item_id: 'bulk-add-1',
+                    status: 'created',
+                    book_id: 'manual-book-1',
+                },
+            ],
+        })
+
+        renderPage()
+        startShelf()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Add manually',
+            }),
+        )
+
+        expect(
+            mockLookupMutateAsync,
+        ).not.toHaveBeenCalled()
+
+        expect(
+            screen.getByText(
+                'No ISBN · Manual entry',
+            ),
+        ).toBeInTheDocument()
+
+        const titleInput =
+            screen.getByLabelText('Title')
+
+        expect(titleInput).toHaveFocus()
+
+        fireEvent.change(titleInput, {
+            target: {
+                value: 'Manual Book',
+            },
+        })
+
+        fireEvent.change(
+            screen.getByLabelText('Authors'),
+            {
+                target: {
+                    value: 'Test Author',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Shelf (1)',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                mockImportMutateAsync,
+            ).toHaveBeenCalledWith({
+                shelf_name: 'a3',
+                acquisition_source:
+                    'Shelf intake',
+                items: [
+                    {
+                        client_item_id:
+                            'bulk-add-1',
+                        action: 'create',
+                        book: {
+                            title: 'Manual Book',
+                            isbn13: '',
+                            authors: [
+                                {
+                                    first_name:
+                                        'Test',
+                                    surname:
+                                        'Author',
+                                },
+                            ],
+                            publisher: null,
+                            publication_date:
+                                null,
+                            pages: null,
+                            category_ids: [],
+                        },
+                    },
+                ],
+            })
+        })
+
+        expect(
+            await screen.findByText('Saved'),
+        ).toBeInTheDocument()
+    })
+
     it('edits lookup metadata and saves a create item with categories', async () => {
         mockLookupMutateAsync.mockResolvedValue({
             items: [
@@ -443,6 +556,12 @@ describe('BulkAddPage', () => {
         fireEvent.change(authorInput, {
             target: { value: 'Homer' },
         })
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select categories',
+            }),
+        )
 
         fireEvent.click(
             screen.getByRole('checkbox', {
@@ -517,6 +636,105 @@ describe('BulkAddPage', () => {
                 name: 'Finish Bulk Add',
             }),
         ).toBeInTheDocument()
+    })
+
+    it('creates and selects a category from the queue picker', async () => {
+        mockLookupMutateAsync.mockResolvedValue({
+            items: [
+                {
+                    client_item_id: 'bulk-add-1',
+                    status: 'found',
+                    catalog_state: 'new',
+                    isbn13: '9780140449266',
+                    draft: {
+                        title: 'The Odyssey',
+                        authors: 'Homer',
+                        isbn13: '9780140449266',
+                    },
+                    missing_fields: [],
+                },
+            ],
+        })
+
+        mockCreateCategoryMutateAsync.mockResolvedValue({
+            category_id: 'category-epic-poetry',
+            name: 'Epic Poetry',
+            slug: 'epic-poetry',
+        })
+
+        mockImportMutateAsync.mockResolvedValue({
+            items: [
+                {
+                    client_item_id: 'bulk-add-1',
+                    status: 'created',
+                    book_id: 'book-1',
+                },
+            ],
+        })
+
+        renderPage()
+        startShelf()
+        scanIsbn('9780140449266')
+
+        await screen.findByDisplayValue('The Odyssey')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select categories',
+            }),
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Search categories'),
+            {
+                target: { value: 'Epic Poetry' },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: '+ Add “Epic Poetry”',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                mockCreateCategoryMutateAsync,
+            ).toHaveBeenCalledWith({
+                name: 'Epic Poetry',
+                slug: 'epic-poetry',
+            })
+        })
+
+        expect(
+            await screen.findByRole('button', {
+                name: 'Remove Epic Poetry category',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Shelf (1)',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                mockImportMutateAsync,
+            ).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    items: [
+                        expect.objectContaining({
+                            book: expect.objectContaining({
+                                category_ids: [
+                                    'category-epic-poetry',
+                                ],
+                            }),
+                        }),
+                    ],
+                }),
+            )
+        })
     })
 
     it('acquires an explicitly selected wishlist book by existing book id', async () => {
@@ -839,4 +1057,171 @@ describe('BulkAddPage', () => {
             ),
         ).not.toBeInTheDocument()
     })
+
+    it('offers shelf rebalancing after saving into an occupied shelf', async () => {
+        mockUseInfiniteBooks.mockImplementation(
+            (options: unknown) => {
+                const query = options as {
+                    shelfName?: string
+                    enabled?: boolean
+                }
+
+                return {
+                    data: {
+                        pages: [
+                            {
+                                total:
+                                    query.shelfName === 'a3' &&
+                                    query.enabled
+                                        ? 23
+                                        : 0,
+                                items: [],
+                            },
+                        ],
+                    },
+                    isPending: false,
+                    isSuccess: true,
+                    isError: false,
+                }
+            },
+        )
+
+        mockLookupMutateAsync.mockResolvedValue({
+            items: [
+                {
+                    client_item_id: 'bulk-add-1',
+                    status: 'found',
+                    catalog_state: 'new',
+                    isbn13: '9780140449266',
+                    draft: {
+                        title: 'The Odyssey',
+                        authors: 'Homer',
+                        isbn13: '9780140449266',
+                    },
+                    missing_fields: [],
+                },
+            ],
+        })
+
+        mockImportMutateAsync.mockResolvedValue({
+            items: [
+                {
+                    client_item_id: 'bulk-add-1',
+                    status: 'created',
+                    book_id: 'book-odyssey',
+                },
+            ],
+        })
+
+        const openSpy = vi
+            .spyOn(window, 'open')
+            .mockImplementation(() => null)
+
+        renderPage()
+        startShelf()
+
+        expect(openSpy).not.toHaveBeenCalled()
+        expect(
+            screen.queryByRole('dialog', {
+                name: 'Rebalance shelf?',
+            }),
+        ).not.toBeInTheDocument()
+
+        scanIsbn('9780140449266')
+
+        await screen.findByDisplayValue('The Odyssey')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Shelf (1)',
+            }),
+        )
+
+        const dialog = await screen.findByRole('dialog', {
+            name: 'Rebalance shelf?',
+        })
+
+        expect(dialog).toHaveTextContent(
+            'A3 already has 23 books. Do any need to move?',
+        )
+        expect(openSpy).not.toHaveBeenCalled()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Move books',
+            }),
+        )
+
+        expect(openSpy).toHaveBeenCalledWith(
+            '/books?shelf_name=a3&bulk_rebalance=1',
+            '_blank',
+        )
+    })
+
+    it('subtracts moved books before offering the next rebalance', async () => {
+        mockUseInfiniteBooks.mockImplementation(
+            (options: unknown) => {
+                const query = options as {
+                    shelfName?: string
+                    enabled?: boolean
+                }
+
+                return {
+                    data: {
+                        pages: [
+                            {
+                                total:
+                                    query.shelfName === 'b1' &&
+                                    query.enabled
+                                        ? 5
+                                        : 0,
+                                items: [],
+                            },
+                        ],
+                    },
+                    isPending: false,
+                    isSuccess: true,
+                    isError: false,
+                }
+            },
+        )
+
+        const openSpy = vi
+            .spyOn(window, 'open')
+            .mockImplementation(() => null)
+
+        renderPage()
+        startShelf()
+
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                origin: window.location.origin,
+                data: {
+                    type: 'shade-bulk-add-rebalance-complete',
+                    shelfName: 'b1',
+                    movedCount: 2,
+                },
+            }),
+        )
+
+        const dialog = await screen.findByRole('dialog', {
+            name: 'Rebalance shelf?',
+        })
+
+        expect(dialog).toHaveTextContent(
+            'B1 already has 3 books. Do any need to move?',
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Move books',
+            }),
+        )
+
+        expect(openSpy).toHaveBeenCalledWith(
+            '/books?shelf_name=b1&bulk_rebalance=1',
+            '_blank',
+        )
+    })
+
 })

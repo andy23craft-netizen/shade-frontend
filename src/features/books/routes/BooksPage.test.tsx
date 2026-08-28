@@ -2236,4 +2236,32 @@ describe('BooksPage', () => {
             }),
         ).toBeInTheDocument()
     })
+
+    it('enters bulk selection mode from the Bulk Add rebalance URL', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [makeBook({ shelf_name: 'a3' })],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?shelf_name=a3&bulk_rebalance=1',
+        )
+
+        expect(
+            screen.getByRole('region', {
+                name: 'Bulk selection',
+            }),
+        ).toBeInTheDocument()
+
+        expect(mockUseInfiniteBooks).toHaveBeenCalledWith(
+            expect.objectContaining({
+                shelfName: 'a3',
+            }),
+        )
+    })
+
 })

@@ -15,12 +15,15 @@ import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
+import { ConfirmationDialog } from '../../../components'
 import {
     useBulkBookImport,
     useBulkBookLookup,
+    useInfiniteBooks,
 } from '../../../api/booksQueries'
 import {
     useCategories,
+    useCreateCategory,
 } from '../../../api/categoriesQueries'
 import {
     useShelves,
@@ -38,6 +41,14 @@ import {
 
 const BULK_LOOKUP_MAX_ITEMS = 50
 const BULK_IMPORT_MAX_ITEMS = 50
+
+function categorySlug(name: string): string {
+    return name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+}
 
 const IsbnCameraScanner = lazy(
     () =>
@@ -320,6 +331,10 @@ export function BulkAddPage() {
     const navigate = useNavigate()
     const shelvesQuery = useShelves()
     const categoriesQuery = useCategories()
+    const {
+        mutateAsync: createCategory,
+        isPending: isCreatingCategory,
+    } = useCreateCategory()
 
     const {
         mutateAsync: lookupBooks,
@@ -332,6 +347,10 @@ export function BulkAddPage() {
 
     const isbnInputRef =
         useRef<HTMLInputElement>(null)
+
+
+    const pendingManualFocusIdRef =
+        useRef<string | null>(null)
 
     const nextClientIdRef = useRef(1)
     const lookupInFlightRef = useRef(false)
@@ -405,6 +424,79 @@ export function BulkAddPage() {
         setIsSaving,
     ] = useState(false)
 
+    const [
+        activeCategoryPickerId,
+        setActiveCategoryPickerId,
+    ] = useState<string | null>(null)
+
+    const [
+        categorySearch,
+        setCategorySearch,
+    ] = useState('')
+
+    const [
+        categoryCreateError,
+        setCategoryCreateError,
+    ] = useState<string | null>(null)
+
+    const [
+        createdCategories,
+        setCreatedCategories,
+    ] = useState<
+        Array<{
+            category_id: string
+            name: string
+        }>
+    >([])
+
+    const [
+        rebalancePrompt,
+        setRebalancePrompt,
+    ] = useState<{
+        shelfName: string
+        existingCount: number
+    } | null>(null)
+
+    const [
+        rebalanceCheck,
+        setRebalanceCheck,
+    ] = useState<{
+        shelfName: string
+        movedCount: number
+    } | null>(null)
+
+    const selectedShelfBooksQuery = useInfiniteBooks({
+        shelfName: shelfName || undefined,
+        enabled: sessionStarted && Boolean(shelfName),
+    })
+
+    const rebalanceShelfBooksQuery = useInfiniteBooks({
+        shelfName: rebalanceCheck?.shelfName,
+        enabled: rebalanceCheck !== null,
+    })
+
+    const returnedShelfExistingCount =
+        rebalanceCheck !== null &&
+        rebalanceShelfBooksQuery.isSuccess
+            ? Math.max(
+                (rebalanceShelfBooksQuery.data?.pages[0]
+                    ?.total ?? 0) -
+                    rebalanceCheck.movedCount,
+                0,
+            )
+            : 0
+
+    const activeRebalancePrompt =
+        rebalancePrompt ??
+        (rebalanceCheck !== null &&
+        returnedShelfExistingCount > 0
+            ? {
+                shelfName: rebalanceCheck.shelfName,
+                existingCount:
+                    returnedShelfExistingCount,
+            }
+            : null)
+
     const assignableShelves = useMemo(
         () =>
             (shelvesQuery.data ?? []).filter(
@@ -419,6 +511,32 @@ export function BulkAddPage() {
             (shelf) =>
                 shelf.common_name === shelfName,
         )
+
+    const categories = useMemo(() => {
+        const queryCategories =
+            categoriesQuery.data ?? []
+
+        return [
+            ...queryCategories,
+            ...createdCategories.filter(
+                (created) =>
+                    !queryCategories.some(
+                        (category) =>
+                            category.category_id ===
+                            created.category_id,
+                    ),
+            ),
+        ].sort((left, right) =>
+            left.name.localeCompare(
+                right.name,
+                undefined,
+                { sensitivity: 'base' },
+            ),
+        )
+    }, [
+        categoriesQuery.data,
+        createdCategories,
+    ])
 
     const saveEligibleItems = useMemo(
         () =>
@@ -681,7 +799,8 @@ export function BulkAddPage() {
     useEffect(() => {
         if (
             !sessionStarted ||
-            isCameraOpen
+            isCameraOpen ||
+            pendingManualFocusIdRef.current !== null
         ) {
             return
         }
@@ -692,6 +811,100 @@ export function BulkAddPage() {
         queue.length,
         sessionStarted,
     ])
+    useEffect(() => {
+        const clientItemId =
+            pendingManualFocusIdRef.current
+
+        if (clientItemId === null) {
+            return
+        }
+
+        const titleInput =
+            document.getElementById(
+                `${clientItemId}-title`,
+            )
+
+        if (titleInput instanceof HTMLInputElement) {
+            titleInput.focus()
+            pendingManualFocusIdRef.current = null
+        }
+    }, [queue.length])
+
+    function openShelfRebalance(
+        targetShelfName: string,
+    ) {
+        const params = new URLSearchParams({
+            shelf_name: targetShelfName,
+            bulk_rebalance: '1',
+        })
+
+        window.open(
+            `/books?${params.toString()}`,
+            '_blank',
+        )
+    }
+
+    useEffect(() => {
+        function handleRebalanceMessage(
+            event: MessageEvent,
+        ) {
+            if (event.origin !== window.location.origin) {
+                return
+            }
+
+            const data = event.data as {
+                type?: unknown
+                shelfName?: unknown
+                movedCount?: unknown
+            } | null
+
+            if (
+                data?.type !==
+                    'shade-bulk-add-rebalance-complete' ||
+                typeof data.shelfName !== 'string' ||
+                !data.shelfName.trim() ||
+                typeof data.movedCount !== 'number' ||
+                data.movedCount < 0
+            ) {
+                return
+            }
+
+            setRebalanceCheck({
+                shelfName: data.shelfName.trim(),
+                movedCount: data.movedCount,
+            })
+        }
+
+        window.addEventListener(
+            'message',
+            handleRebalanceMessage,
+        )
+
+        return () => {
+            window.removeEventListener(
+                'message',
+                handleRebalanceMessage,
+            )
+        }
+    }, [])
+
+    function confirmRebalance() {
+        if (activeRebalancePrompt === null) {
+            return
+        }
+
+        const targetShelfName =
+            activeRebalancePrompt.shelfName
+
+        setRebalancePrompt(null)
+        setRebalanceCheck(null)
+        openShelfRebalance(targetShelfName)
+    }
+
+    function cancelRebalance() {
+        setRebalancePrompt(null)
+        setRebalanceCheck(null)
+    }
 
     function startSession(
         event: FormEvent<HTMLFormElement>,
@@ -755,6 +968,36 @@ export function BulkAddPage() {
         setSaveError(null)
 
         isbnInputRef.current?.focus()
+    }
+
+    function addManualBook() {
+        const clientItemId =
+            `bulk-add-${nextClientIdRef.current}`
+
+        nextClientIdRef.current += 1
+
+        setQueue((current) => [
+            ...current,
+            {
+                clientItemId,
+                isbn: '',
+                status: 'lookup_failed',
+            },
+        ])
+
+        setDrafts((current) => ({
+            ...current,
+            [clientItemId]: emptyDraft(),
+        }))
+
+        pendingManualFocusIdRef.current =
+            clientItemId
+
+        setCaptureMessage(
+            'Added a book for manual entry.',
+        )
+        setSaveMessage(null)
+        setSaveError(null)
     }
 
     function submitIsbn(
@@ -835,6 +1078,61 @@ export function BulkAddPage() {
         })
     }
 
+    async function handleCreateCategory(
+        item: BulkAddQueueItem,
+    ) {
+        const name = categorySearch
+            .trim()
+            .replace(/\s+/g, ' ')
+
+        if (!name) {
+            return
+        }
+
+        setCategoryCreateError(null)
+
+        try {
+            const created =
+                await createCategory({
+                    name,
+                    slug: categorySlug(name),
+                })
+
+            setCreatedCategories((current) =>
+                current.some(
+                    (category) =>
+                        category.category_id ===
+                        created.category_id,
+                )
+                    ? current
+                    : [...current, created],
+            )
+
+            const draft = ensureDraft(item)
+
+            if (
+                !draft.categoryIds.includes(
+                    created.category_id,
+                )
+            ) {
+                updateDraft(item, {
+                    categoryIds: [
+                        ...draft.categoryIds,
+                        created.category_id,
+                    ],
+                })
+            }
+
+            setCategorySearch('')
+        } catch (error) {
+            setCategoryCreateError(
+                error instanceof Error
+                    ? error.message
+                    : 'The category could not be created.',
+            )
+        }
+    }
+
     async function saveShelf() {
         if (
             isSaving ||
@@ -842,6 +1140,12 @@ export function BulkAddPage() {
         ) {
             return
         }
+
+        const preSaveShelfCount =
+            selectedShelfBooksQuery.isSuccess
+                ? selectedShelfBooksQuery.data?.pages[0]
+                    ?.total ?? 0
+                : 0
 
         setIsSaving(true)
         setSaveMessage(null)
@@ -1065,6 +1369,16 @@ export function BulkAddPage() {
                     } still need attention.`,
                 )
             }
+
+            if (
+                succeeded > 0 &&
+                preSaveShelfCount > 0
+            ) {
+                setRebalancePrompt({
+                    shelfName,
+                    existingCount: preSaveShelfCount,
+                })
+            }
         } catch (error) {
             setSaveError(
                 importFailureMessage(
@@ -1111,6 +1425,9 @@ export function BulkAddPage() {
         setSaveMessage(null)
         setSaveError(null)
         setIsCameraOpen(false)
+        setActiveCategoryPickerId(null)
+        setCategorySearch('')
+        setCategoryCreateError(null)
         nextClientIdRef.current = 1
     }
 
@@ -1374,6 +1691,14 @@ export function BulkAddPage() {
                         <Button
                             type="button"
                             variant="secondary"
+                            onClick={addManualBook}
+                        >
+                            Add manually
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="secondary"
                             onClick={() => {
                                 setIsCameraOpen(
                                     true,
@@ -1575,9 +1900,7 @@ export function BulkAddPage() {
                                             </p>
 
                                             <p className="bulk-add-queue-item__isbn">
-                                                {
-                                                    item.isbn
-                                                }
+                                                {item.isbn || 'No ISBN · Manual entry'}
                                             </p>
                                         </div>
 
@@ -1703,9 +2026,7 @@ export function BulkAddPage() {
                                                 >
                                                     <input
                                                         id={`${item.clientItemId}-title`}
-                                                        value={
-                                                            draft.title
-                                                        }
+                                                        value={draft.title}
                                                         aria-invalid={
                                                             titleMissing
                                                                 ? true
@@ -1844,42 +2165,258 @@ export function BulkAddPage() {
                                                     <LoadingState label="Loading categories…" />
                                                 ) : null}
 
-                                                {categoriesQuery.data &&
-                                                categoriesQuery.data.length >
-                                                0 ? (
-                                                    <fieldset className="bulk-add-review__categories">
+                                                {!categoriesQuery.isPending &&
+                                                !categoriesQuery.isError ? (
+                                                    <fieldset className="bulk-add-review__category-field">
                                                         <legend>
                                                             Categories
                                                         </legend>
 
-                                                        {categoriesQuery.data.map(
-                                                            (
-                                                                category,
-                                                            ) => (
-                                                                <label
-                                                                    key={
-                                                                        category.category_id
-                                                                    }
-                                                                >
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={draft.categoryIds.includes(
+                                                        {(() => {
+                                                            const selectedCategories =
+                                                                categories.filter(
+                                                                    (category) =>
+                                                                        draft.categoryIds.includes(
                                                                             category.category_id,
-                                                                        )}
-                                                                        onChange={() => {
-                                                                            toggleCategory(
-                                                                                item,
-                                                                                category.category_id,
-                                                                            )
-                                                                        }}
-                                                                    />
+                                                                        ),
+                                                                )
 
-                                                                    {
+                                                            const pickerOpen =
+                                                                activeCategoryPickerId ===
+                                                                item.clientItemId
+
+                                                            const normalizedSearch =
+                                                                categorySearch
+                                                                    .trim()
+                                                                    .toLowerCase()
+
+                                                            const searchName =
+                                                                categorySearch
+                                                                    .trim()
+                                                                    .replace(
+                                                                        /\s+/g,
+                                                                        ' ',
+                                                                    )
+
+                                                            const hasExactMatch =
+                                                                searchName !== '' &&
+                                                                categories.some(
+                                                                    (category) =>
                                                                         category.name
-                                                                    }
-                                                                </label>
-                                                            ),
-                                                        )}
+                                                                            .trim()
+                                                                            .toLowerCase() ===
+                                                                        searchName.toLowerCase(),
+                                                                )
+
+                                                            const visibleCategories =
+                                                                normalizedSearch === ''
+                                                                    ? categories
+                                                                    : categories.filter(
+                                                                        (category) =>
+                                                                            category.name
+                                                                                .toLowerCase()
+                                                                                .includes(
+                                                                                    normalizedSearch,
+                                                                                ),
+                                                                    )
+
+                                                            return (
+                                                                <>
+                                                                    {selectedCategories.length >
+                                                                    0 ? (
+                                                                        <div
+                                                                            className="book-form__selected-categories"
+                                                                            aria-label={`Selected categories for ${queueItemTitle(
+                                                                                item,
+                                                                                draft,
+                                                                            )}`}
+                                                                        >
+                                                                            {selectedCategories.map(
+                                                                                (category) => (
+                                                                                    <Button
+                                                                                        key={
+                                                                                            category.category_id
+                                                                                        }
+                                                                                        type="button"
+                                                                                        variant="secondary"
+                                                                                        aria-label={`Remove ${category.name} category`}
+                                                                                        onClick={() => {
+                                                                                            toggleCategory(
+                                                                                                item,
+                                                                                                category.category_id,
+                                                                                            )
+                                                                                        }}
+                                                                                    >
+                                                                                        {category.name}{' '}
+                                                                                        ×
+                                                                                    </Button>
+                                                                                ),
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="bulk-add-review__categories-empty">
+                                                                            No categories selected.
+                                                                        </p>
+                                                                    )}
+
+                                                                    <div className="book-form__category-picker">
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="secondary"
+                                                                            aria-expanded={
+                                                                                pickerOpen
+                                                                            }
+                                                                            aria-controls={`${item.clientItemId}-category-picker`}
+                                                                            onClick={() => {
+                                                                                if (
+                                                                                    pickerOpen
+                                                                                ) {
+                                                                                    setActiveCategoryPickerId(
+                                                                                        null,
+                                                                                    )
+                                                                                    setCategorySearch(
+                                                                                        '',
+                                                                                    )
+                                                                                    setCategoryCreateError(
+                                                                                        null,
+                                                                                    )
+                                                                                    return
+                                                                                }
+
+                                                                                setActiveCategoryPickerId(
+                                                                                    item.clientItemId,
+                                                                                )
+                                                                                setCategorySearch(
+                                                                                    '',
+                                                                                )
+                                                                                setCategoryCreateError(
+                                                                                    null,
+                                                                                )
+                                                                            }}
+                                                                        >
+                                                                            {pickerOpen
+                                                                                ? 'Close categories'
+                                                                                : selectedCategories.length >
+                                                                                    0
+                                                                                  ? `Select categories (${selectedCategories.length})`
+                                                                                  : 'Select categories'}
+                                                                        </Button>
+
+                                                                        {pickerOpen ? (
+                                                                            <div
+                                                                                id={`${item.clientItemId}-category-picker`}
+                                                                                className="book-form__category-dropdown"
+                                                                            >
+                                                                                <Field label="Search categories">
+                                                                                    <input
+                                                                                        type="search"
+                                                                                        value={
+                                                                                            categorySearch
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                        ) => {
+                                                                                            setCategorySearch(
+                                                                                                event
+                                                                                                    .target
+                                                                                                    .value,
+                                                                                            )
+                                                                                            setCategoryCreateError(
+                                                                                                null,
+                                                                                            )
+                                                                                        }}
+                                                                                        autoComplete="off"
+                                                                                    />
+                                                                                </Field>
+
+                                                                                <div className="book-form__category-dropdown-list">
+                                                                                    {searchName !== '' &&
+                                                                                    !hasExactMatch ? (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            className="book-form__picker-create"
+                                                                                            disabled={
+                                                                                                isCreatingCategory
+                                                                                            }
+                                                                                            onClick={() => {
+                                                                                                void handleCreateCategory(
+                                                                                                    item,
+                                                                                                )
+                                                                                            }}
+                                                                                        >
+                                                                                            {isCreatingCategory
+                                                                                                ? 'Adding category…'
+                                                                                                : `+ Add “${searchName}”`}
+                                                                                        </button>
+                                                                                    ) : null}
+
+                                                                                    {visibleCategories.length >
+                                                                                    0 ? (
+                                                                                        visibleCategories.map(
+                                                                                            (
+                                                                                                category,
+                                                                                            ) => {
+                                                                                                const inputId =
+                                                                                                    `${item.clientItemId}-category-${category.category_id}`
+
+                                                                                                return (
+                                                                                                    <label
+                                                                                                        key={
+                                                                                                            category.category_id
+                                                                                                        }
+                                                                                                        htmlFor={
+                                                                                                            inputId
+                                                                                                        }
+                                                                                                        className="book-form__category-option"
+                                                                                                    >
+                                                                                                        <input
+                                                                                                            id={
+                                                                                                                inputId
+                                                                                                            }
+                                                                                                            type="checkbox"
+                                                                                                            checked={draft.categoryIds.includes(
+                                                                                                                category.category_id,
+                                                                                                            )}
+                                                                                                            onChange={() => {
+                                                                                                                toggleCategory(
+                                                                                                                    item,
+                                                                                                                    category.category_id,
+                                                                                                                )
+                                                                                                            }}
+                                                                                                        />
+
+                                                                                                        <span>
+                                                                                                            {
+                                                                                                                category.name
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                    </label>
+                                                                                                )
+                                                                                            },
+                                                                                        )
+                                                                                    ) : (
+                                                                                        <p className="book-form__category-no-results">
+                                                                                            No categories match your search.
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                {categoryCreateError ? (
+                                                                                    <p
+                                                                                        className="field__error bulk-add-review__category-error"
+                                                                                        role="alert"
+                                                                                    >
+                                                                                        {
+                                                                                            categoryCreateError
+                                                                                        }
+                                                                                    </p>
+                                                                                ) : null}
+                                                                            </div>
+                                                                        ) : null}
+                                                                    </div>
+                                                                </>
+                                                            )
+                                                        })()}
                                                     </fieldset>
                                                 ) : null}
                                             </div>
@@ -1943,6 +2480,30 @@ export function BulkAddPage() {
                     </div>
                 ) : null}
             </section>
+
+            <ConfirmationDialog
+                open={activeRebalancePrompt !== null}
+                title="Rebalance shelf?"
+                confirmLabel="Move books"
+                cancelLabel="No"
+                confirmVariant="primary"
+                onConfirm={confirmRebalance}
+                onCancel={cancelRebalance}
+            >
+                {activeRebalancePrompt ? (
+                    <p>
+                        {formatShelfCommonNameForDisplay(
+                            activeRebalancePrompt.shelfName,
+                        )}{' '}
+                        already has{' '}
+                        {activeRebalancePrompt.existingCount}{' '}
+                        {activeRebalancePrompt.existingCount === 1
+                            ? 'book'
+                            : 'books'}
+                        . Do any need to move?
+                    </p>
+                ) : null}
+            </ConfirmationDialog>
         </section>
     )
 }

@@ -264,6 +264,9 @@ export function BooksPage() {
         searchParams.get('isbn'),
     )
 
+    const isBulkRebalance =
+        searchParams.get('bulk_rebalance') === '1'
+
     const isUnifiedSearch =
         author !== undefined &&
         title === undefined
@@ -368,7 +371,7 @@ export function BooksPage() {
     const [
         isBulkSelectionMode,
         setIsBulkSelectionMode,
-    ] = useState(false)
+    ] = useState(isBulkRebalance)
 
     const bulkSelection = useBulkSelection({
         books,
@@ -491,6 +494,22 @@ export function BooksPage() {
                     onExit={() => {
                         bulkSelection.clear()
                         setIsBulkSelectionMode(false)
+                    }}
+                    onMoveSuccess={(response) => {
+                        if (!isBulkRebalance) {
+                            return
+                        }
+
+                        window.opener?.postMessage(
+                            {
+                                type: 'shade-bulk-add-rebalance-complete',
+                                shelfName: response.shelf_name,
+                                movedCount: response.moved_count,
+                            },
+                            window.location.origin,
+                        )
+                        window.opener?.focus()
+                        window.close()
                     }}
                 />
             ) : null}

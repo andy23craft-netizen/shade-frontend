@@ -101,7 +101,7 @@ function renderControl({
                            onSuccess = vi.fn(),
                        }: {
     selectedBookIds?: readonly string[]
-    onSuccess?: () => void
+    onSuccess?: (response: BulkShelfMoveResponse) => void
 } = {}) {
     render(
         <BulkMoveToShelfControl
@@ -358,7 +358,9 @@ describe('BulkMoveToShelfControl', () => {
         openConfirmation()
         confirmMove()
 
-        expect(onSuccess).toHaveBeenCalledOnce()
+        expect(onSuccess).toHaveBeenCalledWith(
+            response,
+        )
 
         expect(
             screen.getByRole('status'),
