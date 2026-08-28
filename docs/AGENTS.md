@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-25 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-28 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -44,17 +44,20 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `shelf_name` and ISBN remain URL/deep-link (or hardware) driven. Category vocabulary loads from `GET /categories`
   (`useCategories`); list/detail display uses `formatBookCategories` on `BookRead.categories`. Cleanup mode hides
   ordinary filters and uses incomplete-metadata books. Do not invent page-local filter stacks or hard-coded category
-  taxonomy; frontend category admin remains out of V1.
+  taxonomy; frontend category and author catalog admin remain out of V1.
 - Explicit bulk selection on `/books` (`useBulkSelection` / `BookSelectionControl` / `BooksBulkActions`) and atomic
   bulk move-to-shelf via `POST /books/bulk/move-to-shelf` (`booksApi.moveToShelf` / `useBulkMoveBooksToShelf` /
   `BulkMoveToShelfControl`). Select All covers currently loaded eligible books only. Do not loop per-book `PATCH` for
   bulk placement.
 - Book create/edit (`/books/new`, `/books/:bookId/edit`) via shared `BookForm` / `bookFormModel` / `bookEditModel`,
-  ISBN lookup on create, API-fed shelf pickers (`shelf_name`; create requires an explicit shelf), and multi-category
-  checkboxes (`category_ids`; zero allowed). Create/edit gate on shelves and categories load failure. Edit uses a
-  minimal `BookUpdate` patch (blank ISBN → `null`; omit unchanged `category_ids` / `shelf_name`; send `[]` to clear
-  categories; never send JSON `null` for `shelf_name` or `category_ids` -- **422**; never send `status`, reading
-  fields, or loan-driving values); Field-linked **422**; `404` refetch; no-op rejection; deleted warning.
+  normalized author picker (`author_ids` from `GET /authors`; inline `POST /authors` on create lookup and wishlist
+  add), ISBN lookup on create (draft textual `authors` resolved/reused/created before submit), API-fed shelf pickers
+  (`shelf_name`; create requires an explicit shelf), and multi-category checkboxes (`category_ids`; zero allowed).
+  Create/edit gate on shelves, categories, and authors load failure. Edit uses a minimal `BookUpdate` patch (blank ISBN
+  → `null`; omit unchanged `category_ids` / `shelf_name` / `author_ids`; send `[]` to clear categories; never send
+  JSON `null` for `shelf_name`, `category_ids`, or `author_ids` -- **422**; never send `status`, reading fields, or
+  loan-driving values); Field-linked **422**; `404` refetch; no-op rejection; deleted warning. List/detail display uses
+  `formatBookAuthors` on structured `BookRead.authors` (`BookAuthorRead[]`).
 - ISBN camera capture lazy-loaded from `/books/new` only; hardware-scanner capture under `src/features/scanning/`
   for create lookup on `/books/new` and collection jump on `/dashboard`, `/books`, and `/loans`
   (`useCollectionIsbnJump`). Collection jump opens a unique match or filters `/books?isbn=`; it never creates or
@@ -81,7 +84,8 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   CRUD on book forms.
 - Wishlists on `/wishlists` (`wishlistsApi` / `useWishlists` / `useWishlistBooks` / write mutations): Collection-drawer
   link, nested memberships joined via `GET /books/{id}` (not `GET /books`), add via unshelved `POST /books` (omit
-  `shelf_name`) then `POST /wishlists/{id}/books`, and move-to-shelf via `MoveWishlistBookToShelfControl` /
+  `shelf_name`; `author_ids` required -- text input resolved/reused/created via `useAuthors` / `useCreateAuthor`) then
+  `POST /wishlists/{id}/books`, and move-to-shelf via `MoveWishlistBookToShelfControl` /
   `useMoveWishlistBookToShelf` (membership `DELETE` then `PATCH { shelf_name }`). Shelf/wishlist exclusivity is
   enforced with documented **412** responses. No add-from-collection or membership field edit.
 - Curated Collections on `/collections` (`collectionsApi` / `useCollections` / `useCollectionBooks` / write
@@ -148,7 +152,7 @@ exists), then the product requirements docs when deciding what to build next.
 - Vite 8
 - React Router 7 (`react-router-dom`), integrated in `src/main.tsx`
 - TanStack React Query 5 (`QueryClientProvider` mounted under `AppProviders` with configured client defaults,
-  books/loans/dashboard/shelves/categories/wishlists/collections hooks including infinite-list pagination where
+  books/loans/dashboard/shelves/categories/authors/wishlists/collections hooks including infinite-list pagination where
   applicable, and mutation detail-cache writes)
 - `openapi-typescript` for generating `src/api/generated/openapi.ts` from the checked-in OpenAPI document
 - `@zxing/browser` + `@zxing/library` for camera ISBN decode (lazy-loaded from `/books/new` only; not on the critical
@@ -172,7 +176,7 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `0.2.11`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `0.2.15`). Prefer generating or fixture-checking TypeScript models
   from this file.
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, error
   meanings, lifecycle rules, ISBN quirks, book covers **200** image bytes / multipart semantics, SQL backup dump
@@ -194,7 +198,32 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
 
-### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `0.2.11`)
+### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `0.2.15`)
+
+Authors are backend data, not free-form book text. Books no longer store a string `authors` field on create/update.
+
+- `GET /authors`: authenticated; returns `{ "items": [...], "total": <int> }` (`AuthorList` in OpenAPI). No `skip` /
+  `take`; always the full catalog ordered by surname, first name, then `author_id`.
+- Author catalog CRUD: `POST /authors` (**201**), `GET /authors/{author_id}`, `PATCH /authors/{author_id}`,
+  `DELETE /authors/{author_id}` (**204** when unreferenced). Referenced authors return **409**
+  `{"detail": "Author is referenced by one or more books"}`.
+- `BookRead.authors`: structured `BookAuthorRead[]` (`author_id`, `first_name`, `surname`) preserving book order.
+- `BookCreate.author_ids`: required array with at least one author GUID. `BookUpdate.author_ids`: omit to preserve
+  membership; send a non-empty ordered list to replace. `author_ids` may not be null, empty, or contain duplicates.
+  Unknown IDs return **422** with object `detail` (`message` plus missing `author_ids`).
+- `GET /books?author=` remains a text filter for frontend convenience; it searches normalized author names
+  (case-insensitive substring over linked `first_name` + `surname`). Default sort is `sortBy=author` ascending using the
+  first-listed author's surname and first name.
+- `GET /books/lookup` draft may include textual `draft.authors` from the metadata provider; that does not create author
+  records. Resolve/reuse matching authors or create them with `POST /authors` before `POST /books`.
+- Do not hard-code author names. Load vocabulary from `GET /authors` (`useAuthors`) and submit stable GUIDs as
+  `author_ids`. Frontend author catalog admin (create/edit/delete outside inline book flows) is out of V1.
+
+SPA surface: `authorsApi` / `authorsQueries`, `authorDisplay.formatBookAuthors`, create/edit/wishlist author pickers,
+inline `useCreateAuthor` on ISBN lookup apply and wishlist add, and list/detail/join display. Do not send free-form
+author strings on `BookCreate` / `BookUpdate`.
+
+### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `0.2.15`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
@@ -210,7 +239,7 @@ string enum.
   Blank/absent selection sends no category filter. Unknown or malformed IDs follow the OpenAPI contract; a valid
   selection with no matches returns an empty `BookList`, not **404**.
 - Do not hard-code category names or slugs. Load vocabulary from `GET /categories` (`useCategories`) and submit stable
-  GUIDs as `category_ids`. Frontend category admin (create/rename/merge/delete) is out of V1.
+  GUIDs as `category_ids`. Frontend category catalog admin (create/rename/merge/delete) is out of V1.
 - Dashboard: `by_category` buckets use category display names; a multi-category book contributes once per applicable
   bucket. Incomplete-metadata "missing category" means **no memberships** (empty `categories`, not a sentinel string).
 
@@ -314,6 +343,8 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 | Cover upload       | `PUT /books/{id}/cover` (multipart `file`)     |
 | Cover delete       | `DELETE /books/{id}/cover`                     |
 | ISBN lookup        | `GET /books/lookup?isbn={isbn}`                |
+| Bulk ISBN lookup   | `POST /books/bulk/lookup` (API only; no SPA)    |
+| Bulk import        | `POST /books/bulk/import` (API only; no SPA)    |
 | Backup (ops)       | `GET /backup` (API host / cron; no SPA caller) |
 
 Bulk shelf move is atomic: validate destination and every selected book before changing any membership. Do **not**
@@ -326,17 +357,19 @@ wishlist membership). Do **not** set covers through create/update JSON (`cover_i
 
 - Validate ISBN-10 check digits (backend does not do this correctly).
 - Send normalized `YYYY-MM-DD` dates and UTC ISO 8601 timestamps.
-- Do not send `null` for required DB fields (title, authors, shelf_name on create, is_read, status). Category
-  membership is optional (`category_ids` omit/`[]` allowed); never send a singular `category` enum field. JSON `null`
-  `shelf_name` or `category_ids` on book update is **422** (omit those fields instead; OpenAPI may still show `null`
-  as a schema option). Do not set covers through create/update JSON -- use `PUT` / `DELETE /books/{id}/cover`.
+- Do not send `null` for required DB fields (title, `author_ids` on create, shelf_name on create, is_read, status).
+  Category membership is optional (`category_ids` omit/`[]` allowed); never send a singular `category` enum field. JSON
+  `null` `shelf_name`, `category_ids`, or `author_ids` on book update is **422** (omit those fields instead; OpenAPI
+  may still show `null` as a schema option). Do not set covers through create/update JSON -- use
+  `PUT` / `DELETE /books/{id}/cover`.
 - Load shelves from `GET /shelves` for book placement; send selected `common_name` as `shelf_name` (never Title Case
   display strings). Collection create on `/books/new` requires an explicit shelf. Wishlist-only catalog rows omit
   `shelf_name` on `POST /books`. Manage the catalog on `/shelves` with documented `POST` / `PATCH` / `DELETE` (do not
   invent shelf CRUD on Add/Edit Book).
-- Load categories from `GET /categories` (`useCategories`); submit GUIDs as `category_ids`. Do not hard-code category
-  vocabulary or invent hard-coded labels as fake options.
-- Prevent blank title, authors, borrower, and (on create) unselected shelf.
+- Load categories from `GET /categories` (`useCategories`); submit GUIDs as `category_ids`. Load authors from
+  `GET /authors` (`useAuthors`); submit ordered GUIDs as `author_ids`. Do not hard-code category or author vocabulary
+  or invent hard-coded labels as fake options.
+- Prevent blank title, at least one author (`author_ids`), borrower, and (on create) unselected shelf.
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Render unknown enum values safely (see `enumDisplayValue`).
 - Display API-provided dashboard statistics; do not recalculate business metrics. If an average is `null`, show
@@ -357,11 +390,13 @@ artifacts, wishlists, wishlist move-to-shelf, curated Collections (create/edit/d
 quality gate (`make check`).
 
 **Out of scope unless explicitly requested:** UPC, true multi-library tenancy, overdue notifications,
-Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, and remote
-Ansible/systemd/TLS/rollback orchestration. Categories are many-to-many via `GET /categories` and `category_ids` -- do
-not hard-code taxonomy or invent a second filter stack. Broader catalog filters beyond the current Books controls stay
-out unless a product need explicitly requires them. Collection browse (`BooksPage`) and loan history (`LoansPage`) use
-infinite scroll with backend pagination; other callers still fetch unpaginated full lists when needed.
+Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, Build Mode bulk lookup/import UI
+(`POST /books/bulk/lookup`, `POST /books/bulk/import`), frontend author/category catalog admin pages, and remote
+Ansible/systemd/TLS/rollback orchestration. Categories are many-to-many via `GET /categories` and `category_ids`;
+authors are many-to-many via `GET /authors` and `author_ids` -- do not hard-code taxonomy or invent a second filter
+stack. Broader catalog filters beyond the current Books controls stay out unless a product need explicitly requires
+them. Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite scroll with backend pagination; other
+callers still fetch unpaginated full lists when needed.
 
 Do not expand a ticket into out-of-scope features. Do not invent the next product feature merely because the API
 supports it.
@@ -512,16 +547,18 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/generated/openapi.ts`: Generated OpenAPI types. Do not hand-edit; use `yarn api:generate` / `yarn api:check`.
 - `src/api/apiTypes.ts`: Exported schema aliases (`BookCreate` / `BookUpdate` / `BookRead` / `BookList`, lookup, loan,
   `BulkShelfMoveRequest` / `BulkShelfMoveResponse`, `DashboardSummary` / `DashboardBreakdowns` /
-  `DashboardCountBucket` / `DashboardIncompleteMetadata`, health, version, `CategoryRead` / `BookCategoryRead`,
-  `ShelfCreate` / `ShelfUpdate` / `ShelfRead`, `WishlistCreate` / `WishlistUpdate` / `WishlistRead` / `WishlistList`,
-  `WishlistBookCreate` / `WishlistBookRead` / `WishlistBookList` / `WishlistBookStatus`, `CollectionCreate` /
-  `CollectionUpdate` / `CollectionRead` / `CollectionList`, `CollectionBookCreate` / `CollectionBookRead` /
-  `CollectionBookList` / `CollectionBookReorder`, validation/error schemas, `Status`). Book payloads use
-  `shelf_name` (string); there is no hard-coded `Shelf` enum. Catalog identity is `BookRead.id` (UUID); loans /
-  wishlist / collection memberships reference that UUID as `book_id`. Book category memberships are
-  `BookRead.categories` (`BookCategoryRead[]`); create/update use `category_ids` (GUID array). There is no singular
-  `Category` enum alias. `BookRead.cover_image_path` is an optional read-only filename (not a browser URL); covers
-  are mutated only via `PUT` / `DELETE /books/{id}/cover` (helpers in `booksApi` / cover queries).
+  `DashboardCountBucket` / `DashboardIncompleteMetadata`, health, version, `AuthorRead` / `AuthorList` /
+  `BookAuthorRead`, `CategoryRead` / `BookCategoryRead`, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`,
+  `WishlistCreate` / `WishlistUpdate` / `WishlistRead` / `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` /
+  `WishlistBookList` / `WishlistBookStatus`, `CollectionCreate` / `CollectionUpdate` / `CollectionRead` /
+  `CollectionList`, `CollectionBookCreate` / `CollectionBookRead` / `CollectionBookList` / `CollectionBookReorder`,
+  validation/error schemas, `Status`). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
+  Catalog identity is `BookRead.id` (UUID); loans / wishlist / collection memberships reference that UUID as `book_id`.
+  Book category memberships are `BookRead.categories` (`BookCategoryRead[]`); create/update use `category_ids` (GUID
+  array). Book author memberships are `BookRead.authors` (`BookAuthorRead[]`); create/update use `author_ids` (ordered
+  GUID array). There is no singular `Category` enum alias. `BookRead.cover_image_path` is an optional read-only
+  filename (not a browser URL); covers are mutated only via `PUT` / `DELETE /books/{id}/cover` (helpers in `booksApi`
+  / cover queries).
 - `src/api/guid.ts` / `bookIdentity.ts`: GUID check for book path/query ids; `isBookIdentityError` /
   `isMalformedBookId` map API **400** / **404** for malformed or unknown book identity.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
@@ -541,23 +578,28 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/apiRedaction.ts`: Safe diagnostic projection and assertions so API/error logs never retain headers, tokens,
   borrower names, notes, reviews, ISBN drafts, backup contents, or full bodies.
 - `src/api/requestFields.ts` / `dateTime.ts`: Documented request-field picking for typed helpers and reusable
-  `YYYY-MM-DD` / UTC ISO 8601 normalizers used by form tickets. Book create/update pickers allowlist `category_ids`
-  (not singular `category`). Bulk shelf-move picker allowlists `book_ids` / `shelf_name`
-  (`pickBulkShelfMoveRequest`). Colocated unit tests cover both modules.
+  `YYYY-MM-DD` / UTC ISO 8601 normalizers used by form tickets. Book create/update pickers allowlist `category_ids` and
+  `author_ids` (not singular `category` or free-form author strings). Author create/update pickers allowlist
+  `first_name` / `surname` (`pickAuthorCreate` / `pickAuthorUpdate`). Bulk shelf-move picker allowlists `book_ids` /
+  `shelf_name` (`pickBulkShelfMoveRequest`). Colocated unit tests cover both modules.
 - `src/api/queryKeys.ts`: Shared React Query keys for books (`all`,
   `list({ includeDeleted, isbn?, author?, title?, categoryIds?, shelfName?, isRead?, skip?, take?, sortBy?,
   sortOrder? })`, `infiniteList({ includeDeleted, isbn?, author?, title?, categoryIds?, shelfName?, isRead?, sortBy?,
   sortOrder?, take })`, `detail(id)`, `lookup(isbn)`), loans (`all`, `list(bookId?)`,
   `infiniteList({ bookId?, take })`, `detail(id)`), dashboard (`all`, `breakdowns()`, `incompleteMetadata()`,
-  `incompleteMetadataBooks({ field?, skip?, take? })`), version, shelves (`all`, `list()` unpaginated), and
-  categories (`all`, `list()` unpaginated). Blank/whitespace `isbn` / `author` / `title` / `shelfName` / category IDs
-  / incomplete-metadata `field` are omitted from keys (trimmed when present; `categoryIds` de-duped and sorted).
-  Wishlists: `all`, `list()` unpaginated, `books(wishlistId)`. Collections: `all`, `list()` unpaginated,
+  `incompleteMetadataBooks({ field?, skip?, take? })`), version, shelves (`all`, `list()` unpaginated), categories
+  (`all`, `list()` unpaginated), and authors (`all`, `list()` unpaginated `{ items, total }` envelope). Blank/whitespace
+  `isbn` / `author` / `title` / `shelfName` / category IDs / incomplete-metadata `field` are omitted from keys (trimmed
+  when present; `categoryIds` de-duped and sorted). Wishlists: `all`, `list()` unpaginated, `books(wishlistId)`. Collections: `all`, `list()` unpaginated,
   `books(collectionId)`. Book covers: `bookCovers.all`, `bookCovers.detail(id)` (invalidated after upload/remove).
 - `src/api/api.ts`: `createApi` aggregates typed helpers (`books`, `loans`, `shelves`, `categories`, `dashboard`,
   `health`, `version`, `wishlists`, `collections`) plus the underlying `client`.
 - `src/api/categoriesApi.ts` / `categoriesQueries.ts`: `list()` (`GET /categories`) returns a plain `CategoryRead[]`
   array (no pagination params); `useCategories({ enabled? })` keyed by `queryKeys.categories.list()`.
+- `src/api/authorsApi.ts` / `authorsQueries.ts`: `list()` (`GET /authors`) returns `AuthorList` (`items`, `total`; no
+  pagination params); `get`, `create` (**201**), `update`, `remove` (**204**). Hooks: `useAuthors`, `useAuthor`,
+  `useCreateAuthor`, `useUpdateAuthor`, `useDeleteAuthor`. Not wired through `createApi()` -- hooks construct
+  `createAuthorsApi(apiClient)` directly. Create/update/delete invalidate `queryKeys.authors.all`.
 - `src/api/booksApi.ts`: `list` (optional `isbn`, `author`, `title`, `categoryIds` as repeated
   `category_id`, `shelfName` → `shelf_name`, `isRead` → `is_read`, `skip`, `take`, `sortBy` including `shelf`,
   `sortOrder`; omit empty/whitespace text filters and blank category IDs; send `skip`/`take` together when
@@ -565,9 +607,10 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   binary → `Blob`), `uploadCover` (multipart `FormData` field `file` → `BookRead`), `removeCover` (**204**), `update`,
   `remove`, `checkout` (including documented **412** `Book is display only`), `checkin` (optional body),
   `markRead` (defaults to `{}`). Helpers accept optional `AbortSignal` and serialize only documented request fields
-  (including `shelf_name`, `category_ids`, and bulk `book_ids` / `shelf_name`). Do not use singular `category`
-  query/body fields. Do not implement bulk move as per-book `PATCH` loops. Do not invent cover URLs from
-  `cover_image_path`.
+  (including `shelf_name`, `category_ids`, `author_ids`, and bulk `book_ids` / `shelf_name`). Do not use singular
+  `category` query/body fields or free-form author strings on book payloads. Do not implement bulk move as per-book
+  `PATCH` loops. Do not invent cover URLs from `cover_image_path`. Bulk lookup/import routes exist in OpenAPI but have
+  no SPA callers yet.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`, optional `skip`/`take` together;
   omit empty/`undefined` `bookId` and omitted pagination params), `get(id)` (`GET /loans/{id}`).
 - `src/api/shelvesApi.ts`: `list()` (`GET /shelves`) returns a plain `ShelfRead[]` array (no pagination params);
@@ -697,12 +740,12 @@ Implemented:
   `.book-cover*` in `components.css`.
 - `src/features/books/routes/EditBookPage.tsx` / `bookEditModel.ts` / `bookEditModel.test.ts`
   (`/books/:bookId/edit`): metadata edit via shared `BookForm` + `useUpdateBook` / `booksApi.update` + `useShelves` +
-  `useCategories`; populate with `bookFormValuesFromBook` (seeds `shelfId` from `shelf_name` and `categoryIds` from
-  `categories`); minimal patch via `bookFormValuesToUpdate` (blank ISBN → `null`; omit unchanged `shelf_name` /
-  `category_ids`; send `category_ids: []` to clear; never send `status`, reading fields, or loan-driving values);
-  reject no-op submits; Field-linked `422` / **400** shelf errors; `404` refetch with preserved form input; in-flight
-  disable; success to detail; full-page shelves and categories load/error gates before the
-  form. Reading fields stay on mark-read / reading-edit flows.
+  `useCategories` + `useAuthors`; populate with `bookFormValuesFromBook` (seeds `shelfId` from `shelf_name`,
+  `categoryIds` from `categories`, and `authorIds` from `authors`); minimal patch via `bookFormValuesToUpdate` (blank
+  ISBN → `null`; omit unchanged `shelf_name` / `category_ids` / `author_ids`; send `category_ids: []` to clear; never
+  send `status`, reading fields, or loan-driving values); reject no-op submits; Field-linked `422` / **400** shelf
+  errors; `404` refetch with preserved form input; in-flight disable; success to detail; full-page shelves, categories,
+  and authors load/error gates before the form. Reading fields stay on mark-read / reading-edit flows.
 - `src/features/books/routes/DeleteBookPage.tsx` (`/books/:bookId/delete`): hard delete via `useDeleteBook` /
   `booksApi.remove` with `ConfirmationDialog`; blocks when `status === 'on_loan'` or `findActiveLoan` is present;
   not-found / loan-status error recovery; success navigates away from the deleted detail. Never
@@ -744,25 +787,28 @@ Implemented:
   `pickBookUpdate`; populate from `BookRead`; send only changed `completion_date` / `rating` / `review` (blank →
   `null`); reject no-op submits; `ConfirmationDialog`; Field-linked `422`; `404` refetch with preserved form input;
   success to detail. Active already-read books only; deleted / unread warning UI. Does not offer mark-unread.
-- `src/features/books/routes/NewBookPage.tsx` (`/books/new`): loads `useShelves` and `useCategories` first
-  (loading / full-page `QueryErrorState` without mounting `BookForm` on either failure); mounts shared `BookForm` with
-  shelves and categories, optional ISBN lookup via `useBookLookup` (checksum-gated; apply draft without overwriting the
-  typed ISBN; progress/cancel/retry and manual fallback), creates via `useCreateBook`, maps create `422` `shelf_name`
-  / `category_ids` and **400** shelf errors into the form summary, disables controls while pending, and navigates to
-  the new detail on success. Camera ("Scan ISBN") and hardware scanner capture hands one ISBN into the same lookup
-  path (never calls `POST /books` from scanner success); hardware listening is disabled while the camera UI is open or
-  lookup is fetching
+- `src/features/books/routes/NewBookPage.tsx` (`/books/new`): loads `useShelves`, `useCategories`, and `useAuthors`
+  first (loading / full-page `QueryErrorState` without mounting `BookForm` on any failure); mounts shared `BookForm`
+  with shelves, categories, and authors, optional ISBN lookup via `useBookLookup` (checksum-gated; apply draft resolves
+  textual lookup authors via reuse/`useCreateAuthor` into `authorIds`; progress/cancel/retry and manual fallback),
+  creates via `useCreateBook`, maps create `422` `shelf_name` / `category_ids` / `author_ids` and **400** shelf errors
+  into the form summary, disables controls while pending, and navigates to the new detail on success. Camera ("Scan
+  ISBN") and hardware scanner capture hands one ISBN into the same lookup path (never calls `POST /books` from scanner
+  success); hardware listening is disabled while the camera UI is open or lookup is fetching
 - `src/features/books/components/BookForm.tsx` / `bookFormDefaults.ts` / `bookFormModel.ts`: reusable create/edit form
-  model (title, authors, ISBN, publisher, publication date as text for year-only values, pages, multi-`categoryIds`
-  checkboxes from API categories, `shelfId` from `GET /shelves`, tags, purchase fields, notes). Create UI omits
-  status/read/loan/review; create conversion always sends `status=available` and `is_read=false`, resolves `shelfId` →
-  `shelf_name` (`common_name`), and sends `category_ids` (including `[]`). Create defaults to empty shelf selection
-  (explicit pick required, including `unknown`) and empty categories. Shelf options use Title Case labels; exclude
-  `removed` except edit may surface current `removed` membership as a disabled selected option. No inline shelf or
-  category CRUD. Edit conversion lives in `bookEditModel` (minimal patch; never status/reading/loan fields). Client
-  validation, Field-linked errors, error summary focus, tag normalization, and `formValuesToBookCreate`
+  model (title, ordered `authorIds` via multi-select author picker from `GET /authors`, ISBN, publisher, publication
+  date as text for year-only values, pages, multi-`categoryIds` checkboxes from API categories, `shelfId` from
+  `GET /shelves`, tags, purchase fields, notes). Create UI omits status/read/loan/review; create conversion always sends
+  `status=available` and `is_read=false`, resolves `shelfId` → `shelf_name` (`common_name`), sends ordered
+  `author_ids`, and sends `category_ids` (including `[]`). Create defaults to empty shelf selection (explicit pick
+  required, including `unknown`) and empty categories/authors. Shelf options use Title Case labels; exclude `removed`
+  except edit may surface current `removed` membership as a disabled selected option. No inline shelf, category, or
+  author catalog CRUD pages. Edit conversion lives in `bookEditModel` (minimal patch; never status/reading/loan
+  fields). Client validation, Field-linked errors, error summary focus, tag normalization, and `formValuesToBookCreate`
   blank-optional-to-`null` conversion. Submit label is "Save Book". Colocated `BookForm.test.tsx` /
   `bookFormModel.test.ts` cover gating, validation, conversion, and server error linking
+- `src/features/books/authorDisplay.ts`: `formatAuthorName` and `formatBookAuthors` for structured
+  `BookAuthorRead[]` display across list/detail/join surfaces
 - `src/features/books/categoryDisplay.ts`: `formatBookCategories` (comma-joined names or "None"), `categoryIdsEqual`,
   and `sortCategoriesByName`; colocated `categoryDisplay.test.ts`
 - `src/features/shelves/shelfDisplay.ts`: Title Case `formatShelfCommonNameForDisplay`, assignable-shelf helpers
@@ -835,8 +881,9 @@ Implemented:
   control.
 - `src/features/wishlists/components/AddWishlistBookControl.tsx` /
   `src/features/wishlists/wishlistFormModel.ts` / `src/features/wishlists/wishlistDisplay.ts`: unshelved catalog create
-  (title/authors required; optional ISBN lookup via `useLookupBook`) then membership add;
-  **404** refetch, **412** exclusivity, Field-linked **422**; safe http(s) URL rendering for membership links
+  (title plus textual authors input resolved to `author_ids` via `useAuthors` / `useCreateAuthor`; optional ISBN lookup
+  via `useLookupBook`) then membership add; **404** refetch, **412** exclusivity, Field-linked **422**; safe http(s)
+  URL rendering for membership links
 - `src/features/wishlists/components/MoveWishlistBookToShelfControl.tsx` /
   `src/features/wishlists/moveWishlistBookModel.ts`: per-row shelf picker (`filterAssignableShelves`, Title Case
   labels, empty default) and "Add to Collection" with `ConfirmationDialog`; validates via
@@ -1027,6 +1074,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   `404`, `409`, both `422` detail shapes, `5xx`
   (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success,
   `204`, and `onRequestFailure` diagnostic hooks.
+- `src/api/authorsApi.test.ts`: Author list/get/create/update/remove request shaping and paths.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
   `createApi`, and redaction coverage.
 - `src/api/booksApi.test.ts` / `booksApi.conflicts.test.ts` / `booksApi.largeLibrary.test.ts` / `loansApi.test.ts` /
@@ -1052,8 +1100,9 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   books query, create/update/delete invalidation of `collections.all`, and membership write invalidation of
   `collections.books(collectionId)`.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
-  (includes `/categories`, `/shelves`, `/shelves/{shelf_id}`, `/version`, `/backup`, `/books/{id}/cover`, wishlist
-  paths including membership DELETE, Collections paths, dashboard-report paths, and existing lifecycle routes).
+  (includes `/authors`, `/authors/{author_id}`, `/categories`, `/shelves`, `/shelves/{shelf_id}`, `/version`, `/backup`,
+  `/books/{id}/cover`, `/books/bulk/lookup`, `/books/bulk/import`, wishlist paths including membership DELETE,
+  Collections paths, dashboard-report paths, and existing lifecycle routes).
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
   unauthorized handling without cache clear, and build-time token wiring.
 - `src/features/books/routes/BooksPage.test.tsx` / `BookDetailsPage.test.tsx` / `NewBookPage.test.tsx`: Collection
@@ -1062,10 +1111,10 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   Clear Filters, `formatBookCategories`, URL `isbn` filter / Clear ISBN / unique-match auto-open, collection jump,
   bulk selection / bulk move wiring, `BookCover` wiring), detail (including `BookCover` / `BookCoverManager`, gated
   Check Out via `CheckoutDialog` / `?checkout=1`, Mark Read / Edit Reading / Edit Book / Delete Book with active-loan
-  gating, and multi-category display), and create-route behavior (shelves and categories
-  load gates / failure blocks form, loading/error/empty, navigation, create success with `shelf_name` and
-  `category_ids`, lookup success / `found: false` / provider failure / checksum rejection, create `422` field mapping,
-  camera and hardware scanner handoff into lookup)
+  gating, and multi-category display), and create-route behavior (shelves, categories, and authors load gates /
+  failure blocks form, loading/error/empty, navigation, create success with `shelf_name`, `author_ids`, and
+  `category_ids`, lookup success / `found: false` / provider failure / checksum rejection / lookup-author resolution,
+  create `422` field mapping, camera and hardware scanner handoff into lookup)
 - `src/features/books/components/BookCover.test.tsx` / `BookCoverManager.test.tsx`: cover display (blob / placeholder /
   object-URL cleanup / lazy load) and upload/remove control behavior
 - `src/features/shelves/routes/ShelvesPage.test.tsx` / `shelfDisplay.test.ts` / `shelfFormModel.test.ts`: Shelves
@@ -1073,9 +1122,10 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   flows with Field-linked errors and confirmation, `by_shelf` counts and `/books?shelf_name=` deep links, plus
   display/assignable/form-model helper coverage
 - `src/features/books/routes/EditBookPage.test.tsx` / `bookEditModel.test.ts`: Edit eligibility (active books only),
-  shelves and categories load gates, populate-from-book (including `categoryIds`), minimal
-  changed-fields patch (blank ISBN → `null`; omit unchanged `category_ids`; send `[]` to clear; no status/reading/loan
-  fields), no-op rejection, Field-linked `422`, mutation `404`, pending disable, and success navigation
+  shelves, categories, and authors load gates, populate-from-book (including `categoryIds` and `authorIds`), minimal
+  changed-fields patch (blank ISBN → `null`; omit unchanged `category_ids` / `author_ids`; send `[]` to clear; no
+  status/reading/loan fields), no-op rejection, Field-linked `422`, mutation `404`, pending disable, and success
+  navigation
 - `src/features/books/categoryDisplay.test.ts`: `formatBookCategories`, `categoryIdsEqual`, and `sortCategoriesByName`
 - `src/features/books/useBulkSelection.test.ts` / `utils/bulkSelectionModel.test.ts` /
   `components/BulkMoveToShelfControl.test.tsx`: bulk selection lifecycle and atomic move-to-shelf control behavior
@@ -1323,12 +1373,14 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
-  `info.version` `0.2.11` -- see Backend Contract), including `GET /categories`, book `categories` /
-  `category_ids`, expanded `GET /books` filter query params, `POST /books/bulk/move-to-shelf`, book
-  `cover_image_path`, and `GET` / `PUT` / `DELETE /books/{id}/cover`.
+  `info.version` `0.2.15` -- see Backend Contract), including `GET /authors`, book `authors` / `author_ids`,
+  `GET /categories`, book `categories` / `category_ids`, expanded `GET /books` filter query params,
+  `POST /books/bulk/move-to-shelf`, `POST /books/bulk/lookup`, `POST /books/bulk/import`, book `cover_image_path`, and
+  `GET` / `PUT` / `DELETE /books/{id}/cover`.
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json` (including
-  atomic bulk shelf-move rules, wishlist **412** semantics, collection membership `shelf_name` null for unshelved
-  rows, and Book covers display/upload guidance for authenticated **200** image bytes / multipart `file`).
+  normalized author/category catalog rules, atomic bulk shelf-move rules, Build Mode bulk lookup/import semantics,
+  wishlist **412** semantics, collection membership `shelf_name` null for unshelved rows, and Book covers
+  display/upload guidance for authenticated **200** image bytes / multipart `file`).
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
   this baseline). Includes production-host security ownership and tarball handoff notes.
@@ -1367,8 +1419,8 @@ Common commands:
   production build, and bundle-size enforcement (`yarn check`); this is also the GitHub Actions quality gate.
 - `yarn api:generate`: Regenerates `src/api/generated/openapi.ts` from `docs/technical-reference/openapi.json`.
 - `yarn api:check`: Regenerates types and fails if the generated file differs from git. Keep callers aligned with the
-  checked-in OpenAPI (including `CategoryRead` / `category_ids` / repeated `category_id`); do not hand-edit generated
-  types.
+  checked-in OpenAPI (including `AuthorRead` / `author_ids` / `BookAuthorRead`, `CategoryRead` / `category_ids` /
+  repeated `category_id`); do not hand-edit generated types.
 
 `make check` currently performs type checking twice because `make build` also type-checks. This is expected.
 
@@ -1416,9 +1468,10 @@ make build
   `booksListModel` / `BooksListControls` / `useBulkSelection` / `BooksBulkActions` / `BulkMoveToShelfControl` /
   `booksApi.moveToShelf` / `useBulkMoveBooksToShelf` (centralized URL filters including `shelf_name` / `is_read` /
   `cleanup_field`; atomic `POST /books/bulk/move-to-shelf` only -- never per-book `PATCH` loops). Leave edit under
-  `EditBookPage` / `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; never send `status=on_loan`,
-  reading fields, or loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` / `booksApi.remove`;
-  block when `status === 'on_loan'` or `findActiveLoan` is present; invalidate `queryKeys.collections.all` on success).
+  `EditBookPage` / `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; omit unchanged `author_ids`; never
+  send `status=on_loan`, reading fields, or loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` /
+  `booksApi.remove`; block when `status === 'on_loan'` or `findActiveLoan` is present; invalidate
+  `queryKeys.collections.all` on success).
   There is no browser backup page (`/admin/backup`,
   `BackupLibraryPage`, or `backupApi`); never inspect, log, cache, or upload SQL dump contents. Leave dashboard under
   `DashboardPage` / `useDashboard` / `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` (display API stats
@@ -1439,9 +1492,10 @@ make build
   `/books?shelf_name=`). Leave wishlists under `WishlistsPage` / `AddWishlistBookControl` /
   `MoveWishlistBookToShelfControl` / `moveWishlistBookModel` / `wishlistFormModel` / `wishlistDisplay` /
   `wishlistsApi` / `wishlistsQueries` (`/wishlists` owns catalog CRUD, add, and move-to-shelf; memberships via
-  `useBook` / `GET /books/{id}`; add via unshelved create then membership; move via membership `DELETE` then
-  `PATCH { shelf_name }`; no add-from-collection or membership field edit). Leave collections under `CollectionsPage` /
-  `EditCollectionForm` / `AddCollectionBookControl` / `AddBookToCollectionDialog` / `CollectionMembershipRow` /
+  `useBook` / `GET /books/{id}`; add via unshelved create with resolved `author_ids` then membership; move via
+  membership `DELETE` then `PATCH { shelf_name }`; no add-from-collection or membership field edit). Leave collections
+  under `CollectionsPage` / `EditCollectionForm` / `AddCollectionBookControl` / `AddBookToCollectionDialog` /
+  `CollectionMembershipRow` /
   `collectionFormModel` / `collectionDisplay` / `collectionsApi` / `collectionsQueries` (`/collections` owns
   create/edit/delete, shelved-only add search, reorder/remove; Book Details owns add-current-book via
   `AddBookToCollectionDialog`; memberships via `useBook` / `GET /books/{id}`; duplicate
@@ -1463,12 +1517,14 @@ make build
   mutations. There is no realtime API.
 - For API-dependent work, treat `docs/technical-reference/openapi.json` as the schema source of truth and
   `docs/technical-reference/API-for-FE.md` as behavioral guidance. Prefer a running backend `/openapi.json` for drift
-  checks when available; do not invent lifecycle behavior with generic `PATCH`. Leave categories under
-  `categoriesApi` / `useCategories` / `categoryDisplay` / `BookForm` multi-assignment / Books multi-`category_id`
-  filters and centralized Books URL filters including `shelf_name` / `is_read` / `cleanup_field`; do not use singular
-  `category` enum selectors or hard-coded taxonomy. Leave bulk shelf moves under `booksApi.moveToShelf` /
-  `useBulkMoveBooksToShelf` / `BulkMoveToShelfControl` against `POST /books/bulk/move-to-shelf` only. Leave covers
-  under `booksApi.getCover` / `uploadCover` / `removeCover`, `useBookCover` / `useUploadBookCover` /
+  checks when available; do not invent lifecycle behavior with generic `PATCH`. Leave authors under `authorsApi` /
+  `authorsQueries` / `authorDisplay` / `BookForm` ordered `author_ids` assignment and inline `useCreateAuthor` on
+  lookup/wishlist flows; do not send free-form author strings on book payloads or invent a second author model. Leave
+  categories under `categoriesApi` / `useCategories` / `categoryDisplay` / `BookForm` multi-assignment / Books
+  multi-`category_id` filters and centralized Books URL filters including `shelf_name` / `is_read` / `cleanup_field`;
+  do not use singular `category` enum selectors or hard-coded taxonomy. Leave bulk shelf moves under
+  `booksApi.moveToShelf` / `useBulkMoveBooksToShelf` / `BulkMoveToShelfControl` against
+  `POST /books/bulk/move-to-shelf` only. Leave covers under `booksApi.getCover` / `uploadCover` / `removeCover`, `useBookCover` / `useUploadBookCover` /
   `useRemoveBookCover`, shared `BookCover`, and `BookCoverManager` against authenticated `GET` / `PUT` /
   `DELETE /books/{id}/cover` per `API-for-FE.md` (**200** blob or **404**; multipart `file`); never invent browser
   URLs from `cover_image_path`, call Open Library from the SPA, or PATCH cover fields onto `BookUpdate`.

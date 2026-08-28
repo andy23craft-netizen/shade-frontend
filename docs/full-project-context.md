@@ -4,18 +4,17 @@ Slim always-on context for ChatGPT or any assistant without direct repository ac
 
 This document is the complete self-contained operating baseline for the Shade frontend. It covers working rules,
 architecture, non-negotiables, current product state, the backend contract summary, and the minimum reference index
-needed to continue development safely. Start from this file alone for that baseline. Do not require, request, or defer
-to any other LLM prompt, project agents guide, inventory file, or companion context file -- this pack already includes
-the guidance those files would provide. Everything needed for day-to-day implementation guidance is in this document.
-Attach the current feature ticket (when one exists) and the checked-in API contract only when the task needs them.
+needed to continue development safely. Start from this file alone for that baseline. Everything needed for day-to-day
+implementation guidance is in this document. Attach the current feature ticket (when one exists) and the checked-in API
+contract only when the task needs them.
 
 A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
 ticket or the checked-in API contract. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build
-ticket -- treat it as notes unless the user asks to implement items from it. When no sequenced feature ticket remains
-(directory holds only `.gitkeep` and/or informal notes), ask which work to take next rather than inventing a follow-on
-feature.
+ticket -- treat it as notes unless the user asks to implement items from it. When no ticket is supplied, check
+`docs/tickets/` for open sequenced work (currently `FEAT-PWA.md`) or ask which work to take next rather than inventing
+a follow-on feature.
 
-**Context pack version:** 2026-08-25
+**Context pack version:** 2026-08-28
 
 ---
 
@@ -164,10 +163,11 @@ docs/technical-reference/openapi.json
 docs/technical-reference/API-for-FE.md
 ```
 
-Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.11` (includes many-to-many categories, expanded `GET
-/books` filters, `POST /books/bulk/move-to-shelf`, `BookRead.cover_image_path`, and `GET` / `PUT` /
+Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.15` (includes normalized authors and
+`author_ids`, many-to-many categories, expanded `GET /books` filters, `POST /books/bulk/move-to-shelf`,
+`POST /books/bulk/lookup`, `POST /books/bulk/import`, `BookRead.cover_image_path`, and `GET` / `PUT` /
 `DELETE /books/{id}/cover`). Cover resolution -- including the Open Library ISBN fallback -- happens server-side; `GET
-/books/{id}/cover` returns **200** image bytes or **404**.
+/books/{id}/cover` returns **200** image bytes or **404**. Bulk lookup/import are API-only today (no SPA callers).
 
 Generated types:
 
@@ -178,8 +178,8 @@ src/api/generated/openapi.ts
 Regenerate generated types from the checked-in OpenAPI contract (`yarn api:generate` / `yarn api:check`); never edit
 them manually.
 
-Prefer dedicated lifecycle endpoints over generic `PATCH` for restore, checkout, check-in, initial mark-read, bulk shelf
-move, and cover upload/delete.
+Prefer dedicated lifecycle endpoints over generic `PATCH` for checkout, check-in, initial mark-read, bulk shelf move,
+and cover upload/delete.
 
 ---
 
@@ -207,11 +207,12 @@ Current registered product routes include:
 /wishlists
 /shelves
 /loans
-/admin/deleted
 /checkout        compatibility redirect
 /checkin         compatibility redirect
 *
 ```
+
+There is no `/admin/deleted` route. Books are hard-deleted through `DELETE /books/{id}`; deletion is permanent.
 
 ## Navigation
 
@@ -233,7 +234,6 @@ Current registered product routes include:
 
   * Add Book
   * Shelves
-  * Deleted Books
 
   plus decorative `Manage_Collection_Pen.webp`.
 
@@ -420,6 +420,8 @@ Visible Books controls include:
 * Sort field
 * Sort direction
 
+Default sort when omitted is author ascending (`sortBy=author`, `sortOrder=asc`).
+
 `shelf_name` is URL-driven rather than a visible general Books filter.
 
 Example:
@@ -552,9 +554,43 @@ Do not replace this with one PATCH request per selected book.
 
 Bulk-move UI supports normal and narrow responsive layouts.
 
+## Book create and edit
+
+Primary implementation:
+
+```text
+src/features/books/components/BookForm.tsx
+src/features/books/components/bookFormModel.ts
+src/features/books/routes/NewBookPage.tsx
+src/features/books/routes/EditBookPage.tsx
+src/features/books/routes/bookEditModel.ts
+src/features/books/authorDisplay.ts
+src/api/authorsApi.ts
+src/api/authorsQueries.ts
+```
+
+Behavior:
+
+* create and edit share `BookForm`;
+* pages gate on successful `useShelves`, `useCategories`, and `useAuthors` before mounting the form;
+* authors are normalized: ordered `author_ids` from `GET /authors`, not free-form strings on book payloads;
+* `BookRead.authors` is structured `BookAuthorRead[]`; display uses `formatBookAuthors`;
+* create requires at least one author and an explicit shelf (`shelf_name` from selected `common_name`);
+* edit sends a minimal `BookUpdate` patch only for changed fields;
+* omit unchanged `category_ids`, `shelf_name`, and `author_ids`; send `category_ids: []` to clear categories;
+* never send JSON `null` for `shelf_name`, `category_ids`, or `author_ids` on update (**422**);
+* never send `status`, reading fields, or loan-driving values through edit;
+* ISBN lookup on create may return textual `draft.authors`; applying the draft resolves/reuses/creates author records
+  via `useCreateAuthor` before submit;
+* wishlist-only catalog rows omit `shelf_name` on `POST /books` (see Wishlists).
+
+Frontend author catalog admin outside inline book/wishlist flows is outside V1 unless explicitly requested.
+
 ---
 
-# 8. Categories
+# 8. Categories and authors
+
+## Categories
 
 Backend categories are normalized many-to-many data.
 
@@ -587,6 +623,43 @@ Do not:
 
 Frontend category administration is outside V1 unless explicitly requested.
 
+## Authors
+
+Backend authors are normalized resources; books no longer store a free-form `authors` string on create/update.
+
+Frontend support:
+
+```text
+GET /authors
+authorsApi
+authorsQueries
+useAuthors
+useCreateAuthor
+authorDisplay.formatBookAuthors
+BookForm authorIds -> author_ids
+```
+
+Rules:
+
+* `GET /authors` returns `{ items, total }` with no pagination params;
+* `BookCreate.author_ids` requires at least one GUID; `BookUpdate.author_ids` replaces membership only when present;
+* `author_ids` may not be null, empty, or contain duplicates;
+* unknown `author_ids` on create/update return **422** with object `detail`;
+* deleting a referenced author returns **409**;
+* `GET /books?author=` remains a text filter over normalized author names;
+* default Books sort is author ascending (`sortBy=author`);
+* ISBN lookup drafts do not create author records automatically -- resolve or create authors before `POST /books`;
+* inline `useCreateAuthor` is used on create lookup apply and wishlist add flows.
+
+Do not:
+
+* send free-form author strings on `BookCreate` / `BookUpdate`;
+* hard-code author names in the SPA.
+
+Frontend author catalog admin (dedicated `/authors` management page) is outside V1 unless explicitly requested.
+
+Build Mode bulk lookup/import (`POST /books/bulk/lookup`, `POST /books/bulk/import`) is API-only; no SPA workflow yet.
+
 ---
 
 # 9. Book covers
@@ -601,7 +674,7 @@ DELETE /books/{id}/cover
 
 Behavioral detail beyond OpenAPI schemas lives in `docs/technical-reference/API-for-FE.md` (Book covers). Cover
 resolution -- including the Open Library ISBN fallback -- happens server-side behind the authenticated cover endpoint
-(OpenAPI `0.2.11+`).
+(OpenAPI `0.2.15`; cover routes since `0.2.11+`).
 
 Rules:
 
@@ -618,10 +691,10 @@ Rules:
   2. no local file, but `isbn13` and Open Library returns usable artwork → backend fetches server-side and returns
      **200** image bytes;
   3. otherwise → **404** `"Book cover not found"`;
-  4. soft-deleted / missing book → **404** `"Book not found"`.
+  4. missing or deleted book → **404** `"Book not found"`.
 * Local uploads always take priority over ISBN-derived artwork.
 * Open Library timeout / network / missing / non-image responses resolve to the normal **404** cover state.
-* Soft-deleted books reject cover get/upload/delete (**404**).
+* Missing or hard-deleted books reject cover get/upload/delete (**404**).
 
 Browser display cannot put `Authorization` on an `<img src>`. Use authenticated `fetch` to `GET /books/{id}/cover`:
 
@@ -846,9 +919,12 @@ Wishlists contain unshelved catalog books.
 Add flow:
 
 ```text
-POST /books without shelf_name
+POST /books without shelf_name (author_ids required)
 then wishlist membership POST
 ```
+
+Wishlist add resolves textual author input to `author_ids` via `useAuthors` / `useCreateAuthor` before the unshelved
+catalog create.
 
 Move-to-shelf:
 
@@ -882,19 +958,20 @@ may be JSON `null` for unshelved rows -- do not expect BookRead's synthesized `"
 
 ---
 
-# 14. Delete / restore and backup boundary
+# 14. Hard delete and backup boundary
 
-Books use soft delete.
+Books use permanent hard delete via `DELETE /books/{id}`.
 
-Use dedicated delete/restore endpoints.
-
-Deleted Books admin lives at:
+Product delete lives at:
 
 ```text
-/admin/deleted
+/books/:bookId/delete
 ```
 
-Authenticated SQL backup is an API-host concern.
+The frontend blocks delete when the book is on loan (`status === 'on_loan'` or an active loan exists), even though the
+backend would allow it. Hard delete removes the book and dependent memberships server-side; it cannot be restored.
+
+Authenticated SQL backup is an API-host concern (`GET /backup`).
 
 There is no browser Backup page/API caller.
 
@@ -978,6 +1055,7 @@ Focused coverage includes:
 * bulk-selection model/hook;
 * `BulkMoveToShelfControl`;
 * `BooksPage` bulk-selection integration;
+* author resolution on create/edit/wishlist add (`author_ids`, `useAuthors`, `useCreateAuthor`);
 * `ConfirmationDialog`;
 * Home discovery (`HomePage` / discovery-model tests);
 * cover helpers / hooks / `BookCover` / `BookCoverManager` and cover wiring on Books, Home, Collections, and Book
@@ -986,18 +1064,21 @@ Focused coverage includes:
 The backend OpenAPI contract includes:
 
 ```text
+GET  /authors
+POST /authors
 POST /books/bulk/move-to-shelf
+POST /books/bulk/lookup
+POST /books/bulk/import
 GET  /books/{id}/cover
 PUT  /books/{id}/cover
 DELETE /books/{id}/cover
 ```
 
-Checked-in OpenAPI (`info.version` `0.2.11`) and generated types match. `contractSmoke.test.ts` includes the bulk-move
-path and `/books/{id}/cover`.
+Checked-in OpenAPI (`info.version` `0.2.15`) and generated types match. `contractSmoke.test.ts` includes author routes,
+bulk-move/bulk-lookup/bulk-import paths, and `/books/{id}/cover`.
 
-Treat no sequenced feature ticket (directory holds only `.gitkeep` and/or informal notes such as `ui-nits.md`) plus a
-green `make check` as the current open-work signal. Re-run
-`make check` before claiming a new change is release-ready.
+Treat an open sequenced ticket under `docs/tickets/` (currently `FEAT-PWA.md`), explicit user direction, or a green
+`make check` as the current open-work signal. Re-run `make check` before claiming a new change is release-ready.
 
 ---
 
@@ -1083,13 +1164,14 @@ Bundled WebP imagery under `src/assets/`:
 * Do not duplicate server state into a second state store.
 * Do not silently recalculate API-owned dashboard metrics.
 * Preserve tenant header behavior.
-* Prefer dedicated lifecycle endpoints (restore, checkout, check-in, mark-read, bulk shelf move, cover upload/delete --
-  never simulate those with generic `PATCH`).
+* Prefer dedicated lifecycle endpoints (checkout, check-in, mark-read, bulk shelf move, cover upload/delete -- never
+  simulate those with generic `PATCH`).
 * Bulk shelf movement must use the dedicated atomic endpoint, not repeated single-book PATCH requests.
 * Covers use `GET` / `PUT` / `DELETE /books/{id}/cover` only. Never invent browser URLs from `cover_image_path`, call
   Open Library from the SPA, or set covers through create/update JSON.
-* JSON `null` `shelf_name` or `category_ids` on book update is **422** -- omit those fields instead (OpenAPI may still
-  show `null` as a schema option).
+* JSON `null` `shelf_name`, `category_ids`, or `author_ids` on book update is **422** -- omit those fields instead
+  (OpenAPI may still show `null` as a schema option).
+* Book create requires ordered `author_ids`; do not send free-form author strings on book payloads.
 
 ## Product behavior
 
@@ -1100,7 +1182,8 @@ Bundled WebP imagery under `src/assets/`:
 * No standalone Check-in page.
 * No browser Backup page.
 * No hard-coded category vocabulary.
-* No category admin in V1 unless explicitly requested.
+* No category or author catalog admin pages in V1 unless explicitly requested.
+* No Build Mode bulk lookup/import UI unless explicitly requested.
 * No Mark Unread unless explicitly requested.
 * No wishlist/shelf overlap.
 * Collections do not replace shelf placement.
@@ -1109,11 +1192,8 @@ Bundled WebP imagery under `src/assets/`:
 
 ## Scope discipline
 
-Do not invent the next product feature merely because the API already supports it. When no sequenced feature ticket
-remains under `docs/tickets/` (only `.gitkeep` and/or informal notes such as `ui-nits.md`), ask which work should be
-taken next rather than guessing.
-
-When no current ticket is supplied, ask which work should be taken next rather than guessing.
+Do not invent the next product feature merely because the API already supports it. When no ticket is supplied, check
+`docs/tickets/` for open sequenced work or ask which work should be taken next rather than guessing.
 
 ---
 
@@ -1121,8 +1201,8 @@ When no current ticket is supplied, ask which work should be taken next rather t
 
 Sequenced feature tickets live under `docs/tickets/` while open and are removed after completion. Informal UI feedback
 such as `ui-nits.md` may also live there; it is not a sequenced build ticket unless the user asks to implement items
-from it. When no sequenced feature ticket remains, prefer an explicit user request or product docs when choosing
-further work.
+from it. Open sequenced work currently includes `FEAT-PWA.md`. Prefer the supplied ticket, an explicit user request, or
+product docs when choosing further work.
 
 Current product capabilities are described in the sections above, including:
 
@@ -1133,6 +1213,7 @@ Current product capabilities are described in the sections above, including:
 * desk/paper Dashboard with healing deep links into Books cleanup mode;
 * brand/header and page imagery under `src/assets/`;
 * book covers on Book Details, Books, Home, and Collections;
+* normalized authors via `author_ids` on create/edit/wishlist add;
 * the canonical `make check` quality gate.
 
 Do not invent the next product feature merely because the API already supports it. Keep covers on the authenticated
@@ -1141,7 +1222,8 @@ cover routes.
 ## Remaining planned V1 work
 
 ```text
-(none -- no sequenced feature tickets; docs/tickets/ holds .gitkeep and informal ui-nits.md feedback only)
+docs/tickets/FEAT-PWA.md -- Progressive Web App installation and mobile quick actions (open sequenced ticket)
+docs/tickets/ui-nits.md -- informal UI feedback (not a sequenced build ticket unless explicitly requested)
 ```
 ---
 
@@ -1156,6 +1238,8 @@ src/api/api.ts
 src/api/apiClient.ts
 src/api/apiErrors.ts
 src/api/apiTypes.ts
+src/api/authorsApi.ts
+src/api/authorsQueries.ts
 src/api/booksApi.ts
 src/api/booksQueries.ts
 src/api/categoriesApi.ts
@@ -1175,14 +1259,19 @@ src/api/wishlistsApi.ts
 src/api/wishlistsQueries.ts
 ```
 
+Note: `authorsApi` is not aggregated in `createApi()`; `authorsQueries` constructs it directly from `apiClient`.
+
 ## Books
 
 ```text
+src/features/books/authorDisplay.ts
 src/features/books/booksListModel.ts
 src/features/books/useBulkSelection.ts
 src/features/books/utils/bulkSelectionModel.ts
 src/features/books/components/BookCover.tsx
 src/features/books/components/BookCoverManager.tsx
+src/features/books/components/BookForm.tsx
+src/features/books/components/bookFormModel.ts
 src/features/books/components/BookSelectionControl.tsx
 src/features/books/components/BooksBulkActions.tsx
 src/features/books/components/BooksListControls.tsx
@@ -1191,6 +1280,8 @@ src/features/books/routes/BooksPage.tsx
 src/features/books/routes/BookDetailsPage.tsx
 src/features/books/routes/NewBookPage.tsx
 src/features/books/routes/EditBookPage.tsx
+src/features/books/routes/bookEditModel.ts
+src/features/books/routes/DeleteBookPage.tsx
 ```
 
 ## Dashboard
@@ -1304,7 +1395,7 @@ When a feature ticket exists under `docs/tickets/`:
 7. **Update this context** (and any other frontend-owned docs that describe the changed baseline) only where behavior
    genuinely changed.
 
-When no ticket is supplied and no sequenced feature ticket remains under `docs/tickets/`, ask which work to take next
+When no ticket is supplied and no open sequenced ticket under `docs/tickets/` applies, ask which work to take next
 rather than inventing a follow-on feature.
 
 Treat failing assertions carefully: determine whether they expose a real regression, expected contract drift, or
@@ -1325,8 +1416,7 @@ intentional current behavior.
 | Setup / local development / release    | `README.md`                              |
 | Production-host ownership              | `docs/MAINTAINERS.md`                    |
 
-This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own: do not
-require, request, or defer to any other project prompt, agents guide, or companion LLM context file for day-to-day
+This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own for day-to-day
 implementation guidance. Everything needed for that baseline is in this document. Attach the rows above only when the
 task needs their contents (API schemas, design notes, an open ticket, or deployment ownership). Prefer the current
 sequenced ticket (when one exists) and the checked-in API contract over planning notes that may lag. When no sequenced
@@ -1352,3 +1442,4 @@ Do not invent undocumented behavior that contradicts this baseline.
 Do not invent the next product feature merely because the API already supports it.
 
 When information is missing, request the minimum evidence needed to proceed.
+
