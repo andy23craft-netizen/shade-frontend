@@ -11,6 +11,10 @@ import type {
     BookLookupResponse,
     BookRead,
     BookUpdate,
+    BulkBookImportRequest,
+    BulkBookImportResponse,
+    BulkBookLookupRequest,
+    BulkBookLookupResponse,
     BulkShelfMoveRequest,
     BulkShelfMoveResponse,
     CheckinRequest,
@@ -962,6 +966,213 @@ describe('createBooksApi', () => {
             {
                 method: 'POST',
                 body: {},
+            },
+        )
+    })
+
+    it('looks up multiple books with one bulk request', async () => {
+        const request: BulkBookLookupRequest = {
+            items: [
+                {
+                    client_item_id: 'scan-1',
+                    isbn: '9780140449266',
+                },
+                {
+                    client_item_id: 'scan-2',
+                    isbn: '9780679720201',
+                },
+            ],
+        }
+
+        const response: BulkBookLookupResponse = {
+            items: [
+                {
+                    client_item_id: 'scan-1',
+                    status: 'found',
+                    catalog_state: 'new',
+                    isbn13: '9780140449266',
+                },
+                {
+                    client_item_id: 'scan-2',
+                    status: 'not_found',
+                },
+            ],
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        const result = await api.bulkLookup(request)
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books/bulk/lookup',
+            {
+                method: 'POST',
+                body: request,
+            },
+        )
+
+        expect(result).toBe(response)
+    })
+
+    it('strips undocumented bulk lookup item fields', async () => {
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue({ items: [] })
+
+        const api = createBooksApi(client)
+
+        await api.bulkLookup({
+            items: [
+                {
+                    client_item_id: 'scan-1',
+                    isbn: '9780140449266',
+                    unexpected_field: 'nope',
+                },
+            ],
+            unexpected_field: 'nope',
+        } as unknown as BulkBookLookupRequest & {
+            unexpected_field: string
+        })
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books/bulk/lookup',
+            {
+                method: 'POST',
+                body: {
+                    items: [
+                        {
+                            client_item_id: 'scan-1',
+                            isbn: '9780140449266',
+                        },
+                    ],
+                },
+            },
+        )
+    })
+
+    it('imports approved bulk books with one request', async () => {
+        const request: BulkBookImportRequest = {
+            shelf_name: 'a3',
+            acquisition_source: 'Shelf intake',
+            items: [
+                {
+                    action: 'create',
+                    client_item_id: 'scan-1',
+                    book: {
+                        title: 'The Odyssey',
+                        isbn13: '9780140449112',
+                    },
+                },
+                {
+                    action: 'acquire_wishlist',
+                    client_item_id: 'scan-2',
+                    existing_book_id: 'book-2',
+                },
+            ],
+        }
+
+        const response: BulkBookImportResponse = {
+            submitted_count: 2,
+            succeeded_count: 2,
+            failed_count: 0,
+            created_count: 1,
+            wishlist_acquired_count: 1,
+            items: [
+                {
+                    client_item_id: 'scan-1',
+                    status: 'created',
+                    book_id: 'book-1',
+                },
+                {
+                    client_item_id: 'scan-2',
+                    status: 'wishlist_acquired',
+                    book_id: 'book-2',
+                },
+            ],
+        }
+
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        const result = await api.bulkImport(request)
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books/bulk/import',
+            {
+                method: 'POST',
+                body: request,
+            },
+        )
+
+        expect(result).toBe(response)
+    })
+
+    it('strips undocumented bulk import envelope and item fields', async () => {
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue({
+                submitted_count: 0,
+                succeeded_count: 0,
+                failed_count: 0,
+                created_count: 0,
+                wishlist_acquired_count: 0,
+                items: [],
+            })
+
+        const api = createBooksApi(client)
+
+        await api.bulkImport({
+            shelf_name: 'a3',
+            items: [
+                {
+                    action: 'create',
+                    client_item_id: 'scan-1',
+                    book: {
+                        title: 'The Odyssey',
+                    },
+                    unexpected_field: 'nope',
+                },
+            ],
+            unexpected_field: 'nope',
+        } as unknown as BulkBookImportRequest & {
+            unexpected_field: string
+        })
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books/bulk/import',
+            {
+                method: 'POST',
+                body: {
+                    shelf_name: 'a3',
+                    items: [
+                        {
+                            action: 'create',
+                            client_item_id: 'scan-1',
+                            book: {
+                                title: 'The Odyssey',
+                            },
+                        },
+                    ],
+                },
             },
         )
     })

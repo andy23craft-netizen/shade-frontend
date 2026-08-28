@@ -5,6 +5,7 @@ import {
     fireEvent,
     render,
     screen,
+    waitFor,
 } from '@testing-library/react'
 import {
     describe,
@@ -597,6 +598,70 @@ describe('BookForm', () => {
                 ],
             }),
         )
+    })
+
+    it('offers to create a new author from an unmatched search', async () => {
+        const onSubmit = vi.fn()
+        const onCreateAuthor = vi.fn().mockResolvedValue({
+            author_id: 'author-oconnor',
+            first_name: 'Flannery',
+            surname: "O'Connor",
+            created_date: '2026-01-01T00:00:00Z',
+            updated_date: '2026-01-01T00:00:00Z',
+        } satisfies AuthorRead)
+
+        render(
+            <ControlledBookForm
+                initialValues={makeBook({
+                    authorIds: [],
+                })}
+                onCreateAuthor={onCreateAuthor}
+                onSubmit={onSubmit}
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select authors',
+            }),
+        )
+
+        fireEvent.change(
+            screen.getByRole('searchbox', {
+                name: 'Search authors',
+            }),
+            {
+                target: {
+                    value: "Flannery O'Connor",
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: '+ Add “Flannery O\'Connor”',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(onCreateAuthor).toHaveBeenCalledWith(
+                "Flannery O'Connor",
+            )
+        })
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Book',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(onSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    authorIds: ['author-oconnor'],
+                }),
+            )
+        })
     })
 
     it('shows linked server field errors in the summary', () => {

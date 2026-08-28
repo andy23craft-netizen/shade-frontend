@@ -8,6 +8,7 @@ import {
     useSearchParams,
 } from 'react-router-dom'
 
+
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
@@ -20,6 +21,7 @@ import {
 } from '../../../api/booksQueries'
 import {
     useCategories,
+    useCreateCategory,
 } from '../../../api/categoriesQueries'
 import {
     useAuthors,
@@ -27,6 +29,7 @@ import {
 } from '../../../api/authorsQueries'
 import type {
     AuthorRead,
+    CategoryRead,
 } from '../../../api/apiTypes'
 import {
     useShelves,
@@ -187,6 +190,14 @@ function authorCreateFromName(name: string): {
     }
 }
 
+function categorySlug(name: string): string {
+    return name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+}
+
 export function NewBookPage() {
     const navigate = useNavigate()
 
@@ -212,6 +223,11 @@ export function NewBookPage() {
         createdLookupAuthors,
         setCreatedLookupAuthors,
     ] = useState<AuthorRead[]>([])
+
+    const [
+        createdCategories,
+        setCreatedCategories,
+    ] = useState<CategoryRead[]>([])
 
     const [
         lookupInput,
@@ -253,6 +269,7 @@ export function NewBookPage() {
 
     const createBook = useCreateBook()
     const createAuthor = useCreateAuthor()
+    const createCategory = useCreateCategory()
 
     function handleIsbnDetected(
         isbn: string,
@@ -313,6 +330,7 @@ export function NewBookPage() {
     function cancelLookup() {
         setActiveLookupIsbn('')
     }
+
 
     async function applyLookup() {
         const draft = lookup.data?.draft
@@ -609,8 +627,20 @@ export function NewBookPage() {
     }
 
     const shelves = shelvesQuery.data ?? []
-    const categories =
+    const queryCategories =
         categoriesQuery.data ?? []
+
+    const categories = [
+        ...queryCategories,
+        ...createdCategories.filter(
+            (created) =>
+                !queryCategories.some(
+                    (category) =>
+                        category.category_id ===
+                        created.category_id,
+                ),
+        ),
+    ]
     const queryAuthors =
         authorsQuery.data?.items ?? []
     const authors = [
@@ -624,6 +654,49 @@ export function NewBookPage() {
                 ),
         ),
     ]
+
+    async function handleCreateAuthor(
+        name: string,
+    ) {
+        const created =
+            await createAuthor.mutateAsync(
+                authorCreateFromName(name),
+            )
+
+        setCreatedLookupAuthors((current) =>
+            current.some(
+                (author) =>
+                    author.author_id ===
+                    created.author_id,
+            )
+                ? current
+                : [...current, created],
+        )
+
+        return created
+    }
+
+    async function handleCreateCategory(
+        name: string,
+    ) {
+        const created =
+            await createCategory.mutateAsync({
+                name,
+                slug: categorySlug(name),
+            })
+
+        setCreatedCategories((current) =>
+            current.some(
+                (category) =>
+                    category.category_id ===
+                    created.category_id,
+            )
+                ? current
+                : [...current, created],
+        )
+
+        return created
+    }
 
     return (
         <section className="route-page">
@@ -794,6 +867,8 @@ export function NewBookPage() {
                 shelves={shelves}
                 categories={categories}
                 authors={authors}
+                onCreateAuthor={handleCreateAuthor}
+                onCreateCategory={handleCreateCategory}
                 onChange={setValues}
                 onSubmit={handleSubmit}
                 onCancel={() => {
@@ -801,7 +876,8 @@ export function NewBookPage() {
                 }}
                 isSubmitting={
                     createBook.isPending ||
-                    createAuthor.isPending
+                    createAuthor.isPending ||
+                    createCategory.isPending
                 }
                 serverFieldErrors={
                     serverFieldErrors

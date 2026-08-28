@@ -6,6 +6,7 @@ import {
     AboutPage,
     BookDetailsPage,
     BooksPage,
+    BulkAddPage,
     CollectionsPage,
     DashboardPage,
     DeleteBookPage,
@@ -81,6 +82,13 @@ export const routeConfig = [
                     title: routeMetadata.newBook.title,
                 },
                 element: <NewBookPage />,
+            },
+            {
+                path: routeMetadata.bulkAdd.path,
+                handle: {
+                    title: routeMetadata.bulkAdd.title,
+                },
+                element: <BulkAddPage />,
             },
             {
                 path: routeMetadata.bookDetails.path,

@@ -46,6 +46,26 @@ export function ManageCollectionPage() {
                         </AppLink>
 
                         <AppLink
+                            to="/books/bulk-add"
+                            className="manage-collection-action"
+                        >
+                            <span className="manage-collection-action__title">
+                                Bulk Add
+                            </span>
+
+                            <span className="manage-collection-action__description">
+                                Scan a shelf of books into the catalog.
+                            </span>
+
+                            <span
+                                className="manage-collection-action__arrow"
+                                aria-hidden="true"
+                            >
+                                →
+                            </span>
+                        </AppLink>
+
+                        <AppLink
                             to="/shelves"
                             className="manage-collection-action"
                         >

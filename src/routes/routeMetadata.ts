@@ -39,6 +39,11 @@ export const routeMetadata = {
     title: 'Add Book',
     heading: 'Add Book',
   },
+  bulkAdd: {
+    path: '/books/bulk-add',
+    title: 'Bulk Add',
+    heading: 'Bulk Add',
+  },
   bookDetails: {
     path: '/books/:bookId',
     title: 'Book Details',

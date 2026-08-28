@@ -80,6 +80,12 @@ export interface BookFormProps {
     isSubmitting?: boolean
     serverFieldErrors?: BookFormFieldErrors
     formError?: string | null
+    onCreateAuthor?: (
+        name: string,
+    ) => Promise<AuthorRead>
+    onCreateCategory?: (
+        name: string,
+    ) => Promise<CategoryRead>
 }
 
 function focusSummary(
@@ -99,6 +105,8 @@ export function BookForm({
     isSubmitting = false,
     serverFieldErrors = {},
     formError = null,
+                             onCreateCategory,
+    onCreateAuthor,
 }: BookFormProps) {
     const idPrefix = useId()
     const summaryRef =
@@ -122,6 +130,16 @@ export function BookForm({
         authorSearch,
         setAuthorSearch,
     ] = useState('')
+
+    const [
+        authorCreateError,
+        setAuthorCreateError,
+    ] = useState<string | null>(null)
+
+    const [
+        isCreatingAuthor,
+        setIsCreatingAuthor,
+    ] = useState(false)
 
     const [
         categorySearch,
@@ -200,6 +218,22 @@ export function BookForm({
     const normalizedCategorySearch =
         categorySearch.trim().toLowerCase()
 
+    const categorySearchName =
+        categorySearch.trim().replace(/\s+/g, ' ')
+
+    const hasExactCategoryMatch =
+        categorySearchName !== '' &&
+        categories.some(
+            (category) =>
+                category.name.trim().toLowerCase() ===
+                categorySearchName.toLowerCase(),
+        )
+
+    const canCreateCategory =
+        Boolean(onCreateCategory) &&
+        categorySearchName !== '' &&
+        !hasExactCategoryMatch
+
     const visibleCategories =
         normalizedCategorySearch === ''
             ? sortedCategories
@@ -243,6 +277,57 @@ export function BookForm({
                 .toLocaleLowerCase()
                 .includes(normalizedAuthorSearch),
     )
+
+    const hasExactAuthorMatch = authors.some(
+        (author) =>
+            authorName(author)
+                .trim()
+                .toLocaleLowerCase() ===
+            normalizedAuthorSearch,
+    )
+
+    const canCreateAuthor =
+        onCreateAuthor !== undefined &&
+        authorSearch.trim() !== '' &&
+        !hasExactAuthorMatch
+
+
+
+    async function handleCreateAuthor() {
+        const name = authorSearch
+            .trim()
+            .replace(/\s+/g, ' ')
+
+        if (!name || !onCreateAuthor) {
+            return
+        }
+
+        setAuthorCreateError(null)
+        setIsCreatingAuthor(true)
+
+        try {
+            const created = await onCreateAuthor(name)
+
+            if (!values.authorIds.includes(
+                created.author_id,
+            )) {
+                updateField('authorIds', [
+                    ...values.authorIds,
+                    created.author_id,
+                ])
+            }
+
+            setAuthorSearch('')
+        } catch (error) {
+            setAuthorCreateError(
+                error instanceof Error
+                    ? error.message
+                    : 'The author could not be created.',
+            )
+        } finally {
+            setIsCreatingAuthor(false)
+        }
+    }
 
     const toggleAuthor = (authorId: string) => {
         if (values.authorIds.includes(authorId)) {
@@ -337,6 +422,22 @@ export function BookForm({
             'categoryIds',
             [...selected],
         )
+    }
+
+    async function handleCreateCategory() {
+        if (!onCreateCategory || !categorySearchName) {
+            return
+        }
+
+        const created =
+            await onCreateCategory(categorySearchName)
+
+        updateField('categoryIds', [
+            ...values.categoryIds,
+            created.category_id,
+        ])
+
+        setCategorySearch('')
     }
 
     function handleTextChange(
@@ -521,57 +622,66 @@ export function BookForm({
                     )}
 
                     <div className="book-form__category-picker">
-                        <button
+                        <Button
                             type="button"
-                            className="button button--secondary"
+                            variant="secondary"
                             aria-expanded={isAuthorPickerOpen}
                             aria-controls={`${fieldId(
                                 'authorIds',
                             )}-picker`}
-                            onClick={() =>
+                            onClick={() => {
                                 setIsAuthorPickerOpen(
-                                    (current) => !current,
+                                    (open) => !open,
                                 )
-                            }
+                                setAuthorCreateError(null)
+                            }}
                         >
-                            {values.authorIds.length > 0
-                                ? `Select authors (${values.authorIds.length})`
-                                : 'Select authors'}
-                        </button>
+                            {isAuthorPickerOpen
+                                ? 'Close authors'
+                                : values.authorIds.length > 0
+                                  ? `Select authors (${values.authorIds.length})`
+                                  : 'Select authors'}
+                        </Button>
 
                         {isAuthorPickerOpen ? (
                             <div
                                 id={`${fieldId(
                                     'authorIds',
                                 )}-picker`}
-                                className="book-form__category-picker-panel"
+                                className="book-form__category-dropdown"
                             >
-                                <input
-                                    type="search"
-                                    value={authorSearch}
-                                    aria-label="Search authors"
-                                    placeholder="Search authors"
-                                    autoComplete="off"
-                                    onChange={(event) =>
-                                        setAuthorSearch(
-                                            event.target.value,
-                                        )
-                                    }
-                                />
+                                <Field label="Search authors">
+                                    <input
+                                        type="search"
+                                        value={authorSearch}
+                                        onChange={(event) => {
+                                            setAuthorSearch(
+                                                event.target.value,
+                                            )
+                                            setAuthorCreateError(null)
+                                        }}
+                                        autoComplete="off"
+                                    />
+                                </Field>
 
-                                <div className="book-form__category-options">
+                                <div className="book-form__category-dropdown-list">
                                     {filteredAuthors.map(
                                         (author) => {
                                             const name =
                                                 authorName(author)
+                                            const inputId =
+                                                `${fieldId(
+                                                    'authorIds',
+                                                )}-${author.author_id}`
 
                                             return (
                                                 <label
-                                                    key={
-                                                        author.author_id
-                                                    }
+                                                    key={author.author_id}
+                                                    htmlFor={inputId}
+                                                    className="book-form__category-option"
                                                 >
                                                     <input
+                                                        id={inputId}
                                                         type="checkbox"
                                                         checked={values.authorIds.includes(
                                                             author.author_id,
@@ -582,13 +692,48 @@ export function BookForm({
                                                             )
                                                         }
                                                     />
-
                                                     <span>{name}</span>
                                                 </label>
                                             )
                                         },
                                     )}
+
+                                    {canCreateAuthor ? (
+                                        <button
+                                            type="button"
+                                            className="book-form__author-create"
+                                            disabled={isCreatingAuthor}
+                                            onClick={() => {
+                                                void handleCreateAuthor()
+                                            }}
+                                        >
+                                            {isCreatingAuthor
+                                                ? 'Adding author…'
+                                                : `+ Add “${authorSearch
+                                                      .trim()
+                                                      .replace(
+                                                          /\s+/g,
+                                                          ' ',
+                                                      )}”`}
+                                        </button>
+                                    ) : null}
+
+                                    {filteredAuthors.length === 0 &&
+                                    !canCreateAuthor ? (
+                                        <p className="book-form__category-no-results">
+                                            No authors match your search.
+                                        </p>
+                                    ) : null}
                                 </div>
+
+                                {authorCreateError ? (
+                                    <p
+                                        className="field__error book-form__author-create-error"
+                                        role="alert"
+                                    >
+                                        {authorCreateError}
+                                    </p>
+                                ) : null}
                             </div>
                         ) : null}
                     </div>
@@ -791,6 +936,17 @@ export function BookForm({
                                 </Field>
 
                                 <div className="book-form__category-dropdown-list">
+                                    {canCreateCategory ? (
+                                        <button
+                                            type="button"
+                                            className="book-form__picker-create"
+                                            onClick={() => {
+                                                void handleCreateCategory()
+                                            }}
+                                        >
+                                            + Add “{categorySearchName}”
+                                        </button>
+                                    ) : null}
                                     {visibleCategories.length >
                                     0 ? (
                                         visibleCategories.map(

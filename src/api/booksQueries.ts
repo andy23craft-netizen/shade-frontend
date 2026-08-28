@@ -26,6 +26,8 @@ import type {
     BookList,
     BookRead,
     BookUpdate,
+    BulkBookImportRequest,
+    BulkBookLookupRequest,
     BulkShelfMoveRequest,
     CheckinRequest,
     CheckoutRequest,
@@ -99,6 +101,47 @@ async function invalidateBulkShelfMoveCaches(
 
     await queryClient.invalidateQueries({
         queryKey: queryKeys.dashboard.all,
+    })
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.collections.all,
+    })
+}
+
+async function invalidateBulkBookImportCaches(
+    queryClient: ReturnType<
+        typeof useQueryClient
+    >,
+    bookIds: readonly string[],
+): Promise<void> {
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.books.all,
+    })
+
+    for (const bookId of bookIds) {
+        await queryClient.invalidateQueries({
+            queryKey: queryKeys.books.detail(bookId),
+        })
+    }
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.shelves.all,
+    })
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.all,
+    })
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.wishlists.all,
+    })
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.authors.all,
+    })
+
+    await queryClient.invalidateQueries({
+        queryKey: queryKeys.categories.all,
     })
 
     await queryClient.invalidateQueries({
@@ -514,6 +557,55 @@ export function useRemoveBookCover() {
             await invalidateBookCover(
                 queryClient,
                 id,
+            )
+        },
+    })
+}
+
+export function useBulkBookLookup() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (
+            request: BulkBookLookupRequest,
+        ) =>
+            booksApi.bulkLookup(request),
+    })
+}
+
+export function useBulkBookImport() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (
+            request: BulkBookImportRequest,
+        ) =>
+            booksApi.bulkImport(request),
+
+        onSuccess: async (response) => {
+            const bookIds = response.items
+                .map((item) => item.book_id)
+                .filter(
+                    (bookId): bookId is string =>
+                        typeof bookId === 'string',
+                )
+
+            await invalidateBulkBookImportCaches(
+                queryClient,
+                bookIds,
             )
         },
     })

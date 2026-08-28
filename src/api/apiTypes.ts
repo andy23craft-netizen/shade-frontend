@@ -7,6 +7,42 @@ export type BookUpdate = Schemas['BookUpdate']
 export type BookRead = Schemas['BookRead']
 export type BookList = Schemas['BookList']
 
+export type BulkBookCatalogState =
+    Schemas['BulkBookCatalogState']
+
+export type BulkBookImportAction =
+    Schemas['BulkBookImportAction']
+
+export type BulkBookImportItemRequest =
+    Schemas['BulkBookImportItemRequest']
+
+export type BulkBookImportItemResult =
+    Schemas['BulkBookImportItemResult']
+
+export type BulkBookImportRequest =
+    Schemas['BulkBookImportRequest']
+
+export type BulkBookImportResponse =
+    Schemas['BulkBookImportResponse']
+
+export type BulkBookImportResultStatus =
+    Schemas['BulkBookImportResultStatus']
+
+export type BulkBookLookupItemRequest =
+    Schemas['BulkBookLookupItemRequest']
+
+export type BulkBookLookupItemResult =
+    Schemas['BulkBookLookupItemResult']
+
+export type BulkBookLookupRequest =
+    Schemas['BulkBookLookupRequest']
+
+export type BulkBookLookupResponse =
+    Schemas['BulkBookLookupResponse']
+
+export type BulkBookLookupStatus =
+    Schemas['BulkBookLookupStatus']
+
 export type BulkShelfMoveRequest =
     Schemas['BulkShelfMoveRequest']
 

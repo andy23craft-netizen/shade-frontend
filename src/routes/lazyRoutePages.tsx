@@ -64,6 +64,14 @@ export const NewBookPage = lazy(() =>
     ),
 )
 
+export const BulkAddPage = lazy(() =>
+    import('../features/books/routes/BulkAddPage').then(
+        (module) => ({
+            default: module.BulkAddPage,
+        }),
+    ),
+)
+
 export const BookDetailsPage = lazy(() =>
     import(
         '../features/books/routes/BookDetailsPage'

@@ -4,6 +4,10 @@ import type {
     BookLookupResponse,
     BookRead,
     BookUpdate,
+    BulkBookImportRequest,
+    BulkBookImportResponse,
+    BulkBookLookupRequest,
+    BulkBookLookupResponse,
     BulkShelfMoveRequest,
     BulkShelfMoveResponse,
     CheckinRequest,
@@ -193,6 +197,82 @@ export function createBooksApi(
                 {
                     method: 'POST',
                     body: pickBookCreate(book),
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async bulkLookup(
+            request: BulkBookLookupRequest,
+            options: ApiCallOptions = {},
+        ): Promise<BulkBookLookupResponse> {
+            return client.requestJson<BulkBookLookupResponse>(
+                '/books/bulk/lookup',
+                {
+                    method: 'POST',
+                    body: {
+                        items: request.items.map((item) => ({
+                            client_item_id:
+                            item.client_item_id,
+                            isbn: item.isbn,
+                        })),
+                    },
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async bulkImport(
+            request: BulkBookImportRequest,
+            options: ApiCallOptions = {},
+        ): Promise<BulkBookImportResponse> {
+            const body: BulkBookImportRequest = {
+                shelf_name: request.shelf_name,
+                items: request.items.map((item) => {
+                    const picked = {
+                        action: item.action,
+                        client_item_id:
+                        item.client_item_id,
+                    } as BulkBookImportRequest['items'][number]
+
+                    if (
+                        Object.hasOwn(
+                            item,
+                            'book',
+                        )
+                    ) {
+                        picked.book = item.book
+                    }
+
+                    if (
+                        Object.hasOwn(
+                            item,
+                            'existing_book_id',
+                        )
+                    ) {
+                        picked.existing_book_id =
+                            item.existing_book_id
+                    }
+
+                    return picked
+                }),
+            }
+
+            if (
+                Object.hasOwn(
+                    request,
+                    'acquisition_source',
+                )
+            ) {
+                body.acquisition_source =
+                    request.acquisition_source
+            }
+
+            return client.requestJson<BulkBookImportResponse>(
+                '/books/bulk/import',
+                {
+                    method: 'POST',
+                    body,
                     ...withSignal(options.signal),
                 },
             )
