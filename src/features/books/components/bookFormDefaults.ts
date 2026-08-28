@@ -2,7 +2,7 @@ import type { BookFormValues } from './BookForm'
 
 export const bookFormDefaults: BookFormValues = {
     title: '',
-    authors: '',
+    authorIds: [],
     isbn13: '',
     publisher: '',
     publication_date: '',

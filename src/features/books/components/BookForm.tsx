@@ -31,7 +31,7 @@ import {
 
 export interface BookFormValues {
     title: string
-    authors: string
+    authorIds: string[]
     isbn13: string
     publisher: string
     publication_date: string
@@ -50,7 +50,7 @@ const FIELD_LABELS: Record<
     string
 > = {
     title: 'Title',
-    authors: 'Authors',
+    authorIds: 'Authors',
     isbn13: 'ISBN',
     publisher: 'Publisher',
     publication_date: 'Publication date',

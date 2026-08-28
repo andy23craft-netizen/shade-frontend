@@ -67,6 +67,12 @@ export type ValidationError =
 export type CategoryRead =
     Schemas['CategoryRead']
 
+export type CategoryCreate =
+    Schemas['CategoryCreate']
+
+export type CategoryUpdate =
+    Schemas['CategoryUpdate']
+
 export type BookCategoryRead =
     Schemas['BookCategoryRead']
 
@@ -78,6 +84,18 @@ export type ShelfUpdate =
 
 export type ShelfRead =
     Schemas['ShelfRead']
+
+export type AuthorCreate =
+    Schemas['AuthorCreate']
+
+export type AuthorList =
+    Schemas['AuthorList']
+
+export type AuthorRead =
+    Schemas['AuthorRead']
+
+export type AuthorUpdate =
+    Schemas['AuthorUpdate']
 
 export type WishlistCreate =
     Schemas['WishlistCreate']

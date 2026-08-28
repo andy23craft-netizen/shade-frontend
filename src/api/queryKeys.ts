@@ -352,6 +352,30 @@ export const queryKeys = {
                     list: true,
                 },
             ] as const,
+
+        detail: (categoryId: string) =>
+            [
+                'categories',
+                categoryId,
+            ] as const,
+    },
+
+    authors: {
+        all: ['authors'] as const,
+
+        list: () =>
+            [
+                'authors',
+                {
+                    list: true,
+                },
+            ] as const,
+
+        detail: (authorId: string) =>
+            [
+                'authors',
+                authorId,
+            ] as const,
     },
 
     wishlists: {

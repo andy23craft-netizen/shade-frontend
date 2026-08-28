@@ -72,19 +72,10 @@ export function validateBookFormValues(
             `Title must be at most ${TITLE_AUTHORS_MAX_LENGTH} characters.`
     }
 
-    const authors = values.authors.trim()
-
-    if (authors === '') {
-        errors.authors =
-            'Authors are required.'
-    } else if (
-        authors.length >
-        TITLE_AUTHORS_MAX_LENGTH
-    ) {
-        errors.authors =
-            `Authors must be at most ${TITLE_AUTHORS_MAX_LENGTH} characters.`
+    if (values.authorIds.length === 0) {
+        errors.authorIds =
+            'At least one author is required.'
     }
-
     if (values.shelfId.trim() === '') {
         errors.shelfId = 'Shelf is required.'
     }
@@ -155,7 +146,7 @@ export function formValuesToBookCreate(
 
     return {
         title: values.title.trim(),
-        authors: values.authors.trim(),
+        author_ids: [...values.authorIds],
         category_ids: [...values.categoryIds],
         shelf_name: shelfName,
         is_read: false,

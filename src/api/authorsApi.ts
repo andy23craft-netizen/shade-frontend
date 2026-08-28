@@ -1,7 +1,8 @@
 import type {
-    CategoryCreate,
-    CategoryRead,
-    CategoryUpdate,
+    AuthorCreate,
+    AuthorList,
+    AuthorRead,
+    AuthorUpdate,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -10,11 +11,11 @@ import type {
     ApiCallOptions,
 } from './apiCallOptions'
 import {
-    pickCategoryCreate,
-    pickCategoryUpdate,
+    pickAuthorCreate,
+    pickAuthorUpdate,
 } from './requestFields'
 
-export type ListCategoriesOptions = ApiCallOptions
+export type ListAuthorsOptions = ApiCallOptions
 
 function withSignal(
     signal: AbortSignal | undefined,
@@ -26,72 +27,72 @@ function withSignal(
         }
 }
 
-export function createCategoriesApi(
+export function createAuthorsApi(
     client: ReturnType<typeof createApiClient>,
 ) {
     return {
         async list(
-            options: ListCategoriesOptions = {},
-        ): Promise<CategoryRead[]> {
+            options: ListAuthorsOptions = {},
+        ): Promise<AuthorList> {
             const signalOptions = withSignal(
                 options.signal,
             )
 
             return signalOptions === undefined
-                ? client.getJson<CategoryRead[]>(
-                    '/categories',
+                ? client.getJson<AuthorList>(
+                    '/authors',
                 )
-                : client.getJson<CategoryRead[]>(
-                    '/categories',
+                : client.getJson<AuthorList>(
+                    '/authors',
                     signalOptions,
                 )
         },
 
         async get(
-            categoryId: string,
+            authorId: string,
             options: ApiCallOptions = {},
-        ): Promise<CategoryRead> {
-            return client.getJson<CategoryRead>(
-                `/categories/${encodeURIComponent(categoryId)}`,
+        ): Promise<AuthorRead> {
+            return client.getJson<AuthorRead>(
+                `/authors/${encodeURIComponent(authorId)}`,
                 withSignal(options.signal),
             )
         },
 
         async create(
-            category: CategoryCreate,
+            author: AuthorCreate,
             options: ApiCallOptions = {},
-        ): Promise<CategoryRead> {
-            return client.requestJson<CategoryRead>(
-                '/categories',
+        ): Promise<AuthorRead> {
+            return client.requestJson<AuthorRead>(
+                '/authors',
                 {
                     method: 'POST',
-                    body: pickCategoryCreate(category),
+                    body: pickAuthorCreate(author),
                     ...withSignal(options.signal),
                 },
             )
         },
 
         async update(
-            categoryId: string,
-            category: CategoryUpdate,
+            authorId: string,
+            author: AuthorUpdate,
             options: ApiCallOptions = {},
-        ): Promise<CategoryRead> {
-            return client.requestJson<CategoryRead>(
-                `/categories/${encodeURIComponent(categoryId)}`,
+        ): Promise<AuthorRead> {
+            return client.requestJson<AuthorRead>(
+                `/authors/${encodeURIComponent(authorId)}`,
                 {
                     method: 'PATCH',
-                    body: pickCategoryUpdate(category),
+                    body: pickAuthorUpdate(author),
                     ...withSignal(options.signal),
                 },
             )
         },
 
         async remove(
-            categoryId: string,
+            authorId: string,
             options: ApiCallOptions = {},
         ): Promise<void> {
             await client.request(
-                `/categories/${encodeURIComponent(categoryId)}`,
+                `/authors/${encodeURIComponent(authorId)}`,
                 {
                     method: 'DELETE',
                     ...withSignal(options.signal),

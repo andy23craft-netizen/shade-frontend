@@ -1,6 +1,123 @@
 {
   "components": {
     "schemas": {
+      "AuthorCreate": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "surname": {
+            "maxLength": 255,
+            "title": "Surname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "surname"
+        ],
+        "title": "AuthorCreate",
+        "type": "object"
+      },
+      "AuthorList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuthorRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AuthorList",
+        "type": "object"
+      },
+      "AuthorRead": {
+        "properties": {
+          "author_id": {
+            "title": "Author Id",
+            "type": "string"
+          },
+          "created_date": {
+            "title": "Created Date",
+            "type": "string"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "surname": {
+            "title": "Surname",
+            "type": "string"
+          },
+          "updated_date": {
+            "title": "Updated Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "author_id",
+          "first_name",
+          "surname",
+          "created_date",
+          "updated_date"
+        ],
+        "title": "AuthorRead",
+        "type": "object"
+      },
+      "AuthorUpdate": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "surname": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surname"
+          }
+        },
+        "title": "AuthorUpdate",
+        "type": "object"
+      },
       "Body_upload_book_cover_books__id__cover_put": {
         "properties": {
           "file": {
@@ -13,6 +130,36 @@
           "file"
         ],
         "title": "Body_upload_book_cover_books__id__cover_put",
+        "type": "object"
+      },
+      "BookAuthorRead": {
+        "properties": {
+          "author_id": {
+            "title": "Author Id",
+            "type": "string"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "surname": {
+            "title": "Surname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "author_id",
+          "first_name",
+          "surname"
+        ],
+        "title": "BookAuthorRead",
         "type": "object"
       },
       "BookCategoryRead": {
@@ -51,10 +198,13 @@
             ],
             "title": "Acquisition Source"
           },
-          "authors": {
-            "maxLength": 255,
-            "title": "Authors",
-            "type": "string"
+          "author_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Author Ids",
+            "type": "array"
           },
           "category_ids": {
             "items": {
@@ -222,7 +372,7 @@
         },
         "required": [
           "title",
-          "authors"
+          "author_ids"
         ],
         "title": "BookCreate",
         "type": "object"
@@ -353,9 +503,11 @@
             "title": "Acquisition Source"
           },
           "authors": {
-            "maxLength": 255,
+            "items": {
+              "$ref": "#/components/schemas/BookAuthorRead"
+            },
             "title": "Authors",
-            "type": "string"
+            "type": "array"
           },
           "average_loan_days": {
             "anyOf": [
@@ -564,7 +716,6 @@
         },
         "required": [
           "title",
-          "authors",
           "shelf_name",
           "id",
           "creation_date",
@@ -589,17 +740,19 @@
             ],
             "title": "Acquisition Source"
           },
-          "authors": {
+          "author_ids": {
             "anyOf": [
               {
-                "maxLength": 255,
-                "type": "string"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Authors"
+            "title": "Author Ids"
           },
           "category_ids": {
             "anyOf": [
@@ -793,6 +946,333 @@
         "title": "BookUpdate",
         "type": "object"
       },
+      "BulkBookCatalogState": {
+        "enum": [
+          "new",
+          "owned",
+          "wishlist",
+          "unshelved",
+          "ambiguous"
+        ],
+        "title": "BulkBookCatalogState",
+        "type": "string"
+      },
+      "BulkBookImportAction": {
+        "enum": [
+          "create",
+          "acquire_wishlist"
+        ],
+        "title": "BulkBookImportAction",
+        "type": "string"
+      },
+      "BulkBookImportItemRequest": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/BulkBookImportAction"
+          },
+          "book": {
+            "additionalProperties": true,
+            "title": "Book",
+            "type": "object"
+          },
+          "client_item_id": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "existing_book_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Book Id"
+          }
+        },
+        "required": [
+          "client_item_id",
+          "action"
+        ],
+        "title": "BulkBookImportItemRequest",
+        "type": "object"
+      },
+      "BulkBookImportItemResult": {
+        "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id"
+          },
+          "client_item_id": {
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "conflicting_book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflicting Book Ids",
+            "type": "array"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BulkBookImportResultStatus"
+          }
+        },
+        "required": [
+          "client_item_id",
+          "status"
+        ],
+        "title": "BulkBookImportItemResult",
+        "type": "object"
+      },
+      "BulkBookImportRequest": {
+        "properties": {
+          "acquisition_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Source"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkBookImportItemRequest"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "shelf_name": {
+            "maxLength": 32,
+            "title": "Shelf Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shelf_name",
+          "items"
+        ],
+        "title": "BulkBookImportRequest",
+        "type": "object"
+      },
+      "BulkBookImportResponse": {
+        "properties": {
+          "created_count": {
+            "title": "Created Count",
+            "type": "integer"
+          },
+          "failed_count": {
+            "title": "Failed Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkBookImportItemResult"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "submitted_count": {
+            "title": "Submitted Count",
+            "type": "integer"
+          },
+          "succeeded_count": {
+            "title": "Succeeded Count",
+            "type": "integer"
+          },
+          "wishlist_acquired_count": {
+            "title": "Wishlist Acquired Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "submitted_count",
+          "succeeded_count",
+          "failed_count",
+          "created_count",
+          "wishlist_acquired_count",
+          "items"
+        ],
+        "title": "BulkBookImportResponse",
+        "type": "object"
+      },
+      "BulkBookImportResultStatus": {
+        "enum": [
+          "created",
+          "wishlist_acquired",
+          "already_exists",
+          "validation_failed",
+          "stale_reference",
+          "persistence_failed"
+        ],
+        "title": "BulkBookImportResultStatus",
+        "type": "string"
+      },
+      "BulkBookLookupItemRequest": {
+        "properties": {
+          "client_item_id": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "isbn": {
+            "maxLength": 64,
+            "title": "Isbn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_item_id",
+          "isbn"
+        ],
+        "title": "BulkBookLookupItemRequest",
+        "type": "object"
+      },
+      "BulkBookLookupItemResult": {
+        "properties": {
+          "catalog_book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Catalog Book Ids",
+            "type": "array"
+          },
+          "catalog_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BulkBookCatalogState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "client_item_id": {
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookLookupDraft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isbn13": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn13"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BulkBookLookupStatus"
+          }
+        },
+        "required": [
+          "client_item_id",
+          "status"
+        ],
+        "title": "BulkBookLookupItemResult",
+        "type": "object"
+      },
+      "BulkBookLookupRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkBookLookupItemRequest"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BulkBookLookupRequest",
+        "type": "object"
+      },
+      "BulkBookLookupResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkBookLookupItemResult"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BulkBookLookupResponse",
+        "type": "object"
+      },
+      "BulkBookLookupStatus": {
+        "enum": [
+          "found",
+          "not_found",
+          "invalid_isbn",
+          "provider_timeout",
+          "provider_failure"
+        ],
+        "title": "BulkBookLookupStatus",
+        "type": "string"
+      },
       "BulkShelfMoveRequest": {
         "properties": {
           "book_ids": {
@@ -842,6 +1322,26 @@
         "title": "BulkShelfMoveResponse",
         "type": "object"
       },
+      "CategoryCreate": {
+        "properties": {
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "maxLength": 255,
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ],
+        "title": "CategoryCreate",
+        "type": "object"
+      },
       "CategoryRead": {
         "properties": {
           "category_id": {
@@ -873,6 +1373,36 @@
           "updated_date"
         ],
         "title": "CategoryRead",
+        "type": "object"
+      },
+      "CategoryUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "title": "CategoryUpdate",
         "type": "object"
       },
       "CheckinRequest": {
@@ -2032,10 +2562,260 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "0.2.12"
+    "version": "0.2.15"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/authors": {
+      "get": {
+        "operationId": "list_authors_authors_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Authors",
+        "tags": [
+          "authors"
+        ]
+      },
+      "post": {
+        "operationId": "create_author_authors_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Author",
+        "tags": [
+          "authors"
+        ]
+      }
+    },
+    "/authors/{author_id}": {
+      "delete": {
+        "operationId": "delete_author_authors__author_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "author_id",
+            "required": true,
+            "schema": {
+              "title": "Author Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Author",
+        "tags": [
+          "authors"
+        ]
+      },
+      "get": {
+        "operationId": "get_author_authors__author_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "author_id",
+            "required": true,
+            "schema": {
+              "title": "Author Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Author",
+        "tags": [
+          "authors"
+        ]
+      },
+      "patch": {
+        "operationId": "update_author_authors__author_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "author_id",
+            "required": true,
+            "schema": {
+              "title": "Author Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Author",
+        "tags": [
+          "authors"
+        ]
+      }
+    },
     "/backup": {
       "get": {
         "operationId": "get_backup_backup_get",
@@ -2717,6 +3497,128 @@
           }
         ],
         "summary": "Create Book",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/bulk/import": {
+      "post": {
+        "operationId": "bulk_import_books_books_bulk_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkBookImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkBookImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Import Books",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/bulk/lookup": {
+      "post": {
+        "operationId": "bulk_lookup_books_books_bulk_lookup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkBookLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkBookLookupResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Lookup Books",
         "tags": [
           "books"
         ]
@@ -3686,6 +4588,320 @@
           }
         ],
         "summary": "List Categories",
+        "tags": [
+          "categories"
+        ]
+      },
+      "post": {
+        "operationId": "create_category_categories_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Category",
+        "tags": [
+          "categories"
+        ]
+      }
+    },
+    "/categories/{category_id}": {
+      "delete": {
+        "operationId": "delete_category_categories__category_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Category",
+        "tags": [
+          "categories"
+        ]
+      },
+      "get": {
+        "operationId": "get_category_categories__category_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Category",
+        "tags": [
+          "categories"
+        ]
+      },
+      "patch": {
+        "operationId": "update_category_categories__category_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Category",
         "tags": [
           "categories"
         ]

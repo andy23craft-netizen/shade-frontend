@@ -49,7 +49,9 @@ function makeValues(
     return {
         ...bookFormDefaults,
         title: 'Dune',
-        authors: 'Frank Herbert',
+        authorIds: [
+            'author-frank-herbert',
+        ],
         shelfId: 'id-unknown',
         ...overrides,
     }
@@ -101,37 +103,35 @@ describe('parseTagsInput', () => {
 })
 
 describe('validateBookFormValues', () => {
-    it('requires title, authors, and shelf', () => {
+    it('requires title, at least one author, and shelf', () => {
         expect(
             validateBookFormValues(
                 makeValues({
                     title: '   ',
-                    authors: '',
+                    authorIds: [],
                     shelfId: '',
                 }),
             ),
         ).toEqual({
             title: 'Title is required.',
-            authors: 'Authors are required.',
+            authorIds:
+                'At least one author is required.',
             shelfId: 'Shelf is required.',
         })
     })
 
-    it('enforces 255-character title and authors limits', () => {
+    it('enforces the 255-character title limit', () => {
         const long = 'a'.repeat(256)
 
         expect(
             validateBookFormValues(
                 makeValues({
                     title: long,
-                    authors: long,
                 }),
             ),
         ).toEqual({
             title:
                 'Title must be at most 255 characters.',
-            authors:
-                'Authors must be at most 255 characters.',
         })
     })
 
@@ -199,7 +199,9 @@ describe('formValuesToBookCreate', () => {
             ),
         ).toEqual({
             title: 'Dune',
-            authors: 'Frank Herbert',
+            author_ids: [
+                'author-frank-herbert',
+            ],
             category_ids: [],
             shelf_name: 'unknown',
             is_read: false,
@@ -214,6 +216,25 @@ describe('formValuesToBookCreate', () => {
             notes: null,
             tags: null,
         })
+    })
+
+    it('preserves selected author order', () => {
+        expect(
+            formValuesToBookCreate(
+                makeValues({
+                    authorIds: [
+                        'author-first',
+                        'author-second',
+                        'author-third',
+                    ],
+                }),
+                SHELVES,
+            ).author_ids,
+        ).toEqual([
+            'author-first',
+            'author-second',
+            'author-third',
+        ])
     })
 
     it('passes through year-only publication_date', () => {

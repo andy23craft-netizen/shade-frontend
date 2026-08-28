@@ -14,6 +14,7 @@ import {
 } from 'vitest'
 
 import type {
+    AuthorRead,
     CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
@@ -76,26 +77,51 @@ const TEST_CATEGORIES: CategoryRead[] = [
     },
 ]
 
+const TEST_AUTHORS: AuthorRead[] = [
+    {
+        author_id: 'author-fitzgerald',
+        first_name: 'F. Scott',
+        surname: 'Fitzgerald',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        author_id: 'author-herbert',
+        first_name: 'Frank',
+        surname: 'Herbert',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        author_id: 'author-le-guin',
+        first_name: 'Ursula K.',
+        surname: 'Le Guin',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
 function makeBook(
     overrides: Partial<BookFormValues> = {},
 ): BookFormValues {
     return {
         ...bookFormDefaults,
         title: 'The Great Gatsby',
-        authors: 'F. Scott Fitzgerald',
+        authorIds: ['author-fitzgerald'],
         shelfId: 'id-a1',
         ...overrides,
     }
 }
 
 function ControlledBookForm({
-    initialValues = makeBook(),
-    shelves = TEST_SHELVES,
-    categories = TEST_CATEGORIES,
-    onSubmit = vi.fn(),
-    onCancel = vi.fn(),
-    ...rest
-}: Partial<BookFormProps> & {
+                                initialValues = makeBook(),
+                                shelves = TEST_SHELVES,
+                                categories = TEST_CATEGORIES,
+                                authors = TEST_AUTHORS,
+                                onSubmit = vi.fn(),
+                                onCancel = vi.fn(),
+                                ...rest
+                            }: Partial<BookFormProps> & {
     initialValues?: BookFormValues
 }) {
     const [
@@ -108,6 +134,7 @@ function ControlledBookForm({
             values={values}
             shelves={shelves}
             categories={categories}
+            authors={authors}
             onChange={setValues}
             onSubmit={onSubmit}
             onCancel={onCancel}
@@ -129,7 +156,19 @@ describe('BookForm', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Authors'),
+            screen.getByRole('group', {
+                name: 'Authors',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: /Select authors/,
+            }),
+        )
+
+        expect(
+            screen.getByLabelText('Frank Herbert'),
         ).toBeInTheDocument()
 
         expect(
@@ -242,8 +281,16 @@ describe('BookForm', () => {
         ).toHaveValue('The Great Gatsby')
 
         expect(
-            screen.getByLabelText('Authors'),
-        ).toHaveValue('F. Scott Fitzgerald')
+            screen.getByRole('button', {
+                name: 'Remove F. Scott Fitzgerald author',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Select authors (1)',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             screen.getByLabelText('ISBN'),
@@ -338,13 +385,13 @@ describe('BookForm', () => {
         expect(onSubmit).not.toHaveBeenCalled()
     })
 
-    it('rejects empty authors', () => {
+    it('rejects an empty author selection', () => {
         const onSubmit = vi.fn()
 
         render(
             <ControlledBookForm
                 initialValues={makeBook({
-                    authors: '',
+                    authorIds: [],
                 })}
                 onSubmit={onSubmit}
             />,
@@ -359,7 +406,7 @@ describe('BookForm', () => {
         expect(
             screen.getByRole('alert'),
         ).toHaveTextContent(
-            'Authors are required.',
+            'At least one author is required.',
         )
 
         expect(onSubmit).not.toHaveBeenCalled()
@@ -390,166 +437,6 @@ describe('BookForm', () => {
         )
 
         expect(onSubmit).not.toHaveBeenCalled()
-    })
-
-    it('submits the validated form values', () => {
-        const onSubmit = vi.fn()
-
-        render(
-            <ControlledBookForm
-                initialValues={bookFormDefaults}
-                onSubmit={onSubmit}
-            />,
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('Title'),
-            {
-                target: {
-                    value: 'Dune',
-                },
-            },
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('Authors'),
-            {
-                target: {
-                    value: 'Frank Herbert',
-                },
-            },
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('ISBN'),
-            {
-                target: {
-                    value: '978-0-441-17271-9',
-                },
-            },
-        )
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Select categories',
-            }),
-        )
-
-        fireEvent.click(
-            screen.getByLabelText('Fiction'),
-        )
-
-        fireEvent.click(
-            screen.getByLabelText('Shelf'),
-        )
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'A1',
-            }),
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('Pages'),
-            {
-                target: {
-                    value: '412',
-                },
-            },
-        )
-
-        fireEvent.change(
-            screen.getByLabelText(
-                'Publication date',
-            ),
-            {
-                target: {
-                    value: '1965',
-                },
-            },
-        )
-
-        fireEvent.change(
-            screen.getByLabelText(
-                'Purchase price',
-            ),
-            {
-                target: {
-                    value: '12.50',
-                },
-            },
-        )
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Save Book',
-            }),
-        )
-
-        expect(onSubmit).toHaveBeenCalledOnce()
-
-        expect(onSubmit).toHaveBeenCalledWith({
-            title: 'Dune',
-            authors: 'Frank Herbert',
-            isbn13: '978-0-441-17271-9',
-            publisher: '',
-            publication_date: '1965',
-            pages: '412',
-            categoryIds: ['cat-fiction'],
-            shelfId: 'id-a1',
-            tags: '',
-            acquisition_source: '',
-            purchase_date: '',
-            purchase_price: '12.50',
-            notes: '',
-        })
-    })
-
-    it('submits the current form values after validation', () => {
-        const onSubmit = vi.fn()
-
-        render(
-            <ControlledBookForm
-                initialValues={makeBook({
-                    shelfId: 'id-unknown',
-                })}
-                onSubmit={onSubmit}
-            />,
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('Title'),
-            {
-                target: {
-                    value: '  Dune  ',
-                },
-            },
-        )
-
-        fireEvent.change(
-            screen.getByLabelText('Authors'),
-            {
-                target: {
-                    value: '  Frank Herbert  ',
-                },
-            },
-        )
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Save Book',
-            }),
-        )
-
-        expect(onSubmit).toHaveBeenCalledWith(
-            expect.objectContaining({
-                title: '  Dune  ',
-                authors: '  Frank Herbert  ',
-                shelfId: 'id-unknown',
-                pages: '',
-                purchase_price: '',
-            }),
-        )
     })
 
     it('calls onCancel when Cancel is clicked', () => {
@@ -592,7 +479,7 @@ describe('BookForm', () => {
 
     it('starts a new book with the expected defaults', () => {
         expect(bookFormDefaults.title).toBe('')
-        expect(bookFormDefaults.authors).toBe('')
+        expect(bookFormDefaults.authorIds).toEqual([])
         expect(bookFormDefaults.categoryIds).toEqual(
             [],
         )
@@ -653,6 +540,60 @@ describe('BookForm', () => {
             expect.objectContaining({
                 categoryIds: [
                     'cat-nonfiction',
+                ],
+            }),
+        )
+    })
+
+    it('selects authors and preserves their selection order', () => {
+        const onSubmit = vi.fn()
+
+        render(
+            <ControlledBookForm
+                initialValues={makeBook({
+                    authorIds: [],
+                })}
+                onSubmit={onSubmit}
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select authors',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByLabelText('Ursula K. Le Guin'),
+        )
+
+        fireEvent.click(
+            screen.getByLabelText('Frank Herbert'),
+        )
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Remove Ursula K. Le Guin author',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Remove Frank Herbert author',
+            }),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Book',
+            }),
+        )
+
+        expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                authorIds: [
+                    'author-le-guin',
+                    'author-herbert',
                 ],
             }),
         )

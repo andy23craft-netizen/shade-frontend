@@ -1,9 +1,13 @@
 /* requestFields.ts */
 
 import type {
+    AuthorCreate,
+    AuthorUpdate,
     BookCreate,
     BookUpdate,
     BulkShelfMoveRequest,
+    CategoryCreate,
+    CategoryUpdate,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -20,7 +24,7 @@ import type {
 
 export const BOOK_CREATE_KEYS = [
     'acquisition_source',
-    'authors',
+    'author_ids',
     'category_ids',
     'completion_date',
     'is_read',
@@ -41,7 +45,7 @@ export const BOOK_CREATE_KEYS = [
 
 export const BOOK_UPDATE_KEYS = [
     'acquisition_source',
-    'authors',
+    'author_ids',
     'category_ids',
     'completion_date',
     'is_read',
@@ -82,6 +86,16 @@ export const MARK_READ_REQUEST_KEYS = [
     'review',
 ] as const satisfies readonly (keyof MarkReadRequest)[]
 
+export const CATEGORY_CREATE_KEYS = [
+    'name',
+    'slug',
+] as const satisfies readonly (keyof CategoryCreate)[]
+
+export const CATEGORY_UPDATE_KEYS = [
+    'name',
+    'slug',
+] as const satisfies readonly (keyof CategoryUpdate)[]
+
 export const SHELF_CREATE_KEYS = [
     'common_name',
     'description',
@@ -93,6 +107,16 @@ export const SHELF_UPDATE_KEYS = [
     'description',
     'location',
 ] as const satisfies readonly (keyof ShelfUpdate)[]
+
+export const AUTHOR_CREATE_KEYS = [
+    'first_name',
+    'surname',
+] as const satisfies readonly (keyof AuthorCreate)[]
+
+export const AUTHOR_UPDATE_KEYS = [
+    'first_name',
+    'surname',
+] as const satisfies readonly (keyof AuthorUpdate)[]
 
 export const WISHLIST_CREATE_KEYS = [
     'name',
@@ -200,6 +224,42 @@ export function pickMarkReadRequest(
     return pickDocumentedRequestFields(
         request,
         MARK_READ_REQUEST_KEYS,
+    )
+}
+
+export function pickCategoryCreate(
+    category: CategoryCreate,
+): CategoryCreate {
+    return pickDocumentedRequestFields(
+        category,
+        CATEGORY_CREATE_KEYS,
+    )
+}
+
+export function pickCategoryUpdate(
+    category: CategoryUpdate,
+): CategoryUpdate {
+    return pickDocumentedRequestFields(
+        category,
+        CATEGORY_UPDATE_KEYS,
+    )
+}
+
+export function pickAuthorCreate(
+    author: AuthorCreate,
+): AuthorCreate {
+    return pickDocumentedRequestFields(
+        author,
+        AUTHOR_CREATE_KEYS,
+    )
+}
+
+export function pickAuthorUpdate(
+    author: AuthorUpdate,
+): AuthorUpdate {
+    return pickDocumentedRequestFields(
+        author,
+        AUTHOR_UPDATE_KEYS,
     )
 }
 
