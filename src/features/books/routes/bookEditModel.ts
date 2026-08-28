@@ -23,7 +23,9 @@ export function bookFormValuesFromBook(
 ): BookFormValues {
     return {
         title: book.title,
-        authors: book.authors,
+        authorIds: (book.authors ?? []).map(
+            (author) => author.author_id,
+        ),
         isbn13: book.isbn13 ?? '',
         publisher: book.publisher ?? '',
         publication_date:
@@ -116,10 +118,24 @@ export function bookFormValuesToUpdate(
         update.title = title
     }
 
-    const authors = values.authors.trim()
+    const originalAuthorIds = (
+        original.authors ?? []
+    ).map(
+        (author) => author.author_id,
+    )
 
-    if (authors !== original.authors) {
-        update.authors = authors
+    const authorIdsChanged =
+        values.authorIds.length !==
+        originalAuthorIds.length ||
+        values.authorIds.some(
+            (authorId, index) =>
+                authorId !== originalAuthorIds[index],
+        )
+
+    if (authorIdsChanged) {
+        update.author_ids = [
+            ...values.authorIds,
+        ]
     }
 
     const isbn13 =

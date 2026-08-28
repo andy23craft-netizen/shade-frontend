@@ -16,6 +16,9 @@ import {
     QueryErrorState,
 } from '../../../components'
 import {
+    useAuthors,
+} from '../../../api/authorsQueries'
+import {
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
@@ -48,7 +51,7 @@ import {
 
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
-    'authors',
+    'authorIds',
     'isbn13',
     'publisher',
     'publication_date',
@@ -77,6 +80,9 @@ function mapEditFieldErrors(
         if (field === 'category_ids') {
             field = 'categoryIds'
         }
+        if (field === 'author_ids') {
+            field = 'authorIds'
+        }
 
         if (
             !field ||
@@ -101,6 +107,7 @@ export function EditBookPage() {
     const bookQuery = useBook(bookId)
     const shelvesQuery = useShelves()
     const categoriesQuery = useCategories()
+    const authorsQuery = useAuthors()
     const updateBook = useUpdateBook()
 
     const initializedBookIdRef =
@@ -128,11 +135,13 @@ export function EditBookPage() {
         const shelves = shelvesQuery.data
         const categories =
             categoriesQuery.data
+        const authors = authorsQuery.data
 
         if (
             !book ||
             shelves === undefined ||
             categories === undefined ||
+            authors === undefined ||
             initializedBookIdRef.current ===
             book.id
         ) {
@@ -152,6 +161,7 @@ export function EditBookPage() {
         bookQuery.data,
         categoriesQuery.data,
         shelvesQuery.data,
+        authorsQuery.data,
     ])
 
     async function refetchBookState() {
@@ -288,7 +298,8 @@ export function EditBookPage() {
     if (
         bookQuery.isPending ||
         shelvesQuery.isPending ||
-        categoriesQuery.isPending
+        categoriesQuery.isPending ||
+        authorsQuery.isPending
     ) {
         return (
             <section className="route-page">
@@ -361,6 +372,36 @@ export function EditBookPage() {
         )
     }
 
+    if (authorsQuery.isError) {
+        return (
+            <section className="route-page">
+                <h1 tabIndex={-1}>
+                    Edit Book
+                </h1>
+
+                <p>
+                    Authors must load before a
+                    book can be edited.
+                </p>
+
+                <QueryErrorState
+                    error={authorsQuery.error}
+                    onRetry={() => {
+                        void authorsQuery.refetch()
+                    }}
+                    title="Unable to load authors"
+                />
+
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    Back to Books
+                </AppLink>
+            </section>
+        )
+    }
+
     if (bookQuery.isError) {
         const isNotFound =
             isBookIdentityError(bookQuery.error)
@@ -403,6 +444,8 @@ export function EditBookPage() {
 
     const book = bookQuery.data
     const shelves = shelvesQuery.data ?? []
+    const authors =
+        authorsQuery.data?.items ?? []
     const categories =
         categoriesQuery.data ?? []
 
@@ -436,13 +479,24 @@ export function EditBookPage() {
             <p>
                 Update metadata for{' '}
                 <strong>{book.title}</strong> by{' '}
-                {book.authors}.
+                {(book.authors ?? [])
+                    .map((author) =>
+                        [
+                            author.first_name,
+                            author.surname,
+                        ]
+                            .filter(Boolean)
+                            .join(' '),
+                    )
+                    .join(', ')}
+                .
             </p>
 
             <BookForm
                 values={values}
                 shelves={shelves}
                 categories={categories}
+                authors={authors}
                 onChange={(nextValues) => {
                     setValues(nextValues)
                     setServerFieldErrors({})

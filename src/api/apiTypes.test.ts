@@ -28,7 +28,13 @@ describe('API transport types', () => {
         const book = {
             id: '550e8400-e29b-41d4-a716-446655440000',
             title: 'A Book',
-            authors: 'An Author',
+            authors: [
+                {
+                    author_id: 'author-1',
+                    first_name: 'An',
+                    surname: 'Author',
+                },
+            ],
             categories: [],
             shelf_name: 'unknown',
             status: 'available',

@@ -95,11 +95,13 @@ describe('formValuesToUnshelvedBookCreate', () => {
             authors: 'An Author',
             isbn13: '',
             status: 'wanted',
-        })
+        }, [
+            'author-an-author',
+        ])
 
         expect(payload).toEqual({
             title: 'A Book',
-            authors: 'An Author',
+            author_ids: ['author-an-author'],
             category_ids: [],
             is_read: false,
             status: 'available',
@@ -116,7 +118,9 @@ describe('formValuesToUnshelvedBookCreate', () => {
             authors: 'An Author',
             isbn13: '  9780441172719  ',
             status: 'wanted',
-        })
+        }, [
+            'author-an-author',
+        ])
 
         expect(payload.isbn13).toBe('9780441172719')
         expect(payload).not.toHaveProperty(

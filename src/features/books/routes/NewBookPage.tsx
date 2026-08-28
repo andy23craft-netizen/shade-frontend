@@ -22,6 +22,13 @@ import {
     useCategories,
 } from '../../../api/categoriesQueries'
 import {
+    useAuthors,
+    useCreateAuthor,
+} from '../../../api/authorsQueries'
+import type {
+    AuthorRead,
+} from '../../../api/apiTypes'
+import {
     useShelves,
 } from '../../../api/shelvesQueries'
 import {
@@ -45,7 +52,7 @@ import { useHardwareIsbnScanner } from '../../scanning/useHardwareIsbnScanner'
 
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
-    'authors',
+    'authorIds',
     'isbn13',
     'publisher',
     'publication_date',
@@ -82,6 +89,10 @@ function mapCreateFieldErrors(
 
         if (field === 'category_ids') {
             field = 'categoryIds'
+        }
+
+        if (field === 'author_ids') {
+            field = 'authorIds'
         }
 
         if (
@@ -127,6 +138,55 @@ function lookupFailureMessage(
     return fallback
 }
 
+function normalizedAuthorName(value: string): string {
+    return value
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+}
+
+function authorDisplayName(author: {
+    first_name: string | null
+    surname: string
+}): string {
+    return [
+        author.first_name,
+        author.surname,
+    ]
+        .filter(Boolean)
+        .join(' ')
+}
+
+function lookupAuthorNames(
+    value: string | null,
+): string[] {
+    if (!value) {
+        return []
+    }
+
+    return value
+        .split(/\s*(?:,|;|\band\b|&)\s*/i)
+        .map((name) =>
+            name.trim().replace(/\s+/g, ' '),
+        )
+        .filter(Boolean)
+}
+
+function authorCreateFromName(name: string): {
+    first_name: string | null
+    surname: string
+} {
+    const parts = name.split(' ')
+    const surname = parts.pop() ?? name
+    const firstName = parts.join(' ')
+
+    return {
+        first_name:
+            firstName === '' ? null : firstName,
+        surname,
+    }
+}
+
 export function NewBookPage() {
     const navigate = useNavigate()
 
@@ -136,6 +196,7 @@ export function NewBookPage() {
 
     const shelvesQuery = useShelves()
     const categoriesQuery = useCategories()
+    const authorsQuery = useAuthors()
 
     const [
         values,
@@ -146,6 +207,11 @@ export function NewBookPage() {
             ? initialLookupIsbn.trim()
             : '',
     }))
+
+    const [
+        createdLookupAuthors,
+        setCreatedLookupAuthors,
+    ] = useState<AuthorRead[]>([])
 
     const [
         lookupInput,
@@ -186,6 +252,7 @@ export function NewBookPage() {
     )
 
     const createBook = useCreateBook()
+    const createAuthor = useCreateAuthor()
 
     function handleIsbnDetected(
         isbn: string,
@@ -199,6 +266,7 @@ export function NewBookPage() {
         enabled:
             shelvesQuery.isSuccess &&
             categoriesQuery.isSuccess &&
+            authorsQuery.isSuccess &&
             !isScannerOpen &&
             !lookup.isFetching,
         onDetected: handleIsbnDetected,
@@ -246,19 +314,83 @@ export function NewBookPage() {
         setActiveLookupIsbn('')
     }
 
-    function applyLookup() {
+    async function applyLookup() {
         const draft = lookup.data?.draft
 
         if (!draft) {
             return
         }
 
+        const existingAuthors = [
+            ...(authorsQuery.data?.items ?? []),
+            ...createdLookupAuthors,
+        ]
+        const authorIds: string[] = []
+
+        try {
+            for (const name of lookupAuthorNames(
+                draft.authors ?? null,
+            )) {
+                const normalizedName =
+                    normalizedAuthorName(name)
+                const existing =
+                    existingAuthors.find(
+                        (author) =>
+                            normalizedAuthorName(
+                                authorDisplayName(
+                                    author,
+                                ),
+                            ) === normalizedName,
+                    )
+
+                if (existing) {
+                    authorIds.push(
+                        existing.author_id,
+                    )
+                    continue
+                }
+
+                const created =
+                    await createAuthor.mutateAsync(
+                        authorCreateFromName(name),
+                    )
+
+                authorIds.push(created.author_id)
+                existingAuthors.push(created)
+                setCreatedLookupAuthors(
+                    (current) =>
+                        current.some(
+                            (author) =>
+                                author.author_id ===
+                                created.author_id,
+                        )
+                            ? current
+                            : [
+                                  ...current,
+                                  created,
+                              ],
+                )
+            }
+        } catch (error) {
+            setFormError(
+                isApiError(error)
+                    ? error.message
+                    : error instanceof Error
+                      ? error.message
+                      : 'Lookup authors could not be prepared.',
+            )
+            return
+        }
+
+        setFormError(null)
         setValues((current) => ({
             ...current,
             title:
                 draft.title ?? current.title,
-            authors:
-                draft.authors ?? current.authors,
+            authorIds:
+                authorIds.length > 0
+                    ? authorIds
+                    : current.authorIds,
             pages:
                 draft.pages === null ||
                 draft.pages === undefined
@@ -360,7 +492,8 @@ export function NewBookPage() {
 
     if (
         shelvesQuery.isPending ||
-        categoriesQuery.isPending
+        categoriesQuery.isPending ||
+        authorsQuery.isPending
     ) {
         return (
             <section className="route-page">
@@ -444,9 +577,53 @@ export function NewBookPage() {
         )
     }
 
+    if (authorsQuery.isError) {
+        return (
+            <section className="route-page">
+                <AppLink
+                    to="/books"
+                    variant="secondary"
+                >
+                    ← Back to Books
+                </AppLink>
+
+                <header>
+                    <h1 tabIndex={-1}>
+                        Add Book
+                    </h1>
+                    <p>
+                        Authors must load before a
+                        book can be added.
+                    </p>
+                </header>
+
+                <QueryErrorState
+                    error={authorsQuery.error}
+                    onRetry={() => {
+                        void authorsQuery.refetch()
+                    }}
+                    title="Unable to load authors"
+                />
+            </section>
+        )
+    }
+
     const shelves = shelvesQuery.data ?? []
     const categories =
         categoriesQuery.data ?? []
+    const queryAuthors =
+        authorsQuery.data?.items ?? []
+    const authors = [
+        ...queryAuthors,
+        ...createdLookupAuthors.filter(
+            (created) =>
+                !queryAuthors.some(
+                    (author) =>
+                        author.author_id ===
+                        created.author_id,
+                ),
+        ),
+    ]
 
     return (
         <section className="route-page">
@@ -598,8 +775,11 @@ export function NewBookPage() {
                             <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={
-                                    applyLookup
+                                onClick={() => {
+                                    void applyLookup()
+                                }}
+                                disabled={
+                                    createAuthor.isPending
                                 }
                             >
                                 Apply Lookup
@@ -613,13 +793,15 @@ export function NewBookPage() {
                 values={values}
                 shelves={shelves}
                 categories={categories}
+                authors={authors}
                 onChange={setValues}
                 onSubmit={handleSubmit}
                 onCancel={() => {
                     navigate('/books')
                 }}
                 isSubmitting={
-                    createBook.isPending
+                    createBook.isPending ||
+                    createAuthor.isPending
                 }
                 serverFieldErrors={
                     serverFieldErrors

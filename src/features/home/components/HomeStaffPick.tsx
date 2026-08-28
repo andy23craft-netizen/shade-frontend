@@ -2,6 +2,7 @@ import {
     AppLink,
     LoadingState,
 } from '../../../components'
+import { formatBookAuthors } from '../../books/authorDisplay'
 import {
     useBook,
 } from '../../../api/booksQueries'
@@ -72,11 +73,9 @@ export function HomeStaffPick({
                         </AppLink>
                     </h3>
 
-                    {book.authors ? (
                         <p className="book-card__author">
-                            {book.authors}
+                            {formatBookAuthors(book.authors)}
                         </p>
-                    ) : null}
                 </div>
 
                 <dl className="book-card__metadata">

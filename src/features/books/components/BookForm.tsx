@@ -10,6 +10,7 @@ import {
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import type {
+    AuthorRead,
     CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
@@ -66,8 +67,9 @@ const FIELD_LABELS: Record<
 
 export interface BookFormProps {
     values: BookFormValues
-    shelves: readonly ShelfRead[]
-    categories: readonly CategoryRead[]
+    shelves: ShelfRead[]
+    categories: CategoryRead[]
+    authors: AuthorRead[]
     onChange: (
         values: BookFormValues,
     ) => void
@@ -90,6 +92,7 @@ export function BookForm({
     values,
     shelves,
     categories,
+    authors,
     onChange,
     onSubmit,
     onCancel,
@@ -109,6 +112,16 @@ export function BookForm({
         categoryPickerOpen,
         setCategoryPickerOpen,
     ] = useState(false)
+
+    const [
+        isAuthorPickerOpen,
+        setIsAuthorPickerOpen,
+    ] = useState(false)
+
+    const [
+        authorSearch,
+        setAuthorSearch,
+    ] = useState('')
 
     const [
         categorySearch,
@@ -199,6 +212,57 @@ export function BookForm({
                         ),
             )
 
+    const authorName = (author: AuthorRead) =>
+        [
+            author.first_name,
+            author.surname,
+        ]
+            .filter(Boolean)
+            .join(' ')
+
+    const selectedAuthors = values.authorIds
+        .map((authorId) =>
+            authors.find(
+                (author) =>
+                    author.author_id === authorId,
+            ),
+        )
+        .filter(
+            (author): author is AuthorRead =>
+                author !== undefined,
+        )
+
+    const normalizedAuthorSearch = authorSearch
+        .trim()
+        .toLocaleLowerCase()
+
+    const filteredAuthors = authors.filter(
+        (author) =>
+            normalizedAuthorSearch === '' ||
+            authorName(author)
+                .toLocaleLowerCase()
+                .includes(normalizedAuthorSearch),
+    )
+
+    const toggleAuthor = (authorId: string) => {
+        if (values.authorIds.includes(authorId)) {
+            updateField(
+                'authorIds',
+                values.authorIds.filter(
+                    (selectedId) =>
+                        selectedId !== authorId,
+                ),
+            )
+
+            return
+        }
+
+        updateField('authorIds', [
+            ...values.authorIds,
+            authorId,
+        ])
+    }
+
     const fieldErrors: BookFormFieldErrors = {
         ...serverFieldErrors,
         ...clientErrors,
@@ -278,7 +342,6 @@ export function BookForm({
     function handleTextChange(
         field:
             | 'title'
-            | 'authors'
             | 'isbn13'
             | 'publisher'
             | 'publication_date'
@@ -419,24 +482,128 @@ export function BookForm({
                     />
                 </Field>
 
-                <Field
-                    label="Authors"
-                    id={fieldId('authors')}
-                    error={fieldErrors.authors}
+                <fieldset
+                    className="book-form__categories"
+                    id={fieldId('authorIds')}
                 >
-                    <input
-                        type="text"
-                        value={values.authors}
-                        maxLength={255}
-                        onChange={(event) =>
-                            updateField(
-                                'authors',
-                                event.target.value,
-                            )
-                        }
-                        autoComplete="off"
-                    />
-                </Field>
+                    <legend>Authors</legend>
+
+                    {selectedAuthors.length > 0 ? (
+                        <div
+                            className="book-form__selected-categories"
+                            aria-label="Selected authors"
+                        >
+                            {selectedAuthors.map((author) => {
+                                const name = authorName(author)
+
+                                return (
+                                    <button
+                                        key={author.author_id}
+                                        type="button"
+                                        className="button button--secondary"
+                                        aria-label={`Remove ${name} author`}
+                                        onClick={() =>
+                                            toggleAuthor(
+                                                author.author_id,
+                                            )
+                                        }
+                                    >
+                                        {name}
+                                        {' ×'}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <p className="book-form__categories-empty">
+                            No authors selected.
+                        </p>
+                    )}
+
+                    <div className="book-form__category-picker">
+                        <button
+                            type="button"
+                            className="button button--secondary"
+                            aria-expanded={isAuthorPickerOpen}
+                            aria-controls={`${fieldId(
+                                'authorIds',
+                            )}-picker`}
+                            onClick={() =>
+                                setIsAuthorPickerOpen(
+                                    (current) => !current,
+                                )
+                            }
+                        >
+                            {values.authorIds.length > 0
+                                ? `Select authors (${values.authorIds.length})`
+                                : 'Select authors'}
+                        </button>
+
+                        {isAuthorPickerOpen ? (
+                            <div
+                                id={`${fieldId(
+                                    'authorIds',
+                                )}-picker`}
+                                className="book-form__category-picker-panel"
+                            >
+                                <input
+                                    type="search"
+                                    value={authorSearch}
+                                    aria-label="Search authors"
+                                    placeholder="Search authors"
+                                    autoComplete="off"
+                                    onChange={(event) =>
+                                        setAuthorSearch(
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+
+                                <div className="book-form__category-options">
+                                    {filteredAuthors.map(
+                                        (author) => {
+                                            const name =
+                                                authorName(author)
+
+                                            return (
+                                                <label
+                                                    key={
+                                                        author.author_id
+                                                    }
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={values.authorIds.includes(
+                                                            author.author_id,
+                                                        )}
+                                                        onChange={() =>
+                                                            toggleAuthor(
+                                                                author.author_id,
+                                                            )
+                                                        }
+                                                    />
+
+                                                    <span>{name}</span>
+                                                </label>
+                                            )
+                                        },
+                                    )}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    {fieldErrors.authorIds ? (
+                        <div
+                            className="field__error"
+                            id={`${fieldId(
+                                'authorIds',
+                            )}-error`}
+                        >
+                            {fieldErrors.authorIds}
+                        </div>
+                    ) : null}
+                </fieldset>
 
                 <Field
                     label="ISBN"

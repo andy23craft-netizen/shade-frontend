@@ -46,7 +46,13 @@ const SHELVES: ShelfRead[] = [
 const BOOK: BookRead = {
     id: 'book-1',
     title: 'Dune',
-    authors: 'Frank Herbert',
+    authors: [
+        {
+            author_id: 'author-frank-herbert',
+            first_name: 'Frank',
+            surname: 'Herbert',
+        },
+    ],
     isbn13: '9780441172719',
     publisher: 'Ace',
     publication_date: '1965',
@@ -79,7 +85,9 @@ describe('bookFormValuesFromBook', () => {
             ),
         ).toEqual({
             title: 'Dune',
-            authors: 'Frank Herbert',
+            authorIds: [
+                'author-frank-herbert',
+            ],
             isbn13: '9780441172719',
             publisher: 'Ace',
             publication_date: '1965',
@@ -198,7 +206,6 @@ describe('bookFormValuesToUpdate', () => {
                 SHELVES,
             ),
             title: '  Dune  ',
-            authors: '  Frank Herbert  ',
             tags:
                 'science fiction, classic, classic',
             purchase_price: '12.50',
@@ -255,6 +262,74 @@ describe('bookFormValuesToUpdate', () => {
                 SHELVES,
             ),
         ).toEqual({})
+    })
+
+    it('includes author_ids when authors change', () => {
+        const values: BookFormValues = {
+            ...bookFormValuesFromBook(
+                BOOK,
+                SHELVES,
+            ),
+            authorIds: [
+                'author-ursula-le-guin',
+                'author-frank-herbert',
+            ],
+        }
+
+        expect(
+            bookFormValuesToUpdate(
+                BOOK,
+                values,
+                SHELVES,
+            ),
+        ).toEqual({
+            author_ids: [
+                'author-ursula-le-guin',
+                'author-frank-herbert',
+            ],
+        })
+    })
+
+    it('treats author order as significant', () => {
+        const twoAuthorBook: BookRead = {
+            ...BOOK,
+            authors: [
+                {
+                    author_id: 'author-first',
+                    first_name: 'First',
+                    surname: 'Author',
+                },
+                {
+                    author_id: 'author-second',
+                    first_name: 'Second',
+                    surname: 'Author',
+                },
+            ],
+        }
+
+        const values =
+            bookFormValuesFromBook(
+                twoAuthorBook,
+                SHELVES,
+            )
+
+        values.authorIds = [
+            'author-second',
+            'author-first',
+        ]
+
+        expect(
+            bookFormValuesToUpdate(
+                twoAuthorBook,
+                values,
+                SHELVES,
+            ),
+        ).toEqual({
+            author_ids: [
+                'author-second',
+                'author-first',
+            ],
+        })
     })
 
     it('does not include lifecycle or reading fields', () => {

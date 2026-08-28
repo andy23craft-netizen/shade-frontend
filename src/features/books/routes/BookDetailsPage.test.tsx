@@ -88,7 +88,13 @@ const mockedUseCheckoutBook =
 const completeBook: BookRead = {
     id: 'test-book-id',
     title: 'The Pale Fire',
-    authors: 'Vladimir Nabokov',
+    authors: [
+        {
+            author_id: 'author-vladimir-nabokov',
+            first_name: 'Vladimir',
+            surname: 'Nabokov',
+        },
+    ],
     isbn13: '9780679723427',
     categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
@@ -384,6 +390,32 @@ describe('BookDetailsPage', () => {
         expect(
             screen.getByText(
                 '14.5 days',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('renders multiple authors in book order', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                authors: [
+                    ...(completeBook.authors ?? []),
+                    {
+                        author_id: 'author-mary-mccarthy',
+                        first_name: 'Mary',
+                        surname: 'McCarthy',
+                    },
+                ],
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.getByText(
+                'Vladimir Nabokov, Mary McCarthy',
             ),
         ).toBeInTheDocument()
     })

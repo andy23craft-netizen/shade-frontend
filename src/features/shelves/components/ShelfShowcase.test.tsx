@@ -53,7 +53,13 @@ const shelf: ShelfRead = {
 const book: BookRead = {
     id: 'book-1',
     title: 'The Left Hand of Darkness',
-    authors: 'Ursula K. Le Guin',
+    authors: [
+        {
+            author_id: 'author-ursula-le-guin',
+            first_name: 'Ursula K.',
+            surname: 'Le Guin',
+        },
+    ],
     categories: [],
     shelf_name: 'a1',
     status: 'available',
@@ -415,7 +421,7 @@ describe('ShelfShowcase', () => {
                 items: [
                     {
                         ...book,
-                        authors: null,
+                        authors: [],
                         publication_date: null,
                     },
                 ],

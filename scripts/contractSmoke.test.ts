@@ -32,8 +32,12 @@ const generatedTypesPath = join(
 )
 
 const expectedPaths = [
+    '/authors',
+    '/authors/{author_id}',
     '/backup',
     '/books',
+    '/books/bulk/import',
+    '/books/bulk/lookup',
     '/books/bulk/move-to-shelf',
     '/books/lookup',
     '/books/{id}',
@@ -42,6 +46,7 @@ const expectedPaths = [
     '/books/{id}/cover',
     '/books/{id}/mark-read',
     '/categories',
+    '/categories/{category_id}',
     '/collections',
     '/collections/{collection_id}',
     '/collections/{collection_id}/books',

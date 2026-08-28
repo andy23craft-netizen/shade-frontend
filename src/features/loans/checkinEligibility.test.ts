@@ -16,7 +16,13 @@ import {
 const book = {
     id: 'book-1',
     title: 'Pale Fire',
-    authors: 'Vladimir Nabokov',
+    authors: [
+        {
+            author_id: 'author-vladimir-nabokov',
+            first_name: 'Vladimir',
+            surname: 'Nabokov',
+        },
+    ],
     status: 'on_loan',
 } as BookRead
 

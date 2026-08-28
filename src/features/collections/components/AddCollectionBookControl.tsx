@@ -5,6 +5,7 @@ import {
     useState,
 } from 'react'
 
+import { formatBookAuthors } from '../../books/authorDisplay'
 import {
     Alert,
     AppLink,
@@ -85,9 +86,12 @@ function focusSummary(
 function bookOptionLabel(
     book: BookRead,
 ): string {
-    return book.authors.trim() === ''
+    const authors =
+        formatBookAuthors(book.authors)
+
+    return authors === 'Unknown author'
         ? book.title
-        : `${book.title} — ${book.authors}`
+        : `${book.title} — ${authors}`
 }
 
 export function AddCollectionBookControl() {

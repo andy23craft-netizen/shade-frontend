@@ -13,6 +13,7 @@ import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
+import { formatBookAuthors } from '../authorDisplay'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
 import { useInfiniteBooks } from '../../../api/booksQueries'
@@ -824,7 +825,9 @@ export function BooksPage() {
                                             </h2>
 
                                             <p className="book-card__author">
-                                                {book.authors}
+                                                {formatBookAuthors(
+                                                    book.authors,
+                                                )}
                                             </p>
                                         </div>
 

@@ -131,10 +131,11 @@ export function validateAddWishlistBookFormValues(
 
 export function formValuesToUnshelvedBookCreate(
     values: AddWishlistBookFormValues,
+    authorIds: readonly string[],
 ): BookCreate {
     const book: BookCreate = {
         title: values.title.trim(),
-        authors: values.authors.trim(),
+        author_ids: [...authorIds],
         category_ids: [],
         is_read: false,
         status: 'available',

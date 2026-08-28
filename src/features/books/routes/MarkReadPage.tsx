@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { formatBookAuthors } from '../authorDisplay'
 import {
     Alert,
     AppLink,
@@ -434,7 +435,7 @@ export function MarkReadPage() {
             <p>
                 Record your reading completion for{' '}
                 <strong>{book.title}</strong> by{' '}
-                {book.authors}.
+                {formatBookAuthors(book.authors)}.
             </p>
 
             {hasSummary ? (

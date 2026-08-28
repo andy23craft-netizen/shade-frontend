@@ -58,7 +58,13 @@ const mockUseUpdateBook =
 const readBook: BookRead = {
     id: 'test-book-id',
     title: 'The Pale Fire',
-    authors: 'Vladimir Nabokov',
+    authors: [
+    {
+        author_id: 'author-vladimir-nabokov',
+        first_name: 'Vladimir',
+        surname: 'Nabokov',
+    },
+],
     isbn13: '9780679723427',
     categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',

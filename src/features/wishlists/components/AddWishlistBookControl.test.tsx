@@ -19,6 +19,7 @@ import {
     ApiError,
 } from '../../../api/apiErrors'
 import type {
+    AuthorRead,
     BookRead,
     WishlistBookRead,
     WishlistList,
@@ -27,6 +28,10 @@ import {
     useCreateBook,
     useLookupBook,
 } from '../../../api/booksQueries'
+import {
+    useAuthors,
+    useCreateAuthor,
+} from '../../../api/authorsQueries'
 import {
     useAddWishlistBook,
     useWishlists,
@@ -38,6 +43,11 @@ import {
 vi.mock('../../../api/booksQueries', () => ({
     useCreateBook: vi.fn(),
     useLookupBook: vi.fn(),
+}))
+
+vi.mock('../../../api/authorsQueries', () => ({
+    useAuthors: vi.fn(),
+    useCreateAuthor: vi.fn(),
 }))
 
 vi.mock('../../../api/wishlistsQueries', () => ({
@@ -76,6 +86,10 @@ vi.mock(
 )
 
 const mockUseCreateBook = vi.mocked(useCreateBook)
+const mockUseAuthors = vi.mocked(useAuthors)
+const mockUseCreateAuthor = vi.mocked(
+    useCreateAuthor,
+)
 const mockUseLookupBook = vi.mocked(useLookupBook)
 const mockUseWishlists = vi.mocked(useWishlists)
 const mockUseAddWishlistBook = vi.mocked(
@@ -95,10 +109,27 @@ const wishlists: WishlistList = {
     total: 1,
 }
 
+
+const authors: AuthorRead[] = [
+    {
+        author_id: 'author-an-author',
+        first_name: 'An',
+        surname: 'Author',
+        created_date: '2026-08-01T00:00:00Z',
+        updated_date: '2026-08-01T00:00:00Z',
+    },
+]
+
 const createdBook: BookRead = {
     id: 'book-99',
     title: 'A Book',
-    authors: 'An Author',
+    authors: [
+        {
+            author_id: 'author-an-author',
+            first_name: 'An',
+            surname: 'Author',
+        },
+    ],
     categories: [],
     shelf_name: 'unknown',
     status: 'available',
@@ -134,6 +165,22 @@ const membership: WishlistBookRead = {
 }
 
 function mockQuerySuccess() {
+    mockUseAuthors.mockReturnValue({
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        data: {
+            items: authors,
+            total: authors.length,
+        },
+        refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useAuthors>)
+
+    mockUseCreateAuthor.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+    } as unknown as ReturnType<typeof useCreateAuthor>)
+
     mockUseWishlists.mockReturnValue({
         isPending: false,
         isError: false,
@@ -291,7 +338,7 @@ describe('AddWishlistBookControl', () => {
 
         expect(createPayload).toMatchObject({
             title: 'A Book',
-            authors: 'An Author',
+            author_ids: ['author-an-author'],
             category_ids: [],
             is_read: false,
             status: 'available',

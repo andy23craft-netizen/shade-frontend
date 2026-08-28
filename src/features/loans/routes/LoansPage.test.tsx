@@ -85,7 +85,13 @@ function makeBookList(
             {
                 id: 'book-1',
                 title: 'The Left Hand of Darkness',
-                authors: 'Ursula K. Le Guin',
+                authors: [
+                    {
+                        author_id: 'author-ursula-le-guin',
+                        first_name: 'Ursula K.',
+                        surname: 'Le Guin',
+                    },
+                ],
                 categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
                 shelf_name: 'liz_tbr',
                 status: 'on_loan',

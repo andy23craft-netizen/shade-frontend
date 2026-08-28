@@ -37,7 +37,13 @@ const mockUseCheckinBook = vi.mocked(
 const book = {
     id: 'test-book-id',
     title: 'The Pale Fire',
-    authors: 'Vladimir Nabokov',
+    authors: [
+        {
+            author_id: 'author-vladimir-nabokov',
+            first_name: 'Vladimir',
+            surname: 'Nabokov',
+        },
+    ],
     status: 'on_loan',
 } as BookRead
 

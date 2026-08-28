@@ -1,6 +1,7 @@
 import {
     AppLink,
 } from '../../../components'
+import { formatBookAuthors } from '../../books/authorDisplay'
 import type {
     BookRead,
 } from '../../../api/apiTypes'
@@ -52,11 +53,9 @@ export function HomeRecentBook({
                         </AppLink>
                     </h3>
 
-                    {book.authors ? (
                         <p className="book-card__author">
-                            {book.authors}
+                            {formatBookAuthors(book.authors)}
                         </p>
-                    ) : null}
                 </div>
 
                 <dl className="book-card__metadata">

@@ -23,10 +23,14 @@ import {
 
 import { ApiError } from '../../../api/apiErrors'
 import type {
+    AuthorRead,
     BookRead,
     CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
+import {
+    useAuthors,
+} from '../../../api/authorsQueries'
 import {
     useBook,
     useUpdateBook,
@@ -52,6 +56,10 @@ vi.mock('../../../api/categoriesQueries', () => ({
     useCategories: vi.fn(),
 }))
 
+vi.mock('../../../api/authorsQueries', () => ({
+    useAuthors: vi.fn(),
+}))
+
 const mockNavigate = vi.fn()
 
 vi.mock(
@@ -75,6 +83,8 @@ const mockUseUpdateBook =
 const mockUseShelves = vi.mocked(useShelves)
 const mockUseCategories =
     vi.mocked(useCategories)
+const mockUseAuthors =
+    vi.mocked(useAuthors)
 
 const TEST_SHELVES: ShelfRead[] = [
     {
@@ -103,6 +113,23 @@ const TEST_SHELVES: ShelfRead[] = [
     },
 ]
 
+const TEST_AUTHORS: AuthorRead[] = [
+    {
+        author_id: 'author-vladimir-nabokov',
+        first_name: 'Vladimir',
+        surname: 'Nabokov',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+    {
+        author_id: 'author-ursula-le-guin',
+        first_name: 'Ursula K.',
+        surname: 'Le Guin',
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
 const TEST_CATEGORIES: CategoryRead[] = [
     {
         category_id: 'cat-fiction',
@@ -116,7 +143,9 @@ const TEST_CATEGORIES: CategoryRead[] = [
 const book: BookRead = {
     id: 'test-book-id',
     title: 'The Pale Fire',
-    authors: 'Vladimir Nabokov',
+    authors: [
+        TEST_AUTHORS[0],
+    ],
     isbn13: '9780441172719',
     categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
@@ -218,6 +247,24 @@ function setupSuccessfulCategories(
     >)
 }
 
+function setupSuccessfulAuthors(
+    value: AuthorRead[] = TEST_AUTHORS,
+) {
+    mockUseAuthors.mockReturnValue({
+        data: {
+            items: value,
+            total: value.length,
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+        isSuccess: true,
+        refetch: vi.fn(),
+    } as unknown as ReturnType<
+        typeof useAuthors
+    >)
+}
+
 function setupSuccessfulBook(
     value: BookRead = book,
 ) {
@@ -238,6 +285,7 @@ describe('EditBookPage', () => {
         setupSuccessfulBook()
         setupSuccessfulShelves()
         setupSuccessfulCategories()
+        setupSuccessfulAuthors()
 
         mockUseUpdateBook.mockReturnValue({
             mutate: vi.fn(),
@@ -282,8 +330,16 @@ describe('EditBookPage', () => {
         ).toHaveValue('The Pale Fire')
 
         expect(
-            screen.getByLabelText('Authors'),
-        ).toHaveValue('Vladimir Nabokov')
+            screen.getByRole('button', {
+                name: 'Remove Vladimir Nabokov author',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Select authors (1)',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             screen.getByLabelText('ISBN'),
@@ -370,6 +426,37 @@ describe('EditBookPage', () => {
         expect(
             screen.getByText(
                 'Unable to load categories',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.queryByRole('button', {
+                name: 'Save Book',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('blocks the page when authors fail to load', () => {
+        mockUseAuthors.mockReturnValue({
+            data: undefined,
+            isPending: false,
+            isError: true,
+            error: new ApiError({
+                kind: 'unreachable',
+                message:
+                    'The API could not be reached',
+            }),
+            isSuccess: false,
+            refetch: vi.fn(),
+        } as unknown as ReturnType<
+            typeof useAuthors
+        >)
+
+        renderPage()
+
+        expect(
+            screen.getByText(
+                'Unable to load authors',
             ),
         ).toBeInTheDocument()
 

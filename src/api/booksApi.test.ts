@@ -715,7 +715,7 @@ describe('createBooksApi', () => {
 
         await api.create({
             title: 'Title',
-            authors: 'Author',
+            author_ids: ['author-1'],
             category_ids: [],
             shelf_name: 'unknown',
             is_read: false,
@@ -733,7 +733,7 @@ describe('createBooksApi', () => {
                 method: 'POST',
                 body: {
                     title: 'Title',
-                    authors: 'Author',
+                    author_ids: ['author-1'],
                     category_ids: [],
                     shelf_name: 'unknown',
                     is_read: false,

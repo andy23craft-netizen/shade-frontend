@@ -34,6 +34,7 @@ import type {
 } from '../../../api/apiTypes'
 import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 import { formatBookCategories } from '../categoryDisplay'
+import { formatBookAuthors } from '../authorDisplay'
 import { Button } from '../../../components/Button'
 import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
 import { isCheckoutEligible } from '../../loans/checkoutEligibility'
@@ -302,7 +303,11 @@ export function BookDetailsPage() {
                             {book.title}
                         </h1>
 
-                        <p>{book.authors}</p>
+                        <p>
+                            {formatBookAuthors(
+                                book.authors,
+                            )}
+                        </p>
                     </header>
 
                     <dl className="book-details-card__metadata">

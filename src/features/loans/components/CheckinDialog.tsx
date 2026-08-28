@@ -4,6 +4,7 @@ import {
     useRef,
 } from 'react'
 
+import { formatBookAuthors } from '../../books/authorDisplay'
 import type {
     BookRead,
     LoanRead,
@@ -210,7 +211,7 @@ export function CheckinDialog({
                         {book.title}
                     </strong>
                     {' — '}
-                    {book.authors}
+                    {formatBookAuthors(book.authors)}
                 </p>
 
                 <CheckinForm

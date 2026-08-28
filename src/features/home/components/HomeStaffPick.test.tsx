@@ -81,7 +81,13 @@ function mockBookQuery(
 const bookFixture = {
     id: 'book-1',
     title: 'Pale Fire',
-    authors: 'Vladimir Nabokov',
+    authors: [
+        {
+            author_id: 'author-vladimir-nabokov',
+            first_name: 'Vladimir',
+            surname: 'Nabokov',
+        },
+    ],
     publication_date: '1962-01-01',
     shelf_name: 'e4',
 } as BookRead
@@ -148,11 +154,11 @@ describe('HomeStaffPick', () => {
         )
     })
 
-    it('omits optional author and year metadata when absent', () => {
+    it('shows the author fallback and omits year when absent', () => {
         mockBookQuery({
             data: {
                 ...bookFixture,
-                authors: '',
+                authors: [],
                 publication_date: null,
             },
         })
@@ -166,10 +172,8 @@ describe('HomeStaffPick', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.queryByText(
-                'Vladimir Nabokov',
-            ),
-        ).not.toBeInTheDocument()
+            screen.getByText('Unknown author'),
+        ).toBeInTheDocument()
 
         expect(
             screen.queryByText('1962'),

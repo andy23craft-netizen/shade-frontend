@@ -56,7 +56,13 @@ vi.mock('./CheckinForm', () => ({
 const book = {
     id: 'book-1',
     title: 'The Left Hand of Darkness',
-    authors: 'Ursula K. Le Guin',
+    authors: [
+        {
+            author_id: 'author-ursula-le-guin',
+            first_name: 'Ursula K.',
+            surname: 'Le Guin',
+        },
+    ],
     status: 'on_loan',
 } as BookRead
 

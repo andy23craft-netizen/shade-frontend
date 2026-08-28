@@ -32,6 +32,9 @@ import {
     useBook,
 } from '../../../api/booksQueries'
 import {
+    formatBookAuthors,
+} from '../../books/authorDisplay'
+import {
     useCreateWishlist,
     useDeleteWishlist,
     useInfiniteWishlistBooks,
@@ -132,8 +135,10 @@ function WishlistMembershipRow({
                     </AppLink>
                 </strong>
 
-                {book?.authors ? (
-                    <p>{book.authors}</p>
+                {book?.authors && book.authors.length > 0 ? (
+                    <p>
+                        {formatBookAuthors(book.authors)}
+                    </p>
                 ) : null}
             </div>
 

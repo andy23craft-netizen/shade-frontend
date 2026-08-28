@@ -4,6 +4,7 @@ import {
     useState,
 } from 'react'
 
+import { formatBookAuthors } from '../../books/authorDisplay'
 import {
     AppLink,
     Button,
@@ -66,9 +67,9 @@ function ShelfBookCard({
                         </AppLink>
                     </h3>
 
-                    {book.authors ? (
+                    {book.authors && book.authors.length > 0 ? (
                         <p className="book-card__author">
-                            {book.authors}
+                            {formatBookAuthors(book.authors)}
                         </p>
                     ) : null}
                 </div>

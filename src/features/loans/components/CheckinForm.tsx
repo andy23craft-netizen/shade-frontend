@@ -5,6 +5,7 @@ import {
 } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { formatBookAuthors } from '../../books/authorDisplay'
 import { ConfirmationDialog } from '../../../components'
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
@@ -391,7 +392,7 @@ export function CheckinForm({
 
                         <h3>{book.title}</h3>
 
-                        <p>{book.authors}</p>
+                        <p>{formatBookAuthors(book.authors)}</p>
                     </div>
 
                     <dl className="circulation-card__metadata">

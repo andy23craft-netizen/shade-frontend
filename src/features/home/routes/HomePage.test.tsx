@@ -239,18 +239,30 @@ const recentBooksFixture = {
         {
             id: 'recent-1',
             title: 'Newest Book',
-            authors: 'Newest Author',
+            authors: [
+                {
+                    author_id: 'newest-author',
+                    first_name: 'Newest',
+                    surname: 'Author',
+                },
+            ],
             status: 'available',
         },
         {
             id: 'recent-2',
             title: 'Second Newest Book',
-            authors: 'Second Author',
+            aauthors: [
+                {
+                    author_id: 'second-author',
+                    first_name: 'Second',
+                    surname: 'Author',
+                },
+            ],
             status: 'available',
         },
     ],
     total: 2,
-} as BookList
+} as unknown as BookList
 
 type RecentBooksQuery =
     ReturnType<typeof useRecentBooks>

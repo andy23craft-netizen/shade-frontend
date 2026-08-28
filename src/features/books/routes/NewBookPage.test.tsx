@@ -15,6 +15,7 @@ import {
 
 import { ApiError } from '../../../api/apiErrors'
 import type {
+    AuthorRead,
     CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
@@ -25,6 +26,8 @@ const mockMutate = vi.fn()
 const mockRefetch = vi.fn()
 const mockShelvesRefetch = vi.fn()
 const mockCategoriesRefetch = vi.fn()
+const mockAuthorsRefetch = vi.fn()
+const mockCreateAuthor = vi.fn()
 const mockUseBookLookup = vi.fn()
 
 const TEST_SHELVES: ShelfRead[] = [
@@ -41,6 +44,16 @@ const TEST_SHELVES: ShelfRead[] = [
         common_name: 'a1',
         location: null,
         description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
+]
+
+const TEST_AUTHORS: AuthorRead[] = [
+    {
+        author_id: 'author-frank-herbert',
+        first_name: 'Frank',
+        surname: 'Herbert',
         created_date: '2026-01-01T00:00:00Z',
         updated_date: '2026-01-01T00:00:00Z',
     },
@@ -66,6 +79,20 @@ const shelvesState = {
 
 const categoriesState = {
     data: TEST_CATEGORIES as CategoryRead[] | undefined,
+    isPending: false,
+    isError: false,
+    error: null as unknown,
+    isSuccess: true,
+}
+
+const authorsState = {
+    data: {
+        items: TEST_AUTHORS,
+        total: TEST_AUTHORS.length,
+    } as {
+        items: AuthorRead[]
+        total: number
+    } | undefined,
     isPending: false,
     isError: false,
     error: null as unknown,
@@ -132,6 +159,17 @@ vi.mock('../../../api/categoriesQueries', () => ({
     }),
 }))
 
+vi.mock('../../../api/authorsQueries', () => ({
+    useAuthors: () => ({
+        ...authorsState,
+        refetch: mockAuthorsRefetch,
+    }),
+    useCreateAuthor: () => ({
+        mutateAsync: mockCreateAuthor,
+        isPending: false,
+    }),
+}))
+
 vi.mock('../../scanning/IsbnCameraScanner', () => ({
     IsbnCameraScanner: ({
                             onDetected,
@@ -180,6 +218,8 @@ describe('NewBookPage', () => {
         mockRefetch.mockReset()
         mockShelvesRefetch.mockReset()
         mockCategoriesRefetch.mockReset()
+        mockAuthorsRefetch.mockReset()
+        mockCreateAuthor.mockReset()
         mockUseBookLookup.mockReset()
         shelvesState.data = TEST_SHELVES
         shelvesState.isPending = false
@@ -191,6 +231,27 @@ describe('NewBookPage', () => {
         categoriesState.isError = false
         categoriesState.error = null
         categoriesState.isSuccess = true
+        authorsState.data = {
+            items: TEST_AUTHORS,
+            total: TEST_AUTHORS.length,
+        }
+        authorsState.isPending = false
+        authorsState.isError = false
+        authorsState.error = null
+        authorsState.isSuccess = true
+        mockCreateAuthor.mockImplementation(
+            async ({ first_name, surname }) => ({
+                author_id: `author-${surname
+                    .toLowerCase()
+                    .replace(/\s+/g, '-')}`,
+                first_name,
+                surname,
+                created_date:
+                    '2026-01-01T00:00:00Z',
+                updated_date:
+                    '2026-01-01T00:00:00Z',
+            }),
+        )
         lookupState.data = undefined
         lookupState.isPending = false
         lookupState.isFetching = false
@@ -219,7 +280,9 @@ describe('NewBookPage', () => {
         ).toBeInTheDocument()
 
         expect(
-            screen.getByLabelText('Authors'),
+            screen.getByRole('group', {
+                name: 'Authors',
+            }),
         ).toBeInTheDocument()
 
         expect(
@@ -295,6 +358,36 @@ describe('NewBookPage', () => {
         ).toHaveBeenCalled()
     })
 
+    it('blocks the page when authors fail to load', () => {
+        authorsState.data = undefined
+        authorsState.isPending = false
+        authorsState.isError = true
+        authorsState.isSuccess = false
+        authorsState.error = new ApiError({
+            kind: 'unreachable',
+            message:
+                'The API could not be reached',
+        })
+
+        renderNewBookPage()
+
+        expect(
+            screen.getByText(
+                'Unable to load authors',
+            ),
+        ).toBeInTheDocument()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Retry',
+            }),
+        )
+
+        expect(
+            mockAuthorsRefetch,
+        ).toHaveBeenCalled()
+    })
+
     it('submits the book through the create mutation', () => {
         renderNewBookPage()
 
@@ -307,13 +400,16 @@ describe('NewBookPage', () => {
             },
         )
 
-        fireEvent.change(
-            screen.getByLabelText('Authors'),
-            {
-                target: {
-                    value: 'Frank Herbert',
-                },
-            },
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select authors',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('checkbox', {
+                name: 'Frank Herbert',
+            }),
         )
 
         fireEvent.click(
@@ -336,7 +432,9 @@ describe('NewBookPage', () => {
         expect(mockMutate).toHaveBeenCalledWith(
             expect.objectContaining({
                 title: 'Dune',
-                authors: 'Frank Herbert',
+                author_ids: [
+                    'author-frank-herbert',
+                ],
                 category_ids: [],
                 shelf_name: 'unknown',
                 status: 'available',
@@ -361,13 +459,16 @@ describe('NewBookPage', () => {
             },
         )
 
-        fireEvent.change(
-            screen.getByLabelText('Authors'),
-            {
-                target: {
-                    value: 'Frank Herbert',
-                },
-            },
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select authors',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('checkbox', {
+                name: 'Frank Herbert',
+            }),
         )
 
         fireEvent.click(
@@ -619,8 +720,15 @@ describe('NewBookPage', () => {
         ).toHaveValue('Dune')
 
         expect(
-            screen.getByLabelText('Authors'),
-        ).toHaveValue('Frank Herbert')
+            screen.getByRole('button', {
+                name:
+                    'Remove Frank Herbert author',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            mockCreateAuthor,
+        ).not.toHaveBeenCalled()
 
         expect(
             screen.getByLabelText('Publisher'),
@@ -639,6 +747,69 @@ describe('NewBookPage', () => {
         expect(
             screen.getByLabelText('ISBN'),
         ).toHaveValue('978-0-441-17271-9')
+    })
+
+    it('creates and selects a missing lookup author when metadata is applied', async () => {
+        lookupState.data = {
+            found: true,
+            draft: {
+                isbn13: '9780441172719',
+                title: 'The Left Hand of Darkness',
+                authors: 'Ursula K. Le Guin',
+                publisher: 'Ace',
+                publication_date: '1969',
+                pages: 304,
+            },
+        }
+
+        mockCreateAuthor.mockResolvedValueOnce({
+            author_id: 'author-le-guin',
+            first_name: 'Ursula K. Le',
+            surname: 'Guin',
+            created_date:
+                '2026-01-01T00:00:00Z',
+            updated_date:
+                '2026-01-01T00:00:00Z',
+        })
+
+        renderNewBookPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Lookup ISBN'),
+            {
+                target: {
+                    value: '9780441172719',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Look Up ISBN',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Apply Lookup',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(
+                mockCreateAuthor,
+            ).toHaveBeenCalledWith({
+                first_name: 'Ursula K. Le',
+                surname: 'Guin',
+            })
+        })
+
+        expect(
+            await screen.findByRole('button', {
+                name:
+                    'Remove Ursula K. Le Guin author',
+            }),
+        ).toBeInTheDocument()
     })
 
     it('keeps the ISBN editable when lookup returns found: false', () => {
@@ -735,13 +906,16 @@ describe('NewBookPage', () => {
             },
         )
 
-        fireEvent.change(
-            screen.getByLabelText('Authors'),
-            {
-                target: {
-                    value: 'Frank Herbert',
-                },
-            },
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select authors',
+            }),
+        )
+
+        fireEvent.click(
+            screen.getByRole('checkbox', {
+                name: 'Frank Herbert',
+            }),
         )
 
         fireEvent.click(

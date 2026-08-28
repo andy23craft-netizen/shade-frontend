@@ -2,6 +2,7 @@ import {
     useState,
 } from 'react'
 
+import { formatBookAuthors } from '../../books/authorDisplay'
 import {
     BookCover,
 } from '../../books/components/BookCover'
@@ -245,9 +246,9 @@ export function CollectionMembershipRow({
                         </AppLink>
                     </strong>
 
-                    {book.authors ? (
-                        <p>{book.authors}</p>
-                    ) : null}
+                    <p>
+                        {formatBookAuthors(book.authors)}
+                    </p>
                 </div>
             </div>
 

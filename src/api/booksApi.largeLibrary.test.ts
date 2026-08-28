@@ -22,7 +22,13 @@ function createBook(
     return {
         id: `book-${index}`,
         title: `Title ${index}`,
-        authors: `Author ${index}`,
+        authors: [
+            {
+                author_id: `author-${index}`,
+                first_name: 'Author',
+                surname: `${index}`,
+            },
+        ],
         categories: [],
         shelf_name: 'unknown',
         status: 'available',

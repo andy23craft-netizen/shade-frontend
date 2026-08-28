@@ -24,6 +24,13 @@ import {
     useLookupBook,
 } from '../../../api/booksQueries'
 import {
+    useAuthors,
+    useCreateAuthor,
+} from '../../../api/authorsQueries'
+import type {
+    AuthorRead,
+} from '../../../api/apiTypes'
+import {
     useAddWishlistBook,
     useWishlists,
 } from '../../../api/wishlistsQueries'
@@ -47,6 +54,7 @@ const ADD_BOOK_FIELDS = new Set<string>([
     'wishlistId',
     'title',
     'authors',
+    'author_ids',
     'isbn13',
     'status',
     'book_id',
@@ -73,6 +81,10 @@ function mapAddBookFieldErrors(
             field = 'title'
         }
 
+        if (field === 'author_ids') {
+            field = 'authors'
+        }
+
         if (
             !field ||
             !ADD_BOOK_FIELDS.has(field) ||
@@ -94,10 +106,56 @@ function focusSummary(
     node?.focus()
 }
 
+
+function normalizedAuthorName(value: string): string {
+    return value
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+}
+
+function authorDisplayName(author: {
+    first_name: string | null
+    surname: string
+}): string {
+    return [
+        author.first_name,
+        author.surname,
+    ]
+        .filter(Boolean)
+        .join(' ')
+}
+
+function authorNames(value: string): string[] {
+    return value
+        .split(/\s*(?:,|;|\band\b|&)\s*/i)
+        .map((name) =>
+            name.trim().replace(/\s+/g, ' '),
+        )
+        .filter(Boolean)
+}
+
+function authorCreateFromName(name: string): {
+    first_name: string | null
+    surname: string
+} {
+    const parts = name.split(' ')
+    const surname = parts.pop() ?? name
+    const firstName = parts.join(' ')
+
+    return {
+        first_name:
+            firstName === '' ? null : firstName,
+        surname,
+    }
+}
+
 export function AddWishlistBookControl() {
     const formId = useId()
     const wishlistsQuery = useWishlists()
+    const authorsQuery = useAuthors()
     const createBook = useCreateBook()
+    const createAuthor = useCreateAuthor()
     const addWishlistBook = useAddWishlistBook()
     const lookupBook = useLookupBook()
     const summaryRef = useRef<HTMLDivElement | null>(
@@ -132,6 +190,11 @@ export function AddWishlistBookControl() {
     ] = useState(false)
 
     const [
+        createdAuthors,
+        setCreatedAuthors,
+    ] = useState<AuthorRead[]>([])
+
+    const [
         lookupError,
         setLookupError,
     ] = useState<string | null>(null)
@@ -159,6 +222,7 @@ export function AddWishlistBookControl() {
 
     const isSubmitting =
         createBook.isPending ||
+        createAuthor.isPending ||
         addWishlistBook.isPending
 
     function updateField<
@@ -255,7 +319,7 @@ export function AddWishlistBookControl() {
         startLookup(isbn)
     }
 
-    function handleSubmit(
+    async function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ) {
         event.preventDefault()
@@ -287,9 +351,65 @@ export function AddWishlistBookControl() {
             return
         }
 
+        const existingAuthors = [
+            ...(authorsQuery.data?.items ?? []),
+            ...createdAuthors,
+        ]
+        const authorIds: string[] = []
+
+        try {
+            for (const name of authorNames(
+                nextValues.authors,
+            )) {
+                const normalizedName =
+                    normalizedAuthorName(name)
+                const existing =
+                    existingAuthors.find(
+                        (author) =>
+                            normalizedAuthorName(
+                                authorDisplayName(
+                                    author,
+                                ),
+                            ) === normalizedName,
+                    )
+
+                if (existing) {
+                    authorIds.push(existing.author_id)
+                    continue
+                }
+
+                const created =
+                    await createAuthor.mutateAsync(
+                        authorCreateFromName(name),
+                    )
+
+                authorIds.push(created.author_id)
+                existingAuthors.push(created)
+                setCreatedAuthors((current) =>
+                    current.some(
+                        (author) =>
+                            author.author_id ===
+                            created.author_id,
+                    )
+                        ? current
+                        : [...current, created],
+                )
+            }
+        } catch (error) {
+            setFormError(
+                isApiError(error)
+                    ? error.detail ?? error.message
+                    : error instanceof Error
+                        ? error.message
+                        : 'Authors could not be prepared.',
+            )
+            return
+        }
+
         const book =
             formValuesToUnshelvedBookCreate(
                 nextValues,
+                authorIds,
             )
 
         createBook.mutate(book, {
@@ -426,6 +546,42 @@ export function AddWishlistBookControl() {
                         variant="secondary"
                         onClick={() => {
                             void wishlistsQuery.refetch()
+                        }}
+                    >
+                        Retry
+                    </Button>
+                </Alert>
+            </section>
+        )
+    }
+
+    if (authorsQuery.isPending) {
+        return (
+            <section className="add-to-wishlist">
+                <h2>Add a book</h2>
+                <LoadingState label="Loading authors…" />
+            </section>
+        )
+    }
+
+    if (authorsQuery.isError) {
+        return (
+            <section className="add-to-wishlist">
+                <h2>Add a book</h2>
+
+                <Alert
+                    variant="error"
+                    title="Unable to load authors"
+                >
+                    <p>
+                        Authors could not be loaded.
+                    </p>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            void authorsQuery.refetch()
                         }}
                     >
                         Retry

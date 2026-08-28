@@ -88,7 +88,13 @@ function makeBook(
     return {
         id: 'book-1',
         title: 'The Left Hand of Darkness',
-        authors: 'Ursula K. Le Guin',
+        authors: [
+            {
+                author_id: 'author-ursula-le-guin',
+                first_name: 'Ursula K.',
+                surname: 'Le Guin',
+            },
+        ],
         categories: [
             {
                 category_id: 'cat-fiction',
@@ -870,8 +876,13 @@ describe('BooksPage', () => {
                                         makeBook({
                                             id: 'book-dune',
                                             title: 'Dune',
-                                            authors:
-                                                'Frank Herbert',
+                                            authors: [
+                                                {
+                                                    author_id: 'author-frank-herbert',
+                                                    first_name: 'Frank',
+                                                    surname: 'Herbert',
+                                                },
+                                            ],
                                         }),
                                     ],
                                     total: 1,
@@ -1259,7 +1270,13 @@ describe('BooksPage', () => {
                         makeBook({
                             id: 'book-2',
                             title: 'Pale Fire',
-                            authors: 'Vladimir Nabokov',
+                            authors: [
+                                {
+                                    author_id: 'author-vladimir-nabokov',
+                                    first_name: 'Vladimir',
+                                    surname: 'Nabokov',
+                                },
+                            ],
                             status: 'on_loan',
                             is_read: true,
                         }),

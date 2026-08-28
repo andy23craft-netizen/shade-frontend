@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { formatBookAuthors } from '../authorDisplay'
 import {
     Alert,
     AppLink,
@@ -463,7 +464,7 @@ export function ReadingEditPage() {
             <p>
                 Update reading details for{' '}
                 <strong>{book.title}</strong> by{' '}
-                {book.authors}.
+                {formatBookAuthors(book.authors)}.
             </p>
 
             {hasSummary ? (

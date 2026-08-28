@@ -19,6 +19,7 @@ import {
 import type { BookRead } from '../../../api/apiTypes'
 import { useCheckoutBook } from '../../../api/booksQueries'
 import { queryKeys } from '../../../api/queryKeys'
+import { formatBookAuthors } from '../../books/authorDisplay'
 import {
     checkoutFormDefaults,
     checkoutFormValuesToRequest,
@@ -510,7 +511,9 @@ export function CheckoutDialog({
                 <p>
                     <strong>{book.title}</strong>
                     {' — '}
-                    {book.authors}
+                    {formatBookAuthors(
+                        book.authors,
+                    )}
                 </p>
 
                 {hasSummary ? (

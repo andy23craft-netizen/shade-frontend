@@ -39,21 +39,22 @@ describe('requestFields', () => {
         const picked = pickDocumentedRequestFields(
             {
                 title: 'Title',
-                authors: 'Author',
+                author_ids: ['author-1'],
                 mystery: 'drop-me',
             } as BookCreate & {
                 mystery: string
             },
             [
                 'title',
-                'authors',
+                'author_ids',
             ],
         )
 
         expect(picked).toEqual({
             title: 'Title',
-            authors: 'Author',
+            author_ids: ['author-1'],
         })
+
         expect(picked).not.toHaveProperty(
             'mystery',
         )
@@ -63,7 +64,7 @@ describe('requestFields', () => {
         expect(
             pickBookCreate({
                 title: 'Title',
-                authors: 'Author',
+                author_ids: ['author-1'],
                 category_ids: [],
                 shelf_name: 'unknown',
                 is_read: false,
@@ -77,7 +78,7 @@ describe('requestFields', () => {
             }),
         ).toEqual({
             title: 'Title',
-            authors: 'Author',
+            author_ids: ['author-1'],
             category_ids: [],
             shelf_name: 'unknown',
             is_read: false,
