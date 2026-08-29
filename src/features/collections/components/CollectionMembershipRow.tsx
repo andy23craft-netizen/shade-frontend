@@ -11,14 +11,10 @@ import {
     AppLink,
     Button,
     ConfirmationDialog,
-    LoadingState,
 } from '../../../components'
 import type {
     CollectionBookRead,
 } from '../../../api/apiTypes'
-import {
-    useBook,
-} from '../../../api/booksQueries'
 import {
     useRemoveCollectionBook,
     useReorderCollectionBook,
@@ -35,6 +31,9 @@ export interface CollectionMembershipRowProps {
     membership: CollectionBookRead
     isFirst: boolean
     isLast: boolean
+    rowRef?: (
+        node: HTMLLIElement | null,
+    ) => void
 }
 
 export function CollectionMembershipRow({
@@ -42,10 +41,8 @@ export function CollectionMembershipRow({
                                             membership,
                                             isFirst,
                                             isLast,
+                                            rowRef,
                                         }: CollectionMembershipRowProps) {
-    const bookQuery =
-        useBook(membership.book_id)
-
     const reorderBook =
         useReorderCollectionBook()
 
@@ -61,69 +58,6 @@ export function CollectionMembershipRow({
         actionError,
         setActionError,
     ] = useState<string | null>(null)
-
-    const book = bookQuery.data
-
-    if (bookQuery.isPending) {
-        return (
-            <li
-                className="collection-membership"
-                data-membership-id={
-                    membership.collection_book_id
-                }
-            >
-                <LoadingState
-                    label="Loading collection book…"
-                />
-            </li>
-        )
-    }
-
-    if (bookQuery.isError) {
-        return (
-            <li
-                className="collection-membership"
-                data-membership-id={
-                    membership.collection_book_id
-                }
-            >
-                <div className="collection-membership__book">
-                <span
-                    className="collection-membership__position"
-                    aria-label={`Position ${membership.order_num}`}
-                >
-                    {displayCollectionBookPosition(
-                        membership.order_num,
-                    )}
-                </span>
-
-                    <div>
-                        <strong>
-                            Book {membership.book_id}
-                        </strong>
-
-                        <p>
-                            Book details could not be loaded.
-                        </p>
-
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => {
-                                void bookQuery.refetch()
-                            }}
-                        >
-                            Retry
-                        </Button>
-                    </div>
-                </div>
-            </li>
-        )
-    }
-
-    if (book === undefined) {
-        return null
-    }
 
     const pending =
         reorderBook.isPending ||
@@ -211,6 +145,7 @@ export function CollectionMembershipRow({
 
     return (
         <li
+            ref={rowRef}
             className={className}
             data-membership-id={
                 membership.collection_book_id
@@ -228,9 +163,9 @@ export function CollectionMembershipRow({
 
                 <div className="collection-membership__cover">
                     <BookCover
-                        bookId={book.id}
-                        title={book.title}
-                        status={book.status}
+                        bookId={membership.book_id}
+                        title={membership.book_title}
+                        status={membership.book_status}
                         decorative
                     />
                 </div>
@@ -239,15 +174,15 @@ export function CollectionMembershipRow({
                     <strong>
                         <AppLink
                             to={`/books/${encodeURIComponent(
-                                book.id,
+                                membership.book_id,
                             )}`}
                         >
-                            {book.title}
+                            {membership.book_title}
                         </AppLink>
                     </strong>
 
                     <p>
-                        {formatBookAuthors(book.authors)}
+                        {formatBookAuthors(membership.book_authors ?? [])}
                     </p>
                 </div>
             </div>
@@ -339,7 +274,7 @@ export function CollectionMembershipRow({
             >
                 <p>
                     Remove{' '}
-                    <strong>{book.title}</strong>{' '}
+                    <strong>{membership.book_title}</strong>{' '}
                     from this collection? The catalog book
                     will remain in the library.
                 </p>

@@ -1,4 +1,5 @@
 import {
+    useInfiniteQuery,
     useMutation,
     useQuery,
     useQueryClient,
@@ -6,6 +7,7 @@ import {
 
 import type {
     CollectionBookCreate,
+    CollectionBookList,
     CollectionBookReorder,
     CollectionCreate,
     CollectionUpdate,
@@ -13,6 +15,9 @@ import type {
 import {
     createCollectionsApi,
 } from './collectionsApi'
+import {
+    INFINITE_SCROLL_BATCH_SIZE,
+} from '../features/shared/infiniteScrollConfig'
 import {
     queryKeys,
 } from './queryKeys'
@@ -42,6 +47,66 @@ export function useCollections(
             collectionsApi.list({
                 signal,
             }),
+        enabled,
+    })
+}
+
+function getNextCollectionBooksPageParam(
+    lastPage: CollectionBookList,
+    allPages: CollectionBookList[],
+): number | undefined {
+    const loaded = allPages.reduce(
+        (count, page) =>
+            count + page.items.length,
+        0,
+    )
+
+    return loaded < lastPage.total
+        ? loaded
+        : undefined
+}
+
+export function useInfiniteCollectionBooks(
+    collectionId: string,
+    options: {
+        enabled?: boolean
+    } = {},
+) {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const collectionsApi =
+        createCollectionsApi(apiClient)
+
+    const enabled =
+        Boolean(collectionId) &&
+        (options.enabled ?? true)
+
+    return useInfiniteQuery({
+        queryKey: [
+            ...queryKeys.collections.books(
+                collectionId,
+            ),
+            'infinite',
+            INFINITE_SCROLL_BATCH_SIZE,
+        ],
+        initialPageParam: 0,
+        queryFn: ({
+                      pageParam,
+                      signal,
+                  }) =>
+            collectionsApi.listBooks(
+                collectionId,
+                {
+                    skip: pageParam,
+                    take:
+                        INFINITE_SCROLL_BATCH_SIZE,
+                    signal,
+                },
+            ),
+        getNextPageParam:
+            getNextCollectionBooksPageParam,
         enabled,
     })
 }

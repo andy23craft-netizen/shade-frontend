@@ -997,8 +997,13 @@ export interface components {
         };
         /** CollectionBookRead */
         CollectionBookRead: {
+            /** Book Authors */
+            book_authors?: components["schemas"]["BookAuthorRead"][];
             /** Book Id */
             book_id: string;
+            book_status: components["schemas"]["Status"];
+            /** Book Title */
+            book_title: string;
             /** Collection Book Id */
             collection_book_id: string;
             /** Collection Id */
@@ -1261,8 +1266,13 @@ export interface components {
         };
         /** WishlistBookRead */
         WishlistBookRead: {
+            /** Book Authors */
+            book_authors?: components["schemas"]["BookAuthorRead"][];
             /** Book Id */
             book_id: string;
+            book_status: components["schemas"]["Status"];
+            /** Book Title */
+            book_title: string;
             /** Created Date */
             created_date: string;
             /** Notes */

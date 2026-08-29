@@ -49,6 +49,8 @@ const sampleMembership: CollectionBookRead = {
     collection_book_id: 'membership-1',
     collection_id: 'collection-1',
     book_id: 'book-1',
+    book_title: 'The Dispossessed',
+    book_status: 'available',
     order_num: 1,
     notes: null,
     shelf_name: 'a1',

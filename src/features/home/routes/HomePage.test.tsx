@@ -197,6 +197,8 @@ const staffPicksFixture: CollectionBookList = {
             collection_id:
                 'collection-staff',
             book_id: 'book-staff-1',
+            book_title: 'Staff Pick One',
+            book_status: 'available',
             order_num: 1,
             notes: null,
             shelf_name: 'a1',
@@ -210,6 +212,8 @@ const staffPicksFixture: CollectionBookList = {
             collection_id:
                 'collection-staff',
             book_id: 'book-wishlist',
+            book_title: 'Wishlist Book',
+            book_status: 'available',
             order_num: 2,
             notes: null,
             shelf_name: null,
@@ -223,6 +227,8 @@ const staffPicksFixture: CollectionBookList = {
             collection_id:
                 'collection-staff',
             book_id: 'book-staff-2',
+            book_title: 'Staff Pick Two',
+            book_status: 'available',
             order_num: 3,
             notes: null,
             shelf_name: 'e4',

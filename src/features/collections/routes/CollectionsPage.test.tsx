@@ -25,8 +25,8 @@ import type {
     CollectionRead,
 } from '../../../api/apiTypes'
 import {
-    useCollectionBooks,
     useCollections,
+    useInfiniteCollectionBooks,
     useCreateCollection,
     useDeleteCollection,
     useUpdateCollection,
@@ -37,11 +37,20 @@ import {
 
 vi.mock('../../../api/collectionsQueries', () => ({
     useCollections: vi.fn(),
-    useCollectionBooks: vi.fn(),
+    useInfiniteCollectionBooks: vi.fn(),
     useCreateCollection: vi.fn(),
     useDeleteCollection: vi.fn(),
     useUpdateCollection: vi.fn(),
 }))
+
+vi.mock(
+    '../../../hooks/useInfiniteScrollTrigger',
+    () => ({
+        useInfiniteScrollTrigger: () => ({
+            getRowRef: () => undefined,
+        }),
+    }),
+)
 
 vi.mock(
     '../components/AddCollectionBookControl',
@@ -102,8 +111,8 @@ vi.mock(
 const mockUseCollections =
     vi.mocked(useCollections)
 
-const mockUseCollectionBooks =
-    vi.mocked(useCollectionBooks)
+const mockUseInfiniteCollectionBooks =
+    vi.mocked(useInfiniteCollectionBooks)
 
 const mockUseCreateCollection =
     vi.mocked(useCreateCollection)
@@ -136,6 +145,8 @@ const memberships: CollectionBookList = {
             collection_id:
                 'collection-1',
             book_id: 'book-2',
+            book_title: 'Second Book',
+            book_status: 'available',
             order_num: 2,
             notes: null,
             shelf_name: null,
@@ -149,6 +160,8 @@ const memberships: CollectionBookList = {
             collection_id:
                 'collection-1',
             book_id: 'book-1',
+            book_title: 'First Book',
+            book_status: 'available',
             order_num: 1,
             notes: 'First',
             shelf_name: 'a1',
@@ -179,15 +192,22 @@ function mockSuccessState() {
         typeof useCollections
     >)
 
-    mockUseCollectionBooks.mockReturnValue({
+    mockUseInfiniteCollectionBooks.mockReturnValue({
+        data: {
+            pages: [memberships],
+            pageParams: [0],
+        },
         isPending: false,
-        isError: false,
+        isLoadingError: false,
         isSuccess: true,
-        data: memberships,
+        isFetchingNextPage: false,
+        isFetchNextPageError: false,
+        hasNextPage: false,
+        fetchNextPage: vi.fn(),
         error: null,
         refetch: vi.fn(),
     } as unknown as ReturnType<
-        typeof useCollectionBooks
+        typeof useInfiniteCollectionBooks
     >)
 
     mockUseCreateCollection.mockReturnValue(
@@ -457,8 +477,38 @@ describe('CollectionsPage', () => {
         )
     })
 
-    it('renders memberships in order_num order', () => {
+    it('renders memberships in order_num order after expansion', () => {
         renderPage()
+
+        expect(
+            screen.queryByTestId(
+                'collection-membership',
+            ),
+        ).not.toBeInTheDocument()
+
+        expect(
+            mockUseInfiniteCollectionBooks,
+        ).toHaveBeenCalledWith(
+            'collection-1',
+            {
+                enabled: false,
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
+
+        expect(
+            mockUseInfiniteCollectionBooks,
+        ).toHaveBeenCalledWith(
+            'collection-1',
+            {
+                enabled: true,
+            },
+        )
 
         const rows =
             screen.getAllByTestId(
@@ -510,6 +560,12 @@ describe('CollectionsPage', () => {
 
     it('shows collection name, description, and membership count', () => {
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
 
         expect(
             screen.getByRole('heading', {
@@ -832,21 +888,36 @@ describe('CollectionsPage', () => {
     })
 
     it('shows an empty membership state', () => {
-        mockUseCollectionBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            isSuccess: true,
+        mockUseInfiniteCollectionBooks.mockReturnValue({
             data: {
-                items: [],
-                total: 0,
+                pages: [
+                    {
+                        items: [],
+                        total: 0,
+                    },
+                ],
+                pageParams: [0],
             },
+            isPending: false,
+            isLoadingError: false,
+            isSuccess: true,
+            isFetchingNextPage: false,
+            isFetchNextPageError: false,
+            hasNextPage: false,
+            fetchNextPage: vi.fn(),
             error: null,
             refetch: vi.fn(),
         } as unknown as ReturnType<
-            typeof useCollectionBooks
+            typeof useInfiniteCollectionBooks
         >)
 
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
 
         expect(
             screen.getByText(
@@ -947,18 +1018,28 @@ describe('CollectionsPage', () => {
     it('shows retryable membership errors', () => {
         const refetch = vi.fn()
 
-        mockUseCollectionBooks.mockReturnValue({
-            isPending: false,
-            isError: true,
-            isSuccess: false,
+        mockUseInfiniteCollectionBooks.mockReturnValue({
             data: undefined,
+            isPending: false,
+            isLoadingError: true,
+            isSuccess: false,
+            isFetchingNextPage: false,
+            isFetchNextPageError: false,
+            hasNextPage: false,
+            fetchNextPage: vi.fn(),
             error: new Error('failed'),
             refetch,
         } as unknown as ReturnType<
-            typeof useCollectionBooks
+            typeof useInfiniteCollectionBooks
         >)
 
         renderPage()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Expand',
+            }),
+        )
 
         expect(
             screen.getByText(

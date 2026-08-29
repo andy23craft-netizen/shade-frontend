@@ -15,12 +15,8 @@ import {
 } from 'vitest'
 
 import type {
-    BookRead,
     CollectionBookRead,
 } from '../../../api/apiTypes'
-import {
-    useBook,
-} from '../../../api/booksQueries'
 import {
     useRemoveCollectionBook,
     useReorderCollectionBook,
@@ -29,9 +25,6 @@ import {
     CollectionMembershipRow,
 } from './CollectionMembershipRow'
 
-vi.mock('../../../api/booksQueries', () => ({
-    useBook: vi.fn(),
-}))
 
 vi.mock('../../../api/collectionsQueries', () => ({
     useReorderCollectionBook: vi.fn(),
@@ -58,8 +51,6 @@ vi.mock(
     }),
 )
 
-const mockUseBook =
-    vi.mocked(useBook)
 
 const mockUseReorderCollectionBook =
     vi.mocked(useReorderCollectionBook)
@@ -67,45 +58,19 @@ const mockUseReorderCollectionBook =
 const mockUseRemoveCollectionBook =
     vi.mocked(useRemoveCollectionBook)
 
-const book: BookRead = {
-    id: 'book-1',
-    title: 'The Dispossessed',
-    authors: [
+const membership: CollectionBookRead = {
+    collection_book_id: 'membership-1',
+    collection_id: 'collection-1',
+    book_id: 'book-1',
+    book_title: 'The Dispossessed',
+    book_authors: [
         {
             author_id: 'author-ursula-le-guin',
             first_name: 'Ursula K.',
             surname: 'Le Guin',
         },
     ],
-    categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
-    shelf_name: 'a1',
-    status: 'available',
-    is_read: false,
-    isbn13: null,
-    publisher: null,
-    publication_date: null,
-    pages: null,
-    tags: null,
-    purchase_date: null,
-    purchase_price: null,
-    acquisition_source: null,
-    notes: null,
-    completion_date: null,
-    rating: null,
-    review: null,
-    times_borrowed: 0,
-    last_borrowed_at: null,
-    average_loan_days: null,
-    creation_date:
-        '2026-08-01T00:00:00Z',
-    updated_date:
-        '2026-08-01T00:00:00Z',
-}
-
-const membership: CollectionBookRead = {
-    collection_book_id: 'membership-1',
-    collection_id: 'collection-1',
-    book_id: 'book-1',
+    book_status: 'available',
     order_num: 2,
     notes: 'Essential reading',
     shelf_name: 'a1',
@@ -119,20 +84,6 @@ function idleMutation() {
         mutate: vi.fn(),
         isPending: false,
     }
-}
-
-function mockBookSuccess(
-    value: BookRead = book,
-) {
-    mockUseBook.mockReturnValue({
-        isPending: false,
-        isError: false,
-        isSuccess: true,
-        data: value,
-        refetch: vi.fn(),
-    } as unknown as ReturnType<
-        typeof useBook
-    >)
 }
 
 function renderRow(
@@ -166,7 +117,6 @@ describe('CollectionMembershipRow', () => {
     beforeEach(() => {
         vi.clearAllMocks()
 
-        mockBookSuccess()
 
         mockUseReorderCollectionBook.mockReturnValue(
             idleMutation() as unknown as ReturnType<
@@ -250,21 +200,6 @@ describe('CollectionMembershipRow', () => {
         )
     })
 
-    it('shows an error row when the joined book cannot be loaded', () => {
-        mockUseBook.mockReturnValue({
-            isPending: false,
-            isError: true,
-            error: new Error('Book not found'),
-        } as ReturnType<typeof useBook>)
-
-        renderRow()
-
-        expect(
-            screen.getByText(
-                'Book details could not be loaded.',
-            ),
-        ).toBeInTheDocument()
-    })
 
     it('disables move up at the beginning', () => {
         renderRow({
@@ -436,56 +371,6 @@ describe('CollectionMembershipRow', () => {
         ).toBeDisabled()
     })
 
-    it('shows loading and retryable book errors', () => {
-        mockUseBook.mockReturnValue({
-            isPending: true,
-            isError: false,
-            isSuccess: false,
-            data: undefined,
-            refetch: vi.fn(),
-        } as unknown as ReturnType<
-            typeof useBook
-        >)
-
-        const {
-            unmount,
-        } = renderRow()
-
-        expect(
-            screen.getByText(
-                'Loading collection book…',
-            ),
-        ).toBeInTheDocument()
-
-        unmount()
-
-        const refetch = vi.fn()
-
-        mockUseBook.mockReturnValue({
-            isPending: false,
-            isError: true,
-            isSuccess: false,
-            data: undefined,
-            error: new Error('failed'),
-            refetch,
-        } as unknown as ReturnType<
-            typeof useBook
-        >)
-
-        renderRow()
-
-        expect(
-            screen.getByText('Book book-1'),
-        ).toBeInTheDocument()
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: 'Retry',
-            }),
-        )
-
-        expect(refetch).toHaveBeenCalled()
-    })
 
     it('cancels remove confirmation without mutating', () => {
         const mutate = vi.fn()

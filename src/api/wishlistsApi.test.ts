@@ -48,6 +48,8 @@ const sampleMembership: WishlistBookRead = {
     wishlist_book_id: 'membership-1',
     wishlist_id: 'wishlist-1',
     book_id: 'book-1',
+    book_title: 'The Dispossessed',
+    book_status: 'available',
     status: 'wanted',
     priority: null,
     notes: null,

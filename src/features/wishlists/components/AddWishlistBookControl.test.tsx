@@ -157,6 +157,8 @@ const membership: WishlistBookRead = {
     wishlist_book_id: 'membership-1',
     wishlist_id: 'wishlist-1',
     book_id: 'book-99',
+    book_title: 'A Book',
+    book_status: 'available',
     status: 'wanted',
     priority: null,
     notes: null,

@@ -214,6 +214,8 @@ describe('API transport types', () => {
             wishlist_book_id: 'membership-1',
             wishlist_id: 'wishlist-1',
             book_id: '550e8400-e29b-41d4-a716-446655440000',
+            book_title: 'A Book',
+            book_status: 'available',
             status,
             priority: null,
             notes: null,

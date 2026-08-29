@@ -29,9 +29,6 @@ import type {
     WishlistRead,
 } from '../../../api/apiTypes'
 import {
-    useBook,
-} from '../../../api/booksQueries'
-import {
     formatBookAuthors,
 } from '../../books/authorDisplay'
 import {
@@ -110,15 +107,14 @@ function WishlistMembershipRow({
         wishlist_book_id: membershipId,
         wishlist_id: wishlistId,
         book_id: bookId,
+        book_title: title,
+        book_authors: authors = [],
         status,
         priority,
         notes,
         url,
     } = membership
 
-    const bookQuery = useBook(bookId)
-    const book = bookQuery.data
-    const title = book?.title ?? `Book ${bookId}`
     const href = `/books/${encodeURIComponent(bookId)}`
     const safeUrl = safeHttpUrl(url)
 
@@ -135,9 +131,9 @@ function WishlistMembershipRow({
                     </AppLink>
                 </strong>
 
-                {book?.authors && book.authors.length > 0 ? (
+                {authors.length > 0 ? (
                     <p>
-                        {formatBookAuthors(book.authors)}
+                        {formatBookAuthors(authors)}
                     </p>
                 ) : null}
             </div>

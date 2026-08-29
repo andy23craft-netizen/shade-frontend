@@ -19,14 +19,12 @@ import {
     ApiError,
 } from '../../../api/apiErrors'
 import type {
-    BookRead,
     WishlistBookList,
     WishlistBookStatus,
     WishlistList,
     WishlistRead,
 } from '../../../api/apiTypes'
 import {
-    useBook,
     useCreateBook,
     useLookupBook,
 } from '../../../api/booksQueries'
@@ -39,7 +37,6 @@ import {
     useCreateWishlist,
     useDeleteWishlist,
     useInfiniteWishlistBooks,
-    useWishlistBooks,
     useWishlists,
 } from '../../../api/wishlistsQueries'
 import {
@@ -47,7 +44,6 @@ import {
 } from './WishlistsPage'
 
 vi.mock('../../../api/booksQueries', () => ({
-    useBook: vi.fn(),
     useCreateBook: vi.fn(),
     useLookupBook: vi.fn(),
 }))
@@ -59,7 +55,6 @@ vi.mock('../../../api/authorsQueries', () => ({
 
 vi.mock('../../../api/wishlistsQueries', () => ({
     useWishlists: vi.fn(),
-    useWishlistBooks: vi.fn(),
     useInfiniteWishlistBooks: vi.fn(),
     useCreateWishlist: vi.fn(),
     useDeleteWishlist: vi.fn(),
@@ -149,7 +144,6 @@ vi.mock(
     }),
 )
 
-const mockUseBook = vi.mocked(useBook)
 const mockUseAuthors = vi.mocked(useAuthors)
 const mockUseCreateAuthor = vi.mocked(
     useCreateAuthor,
@@ -157,9 +151,6 @@ const mockUseCreateAuthor = vi.mocked(
 const mockUseCreateBook = vi.mocked(useCreateBook)
 const mockUseLookupBook = vi.mocked(useLookupBook)
 const mockUseWishlists = vi.mocked(useWishlists)
-const mockUseWishlistBooks = vi.mocked(
-    useWishlistBooks,
-)
 const mockUseCreateWishlist = vi.mocked(
     useCreateWishlist,
 )
@@ -183,45 +174,21 @@ const wishlists: WishlistList = {
     total: 1,
 }
 
-const catalogBook: BookRead = {
-    id: 'book-1',
-    title: 'The Dispossessed',
-    authors: [
-        {
-            author_id: 'author-ursula-le-guin',
-            first_name: 'Ursula K.',
-            surname: 'Le Guin',
-        },
-    ],
-    categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
-    shelf_name: 'unknown',
-    status: 'available',
-    is_read: false,
-    isbn13: null,
-    publisher: null,
-    publication_date: null,
-    pages: null,
-    tags: null,
-    purchase_date: null,
-    purchase_price: null,
-    acquisition_source: null,
-    notes: null,
-    completion_date: null,
-    rating: null,
-    review: null,
-    times_borrowed: 0,
-    last_borrowed_at: null,
-    average_loan_days: null,
-    creation_date: '2026-08-01T00:00:00Z',
-    updated_date: '2026-08-01T00:00:00Z',
-}
-
 const memberships: WishlistBookList = {
     items: [
         {
             wishlist_book_id: 'membership-1',
             wishlist_id: 'wishlist-1',
             book_id: 'book-1',
+            book_title: 'The Dispossessed',
+            book_authors: [
+                {
+                    author_id: 'author-ursula-le-guin',
+                    first_name: 'Ursula K.',
+                    surname: 'Le Guin',
+                },
+            ],
+            book_status: 'available',
             status: 'wanted',
             priority: 2,
             notes: 'Hardcover if possible',
@@ -232,6 +199,8 @@ const memberships: WishlistBookList = {
             wishlist_book_id: 'membership-2',
             wishlist_id: 'wishlist-1',
             book_id: 'missing-book',
+            book_title: 'Book missing-book',
+            book_status: 'unknown',
             status: 'mystery' as WishlistBookStatus,
             priority: null,
             notes: null,
@@ -346,41 +315,7 @@ describe('WishlistsPage', () => {
             error: null,
         } as unknown as ReturnType<typeof useWishlists>)
 
-        mockUseWishlistBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            isSuccess: true,
-            data: memberships,
-            refetch: vi.fn(),
-            error: null,
-        } as unknown as ReturnType<
-            typeof useWishlistBooks
-        >)
 
-        mockUseBook.mockImplementation((id: string) => {
-            if (id === 'book-1') {
-                return {
-                    isPending: false,
-                    isError: false,
-                    isSuccess: true,
-                    data: catalogBook,
-                } as unknown as ReturnType<
-                    typeof useBook
-                >
-            }
-
-            return {
-                isPending: false,
-                isError: true,
-                isSuccess: false,
-                data: undefined,
-                error: new ApiError({
-                    kind: 'http',
-                    status: 404,
-                    message: 'Not found',
-                }),
-            } as unknown as ReturnType<typeof useBook>
-        })
     })
 
     it('shows a loading state while wishlists load', () => {
@@ -498,7 +433,7 @@ describe('WishlistsPage', () => {
         )
     })
 
-    it('joins memberships with GET /books/{id} and falls back when missing', () => {
+    it('renders enriched membership identity without per-book detail requests', () => {
         renderPage()
 
         fireEvent.click(
@@ -560,12 +495,6 @@ describe('WishlistsPage', () => {
             }),
         ).not.toBeInTheDocument()
 
-        expect(mockUseBook).toHaveBeenCalledWith(
-            'book-1',
-        )
-        expect(mockUseBook).toHaveBeenCalledWith(
-            'missing-book',
-        )
         expect(
             screen.queryByRole('button', {
                 name: /remove/i,
@@ -574,19 +503,6 @@ describe('WishlistsPage', () => {
     })
 
     it('shows distinct empty-membership copy', () => {
-        mockUseWishlistBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            isSuccess: true,
-            data: {
-                items: [],
-                total: 0,
-            },
-            refetch: vi.fn(),
-            error: null,
-        } as unknown as ReturnType<
-            typeof useWishlistBooks
-        >)
 
         mockUseInfiniteWishlistBooks.mockReturnValue({
             data: {

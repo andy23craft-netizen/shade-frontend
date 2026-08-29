@@ -110,6 +110,8 @@ const membership: CollectionBookRead = {
     collection_book_id: 'membership-1',
     collection_id: 'collection-1',
     book_id: 'book-1',
+    book_title: 'The Left Hand of Darkness',
+    book_status: 'available',
     order_num: 1,
     notes: null,
     shelf_name: 'a1',

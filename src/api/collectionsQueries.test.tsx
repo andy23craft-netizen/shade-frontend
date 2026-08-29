@@ -31,6 +31,7 @@ import {
     useAddCollectionBook,
     useCollectionBooks,
     useCollections,
+    useInfiniteCollectionBooks,
     useCreateCollection,
     useDeleteCollection,
     useRemoveCollectionBook,
@@ -118,6 +119,8 @@ const sampleMembership: CollectionBookRead = {
     collection_book_id: 'membership-1',
     collection_id: 'collection-1',
     book_id: 'book-1',
+    book_title: 'The Dispossessed',
+    book_status: 'available',
     order_num: 1,
     notes: null,
     shelf_name: 'a1',
@@ -556,5 +559,138 @@ describe('collection write mutations', () => {
                     'collection-1',
                 ),
         })
+    })
+})
+
+describe('useInfiniteCollectionBooks', () => {
+    it('loads collection memberships in batches', async () => {
+        mockListBooks.mockResolvedValue({
+            items: [sampleMembership],
+            total: 31,
+        })
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () =>
+                useInfiniteCollectionBooks(
+                    'collection-1',
+                ),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() => {
+            expect(
+                result.current.isSuccess,
+            ).toBe(true)
+        })
+
+        expect(
+            mockListBooks,
+        ).toHaveBeenCalledWith(
+            'collection-1',
+            expect.objectContaining({
+                skip: 0,
+                take: 30,
+                signal: expect.any(AbortSignal),
+            }),
+        )
+    })
+
+    it('loads the next page after the memberships already loaded', async () => {
+        const firstPageItems =
+            Array.from(
+                {
+                    length: 30,
+                },
+                (_, index) => ({
+                    ...sampleMembership,
+                    collection_book_id:
+                        `membership-${index}`,
+                    book_id: `book-${index}`,
+                    order_num: index + 1,
+                }),
+            )
+
+        mockListBooks
+            .mockResolvedValueOnce({
+                items: firstPageItems,
+                total: 31,
+            })
+            .mockResolvedValueOnce({
+                items: [
+                    {
+                        ...sampleMembership,
+                        collection_book_id:
+                            'membership-30',
+                        book_id: 'book-30',
+                        order_num: 31,
+                    },
+                ],
+                total: 31,
+            })
+
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        const {
+            result,
+        } = renderHook(
+            () =>
+                useInfiniteCollectionBooks(
+                    'collection-1',
+                ),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() => {
+            expect(
+                result.current.isSuccess,
+            ).toBe(true)
+        })
+
+        await result.current.fetchNextPage()
+
+        expect(
+            mockListBooks,
+        ).toHaveBeenLastCalledWith(
+            'collection-1',
+            expect.objectContaining({
+                skip: 30,
+                take: 30,
+            }),
+        )
+    })
+
+    it('does not load memberships while disabled', () => {
+        const {
+            Wrapper,
+        } = createWrapper()
+
+        renderHook(
+            () =>
+                useInfiniteCollectionBooks(
+                    'collection-1',
+                    {
+                        enabled: false,
+                    },
+                ),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        expect(
+            mockListBooks,
+        ).not.toHaveBeenCalled()
     })
 })

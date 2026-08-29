@@ -17,6 +17,9 @@ import {
     QueryErrorState,
 } from '../../../components'
 import {
+    useInfiniteScrollTrigger,
+} from '../../../hooks/useInfiniteScrollTrigger'
+import {
     isApiError,
     type ApiFieldError,
 } from '../../../api/apiErrors'
@@ -24,8 +27,8 @@ import type {
     CollectionRead,
 } from '../../../api/apiTypes'
 import {
-    useCollectionBooks,
     useCollections,
+    useInfiniteCollectionBooks,
     useCreateCollection,
     useDeleteCollection,
     useUpdateCollection,
@@ -565,10 +568,14 @@ function EditCollectionForm({
 
 function CollectionSection({
                                collection,
+                               expanded,
+                               onToggle,
                                onDelete,
                                deletePending,
                            }: {
     collection: CollectionRead
+    expanded: boolean
+    onToggle: () => void
     onDelete: (
         collection: CollectionRead,
     ) => void
@@ -578,13 +585,22 @@ function CollectionSection({
         editOpen,
         setEditOpen,
     ] = useState(false)
+
     const membershipsQuery =
-        useCollectionBooks(
+        useInfiniteCollectionBooks(
             collection.collection_id,
+            {
+                enabled: expanded,
+            },
         )
 
+    const pages =
+        membershipsQuery.data?.pages ?? []
+
     const items =
-        membershipsQuery.data?.items ?? []
+        pages.flatMap(
+            (page) => page.items,
+        )
 
     const orderedItems = [
         ...items,
@@ -595,7 +611,26 @@ function CollectionSection({
     )
 
     const total =
-        membershipsQuery.data?.total
+        pages[0]?.total ?? 0
+
+    const fetchNextMembershipsPage =
+        membershipsQuery.fetchNextPage
+
+    const {
+        getRowRef,
+    } = useInfiniteScrollTrigger({
+        enabled:
+            expanded &&
+            membershipsQuery.isSuccess,
+        hasNextPage:
+            membershipsQuery.hasNextPage,
+        isFetchingNextPage:
+            membershipsQuery.isFetchingNextPage,
+        fetchNextPage: () => {
+            void fetchNextMembershipsPage()
+        },
+        itemCount: orderedItems.length,
+    })
 
     return (
         <article className="collection-card">
@@ -609,16 +644,27 @@ function CollectionSection({
                         </p>
                     ) : null}
 
-                    {membershipsQuery.isSuccess ? (
+                    {expanded &&
+                    membershipsQuery.isSuccess ? (
                         <p>
                             {total === 1
                                 ? '1 book'
-                                : `${total ?? 0} books`}
+                                : `${total} books`}
                         </p>
                     ) : null}
                 </div>
 
                 <div className="collection-card__actions">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={onToggle}
+                    >
+                        {expanded
+                            ? 'Collapse'
+                            : 'Expand'}
+                    </Button>
+
                     <Button
                         type="button"
                         variant="secondary"
@@ -658,66 +704,98 @@ function CollectionSection({
                 />
             ) : null}
 
-            {membershipsQuery.isPending ? (
-                <LoadingState
-                    label={`Loading ${collection.name}…`}
-                />
-            ) : null}
+            {!expanded ? null : (
+                <>
+                    {membershipsQuery.isPending ? (
+                        <LoadingState
+                            label={`Loading ${collection.name}…`}
+                        />
+                    ) : null}
 
-            {membershipsQuery.isError ? (
-                <QueryErrorState
-                    title={`Unable to load ${collection.name}`}
-                    error={
-                        membershipsQuery.error
-                    }
-                    onRetry={() => {
-                        void membershipsQuery.refetch()
-                    }}
-                />
-            ) : null}
+                    {membershipsQuery.isLoadingError ? (
+                        <QueryErrorState
+                            title={`Unable to load ${collection.name}`}
+                            error={
+                                membershipsQuery.error
+                            }
+                            onRetry={() => {
+                                void membershipsQuery.refetch()
+                            }}
+                        />
+                    ) : null}
 
-            {membershipsQuery.isSuccess &&
-            orderedItems.length === 0 ? (
-                <p>
-                    No books have been added to this
-                    collection yet.
-                </p>
-            ) : null}
+                    {membershipsQuery.isSuccess &&
+                    total === 0 ? (
+                        <p>
+                            No books have been added to this
+                            collection yet.
+                        </p>
+                    ) : null}
 
-            {membershipsQuery.isSuccess &&
-            orderedItems.length > 0 ? (
-                <ol
-                    className="collection-memberships"
-                    aria-label={`${collection.name} books`}
-                >
-                    {orderedItems.map(
-                        (
-                            membership,
-                            index,
-                        ) => (
-                            <CollectionMembershipRow
-                                key={
-                                    membership.collection_book_id
-                                }
-                                collectionId={
-                                    collection.collection_id
-                                }
-                                membership={
-                                    membership
-                                }
-                                isFirst={
-                                    index === 0
-                                }
-                                isLast={
-                                    index ===
-                                    orderedItems.length -
-                                    1
-                                }
+                    {membershipsQuery.isSuccess &&
+                    orderedItems.length > 0 ? (
+                        <ol
+                            className="collection-memberships"
+                            aria-label={`${collection.name} books`}
+                        >
+                            {orderedItems.map(
+                                (
+                                    membership,
+                                    index,
+                                ) => (
+                                    <CollectionMembershipRow
+                                        key={
+                                            membership.collection_book_id
+                                        }
+                                        collectionId={
+                                            collection.collection_id
+                                        }
+                                        membership={
+                                            membership
+                                        }
+                                        isFirst={
+                                            membership.order_num === 1
+                                        }
+                                        isLast={
+                                            membership.order_num ===
+                                            total
+                                        }
+                                        rowRef={
+                                            getRowRef(index)
+                                        }
+                                    />
+                                ),
+                            )}
+                        </ol>
+                    ) : null}
+
+                    {membershipsQuery.isFetchingNextPage ? (
+                        <div className="infinite-scroll__footer">
+                            <LoadingState
+                                label={`Loading more ${collection.name} books…`}
                             />
-                        ),
-                    )}
-                </ol>
-            ) : null}
+                        </div>
+                    ) : null}
+
+                    {membershipsQuery.isFetchNextPageError ? (
+                        <div className="infinite-scroll__footer">
+                            <Alert variant="error">
+                                Unable to load more books.
+                            </Alert>
+
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => {
+                                    void fetchNextMembershipsPage()
+                                }}
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    ) : null}
+                </>
+            )}
         </article>
     )
 }
@@ -746,6 +824,11 @@ export function CollectionsPage() {
         setCollectionActionsOpen,
     ] = useState(false)
 
+    const [
+        activeCollectionId,
+        setActiveCollectionId,
+    ] = useState<string | null>(null)
+
     function handleConfirmDelete() {
         if (
             pendingDelete === null ||
@@ -760,6 +843,13 @@ export function CollectionsPage() {
             pendingDelete.collection_id,
             {
                 onSuccess: () => {
+                    setActiveCollectionId(
+                        (current) =>
+                            current ===
+                            pendingDelete.collection_id
+                                ? null
+                                : current,
+                    )
                     setPendingDelete(null)
                 },
 
@@ -865,6 +955,19 @@ export function CollectionsPage() {
                                     collection={
                                         collection
                                     }
+                                    expanded={
+                                        activeCollectionId ===
+                                        collection.collection_id
+                                    }
+                                    onToggle={() => {
+                                        setActiveCollectionId(
+                                            (current) =>
+                                                current ===
+                                                collection.collection_id
+                                                    ? null
+                                                    : collection.collection_id,
+                                        )
+                                    }}
                                     onDelete={
                                         setPendingDelete
                                     }
