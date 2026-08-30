@@ -2594,7 +2594,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "0.2.15"
+    "version": "1.0.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -6093,6 +6093,25 @@
         "tags": [
           "loans"
         ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Readiness check that verifies a database connection can be acquired.",
+        "operationId": "readiness_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readiness"
       }
     },
     "/shelves": {

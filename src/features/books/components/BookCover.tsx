@@ -113,7 +113,7 @@ export function BookCover({
                     }
                 },
                 {
-                    rootMargin: '300px 0px',
+                    rootMargin: '100px 0px',
                 },
             )
 

@@ -393,11 +393,16 @@ describe('BulkAddPage', () => {
             }),
         )
 
+        await vi.dynamicImportSettled()
+
         fireEvent.click(
             await screen.findByRole(
                 'button',
                 {
                     name: 'Simulate camera scan',
+                },
+                {
+                    timeout: 10_000,
                 },
             ),
         )

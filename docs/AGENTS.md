@@ -104,7 +104,9 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   Additions / Staff Picks, and Collections memberships; upload/remove via `BookCoverManager` on Book Details.
   Backend resolves local vs ISBN Open Library artwork server-side (**200** image bytes or **404**); the SPA must
   not invent `cover_image_path` browser URLs or call Open Library directly. Never set covers through create/update
-  JSON.
+  JSON. Cover downloads share one six-request concurrency limit, preserve cancellation while queued or active, and
+  lazy-load with a 100-pixel viewport margin. A database-pool **503** remains a transient query error; it is not a
+  no-cover result, and a later remount or explicit invalidation may retry it.
 - `booksApi.list` / `useInfiniteBooks` / `useBooks` wire `author` / `title` / repeated `category_id` / `isbn` /
   `shelf_name` / `is_read` (plus sort/pagination) through the centralized Books URL model (`booksListModel`). Broader
   contract filters (publisher, ranges, `status`, etc.) stay out unless a product need explicitly requires them.
@@ -289,6 +291,8 @@ Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{id}/cover`. Behavior
   (3) otherwise → **404** `"Book cover not found"`; missing book → **404** `"Book not found"`. Local
   uploads win over ISBN-derived artwork. Open Library timeout/network/missing/non-image responses resolve to the
   normal **404** cover state.
+- Database-pool saturation may return **503** with `Retry-After: 1`. Keep that as an error rather than a successful
+  no-cover result. Cover queries do not automatically retry; a later remount or explicit invalidation may retry.
 - Missing books reject cover get/upload/delete (**404**), same as checkout / check-in / mark-read / `PATCH` /
   bulk shelf move.
 - Browser `<img src>` cannot send `Authorization`. Use authenticated `fetch` to `GET /books/{id}/cover`: **200** →
@@ -312,7 +316,7 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 
 - Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
 - Protected requests also send `Library-Username: shade` (injected by `apiClient` with the Bearer token)
-- Public `GET /health` and `GET /version` omit both headers (`authenticated: false`)
+- Public `GET /health`, `GET /ready`, and `GET /version` omit both headers (`authenticated: false`)
 - No login, logout, user accounts, sessions, or roles
 - Token comes from a repository-root `.env` file via `VITE_API_SECRET_KEY`; Vite injects it at dev-server and
   production build time into JS bundles (`.env` stays gitignored; `.env.example` is committed)
@@ -323,6 +327,8 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 - On `403`, show a page-level error via `QueryErrorState` / `formatApiQueryError`; do not clear the query cache or
   loop back into loading
 - Startup reachability uses public `GET /health` only; do not verify auth with `GET /protected`
+- `GET /ready` verifies database readiness and may return **503** with `Retry-After: 1`; do not poll it or substitute
+  it for the ordinary startup health check
 - Use public `GET /version` for the footer API release string only; do not treat it as a health probe
 - Never commit the token, put it in URLs, log Authorization headers, or send it to analytics
 - A build-time token in JS bundles is inspectable by anyone with device or artifact access; that is an accepted risk

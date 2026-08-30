@@ -32,6 +32,10 @@ import type {
 } from './apiTypes'
 
 import {
+    ApiError,
+} from './apiErrors'
+
+import {
     useBook,
     useBookCover,
     useBookLookup,
@@ -1448,6 +1452,78 @@ it(
             ),
         ).toBe(blob)
 
+        queryClient.clear()
+    })
+
+    it('retries a transient cover failure after remount', async () => {
+        const unavailable = new ApiError({
+            kind: 'server',
+            status: 503,
+            message:
+                'Database is temporarily unavailable',
+        })
+        const blob = new Blob(
+            ['cover-image'],
+            {
+                type: 'image/jpeg',
+            },
+        )
+
+        mockGetCover
+            .mockRejectedValueOnce(unavailable)
+            .mockResolvedValueOnce(blob)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const firstMount = renderHook(
+            () => useBookCover('book-123'),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                firstMount.result.current
+                    .isError,
+            ).toBe(true),
+        )
+
+        expect(
+            firstMount.result.current.error,
+        ).toBe(unavailable)
+        expect(
+            queryClient.getQueryData([
+                'book-covers',
+                'book-123',
+            ]),
+        ).toBeUndefined()
+
+        firstMount.unmount()
+
+        const secondMount = renderHook(
+            () => useBookCover('book-123'),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await waitFor(() =>
+            expect(
+                secondMount.result.current
+                    .isSuccess,
+            ).toBe(true),
+        )
+
+        expect(mockGetCover).toHaveBeenCalledTimes(2)
+        expect(
+            secondMount.result.current.data,
+        ).toBe(blob)
+
+        secondMount.unmount()
         queryClient.clear()
     })
 

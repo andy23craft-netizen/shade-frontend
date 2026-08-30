@@ -67,6 +67,57 @@ describe('BookCover', () => {
         vi.unstubAllGlobals()
     })
 
+    it('observes the 100 pixel preload range before loading', () => {
+        const observe = vi.fn()
+        const disconnect = vi.fn()
+        const observerOptions:
+            (IntersectionObserverInit | undefined)[] = []
+
+        class MockIntersectionObserver {
+            constructor(
+                _callback: IntersectionObserverCallback,
+                options?: IntersectionObserverInit,
+            ) {
+                observerOptions.push(options)
+            }
+
+            observe = observe
+            disconnect = disconnect
+        }
+
+        vi.stubGlobal(
+            'IntersectionObserver',
+            MockIntersectionObserver,
+        )
+
+        const { unmount } = render(
+            <BookCover
+                bookId="book-123"
+                title="Pale Fire"
+                status="available"
+            />,
+        )
+
+        expect(observerOptions).toEqual([
+            {
+                rootMargin: '100px 0px',
+            },
+        ])
+        expect(observe).toHaveBeenCalledOnce()
+        expect(
+            mockedUseBookCover,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            {
+                enabled: false,
+            },
+        )
+
+        unmount()
+
+        expect(disconnect).toHaveBeenCalledOnce()
+    })
+
     it('renders the intentional placeholder when no cover is available', () => {
         render(
             <BookCover

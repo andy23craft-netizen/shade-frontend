@@ -18,10 +18,12 @@ Authorization: Bearer <API_SECRET_KEY>
 There is no login, logout, or session system. Missing or invalid credentials return 403 with
 {"detail": "Invalid authentication credentials"}.
 
-Public routes: GET /health, GET /version, and FastAPI's generated docs/OpenAPI routes (/docs, /redoc,
+Public routes: GET /health, GET /ready, GET /version, and FastAPI's generated docs/OpenAPI routes (/docs, /redoc,
 /openapi.json, /docs/oauth2-redirect). Every other business route requires the Bearer token.
 
 There is no dedicated token-verification endpoint. Use GET /health for startup reachability only (unauthenticated).
+GET /ready verifies that a database connection can be acquired and may return 503 with `Retry-After: 1`; do not use
+it for ordinary startup reachability.
 Use GET /version when the UI needs the running API release string (same value as ../../ci/VERSION and OpenAPI
 info.version); do not treat it as a health probe. Learn whether credentials are accepted from the first protected
 request you need (e.g., GET /books or GET /dashboard); a 403 means the token is missing or invalid.

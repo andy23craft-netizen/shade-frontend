@@ -21,6 +21,9 @@ import type {
     ApiCallOptions,
 } from './apiCallOptions'
 import {
+    withCoverRequestSlot,
+} from './coverRequestLimiter'
+import {
     pickBookCreate,
     pickBookUpdate,
     pickBulkShelfMoveRequest,
@@ -346,12 +349,16 @@ export function createBooksApi(
             )
 
             const response =
-                signalOptions === undefined
-                    ? await client.get(path)
-                    : await client.get(
-                        path,
-                        signalOptions,
-                    )
+                await withCoverRequestSlot(
+                    options.signal,
+                    () =>
+                        signalOptions === undefined
+                            ? client.get(path)
+                            : client.get(
+                                path,
+                                signalOptions,
+                            ),
+                )
 
             return response.blob()
         },
