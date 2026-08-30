@@ -3,6 +3,7 @@ import {
     useState,
 } from 'react'
 import {
+    useLocation,
     useParams,
     useSearchParams,
 } from 'react-router-dom'
@@ -121,6 +122,7 @@ function displayDate(
 
 export function BookDetailsPage() {
     const { bookId } = useParams()
+    const location = useLocation()
     const [searchParams, setSearchParams] =
         useSearchParams()
 
@@ -131,6 +133,15 @@ export function BookDetailsPage() {
         setAddToCollectionOpen,
     ] = useState(false)
     const queryClient = useQueryClient()
+
+    const booksReturnTo =
+        typeof location.state === 'object' &&
+        location.state !== null &&
+        'booksReturnTo' in location.state &&
+        typeof location.state.booksReturnTo === 'string' &&
+        location.state.booksReturnTo.startsWith('/books')
+            ? location.state.booksReturnTo
+            : '/books'
 
     const bookQuery = useBook(bookId ?? '')
 
@@ -202,7 +213,7 @@ export function BookDetailsPage() {
                     </Alert>
 
                     <AppLink
-                        to="/books"
+                        to={booksReturnTo}
                         variant="secondary"
                     >
                         Back to Books
@@ -223,7 +234,7 @@ export function BookDetailsPage() {
                 />
 
                 <AppLink
-                    to="/books"
+                    to={booksReturnTo}
                     variant="secondary"
                 >
                     Back to Books
@@ -274,7 +285,7 @@ export function BookDetailsPage() {
         <section className="route-page book-details-page">
             <div className="book-details__topbar">
                 <AppLink
-                    to="/books"
+                    to={booksReturnTo}
                     variant="secondary"
                 >
                     ← Back to Books

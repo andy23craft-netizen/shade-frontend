@@ -1,4 +1,5 @@
 import {
+    useLocation,
     useNavigate,
     useSearchParams,
 } from 'react-router-dom'
@@ -223,6 +224,7 @@ function updateListParams(
 export function BooksPage() {
     useCollectionIsbnJump()
 
+    const location = useLocation()
     const navigate = useNavigate()
     const uniqueOpenedIsbnRef =
         useRef<string | null>(null)
@@ -232,7 +234,9 @@ export function BooksPage() {
         setSearchParams,
     ] = useSearchParams()
 
-    const categoriesQuery = useCategories()
+    const categoriesQuery = useCategories({
+        inUse: true,
+    })
 
     const sortBy = parseSortByParam(
         searchParams.get('sortBy'),
@@ -838,6 +842,10 @@ export function BooksPage() {
                                             <h2 className="book-card__title">
                                                 <AppLink
                                                     to={`/books/${book.id}`}
+                                                    state={{
+                                                        booksReturnTo:
+                                                            `${location.pathname}${location.search}`,
+                                                    }}
                                                 >
                                                     {book.title}
                                                 </AppLink>

@@ -2601,6 +2601,18 @@
     "/authors": {
       "get": {
         "operationId": "list_authors_authors_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "in_use",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "In Use",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2611,6 +2623,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -4588,6 +4610,18 @@
     "/categories": {
       "get": {
         "operationId": "list_categories_categories_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "in_use",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "In Use",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4612,6 +4646,16 @@
               }
             },
             "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [

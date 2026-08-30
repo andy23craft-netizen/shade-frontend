@@ -14,7 +14,9 @@ import {
     pickCategoryUpdate,
 } from './requestFields'
 
-export type ListCategoriesOptions = ApiCallOptions
+export type ListCategoriesOptions = ApiCallOptions & {
+    inUse?: boolean
+}
 
 function withSignal(
     signal: AbortSignal | undefined,
@@ -37,12 +39,16 @@ export function createCategoriesApi(
                 options.signal,
             )
 
+            const path = options.inUse === true
+                ? '/categories?in_use=true'
+                : '/categories'
+
             return signalOptions === undefined
                 ? client.getJson<CategoryRead[]>(
-                    '/categories',
+                    path,
                 )
                 : client.getJson<CategoryRead[]>(
-                    '/categories',
+                    path,
                     signalOptions,
                 )
         },

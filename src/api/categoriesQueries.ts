@@ -40,6 +40,7 @@ async function invalidateCategoryCaches(
 export function useCategories(
     options: {
         enabled?: boolean
+        inUse?: boolean
     } = {},
 ) {
     const {
@@ -52,12 +53,15 @@ export function useCategories(
     const enabled = options.enabled ?? true
 
     return useQuery({
-        queryKey: queryKeys.categories.list(),
+        queryKey: queryKeys.categories.list({
+            inUse: options.inUse,
+        }),
         queryFn: ({
                       signal,
                   }) =>
             categoriesApi.list({
                 signal,
+                inUse: options.inUse,
             }),
         enabled,
     })

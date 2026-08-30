@@ -30,6 +30,8 @@ import type {
 } from '../../../api/apiTypes'
 import {
     useAuthors,
+    useCreateAuthor,
+    useUpdateAuthor,
 } from '../../../api/authorsQueries'
 import {
     useBook,
@@ -37,6 +39,8 @@ import {
 } from '../../../api/booksQueries'
 import {
     useCategories,
+    useCreateCategory,
+    useUpdateCategory,
 } from '../../../api/categoriesQueries'
 import {
     useShelves,
@@ -54,10 +58,14 @@ vi.mock('../../../api/shelvesQueries', () => ({
 
 vi.mock('../../../api/categoriesQueries', () => ({
     useCategories: vi.fn(),
+    useCreateCategory: vi.fn(),
+    useUpdateCategory: vi.fn(),
 }))
 
 vi.mock('../../../api/authorsQueries', () => ({
     useAuthors: vi.fn(),
+    useCreateAuthor: vi.fn(),
+    useUpdateAuthor: vi.fn(),
 }))
 
 const mockNavigate = vi.fn()
@@ -85,6 +93,14 @@ const mockUseCategories =
     vi.mocked(useCategories)
 const mockUseAuthors =
     vi.mocked(useAuthors)
+const mockUseCreateAuthor =
+    vi.mocked(useCreateAuthor)
+const mockUseUpdateAuthor =
+    vi.mocked(useUpdateAuthor)
+const mockUseCreateCategory =
+    vi.mocked(useCreateCategory)
+const mockUseUpdateCategory =
+    vi.mocked(useUpdateCategory)
 
 const TEST_SHELVES: ShelfRead[] = [
     {
@@ -286,6 +302,32 @@ describe('EditBookPage', () => {
         setupSuccessfulShelves()
         setupSuccessfulCategories()
         setupSuccessfulAuthors()
+
+        const idleMetadataMutation = {
+            mutateAsync: vi.fn(),
+            isPending: false,
+        }
+
+        mockUseCreateAuthor.mockReturnValue(
+            idleMetadataMutation as unknown as ReturnType<
+                typeof useCreateAuthor
+            >,
+        )
+        mockUseUpdateAuthor.mockReturnValue(
+            idleMetadataMutation as unknown as ReturnType<
+                typeof useUpdateAuthor
+            >,
+        )
+        mockUseCreateCategory.mockReturnValue(
+            idleMetadataMutation as unknown as ReturnType<
+                typeof useCreateCategory
+            >,
+        )
+        mockUseUpdateCategory.mockReturnValue(
+            idleMetadataMutation as unknown as ReturnType<
+                typeof useUpdateCategory
+            >,
+        )
 
         mockUseUpdateBook.mockReturnValue({
             mutate: vi.fn(),

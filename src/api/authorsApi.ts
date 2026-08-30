@@ -15,7 +15,9 @@ import {
     pickAuthorUpdate,
 } from './requestFields'
 
-export type ListAuthorsOptions = ApiCallOptions
+export type ListAuthorsOptions = ApiCallOptions & {
+    inUse?: boolean
+}
 
 function withSignal(
     signal: AbortSignal | undefined,
@@ -38,12 +40,16 @@ export function createAuthorsApi(
                 options.signal,
             )
 
+            const path = options.inUse === true
+                ? '/authors?in_use=true'
+                : '/authors'
+
             return signalOptions === undefined
                 ? client.getJson<AuthorList>(
-                    '/authors',
+                    path,
                 )
                 : client.getJson<AuthorList>(
-                    '/authors',
+                    path,
                     signalOptions,
                 )
         },

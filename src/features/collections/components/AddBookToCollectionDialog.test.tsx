@@ -31,6 +31,7 @@ import type {
 import {
     useAddCollectionBook,
     useCollections,
+    useCreateCollection,
 } from '../../../api/collectionsQueries'
 import {
     AddBookToCollectionDialog,
@@ -39,6 +40,7 @@ import {
 vi.mock('../../../api/collectionsQueries', () => ({
     useCollections: vi.fn(),
     useAddCollectionBook: vi.fn(),
+    useCreateCollection: vi.fn(),
 }))
 
 const mockUseCollections =
@@ -46,6 +48,9 @@ const mockUseCollections =
 
 const mockUseAddCollectionBook =
     vi.mocked(useAddCollectionBook)
+
+const mockUseCreateCollection =
+    vi.mocked(useCreateCollection)
 
 const collections: CollectionList = {
     items: [
@@ -152,9 +157,16 @@ function mockSuccessState() {
         typeof useCollections
     >)
 
+
     mockUseAddCollectionBook.mockReturnValue(
         idleMutation() as unknown as ReturnType<
             typeof useAddCollectionBook
+        >,
+    )
+
+    mockUseCreateCollection.mockReturnValue(
+        idleMutation() as unknown as ReturnType<
+            typeof useCreateCollection
         >,
     )
 }
@@ -508,7 +520,7 @@ describe('AddBookToCollectionDialog', () => {
         ).toHaveValue('collection-1')
     })
 
-    it('provides a collections link when none exist', async () => {
+    it('provides inline collection creation when none exist', async () => {
         mockUseCollections.mockReturnValue({
             isPending: false,
             isError: false,
@@ -537,13 +549,20 @@ describe('AddBookToCollectionDialog', () => {
         ).toBeInTheDocument()
 
         expect(
-            within(dialog).getByRole('link', {
-                name: 'Manage Collections',
+            within(dialog).getByRole('heading', {
+                name: 'Create a collection',
             }),
-        ).toHaveAttribute(
-            'href',
-            '/collections',
-        )
+        ).toBeInTheDocument()
+
+        expect(
+            within(dialog).getByLabelText('Name'),
+        ).toBeInTheDocument()
+
+        expect(
+            within(dialog).getByRole('button', {
+                name: 'Create Collection',
+            }),
+        ).toBeEnabled()
 
         expect(
             within(dialog).queryByLabelText(

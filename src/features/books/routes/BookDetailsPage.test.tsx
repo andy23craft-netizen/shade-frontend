@@ -549,6 +549,63 @@ describe('BookDetailsPage', () => {
         )
     })
 
+    it('returns to the filtered books URL when opened from the list', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: completeBook,
+        } as ReturnType<typeof useBook>)
+
+        renderWithProviders(
+            <MemoryRouter
+                initialEntries={[
+                    {
+                        pathname: '/books/test-book-id',
+                        state: {
+                            booksReturnTo:
+                                '/books?category_id=cat-fiction&author=Le%20Guin&sortBy=title&sortOrder=desc',
+                        },
+                    },
+                ]}
+            >
+                <Routes>
+                    <Route
+                        path="/books/:bookId"
+                        element={<BookDetailsPage />}
+                    />
+                </Routes>
+            </MemoryRouter>,
+        )
+
+        expect(
+            screen.getByRole('link', {
+                name: '← Back to Books',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books?category_id=cat-fiction&author=Le%20Guin&sortBy=title&sortOrder=desc',
+        )
+    })
+
+    it('falls back to the unfiltered books list without list-origin state', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: completeBook,
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.getByRole('link', {
+                name: '← Back to Books',
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/books',
+        )
+    })
+
     it('formats date-only values without timezone shifting', () => {
         mockedUseBook.mockReturnValue({
             isPending: false,

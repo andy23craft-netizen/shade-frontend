@@ -17,6 +17,8 @@ import {
 } from '../../../components'
 import {
     useAuthors,
+    useCreateAuthor,
+    useUpdateAuthor,
 } from '../../../api/authorsQueries'
 import {
     isApiError,
@@ -31,6 +33,8 @@ import {
 } from '../../../api/booksQueries'
 import {
     useCategories,
+    useCreateCategory,
+    useUpdateCategory,
 } from '../../../api/categoriesQueries'
 import {
     useShelves,
@@ -48,6 +52,10 @@ import {
     bookFormValuesFromBook,
     bookFormValuesToUpdate,
 } from './bookEditModel'
+import type {
+    AuthorRead,
+    CategoryRead,
+} from '../../../api/apiTypes'
 
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
@@ -99,6 +107,33 @@ function mapEditFieldErrors(
     return mapped
 }
 
+
+function authorCreateFromName(name: string): {
+    first_name: string | null
+    surname: string
+} {
+    const parts = name
+        .trim()
+        .replace(/\s+/g, ' ')
+        .split(' ')
+    const surname = parts.pop() ?? name
+    const firstName = parts.join(' ')
+
+    return {
+        first_name:
+            firstName === '' ? null : firstName,
+        surname,
+    }
+}
+
+function categorySlug(name: string): string {
+    return name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+}
+
 export function EditBookPage() {
     const { bookId = '' } = useParams()
     const navigate = useNavigate()
@@ -108,6 +143,10 @@ export function EditBookPage() {
     const shelvesQuery = useShelves()
     const categoriesQuery = useCategories()
     const authorsQuery = useAuthors()
+    const createAuthor = useCreateAuthor()
+    const updateAuthor = useUpdateAuthor()
+    const createCategory = useCreateCategory()
+    const updateCategory = useUpdateCategory()
     const updateBook = useUpdateBook()
 
     const initializedBookIdRef =
@@ -174,6 +213,57 @@ export function EditBookPage() {
                 queryKey: queryKeys.books.all,
             }),
         ])
+    }
+
+    async function handleCreateAuthor(
+        name: string,
+    ): Promise<AuthorRead> {
+        return createAuthor.mutateAsync(
+            authorCreateFromName(name),
+        )
+    }
+
+    async function handleCreateCategory(
+        name: string,
+    ): Promise<CategoryRead> {
+        return createCategory.mutateAsync({
+            name,
+            slug: categorySlug(name),
+        })
+    }
+
+    async function handleUpdateAuthor(
+        author: AuthorRead,
+        firstName: string,
+        surname: string,
+    ): Promise<AuthorRead> {
+        return updateAuthor.mutateAsync({
+            authorId: author.author_id,
+            author: {
+                first_name:
+                    firstName.trim() === ''
+                        ? null
+                        : firstName.trim(),
+                surname: surname.trim(),
+            },
+        })
+    }
+
+    async function handleUpdateCategory(
+        category: CategoryRead,
+        name: string,
+    ): Promise<CategoryRead> {
+        const normalizedName = name
+            .trim()
+            .replace(/\s+/g, ' ')
+
+        return updateCategory.mutateAsync({
+            categoryId: category.category_id,
+            category: {
+                name: normalizedName,
+                slug: categorySlug(normalizedName),
+            },
+        })
     }
 
     function handleSubmit(
@@ -497,6 +587,10 @@ export function EditBookPage() {
                 shelves={shelves}
                 categories={categories}
                 authors={authors}
+                onCreateAuthor={handleCreateAuthor}
+                onCreateCategory={handleCreateCategory}
+                onUpdateAuthor={handleUpdateAuthor}
+                onUpdateCategory={handleUpdateCategory}
                 onChange={(nextValues) => {
                     setValues(nextValues)
                     setServerFieldErrors({})
@@ -509,7 +603,11 @@ export function EditBookPage() {
                     )
                 }}
                 isSubmitting={
-                    updateBook.isPending
+                    updateBook.isPending ||
+                    createAuthor.isPending ||
+                    createCategory.isPending ||
+                    updateAuthor.isPending ||
+                    updateCategory.isPending
                 }
                 serverFieldErrors={
                     serverFieldErrors

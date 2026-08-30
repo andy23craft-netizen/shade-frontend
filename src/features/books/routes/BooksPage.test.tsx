@@ -150,10 +150,15 @@ function LocationProbe() {
     const location = useLocation()
 
     return (
-        <div data-testid="location">
-            {location.pathname}
-            {location.search}
-        </div>
+        <>
+            <div data-testid="location">
+                {location.pathname}
+                {location.search}
+            </div>
+            <div data-testid="location-state">
+                {JSON.stringify(location.state)}
+            </div>
+        </>
     )
 }
 
@@ -826,6 +831,76 @@ describe('BooksPage', () => {
                 sortOrder: 'asc',
                 enabled: false,
             }),
+        )
+    })
+
+    it('submits unified search when Enter is pressed', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [makeBook()],
+                },
+            ]),
+        )
+
+        renderBooksPage('/books?category_id=cat-fiction')
+
+        const searchInput = screen.getByLabelText(
+            'Search author or title',
+        )
+
+        fireEvent.change(searchInput, {
+            target: {
+                value: '  Le Guin  ',
+            },
+        })
+
+        fireEvent.keyDown(searchInput, {
+            key: 'Enter',
+            code: 'Enter',
+            charCode: 13,
+        })
+
+        fireEvent.submit(
+            searchInput.closest('form')!,
+        )
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent(
+            '/books?category_id=cat-fiction&author=Le+Guin',
+        )
+    })
+
+    it('preserves the filtered books URL when opening book details', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [makeBook()],
+                },
+            ]),
+        )
+
+        renderBooksPage(
+            '/books?category_id=cat-fiction&author=Le%20Guin&sortBy=title&sortOrder=desc',
+        )
+
+        fireEvent.click(
+            screen.getByRole('link', {
+                name: 'The Left Hand of Darkness',
+            }),
+        )
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent('/books/book-1')
+
+        expect(
+            screen.getByTestId('location-state'),
+        ).toHaveTextContent(
+            '"booksReturnTo":"/books?category_id=cat-fiction&author=Le%20Guin&sortBy=title&sortOrder=desc"',
         )
     })
 

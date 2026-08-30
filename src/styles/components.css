@@ -234,6 +234,56 @@
   gap: var(--space-3);
 }
 
+
+/* Keep collection dialogs and controls inside their modal width. */
+.confirmation-dialog__content,
+.confirmation-dialog__content > *,
+.add-book-to-collection-dialog form,
+.add-book-to-collection-dialog .field,
+.collections-page__workbench--dialog,
+.collections-page__workbench--dialog > *,
+.collections-page__workbench--dialog .field {
+  min-width: 0;
+}
+
+.add-book-to-collection-dialog {
+  max-width: calc(100vw - 2rem);
+  overflow-x: hidden;
+}
+
+.add-book-to-collection-dialog input,
+.add-book-to-collection-dialog select,
+.add-book-to-collection-dialog textarea,
+.collections-page__workbench--dialog input,
+.collections-page__workbench--dialog select,
+.collections-page__workbench--dialog textarea {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.add-book-to-collection-dialog__collection-tools,
+.add-book-to-collection-dialog__create-form {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-4);
+}
+
+.add-book-to-collection-dialog__create-form {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-card-border);
+}
+
+.add-book-to-collection-dialog__create-form h3 {
+  margin: 0;
+}
+
+.add-book-to-collection-dialog p,
+.add-book-to-collection-dialog strong {
+  overflow-wrap: anywhere;
+}
+
 /* General form dialog */
 
 .modal-dialog {
@@ -1697,6 +1747,62 @@
 .book-form__category-option span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.book-form__metadata-option {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.book-form__metadata-option-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.book-form__metadata-option-row .book-form__category-option {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.book-form__metadata-edit-button {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-link);
+  font: inherit;
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.book-form__metadata-edit-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.book-form__metadata-editor {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid rgb(113 84 52 / 22%);
+  background: rgb(255 252 239 / 72%);
+}
+
+.book-form__metadata-editor input {
+  width: 100%;
+  min-width: 0;
+}
+
+.book-form__metadata-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .book-form__category-no-results {

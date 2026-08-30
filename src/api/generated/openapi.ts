@@ -1337,7 +1337,9 @@ export type $defs = Record<string, never>;
 export interface operations {
     list_authors_authors_get: {
         parameters: {
-            query?: never;
+            query?: {
+                in_use?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1351,6 +1353,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthorList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2493,7 +2504,9 @@ export interface operations {
     };
     list_categories_categories_get: {
         parameters: {
-            query?: never;
+            query?: {
+                in_use?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2516,6 +2529,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

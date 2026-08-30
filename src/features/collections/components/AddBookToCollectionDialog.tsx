@@ -7,7 +7,6 @@ import {
 } from 'react'
 
 import {
-    AppLink,
     Button,
     Field,
     LoadingState,
@@ -22,10 +21,16 @@ import type {
 import {
     useAddCollectionBook,
     useCollections,
+    useCreateCollection,
 } from '../../../api/collectionsQueries'
 import {
     emptyAddCollectionBookFormValues,
+    emptyCollectionCreateFormValues,
     formValuesToCollectionBookCreate,
+    formValuesToCollectionCreate,
+    validateCollectionCreateFormValues,
+    type CollectionCreateFieldErrors,
+    type CollectionCreateFormValues,
 } from '../collectionFormModel'
 
 export interface AddBookToCollectionDialogProps {
@@ -59,6 +64,9 @@ export function AddBookToCollectionDialog({
 
     const addCollectionBook =
         useAddCollectionBook()
+
+    const createCollection =
+        useCreateCollection()
 
     const dialogRef =
         useRef<HTMLDialogElement>(null)
@@ -95,6 +103,28 @@ export function AddBookToCollectionDialog({
     const [
         formError,
         setFormError,
+    ] = useState<string | null>(null)
+
+    const [
+        createOpen,
+        setCreateOpen,
+    ] = useState(false)
+
+    const [
+        createValues,
+        setCreateValues,
+    ] = useState<CollectionCreateFormValues>(
+        emptyCollectionCreateFormValues,
+    )
+
+    const [
+        createFieldErrors,
+        setCreateFieldErrors,
+    ] = useState<CollectionCreateFieldErrors>({})
+
+    const [
+        createFormError,
+        setCreateFormError,
     ] = useState<string | null>(null)
 
     useEffect(() => {
@@ -153,7 +183,10 @@ export function AddBookToCollectionDialog({
         const handleCancel = (event: Event) => {
             event.preventDefault()
 
-            if (addCollectionBook.isPending) {
+            if (
+                addCollectionBook.isPending ||
+                createCollection.isPending
+            ) {
                 return
             }
 
@@ -161,6 +194,12 @@ export function AddBookToCollectionDialog({
             setNotes('')
             setCollectionError(null)
             setFormError(null)
+            setCreateOpen(false)
+            setCreateValues(
+                emptyCollectionCreateFormValues,
+            )
+            setCreateFieldErrors({})
+            setCreateFormError(null)
 
             onCloseRef.current()
         }
@@ -241,6 +280,7 @@ export function AddBookToCollectionDialog({
         }
     }, [
         addCollectionBook.isPending,
+        createCollection.isPending,
     ])
 
     useEffect(() => {
@@ -260,7 +300,98 @@ export function AddBookToCollectionDialog({
         setNotes('')
         setCollectionError(null)
         setFormError(null)
+        setCreateOpen(false)
+        setCreateValues(
+            emptyCollectionCreateFormValues,
+        )
+        setCreateFieldErrors({})
+        setCreateFormError(null)
         onClose()
+    }
+
+    function handleCreateCollection(
+        event: FormEvent<HTMLFormElement>,
+    ) {
+        event.preventDefault()
+
+        if (createCollection.isPending) {
+            return
+        }
+
+        setCreateFieldErrors({})
+        setCreateFormError(null)
+
+        const clientErrors =
+            validateCollectionCreateFormValues(
+                createValues,
+            )
+
+        if (Object.keys(clientErrors).length > 0) {
+            setCreateFieldErrors(clientErrors)
+            setCreateFormError(
+                'Fix the highlighted fields and try again.',
+            )
+            return
+        }
+
+        createCollection.mutate(
+            formValuesToCollectionCreate(
+                createValues,
+            ),
+            {
+                onSuccess: (createdCollection) => {
+                    setCollectionId(
+                        createdCollection.collection_id,
+                    )
+                    setCreateValues(
+                        emptyCollectionCreateFormValues,
+                    )
+                    setCreateFieldErrors({})
+                    setCreateFormError(null)
+                    setCreateOpen(false)
+                    setCollectionError(null)
+                    setFormError(null)
+                },
+                onError: (error) => {
+                    if (
+                        isApiError(error) &&
+                        error.status === 422 &&
+                        error.fieldErrors.length > 0
+                    ) {
+                        const mapped: CollectionCreateFieldErrors = {}
+
+                        for (const entry of error.fieldErrors) {
+                            const field =
+                                entry.field.split('.')[0]
+
+                            if (
+                                (field === 'name' ||
+                                    field === 'description') &&
+                                mapped[field] === undefined
+                            ) {
+                                mapped[field] =
+                                    entry.message
+                            }
+                        }
+
+                        setCreateFieldErrors(mapped)
+                        setCreateFormError(
+                            'Correct the marked fields and try again.',
+                        )
+                        return
+                    }
+
+                    setCreateFormError(
+                        isApiError(error)
+                            ? error.detail ??
+                              error.message
+                            : error instanceof Error
+                                ? error.message
+                                : 'The collection could not be created.',
+                    )
+                },
+            },
+        )
     }
 
     function handleSubmit(
@@ -375,7 +506,7 @@ export function AddBookToCollectionDialog({
     return (
         <dialog
             ref={dialogRef}
-            className="confirmation-dialog"
+            className="confirmation-dialog add-book-to-collection-dialog"
             aria-labelledby={titleId}
         >
             <div className="confirmation-dialog__content">
@@ -417,23 +548,162 @@ export function AddBookToCollectionDialog({
                     />
                 ) : null}
 
-                {collectionsQuery.isSuccess &&
-                collections.length === 0 ? (
-                    <div>
-                        <p>
-                            You do not have any collections
-                            yet.
-                        </p>
+                {collectionsQuery.isSuccess ? (
+                    <div className="add-book-to-collection-dialog__collection-tools">
+                        {collections.length === 0 ? (
+                            <p>
+                                You do not have any collections
+                                yet. Create one here, then add
+                                this book to it.
+                            </p>
+                        ) : null}
 
-                        <AppLink
-                            to="/collections"
-                            variant="secondary"
-                            onClick={() => {
-                                resetAndClose()
-                            }}
-                        >
-                            Manage Collections
-                        </AppLink>
+                        {!createOpen &&
+                        collections.length > 0 ? (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                disabled={
+                                    addCollectionBook.isPending
+                                }
+                                onClick={() => {
+                                    setCreateOpen(true)
+                                    setCreateFormError(null)
+                                    setCreateFieldErrors({})
+                                }}
+                            >
+                                Create New Collection
+                            </Button>
+                        ) : null}
+
+                        {createOpen ||
+                        collections.length === 0 ? (
+                            <form
+                                className="add-book-to-collection-dialog__create-form"
+                                onSubmit={
+                                    handleCreateCollection
+                                }
+                                noValidate
+                            >
+                                <h3>Create a collection</h3>
+
+                                {createFormError ? (
+                                    <div
+                                        className="alert alert--error"
+                                        role="alert"
+                                    >
+                                        <p>{createFormError}</p>
+                                    </div>
+                                ) : null}
+
+                                <Field
+                                    id={`${titleId}-new-collection-name`}
+                                    label="Name"
+                                    error={
+                                        createFieldErrors.name
+                                    }
+                                >
+                                    <input
+                                        id={`${titleId}-new-collection-name`}
+                                        name="name"
+                                        type="text"
+                                        value={
+                                            createValues.name
+                                        }
+                                        onChange={(event) => {
+                                            setCreateValues(
+                                                (current) => ({
+                                                    ...current,
+                                                    name: event.target.value,
+                                                }),
+                                            )
+                                            setCreateFieldErrors(
+                                                (current) => ({
+                                                    ...current,
+                                                    name: undefined,
+                                                }),
+                                            )
+                                            setCreateFormError(null)
+                                        }}
+                                        disabled={
+                                            createCollection.isPending
+                                        }
+                                        maxLength={255}
+                                        autoComplete="off"
+                                    />
+                                </Field>
+
+                                <Field
+                                    id={`${titleId}-new-collection-description`}
+                                    label="Description"
+                                    error={
+                                        createFieldErrors.description
+                                    }
+                                >
+                                    <textarea
+                                        id={`${titleId}-new-collection-description`}
+                                        name="description"
+                                        value={
+                                            createValues.description
+                                        }
+                                        onChange={(event) => {
+                                            setCreateValues(
+                                                (current) => ({
+                                                    ...current,
+                                                    description:
+                                                        event.target.value,
+                                                }),
+                                            )
+                                            setCreateFieldErrors(
+                                                (current) => ({
+                                                    ...current,
+                                                    description: undefined,
+                                                }),
+                                            )
+                                            setCreateFormError(null)
+                                        }}
+                                        disabled={
+                                            createCollection.isPending
+                                        }
+                                        rows={3}
+                                    />
+                                </Field>
+
+                                <div className="confirmation-dialog__actions">
+                                    {collections.length > 0 ? (
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            disabled={
+                                                createCollection.isPending
+                                            }
+                                            onClick={() => {
+                                                setCreateOpen(false)
+                                                setCreateValues(
+                                                    emptyCollectionCreateFormValues,
+                                                )
+                                                setCreateFieldErrors({})
+                                                setCreateFormError(null)
+                                            }}
+                                        >
+                                            Cancel Create
+                                        </Button>
+                                    ) : null}
+
+                                    <Button
+                                        type="submit"
+                                        variant="primary"
+                                        disabled={
+                                            createCollection.isPending
+                                        }
+                                    >
+                                        {createCollection.isPending
+                                            ? 'Creating…'
+                                            : 'Create Collection'}
+                                    </Button>
+                                </div>
+                            </form>
+                        ) : null}
                     </div>
                 ) : null}
 

@@ -86,6 +86,15 @@ export interface BookFormProps {
     onCreateCategory?: (
         name: string,
     ) => Promise<CategoryRead>
+    onUpdateAuthor?: (
+        author: AuthorRead,
+        firstName: string,
+        surname: string,
+    ) => Promise<AuthorRead>
+    onUpdateCategory?: (
+        category: CategoryRead,
+        name: string,
+    ) => Promise<CategoryRead>
 }
 
 function focusSummary(
@@ -105,8 +114,10 @@ export function BookForm({
     isSubmitting = false,
     serverFieldErrors = {},
     formError = null,
-                             onCreateCategory,
+    onCreateCategory,
     onCreateAuthor,
+    onUpdateAuthor,
+    onUpdateCategory,
 }: BookFormProps) {
     const idPrefix = useId()
     const summaryRef =
@@ -142,9 +153,54 @@ export function BookForm({
     ] = useState(false)
 
     const [
+        editingAuthorId,
+        setEditingAuthorId,
+    ] = useState<string | null>(null)
+
+    const [
+        authorEditFirstName,
+        setAuthorEditFirstName,
+    ] = useState('')
+
+    const [
+        authorEditSurname,
+        setAuthorEditSurname,
+    ] = useState('')
+
+    const [
+        authorEditError,
+        setAuthorEditError,
+    ] = useState<string | null>(null)
+
+    const [
+        isUpdatingAuthor,
+        setIsUpdatingAuthor,
+    ] = useState(false)
+
+    const [
         categorySearch,
         setCategorySearch,
     ] = useState('')
+
+    const [
+        editingCategoryId,
+        setEditingCategoryId,
+    ] = useState<string | null>(null)
+
+    const [
+        categoryEditName,
+        setCategoryEditName,
+    ] = useState('')
+
+    const [
+        categoryEditError,
+        setCategoryEditError,
+    ] = useState<string | null>(null)
+
+    const [
+        isUpdatingCategory,
+        setIsUpdatingCategory,
+    ] = useState(false)
 
     const [
         shelfPickerOpen,
@@ -329,6 +385,53 @@ export function BookForm({
         }
     }
 
+    function startAuthorEdit(author: AuthorRead) {
+        setEditingAuthorId(author.author_id)
+        setAuthorEditFirstName(author.first_name ?? '')
+        setAuthorEditSurname(author.surname)
+        setAuthorEditError(null)
+    }
+
+    function cancelAuthorEdit() {
+        setEditingAuthorId(null)
+        setAuthorEditFirstName('')
+        setAuthorEditSurname('')
+        setAuthorEditError(null)
+    }
+
+    async function saveAuthorEdit(author: AuthorRead) {
+        if (!onUpdateAuthor || isUpdatingAuthor) {
+            return
+        }
+
+        const surname = authorEditSurname.trim()
+
+        if (surname === '') {
+            setAuthorEditError('Enter a surname.')
+            return
+        }
+
+        setAuthorEditError(null)
+        setIsUpdatingAuthor(true)
+
+        try {
+            await onUpdateAuthor(
+                author,
+                authorEditFirstName,
+                surname,
+            )
+            cancelAuthorEdit()
+        } catch (error) {
+            setAuthorEditError(
+                error instanceof Error
+                    ? error.message
+                    : 'The author could not be updated.',
+            )
+        } finally {
+            setIsUpdatingAuthor(false)
+        }
+    }
+
     const toggleAuthor = (authorId: string) => {
         if (values.authorIds.includes(authorId)) {
             updateField(
@@ -438,6 +541,51 @@ export function BookForm({
         ])
 
         setCategorySearch('')
+    }
+
+    function startCategoryEdit(category: CategoryRead) {
+        setEditingCategoryId(category.category_id)
+        setCategoryEditName(category.name)
+        setCategoryEditError(null)
+    }
+
+    function cancelCategoryEdit() {
+        setEditingCategoryId(null)
+        setCategoryEditName('')
+        setCategoryEditError(null)
+    }
+
+    async function saveCategoryEdit(
+        category: CategoryRead,
+    ) {
+        if (!onUpdateCategory || isUpdatingCategory) {
+            return
+        }
+
+        const name = categoryEditName
+            .trim()
+            .replace(/\s+/g, ' ')
+
+        if (name === '') {
+            setCategoryEditError('Enter a category name.')
+            return
+        }
+
+        setCategoryEditError(null)
+        setIsUpdatingCategory(true)
+
+        try {
+            await onUpdateCategory(category, name)
+            cancelCategoryEdit()
+        } catch (error) {
+            setCategoryEditError(
+                error instanceof Error
+                    ? error.message
+                    : 'The category could not be updated.',
+            )
+        } finally {
+            setIsUpdatingCategory(false)
+        }
     }
 
     function handleTextChange(
@@ -675,25 +823,134 @@ export function BookForm({
                                                 )}-${author.author_id}`
 
                                             return (
-                                                <label
+                                                <div
                                                     key={author.author_id}
-                                                    htmlFor={inputId}
-                                                    className="book-form__category-option"
+                                                    className="book-form__metadata-option"
                                                 >
-                                                    <input
-                                                        id={inputId}
-                                                        type="checkbox"
-                                                        checked={values.authorIds.includes(
-                                                            author.author_id,
-                                                        )}
-                                                        onChange={() =>
-                                                            toggleAuthor(
-                                                                author.author_id,
-                                                            )
-                                                        }
-                                                    />
-                                                    <span>{name}</span>
-                                                </label>
+                                                    <div className="book-form__metadata-option-row">
+                                                        <label
+                                                            htmlFor={inputId}
+                                                            className="book-form__category-option"
+                                                        >
+                                                            <input
+                                                                id={inputId}
+                                                                type="checkbox"
+                                                                checked={values.authorIds.includes(
+                                                                    author.author_id,
+                                                                )}
+                                                                onChange={() =>
+                                                                    toggleAuthor(
+                                                                        author.author_id,
+                                                                    )
+                                                                }
+                                                            />
+                                                            <span>{name}</span>
+                                                        </label>
+
+                                                        {onUpdateAuthor ? (
+                                                            <button
+                                                                type="button"
+                                                                className="book-form__metadata-edit-button"
+                                                                disabled={
+                                                                    isUpdatingAuthor
+                                                                }
+                                                                onClick={() => {
+                                                                    startAuthorEdit(
+                                                                        author,
+                                                                    )
+                                                                }}
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        ) : null}
+                                                    </div>
+
+                                                    {editingAuthorId ===
+                                                    author.author_id ? (
+                                                        <div className="book-form__metadata-editor">
+                                                            <Field label="First name">
+                                                                <input
+                                                                    type="text"
+                                                                    value={
+                                                                        authorEditFirstName
+                                                                    }
+                                                                    onChange={(event) => {
+                                                                        setAuthorEditFirstName(
+                                                                            event.target.value,
+                                                                        )
+                                                                        setAuthorEditError(
+                                                                            null,
+                                                                        )
+                                                                    }}
+                                                                    disabled={
+                                                                        isUpdatingAuthor
+                                                                    }
+                                                                />
+                                                            </Field>
+
+                                                            <Field label="Surname">
+                                                                <input
+                                                                    type="text"
+                                                                    value={
+                                                                        authorEditSurname
+                                                                    }
+                                                                    onChange={(event) => {
+                                                                        setAuthorEditSurname(
+                                                                            event.target.value,
+                                                                        )
+                                                                        setAuthorEditError(
+                                                                            null,
+                                                                        )
+                                                                    }}
+                                                                    disabled={
+                                                                        isUpdatingAuthor
+                                                                    }
+                                                                />
+                                                            </Field>
+
+                                                            {authorEditError ? (
+                                                                <p
+                                                                    className="field__error"
+                                                                    role="alert"
+                                                                >
+                                                                    {authorEditError}
+                                                                </p>
+                                                            ) : null}
+
+                                                            <div className="book-form__metadata-editor-actions">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="primary"
+                                                                    disabled={
+                                                                        isUpdatingAuthor
+                                                                    }
+                                                                    onClick={() => {
+                                                                        void saveAuthorEdit(
+                                                                            author,
+                                                                        )
+                                                                    }}
+                                                                >
+                                                                    {isUpdatingAuthor
+                                                                        ? 'Saving…'
+                                                                        : 'Save author'}
+                                                                </Button>
+
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="secondary"
+                                                                    disabled={
+                                                                        isUpdatingAuthor
+                                                                    }
+                                                                    onClick={
+                                                                        cancelAuthorEdit
+                                                                    }
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : null}
+                                                </div>
                                             )
                                         },
                                     )}
@@ -957,36 +1214,123 @@ export function BookForm({
                                                     )}-${category.category_id}`
 
                                                 return (
-                                                    <label
+                                                    <div
                                                         key={
                                                             category.category_id
                                                         }
-                                                        htmlFor={
-                                                            inputId
-                                                        }
-                                                        className="book-form__category-option"
+                                                        className="book-form__metadata-option"
                                                     >
-                                                        <input
-                                                            id={
-                                                                inputId
-                                                            }
-                                                            type="checkbox"
-                                                            checked={values.categoryIds.includes(
-                                                                category.category_id,
-                                                            )}
-                                                            onChange={() => {
-                                                                toggleCategoryId(
-                                                                    category.category_id,
-                                                                )
-                                                            }}
-                                                        />
+                                                        <div className="book-form__metadata-option-row">
+                                                            <label
+                                                                htmlFor={
+                                                                    inputId
+                                                                }
+                                                                className="book-form__category-option"
+                                                            >
+                                                                <input
+                                                                    id={
+                                                                        inputId
+                                                                    }
+                                                                    type="checkbox"
+                                                                    checked={values.categoryIds.includes(
+                                                                        category.category_id,
+                                                                    )}
+                                                                    onChange={() => {
+                                                                        toggleCategoryId(
+                                                                            category.category_id,
+                                                                        )
+                                                                    }}
+                                                                />
 
-                                                        <span>
-                                            {
-                                                category.name
-                                            }
-                                        </span>
-                                                    </label>
+                                                                <span>
+                                                                    {category.name}
+                                                                </span>
+                                                            </label>
+
+                                                            {onUpdateCategory ? (
+                                                                <button
+                                                                    type="button"
+                                                                    className="book-form__metadata-edit-button"
+                                                                    disabled={
+                                                                        isUpdatingCategory
+                                                                    }
+                                                                    onClick={() => {
+                                                                        startCategoryEdit(
+                                                                            category,
+                                                                        )
+                                                                    }}
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                            ) : null}
+                                                        </div>
+
+                                                        {editingCategoryId ===
+                                                        category.category_id ? (
+                                                            <div className="book-form__metadata-editor">
+                                                                <Field label="Category name">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={
+                                                                            categoryEditName
+                                                                        }
+                                                                        onChange={(event) => {
+                                                                            setCategoryEditName(
+                                                                                event.target.value,
+                                                                            )
+                                                                            setCategoryEditError(
+                                                                                null,
+                                                                            )
+                                                                        }}
+                                                                        disabled={
+                                                                            isUpdatingCategory
+                                                                        }
+                                                                    />
+                                                                </Field>
+
+                                                                {categoryEditError ? (
+                                                                    <p
+                                                                        className="field__error"
+                                                                        role="alert"
+                                                                    >
+                                                                        {categoryEditError}
+                                                                    </p>
+                                                                ) : null}
+
+                                                                <div className="book-form__metadata-editor-actions">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="primary"
+                                                                        disabled={
+                                                                            isUpdatingCategory
+                                                                        }
+                                                                        onClick={() => {
+                                                                            void saveCategoryEdit(
+                                                                                category,
+                                                                            )
+                                                                        }}
+                                                                    >
+                                                                        {isUpdatingCategory
+                                                                            ? 'Saving…'
+                                                                            : 'Save category'}
+                                                                    </Button>
+
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="secondary"
+                                                                        disabled={
+                                                                            isUpdatingCategory
+                                                                        }
+                                                                        onClick={
+                                                                            cancelCategoryEdit
+                                                                        }
+                                                                    >
+                                                                        Cancel
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
                                                 )
                                             },
                                         )

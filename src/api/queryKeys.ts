@@ -345,11 +345,18 @@ export const queryKeys = {
     categories: {
         all: ['categories'] as const,
 
-        list: () =>
+        list: (
+            options: {
+                inUse?: boolean
+            } = {},
+        ) =>
             [
                 'categories',
                 {
                     list: true,
+                    ...(options.inUse === true
+                        ? { inUse: true }
+                        : {}),
                 },
             ] as const,
 
@@ -363,11 +370,18 @@ export const queryKeys = {
     authors: {
         all: ['authors'] as const,
 
-        list: () =>
+        list: (
+            options: {
+                inUse?: boolean
+            } = {},
+        ) =>
             [
                 'authors',
                 {
                     list: true,
+                    ...(options.inUse === true
+                        ? { inUse: true }
+                        : {}),
                 },
             ] as const,
 

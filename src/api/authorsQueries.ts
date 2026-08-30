@@ -45,6 +45,7 @@ async function invalidateAuthorCaches(
 export function useAuthors(
     options: {
         enabled?: boolean
+        inUse?: boolean
     } = {},
 ) {
     const {
@@ -57,12 +58,15 @@ export function useAuthors(
     const enabled = options.enabled ?? true
 
     return useQuery({
-        queryKey: queryKeys.authors.list(),
+        queryKey: queryKeys.authors.list({
+            inUse: options.inUse,
+        }),
         queryFn: ({
                       signal,
                   }) =>
             authorsApi.list({
                 signal,
+                inUse: options.inUse,
             }),
         enabled,
     })
