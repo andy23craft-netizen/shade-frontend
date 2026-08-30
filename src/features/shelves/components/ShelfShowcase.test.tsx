@@ -62,6 +62,7 @@ const book: BookRead = {
     ],
     categories: [],
     shelf_name: 'a1',
+    placement_state: 'shelved',
     status: 'available',
     is_read: false,
     isbn13: null,

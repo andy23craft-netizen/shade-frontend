@@ -94,6 +94,7 @@ function makeBookList(
                 ],
                 categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
                 shelf_name: 'liz_tbr',
+                placement_state: 'shelved',
                 status: 'on_loan',
                 is_read: false,
                 isbn13: null,

@@ -147,6 +147,7 @@ export function mockReachableApi() {
                             unread: 0,
                             recently_added: 0,
                             recent_window_days: 30,
+                            stash_count: 0,
                             borrowing: {
                                 active_loans: 0,
                                 lifetime_loans: 0,
@@ -285,7 +286,7 @@ export async function renderAppTree(
             ).not.toBeInTheDocument()
         },
         {
-            timeout: 5000,
+            timeout: 10_000,
         },
     )
 

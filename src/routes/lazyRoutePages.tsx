@@ -32,6 +32,12 @@ export const BooksPage = lazy(() =>
     ),
 )
 
+export const StashPage = lazy(() =>
+    import('../features/books/routes/StashPage').then(
+        (module) => ({ default: module.StashPage }),
+    ),
+)
+
 export const WishlistsPage = lazy(() =>
     import(
         '../features/wishlists/routes/WishlistsPage'

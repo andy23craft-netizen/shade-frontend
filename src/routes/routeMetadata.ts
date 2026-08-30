@@ -19,6 +19,11 @@ export const routeMetadata = {
     title: 'Books',
     heading: 'Books',
   },
+  stash: {
+    path: '/stash',
+    title: 'Stash',
+    heading: 'Stash',
+  },
   wishlists: {
     path: '/wishlists',
     title: 'Wishlists',

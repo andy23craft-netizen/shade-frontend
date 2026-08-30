@@ -15,7 +15,10 @@ import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
-import { ConfirmationDialog } from '../../../components'
+import {
+    ConfirmationDialog,
+    ModalDialog,
+} from '../../../components'
 import {
     useBulkBookImport,
     useBulkBookLookup,
@@ -81,6 +84,56 @@ function emptyDraft(): BulkAddDraft {
     }
 }
 
+function lookupAuthorsText(
+    value: unknown,
+): string {
+    if (typeof value === 'string') {
+        return value.trim()
+    }
+
+    if (!Array.isArray(value)) {
+        return ''
+    }
+
+    return value
+        .map((author) => {
+            if (typeof author === 'string') {
+                return author.trim()
+            }
+
+            if (
+                typeof author !== 'object' ||
+                author === null
+            ) {
+                return ''
+            }
+
+            const record = author as Record<
+                string,
+                unknown
+            >
+
+            if (typeof record.name === 'string') {
+                return record.name.trim()
+            }
+
+            const firstName =
+                typeof record.first_name === 'string'
+                    ? record.first_name.trim()
+                    : ''
+            const surname =
+                typeof record.surname === 'string'
+                    ? record.surname.trim()
+                    : ''
+
+            return [firstName, surname]
+                .filter(Boolean)
+                .join(' ')
+        })
+        .filter(Boolean)
+        .join('; ')
+}
+
 function draftFromQueueItem(
     item: BulkAddQueueItem,
 ): BulkAddDraft {
@@ -89,7 +142,9 @@ function draftFromQueueItem(
     return {
         ...emptyDraft(),
         title: lookupDraft?.title?.trim() ?? '',
-        authors: lookupDraft?.authors?.trim() ?? '',
+        authors: lookupAuthorsText(
+            lookupDraft?.authors,
+        ),
         publisher: lookupDraft?.publisher?.trim() ?? '',
         publicationDate:
             lookupDraft?.publication_date?.trim() ?? '',
@@ -366,6 +421,11 @@ export function BulkAddPage() {
     const [
         sessionStarted,
         setSessionStarted,
+    ] = useState(false)
+
+    const [
+        cancelShelfOpen,
+        setCancelShelfOpen,
     ] = useState(false)
 
     const [
@@ -1398,21 +1458,7 @@ export function BulkAddPage() {
         )
     }
 
-    function confirmDiscardUnresolved(): boolean {
-        if (!hasUnresolvedItems()) {
-            return true
-        }
-
-        return window.confirm(
-            'Some scanned books have not been saved. Discard those unresolved items and leave this shelf?',
-        )
-    }
-
-    function startNextShelf() {
-        if (!confirmDiscardUnresolved()) {
-            return
-        }
-
+    function resetShelfSession() {
         setShelfName('')
         setAcquisitionSource('')
         setSessionStarted(false)
@@ -1428,7 +1474,89 @@ export function BulkAddPage() {
         setActiveCategoryPickerId(null)
         setCategorySearch('')
         setCategoryCreateError(null)
+        setCancelShelfOpen(false)
         nextClientIdRef.current = 1
+    }
+
+    function keepScansAndChooseShelf() {
+        const retainedIds = new Set(
+            queue
+                .filter(
+                    (item) =>
+                        !savedIds.has(
+                            item.clientItemId,
+                        ),
+                )
+                .map(
+                    (item) =>
+                        item.clientItemId,
+                ),
+        )
+
+        setQueue((current) =>
+            current.filter((item) =>
+                retainedIds.has(
+                    item.clientItemId,
+                ),
+            ),
+        )
+        setDrafts((current) =>
+            Object.fromEntries(
+                Object.entries(current).filter(
+                    ([clientItemId]) =>
+                        retainedIds.has(
+                            clientItemId,
+                        ),
+                ),
+            ),
+        )
+        setImportErrors((current) =>
+            new Map(
+                [...current].filter(
+                    ([clientItemId]) =>
+                        retainedIds.has(
+                            clientItemId,
+                        ),
+                ),
+            ),
+        )
+        setSavedIds(new Set())
+        setShelfName('')
+        setSessionStarted(false)
+        setSaveMessage(null)
+        setSaveError(null)
+        setCancelShelfOpen(false)
+    }
+
+    function requestCancelShelf() {
+        if (isSaving) {
+            return
+        }
+
+        if (hasUnresolvedItems()) {
+            setCancelShelfOpen(true)
+            return
+        }
+
+        resetShelfSession()
+    }
+
+    function confirmDiscardUnresolved(): boolean {
+        if (!hasUnresolvedItems()) {
+            return true
+        }
+
+        return window.confirm(
+            'Some scanned books have not been saved. Discard those unresolved items and leave this shelf?',
+        )
+    }
+
+    function startNextShelf() {
+        if (!confirmDiscardUnresolved()) {
+            return
+        }
+
+        resetShelfSession()
     }
 
     function finishBulkAdd() {
@@ -1625,12 +1753,33 @@ export function BulkAddPage() {
                         ? ` · ${acquisitionSource.trim()}`
                         : ''}
                 </p>
+
             </header>
 
             <section
                 className="bulk-add-capture"
                 aria-labelledby="bulk-add-capture-heading"
             >
+                <div className="bulk-add-session-bar">
+                    <strong>
+                        Shelf{' '}
+                        {selectedShelf
+                            ? formatShelfCommonNameForDisplay(
+                                selectedShelf.common_name,
+                            )
+                            : shelfName}
+                    </strong>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={isSaving}
+                        onClick={requestCancelShelf}
+                    >
+                        Cancel Shelf
+                    </Button>
+                </div>
+
                 <div>
                     <h2 id="bulk-add-capture-heading">
                         Scan books
@@ -2504,6 +2653,48 @@ export function BulkAddPage() {
                     </p>
                 ) : null}
             </ConfirmationDialog>
+
+            <ModalDialog
+                open={cancelShelfOpen}
+                title="Cancel this shelf?"
+                onClose={() => {
+                    setCancelShelfOpen(false)
+                }}
+            >
+                <p>
+                    Unsaved scans are still in this shelf
+                    session. Saved books will remain on the
+                    shelf where they were submitted.
+                </p>
+
+                <div className="form-actions">
+                    <Button
+                        type="button"
+                        variant="primary"
+                        onClick={keepScansAndChooseShelf}
+                    >
+                        Keep scans and choose another shelf
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="danger"
+                        onClick={resetShelfSession}
+                    >
+                        Discard scans and cancel shelf
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setCancelShelfOpen(false)
+                        }}
+                    >
+                        Continue this shelf
+                    </Button>
+                </div>
+            </ModalDialog>
         </section>
     )
 }

@@ -22,6 +22,7 @@ import {
     useInfiniteIncompleteMetadataBooks,
 } from '../../../api/dashboardQueries'
 import { useCategories } from '../../../api/categoriesQueries'
+import { useShelves } from '../../../api/shelvesQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
     Status,
@@ -43,6 +44,7 @@ import {
     parseSortOrderParam,
     parseTextFilterParam,
     parseCleanupFieldParam,
+    parsePlacementStateParam,
     type BookCleanupField,
     type BookSortBy,
     type BookSortOrder,
@@ -117,6 +119,7 @@ function updateListParams(
         shelfName?: string | undefined
         isRead?: boolean | undefined
         cleanupField?: BookCleanupField | undefined
+        placementState?: import('../../../api/apiTypes').PlacementState
         sortBy?: BookSortBy
         sortOrder?: BookSortOrder
     },
@@ -183,6 +186,14 @@ function updateListParams(
         }
     }
 
+    if ('placementState' in updates) {
+        if (updates.placementState === undefined) {
+            next.delete('placement_state')
+        } else {
+            next.set('placement_state', updates.placementState)
+        }
+    }
+
     if ('isRead' in updates) {
         if (updates.isRead === undefined) {
             next.delete('is_read')
@@ -238,6 +249,8 @@ export function BooksPage() {
         inUse: true,
     })
 
+    const shelvesQuery = useShelves()
+
     const sortBy = parseSortByParam(
         searchParams.get('sortBy'),
     )
@@ -256,6 +269,9 @@ export function BooksPage() {
     const shelfName = parseTextFilterParam(
         searchParams.get('shelf_name'),
     )
+    const placementState = parsePlacementStateParam(
+        searchParams.get('placement_state'),
+    )
     const isRead = parseReadStatusParam(
         searchParams.get('is_read'),
     )
@@ -270,6 +286,8 @@ export function BooksPage() {
 
     const isBulkRebalance =
         searchParams.get('bulk_rebalance') === '1'
+    const isBulkReview =
+        searchParams.get('bulk_review') === '1'
 
     const isUnifiedSearch =
         author !== undefined &&
@@ -291,6 +309,7 @@ export function BooksPage() {
         title,
         isbn,
         shelfName,
+        placementState,
         isRead,
         sortBy,
         sortOrder,
@@ -322,6 +341,7 @@ export function BooksPage() {
             title: author,
             isbn,
             shelfName,
+            placementState,
             isRead,
             sortBy,
             sortOrder,
@@ -358,6 +378,7 @@ export function BooksPage() {
         title !== undefined ||
         isbn !== undefined ||
         shelfName !== undefined ||
+        placementState !== undefined ||
         isRead !== undefined ||
         cleanupField !== undefined
 
@@ -368,6 +389,7 @@ export function BooksPage() {
             title: title ?? null,
             isbn: isbn ?? null,
             shelfName: shelfName ?? null,
+            placementState: placementState ?? null,
             isRead: isRead ?? null,
             cleanupField: cleanupField ?? null,
         })
@@ -375,7 +397,7 @@ export function BooksPage() {
     const [
         isBulkSelectionMode,
         setIsBulkSelectionMode,
-    ] = useState(isBulkRebalance)
+    ] = useState(isBulkRebalance || isBulkReview)
 
     const bulkSelection = useBulkSelection({
         books,
@@ -498,7 +520,13 @@ export function BooksPage() {
                     onExit={() => {
                         bulkSelection.clear()
                         setIsBulkSelectionMode(false)
+                        if (isBulkReview) {
+                            const next = new URLSearchParams(searchParams)
+                            next.delete('bulk_review')
+                            setSearchParams(next, { replace: true })
+                        }
                     }}
+                    reviewMode={isBulkReview}
                     onMoveSuccess={(response) => {
                         if (!isBulkRebalance) {
                             return
@@ -525,6 +553,8 @@ export function BooksPage() {
                     categoriesQuery.data ?? []
                 }
                 categoryIds={categoryIds}
+                shelves={shelvesQuery.data ?? []}
+                shelfName={shelfName}
                 author={author ?? ''}
                 title={title ?? ''}
                 isRead={isRead}
@@ -589,6 +619,21 @@ export function BooksPage() {
                     )
                 }}
 
+                onShelfNameChange={(nextShelfName) => {
+                    setSearchParams(
+                        updateListParams(
+                            searchParams,
+                            {
+                                shelfName:
+                                    nextShelfName,
+                            },
+                        ),
+                        {
+                            replace: true,
+                        },
+                    )
+                }}
+
                 onSortChange={(
                     nextSortBy,
                     nextSortOrder,
@@ -620,6 +665,7 @@ export function BooksPage() {
                                 shelfName: undefined,
                                 isRead: undefined,
                                 cleanupField: undefined,
+                                placementState: undefined,
                             },
                         ),
                         {
@@ -787,10 +833,13 @@ export function BooksPage() {
                                 book.categories,
                             )
 
-                        const shelf =
-                            formatShelfCommonNameForDisplay(
+                        const shelf = book.shelf_name
+                            ? formatShelfCommonNameForDisplay(
                                 book.shelf_name,
                             )
+                            : book.placement_state === 'stashed'
+                                ? 'Stash'
+                                : 'Unshelved'
 
                         const isSelectable =
                             isBookBulkSelectable(book)

@@ -31,6 +31,7 @@ function createBook(
         ],
         categories: [],
         shelf_name: 'unknown',
+        placement_state: 'shelved',
         status: 'available',
         is_read: false,
         creation_date: '2026-01-01T00:00:00Z',

@@ -134,6 +134,14 @@ const shelves: ShelfRead[] = [
         created_date: '2026-01-01T00:00:00Z',
         updated_date: '2026-01-01T00:00:00Z',
     },
+    {
+        shelf_id: 'shelf-b1',
+        common_name: 'b1',
+        location: null,
+        description: null,
+        created_date: '2026-01-01T00:00:00Z',
+        updated_date: '2026-01-01T00:00:00Z',
+    },
 ]
 
 function renderPage() {
@@ -341,6 +349,10 @@ describe('BulkAddPage', () => {
         ).toBeInTheDocument()
 
         expect(
+            screen.getByLabelText('Authors'),
+        ).toHaveValue('Homer')
+
+        expect(
             screen.getByText('Ready'),
         ).toBeInTheDocument()
 
@@ -372,6 +384,111 @@ describe('BulkAddPage', () => {
         expect(
             screen.getByText(
                 /1 book scanned/,
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('normalizes structured lookup authors into the review draft', async () => {
+        mockLookupMutateAsync.mockResolvedValue({
+            items: [
+                {
+                    client_item_id: 'bulk-add-1',
+                    status: 'found',
+                    catalog_state: 'new',
+                    isbn13: '9780140449266',
+                    draft: {
+                        title: 'The Odyssey',
+                        authors: [
+                            {
+                                first_name: null,
+                                surname: 'Homer',
+                            },
+                            'Emily Wilson',
+                        ],
+                        isbn13: '9780140449266',
+                    },
+                    missing_fields: [],
+                },
+            ],
+        } as unknown as BulkBookLookupResponse)
+
+        renderPage()
+        startShelf()
+        scanIsbn('9780140449266')
+
+        expect(
+            await screen.findByLabelText('Authors'),
+        ).toHaveValue('Homer; Emily Wilson')
+    })
+
+    it('cancels an empty shelf session immediately', () => {
+        renderPage()
+        startShelf()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel Shelf',
+            }),
+        )
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Start Shelf',
+            }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByLabelText('Destination shelf'),
+        ).toHaveValue('')
+    })
+
+    it('keeps unresolved scans while choosing another shelf', () => {
+        renderPage()
+        startShelf()
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Add manually',
+            }),
+        )
+        fireEvent.change(
+            screen.getByLabelText('Title'),
+            {
+                target: {
+                    value: 'Preserved Draft',
+                },
+            },
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Cancel Shelf',
+            }),
+        )
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Keep scans and choose another shelf',
+            }),
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Destination shelf'),
+            {
+                target: { value: 'b1' },
+            },
+        )
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Start Shelf',
+            }),
+        )
+
+        expect(
+            screen.getByLabelText('Title'),
+        ).toHaveValue('Preserved Draft')
+        expect(
+            screen.getByText((_, element) =>
+                element?.textContent ===
+                'Shelf B1 · Shelf intake',
             ),
         ).toBeInTheDocument()
     })

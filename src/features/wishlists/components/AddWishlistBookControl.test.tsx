@@ -132,6 +132,7 @@ const createdBook: BookRead = {
     ],
     categories: [],
     shelf_name: 'unknown',
+    placement_state: 'shelved',
     status: 'available',
     is_read: false,
     isbn13: null,

@@ -608,6 +608,20 @@
             ],
             "title": "Pages"
           },
+          "placement_state": {
+            "$ref": "#/components/schemas/PlacementState"
+          },
+          "previous_shelf_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Shelf Name"
+          },
           "publication_date": {
             "anyOf": [
               {
@@ -678,9 +692,15 @@
             "title": "Review"
           },
           "shelf_name": {
-            "maxLength": 32,
-            "title": "Shelf Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shelf Name"
           },
           "status": {
             "$ref": "#/components/schemas/Status",
@@ -716,8 +736,8 @@
         },
         "required": [
           "title",
-          "shelf_name",
           "id",
+          "placement_state",
           "creation_date",
           "updated_date",
           "times_borrowed",
@@ -1273,6 +1293,71 @@
         "title": "BulkBookLookupStatus",
         "type": "string"
       },
+      "BulkBookStashItem": {
+        "properties": {
+          "book_id": {
+            "title": "Book Id",
+            "type": "string"
+          },
+          "previous_shelf_name": {
+            "title": "Previous Shelf Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "previous_shelf_name"
+        ],
+        "title": "BulkBookStashItem",
+        "type": "object"
+      },
+      "BulkBookStashRequest": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Book Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "book_ids"
+        ],
+        "title": "BulkBookStashRequest",
+        "type": "object"
+      },
+      "BulkBookStashResponse": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkBookStashItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "stashed_count": {
+            "title": "Stashed Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "stashed_count",
+          "book_ids",
+          "items"
+        ],
+        "title": "BulkBookStashResponse",
+        "type": "object"
+      },
       "BulkShelfMoveRequest": {
         "properties": {
           "book_ids": {
@@ -1320,6 +1405,66 @@
           "book_ids"
         ],
         "title": "BulkShelfMoveResponse",
+        "type": "object"
+      },
+      "BulkStashApplyRequest": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "shelf_name": {
+            "maxLength": 32,
+            "title": "Shelf Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_ids",
+          "shelf_name"
+        ],
+        "title": "BulkStashApplyRequest",
+        "type": "object"
+      },
+      "BulkStashApplyResponse": {
+        "properties": {
+          "applied_count": {
+            "title": "Applied Count",
+            "type": "integer"
+          },
+          "book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "destination_preexisting_count": {
+            "title": "Destination Preexisting Count",
+            "type": "integer"
+          },
+          "destination_shelf": {
+            "title": "Destination Shelf",
+            "type": "string"
+          },
+          "destination_was_occupied": {
+            "title": "Destination Was Occupied",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "applied_count",
+          "book_ids",
+          "destination_shelf",
+          "destination_preexisting_count",
+          "destination_was_occupied"
+        ],
+        "title": "BulkStashApplyResponse",
         "type": "object"
       },
       "CategoryCreate": {
@@ -1920,6 +2065,10 @@
             "title": "Recently Added",
             "type": "integer"
           },
+          "stash_count": {
+            "title": "Stash Count",
+            "type": "integer"
+          },
           "total_books": {
             "title": "Total Books",
             "type": "integer"
@@ -1931,6 +2080,7 @@
         },
         "required": [
           "total_books",
+          "stash_count",
           "checked_out",
           "read",
           "unread",
@@ -2112,6 +2262,15 @@
         },
         "title": "MarkReadRequest",
         "type": "object"
+      },
+      "PlacementState": {
+        "enum": [
+          "shelved",
+          "stashed",
+          "unshelved"
+        ],
+        "title": "PlacementState",
+        "type": "string"
       },
       "ShelfCreate": {
         "properties": {
@@ -3334,6 +3493,22 @@
           },
           {
             "in": "query",
+            "name": "placement_state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PlacementState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Placement State"
+            }
+          },
+          {
+            "in": "query",
             "name": "is_read",
             "required": false,
             "schema": {
@@ -3556,6 +3731,102 @@
         ]
       }
     },
+    "/books/bulk/apply-stash": {
+      "post": {
+        "operationId": "bulk_apply_stash_books_bulk_apply_stash_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkStashApplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkStashApplyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Precondition failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Apply Stash",
+        "tags": [
+          "books"
+        ]
+      }
+    },
     "/books/bulk/import": {
       "post": {
         "operationId": "bulk_import_books_books_bulk_import_post",
@@ -3732,6 +4003,16 @@
             },
             "description": "Resource not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
           "412": {
             "content": {
               "application/json": {
@@ -3759,6 +4040,102 @@
           }
         ],
         "summary": "Bulk Move Books To Shelf",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/bulk/stash": {
+      "post": {
+        "operationId": "bulk_stash_books_books_bulk_stash_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkBookStashRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkBookStashResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Precondition failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Stash Books",
         "tags": [
           "books"
         ]
@@ -4048,6 +4425,16 @@
               }
             },
             "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
           },
           "412": {
             "content": {

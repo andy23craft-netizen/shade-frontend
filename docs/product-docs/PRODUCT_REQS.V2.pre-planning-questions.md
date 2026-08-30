@@ -32,7 +32,8 @@ the eventual authoritative feature tickets.
 5. What authoritative backend signal distinguishes “never configured” from a configured library that currently has
    zero owned items, a tenant the user cannot access, or a failed books request?
    - Hmmm. This is a good question that requires more thought. I have just pictured that no one would boot it up empty
-   more than once, but that's a good point. There should definitely be a difference in a failed request though. 
+   more than once, but that's a good point. There should definitely be a difference in a failed request though. do you have
+   suggestions on how to deal with that on the technical side?
    
 6. Should setup completion be stored per library on the server or locally in one browser? There are no user accounts
    in the locked multi-library model. Can an owner mark
@@ -61,35 +62,65 @@ the eventual authoritative feature tickets.
 
 11. What are the authoritative data models for DVDs, comics, and VHS? The backend album series fully defines vinyl,
     CDs, and cassettes but does not cover these remaining required media.
+	- I'm comfortable making these V3 after more thought. But DVDs and VHS i think should be analogous in the same way
+	vinyl, cds, and cassettes are. Comics might belong in the books side, but we need to add UPC lookup support for that.
+	
 12. Should DVDs and VHS share a film/video catalog model with a format field, analogous to the album model, or are
     they separate resources? What is the loanable grain for multi-disc/box sets?
+	- See above, but also, on box sets, good question. I might talk to a collector about that and get their feedback. 
+	
 13. What is the comic catalog grain: issue, collected edition, series, or owned physical copy? How are creators and
     roles, issue/volume numbers, variants, and story arcs represented?
+	- need to talk to a collector about that. comics are probably v3, as well. 
 14. Do the no-mixed-shelf and no-mixed-collection rules locked for books versus albums extend to every later medium?
     If so, how does a collection/shelf advertise its type when the shared catalog row has no `media_type` column?
+	- yes, this rule applies across the board, but i'll need to think more about the second half of this. 
+	
 15. Are multiple copies of the same commercial release supported in V2? The UUID QR requirement implies copy-level
     identity, while current duplicate ISBN behavior generally prevents another owned book record.
+	- yes. 
+	
 16. Are audiobooks intentionally excluded, despite the older Reading History note, and are digital items always out of
     scope for this physical-media release?
+	- I would like a way to log the audiobooks i've read, but that's out of scope for now. I'm more focused on logging 
+	physical media for now. 
+	
 17. Albums currently have no cover/artwork endpoint in the ticket series. Is album artwork required for the V2
     first-class UI, and if so, which backend ticket owns storage/provider fallback?
+	- artwork is one of the things that makes V1's UI feel real. I think albums need it, too. May need to find a public
+	API for that. 
 18. Album incomplete-metadata is explicitly deferred by the backend MVP. Is that acceptable for UI V2 completion, or
     must V2 add album cleanup reporting later?
+	- album cleanup can be added later. Other people may not be as anal about that kind of thing as I am. 
 
 ## Multi-tenancy, accounts, and preferences
 
 19. `PLAN-02` notes that anyone with the shared secret can access either allowed hostname/library. Is that acceptable
     owner-support policy, and should the frontend continue to omit any library switcher?
-20. What should the SPA show on an unknown hostname: a dedicated generic error page or the API's `400` response?
+	- I need access to everyone's profile as the admin, and i don't see a reason to firewall users from mine. Yeah, no
+	library switcher, just relative to the domain name "shade.library", "jamie.library", "dallas.library", etc. 
+	
+20. What should the SPA show on an unknown hostname: a dedicated generic error page or the API's `400` response? 
+	- a fun landing page that says something about, "no one owns this library yet." or something. 
+	
 21. Which library receives the existing seeded catalog, and should the other first boot with schema/system shelves
     only? This affects first-run setup acceptance testing.
+	- I'm not sure i understand this question. But most other users will not have TSV to bootstrap. 
+	
 22. Which settings belong to a library versus a browser/device: media skin, setup completion, scanner preferences,
     quote behavior, and label print format? There are no user accounts in the locked model.
+	- I think most of these should be available for them to do on their own in the manage collection page 
+	
 23. Since library switching occurs by navigation to another hostname, which local state may persist across hostnames
     and which must also be namespaced defensively (for example saved Bulk Add sessions)?
+	- I might need other examples and more information to answer this. 
+	
 24. Does the hardcoded Andy/Jamie owner theme required by `PLAN-02` select a skin, sit above the media-identity/skin
     system as another override, or become obsolete when curated skins ship?
+	- Originally, yes. I see curated skins maybe as a V3. I might just stick with one new aesthetic for V2. 
+	
 25. Do Andy and Jamie receive the same enabled media types and feature set, or may availability differ by library?
+	- yes, all users should get the same options. 
 
 ## Visual identity and skins
 
@@ -102,6 +133,8 @@ the eventual authoritative feature tickets.
 31. What asset-size/performance budget should apply when every medium has multiple visual packages?
 32. Which administrative surfaces remain visually neutral—Bulk Add, tenant setup, circulation, settings—and how much
     media identity should they retain?
+	
+	Will review at a later date
 
 ## Media-aware Bulk Add
 

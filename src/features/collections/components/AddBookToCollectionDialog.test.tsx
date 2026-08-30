@@ -88,6 +88,7 @@ const book: BookRead = {
     ],
     categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
+    placement_state: 'shelved',
     status: 'available',
     is_read: false,
     isbn13: null,

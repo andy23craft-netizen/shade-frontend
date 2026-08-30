@@ -14,6 +14,7 @@ import { BooksPage } from './BooksPage'
 import type {
     BookList,
     BookRead,
+    ShelfRead,
 } from '../../../api/apiTypes'
 import { ApiError } from '../../../api/apiErrors'
 import { renderWithProviders } from '../../../test/renderAppTree'
@@ -29,6 +30,7 @@ const mockUseInfiniteIncompleteMetadataBooks =
     vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
 const mockUseBulkMoveBooksToShelf = vi.fn()
+const mockUseShelves = vi.fn()
 
 vi.mock('../../../api/booksQueries', () => ({
     useInfiniteBooks: (options: unknown) =>
@@ -45,6 +47,10 @@ vi.mock('../../../api/dashboardQueries', () => ({
         mockUseInfiniteIncompleteMetadataBooks(
             options,
         ),
+}))
+
+vi.mock('../../../api/shelvesQueries', () => ({
+    useShelves: () => mockUseShelves(),
 }))
 
 const mockUseCategories = vi.fn()
@@ -103,6 +109,7 @@ function makeBook(
             },
         ],
         shelf_name: 'liz_tbr',
+        placement_state: 'shelved',
         status: 'available',
         is_read: false,
         isbn13: null,
@@ -190,10 +197,34 @@ describe('BooksPage', () => {
         mockUseInfiniteScrollTrigger.mockReset()
         mockUseCategories.mockReset()
         mockUseBulkMoveBooksToShelf.mockReset()
+        mockUseShelves.mockReset()
 
         mockUseBulkMoveBooksToShelf.mockReturnValue({
             mutate: vi.fn(),
             isPending: false,
+        })
+
+        mockUseShelves.mockReturnValue({
+            data: [
+                {
+                    shelf_id: 'shelf-a3',
+                    common_name: 'a3',
+                    location: null,
+                    description: null,
+                    created_date: '2026-01-01T00:00:00Z',
+                    updated_date: '2026-01-01T00:00:00Z',
+                },
+                {
+                    shelf_id: 'shelf-removed',
+                    common_name: 'removed',
+                    location: null,
+                    description: null,
+                    created_date: '2026-01-01T00:00:00Z',
+                    updated_date: '2026-01-01T00:00:00Z',
+                },
+            ] satisfies ShelfRead[],
+            isPending: false,
+            isError: false,
         })
 
         mockUseInfiniteScrollTrigger.mockReturnValue({
@@ -1006,6 +1037,43 @@ describe('BooksPage', () => {
         ).toHaveAttribute(
             'href',
             '/books/book-dune',
+        )
+    })
+
+    it('filters by a visible shelf control and preserves the URL model', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([
+                {
+                    total: 1,
+                    items: [makeBook()],
+                },
+            ]),
+        )
+
+        renderBooksPage()
+
+        expect(
+            screen.queryByRole('option', {
+                name: 'Removed',
+            }),
+        ).not.toBeInTheDocument()
+
+        fireEvent.change(
+            screen.getByLabelText('Shelf'),
+            {
+                target: { value: 'a3' },
+            },
+        )
+
+        expect(
+            screen.getByTestId('location'),
+        ).toHaveTextContent('/books?shelf_name=a3')
+        expect(
+            mockUseInfiniteBooks,
+        ).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                shelfName: 'a3',
+            }),
         )
     })
 

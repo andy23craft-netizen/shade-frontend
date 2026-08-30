@@ -43,6 +43,7 @@ export const queryKeys = {
                 title?: string
                 categoryIds?: readonly string[]
                 shelfName?: string
+                placementState?: string
                 isRead?: boolean
                 sortBy?: string
                 sortOrder?: string
@@ -71,6 +72,7 @@ export const queryKeys = {
                 title?: string
                 categoryIds?: string[]
                 shelfName?: string
+                placementState?: string
                 isRead?: boolean
                 sortBy?: string
                 sortOrder?: string
@@ -101,6 +103,11 @@ export const queryKeys = {
                 key.shelfName = shelfName
             }
 
+            if (options.placementState !== undefined) {
+                key.placementState =
+                    options.placementState
+            }
+
             if (options.isRead !== undefined) {
                 key.isRead = options.isRead
             }
@@ -126,6 +133,7 @@ export const queryKeys = {
                 title?: string
                 categoryIds?: readonly string[]
                 shelfName?: string
+                placementState?: string
                 isRead?: boolean
                 skip?: number
                 take?: number
@@ -156,6 +164,7 @@ export const queryKeys = {
                 title?: string
                 categoryIds?: string[]
                 shelfName?: string
+                placementState?: string
                 isRead?: boolean
                 skip?: number
                 take?: number
@@ -182,6 +191,11 @@ export const queryKeys = {
 
             if (shelfName !== undefined) {
                 key.shelfName = shelfName
+            }
+
+            if (options.placementState !== undefined) {
+                key.placementState =
+                    options.placementState
             }
 
             if (options.isRead !== undefined) {

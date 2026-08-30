@@ -5,6 +5,7 @@ import { Button } from '../../../components/Button'
 import {
     BulkMoveToShelfControl,
 } from './BulkMoveToShelfControl'
+import { BulkStashControl } from './BulkStashControl'
 
 interface BooksBulkActionsProps {
     selectedBookIds: readonly string[]
@@ -13,6 +14,7 @@ interface BooksBulkActionsProps {
     onClear: () => void
     onExit: () => void
     onMoveSuccess?: (response: BulkShelfMoveResponse) => void
+    reviewMode?: boolean
 }
 
 export function BooksBulkActions({
@@ -22,6 +24,7 @@ export function BooksBulkActions({
                                      onClear,
                                      onExit,
     onMoveSuccess,
+    reviewMode = false,
 }: BooksBulkActionsProps) {
     return (
         <section
@@ -55,6 +58,13 @@ export function BooksBulkActions({
                     }}
                 />
 
+                {reviewMode ? (
+                    <BulkStashControl
+                        selectedBookIds={selectedBookIds}
+                        onSuccess={onClear}
+                    />
+                ) : null}
+
                 <Button
                     type="button"
                     variant="secondary"
@@ -69,7 +79,9 @@ export function BooksBulkActions({
                     variant="secondary"
                     onClick={onExit}
                 >
-                    Exit selection
+                    {reviewMode
+                        ? 'Finish Review'
+                        : 'Exit selection'}
                 </Button>
             </div>
         </section>

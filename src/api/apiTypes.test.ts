@@ -37,6 +37,7 @@ describe('API transport types', () => {
             ],
             categories: [],
             shelf_name: 'unknown',
+            placement_state: 'shelved',
             status: 'available',
             is_read: false,
             creation_date: '2026-08-01T00:00:00Z',
@@ -151,6 +152,7 @@ describe('API transport types', () => {
             unread: 10,
             recently_added: 1,
             recent_window_days: 30,
+            stash_count: 0,
             borrowing: {
                 active_loans: 0,
                 lifetime_loans: 0,

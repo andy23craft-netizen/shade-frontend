@@ -28,10 +28,13 @@ import type {
     BookUpdate,
     BulkBookImportRequest,
     BulkBookLookupRequest,
+    BulkBookStashRequest,
     BulkShelfMoveRequest,
+    BulkStashApplyRequest,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
+    PlacementState,
 } from './apiTypes'
 
 function getNextListPageParam(
@@ -180,6 +183,7 @@ export function useBooks(
         title?: string
         categoryIds?: readonly string[]
         shelfName?: string
+        placementState?: PlacementState
         isRead?: boolean
         skip?: number
         take?: number
@@ -200,6 +204,7 @@ export function useBooks(
     const title = options.title
     const categoryIds = options.categoryIds
     const shelfName = options.shelfName
+    const placementState = options.placementState
     const isRead = options.isRead
     const skip = options.skip
     const take = options.take
@@ -214,6 +219,7 @@ export function useBooks(
             title,
             categoryIds,
             shelfName,
+            placementState,
             isRead,
             skip,
             take,
@@ -229,6 +235,7 @@ export function useBooks(
                 title,
                 categoryIds,
                 shelfName,
+                placementState,
                 isRead,
                 skip,
                 take,
@@ -247,6 +254,7 @@ export function useInfiniteBooks(
         title?: string
         categoryIds?: readonly string[]
         shelfName?: string
+        placementState?: PlacementState
         isRead?: boolean
         sortBy?: string
         sortOrder?: string
@@ -265,6 +273,7 @@ export function useInfiniteBooks(
     const title = options.title
     const categoryIds = options.categoryIds
     const shelfName = options.shelfName
+    const placementState = options.placementState
     const isRead = options.isRead
     const sortBy = options.sortBy
     const sortOrder = options.sortOrder
@@ -277,6 +286,7 @@ export function useInfiniteBooks(
             title,
             categoryIds,
             shelfName,
+            placementState,
             isRead,
             sortBy,
             sortOrder,
@@ -293,6 +303,7 @@ export function useInfiniteBooks(
                 title,
                 categoryIds,
                 shelfName,
+                placementState,
                 isRead,
                 skip: pageParam,
                 take: INFINITE_SCROLL_BATCH_SIZE,
@@ -632,6 +643,52 @@ export function useBulkMoveBooksToShelf() {
             await invalidateBulkShelfMoveCaches(
                 queryClient,
                 response.book_ids,
+            )
+        },
+    })
+}
+
+export function useBulkStashBooks() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const booksApi = createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (request: BulkBookStashRequest) =>
+            booksApi.stash(request),
+        onSuccess: async (response) => {
+            await invalidateBulkShelfMoveCaches(
+                queryClient,
+                response.book_ids,
+            )
+        },
+        onError: async (_error, request) => {
+            await invalidateBulkShelfMoveCaches(
+                queryClient,
+                request.book_ids,
+            )
+        },
+    })
+}
+
+export function useBulkApplyStash() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const booksApi = createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (request: BulkStashApplyRequest) =>
+            booksApi.applyStash(request),
+        onSuccess: async (response) => {
+            await invalidateBulkShelfMoveCaches(
+                queryClient,
+                response.book_ids,
+            )
+        },
+        onError: async (_error, request) => {
+            await invalidateBulkShelfMoveCaches(
+                queryClient,
+                request.book_ids,
             )
         },
     })

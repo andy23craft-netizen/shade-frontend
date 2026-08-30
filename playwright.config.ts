@@ -5,7 +5,10 @@ export default defineConfig({
     fullyParallel: true,
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    // Vite compiles lazy route chunks on demand in the e2e dev server. Running
+    // every browser test in parallel can make those first-load compilations
+    // contend until the tests time out at the shared Suspense fallback.
+    workers: 1,
     reporter: [
         ['list'],
         ['html', { open: 'never' }],

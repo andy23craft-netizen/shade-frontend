@@ -41,10 +41,12 @@ export function bookFormValuesFromBook(
             (category) => category.category_id,
         ),
         shelfId:
-            shelfIdByCommonName(
-                shelves,
-                book.shelf_name,
-            ) ?? '',
+            book.shelf_name
+                ? shelfIdByCommonName(
+                    shelves,
+                    book.shelf_name,
+                ) ?? ''
+                : '',
         tags: book.tags?.join(', ') ?? '',
         acquisition_source:
             book.acquisition_source ?? '',

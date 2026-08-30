@@ -6,6 +6,7 @@ import {
     useMatches,
 } from 'react-router-dom'
 import { useVersion } from '../api/versionQueries'
+import { useDashboard } from '../api/dashboardQueries'
 import { LoadingState } from '../components/LoadingState'
 import { APP_VERSION } from '../config/appVersion'
 import { DrawerNavMenu } from './DrawerNavMenu'
@@ -15,10 +16,11 @@ interface RouteHandle {
     title?: string
 }
 
-const LAST_UPDATED = 'August 25, 2026'
+const LAST_UPDATED = 'August 30, 2026'
 
 export function AppShell() {
     const { data: versionData } = useVersion()
+    const { data: dashboardData } = useDashboard()
     const location = useLocation()
     const matches = useMatches()
     const mainRef = useRef<HTMLElement>(null)
@@ -102,11 +104,16 @@ export function AppShell() {
                                 '/shelves',
                                 '/collection',
                                 '/wishlists',
+                                '/stash',
                             ]}
                             items={[
                                 {
                                     label: 'Browse',
                                     to: '/books',
+                                },
+                                {
+                                    label: `Stash (${dashboardData?.stash_count ?? 0})`,
+                                    to: '/stash',
                                 },
                                 {
                                     label: 'Manage',

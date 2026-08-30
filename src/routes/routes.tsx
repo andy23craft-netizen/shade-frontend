@@ -19,6 +19,7 @@ import {
     NotFoundPage,
     ReadingEditPage,
     ShelvesPage,
+    StashPage,
     WishlistsPage,
 } from './lazyRoutePages'
 import { routeMetadata } from './routeMetadata'
@@ -54,6 +55,11 @@ export const routeConfig = [
                     title: routeMetadata.books.title,
                 },
                 element: <BooksPage />,
+            },
+            {
+                path: routeMetadata.stash.path,
+                handle: { title: routeMetadata.stash.title },
+                element: <StashPage />,
             },
             {
                 path: routeMetadata.wishlists.path,

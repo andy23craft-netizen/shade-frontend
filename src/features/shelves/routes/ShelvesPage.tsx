@@ -631,6 +631,11 @@ export function ShelvesPage() {
     ] = useState(SHELF_RENDER_BATCH_SIZE)
 
     const [
+        shelfSearch,
+        setShelfSearch,
+    ] = useState('')
+
+    const [
         createShelfOpen,
         setCreateShelfOpen,
     ] = useState(false)
@@ -665,20 +670,46 @@ export function ShelvesPage() {
             shelf.common_name !== 'removed',
     )
 
-    const visibleShelves = shelves.slice(
-        0,
-        visibleShelfCount,
-    )
+    const normalizedShelfSearch =
+        shelfSearch.trim().toLowerCase()
+
+    const matchingShelves =
+        normalizedShelfSearch === ''
+            ? shelves
+            : shelves.filter((shelf) =>
+                [
+                    shelf.common_name,
+                    formatShelfCommonNameForDisplay(
+                        shelf.common_name,
+                    ),
+                ].some((value) =>
+                    value
+                        .toLowerCase()
+                        .includes(
+                            normalizedShelfSearch,
+                        ),
+                ),
+            )
+
+    const visibleShelves =
+        normalizedShelfSearch === ''
+            ? matchingShelves.slice(
+                0,
+                visibleShelfCount,
+            )
+            : matchingShelves
 
     const hasMoreShelves =
-        visibleShelves.length < shelves.length
+        normalizedShelfSearch === '' &&
+        visibleShelves.length <
+            matchingShelves.length
 
     function exposeNextShelfBatch() {
         setVisibleShelfCount((currentCount) =>
             Math.min(
                 currentCount +
                 SHELF_RENDER_BATCH_SIZE,
-                shelves.length,
+                matchingShelves.length,
             ),
         )
     }
@@ -850,6 +881,25 @@ export function ShelvesPage() {
                 </p>
             </header>
 
+            <div className="shelves-page__search">
+                <label htmlFor="shelves-search">
+                    Find a shelf
+                </label>
+
+                <input
+                    id="shelves-search"
+                    type="search"
+                    value={shelfSearch}
+                    placeholder="Search shelves…"
+                    autoComplete="off"
+                    onChange={(event) => {
+                        setShelfSearch(
+                            event.target.value,
+                        )
+                    }}
+                />
+            </div>
+
             {actionError ? (
                 <Alert
                     variant="error"
@@ -872,6 +922,11 @@ export function ShelvesPage() {
                 <EmptyState title="No shelves yet">
                     The API returned an empty shelf
                     catalog.
+                </EmptyState>
+            ) : matchingShelves.length === 0 ? (
+                <EmptyState title="No matching shelves">
+                    Try another shelf name or clear
+                    the search.
                 </EmptyState>
             ) : (
                 <div

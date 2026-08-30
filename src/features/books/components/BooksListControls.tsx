@@ -7,6 +7,7 @@ import {
 
 import type {
     CategoryRead,
+    ShelfRead,
 } from '../../../api/apiTypes'
 import { Button } from '../../../components/Button'
 import {
@@ -16,10 +17,16 @@ import {
 import {
     sortCategoriesByName,
 } from '../categoryDisplay'
+import {
+    filterAssignableShelves,
+    formatShelfCommonNameForDisplay,
+} from '../../shelves/shelfDisplay'
 
 export interface BooksListControlsProps {
     categories: readonly CategoryRead[]
     categoryIds: readonly string[]
+    shelves: readonly ShelfRead[]
+    shelfName?: string
     author?: string
     title?: string
     isRead: boolean | undefined
@@ -31,6 +38,9 @@ export interface BooksListControlsProps {
     ) => void
     onReadStatusChange: (
         isRead: boolean | undefined,
+    ) => void
+    onShelfNameChange: (
+        shelfName: string | undefined,
     ) => void
     onSearch: (
         search: string,
@@ -89,6 +99,8 @@ function sortStateLabel(
 export function BooksListControls({
                                       categories,
                                       categoryIds,
+                                      shelves,
+                                      shelfName,
                                       author,
                                       title,
                                       isRead,
@@ -97,6 +109,7 @@ export function BooksListControls({
                                       selectionMode,
                                       onCategoryIdsChange,
                                       onReadStatusChange,
+                                      onShelfNameChange,
                                       onSearch,
                                       onClear,
                                       onSortChange,
@@ -142,6 +155,9 @@ export function BooksListControls({
 
     const sortedCategories =
         sortCategoriesByName(categories)
+
+    const assignableShelves =
+        filterAssignableShelves(shelves)
 
     const selected =
         new Set(categoryIds)
@@ -468,6 +484,38 @@ export function BooksListControls({
                     />
 
                     <span>Read</span>
+                </label>
+
+                <label className="books-toolbar__shelf">
+                    <span>Shelf</span>
+
+                    <select
+                        aria-label="Shelf"
+                        value={shelfName ?? ''}
+                        onChange={(event) => {
+                            onShelfNameChange(
+                                event.target.value ||
+                                undefined,
+                            )
+                        }}
+                    >
+                        <option value="">
+                            All shelves
+                        </option>
+
+                        {assignableShelves.map(
+                            (shelf) => (
+                                <option
+                                    key={shelf.shelf_id}
+                                    value={shelf.common_name}
+                                >
+                                    {formatShelfCommonNameForDisplay(
+                                        shelf.common_name,
+                                    )}
+                                </option>
+                            ),
+                        )}
+                    </select>
                 </label>
 
                 <button

@@ -457,6 +457,45 @@ describe('ShelvesPage', () => {
         expect(nameInput.value).toBe('unknown')
     })
 
+    it('filters the complete catalog by a partial shelf name', () => {
+        mockShelvesData = incrementalShelves
+
+        renderShelvesPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Find a shelf'),
+            {
+                target: { value: 'shelf 12' },
+            },
+        )
+
+        expect(
+            screen.getByRole('heading', {
+                name: 'Shelf 12',
+            }),
+        ).toBeInTheDocument()
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Shelf 1',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('shows a no-results state for shelf search', () => {
+        renderShelvesPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Find a shelf'),
+            {
+                target: { value: 'not here' },
+            },
+        )
+
+        expect(
+            screen.getByText('No matching shelves'),
+        ).toBeInTheDocument()
+    })
+
     it('creates a shelf with normalized common_name', async () => {
         mockCreateMutate.mockImplementation(
             (_body, options) => {

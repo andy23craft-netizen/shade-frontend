@@ -8,11 +8,16 @@ import type {
     BulkBookImportResponse,
     BulkBookLookupRequest,
     BulkBookLookupResponse,
+    BulkBookStashRequest,
+    BulkBookStashResponse,
     BulkShelfMoveRequest,
     BulkShelfMoveResponse,
+    BulkStashApplyRequest,
+    BulkStashApplyResponse,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
+    PlacementState,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -39,6 +44,7 @@ export interface ListBooksOptions
     title?: string
     categoryIds?: readonly string[]
     shelfName?: string
+    placementState?: PlacementState
     isRead?: boolean
     skip?: number
     take?: number
@@ -128,6 +134,11 @@ export function createBooksApi(
                 params,
                 'shelf_name',
                 options.shelfName,
+            )
+            setOptionalStringParam(
+                params,
+                'placement_state',
+                options.placementState,
             )
 
             if (options.isRead !== undefined) {
@@ -289,6 +300,35 @@ export function createBooksApi(
                 {
                     method: 'POST',
                     body: pickBulkShelfMoveRequest(request),
+                },
+            )
+        },
+
+        async stash(
+            request: BulkBookStashRequest,
+        ): Promise<BulkBookStashResponse> {
+            return client.requestJson<BulkBookStashResponse>(
+                '/books/bulk/stash',
+                {
+                    method: 'POST',
+                    body: {
+                        book_ids: [...request.book_ids],
+                    },
+                },
+            )
+        },
+
+        async applyStash(
+            request: BulkStashApplyRequest,
+        ): Promise<BulkStashApplyResponse> {
+            return client.requestJson<BulkStashApplyResponse>(
+                '/books/bulk/apply-stash',
+                {
+                    method: 'POST',
+                    body: {
+                        book_ids: [...request.book_ids],
+                        shelf_name: request.shelf_name,
+                    },
                 },
             )
         },

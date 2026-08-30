@@ -334,9 +334,11 @@ export function BookDetailsPage() {
                     <div className="book-details-card__field">
                         <dt>Shelf</dt>
                         <dd>
-                            {formatShelfCommonNameForDisplay(
-                                book.shelf_name,
-                            )}
+                            {book.placement_state === 'stashed'
+                                ? 'Stash'
+                                : book.shelf_name
+                                    ? formatShelfCommonNameForDisplay(book.shelf_name)
+                                    : 'Unshelved'}
                         </dd>
                     </div>
 

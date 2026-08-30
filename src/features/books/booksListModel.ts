@@ -1,4 +1,5 @@
 import { compactIsbnForListFilter } from './utils/isbn'
+import type { PlacementState } from '../../api/apiTypes'
 
 export {
     INFINITE_SCROLL_BATCH_SIZE as BOOKS_BATCH_SIZE,
@@ -46,6 +47,23 @@ const CLEANUP_FIELD_VALUES:
     'year',
     'isbn',
 ]
+
+const PLACEMENT_STATE_VALUES: readonly PlacementState[] = [
+    'shelved',
+    'stashed',
+    'unshelved',
+]
+
+export function parsePlacementStateParam(
+    value: string | null,
+): PlacementState | undefined {
+    return value !== null &&
+        PLACEMENT_STATE_VALUES.includes(
+            value as PlacementState,
+        )
+        ? value as PlacementState
+        : undefined
+}
 
 export function parseSortByParam(
     value: string | null,

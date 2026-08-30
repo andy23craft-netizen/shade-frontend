@@ -44,10 +44,13 @@ export function HomeStaffPick({
     const publicationYear =
         book.publication_date?.slice(0, 4)
 
-    const shelf =
-        formatShelfCommonNameForDisplay(
+    const shelf = book.shelf_name
+        ? formatShelfCommonNameForDisplay(
             book.shelf_name,
         )
+        : book.placement_state === 'stashed'
+            ? 'Stash'
+            : 'Unshelved'
 
     return (
         <div className="home-book-deck__item">

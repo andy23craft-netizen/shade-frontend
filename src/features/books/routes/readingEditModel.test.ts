@@ -27,6 +27,7 @@ const readBook: BookRead = {
     isbn13: '9780679723427',
     categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
     shelf_name: 'a1',
+    placement_state: 'shelved',
     status: 'available',
     publication_date: '1962',
     publisher: 'Vintage',

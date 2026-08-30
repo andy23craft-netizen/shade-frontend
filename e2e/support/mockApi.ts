@@ -40,6 +40,7 @@ export interface MockApiController {
 export type DashboardFixture = DashboardSummary
 
 export const emptyDashboardFixture: DashboardFixture = {
+    stash_count: 0,
     total_books: 0,
     checked_out: 0,
     read: 0,
@@ -176,6 +177,8 @@ export function makeBook(
             },
         ],
         shelf_name: 'a1',
+        placement_state: 'shelved',
+        previous_shelf_name: null,
         status: 'available',
         publication_date: '1962',
         publisher: 'Vintage',
@@ -301,6 +304,9 @@ function listBooks(
         .getAll('category_id')
         .map((value) => value.trim())
         .filter((value) => value !== '')
+    const shelfName = url.searchParams.get('shelf_name')
+    const placementState =
+        url.searchParams.get('placement_state')
     const sortBy = url.searchParams.get('sortBy')
     const sortOrder =
         url.searchParams.get('sortOrder') === 'desc'
@@ -351,6 +357,23 @@ function listBooks(
         })
     }
 
+    if (shelfName !== null) {
+        books = books.filter(
+            (book) => book.shelf_name === shelfName,
+        )
+    }
+
+    if (placementState !== null) {
+        books = books.filter(
+            (book) =>
+                book.placement_state === placementState,
+        )
+    } else {
+        books = books.filter(
+            (book) => book.placement_state === 'shelved',
+        )
+    }
+
     if (sortBy !== null) {
         books = [...books].sort((left, right) => {
             let leftValue = ''
@@ -373,8 +396,8 @@ function listBooks(
                     break
 
                 case 'shelf':
-                    leftValue = left.shelf_name
-                    rightValue = right.shelf_name
+                    leftValue = left.shelf_name ?? ''
+                    rightValue = right.shelf_name ?? ''
                     break
             }
 
@@ -534,6 +557,10 @@ function calculateDashboard(
         activeBooks.length - booksRead
 
     return {
+        stash_count: activeBooks.filter(
+            (book) =>
+                book.placement_state === 'stashed',
+        ).length,
         total_books: activeBooks.length,
         checked_out: activeBooks.filter(
             (book) =>
@@ -885,6 +912,98 @@ export async function installMockApi(
                         calculateDashboard(
                             state,
                         ),
+                })
+                return
+            }
+
+            if (
+                method === 'POST' &&
+                url.pathname === '/books/bulk/stash'
+            ) {
+                const body = readRequestBody(route) as {
+                    book_ids?: string[]
+                }
+                const selected = (body.book_ids ?? []).map(
+                    (bookId) => findBook(state, bookId),
+                )
+
+                if (selected.some(
+                    (book) =>
+                        !book || book.placement_state !== 'shelved',
+                )) {
+                    await fulfillJson(route, {
+                        status: 409,
+                        body: { detail: 'One or more books are not shelved' },
+                    })
+                    return
+                }
+
+                const items = selected.map((book, index) => {
+                    const previousShelfName = book?.shelf_name ?? 'unknown'
+
+                    if (book) {
+                        book.shelf_name = null
+                        book.placement_state = 'stashed'
+                        book.previous_shelf_name = previousShelfName
+                    }
+
+                    return {
+                        book_id: body.book_ids?.[index] ?? '',
+                        previous_shelf_name: previousShelfName,
+                    }
+                })
+
+                await fulfillJson(route, {
+                    body: {
+                        book_ids: body.book_ids ?? [],
+                        stashed_count: items.length,
+                        items,
+                    },
+                })
+                return
+            }
+
+            if (
+                method === 'POST' &&
+                url.pathname === '/books/bulk/apply-stash'
+            ) {
+                const body = readRequestBody(route) as {
+                    book_ids?: string[]
+                    shelf_name?: string
+                }
+                const destination = body.shelf_name ?? ''
+                const preexisting = state.books.filter(
+                    (book) =>
+                        book.placement_state === 'shelved' &&
+                        book.shelf_name === destination,
+                ).length
+                const selected = (body.book_ids ?? []).map(
+                    (bookId) => findBook(state, bookId),
+                )
+
+                if (selected.some((book) => !book || book.placement_state !== 'stashed')) {
+                    await fulfillJson(route, {
+                        status: 409,
+                        body: { detail: 'One or more books are not stashed' },
+                    })
+                    return
+                }
+
+                for (const book of selected) {
+                    if (!book) continue
+                    book.shelf_name = destination
+                    book.placement_state = 'shelved'
+                    book.previous_shelf_name = null
+                }
+
+                await fulfillJson(route, {
+                    body: {
+                        applied_count: selected.length,
+                        book_ids: body.book_ids ?? [],
+                        destination_shelf: destination,
+                        destination_preexisting_count: preexisting,
+                        destination_was_occupied: preexisting > 0,
+                    },
                 })
                 return
             }

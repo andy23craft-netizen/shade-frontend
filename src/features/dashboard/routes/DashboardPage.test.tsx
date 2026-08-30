@@ -42,6 +42,7 @@ vi.mock('../../../api/dashboardQueries', () => ({
 }))
 
 const dashboardFixture: DashboardSummary = {
+    stash_count: 0,
     total_books: 542,
     checked_out: 7,
     read: 318,
@@ -356,6 +357,7 @@ describe('DashboardPage', () => {
                 unread: 0,
                 recently_added: 0,
                 recent_window_days: 30,
+                stash_count: 0,
                 borrowing: {
                     active_loans: 0,
                     lifetime_loans: 0,

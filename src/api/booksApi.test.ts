@@ -15,8 +15,10 @@ import type {
     BulkBookImportResponse,
     BulkBookLookupRequest,
     BulkBookLookupResponse,
+    BulkBookStashResponse,
     BulkShelfMoveRequest,
     BulkShelfMoveResponse,
+    BulkStashApplyResponse,
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
@@ -85,6 +87,24 @@ describe('createBooksApi', () => {
             client.getJson,
         ).toHaveBeenCalledWith(
             '/books?isbn=9780441',
+        )
+    })
+
+    it('lists stashed books through placement_state', async () => {
+        const client = createMockClient()
+        vi.mocked(client.getJson).mockResolvedValue({
+            items: [],
+            total: 0,
+        })
+
+        await createBooksApi(client).list({
+            placementState: 'stashed',
+            sortBy: 'author',
+            sortOrder: 'asc',
+        })
+
+        expect(client.getJson).toHaveBeenCalledWith(
+            '/books?placement_state=stashed&sortBy=author&sortOrder=asc',
         )
     })
 
@@ -1263,4 +1283,59 @@ describe('createBooksApi', () => {
             )
         },
     )
+
+    it('stashes selected books atomically', async () => {
+        const response: BulkBookStashResponse = {
+            book_ids: ['book-1'],
+            stashed_count: 1,
+            items: [{
+                book_id: 'book-1',
+                previous_shelf_name: 'a1',
+            }],
+        }
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue(response)
+
+        const result = await createBooksApi(client).stash({
+            book_ids: ['book-1'],
+        })
+
+        expect(client.requestJson).toHaveBeenCalledWith(
+            '/books/bulk/stash',
+            {
+                method: 'POST',
+                body: { book_ids: ['book-1'] },
+            },
+        )
+        expect(result).toBe(response)
+    })
+
+    it('applies a selected Stash subset atomically', async () => {
+        const response: BulkStashApplyResponse = {
+            applied_count: 2,
+            book_ids: ['book-1', 'book-2'],
+            destination_shelf: 'e3',
+            destination_preexisting_count: 4,
+            destination_was_occupied: true,
+        }
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue(response)
+
+        const result = await createBooksApi(client).applyStash({
+            book_ids: ['book-1', 'book-2'],
+            shelf_name: 'e3',
+        })
+
+        expect(client.requestJson).toHaveBeenCalledWith(
+            '/books/bulk/apply-stash',
+            {
+                method: 'POST',
+                body: {
+                    book_ids: ['book-1', 'book-2'],
+                    shelf_name: 'e3',
+                },
+            },
+        )
+        expect(result).toBe(response)
+    })
 })

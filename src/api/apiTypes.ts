@@ -49,6 +49,17 @@ export type BulkShelfMoveRequest =
 export type BulkShelfMoveResponse =
     Schemas['BulkShelfMoveResponse']
 
+export type BulkBookStashRequest =
+    Schemas['BulkBookStashRequest']
+export type BulkBookStashResponse =
+    Schemas['BulkBookStashResponse']
+export type BulkStashApplyRequest =
+    Schemas['BulkStashApplyRequest']
+export type BulkStashApplyResponse =
+    Schemas['BulkStashApplyResponse']
+export type PlacementState =
+    Schemas['PlacementState']
+
 export type BookLookupDraft =
     Schemas['BookLookupDraft']
 
@@ -183,4 +194,3 @@ export type CollectionBookReorder =
 
 export type Status =
     Schemas['Status']
-

@@ -76,6 +76,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/bulk/apply-stash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Apply Stash */
+        post: operations["bulk_apply_stash_books_bulk_apply_stash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/bulk/import": {
         parameters: {
             query?: never;
@@ -121,6 +138,23 @@ export interface paths {
         put?: never;
         /** Bulk Move Books To Shelf */
         post: operations["bulk_move_books_to_shelf_books_bulk_move_to_shelf_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/bulk/stash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Stash Books */
+        post: operations["bulk_stash_books_books_bulk_stash_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -776,6 +810,9 @@ export interface components {
             notes?: string | null;
             /** Pages */
             pages?: number | null;
+            placement_state: components["schemas"]["PlacementState"];
+            /** Previous Shelf Name */
+            previous_shelf_name?: string | null;
             /** Publication Date */
             publication_date?: string | null;
             /** Publisher */
@@ -789,7 +826,7 @@ export interface components {
             /** Review */
             review?: string | null;
             /** Shelf Name */
-            shelf_name: string;
+            shelf_name?: string | null;
             /** @default available */
             status: components["schemas"]["Status"];
             /** Tags */
@@ -940,6 +977,27 @@ export interface components {
          * @enum {string}
          */
         BulkBookLookupStatus: "found" | "not_found" | "invalid_isbn" | "provider_timeout" | "provider_failure";
+        /** BulkBookStashItem */
+        BulkBookStashItem: {
+            /** Book Id */
+            book_id: string;
+            /** Previous Shelf Name */
+            previous_shelf_name: string;
+        };
+        /** BulkBookStashRequest */
+        BulkBookStashRequest: {
+            /** Book Ids */
+            book_ids: string[];
+        };
+        /** BulkBookStashResponse */
+        BulkBookStashResponse: {
+            /** Book Ids */
+            book_ids: string[];
+            /** Items */
+            items: components["schemas"]["BulkBookStashItem"][];
+            /** Stashed Count */
+            stashed_count: number;
+        };
         /** BulkShelfMoveRequest */
         BulkShelfMoveRequest: {
             /** Book Ids */
@@ -955,6 +1013,26 @@ export interface components {
             moved_count: number;
             /** Shelf Name */
             shelf_name: string;
+        };
+        /** BulkStashApplyRequest */
+        BulkStashApplyRequest: {
+            /** Book Ids */
+            book_ids: string[];
+            /** Shelf Name */
+            shelf_name: string;
+        };
+        /** BulkStashApplyResponse */
+        BulkStashApplyResponse: {
+            /** Applied Count */
+            applied_count: number;
+            /** Book Ids */
+            book_ids: string[];
+            /** Destination Preexisting Count */
+            destination_preexisting_count: number;
+            /** Destination Shelf */
+            destination_shelf: string;
+            /** Destination Was Occupied */
+            destination_was_occupied: boolean;
         };
         /** CategoryCreate */
         CategoryCreate: {
@@ -1145,6 +1223,8 @@ export interface components {
             recent_window_days: number;
             /** Recently Added */
             recently_added: number;
+            /** Stash Count */
+            stash_count: number;
             /** Total Books */
             total_books: number;
             /** Unread */
@@ -1208,6 +1288,11 @@ export interface components {
             /** Review */
             review?: string | null;
         };
+        /**
+         * PlacementState
+         * @enum {string}
+         */
+        PlacementState: "shelved" | "stashed" | "unshelved";
         /** ShelfCreate */
         ShelfCreate: {
             /** Common Name */
@@ -1617,6 +1702,7 @@ export interface operations {
                 updated_date_max?: string | null;
                 category_id?: string[] | null;
                 shelf_name?: string | null;
+                placement_state?: components["schemas"]["PlacementState"] | null;
                 is_read?: boolean | null;
                 status?: components["schemas"]["Status"] | null;
                 skip?: number | null;
@@ -1709,6 +1795,84 @@ export interface operations {
                 };
             };
             /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_apply_stash_books_bulk_apply_stash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkStashApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkStashApplyResponse"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Precondition failed */
             412: {
                 headers: {
                     [name: string]: unknown;
@@ -1870,7 +2034,94 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_stash_books_books_bulk_stash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkBookStashRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkBookStashResponse"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Precondition failed */
             412: {
                 headers: {
                     [name: string]: unknown;
@@ -2106,6 +2357,15 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
