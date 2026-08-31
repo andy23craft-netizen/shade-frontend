@@ -196,8 +196,8 @@ Locked behavior:
   frontend design work.
 * Vite must accept the two `*.localhost` development hosts, and frontend documentation must use those URLs for local
   testing.
-* The SPA must not restore a browser backup surface. Backup scoping and multi-file capture remain backend/operator
-  concerns.
+* The existing removal of the browser backup-download page remains valid. V2 disaster recovery is a separate,
+  safety-critical workflow; whether it has any browser surface or stays operator-only is an explicit planning decision.
 
 ### Contract status
 
@@ -355,13 +355,16 @@ must be stored separately from the shelf are still open. Those rules require a b
 
 ## 10. Quote-coordinated Home presentation
 
-**V2 commitment:** Home presentation responds deliberately to the active quote; the quote is not an isolated rotating
-text block.
+**V2 commitment:** The randomly selected Home quote supplies a curated verbal theme for the major section headings on
+that page load. The quote is not an isolated rotating text block.
 
 ### Existing quote work to preserve
 
 Home currently chooses one random entry per page mount from the frontend `homeQuotes` pool and lets the user expand its
-context. `PRODUCT_REQS.V2.pass-2.md` and `PRODUCT_REQS.V2.quote-bucket.md` separately define a future weather-aware
+context. That per-load random behavior remains the basis for this feature. Reloading or remounting Home may select a
+different quote and therefore a different heading set.
+
+`PRODUCT_REQS.V2.pass-2.md` and `PRODUCT_REQS.V2.quote-bucket.md` separately describe a possible future weather-aware
 quote system:
 
 * quotes become structured records rather than only hardcoded frontend text;
@@ -371,19 +374,43 @@ quote system:
   pattern varied; and
 * weather-aware quote selection remains separate from weather-based book recommendations.
 
-The quote corpus is explicitly a candidate corpus requiring a second source-verification pass, not final production
-data.
+The weather-aware system is not required to implement quote-themed headings. If weather selection is later adopted,
+the selected quote can use the same curated heading metadata. Weather-based quote selection remains separate from
+weather-based book recommendations.
 
-### New presentation requirement
+The larger quote corpus is explicitly a candidate corpus requiring a second source-verification pass, not final
+production data.
 
-The active quote should supply a presentation key or other curated mapping used by Home headings and page treatment.
-The relationship must be authored and bounded: quote text must never be interpreted as CSS, HTML, or an asset path.
-The base Home structure and accessible names should remain stable while approved decorative text/treatment changes.
-A deterministic fallback is required for records without a presentation mapping and for failed quote/weather loads.
+### Curated heading pairs
 
-The prior documents do not define which headings change, how treatments map to quotes, whether the presentation is
-weather-derived or quote-specific, or how much of Home is affected. Those decisions are required before a ticket can
-be written.
+Each production quote should carry or map to an explicitly authored display phrase for each participating Home
+section. The initial sections are:
+
+* **New Additions**
+* **Browse the Stacks** / categories
+* **Staff Picks**
+
+For Kafka's “axe for the frozen sea” quote, for example, the New Additions display phrase might be **Newest Axes** and
+the category section might use **Crack the Frozen Sea**. These examples communicate the desired metaphor but are not
+approved final copy.
+
+Every participating section displays a two-level heading treatment:
+
+1. The quote-specific phrase appears first as the prominent, expressive heading.
+2. The stable functional heading appears immediately beneath it in a smaller, consistent type treatment—for example,
+   **New Additions**, **Browse the Stacks**, or **Staff Picks**.
+
+The stable label must remain visible text, not only screen-reader text, a tooltip, or an `aria-label`. It keeps the page
+understandable when the metaphorical phrase is playful or indirect. The quote-specific phrase may change on reload;
+the functional label, section purpose, links, and content do not.
+
+The mapping is curated per quote rather than generated from quote text at runtime. Quote text must never be interpreted
+as markup, CSS, executable content, or an asset path. A quote without a complete approved mapping falls back to the
+ordinary functional headings instead of displaying missing, generic, or machine-invented copy.
+
+The heading pair must form one understandable section label for assistive technology without causing confusing
+duplicate heading navigation. Exact semantic markup and whether any secondary Home sections participate should be
+settled in the frontend ticket.
 
 ## 11. Borrower signature capture
 
@@ -479,7 +506,107 @@ Media selection will affect domain fields and visual environment. It needs a per
 mobile-appropriate interaction with defined URL/deep-link behavior and a predictable fallback when the selected
 medium is unavailable to the active tenant.
 
-## 15. Post-V1 observation period
+## 15. Persistent Books controls and infinite-scroll navigation
+
+**V2 commitment:** Books filtering and sorting remain usable while the user moves through a long result set, and every
+automatic infinite-scroll surface provides a consistent way to return to the top.
+
+### Books filter and sort rail
+
+The main Books list currently places `BooksListControls` above the results. Because results load continuously, changing
+a filter or sort after browsing deeply requires a long return to the top.
+
+On layouts wide enough to support it, the complete filter/sort control group should move into a persistent side rail
+beside the book results. The rail should:
+
+* remain available as the document scrolls, normally through a sticky treatment within the page layout;
+* expose the same URL-backed search, category, read-state, placement, and sort behavior rather than creating a second
+  filter model;
+* show active selections and retain the existing clear/reset behavior;
+* remain usable when its controls are taller than the viewport, with an intentional internal or page-scrolling
+  strategy that does not make lower controls unreachable;
+* preserve space for book cards and bulk-selection controls without covering results; and
+* keep filter application, loading, empty, error, cleanup, ISBN deep-link, and bulk-selection states understandable.
+
+The rail is a responsive enhancement, not a requirement to squeeze a sidebar beside a 320-pixel viewport. On narrow
+screens, the same controls should use an accessible compact treatment—such as a persistent Filters and Sort trigger
+opening an inline panel or drawer—while preserving the active-filter summary and URL state. The exact side and mobile
+interaction remain design decisions.
+
+This requirement applies to the main Books catalog and its cleanup mode. The later album catalog should adopt the
+same persistent-control pattern if its list uses continuous scrolling, while keeping album-specific fields.
+
+### Shared Back to Top control
+
+Any page that automatically appends content as the user approaches the end must provide a visible **Back to Top**
+control after the user has moved meaningfully away from the top. Current applicable surfaces are:
+
+* Books, including incomplete-metadata cleanup results;
+* Loans;
+* collection membership lists;
+* wishlist membership lists; and
+* the progressively revealed Shelves list.
+
+Future infinite lists, including albums if implemented that way, inherit the requirement. A short page that has not
+required meaningful scrolling should not display a needless floating control. A manually paged or explicit “Load
+more” surface only inherits it when its accumulated content can create the same navigation problem.
+
+The control should use one shared component and behavior, remain reachable by keyboard and touch, have an explicit
+accessible name, respect safe areas and other sticky controls, and never obscure important content. Returning to the
+top may animate only when reduced motion is not requested. The destination and focus behavior must be consistent and
+should restore useful context at the page heading or list controls rather than leaving keyboard focus stranded in an
+off-screen floating button.
+
+## 16. Restore from backup / disaster recovery
+
+**V2 commitment:** A verified backup can be used to recover a damaged or unusable library. Producing backup files
+without a documented, tested restoration path is not sufficient disaster recovery.
+
+### Current state and boundary
+
+The backend currently produces an authenticated `application/sql` dump through `GET /backup`, and the operator-side
+scheduled job retains changed dumps. The frontend deliberately has no backup-download page. There is currently no
+supported restore command, restore endpoint, recovery runbook, or automated restore verification.
+
+Under the planned multi-library model, each backup and restore target is one named library database, such as
+`andy.db` or `jamie.db`. A restore must never infer the target from dump contents, restore one person's data into
+another person's library, or silently affect every library on the instance.
+
+### Required recovery behavior
+
+The supported workflow must:
+
+1. Require an explicit source backup and explicit target library.
+2. Validate that the artifact is an expected Shade SQL backup, is readable, and is compatible with a supported schema
+   or migration path before touching the live database.
+3. Prevent writes to the target library while its database is being replaced.
+4. Create a separate pre-restore safety copy of the current target database whenever it is readable enough to do so.
+5. Restore into a temporary database, apply the supported migrations, and run SQLite integrity and application-level
+   checks before activation.
+6. Activate the restored database atomically so the API never serves a partially replayed database.
+7. Preserve the pre-restore database until the restored library has passed post-activation smoke checks.
+8. Roll back to the pre-restore copy if activation or verification fails.
+9. Report which library, backup, schema/application version, and verification result were involved without logging or
+   exposing catalog contents.
+10. Include a maintained operator runbook and a repeatable recovery test using non-production fixtures.
+
+Restoration is destructive to the target library's current state and must require deliberate confirmation. It must not
+be triggered by an ordinary page load, first-run empty-state detection, or an untrusted filename. A TSV bootstrap is
+an initial import path, not a substitute for restoring a complete operational backup.
+
+### Completeness gap
+
+The SQL dump protects database content but does not contain uploaded cover image files or future signature/artwork
+files. V2 must explicitly decide whether “restore from backup” means database-only recovery or a complete library
+recovery bundle that also protects referenced files. The UI must not claim complete recovery if restored rows point to
+files that were never backed up.
+
+The restore entry point, authorization model, retention of safety copies, version-compatibility window, and treatment
+of non-database files remain open. Because the existing shared Bearer secret is available to the browser, merely
+protecting a destructive restore endpoint with that same token may be insufficient; operator-only CLI or host tooling
+is the safer baseline unless a stronger administrative authorization mechanism is approved.
+
+## 17. Post-V1 observation period
 
 After V1 goes live, pause active feature development for approximately one week and use the application normally.
 Record cumbersome interactions, weak pages, technically complete but unpolished behavior, repetitive actions, missing
@@ -502,8 +629,10 @@ Committed release outcomes:
 * Stable physical-item QR labels, batch printing, and QR-aware item resolution in circulation.
 * Manual book availability controls for reserved, reading, missing, and available states.
 * Agreed automatic status behavior when books move to `Liz TBR` or `Andy TBR`.
-* Quote-coordinated Home presentation, including the agreed portion of the existing structured/weather-aware quote
-  work.
+* Persistent side filter/sort controls for Books on wide layouts, with an equivalent compact mobile treatment.
+* A shared accessible Back to Top control on automatic infinite-scroll surfaces.
+* A documented, tested, tenant-safe restore-from-backup workflow with validation and rollback.
+* Quote-specific curated Home heading phrases with the stable functional heading visibly beneath each one.
 * Borrower signature capture and rendering if the feasibility gate is approved.
 * Optional borrower ratings/reviews with owner-data separation and borrower aggregates.
 * Incorporation of selected post-V1 observations.

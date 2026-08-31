@@ -190,18 +190,25 @@ the eventual authoritative feature tickets.
 
 ## Quote-coordinated Home presentation
 
-55. Is this feature the previously documented weather-aware quote system plus coordinated visuals, or should it remain
-    random and use quote-specific presentation independent of weather?
-56. Which Home text changes with a quote: section headings, helper copy, hero treatment, all page headings, or a fixed
-    approved subset? Please provide the prior conversation that contains the agreed behavior if it exists.
-57. Is presentation mapped per individual quote, per weather family, per tone/category, or through a curated template
-    set shared by many quotes?
-58. Which visual properties may respond—background, assets, accents, typography, layout—and how does this interact with
-    media identity, skin, season, and time of day?
-59. Who owns quote records and their editorial verification? Is the candidate 50–100 quote corpus still the target,
-    and may quotes be linked to items absent from the local catalog?
-60. Is `last_displayed_date` global, per tenant, or per user/device? Who selects a quote—the backend or frontend—and
-    what is the fallback when weather or quote services fail?
+55. Is quote-themed heading behavior independent of the proposed weather-aware quote system?
+    - Yes. Home continues to choose a random quote on page load/reload. The selected quote determines the heading
+      phrases. A future weather selector can choose from the same quote records without changing this presentation
+      model.
+56. Which Home sections receive quote-specific headings?
+    - At minimum: New Additions, Browse the Stacks/categories, and Staff Picks. Confirm whether any later Home modules
+      should opt in individually rather than assuming every piece of Home copy changes.
+57. Is heading presentation mapped per quote or generated dynamically from quote text?
+    - Curated per individual quote. Each mapping supplies approved display phrases for the participating sections; the
+      application does not ask a model or algorithm to improvise copy at runtime.
+58. What remains stable when the stylized phrase changes?
+    - The true functional heading remains visibly beneath it in a smaller, consistent font. Section behavior, links,
+      accessible purpose, and content remain unchanged. Decide the exact heading markup so assistive technology hears
+      one useful section label rather than two confusing adjacent headings.
+59. Who writes and approves the phrase set for every quote, and must every quote have a complete mapping before it can
+    enter the production random pool? Is an ordinary-heading fallback acceptable while mappings are incomplete?
+60. Should this V2 feature change only heading wording/type treatment, or may a quote mapping also select decorative
+    accents? Any broader background, layout, skin, seasonal, or time-of-day changes should remain separate unless
+    explicitly approved.
 
 ## Signature capture
 
@@ -259,6 +266,49 @@ the eventual authoritative feature tickets.
 87. Which post-V1 observations have been collected, and who decides whether each is a defect, polish item, committed
     V2 feature, or later work?
 
+## Restore from backup / disaster recovery
+
+88. Should restoration be an operator-only CLI/host command, an authenticated administrative API, a browser UI, or a
+    CLI foundation with a later UI? The browser currently possesses the shared Bearer secret, so it is not a distinct
+    administrator credential.
+89. Is the existing `application/sql` dump the required restore input, or should V2 introduce a versioned recovery
+    bundle with a manifest, checksum, schema/application version, and additional files?
+90. Must V2 provide complete recovery of uploaded book covers, album artwork, future signatures, and other referenced
+    files? Current SQL backups contain database rows but not those file contents.
+91. Under multi-library operation, should one restore operation always target exactly one library, with full-instance
+    recovery performed as an explicit sequence, or is a coordinated all-libraries bundle also required?
+92. How is the target library selected and confirmed so an Andy backup cannot accidentally replace Jamie's database?
+    Should a backup manifest record its originating library and block mismatched restores by default?
+93. Which backup versions must remain restorable: only the current schema, any V2 backup through migrations, or older
+    V1 backups as well? What happens when the backup is newer than the running application?
+94. How much downtime is acceptable during restore, and is maintenance mode needed for only the target library or the
+    whole API process?
+95. How long should the automatic pre-restore safety copy be retained, where should it live, and what storage-space
+    check is required before restoration starts?
+96. Which verification gates define success: SQLite integrity, migration completion, expected core tables, API smoke
+    checks, row-count sanity checks, referenced-file checks, and manual owner confirmation?
+97. How often should an automated non-production restore drill run so the project verifies that newly produced backups
+    remain recoverable rather than discovering incompatibility during an emergency?
+
+## Persistent list controls and Back to Top
+
+98. Should the Books filter/sort rail sit on the left or right of the results on wide screens? Is there a preferred
+    reference layout or minimum width at which the side rail should appear?
+99. Should the wide-screen rail remain fully expanded, allow the user to collapse it, or collapse individual filter
+    groups while keeping active-filter counts visible?
+100. When the rail is taller than the viewport, should the rail scroll independently beneath the application header,
+     or should its sticky behavior release so the document can reach every control naturally?
+101. On mobile, should Filters and Sort open a modal drawer, expand inline above the results, or use another compact
+     treatment? Should Apply be explicit, or should URL-backed results continue updating immediately per control?
+102. Should bulk-selection actions remain above the results, join the side rail, or become a separate sticky action
+     bar while selection mode is active?
+103. Should Back to Top return to the page heading, the beginning of the result list, or the persistent controls? What
+     element should receive keyboard focus after activation?
+104. After what condition should Back to Top appear: a scroll-distance threshold, after the first additional page has
+     loaded, or whichever happens first?
+105. Should Shelves and explicit Load More surfaces use Back to Top whenever accumulated content is long, even though
+     they may not be backed by server-side infinite queries?
+
 ## Planning readiness
 
 An end-to-end V2 implementation plan is ready to create when:
@@ -268,5 +318,8 @@ An end-to-end V2 implementation plan is ready to create when:
 * the shared item/media/location and tenant/auth models are known;
 * the persisted preference and session boundaries are known;
 * the circulation, QR payload, borrower identity, feedback, and signature lifecycles are defined;
+* restore scope, artifact format, authorization, target isolation, compatibility, verification, and rollback are
+  defined;
+* the Books rail layout, mobile control treatment, and shared Back to Top destination/focus behavior are defined;
 * art direction exists for the required media/skin matrix; and
 * exploratory features have been promoted to committed scope or explicitly kept non-blocking.
