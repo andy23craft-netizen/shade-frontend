@@ -84,27 +84,35 @@ not a greenfield design.
 First-run setup should reuse the same intake engine and real catalog operations. It should add only the guidance and
 orchestration needed to build an empty library:
 
-1. Detect a genuinely empty installation from authoritative backend state, including an installation with no TSV
-   bootstrap data. Do not infer first-run solely from a temporarily empty or failed frontend query.
-2. Explain briefly that setup will organize and catalog the real collection one physical location at a time.
-3. Let the user create the first assignable location without leaving setup, then select it as the active destination.
-4. Enter the ordinary high-throughput intake workspace with scanner focus and short, contextual guidance.
-5. Save valid items while retaining unresolved items for correction, using the existing partial-success semantics.
-6. On completion of a location, let the user create or choose the next location and continue without returning to the
+1. Read explicit per-library setup state from the backend. Recommended states are `not_started`, `in_progress`, and
+   `complete`; a failed request remains an error and must never be interpreted as an empty or new library. Item counts
+   may inform setup but are not the completion signal.
+2. Ask which supported media the owner is adding, then use that medium's user-facing location term and intake fields.
+3. Ask whether the owner has a supported TSV bootstrap source. If so, enter a validated bootstrap/import path; if not,
+   continue into guided Build Mode. A disaster-recovery backup uses the separate restore workflow.
+4. Explain briefly that setup will organize and catalog the real collection one physical location at a time.
+5. Let the user create the first assignable location without leaving setup, then select it as the active destination.
+6. Enter the ordinary high-throughput intake workspace with scanner focus and short, contextual guidance.
+7. Save valid items while retaining unresolved items for correction, using the existing partial-success semantics.
+8. On completion of a location, let the user create or choose the next location and continue without returning to the
    normal application shell.
-7. Let the user finish setup deliberately. Once finished, route to an agreed useful destination and do not force the
-   wizard on every subsequent empty-library visit.
-8. Provide a discoverable way to resume or restart guided building later, because an empty installation may be built
-   over multiple sessions.
+9. Let the owner mark setup complete even if no item was added, then route to Dashboard for a library-wide summary.
+   Do not force the wizard on every subsequent empty-library visit.
+10. Provide a discoverable entry from Manage Collection to resume guided building later.
+11. Persist an unfinished intake queue in the current browser so a refresh, closure, or interruption does not discard
+   scanned work. Cross-device resume is not required for V2.
 
 Tutorial text should be attached to real actions. Avoid tutorial-only slides, fake scans, and a second catalog form.
 Ordinary Bulk Add must remain available after first-run setup.
 
 ### Known gap
 
-The current API has no setup-completion state, library-initialization resource, or server-side intake-session resource.
-The current Bulk Add queue is frontend state. The persistence and completion-state design must be decided before this
-feature can be ticketed.
+The current API has no setup-completion state or library-initialization resource. Add library-scoped settings/setup
+state rather than encoding completion in the shared Bearer token: the hostname-derived `Library-Username` already
+selects the library. Browser persistence should include the library identity, media type, destination, stable client
+item IDs, drafts, lookup results, and save outcomes; never restore one library's intake into another. Different
+hostnames already receive separate browser storage origins, but explicit namespacing protects local-development
+overrides and future host migrations.
 
 ## 3. Additional physical media
 
@@ -160,6 +168,12 @@ The locked model and its frontend consequences are:
   MusicBrainz only for not-found or when no Discogs token is configured. It returns an editable, non-persisted draft.
 * Dashboard summary and breakdown responses gain parallel album keys. Existing book keys remain book-only. Album
   incomplete-metadata reporting is explicitly deferred, and a missing track list is not an error.
+* Album artwork is required for the first-class V2 experience. The backend album sequence needs a contract comparable
+  to book covers: authenticated artwork reads, owner upload/remove, and provider fallback where licensing and provider
+  terms permit. The frontend must not construct provider URLs itself.
+* V2 supports more than one owned physical copy of the same commercial book or album release. Commercial identifiers
+  identify the edition/release; each owned copy retains its own UUID, location, status, loan history, and QR label.
+  Existing duplicate-ISBN/import behavior must be revised by an authoritative backend ticket before frontend work.
 
 The frontend should wait for backend `FEAT-23` contract synchronization and use the resulting OpenAPI plus
 `API-for-FE.md`, rather than coding against proposed intermediate schemas.
@@ -197,7 +211,16 @@ Locked behavior:
 * Vite must accept the two `*.localhost` development hosts, and frontend documentation must use those URLs for local
   testing.
 * The existing removal of the browser backup-download page remains valid. V2 disaster recovery is a separate,
-  safety-critical workflow; whether it has any browser surface or stays operator-only is an explicit planning decision.
+  safety-critical workflow entered from Manage Collection and backed by a constrained server-side backup inventory.
+* Unknown/unclaimed hostnames show a deliberate themed landing page—using copy such as “No one owns this library
+  yet”—rather than leaking raw API `400` responses.
+* Every library receives the same enabled media types and product capabilities. Library-owned settings under Manage
+  Collection control presentation and policy choices such as setup completion, media identity, circulation enabled,
+  scanner preferences, quote behavior, and label format where applicable.
+* The existing seeded Shade catalog belongs to Andy's library. A newly added library normally receives schema and
+  required system locations only, then chooses TSV bootstrap or guided Build Mode.
+* Andy requires operator/admin support access to other hosted libraries, but ordinary navigation exposes no library
+  switcher. The authorization mechanism for destructive admin actions remains separate from hostname routing.
 
 ### Contract status
 
@@ -224,22 +247,14 @@ The current app has one global token and stylesheet system plus book/library-spe
 context or runtime theme provider. A design brief and asset budget are required for each medium before implementation
 tickets can be estimated.
 
-## 6. Curated skins per media type
+## 6. Curated skins deferred
 
-**V2 commitment:** Every supported medium ships with a primary skin and at least one alternate curated skin. A
-free-form theme editor is deferred.
+Multiple selectable skins per media type and a free-form theme editor are deferred to V3 or later. V2 supplies one
+approved visual identity for each supported area and the hostname/library-specific identity required by the
+multi-library work. It should not build a general skin selector or persistence model prematurely.
 
-Media identity and skin are separate layers:
-
-* **Media identity** supplies the broad vocabulary appropriate to books, albums, and future media.
-* **Skin** supplies a curated interpretation of that identity.
-
-The current Shade Library appearance should become a book skin, not the universal application appearance. Skin choice
-must be persisted at the agreed scope, applied before or during initial render without an avoidable flash of the wrong
-skin, and have a safe fallback if a saved skin is removed or unavailable. All skins must meet the same functional and
-accessibility requirements.
-
-Seasonal themes in the older V2 documents are a separate axis unless product deliberately merges them with skins.
+Seasonal and time-of-day overlays also remain outside the committed V2 boundary unless promoted during the final
+review of the older pass documents.
 
 ## 7. Media-aware Bulk Add
 
@@ -320,9 +335,9 @@ other lifecycle fields. Checkout is offered only for `available` books. Checkout
 
 ### Manual status control
 
-Book Details should expose a clear owner/admin action for changing availability. At minimum, the owner must be able to
-mark a book `available`, `reserved`, `reading`, or `missing` without editing unrelated bibliographic metadata.
-`display_only` and `unknown` may remain available administrative choices if product confirms they are useful.
+Book Details and Browse bulk actions should expose a clear owner/admin action for changing availability. The owner can
+mark a book `available`, `reserved`, `reading`, `missing`, or `display_only` without editing unrelated bibliographic
+metadata. `unknown` is not a separate user-facing choice; the product treats a manually unlocatable item as Missing.
 
 `on_loan` is not a manual choice. It is created by checkout and cleared by check-in so loan history and book state
 cannot diverge. A manual action must not make a book available, reserved, reading, or missing while an active loan
@@ -332,9 +347,9 @@ book and loan state, and explain what changed.
 The UI should explain the practical meaning of each state:
 
 * **Available:** eligible for ordinary checkout.
-* **Reserved:** intentionally held back from ordinary checkout.
-* **Reading:** currently in personal use and held back from ordinary checkout.
-* **Missing:** not presently locatable and held back from ordinary checkout.
+* **Reserved:** intentionally held for someone; checkout warns but can be overridden.
+* **Reading:** currently in personal use; checkout warns but can be overridden.
+* **Missing:** not presently locatable and moved to the `unknown` system shelf.
 * **Display only:** part of the collection but never ordinarily loaned.
 
 Changing availability does not change `is_read`, reading completion, rating, or review. In particular, `reading`
@@ -342,16 +357,37 @@ means the physical copy is in current use; it does not mark the book read.
 
 ### TBR shelf automation
 
-Moving a book from its home shelf to `Liz TBR` or `Andy TBR` should be able to reserve it or mark it as reading as part
-of the same successful operation. The status and shelf move must not visibly disagree because one update succeeded
-and the other failed.
+Moving a book to `Liz TBR` or `Andy TBR` sets it to `reserved` as part of the same successful operation. Moving it out
+of either TBR shelf returns it to `available`. Starting the book is a separate manual action that sets `reading`. The
+status and shelf move must not visibly disagree because one update succeeded and the other failed.
 
 The initial product intent is household-scale rather than a general reservation queue: Andy or Liz can hold a book so
 another borrower is not offered it. A later version may add an ordered reservation list for several people who want
 the same title back to back.
 
-The exact mapping for each TBR shelf, what happens when a book leaves one, and whether the reserved person's identity
-must be stored separately from the shelf are still open. Those rules require a backend contract before ticketing.
+The TBR shelf name is sufficient attribution for Andy or Liz in V2; no `reserved_for` field is required for those
+shelves. Manually setting `reserved` elsewhere displays the status stamp without changing location or naming a person.
+
+Status precedence is explicit:
+
+* Setting `missing` moves the book to `unknown` regardless of a prior TBR location.
+* Setting `display_only` overrides TBR reservation behavior and blocks checkout. It does not otherwise move the book.
+* Setting `reading` leaves location unchanged and overrides the reserved display while the book remains on a TBR
+  shelf.
+* Reserved and reading checkout attempts show a confirmation warning and may proceed without first changing status.
+  Successful checkout then uses the normal `on_loan` lifecycle.
+* Display-only and missing books remain ineligible for checkout.
+
+Single-book TBR movement is the normal interaction, but a bulk move to a TBR shelf applies `reserved` to every
+successfully moved eligible book in the same atomic operation.
+
+### General Reserved shelf / will-call concept
+
+A separate shelf named `Reserved` may act as a small virtual will-call box for holds that are not for Andy or Liz.
+Books there can show an editable post-it-style note on Book Details containing the name or short pickup note. The note
+must be structured as reservation metadata rather than inferred from general book notes if it needs separate display,
+clearing, or privacy behavior. This concept is desired but still needs a decision about whether it is committed V2
+scope or a follow-on to the basic status/TBR work.
 
 ## 10. Quote-coordinated Home presentation
 
@@ -408,6 +444,12 @@ The mapping is curated per quote rather than generated from quote text at runtim
 as markup, CSS, executable content, or an asset path. A quote without a complete approved mapping falls back to the
 ordinary functional headings instead of displaying missing, generic, or machine-invented copy.
 
+The owner writes or approves every production phrase set, potentially in collaboration with the implementation team.
+The target is a complete mapping for every quote in the random pool, with the ordinary headings as a safe fallback.
+An optional curated presentation key may also select a bounded decorative accent—such as an illustration, texture, or
+heading ornament—that reinforces the quote. It must not alter navigation, content order, or the active media identity,
+and it remains separate from deferred skins, seasonal themes, and time-of-day behavior.
+
 The heading pair must form one understandable section label for assistive technology without causing confusing
 duplicate heading navigation. Exact semantic markup and whether any secondary Home sections participate should be
 settled in the frontend ticket.
@@ -419,19 +461,26 @@ rendering are one feature and should not be split into independently shippable p
 
 Intended experience:
 
-1. The owner begins checkout on a phone-friendly surface.
-2. The borrower is shown the item, borrower identity, timestamp context, and a short acknowledgement.
-3. The device is handed to the borrower, who signs in a touch-capable signature area.
-4. The borrower can clear and retry before confirming.
-5. The confirmed signature is saved to the newly created loan, not to the reusable book/item record.
-6. The loan's visual record renders the signature with borrower and checkout context.
+1. The owner begins checkout on a phone-friendly surface and always records the borrower's typed full name.
+2. The device may be handed to the borrower, who signs in a touch-capable signature area.
+3. The borrower can clear and retry, Confirm the signature, or Skip and use the typed name only.
+4. Signature and loan creation complete as one user-visible operation: a signature failure must not silently leave an
+   apparently unsigned successful checkout. The backend may stage the file before committing the loan to achieve safe
+   compensation and cleanup.
+5. The confirmed signature is saved to that loan, not to the reusable book/item or borrower profile.
+6. Book Details renders its loan-history cards beneath the main book record, evoking the card at the back of a library
+   book. Each card includes the typed borrower name and, when present, the signature at the bottom.
 
 The signature is a library artifact and acknowledgement, not a claim of legal enforceability. The UI must not imply
 otherwise.
 
-The older `UI_DESIGN_NOTES.MD` already places the signature on the digital library card/loan treatment, while
-`PRODUCT_REQS.V2.pass-2.md` says that richer skeuomorphic treatment should not block other work. The minimum V2 record
-can therefore be an accessible loan-detail/card treatment without requiring a full physical-card simulation.
+The existing Loans page remains the typed circulation/history overview; V2 does not require a separate loan-detail
+route. The richer per-book card treatment lives on Book Details.
+
+For the desired balance of visual fidelity, storage cost, and safe rendering, the recommended V2 representation is a
+small transparent PNG generated from a bounded signature canvas and stored as `{loan_id}.png` in a gitignored runtime
+directory parallel to covers. Unlike arbitrary SVG, PNG cannot contain active markup. The backend should validate
+dimensions and content and expose authenticated reads rather than public filesystem paths.
 
 The current checkout body and `LoanRead` schema contain no signature field or attachment resource, and loan records
 cannot be patched. Storage format, retention, deletion, access, upload timing, and failure recovery require a backend
@@ -439,32 +488,44 @@ contract before UI planning.
 
 ## 12. Borrower ratings and reviews
 
-**V2 commitment:** A borrower can optionally rate and review a returned physical item without altering the owner's
-rating, review, or read state.
+**V2 commitment:** Every completed return records a borrower rating, and may later receive one optional written review,
+without altering the owner's rating, review, or read state.
 
-The natural prompt is part of, or immediately after, successful check-in. It must be lightweight, skippable, and safe
-to dismiss. Review data belongs to the relevant borrower and loan history. An item detail surface may show a separate
-aggregate such as “4.6 from 8 borrowers” and individual reviews according to the chosen privacy rules.
+Check-in on the owner's device requires a rating; the written review is optional. A future follow-up email may send a
+signed, single-use HTTPS link through which the borrower can add the optional review after return. A custom
+`@shade.library.spir.es` mailbox is not required: outbound mail can use any address verified with the configured SMTP
+or email provider. Collecting a structured review through the signed link is preferable to parsing email replies.
+Email delivery, tokens, expiry, and abuse controls require a separate backend contract and may be deferred without
+blocking the required check-in rating.
 
 Required separation:
 
 * Owner `rating`, `review`, and read status remain owner collection data.
 * Borrower feedback never marks the owner as having read an item.
-* A feedback record is attributable internally to a loan even if its public display is anonymous.
+* A feedback record is attributable internally to exactly one returned loan. There is at most one rating/review record
+  per loan.
 * Aggregates count only feedback included by agreed moderation/privacy rules and distinguish no ratings from a zero
   rating.
+* The loan card shows the rating beside the signature/typed borrower record. When a written review exists, it may be
+  revealed from that card through an accessible disclosure; hover alone is insufficient on touch and keyboard devices.
+* Loan records show the full typed borrower name. Review presentation may use the borrower's first name or initials.
 * Editing or removing borrower feedback recomputes the aggregate without rewriting the loan event itself.
+* Moderation, approval, abuse reporting, and borrower profiles are out of scope for this trusted private-library model.
 
 “Highest rated by borrowers,” “Most borrowed,” and “Borrower favorites” are discovery extensions, not part of the
 minimum feedback feature unless separately promoted.
 
+Borrower aggregates combine physical copies of the same work/title within one media type. They never combine books
+with albums or other media. Reliable cross-copy aggregation requires a stable work/group identity; normalized title
+text alone is not sufficient because editions and unrelated works can share or vary titles. The backend contract must
+introduce or select that grouping before aggregate UI is ticketed.
+
 The current app has only a free-text borrower name on each loan. Owner rating/review live on `BookRead`; check-in
-accepts only an optional return timestamp; and no borrower, patron, feedback, or aggregate resource exists. This
-feature requires a borrower identity decision and backend contract.
+accepts only an optional return timestamp; and no borrower-feedback, work-identity, or aggregate resource exists.
 
 ## 13. Patron donation participation / punch card
 
-**V2 status:** Exploratory; it becomes a release requirement only after product approves concrete rules.
+**Status:** Not part of V2 software scope and must not receive implementation tickets.
 
 The preferred concept rewards qualifying donations to the library rather than repeated borrowing. A patron receives a
 credit for a qualifying donation and, after a configurable threshold (currently proposed as ten), earns a small
@@ -480,14 +541,16 @@ Staff Picks currently exist as a named Collection. A reward could therefore gran
 limited membership action, but the exact authority must be chosen; the current application has no patron accounts or
 permissions.
 
-No patron, donation, punch, reward, or redemption model exists in the frontend or API.
+This remains an offline/non-software participation idea. No patron, donation, punch, reward, or redemption model should
+be added to the frontend or API for V2.
 
 ## 14. Cross-cutting behavior to resolve
 
 ### Unified search and scanning
 
-Decide whether a global entry point can search and scan across media without a prior medium choice. Exact item QR
-payloads should be resolvable globally. Ambiguous commercial identifiers need an explicit disambiguation experience.
+Text search remains scoped to the current media area; V2 does not add mixed-media global search. Exact item QR
+payloads should be resolvable without guessing a commercial edition. Ambiguous commercial identifiers need an
+explicit disambiguation experience.
 
 ### Generalized circulation
 
@@ -497,14 +560,21 @@ concepts unless a medium has a documented exception.
 
 ### Dashboard and Home
 
-Choose which modules are library-wide, which follow the currently selected medium, and which intentionally combine
-both. Counts and labels must make their scope visible.
+Home is library-wide and serves as the entry hall to the supported media areas. Recent Additions intentionally mixes
+media. Staff Picks remains a book collection; albums receive their own equivalent curated collection/presentation.
+Collections never mix media types.
+
+Dashboard is expected to be media-specific, but product will confirm that choice immediately before Dashboard V2
+ticketing. Counts and labels must always make their scope visible.
 
 ### Media switching
 
-Media selection will affect domain fields and visual environment. It needs a persistent, keyboard-accessible,
-mobile-appropriate interaction with defined URL/deep-link behavior and a predictable fallback when the selected
-medium is unavailable to the active tenant.
+Media selection is an explicit physical-feeling control, visually conceived as moving through a doorway or hallway
+into another room. It must remain keyboard-accessible, mobile-appropriate, URL/deep-link compatible, and predictable
+when a medium is unavailable.
+
+Circulation is configurable per library through Manage Collection with an **Enable loans** setting. Disabled
+circulation hides or disables checkout/check-in entry points without deleting loan history.
 
 ## 15. Persistent Books controls and infinite-scroll navigation
 
@@ -523,18 +593,21 @@ beside the book results. The rail should:
 * expose the same URL-backed search, category, read-state, placement, and sort behavior rather than creating a second
   filter model;
 * show active selections and retain the existing clear/reset behavior;
+* allow individual filter groups to collapse while keeping active-filter counts visible;
 * remain usable when its controls are taller than the viewport, with an intentional internal or page-scrolling
   strategy that does not make lower controls unreachable;
 * preserve space for book cards and bulk-selection controls without covering results; and
 * keep filter application, loading, empty, error, cleanup, ISBN deep-link, and bulk-selection states understandable.
 
 The rail is a responsive enhancement, not a requirement to squeeze a sidebar beside a 320-pixel viewport. On narrow
-screens, the same controls should use an accessible compact treatment—such as a persistent Filters and Sort trigger
-opening an inline panel or drawer—while preserving the active-filter summary and URL state. The exact side and mobile
-interaction remain design decisions.
+screens, the same controls open in a modal treatment while preserving active-filter summary and URL state. The exact
+wide-screen side, breakpoint, overflow behavior, and immediate-versus-explicit mobile application remain design
+decisions informed by further Discogs reference review.
 
-This requirement applies to the main Books catalog and its cleanup mode. The later album catalog should adopt the
-same persistent-control pattern if its list uses continuous scrolling, while keeping album-specific fields.
+Bulk-selection actions join the side rail while selection mode is active. This requirement applies to the main Books
+catalog and its cleanup mode. Shelves search and other Shelves list controls also move to a persistent side rail on
+wide layouts with the same responsive principles. The later album catalog should adopt the pattern if its list uses
+continuous scrolling, while keeping album-specific fields.
 
 ### Shared Back to Top control
 
@@ -548,14 +621,15 @@ control after the user has moved meaningfully away from the top. Current applica
 * the progressively revealed Shelves list.
 
 Future infinite lists, including albums if implemented that way, inherit the requirement. A short page that has not
-required meaningful scrolling should not display a needless floating control. A manually paged or explicit “Load
-more” surface only inherits it when its accumulated content can create the same navigation problem.
+loaded an additional batch should not display a needless floating control. Long Shelves and explicit “Load more”
+surfaces inherit it even when they are not backed by server-side infinite queries.
+
+The control appears after the first additional page or progressive batch loads. It returns to the beginning of the
+result list and moves focus to that list's search/filter entry point.
 
 The control should use one shared component and behavior, remain reachable by keyboard and touch, have an explicit
 accessible name, respect safe areas and other sticky controls, and never obscure important content. Returning to the
-top may animate only when reduced motion is not requested. The destination and focus behavior must be consistent and
-should restore useful context at the page heading or list controls rather than leaving keyboard focus stranded in an
-off-screen floating button.
+top may animate only when reduced motion is not requested.
 
 ## 16. Restore from backup / disaster recovery
 
@@ -572,11 +646,16 @@ Under the planned multi-library model, each backup and restore target is one nam
 `andy.db` or `jamie.db`. A restore must never infer the target from dump contents, restore one person's data into
 another person's library, or silently affect every library on the instance.
 
+Manage Collection provides the user-facing **Restore from Backup** entry point. Browser code cannot open or browse an
+arbitrary directory on the server. The backend must instead return a constrained inventory of recognized backup files
+for the current library, including safe display metadata, and accept only an opaque server-issued backup identifier.
+It must never accept a client-supplied filesystem path.
+
 ### Required recovery behavior
 
 The supported workflow must:
 
-1. Require an explicit source backup and explicit target library.
+1. Require an explicit source backup and explicit target library. One operation restores one library only.
 2. Validate that the artifact is an expected Shade SQL backup, is readable, and is compatible with a supported schema
    or migration path before touching the live database.
 3. Prevent writes to the target library while its database is being replaced.
@@ -596,15 +675,30 @@ an initial import path, not a substitute for restoring a complete operational ba
 
 ### Completeness gap
 
-The SQL dump protects database content but does not contain uploaded cover image files or future signature/artwork
-files. V2 must explicitly decide whether “restore from backup” means database-only recovery or a complete library
-recovery bundle that also protects referenced files. The UI must not claim complete recovery if restored rows point to
-files that were never backed up.
+V2 restore addresses database corruption. Existing sibling asset directories for covers, album artwork, and signatures
+remain in place and UUID-based references reconnect after database restoration. This does **not** recover assets after
+disk loss or corruption of those directories; the UI and runbook must describe the boundary accurately.
 
-The restore entry point, authorization model, retention of safety copies, version-compatibility window, and treatment
-of non-database files remain open. Because the existing shared Bearer secret is available to the browser, merely
-protecting a destructive restore endpoint with that same token may be insufficient; operator-only CLI or host tooling
-is the safer baseline unless a stronger administrative authorization mechanism is approved.
+Each SQL backup should have a small machine-readable manifest containing its originating library username, creation
+time, schema/application version, checksum, and format version. The manifest is not another copy of the catalog; it
+lets the server reject a damaged file, a backup from the wrong library, or an unsupported version. A filename such as
+`andy.db` or `andy-backup.sql` is helpful to humans but is not sufficient validation by itself.
+
+V2 guarantees restoration only when the backup schema matches the running database schema. Older or newer schemas are
+rejected with an explanation rather than migrated implicitly during an emergency restore. Restoration may take the
+target library offline for as long as necessary; other libraries should remain available when the backend architecture
+can isolate maintenance safely.
+
+Minimum verification before activation is: checksum match, successful SQL replay into a temporary database,
+`PRAGMA integrity_check`, expected migration/schema version and core tables, foreign-key validation, and read-only API
+smoke queries for the restored library. Row-count summaries and missing referenced assets should be warnings presented
+for owner confirmation, not logs of catalog contents. A quarterly non-production restore drill—and another drill after
+any backup-format or restore-path change—is the V2 operating baseline.
+
+The retention period and storage-space policy for the automatic pre-restore safety copy remain open. The authorization
+model also remains open: the shared browser Bearer token is not a distinct administrator credential. If tenants may
+restore their own current library, the endpoint still needs deliberate reauthentication/confirmation and strict
+library scoping; cross-library support restoration requires a separate operator/admin capability.
 
 ## 17. Post-V1 observation period
 
@@ -624,7 +718,9 @@ Committed release outcomes:
 * Guided first-run setup built on the existing Build Mode workflow.
 * First-class books plus the album catalog for vinyl, cassettes, and CDs.
 * Tenant-aware UI against the approved multi-tenant contract.
-* A distinctive visual identity plus at least one alternate curated skin for every supported medium.
+* One approved distinctive visual identity for each supported media area; selectable alternate skins are deferred.
+* Album artwork display, upload/removal, and approved provider fallback.
+* Multiple owned physical copies of the same commercial edition/release, each with its own UUID and lifecycle.
 * Media-aware Bulk Add for every supported medium.
 * Stable physical-item QR labels, batch printing, and QR-aware item resolution in circulation.
 * Manual book availability controls for reserved, reading, missing, and available states.
@@ -633,14 +729,11 @@ Committed release outcomes:
 * A shared accessible Back to Top control on automatic infinite-scroll surfaces.
 * A documented, tested, tenant-safe restore-from-backup workflow with validation and rollback.
 * Quote-specific curated Home heading phrases with the stable functional heading visibly beneath each one.
-* Borrower signature capture and rendering if the feasibility gate is approved.
-* Optional borrower ratings/reviews with owner-data separation and borrower aggregates.
+* Optional borrower signature capture with typed-name fallback and per-book loan-card rendering, unless technical
+  investigation moves it to V3.
+* Required borrower rating at check-in, optional written review, owner-data separation, and cross-copy borrower
+  aggregates within one media type.
 * Incorporation of selected post-V1 observations.
-
-Exploratory outcomes, not release blockers until promoted:
-
-* Patron donation participation / punch card.
-* Staff Pick nomination or designation as a punch-card reward.
 
 ## Deferred or possible later work
 
@@ -648,8 +741,9 @@ Exploratory outcomes, not release blockers until promoted:
 * Movie/video catalog support, including DVDs, VHS, and decisions for multi-disc releases and box sets.
 * Comic support after the catalog grain, creator model, and UPC lookup requirements are defined.
 * Audiobook reading-history logging and other digital-media support.
-* A free-form user-created theme editor.
+* Multiple curated skins, seasonal/time-of-day themes, and a free-form user-created theme editor.
 * Elaborate patron reward or monetary-incentive systems.
+* Software implementation of the donation punch-card / Staff Pick reward idea.
 * Borrower-derived discovery beyond the minimum feedback and aggregate display.
 
 Move deliberately deferred ideas here so they are not silently lost.
