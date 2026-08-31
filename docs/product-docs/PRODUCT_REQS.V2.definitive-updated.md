@@ -214,9 +214,7 @@ Locked behavior:
   safety-critical workflow entered from Manage Collection and backed by a constrained server-side backup inventory.
 * Unknown/unclaimed hostnames show a deliberate themed landing page—using copy such as “No one owns this library
   yet”—rather than leaking raw API `400` responses.
-* Every library receives the same enabled media types and product capabilities. Library-owned settings under Manage
-  Collection control presentation and policy choices such as setup completion, media identity, circulation enabled,
-  scanner preferences, quote behavior, and label format where applicable.
+* Every library receives the same enabled media types and product capabilities. Library-owned backend settings are limited to choices that must follow the library across devices, including setup state and Enable Loans. Scanner preferences and label-print defaults are browser/device preferences in V2 unless a later ticket demonstrates a cross-device requirement. Media identity is the one approved identity for the active media area rather than a user-selectable persisted skin; quote mappings remain checked-in frontend content.
 * The existing seeded Shade catalog belongs to Andy's library. A newly added library normally receives schema and
   required system locations only, then chooses TSV bootstrap or guided Build Mode.
 * Andy requires operator/admin support access to other hosted libraries, but ordinary navigation exposes no library
@@ -291,7 +289,7 @@ Required user-facing behavior:
 
 * Generate a label for one item from its existing stable item UUID.
 * Generate labels in a batch from explicitly selected items.
-* Preview and print labels in an agreed sheet/label format with readable fallback text.
+* Preview and print labels from the browser. V2 is phone-scanning-first and does not require dedicated 2D scanner acceptance coverage or human-readable fallback text on the label. Dedicated scanners may be supported later after hardware is selected.
 * Reprint the same item's label without creating or rotating its identity.
 * Use a versioned, recognizable application payload rather than displaying a raw UUID as an untyped scan.
 * Reject malformed or unsupported Shade payloads safely.
@@ -309,8 +307,7 @@ current scanners parse ISBNs only, collection scan behavior either opens a uniqu
 there is no unified checkout/check-in scanner surface. No QR payload format, item-resolution endpoint across media,
 label-generation API, or print template is defined.
 
-QR generation itself can be client-side, but lookup authorization, payload format, revocation expectations, and print
-requirements must be decided before choosing that boundary.
+QR generation and print layout are frontend responsibilities. The canonical payload is a compact versioned Shade value containing media type and catalog UUID, conceptually `shade:v1:<media-type>:<uuid>`. It contains no tenant name or public URL and therefore survives hostname/domain changes. The stable catalog UUID is the label identity; V2 adds no separate revocable public label ID or print-history model. Labels are generated on request and reprinting produces the same payload. Scanning is authenticated application behavior; V2 defines no unauthenticated public landing page for item labels. Optional decorative QR styling—including a portrait-inspired treatment honoring the library dedication—may be explored only if phone scan reliability remains robust, with a conventional QR fallback.
 
 ## 9. Manual book availability and TBR-driven status
 
@@ -386,8 +383,7 @@ successfully moved eligible book in the same atomic operation.
 A separate shelf named `Reserved` may act as a small virtual will-call box for holds that are not for Andy or Liz.
 Books there can show an editable post-it-style note on Book Details containing the name or short pickup note. The note
 must be structured as reservation metadata rather than inferred from general book notes if it needs separate display,
-clearing, or privacy behavior. This concept is desired but still needs a decision about whether it is committed V2
-scope or a follow-on to the basic status/TBR work.
+clearing, or privacy behavior. This general Reserved/will-call shelf is committed to V2. It is distinct from the personal TBR shelves and represents a physical holding location for a borrower. It receives a visually distinct frontend treatment and stores a structured pickup name plus optional note rather than relying on general book notes. The exact clearing triggers are ticket-level behavior to define, but V2 remains a lightweight owner-managed hold rather than a reservation queue.
 
 ## 10. Quote-coordinated Home presentation
 
@@ -456,8 +452,7 @@ settled in the frontend ticket.
 
 ## 11. Borrower signature capture
 
-**V2 status:** Committed subject to a feasibility decision. If accepted after investigation, signature capture and
-rendering are one feature and should not be split into independently shippable promises.
+**V2 status:** Committed, with a bounded prototype feasibility gate. Signature capture and rendering are one feature and should not be split into independently shippable promises. It moves to V3 only if a small prototype demonstrates a concrete blocker such as unreliable canvas export on supported phones, inability to guarantee signature retention with successful checkout, or disproportionate tenant-safe private-file storage constraints. Ordinary endpoint work or minor browser polish is not sufficient reason to defer it.
 
 Intended experience:
 
@@ -482,21 +477,14 @@ small transparent PNG generated from a bounded signature canvas and stored as `{
 directory parallel to covers. Unlike arbitrary SVG, PNG cannot contain active markup. The backend should validate
 dimensions and content and expose authenticated reads rather than public filesystem paths.
 
-The current checkout body and `LoanRead` schema contain no signature field or attachment resource, and loan records
-cannot be patched. Storage format, retention, deletion, access, upload timing, and failure recovery require a backend
-contract before UI planning.
+The backend direction is now defined: stage an optional validated transparent PNG (maximum 800×300, 250 KiB) through a short-lived authenticated upload token, then submit that single-use token with checkout. Checkout and signature commit behave as one compensated operation; unclaimed staged files expire. `LoanRead` exposes signature presence only, while authenticated bytes are fetched from `GET /loans/{loan_id}/signature`. Confirmed signatures are immutable, tenant-scoped, deleted with the loan, and the loan retains the acknowledgement text/version shown at signing.
 
 ## 12. Borrower ratings and reviews
 
 **V2 commitment:** Every completed return records a borrower rating, and may later receive one optional written review,
 without altering the owner's rating, review, or read state.
 
-Check-in on the owner's device requires a rating; the written review is optional. A future follow-up email may send a
-signed, single-use HTTPS link through which the borrower can add the optional review after return. A custom
-`@shade.library.spir.es` mailbox is not required: outbound mail can use any address verified with the configured SMTP
-or email provider. Collecting a structured review through the signed link is preferable to parsing email replies.
-Email delivery, tokens, expiry, and abuse controls require a separate backend contract and may be deferred without
-blocking the required check-in rating.
+Check-in on the owner's device requires a rating; the written review is optional. The required V2 interaction is local: check-in on the owner's authenticated device requires a 1–5 rating, while an optional written review is submitted through a follow-up feedback endpoint so feedback failure cannot roll back or repeat check-in. Email review requests, signed public review links, SMTP/provider work, and borrower authentication are outside the minimum V2 contract and may be considered later.
 
 Required separation:
 
@@ -516,9 +504,7 @@ Required separation:
 minimum feedback feature unless separately promoted.
 
 Borrower aggregates combine physical copies of the same work/title within one media type. They never combine books
-with albums or other media. Reliable cross-copy aggregation requires a stable work/group identity; normalized title
-text alone is not sufficient because editions and unrelated works can share or vary titles. The backend contract must
-introduce or select that grouping before aggregate UI is ticketed.
+with albums or other media. For books, borrower aggregates are explicitly work/title-level across editions and physical copies: a rating on one edition must appear in the aggregate shown for another owned edition of the same work, including display-only copies. Edition-specific ISBNs therefore cannot define the group. The backend will use available provider work identifiers where trustworthy plus an owner-correctable merge/split (or equivalent) grouping mechanism; normalized title text alone is never authoritative. Albums follow the same work-level principle within their media type.
 
 The current app has only a free-text borrower name on each loan. Owner rating/review live on `BookRead`; check-in
 accepts only an optional return timestamp; and no borrower-feedback, work-identity, or aggregate resource exists.
@@ -564,8 +550,7 @@ Home is library-wide and serves as the entry hall to the supported media areas. 
 media. Staff Picks remains a book collection; albums receive their own equivalent curated collection/presentation.
 Collections never mix media types.
 
-Dashboard is expected to be media-specific, but product will confirm that choice immediately before Dashboard V2
-ticketing. Counts and labels must always make their scope visible.
+Dashboard is media-specific in V2 and uses explicitly scoped keys/counts. Home remains library-wide, including mixed-media Recent Additions. Counts and labels must always make their scope visible.
 
 ### Media switching
 
@@ -695,10 +680,7 @@ smoke queries for the restored library. Row-count summaries and missing referenc
 for owner confirmation, not logs of catalog contents. A quarterly non-production restore drill—and another drill after
 any backup-format or restore-path change—is the V2 operating baseline.
 
-The retention period and storage-space policy for the automatic pre-restore safety copy remain open. The authorization
-model also remains open: the shared browser Bearer token is not a distinct administrator credential. If tenants may
-restore their own current library, the endpoint still needs deliberate reauthentication/confirmation and strict
-library scoping; cross-library support restoration requires a separate operator/admin capability.
+Restore authorization is defined as a short-lived, tenant-bound recovery token generated through an operator command, in addition to ordinary authentication and explicit typed confirmation. Manage Collection lists only recognized backups for the active tenant; cross-library support/destructive restores use the separate operator capability and are never ordinary tenant navigation. Pre-restore safety copies enter the normal backup retention policy after post-restore verification: all distinct backups for seven days, one per week for eight weeks, and one per month for twelve months. The exact free-space preflight threshold remains an operations/ticket-level decision.
 
 ## 17. Post-V1 observation period
 
@@ -724,15 +706,13 @@ Committed release outcomes:
 * Media-aware Bulk Add for every supported medium.
 * Stable physical-item QR labels, batch printing, and QR-aware item resolution in circulation.
 * Manual book availability controls for reserved, reading, missing, and available states.
-* Agreed automatic status behavior when books move to `Liz TBR` or `Andy TBR`.
+* Agreed automatic status behavior when books move to `Liz TBR` or `Andy TBR`, plus the distinct general Reserved/will-call shelf with structured pickup metadata.
 * Persistent side filter/sort controls for Books on wide layouts, with an equivalent compact mobile treatment.
 * A shared accessible Back to Top control on automatic infinite-scroll surfaces.
 * A documented, tested, tenant-safe restore-from-backup workflow with validation and rollback.
 * Quote-specific curated Home heading phrases with the stable functional heading visibly beneath each one.
-* Optional borrower signature capture with typed-name fallback and per-book loan-card rendering, unless technical
-  investigation moves it to V3.
-* Required borrower rating at check-in, optional written review, owner-data separation, and cross-copy borrower
-  aggregates within one media type.
+* Optional borrower signature capture with typed-name fallback and per-book loan-card rendering, subject only to the bounded prototype blocker criteria defined above.
+* Required borrower rating at check-in, optional written review, owner-data separation, and owner-correctable work-level cross-copy borrower aggregates within one media type.
 * Incorporation of selected post-V1 observations.
 
 ## Deferred or possible later work
