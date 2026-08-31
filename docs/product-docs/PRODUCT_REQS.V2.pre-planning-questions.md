@@ -18,9 +18,10 @@ the eventual authoritative feature tickets.
    - Punch cards are non-blocking, that's not software stuff. But I would like to pursue the borrower signature as much 
    as possible. If it's going to take a lot, it can be V3.
    
-3. Are books plus vinyl, cassettes, CDs, DVDs, comics, and VHS all mandatory for the same V2 release, or can V2 ship
-   them incrementally behind an approved availability model?
-   - I would be comfortable adding one form of physical media per version, and making dvds and vhs tapes a v3 addition. 
+3. Is the V2 media boundary now books plus the album catalog for vinyl, cassettes, and CDs, with movies/DVDs/VHS and
+   comics deferred to V3?
+   - Movies, DVDs, and VHS are confirmed V3. Comics are provisionally V3 pending collector research. Albums are the
+     additional physical-media catalog for V2.
    
 4. Should the frontend album work be planned only after backend `FEAT-23` publishes its synchronized contract, as the
    backend sequence directs, or should a provisional frontend design ticket run in parallel without transport work?
@@ -60,18 +61,18 @@ the eventual authoritative feature tickets.
 
 ## Additional media and shared domain model
 
-11. What are the authoritative data models for DVDs, comics, and VHS? The backend album series fully defines vinyl,
-    CDs, and cassettes but does not cover these remaining required media.
-	- I'm comfortable making these V3 after more thought. But DVDs and VHS i think should be analogous in the same way
-	vinyl, cds, and cassettes are. Comics might belong in the books side, but we need to add UPC lookup support for that.
+11. What preparation, if any, should V2 make for the deferred movie/video and comic catalogs without implementing
+    them prematurely?
+	- Movies, DVDs, and VHS are V3. DVDs and VHS will probably be formats in one movie/video model, analogous to vinyl,
+	CDs, and cassettes within albums. Comics are provisionally V3 and may relate to books, but need UPC lookup and a
+	collector-informed model first. V2 should not use album `other` as a substitute for either domain.
 	
-12. Should DVDs and VHS share a film/video catalog model with a format field, analogous to the album model, or are
-    they separate resources? What is the loanable grain for multi-disc/box sets?
-	- See above, but also, on box sets, good question. I might talk to a collector about that and get their feedback. 
+12. For later V3 movie/video planning, what is the loanable grain for multi-disc releases and box sets?
+	- Ask a collector before deciding. This does not block V2.
 	
-13. What is the comic catalog grain: issue, collected edition, series, or owned physical copy? How are creators and
-    roles, issue/volume numbers, variants, and story arcs represented?
-	- need to talk to a collector about that. comics are probably v3, as well. 
+13. For later V3 comic planning, what is the catalog grain: issue, collected edition, series, or owned physical copy?
+    How are creators and roles, issue/volume numbers, variants, story arcs, and UPC lookup represented?
+	- Ask a collector before deciding. Comics are provisionally V3, so this does not block V2.
 14. Do the no-mixed-shelf and no-mixed-collection rules locked for books versus albums extend to every later medium?
     If so, how does a collection/shelf advertise its type when the shared catalog row has no `media_type` column?
 	- yes, this rule applies across the board, but i'll need to think more about the second half of this. 
@@ -168,82 +169,101 @@ the eventual authoritative feature tickets.
     proceed from a product-level scan without a copy QR?
 46. What should happen if a valid QR points to a deleted, removed, wrong-tenant, or non-circulating item?
 
+## Manual book availability and TBR shelf behavior
+
+47. Should both `Liz TBR` and `Andy TBR` set the book to `reserved`, or should either shelf set it to `reading`?
+    Is “reading” reserved for a book someone has actually started?
+48. Does a reservation need a separate `reserved_for` value so the UI can say “Reserved for Liz” or “Reserved for
+    Andy,” or is the TBR shelf name enough for now? What should a manually reserved book outside those shelves show?
+49. When a book leaves a TBR shelf, should it automatically return to `available`, restore the status it had before
+    entering the shelf, or keep its current status until changed manually?
+50. If a book is manually marked `missing`, `display_only`, or `reading` while it is on a TBR shelf, does that manual
+    choice override the shelf rule? If so, should later moves reapply automation?
+51. Should the status action offer `unknown` and `display_only` as well as the required `available`, `reserved`,
+    `reading`, and `missing` choices?
+52. Should moving several books to a TBR shelf apply the same automatic status to every selected book through one
+    atomic bulk operation? The current bulk move endpoint changes only shelves.
+53. Should reserved and reading books be completely blocked from checkout, or may the owner explicitly override the
+    hold during checkout after a warning?
+54. Where should manual status changes be available besides Book Details: Browse bulk actions, the ordinary Edit Book
+    form, a shelf view, or only Book Details for V2?
+
 ## Quote-coordinated Home presentation
 
-47. Is this feature the previously documented weather-aware quote system plus coordinated visuals, or should it remain
+55. Is this feature the previously documented weather-aware quote system plus coordinated visuals, or should it remain
     random and use quote-specific presentation independent of weather?
-48. Which Home text changes with a quote: section headings, helper copy, hero treatment, all page headings, or a fixed
+56. Which Home text changes with a quote: section headings, helper copy, hero treatment, all page headings, or a fixed
     approved subset? Please provide the prior conversation that contains the agreed behavior if it exists.
-49. Is presentation mapped per individual quote, per weather family, per tone/category, or through a curated template
+57. Is presentation mapped per individual quote, per weather family, per tone/category, or through a curated template
     set shared by many quotes?
-50. Which visual properties may respond—background, assets, accents, typography, layout—and how does this interact with
+58. Which visual properties may respond—background, assets, accents, typography, layout—and how does this interact with
     media identity, skin, season, and time of day?
-51. Who owns quote records and their editorial verification? Is the candidate 50–100 quote corpus still the target,
+59. Who owns quote records and their editorial verification? Is the candidate 50–100 quote corpus still the target,
     and may quotes be linked to items absent from the local catalog?
-52. Is `last_displayed_date` global, per tenant, or per user/device? Who selects a quote—the backend or frontend—and
+60. Is `last_displayed_date` global, per tenant, or per user/device? Who selects a quote—the backend or frontend—and
     what is the fallback when weather or quote services fail?
 
 ## Signature capture
 
-53. Is a signature required to complete checkout, optional per loan, or controlled by a tenant setting? May the owner
+61. Is a signature required to complete checkout, optional per loan, or controlled by a tenant setting? May the owner
     bypass it when the borrower is remote or the device lacks pointer support?
-54. What exact acknowledgement text is displayed, and must the borrower explicitly accept it in addition to drawing a
+62. What exact acknowledgement text is displayed, and must the borrower explicitly accept it in addition to drawing a
     signature?
-55. Should the signature be stored as vector strokes, SVG, PNG/WebP, or another representation? Must pressure,
+63. Should the signature be stored as vector strokes, SVG, PNG/WebP, or another representation? Must pressure,
     timestamps, or stroke order be retained?
-56. What retention, deletion, export, backup, and privacy rules apply to signatures? Who may view them?
-57. Should checkout create the loan before signature upload, submit both atomically, or hold an expiring checkout
+64. What retention, deletion, export, backup, and privacy rules apply to signatures? Who may view them?
+65. Should checkout create the loan before signature upload, submit both atomically, or hold an expiring checkout
     session? What happens if checkout succeeds but signature storage fails?
-58. Is a dedicated loan-detail route required, or is rendering within the existing Loans page sufficient for V2?
+66. Is a dedicated loan-detail route required, or is rendering within the existing Loans page sufficient for V2?
 
 ## Borrowers, ratings, and reviews
 
-59. Does V2 introduce durable patron/borrower profiles, or do reviews remain attached to the current free-text borrower
+67. Does V2 introduce durable patron/borrower profiles, or do reviews remain attached to the current free-text borrower
     string? How are two people with the same name distinguished?
-60. Who enters feedback: the borrower directly on the owner's device, the owner on the borrower's behalf, or the
+68. Who enters feedback: the borrower directly on the owner's device, the owner on the borrower's behalf, or the
     borrower through a link/account later?
-61. Is feedback allowed only after a successful return, and is there at most one feedback record per loan?
-62. What rating scale and precision are required? Is a text review allowed without a rating, and can feedback be
+69. Is feedback allowed only after a successful return, and is there at most one feedback record per loan?
+70. What rating scale and precision are required? Is a text review allowed without a rating, and can feedback be
     edited or withdrawn?
-63. Is borrower attribution anonymous, initials-only, full-name, tenant-configurable, or chosen per review?
-64. Are moderation/approval, visibility, and abuse-reporting needed when tenants other than the original private
+71. Is borrower attribution anonymous, initials-only, full-name, tenant-configurable, or chosen per review?
+72. Are moderation/approval, visibility, and abuse-reporting needed when tenants other than the original private
     library use the app?
-65. Are aggregates calculated per owned copy, commercial edition/release, work/title, or some combination? Albums
+73. Are aggregates calculated per owned copy, commercial edition/release, work/title, or some combination? Albums
     have a release-level catalog row; books currently generally prevent duplicate ISBNs. How do
     aggregates work across media?
-66. Should a skipped check-in prompt be available later from the loan record, and should the app ever remind a
+74. Should a skipped check-in prompt be available later from the loan record, and should the app ever remind a
     borrower?
 
 ## Donation punch card and Staff Pick reward
 
-67. Is this feature committed to V2 or only a research/design outcome for V2?
-68. What constitutes a qualifying donation: physical items only, any media, money, supplies, or owner discretion?
-69. Who grants a punch, can it be reversed, and what audit note/evidence is required to prevent duplicates?
-70. Is the threshold fixed at ten, tenant-configurable, or campaign-specific? Do punches expire or carry over after a
+75. Is this feature committed to V2 or only a research/design outcome for V2?
+76. What constitutes a qualifying donation: physical items only, any media, money, supplies, or owner discretion?
+77. Who grants a punch, can it be reversed, and what audit note/evidence is required to prevent duplicates?
+78. Is the threshold fixed at ten, tenant-configurable, or campaign-specific? Do punches expire or carry over after a
     reward?
-71. Does earning the reward let the patron nominate a Staff Pick for owner approval or directly add one item? How long
+79. Does earning the reward let the patron nominate a Staff Pick for owner approval or directly add one item? How long
     does the designation last, and can the same item have several patrons' picks?
-72. Does this require a patron-facing account/UI, or is it an owner-managed ledger shown to the patron when useful?
-73. How should donations and participation be presented without implying a monetary value, tax status, or guaranteed
+80. Does this require a patron-facing account/UI, or is it an owner-managed ledger shown to the patron when useful?
+81. How should donations and participation be presented without implying a monetary value, tax status, or guaranteed
     prize?
 
 ## Cross-cutting product behavior
 
-74. Is Home library-wide by default or scoped to the selected medium? Is Dashboard scoped the same way?
-75. Is media selection global persistent state, a URL segment/filter, or both? What does a shared deep link select?
-76. Should global search return mixed-media results by default, and how are heterogeneous results grouped and
+82. Is Home library-wide by default or scoped to the selected medium? Is Dashboard scoped the same way?
+83. Is media selection global persistent state, a URL segment/filter, or both? What does a shared deep link select?
+84. Should global search return mixed-media results by default, and how are heterogeneous results grouped and
     disambiguated on mobile?
-77. Which media are circulatable by default, and can circulation policy be configured per item, medium, or tenant?
-78. Do “Staff Picks,” Collections, Wishlists, borrower aggregates, recent additions, and dashboard counts combine media
+85. Which media are circulatable by default, and can circulation policy be configured per item, medium, or tenant?
+86. Do “Staff Picks,” Collections, Wishlists, borrower aggregates, recent additions, and dashboard counts combine media
     or get separate per-medium views?
-79. Which post-V1 observations have been collected, and who decides whether each is a defect, polish item, committed
+87. Which post-V1 observations have been collected, and who decides whether each is a defect, polish item, committed
     V2 feature, or later work?
 
 ## Planning readiness
 
 An end-to-end V2 implementation plan is ready to create when:
 
-* authoritative contracts exist for DVDs, comics, and VHS, and the album `FEAT-23` handoff contract is available;
+* the album `FEAT-23` handoff contract is available; deferred V3 media do not block V2 planning;
 * the definitive scope versus the older pass documents has been resolved;
 * the shared item/media/location and tenant/auth models are known;
 * the persisted preference and session boundaries are known;

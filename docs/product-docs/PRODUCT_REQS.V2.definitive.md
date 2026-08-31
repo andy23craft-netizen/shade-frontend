@@ -108,8 +108,11 @@ feature can be ticketed.
 
 ## 3. Additional physical media
 
-**V2 commitment:** Books, vinyl records, cassettes, CDs, DVDs, comics, and VHS tapes are first-class collection types.
-Board games are deferred unless explicitly promoted into V2.
+**V2 commitment:** V2 adds the album catalog defined by the backend workstream. Vinyl records, CDs, and cassettes are
+first-class formats within that album catalog. Books remain first-class through the existing book catalog.
+
+Movies and video media—including DVDs and VHS tapes—are V3, not V2. Comics are also provisionally V3 while their
+catalog grain and UPC requirements are researched. Board games remain a possible later addition.
 
 First-class means each medium can be created, browsed, searched, viewed, edited, located, included in applicable
 collections or wishlists, and circulated where the domain rules allow. A non-book item must not be represented by
@@ -161,11 +164,15 @@ The locked model and its frontend consequences are:
 The frontend should wait for backend `FEAT-23` contract synchronization and use the resulting OpenAPI plus
 `API-for-FE.md`, rather than coding against proposed intermediate schemas.
 
-### Media still lacking contracts
+### Deferred media
 
-The album tickets cover vinyl, CDs, and cassettes. They do not define DVDs, comics, or VHS. The `other` album format
-must not be treated as a substitute for those distinct domains. Those media require their own authoritative feature
-definitions before an implementation plan can include them. Board games remain deferred.
+The album `other` format must not be used as a substitute for a movie, video, comic, or board-game domain.
+
+V3 planning may treat DVDs and VHS as formats of one movie/video catalog, analogous to the album format model. The
+loanable grain for multi-disc releases and box sets remains open. Comics also require collector input before deciding
+whether the catalog grain is an issue, collected edition, series, or another physical-copy model, and before adding
+UPC-based lookup. Audiobook reading-history logging and digital-media management remain outside the physical-media V2
+scope.
 
 ## 4. Multi-tenant support
 
@@ -224,7 +231,7 @@ free-form theme editor is deferred.
 
 Media identity and skin are separate layers:
 
-* **Media identity** supplies the broad vocabulary appropriate to books, records, films, comics, and other media.
+* **Media identity** supplies the broad vocabulary appropriate to books, albums, and future media.
 * **Skin** supplies a curated interpretation of that identity.
 
 The current Shade Library appearance should become a book skin, not the universal application appearance. Skin choice
@@ -290,7 +297,63 @@ label-generation API, or print template is defined.
 QR generation itself can be client-side, but lookup authorization, payload format, revocation expectations, and print
 requirements must be decided before choosing that boundary.
 
-## 9. Quote-coordinated Home presentation
+## 9. Manual book availability and TBR-driven status
+
+**V2 commitment:** An owner can deliberately change a book's availability state without checking it in or out, and
+selected personal TBR shelves can apply an availability state automatically when a book is moved there.
+
+### Existing contract and current limitation
+
+The backend already defines these book statuses:
+
+* `unknown`
+* `available`
+* `on_loan`
+* `missing`
+* `display_only`
+* `reserved`
+* `reading`
+
+`BookUpdate` currently accepts `status`, but the frontend's ordinary book-edit flow intentionally omits it along with
+other lifecycle fields. Checkout is offered only for `available` books. Checkout and check-in own the `on_loan` to
+`available` lifecycle, while shelf moves currently change only `shelf_name`.
+
+### Manual status control
+
+Book Details should expose a clear owner/admin action for changing availability. At minimum, the owner must be able to
+mark a book `available`, `reserved`, `reading`, or `missing` without editing unrelated bibliographic metadata.
+`display_only` and `unknown` may remain available administrative choices if product confirms they are useful.
+
+`on_loan` is not a manual choice. It is created by checkout and cleared by check-in so loan history and book state
+cannot diverge. A manual action must not make a book available, reserved, reading, or missing while an active loan
+exists; the owner must check the item in first. Stale-state failures should preserve the intended choice, refresh the
+book and loan state, and explain what changed.
+
+The UI should explain the practical meaning of each state:
+
+* **Available:** eligible for ordinary checkout.
+* **Reserved:** intentionally held back from ordinary checkout.
+* **Reading:** currently in personal use and held back from ordinary checkout.
+* **Missing:** not presently locatable and held back from ordinary checkout.
+* **Display only:** part of the collection but never ordinarily loaned.
+
+Changing availability does not change `is_read`, reading completion, rating, or review. In particular, `reading`
+means the physical copy is in current use; it does not mark the book read.
+
+### TBR shelf automation
+
+Moving a book from its home shelf to `Liz TBR` or `Andy TBR` should be able to reserve it or mark it as reading as part
+of the same successful operation. The status and shelf move must not visibly disagree because one update succeeded
+and the other failed.
+
+The initial product intent is household-scale rather than a general reservation queue: Andy or Liz can hold a book so
+another borrower is not offered it. A later version may add an ordered reservation list for several people who want
+the same title back to back.
+
+The exact mapping for each TBR shelf, what happens when a book leaves one, and whether the reserved person's identity
+must be stored separately from the shelf are still open. Those rules require a backend contract before ticketing.
+
+## 10. Quote-coordinated Home presentation
 
 **V2 commitment:** Home presentation responds deliberately to the active quote; the quote is not an isolated rotating
 text block.
@@ -322,7 +385,7 @@ The prior documents do not define which headings change, how treatments map to q
 weather-derived or quote-specific, or how much of Home is affected. Those decisions are required before a ticket can
 be written.
 
-## 10. Borrower signature capture
+## 11. Borrower signature capture
 
 **V2 status:** Committed subject to a feasibility decision. If accepted after investigation, signature capture and
 rendering are one feature and should not be split into independently shippable promises.
@@ -347,7 +410,7 @@ The current checkout body and `LoanRead` schema contain no signature field or at
 cannot be patched. Storage format, retention, deletion, access, upload timing, and failure recovery require a backend
 contract before UI planning.
 
-## 11. Borrower ratings and reviews
+## 12. Borrower ratings and reviews
 
 **V2 commitment:** A borrower can optionally rate and review a returned physical item without altering the owner's
 rating, review, or read state.
@@ -372,7 +435,7 @@ The current app has only a free-text borrower name on each loan. Owner rating/re
 accepts only an optional return timestamp; and no borrower, patron, feedback, or aggregate resource exists. This
 feature requires a borrower identity decision and backend contract.
 
-## 12. Patron donation participation / punch card
+## 13. Patron donation participation / punch card
 
 **V2 status:** Exploratory; it becomes a release requirement only after product approves concrete rules.
 
@@ -392,7 +455,7 @@ permissions.
 
 No patron, donation, punch, reward, or redemption model exists in the frontend or API.
 
-## 13. Cross-cutting behavior to resolve
+## 14. Cross-cutting behavior to resolve
 
 ### Unified search and scanning
 
@@ -416,7 +479,7 @@ Media selection will affect domain fields and visual environment. It needs a per
 mobile-appropriate interaction with defined URL/deep-link behavior and a predictable fallback when the selected
 medium is unavailable to the active tenant.
 
-## 14. Post-V1 observation period
+## 15. Post-V1 observation period
 
 After V1 goes live, pause active feature development for approximately one week and use the application normally.
 Record cumbersome interactions, weak pages, technically complete but unpolished behavior, repetitive actions, missing
@@ -432,11 +495,13 @@ scheduled.
 Committed release outcomes:
 
 * Guided first-run setup built on the existing Build Mode workflow.
-* First-class books, vinyl, cassettes, CDs, DVDs, comics, and VHS support.
+* First-class books plus the album catalog for vinyl, cassettes, and CDs.
 * Tenant-aware UI against the approved multi-tenant contract.
 * A distinctive visual identity plus at least one alternate curated skin for every supported medium.
 * Media-aware Bulk Add for every supported medium.
 * Stable physical-item QR labels, batch printing, and QR-aware item resolution in circulation.
+* Manual book availability controls for reserved, reading, missing, and available states.
+* Agreed automatic status behavior when books move to `Liz TBR` or `Andy TBR`.
 * Quote-coordinated Home presentation, including the agreed portion of the existing structured/weather-aware quote
   work.
 * Borrower signature capture and rendering if the feasibility gate is approved.
@@ -451,6 +516,9 @@ Exploratory outcomes, not release blockers until promoted:
 ## Deferred or possible later work
 
 * Board-game support, potentially V3.
+* Movie/video catalog support, including DVDs, VHS, and decisions for multi-disc releases and box sets.
+* Comic support after the catalog grain, creator model, and UPC lookup requirements are defined.
+* Audiobook reading-history logging and other digital-media support.
 * A free-form user-created theme editor.
 * Elaborate patron reward or monetary-incentive systems.
 * Borrower-derived discovery beyond the minimum feedback and aggregate display.
