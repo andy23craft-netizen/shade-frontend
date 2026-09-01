@@ -1748,18 +1748,33 @@
         "title": "CollectionBookRead",
         "type": "object"
       },
-      "CollectionBookReorder": {
+      "CollectionBookUpdate": {
         "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
           "order_num": {
-            "exclusiveMinimum": 0.0,
-            "title": "Order Num",
-            "type": "integer"
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Num"
           }
         },
-        "required": [
-          "order_num"
-        ],
-        "title": "CollectionBookReorder",
+        "title": "CollectionBookUpdate",
         "type": "object"
       },
       "CollectionCreate": {
@@ -2626,6 +2641,26 @@
         "title": "WishlistBookStatus",
         "type": "string"
       },
+      "WishlistBookUpdate": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "notes"
+        ],
+        "title": "WishlistBookUpdate",
+        "type": "object"
+      },
       "WishlistCreate": {
         "properties": {
           "description": {
@@ -2753,7 +2788,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.0.0"
+    "version": "1.0.3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -5952,7 +5987,7 @@
         ]
       },
       "patch": {
-        "operationId": "reorder_collection_book_route_collections__collection_id__books__collection_book_id__patch",
+        "operationId": "update_collection_book_route_collections__collection_id__books__collection_book_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -5977,7 +6012,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CollectionBookReorder"
+                "$ref": "#/components/schemas/CollectionBookUpdate"
               }
             }
           },
@@ -6050,7 +6085,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Reorder Collection Book Route",
+        "summary": "Update Collection Book Route",
         "tags": [
           "collections"
         ]
@@ -7386,6 +7421,100 @@
           }
         ],
         "summary": "Delete Wishlist Book",
+        "tags": [
+          "wishlists"
+        ]
+      },
+      "patch": {
+        "operationId": "update_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "wishlist_book_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WishlistBookUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistBookRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Wishlist Book",
         "tags": [
           "wishlists"
         ]

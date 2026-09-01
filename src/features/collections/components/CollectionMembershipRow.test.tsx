@@ -20,6 +20,7 @@ import type {
 import {
     useRemoveCollectionBook,
     useReorderCollectionBook,
+    useUpdateCollectionBook,
 } from '../../../api/collectionsQueries'
 import {
     CollectionMembershipRow,
@@ -29,6 +30,7 @@ import {
 vi.mock('../../../api/collectionsQueries', () => ({
     useReorderCollectionBook: vi.fn(),
     useRemoveCollectionBook: vi.fn(),
+    useUpdateCollectionBook: vi.fn(),
 }))
 
 vi.mock(
@@ -57,6 +59,8 @@ const mockUseReorderCollectionBook =
 
 const mockUseRemoveCollectionBook =
     vi.mocked(useRemoveCollectionBook)
+const mockUseUpdateCollectionBook =
+    vi.mocked(useUpdateCollectionBook)
 
 const membership: CollectionBookRead = {
     collection_book_id: 'membership-1',
@@ -82,6 +86,7 @@ const membership: CollectionBookRead = {
 function idleMutation() {
     return {
         mutate: vi.fn(),
+        mutateAsync: vi.fn().mockResolvedValue(undefined),
         isPending: false,
     }
 }
@@ -128,6 +133,9 @@ describe('CollectionMembershipRow', () => {
             idleMutation() as unknown as ReturnType<
                 typeof useRemoveCollectionBook
             >,
+        )
+        mockUseUpdateCollectionBook.mockReturnValue(
+            idleMutation() as unknown as ReturnType<typeof useUpdateCollectionBook>,
         )
     })
 

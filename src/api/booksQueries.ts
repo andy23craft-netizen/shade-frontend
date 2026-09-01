@@ -1,4 +1,5 @@
 import {
+    keepPreviousData,
     useInfiniteQuery,
     useMutation,
     useQuery,
@@ -312,6 +313,7 @@ export function useInfiniteBooks(
                 signal,
             }),
         getNextPageParam: getNextListPageParam,
+        placeholderData: keepPreviousData,
         enabled,
     })
 }
@@ -796,6 +798,7 @@ export function useCheckinBook() {
                 queryClient,
                 book,
             )
+
             await invalidateBookCaches(
                 queryClient,
                 book.id,

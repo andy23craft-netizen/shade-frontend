@@ -2290,6 +2290,7 @@ export function BulkAddPage() {
                                                     <input
                                                         id={`${item.clientItemId}-pages`}
                                                         type="number"
+                                                        inputMode="numeric"
                                                         min="1"
                                                         value={
                                                             draft.pages

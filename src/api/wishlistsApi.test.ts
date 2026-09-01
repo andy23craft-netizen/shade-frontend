@@ -252,6 +252,17 @@ describe('createWishlistsApi', () => {
         ).rejects.toBe(error)
     })
 
+    it('updates and clears wishlist membership notes', async () => {
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue(sampleMembership)
+        const api = createWishlistsApi(client)
+        await api.updateBook('wishlist-1', 'membership/1', { notes: null })
+        expect(client.requestJson).toHaveBeenCalledWith(
+            '/wishlists/wishlist-1/books/membership%2F1',
+            { method: 'PATCH', body: { notes: null } },
+        )
+    })
+
     it('propagates a 404 error when removing an unknown membership', async () => {
         const client = createMockClient()
 

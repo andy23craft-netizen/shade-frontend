@@ -2,7 +2,7 @@ import type {
     CollectionBookCreate,
     CollectionBookList,
     CollectionBookRead,
-    CollectionBookReorder,
+    CollectionBookUpdate,
     CollectionCreate,
     CollectionList,
     CollectionRead,
@@ -16,7 +16,7 @@ import type {
 } from './apiCallOptions'
 import {
     pickCollectionBookCreate,
-    pickCollectionBookReorder,
+    pickCollectionBookUpdate,
     pickCollectionCreate,
     pickCollectionUpdate,
 } from './requestFields'
@@ -177,21 +177,35 @@ export function createCollectionsApi(
             )
         },
 
-        async reorderBook(
+        async updateBook(
             collectionId: string,
             collectionBookId: string,
-            reorder: CollectionBookReorder,
+            update: CollectionBookUpdate,
             options: ApiCallOptions = {},
         ): Promise<CollectionBookRead> {
             return client.requestJson<CollectionBookRead>(
                 `/collections/${encodeURIComponent(collectionId)}/books/${encodeURIComponent(collectionBookId)}`,
                 {
                     method: 'PATCH',
-                    body: pickCollectionBookReorder(
-                        reorder,
+                    body: pickCollectionBookUpdate(
+                        update,
                     ),
                     ...withSignal(options.signal),
                 },
+            )
+        },
+
+        async reorderBook(
+            collectionId: string,
+            collectionBookId: string,
+            update: CollectionBookUpdate,
+            options: ApiCallOptions = {},
+        ): Promise<CollectionBookRead> {
+            return this.updateBook(
+                collectionId,
+                collectionBookId,
+                update,
+                options,
             )
         },
 

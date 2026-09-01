@@ -9,6 +9,7 @@ import type {
     CollectionBookCreate,
     CollectionBookList,
     CollectionBookReorder,
+    CollectionBookUpdate,
     CollectionCreate,
     CollectionUpdate,
 } from './apiTypes'
@@ -311,6 +312,25 @@ export function useReorderCollectionBook() {
                     queryKeys.collections.books(
                         variables.collectionId,
                     ),
+            })
+        },
+    })
+}
+
+export function useUpdateCollectionBook() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const collectionsApi = createCollectionsApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({ collectionId, collectionBookId, update }: {
+            collectionId: string
+            collectionBookId: string
+            update: CollectionBookUpdate
+        }) => collectionsApi.updateBook(collectionId, collectionBookId, update),
+        onSuccess: async (_result, variables) => {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.collections.books(variables.collectionId),
             })
         },
     })

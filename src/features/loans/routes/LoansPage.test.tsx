@@ -426,12 +426,6 @@ describe('LoansPage', () => {
                 /8\/12\/2026/,
             ),
         ).toBeInTheDocument()
-
-        expect(
-            screen.getByText(
-                /8\/20\/2026/,
-            ),
-        ).toBeInTheDocument()
     })
 
     it('offers check-in for an eligible active loan', () => {
@@ -983,82 +977,6 @@ describe('LoansPage', () => {
         expect(
             screen.getByText(
                 'No returned loans yet.',
-            ),
-        ).toBeInTheDocument()
-    })
-
-    it('renders date-only due values without timezone shifting', () => {
-        mockUseInfiniteLoans.mockReturnValue(
-            makeInfiniteLoansResult([
-                makeLoanList({
-                    items: [
-                        {
-                            ...makeLoanList().items[0],
-                            due_at: '2026-08-20',
-                        },
-                    ],
-                }),
-            ]),
-        )
-
-        mockUseBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeBookList(),
-        })
-
-        renderPage()
-
-        const expected =
-            new Intl.DateTimeFormat(
-                undefined,
-                {
-                    dateStyle: 'medium',
-                },
-            ).format(
-                new Date(
-                    2026,
-                    7,
-                    20,
-                ),
-            )
-
-        expect(
-            screen.getByText(expected),
-        ).toBeInTheDocument()
-    })
-
-    it('renders malformed due values safely', () => {
-        mockUseInfiniteLoans.mockReturnValue(
-            makeInfiniteLoansResult([
-                makeLoanList({
-                    items: [
-                        {
-                            ...makeLoanList().items[0],
-                            due_at: 'not-a-date',
-                        },
-                    ],
-                }),
-            ]),
-        )
-
-        mockUseBooks.mockReturnValue({
-            isPending: false,
-            isError: false,
-            data: makeBookList(),
-        })
-
-        renderPage()
-
-        expect(
-            screen.getByText(
-                'not-a-date (unrecognized date)',
-            ),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByText(
-                'Active — due date could not be interpreted',
             ),
         ).toBeInTheDocument()
     })

@@ -14,9 +14,11 @@ import type {
     ShelfCreate,
     ShelfUpdate,
     WishlistBookCreate,
+    WishlistBookUpdate,
     WishlistCreate,
     WishlistUpdate,
     CollectionBookCreate,
+    CollectionBookUpdate,
     CollectionBookReorder,
     CollectionCreate,
     CollectionUpdate,
@@ -72,7 +74,6 @@ export const BULK_SHELF_MOVE_REQUEST_KEYS = [
 export const CHECKOUT_REQUEST_KEYS = [
     'borrower',
     'checked_out_at',
-    'due_at',
     'notes',
 ] as const satisfies readonly (keyof CheckoutRequest)[]
 
@@ -136,6 +137,10 @@ export const WISHLIST_BOOK_CREATE_KEYS = [
     'url',
 ] as const satisfies readonly (keyof WishlistBookCreate)[]
 
+export const WISHLIST_BOOK_UPDATE_KEYS = [
+    'notes',
+] as const satisfies readonly (keyof WishlistBookUpdate)[]
+
 export const COLLECTION_CREATE_KEYS = [
     'name',
     'description',
@@ -152,9 +157,10 @@ export const COLLECTION_BOOK_CREATE_KEYS = [
     'notes',
 ] as const satisfies readonly (keyof CollectionBookCreate)[]
 
-export const COLLECTION_BOOK_REORDER_KEYS = [
+export const COLLECTION_BOOK_UPDATE_KEYS = [
     'order_num',
-] as const satisfies readonly (keyof CollectionBookReorder)[]
+    'notes',
+] as const satisfies readonly (keyof CollectionBookUpdate)[]
 
 export function pickDocumentedRequestFields<
     T extends object,
@@ -308,6 +314,15 @@ export function pickWishlistBookCreate(
     )
 }
 
+export function pickWishlistBookUpdate(
+    wishlistBook: WishlistBookUpdate,
+): WishlistBookUpdate {
+    return pickDocumentedRequestFields(
+        wishlistBook,
+        WISHLIST_BOOK_UPDATE_KEYS,
+    )
+}
+
 export function pickCollectionCreate(
     collection: CollectionCreate,
 ): CollectionCreate {
@@ -335,13 +350,20 @@ export function pickCollectionBookCreate(
     )
 }
 
+export function pickCollectionBookUpdate(
+    update: CollectionBookUpdate,
+): CollectionBookUpdate {
+    return pickDocumentedRequestFields(
+        update,
+        COLLECTION_BOOK_UPDATE_KEYS,
+    )
+}
+
 export function pickCollectionBookReorder(
     reorder: CollectionBookReorder,
 ): CollectionBookReorder {
     return pickDocumentedRequestFields(
         reorder,
-        COLLECTION_BOOK_REORDER_KEYS,
+        ['order_num'],
     )
 }
-
-

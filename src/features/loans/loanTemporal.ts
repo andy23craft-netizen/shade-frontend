@@ -1,14 +1,6 @@
 import {
-    formatDateOnly,
     isDateOnlyString,
 } from '../../api/dateTime'
-
-export type LoanDueState =
-    | 'no_due_date'
-    | 'due'
-    | 'due_today'
-    | 'overdue'
-    | 'unknown'
 
 export function displayLoanDate(
     value: string | null | undefined,
@@ -45,40 +37,4 @@ export function displayLoanDate(
     }
 
     return date.toLocaleString()
-}
-
-export function getLoanDueState(
-    dueAt: string | null | undefined,
-    now: Date = new Date(),
-): LoanDueState {
-    if (!dueAt) {
-        return 'no_due_date'
-    }
-
-    if (isDateOnlyString(dueAt)) {
-        const today =
-            formatDateOnly(now)
-
-        if (dueAt < today) {
-            return 'overdue'
-        }
-
-        if (dueAt === today) {
-            return 'due_today'
-        }
-
-        return 'due'
-    }
-
-    const dueDate = new Date(dueAt)
-
-    if (Number.isNaN(dueDate.getTime())) {
-        return 'unknown'
-    }
-
-    if (dueDate.getTime() < now.getTime()) {
-        return 'overdue'
-    }
-
-    return 'due'
 }

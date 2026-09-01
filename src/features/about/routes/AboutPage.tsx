@@ -79,8 +79,8 @@ export function AboutPage() {
 
                 <p>
                     If you find something you want to read, borrow it. Take your time
-                    with it and bring it back at your leisure. I&apos;m much more interested
-                    in a book being enjoyed than in enforcing a due date.
+                    with it and bring it back at your leisure. What matters is that the
+                    book is enjoyed and eventually finds its way home.
                 </p>
 
                 <p>

@@ -82,6 +82,21 @@ export function IsbnCameraScanner({
         capabilityError ?? runtimeError
 
     useEffect(() => {
+        if (
+            typeof window.matchMedia !== 'function' ||
+            !window.matchMedia('(max-width: 40rem)').matches
+        ) {
+            return
+        }
+
+        const previousOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        return () => {
+            document.body.style.overflow = previousOverflow
+        }
+    }, [])
+
+    useEffect(() => {
         if (capabilityError) {
             return
         }
@@ -309,6 +324,7 @@ export function IsbnCameraScanner({
     return (
         <section
             aria-labelledby="isbn-scanner-heading"
+            className="isbn-camera-scanner"
         >
             <header>
                 <h2 id="isbn-scanner-heading">
@@ -324,7 +340,7 @@ export function IsbnCameraScanner({
 
             {!error ? (
                 <>
-                    <div>
+                    <div className="isbn-camera-scanner__viewfinder">
                         <video
                             ref={videoRef}
                             muted
@@ -422,7 +438,7 @@ export function IsbnCameraScanner({
                 </>
             ) : null}
 
-            <div>
+            <div className="isbn-camera-scanner__actions">
                 <Button
                     type="button"
                     variant="secondary"

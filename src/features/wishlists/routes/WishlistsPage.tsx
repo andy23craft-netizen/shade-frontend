@@ -35,6 +35,9 @@ import {
     useCreateWishlist,
     useDeleteWishlist,
     useInfiniteWishlistBooks,
+    useRemoveWishlistBook,
+    useUpdateWishlist,
+    useUpdateWishlistBook,
     useWishlists,
 } from '../../../api/wishlistsQueries'
 import {
@@ -59,6 +62,7 @@ import {
     type WishlistCreateFieldErrors,
     type WishlistCreateFormValues,
 } from '../wishlistFormModel'
+import { MembershipNotesEditor } from '../../shared/MembershipNotesEditor'
 
 const CREATE_FIELDS = new Set<string>([
     'name',
@@ -103,6 +107,10 @@ function WishlistMembershipRow({
         node: HTMLLIElement | null,
     ) => void
 }) {
+    const removeMembership = useRemoveWishlistBook()
+    const updateMembership = useUpdateWishlistBook()
+    const [confirmRemove, setConfirmRemove] = useState(false)
+    const [removeError, setRemoveError] = useState<string | null>(null)
     const {
         wishlist_book_id: membershipId,
         wishlist_id: wishlistId,
@@ -186,12 +194,66 @@ function WishlistMembershipRow({
                 bookTitle={title}
             />
 
+            <MembershipNotesEditor
+                label="Wishlist description"
+                notes={notes}
+                onSave={(nextNotes) => updateMembership.mutateAsync({
+                    wishlistId,
+                    wishlistBookId: membershipId,
+                    update: { notes: nextNotes },
+                })}
+            />
+
             <MoveWishlistBookToShelfControl
                 wishlistId={wishlistId}
                 wishlistBookId={membershipId}
                 bookId={bookId}
                 bookTitle={title}
             />
+
+            {removeError ? <Alert variant="error">{removeError}</Alert> : null}
+
+            <Button
+                type="button"
+                variant="danger"
+                disabled={removeMembership.isPending}
+                onClick={() => setConfirmRemove(true)}
+            >
+                Remove from Wishlist
+            </Button>
+
+            <ConfirmationDialog
+                open={confirmRemove}
+                title="Remove from wishlist?"
+                confirmLabel={removeMembership.isPending ? 'Removing…' : 'Remove from Wishlist'}
+                cancelLabel="Cancel"
+                confirmVariant="danger"
+                onConfirm={() => {
+                    if (removeMembership.isPending) return
+                    setRemoveError(null)
+                    removeMembership.mutate(
+                        { wishlistId, wishlistBookId: membershipId },
+                        {
+                            onSuccess: () => setConfirmRemove(false),
+                            onError: (error) => {
+                                setConfirmRemove(false)
+                                setRemoveError(
+                                    isApiError(error)
+                                        ? error.detail ?? error.message
+                                        : error instanceof Error
+                                            ? error.message
+                                            : 'The book could not be removed from the wishlist.',
+                                )
+                            },
+                        },
+                    )
+                }}
+                onCancel={() => {
+                    if (!removeMembership.isPending) setConfirmRemove(false)
+                }}
+            >
+                Remove <strong>{title}</strong> from this wishlist without adding it to the owned collection?
+            </ConfirmationDialog>
 
         </li>
     )
@@ -210,6 +272,10 @@ function WishlistSection({
     onDelete: (wishlist: WishlistRead) => void
     deletePending: boolean
 }) {
+    const updateWishlist = useUpdateWishlist()
+    const [editing, setEditing] = useState(false)
+    const [description, setDescription] = useState(wishlist.description ?? '')
+    const [editError, setEditError] = useState<string | null>(null)
     const membershipsQuery =
         useInfiniteWishlistBooks(
             wishlist.wishlist_id,
@@ -251,9 +317,8 @@ function WishlistSection({
     return (
         <article className="wishlist-card">
             <header className="wishlist-card__header">
-                <div>
-                    <h2>{wishlist.name}</h2>
-
+                <h2>{wishlist.name}</h2>
+                <div className="wishlist-card__summary">
                     {wishlist.description ? (
                         <p>{wishlist.description}</p>
                     ) : null}
@@ -269,6 +334,17 @@ function WishlistSection({
                 </div>
 
                 <div className="wishlist-card__actions">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setDescription(wishlist.description ?? '')
+                            setEditError(null)
+                            setEditing(true)
+                        }}
+                    >
+                        Edit Wishlist
+                    </Button>
                     <Button
                         type="button"
                         variant="secondary"
@@ -291,6 +367,52 @@ function WishlistSection({
                     </Button>
                 </div>
             </header>
+
+            {editing ? (
+                <form
+                    className="wishlist-form"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        if (updateWishlist.isPending) return
+                        setEditError(null)
+                        const trimmed = description.trim()
+                        updateWishlist.mutate(
+                            {
+                                wishlistId: wishlist.wishlist_id,
+                                wishlist: { description: trimmed === '' ? null : trimmed },
+                            },
+                            {
+                                onSuccess: () => setEditing(false),
+                                onError: (error) => setEditError(
+                                    isApiError(error)
+                                        ? error.detail ?? error.message
+                                        : error instanceof Error
+                                            ? error.message
+                                            : 'The wishlist could not be updated.',
+                                ),
+                            },
+                        )
+                    }}
+                >
+                    {editError ? <Alert variant="error">{editError}</Alert> : null}
+                    <Field label="Description">
+                        <textarea
+                            value={description}
+                            rows={3}
+                            disabled={updateWishlist.isPending}
+                            onChange={(event) => setDescription(event.target.value)}
+                        />
+                    </Field>
+                    <div className="wishlist-card__actions">
+                        <Button type="submit" variant="primary" disabled={updateWishlist.isPending}>
+                            {updateWishlist.isPending ? 'Saving…' : 'Save Wishlist'}
+                        </Button>
+                        <Button type="button" variant="secondary" disabled={updateWishlist.isPending} onClick={() => setEditing(false)}>
+                            Cancel
+                        </Button>
+                    </div>
+                </form>
+            ) : null}
 
             {!expanded ? null : (
                 <>

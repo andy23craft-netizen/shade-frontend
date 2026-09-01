@@ -150,7 +150,9 @@ test('checks out and checks in a book through the browser', async ({
     }).click()
 
     await expect(page).toHaveURL(
-        /\/loans$/,
+        new RegExp(
+            `/loans\\?bookId=${book.id}`,
+        ),
     )
 
     await expect(

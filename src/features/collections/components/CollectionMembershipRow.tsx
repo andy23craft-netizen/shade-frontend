@@ -18,7 +18,9 @@ import type {
 import {
     useRemoveCollectionBook,
     useReorderCollectionBook,
+    useUpdateCollectionBook,
 } from '../../../api/collectionsQueries'
+import { MembershipNotesEditor } from '../../shared/MembershipNotesEditor'
 import {
     collectionBookWishlistClassName,
     displayCollectionBookLocation,
@@ -48,6 +50,9 @@ export function CollectionMembershipRow({
 
     const removeBook =
         useRemoveCollectionBook()
+
+    const updateBook =
+        useUpdateCollectionBook()
 
     const [
         removeOpen,
@@ -208,6 +213,15 @@ export function CollectionMembershipRow({
             ) : null}
 
             <div className="collection-membership__actions">
+                <MembershipNotesEditor
+                    label="Collection description"
+                    notes={membership.notes}
+                    onSave={(nextNotes) => updateBook.mutateAsync({
+                        collectionId,
+                        collectionBookId: membership.collection_book_id,
+                        update: { notes: nextNotes },
+                    })}
+                />
                 <Button
                     type="button"
                     variant="secondary"

@@ -22,7 +22,6 @@ import {
 import { ApiError } from '../../../api/apiErrors'
 import type { BookRead } from '../../../api/apiTypes'
 import { useCheckoutBook } from '../../../api/booksQueries'
-import { dueAtOneYearFrom } from '../checkoutModel'
 import { CheckoutDialog } from './CheckoutDialog'
 
 vi.mock('../../../api/booksQueries', () => ({
@@ -245,7 +244,7 @@ describe('CheckoutDialog', () => {
         ).toHaveFocus()
     })
 
-    it('submits borrower, checkout time, due date, and notes', () => {
+    it('submits borrower, checkout time, and notes without a due date', () => {
         const now = new Date(
             '2026-08-19T15:30:45.123Z',
         )
@@ -280,7 +279,6 @@ describe('CheckoutDialog', () => {
                 borrower: 'Jane Reader',
                 checked_out_at:
                     '2026-08-19T15:30:45.123Z',
-                due_at: dueAtOneYearFrom(now),
                 notes: 'Handle with care',
             },
         })
@@ -317,11 +315,6 @@ describe('CheckoutDialog', () => {
             borrower: 'Jane Reader',
             checked_out_at:
                 '2026-08-19T15:30:45.123Z',
-            due_at: dueAtOneYearFrom(
-                new Date(
-                    '2026-08-19T15:30:45.123Z',
-                ),
-            ),
         })
 
         expect(

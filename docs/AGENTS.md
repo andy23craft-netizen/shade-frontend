@@ -87,11 +87,13 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `shelf_name`; `author_ids` required -- text input resolved/reused/created via `useAuthors` / `useCreateAuthor`) then
   `POST /wishlists/{id}/books`, and move-to-shelf via `MoveWishlistBookToShelfControl` /
   `useMoveWishlistBookToShelf` (membership `DELETE` then `PATCH { shelf_name }`). Shelf/wishlist exclusivity is
-  enforced with documented **412** responses. No add-from-collection or membership field edit.
+  enforced with documented **412** responses. Membership contextual descriptions are editable through
+  `PATCH /wishlists/{id}/books/{membership_id}` with `WishlistBookUpdate.notes`; `null` clears notes.
 - Curated Collections on `/collections` (`collectionsApi` / `useCollections` / `useCollectionBooks` / write
   mutations): Collection-drawer link, create/edit/delete collections (`useUpdateCollection` for name/description;
   blank description clears via explicit JSON `null`), add shelved catalog books via `GET /books` search then
-  `POST /collections/{id}/books`, reorder/remove memberships, and join title/authors via `GET /books/{id}`.
+  `POST /collections/{id}/books`, update membership notes/reorder/remove memberships, and join title/authors via
+  `GET /books/{id}`. `CollectionBookUpdate` preserves omitted fields and accepts `notes: null` to clear notes.
   Membership lists show shelved and wishlisted books (**Wishlist** location when `on_wishlist`; membership
   `shelf_name` may be JSON `null` for unshelved rows -- do not expect BookRead's synthesized `"unknown"`);
   duplicate add is **409**; library delete drops memberships server-side
@@ -178,7 +180,7 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `0.2.15`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.0.3`). Prefer generating or fixture-checking TypeScript models
   from this file.
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, error
   meanings, lifecycle rules, ISBN quirks, book covers **200** image bytes / multipart semantics, SQL backup dump
@@ -200,7 +202,7 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
 
-### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `0.2.15`)
+### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.0.3`)
 
 Authors are backend data, not free-form book text. Books no longer store a string `authors` field on create/update.
 
@@ -225,7 +227,7 @@ SPA surface: `authorsApi` / `authorsQueries`, `authorDisplay.formatBookAuthors`,
 inline `useCreateAuthor` on ISBN lookup apply and wishlist add, and list/detail/join display. Do not send free-form
 author strings on `BookCreate` / `BookUpdate`.
 
-### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `0.2.15`)
+### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.0.3`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
@@ -556,8 +558,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `DashboardCountBucket` / `DashboardIncompleteMetadata`, health, version, `AuthorRead` / `AuthorList` /
   `BookAuthorRead`, `CategoryRead` / `BookCategoryRead`, `ShelfCreate` / `ShelfUpdate` / `ShelfRead`,
   `WishlistCreate` / `WishlistUpdate` / `WishlistRead` / `WishlistList`, `WishlistBookCreate` / `WishlistBookRead` /
-  `WishlistBookList` / `WishlistBookStatus`, `CollectionCreate` / `CollectionUpdate` / `CollectionRead` /
-  `CollectionList`, `CollectionBookCreate` / `CollectionBookRead` / `CollectionBookList` / `CollectionBookReorder`,
+  `WishlistBookList` / `WishlistBookUpdate` / `WishlistBookStatus`, `CollectionCreate` / `CollectionUpdate` / `CollectionRead` /
+  `CollectionList`, `CollectionBookCreate` / `CollectionBookRead` / `CollectionBookList` / `CollectionBookUpdate`,
   validation/error schemas, `Status`). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
   Catalog identity is `BookRead.id` (UUID); loans / wishlist / collection memberships reference that UUID as `book_id`.
   Book category memberships are `BookRead.categories` (`BookCategoryRead[]`); create/update use `category_ids` (GUID
@@ -649,9 +651,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   })`, plus `useCreateShelf` / `useUpdateShelf` / `useDeleteShelf` that invalidate `queryKeys.shelves.all` (and
   books/dashboard when a rename includes `common_name`).
 - `src/api/wishlistsApi.ts` / `wishlistsQueries.ts`: `list` / `create` (**201**) / `update` / `remove` (**204**) /
-  `listBooks` / `addBook` / `removeBook` (**204** membership `DELETE`); optional `skip`/`take` together; documented
+  `listBooks` / `addBook` / `updateBook` / `removeBook` (**204** membership `DELETE`); optional `skip`/`take` together; documented
   fields only. Hooks: `useWishlists`, `useWishlistBooks` (disabled when id is empty), `useCreateWishlist`,
-  `useUpdateWishlist`, `useDeleteWishlist`, `useAddWishlistBook`, `useRemoveWishlistBook`,
+  `useUpdateWishlist`, `useDeleteWishlist`, `useAddWishlistBook`, `useUpdateWishlistBook`, `useRemoveWishlistBook`,
   `useMoveWishlistBookToShelf` (`MoveWishlistBookToShelfError` with `membershipRemoved` for partial-failure retry).
   Create/update/delete invalidate `queryKeys.wishlists.all`; add/remove invalidate that wishlist's books key.
   Move-to-shelf runs membership `DELETE` then minimal `booksApi.update({ shelf_name })` (skip delete when
@@ -660,11 +662,11 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `useAddWishlistBook`. **412** `"Existing books cannot be added to a wishlist"` and edit/move **412**
   `"The book must be removed from the wishlist before it can be placed on a shelf"` are surfaced honestly.
 - `src/api/collectionsApi.ts` / `collectionsQueries.ts`: `list` / `create` (**201**) / `update` / `remove` (**204**) /
-  `listBooks` / `addBook` (**201**) / `reorderBook` / `removeBook` (**204**); optional `skip`/`take` together;
+  `listBooks` / `addBook` (**201**) / `updateBook` / `reorderBook` / `removeBook` (**204**); optional `skip`/`take` together;
   documented fields only (`pickCollectionCreate` / `pickCollectionUpdate` / `pickCollectionBookCreate` /
-  `pickCollectionBookReorder`). Hooks: `useCollections`, `useCollectionBooks` (disabled when id is empty),
+  `pickCollectionBookUpdate`). Hooks: `useCollections`, `useCollectionBooks` (disabled when id is empty),
   `useCreateCollection`, `useUpdateCollection`, `useDeleteCollection`, `useAddCollectionBook`,
-  `useReorderCollectionBook`, `useRemoveCollectionBook`. Create/update/delete invalidate `queryKeys.collections.all`;
+  `useUpdateCollectionBook`, `useReorderCollectionBook`, `useRemoveCollectionBook`. Create/update/delete invalidate `queryKeys.collections.all`;
   membership add/reorder/remove invalidate that collection's books key. `useDeleteBook` also invalidates
   `queryKeys.collections.all` (server drops memberships on hard delete). Product UI uses create/edit/delete/add/
   reorder/remove on `/collections` plus Book Details `AddBookToCollectionDialog` (`useUpdateCollection` /
@@ -847,13 +849,13 @@ Implemented:
   strip only for `GET /books?isbn=`); used by lookup, create, scanner capture, collection jump, and `/books` ISBN list
   filtering. Not used by checkout. Colocated unit tests
 - `src/features/loans/components/CheckoutDialog.tsx` (Check Out on `BookDetailsPage`): checkout via `useCheckoutBook`
-  / `checkoutModel` / `checkoutEligibility`. Native `<dialog>` with borrower and notes only (`checked_out_at` and
-  `due_at` computed client-side via `dueAtOneYearFrom`); Field-linked `422`; `404`/`409`/`412` stale-state refetch
+  / `checkoutModel` / `checkoutEligibility`. Native `<dialog>` with borrower and notes only (`checked_out_at` is
+  computed client-side; optional `due_at` is not displayed, computed, or sent); Field-linked `422`; `404`/`409`/`412` stale-state refetch
   with preserved borrower/notes (`412` for `display_only`, without alternate-copy offers); in-flight disable; success
   closes the dialog and stays on detail. Non-`available` books (including `display_only`) do not get a
   Check Out button. `CheckoutPage` is gone. Colocated `CheckoutDialog.test.tsx`
 - `src/features/loans/checkoutModel.ts`: borrower validation, optional notes, omit blank notes, set `checked_out_at`
-  to now and `due_at` via `dueAtOneYearFrom`; colocated `checkoutModel.test.ts`
+  to now, and omit optional `due_at`; colocated `checkoutModel.test.ts`
 - `src/features/loans/checkoutEligibility.ts`: `isCheckoutEligible` (`status === 'available'`); used by
   `BookDetailsPage` and `CheckoutDialog`; colocated `checkoutEligibility.test.ts`
 - `src/features/loans/checkinEligibility.ts`: `findActiveLoan` and `isCheckinEligible` (active loan on the book;

@@ -1,6 +1,7 @@
 import {
     Children,
     type ReactNode,
+    useCallback,
     useEffect,
     useRef,
     useState,
@@ -19,6 +20,7 @@ export function HomeBookCarousel({
                                      children,
                                  }: HomeBookCarouselProps) {
     const items = Children.toArray(children)
+    const count = items.length
 
     const trackRef =
         useRef<HTMLUListElement>(null)
@@ -26,54 +28,34 @@ export function HomeBookCarousel({
     const resumeTimerRef =
         useRef<number | null>(null)
 
-    const [
-        activeIndex,
-        setActiveIndex,
-    ] = useState(0)
+    const [atStart, setAtStart] = useState(true)
+    const [atEnd, setAtEnd] = useState(count < 2)
 
     const [
         paused,
         setPaused,
     ] = useState(false)
 
-    const count = items.length
-
-    function scrollToIndex(
-        nextIndex: number,
-        behavior: ScrollBehavior = 'smooth',
-    ) {
+    const updateBoundaries = useCallback(() => {
         const track = trackRef.current
-
-        if (track === null || count === 0) {
+        if (track === null) {
             return
         }
+        const tolerance = 2
+        setAtStart(track.scrollLeft <= tolerance)
+        setAtEnd(
+            track.scrollLeft + track.clientWidth >=
+                track.scrollWidth - tolerance,
+        )
+    }, [])
 
-        const normalizedIndex =
-            (nextIndex + count) % count
-
-        const item =
-            track.children[
-                normalizedIndex
-                ] as HTMLElement | undefined
-
-        if (item === undefined) {
-            return
-        }
-
-        track.scrollTo({
-            left: item.offsetLeft,
-            behavior,
+    function move(direction: -1 | 1) {
+        const track = trackRef.current
+        if (track === null) return
+        track.scrollBy({
+            left: direction * Math.max(track.clientWidth * 0.8, 1),
+            behavior: 'smooth',
         })
-
-        setActiveIndex(normalizedIndex)
-    }
-
-    function moveNext() {
-        scrollToIndex(activeIndex + 1)
-    }
-
-    function movePrevious() {
-        scrollToIndex(activeIndex - 1)
     }
 
     function pauseTemporarily() {
@@ -107,41 +89,15 @@ export function HomeBookCarousel({
             return
         }
 
-        const interval =
-            window.setInterval(() => {
-                setActiveIndex(
-                    (currentIndex) => {
-                        const nextIndex =
-                            (currentIndex + 1) %
-                            count
-
-                        const track =
-                            trackRef.current
-
-                        const item =
-                            track?.children[
-                                nextIndex
-                                ] as
-                                | HTMLElement
-                                | undefined
-
-                        if (
-                            track !== null &&
-                            track !== undefined &&
-                            item !== undefined
-                        ) {
-                            track.scrollTo({
-                                left:
-                                item.offsetLeft,
-                                behavior:
-                                    'smooth',
-                            })
-                        }
-
-                        return nextIndex
-                    },
-                )
-            }, AUTO_ADVANCE_MS)
+        const interval = window.setInterval(() => {
+            const track = trackRef.current
+            if (track === null) return
+            if (atEnd) {
+                track.scrollTo({ left: 0, behavior: 'smooth' })
+            } else {
+                move(1)
+            }
+        }, AUTO_ADVANCE_MS)
 
         return () => {
             window.clearInterval(interval)
@@ -149,7 +105,18 @@ export function HomeBookCarousel({
     }, [
         count,
         paused,
+        atEnd,
     ])
+
+    useEffect(() => {
+        const track = trackRef.current
+        if (track === null) return
+        updateBoundaries()
+        if (typeof ResizeObserver === 'undefined') return
+        const observer = new ResizeObserver(updateBoundaries)
+        observer.observe(track)
+        return () => observer.disconnect()
+    }, [count, updateBoundaries])
 
     useEffect(() => {
         return () => {
@@ -171,28 +138,23 @@ export function HomeBookCarousel({
                     type="button"
                     className="home-book-carousel__button"
                     aria-label={`Previous ${ariaLabel}`}
+                    disabled={atStart}
                     onClick={() => {
                         pauseTemporarily()
-                        movePrevious()
+                        move(-1)
                     }}
                 >
                     ←
                 </button>
 
-                <p
-                    className="home-book-carousel__position"
-                    aria-live="polite"
-                >
-                    {activeIndex + 1} / {count}
-                </p>
-
                 <button
                     type="button"
                     className="home-book-carousel__button"
                     aria-label={`Next ${ariaLabel}`}
+                    disabled={atEnd}
                     onClick={() => {
                         pauseTemporarily()
-                        moveNext()
+                        move(1)
                     }}
                 >
                     →
@@ -203,6 +165,7 @@ export function HomeBookCarousel({
                 ref={trackRef}
                 className="home-book-carousel__list"
                 aria-label={ariaLabel}
+                onScroll={updateBoundaries}
                 onPointerDown={
                     pauseTemporarily
                 }

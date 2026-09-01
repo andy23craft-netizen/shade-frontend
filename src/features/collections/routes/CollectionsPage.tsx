@@ -635,9 +635,8 @@ function CollectionSection({
     return (
         <article className="collection-card">
             <header className="collection-card__header">
-                <div>
-                    <h2>{collection.name}</h2>
-
+                <h2>{collection.name}</h2>
+                <div className="collection-card__summary">
                     {collection.description ? (
                         <p>
                             {collection.description}

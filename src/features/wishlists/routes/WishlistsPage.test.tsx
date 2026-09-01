@@ -37,6 +37,9 @@ import {
     useCreateWishlist,
     useDeleteWishlist,
     useInfiniteWishlistBooks,
+    useRemoveWishlistBook,
+    useUpdateWishlist,
+    useUpdateWishlistBook,
     useWishlists,
 } from '../../../api/wishlistsQueries'
 import {
@@ -59,6 +62,9 @@ vi.mock('../../../api/wishlistsQueries', () => ({
     useCreateWishlist: vi.fn(),
     useDeleteWishlist: vi.fn(),
     useAddWishlistBook: vi.fn(),
+    useRemoveWishlistBook: vi.fn(),
+    useUpdateWishlist: vi.fn(),
+    useUpdateWishlistBook: vi.fn(),
 }))
 vi.mock(
     '../components/MoveWishlistBookToShelfControl',
@@ -158,6 +164,9 @@ const mockUseDeleteWishlist = vi.mocked(
     useDeleteWishlist,
 )
 const mockUseAddWishlistBook = vi.mocked(useAddWishlistBook)
+const mockUseRemoveWishlistBook = vi.mocked(useRemoveWishlistBook)
+const mockUseUpdateWishlist = vi.mocked(useUpdateWishlist)
+const mockUseUpdateWishlistBook = vi.mocked(useUpdateWishlistBook)
 const mockUseInfiniteWishlistBooks =
     vi.mocked(useInfiniteWishlistBooks)
 
@@ -214,6 +223,7 @@ const memberships: WishlistBookList = {
 function idleMutation() {
     return {
         mutate: vi.fn(),
+        mutateAsync: vi.fn().mockResolvedValue(undefined),
         isPending: false,
     }
 }
@@ -243,6 +253,15 @@ function mockIdleWrites() {
         idleMutation() as unknown as ReturnType<
             typeof useAddWishlistBook
         >,
+    )
+    mockUseRemoveWishlistBook.mockReturnValue(
+        idleMutation() as unknown as ReturnType<typeof useRemoveWishlistBook>,
+    )
+    mockUseUpdateWishlist.mockReturnValue(
+        idleMutation() as unknown as ReturnType<typeof useUpdateWishlist>,
+    )
+    mockUseUpdateWishlistBook.mockReturnValue(
+        idleMutation() as unknown as ReturnType<typeof useUpdateWishlistBook>,
     )
     mockUseInfiniteWishlistBooks.mockReturnValue({
         data: {
@@ -496,10 +515,10 @@ describe('WishlistsPage', () => {
         ).not.toBeInTheDocument()
 
         expect(
-            screen.queryByRole('button', {
-                name: /remove/i,
+            screen.getAllByRole('button', {
+                name: 'Remove from Wishlist',
             }),
-        ).not.toBeInTheDocument()
+        ).toHaveLength(2)
     })
 
     it('shows distinct empty-membership copy', () => {
@@ -629,6 +648,37 @@ describe('WishlistsPage', () => {
 
         expect(mutate).toHaveBeenCalledWith(
             'wishlist-1',
+            expect.any(Object),
+        )
+    })
+
+    it('edits the wishlist description independently', () => {
+        const mutate = vi.fn()
+        mockUseUpdateWishlist.mockReturnValue({ mutate, isPending: false } as unknown as ReturnType<typeof useUpdateWishlist>)
+        renderPage()
+        fireEvent.click(screen.getByRole('button', { name: 'Edit Wishlist' }))
+        const wishlistCard = screen.getByRole('heading', { name: 'TBR' }).closest('article')
+        expect(wishlistCard).not.toBeNull()
+        fireEvent.change(within(wishlistCard!).getByLabelText('Description'), { target: { value: 'Updated list' } })
+        fireEvent.click(within(wishlistCard!).getByRole('button', { name: 'Save Wishlist' }))
+        expect(mutate).toHaveBeenCalledWith(
+            { wishlistId: 'wishlist-1', wishlist: { description: 'Updated list' } },
+            expect.any(Object),
+        )
+    })
+
+    it('removes a wishlist membership without acquiring the book', () => {
+        const mutate = vi.fn()
+        mockUseRemoveWishlistBook.mockReturnValue({ mutate, isPending: false } as unknown as ReturnType<typeof useRemoveWishlistBook>)
+        renderPage()
+        fireEvent.click(screen.getByRole('button', { name: 'Expand' }))
+        const removeButtons = screen.getAllByRole('button', { name: 'Remove from Wishlist' })
+        fireEvent.click(removeButtons[0]!)
+        const dialog = screen.getByRole('dialog', { name: 'Remove from wishlist?' })
+        expect(dialog).toHaveTextContent('without adding it to the owned collection')
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Remove from Wishlist' }))
+        expect(mutate).toHaveBeenCalledWith(
+            { wishlistId: 'wishlist-1', wishlistBookId: 'membership-1' },
             expect.any(Object),
         )
     })

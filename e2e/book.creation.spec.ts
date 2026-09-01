@@ -38,7 +38,10 @@ test('adds a book manually and opens the created book', async ({
     }).check()
 
     await page
-        .getByLabel('Shelf')
+        .getByRole('button', {
+            name: 'Shelf',
+            exact: true,
+        })
         .click()
 
     await page

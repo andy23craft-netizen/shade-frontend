@@ -38,31 +38,10 @@ import {
 } from '../loansListModel'
 import {
     displayLoanDate,
-    getLoanDueState,
 } from '../loanTemporal'
 import {
     useCollectionIsbnJump,
 } from '../../scanning/useCollectionIsbnJump'
-
-function dueStateLabel(
-    dueAt: string | null | undefined,
-): string {
-    const state =
-        getLoanDueState(dueAt)
-
-    switch (state) {
-        case 'no_due_date':
-            return 'Active — no due date'
-        case 'due':
-            return 'Active — due'
-        case 'due_today':
-            return 'Active — due today'
-        case 'overdue':
-            return 'Active — overdue'
-        case 'unknown':
-            return 'Active — due date could not be interpreted'
-    }
-}
 
 interface SelectedCheckinProps {
     bookId: string
@@ -474,7 +453,7 @@ export function LoansPage() {
                                 <article className="circulation-record-card">
                                     <header className="circulation-record-card__heading">
                                         <p className="circulation-record-card__eyebrow">
-                                            {dueStateLabel(loan.due_at)}
+                                            Active
                                         </p>
 
                                         <h3>
@@ -503,17 +482,6 @@ export function LoansPage() {
                                             <dd>
                                                 {displayLoanDate(
                                                     loan.checked_out_at,
-                                                )}
-                                            </dd>
-                                        </div>
-
-                                        <div>
-                                            <dt>
-                                                Due
-                                            </dt>
-                                            <dd>
-                                                {displayLoanDate(
-                                                    loan.due_at,
                                                 )}
                                             </dd>
                                         </div>

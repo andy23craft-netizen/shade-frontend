@@ -10,6 +10,7 @@ import type {
     WishlistBookCreate,
     WishlistBookList,
     WishlistBookRead,
+    WishlistBookUpdate,
     WishlistCreate,
     WishlistUpdate,
 } from './apiTypes'
@@ -566,3 +567,21 @@ export function useRemoveWishlistBook() {
     })
 }
 
+export function useUpdateWishlistBook() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const wishlistsApi = createWishlistsApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({ wishlistId, wishlistBookId, update }: {
+            wishlistId: string
+            wishlistBookId: string
+            update: WishlistBookUpdate
+        }) => wishlistsApi.updateBook(wishlistId, wishlistBookId, update),
+        onSuccess: async (_result, variables) => {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.wishlists.books(variables.wishlistId),
+            })
+        },
+    })
+}

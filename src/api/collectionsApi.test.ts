@@ -291,6 +291,17 @@ describe('createCollectionsApi', () => {
         )
     })
 
+    it('updates and clears collection membership notes', async () => {
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue(sampleMembership)
+        const api = createCollectionsApi(client)
+        await api.updateBook('collection-1', 'membership/1', { notes: null })
+        expect(client.requestJson).toHaveBeenCalledWith(
+            '/collections/collection-1/books/membership%2F1',
+            { method: 'PATCH', body: { notes: null } },
+        )
+    })
+
     it('removes a collection membership', async () => {
         const client = createMockClient()
 

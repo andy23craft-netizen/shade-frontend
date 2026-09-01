@@ -1076,6 +1076,7 @@ export function BookForm({
                 >
                     <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         step="1"
                         value={values.pages}
@@ -1350,6 +1351,25 @@ export function BookForm({
                     label="Shelf"
                     error={fieldErrors.shelfId}
                 >
+                    <div className="book-form__shelf-controls">
+                    <select
+                        id={`${fieldId('shelfId')}-native`}
+                        className="book-form__shelf-native"
+                        aria-label="Shelf (mobile)"
+                        value={values.shelfId}
+                        aria-invalid={fieldErrors.shelfId ? true : undefined}
+                        onChange={(event) => updateField('shelfId', event.target.value)}
+                    >
+                        <option value="">Select a shelf</option>
+                        {shelfOptions.map((shelf) => {
+                            const isRemoved = normalizeShelfCommonName(shelf.common_name) === 'removed'
+                            return (
+                                <option key={shelf.shelf_id} value={shelf.shelf_id} disabled={isRemoved}>
+                                    {formatShelfCommonNameForDisplay(shelf.common_name)}
+                                </option>
+                            )
+                        })}
+                    </select>
                     <div className="book-form__shelf-picker">
                         <button
                             id={fieldId('shelfId')}
@@ -1470,6 +1490,7 @@ export function BookForm({
                             </div>
                         ) : null}
                     </div>
+                    </div>
                 </Field>
             </section>
 
@@ -1528,6 +1549,7 @@ export function BookForm({
                 >
                     <input
                         type="number"
+                        inputMode="decimal"
                         step="0.01"
                         value={
                             values.purchase_price

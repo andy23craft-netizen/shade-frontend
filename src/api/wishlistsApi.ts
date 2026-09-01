@@ -2,6 +2,7 @@ import type {
     WishlistBookCreate,
     WishlistBookList,
     WishlistBookRead,
+    WishlistBookUpdate,
     WishlistCreate,
     WishlistList,
     WishlistRead,
@@ -15,6 +16,7 @@ import type {
 } from './apiCallOptions'
 import {
     pickWishlistBookCreate,
+    pickWishlistBookUpdate,
     pickWishlistCreate,
     pickWishlistUpdate,
 } from './requestFields'
@@ -176,6 +178,22 @@ export function createWishlistsApi(
                 `/wishlists/${encodeURIComponent(wishlistId)}/books/${encodeURIComponent(wishlistBookId)}`,
                 {
                     method: 'DELETE',
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async updateBook(
+            wishlistId: string,
+            wishlistBookId: string,
+            wishlistBook: WishlistBookUpdate,
+            options: ApiCallOptions = {},
+        ): Promise<WishlistBookRead> {
+            return client.requestJson<WishlistBookRead>(
+                `/wishlists/${encodeURIComponent(wishlistId)}/books/${encodeURIComponent(wishlistBookId)}`,
+                {
+                    method: 'PATCH',
+                    body: pickWishlistBookUpdate(wishlistBook),
                     ...withSignal(options.signal),
                 },
             )

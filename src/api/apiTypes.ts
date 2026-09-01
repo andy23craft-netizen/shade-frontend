@@ -165,6 +165,9 @@ export type WishlistBookRead =
 export type WishlistBookList =
     Schemas['WishlistBookList']
 
+export type WishlistBookUpdate =
+    Schemas['WishlistBookUpdate']
+
 export type WishlistBookStatus =
     Schemas['WishlistBookStatus']
 
@@ -189,8 +192,11 @@ export type CollectionBookRead =
 export type CollectionBookList =
     Schemas['CollectionBookList']
 
+export type CollectionBookUpdate =
+    Schemas['CollectionBookUpdate']
+
 export type CollectionBookReorder =
-    Schemas['CollectionBookReorder']
+    Pick<CollectionBookUpdate, 'order_num'>
 
 export type Status =
     Schemas['Status']

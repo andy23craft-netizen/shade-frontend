@@ -372,8 +372,8 @@ export interface paths {
         delete: operations["delete_collection_book_route_collections__collection_id__books__collection_book_id__delete"];
         options?: never;
         head?: never;
-        /** Reorder Collection Book Route */
-        patch: operations["reorder_collection_book_route_collections__collection_id__books__collection_book_id__patch"];
+        /** Update Collection Book Route */
+        patch: operations["update_collection_book_route_collections__collection_id__books__collection_book_id__patch"];
         trace?: never;
     };
     "/dashboard": {
@@ -642,7 +642,8 @@ export interface paths {
         delete: operations["delete_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Wishlist Book */
+        patch: operations["update_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__patch"];
         trace?: never;
     };
 }
@@ -1117,10 +1118,12 @@ export interface components {
             /** Shelf Name */
             shelf_name?: string | null;
         };
-        /** CollectionBookReorder */
-        CollectionBookReorder: {
+        /** CollectionBookUpdate */
+        CollectionBookUpdate: {
+            /** Notes */
+            notes?: string | null;
             /** Order Num */
-            order_num: number;
+            order_num?: number | null;
         };
         /** CollectionCreate */
         CollectionCreate: {
@@ -1397,6 +1400,11 @@ export interface components {
          * @enum {string}
          */
         WishlistBookStatus: "wanted" | "ordered" | "owned" | "dropped";
+        /** WishlistBookUpdate */
+        WishlistBookUpdate: {
+            /** Notes */
+            notes: string | null;
+        };
         /** WishlistCreate */
         WishlistCreate: {
             /** Description */
@@ -3466,7 +3474,7 @@ export interface operations {
             };
         };
     };
-    reorder_collection_book_route_collections__collection_id__books__collection_book_id__patch: {
+    update_collection_book_route_collections__collection_id__books__collection_book_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -3478,7 +3486,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollectionBookReorder"];
+                "application/json": components["schemas"]["CollectionBookUpdate"];
             };
         };
         responses: {
@@ -4439,6 +4447,69 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wishlist_id: string;
+                wishlist_book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistBookUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistBookRead"];
+                };
             };
             /** @description Malformed or missing identifier */
             400: {
