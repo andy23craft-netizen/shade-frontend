@@ -450,12 +450,7 @@ export function DashboardPage() {
                                     className="dashboard-reading-chart__key dashboard-reading-chart__key--read"
                                     aria-hidden="true"
                                 />
-                                <strong>
-                                    <AppLink to="/books?is_read=true">
-                                        {dashboard.read}
-                                    </AppLink>
-                                </strong>{' '}
-                                read
+                                Read
                             </p>
 
                             <p>
@@ -463,12 +458,7 @@ export function DashboardPage() {
                     className="dashboard-reading-chart__key dashboard-reading-chart__key--unread"
                     aria-hidden="true"
                 />
-                                <strong>
-                                    <AppLink to="/books?is_read=false">
-                                        {dashboard.unread}
-                                    </AppLink>
-                                </strong>{' '}
-                                unread
+                                Unread
                             </p>
                         </div>
                     </div>

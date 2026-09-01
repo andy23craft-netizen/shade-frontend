@@ -319,6 +319,19 @@ describe('DashboardPage', () => {
             screen.getByText('Books Unread').closest('.dashboard-metric'),
         ).toHaveTextContent('224')
 
+        const readingLegend = document.querySelector<HTMLElement>(
+            '.dashboard-reading-chart__legend',
+        )
+
+        expect(readingLegend).not.toBeNull()
+        expect(readingLegend).toHaveTextContent('Read')
+        expect(readingLegend).toHaveTextContent('Unread')
+        expect(readingLegend).not.toHaveTextContent('318')
+        expect(readingLegend).not.toHaveTextContent('224')
+        expect(
+            within(readingLegend!).queryAllByRole('link'),
+        ).toHaveLength(0)
+
         expect(
             screen.getByText('4.2 / 5'),
         ).toBeInTheDocument()
@@ -516,7 +529,7 @@ describe('DashboardPage', () => {
             { name: '318' },
         )
 
-        expect(readLinks).toHaveLength(2)
+        expect(readLinks).toHaveLength(1)
 
         for (const link of readLinks) {
             expect(link).toHaveAttribute(
@@ -530,7 +543,7 @@ describe('DashboardPage', () => {
             { name: '224' },
         )
 
-        expect(unreadLinks).toHaveLength(2)
+        expect(unreadLinks).toHaveLength(1)
 
         for (const link of unreadLinks) {
             expect(link).toHaveAttribute(

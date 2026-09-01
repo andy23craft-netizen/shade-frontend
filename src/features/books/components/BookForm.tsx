@@ -1194,17 +1194,6 @@ export function BookForm({
                                 </Field>
 
                                 <div className="book-form__category-dropdown-list">
-                                    {canCreateCategory ? (
-                                        <button
-                                            type="button"
-                                            className="book-form__picker-create"
-                                            onClick={() => {
-                                                void handleCreateCategory()
-                                            }}
-                                        >
-                                            + Add “{categorySearchName}”
-                                        </button>
-                                    ) : null}
                                     {visibleCategories.length >
                                     0 ? (
                                         visibleCategories.map(
@@ -1341,6 +1330,17 @@ export function BookForm({
                                             your search.
                                         </p>
                                     )}
+                                    {canCreateCategory ? (
+                                        <button
+                                            type="button"
+                                            className="book-form__picker-create"
+                                            onClick={() => {
+                                                void handleCreateCategory()
+                                            }}
+                                        >
+                                            + Add “{categorySearchName}”
+                                        </button>
+                                    ) : null}
                                 </div>
                             </div>
                         ) : null}

@@ -25,9 +25,7 @@ When documents disagree, use the following order:
     behavior.
 3.  A feature-specific product specification, such as `BULK_ADD_UX.md`.
 4.  This scope document for the intended user-facing outcome.
-5.  The reconciled Product Brief and Product Brief Details documents,
-    plus `UI_DESIGN_NOTES.MD`, as design background and preserved
-    rationale.
+5.  `UI_DESIGN_NOTES.MD` as design background and preserved rationale.
 
 The frontend open-ticket directory currently contains no sequenced
 feature ticket. The referenced album and multi-tenant definitions live
@@ -36,10 +34,11 @@ created from their final contracts at the handoff points those documents
 specify; the frontend must not restate or diverge from their backend
 architecture.
 
-The reconciled Product Brief documents are supporting design material.
-Decisions promoted from them into this definitive document are part of
-V2; ideas left only in those briefs are background or later-version
-possibilities and must not be assumed to be V2 scope.
+The former Product Brief and Product Brief Details documents were
+consolidated into this document on September 1, 2026. They are no longer
+parallel scope sources. Their committed outcomes are recorded here and
+their later-version ideas are preserved under **Deferred or possible
+later work**.
 
 ## 1. Version definition
 
@@ -959,6 +958,52 @@ Circulation is configurable per library through Manage Collection with
 an **Enable loans** setting. Disabled circulation hides or disables
 checkout/check-in entry points without deleting loan history.
 
+### Human-readable deep links
+
+**V2 commitment:** Links intended for people to type, recognize, or share
+use readable keys wherever the resource has an unambiguous human name.
+The Books URL uses parameters such as `?category=thriller` rather than
+exposing a category UUID. The same rule applies to shelves, collections,
+wishlists, media areas, and comparable named resources.
+
+UUIDs remain the internal identity and API transport key. Resources whose
+names can change or collide need a backend-owned unique slug; changing a
+display name must not silently break existing links, and old slugs should
+redirect to the current canonical URL. Physical copies and other unnamed
+entities may use a stable short public identifier or UUID when no honest,
+unique readable key exists. The frontend must resolve readable URL values
+through the backend contract rather than guessing UUIDs from labels.
+
+### Reshelving queue
+
+**V2 commitment:** An owner can mark a book as needing attention when they
+notice it is filed under the wrong shelf, category, or other placement
+metadata. The action is available from Book Details and records a small
+reason/note without immediately changing catalog data. Dashboard provides
+a pinned **Needs Reshelving** queue linking back to each book, and the flag
+can be cleared after the physical and catalog placement are corrected.
+This is an owner workflow, not another circulation status or a hard-coded
+shelf.
+
+### Optional book contributors
+
+**V2 commitment:** Book create/edit supports optional editors,
+illustrators, and translators in addition to required authors. Existing
+values can be added, changed, or removed later. Book Details renders only
+contributor roles that contain at least one value; it never displays empty
+labels or `null` metadata rows. The backend contract should model the role
+explicitly and preserve contributor order rather than folding these names
+into author text.
+
+### Camera capture presentation
+
+The existing native camera ISBN capture remains the functional base. V2
+brings its chrome into the product's visual system: the area surrounding
+the viewfinder uses the header's wood-brown treatment, controls use shared
+Shade button styles, and focus, permission, error, reduced-motion, and
+small-screen states remain accessible. Decoration must not reduce the
+visible scan area or make browser permission guidance harder to follow.
+
 ## 15. Persistent Books controls and infinite-scroll navigation
 
 **V2 commitment:** Books filtering and sorting remain usable while the
@@ -996,6 +1041,13 @@ controls open in a modal treatment while preserving active-filter
 summary and URL state. The exact wide-screen side, breakpoint, overflow
 behavior, and immediate-versus-explicit mobile application remain design
 decisions informed by further Discogs reference review.
+
+The wide Books rail should visually mirror the successful current mobile
+filter modal: reuse its grouping, labels, control styling, active-state
+treatment, and clear/reset affordances. Desktop changes the spatial
+arrangement, not the filter interaction language. The rail is left-aligned;
+the remaining breakpoint, overflow, and mobile Apply behavior stay open
+until the responsive prototype is reviewed.
 
 Bulk-selection actions join the side rail while selection mode is
 active. This requirement applies to the main Books catalog and its
@@ -1208,6 +1260,14 @@ Reading, the existing New Additions/Staff Picks/category discovery, and
 quote treatment should be composed deliberately rather than stacked
 without a responsive density plan.
 
+That responsive density plan must also keep complete book titles usable
+when card text columns are narrow, including long unbroken words and
+very long titles. Prefer resilient card geometry and natural wrapping
+over per-title font scaling or automatic/marquee motion. Any approved
+visible truncation must retain an equally available way to read the full
+title without depending on hover, and layouts must remain usable at a
+320-pixel viewport and with text enlarged to 200 percent.
+
 ### 17.4 Surprise Me / serendipity
 
 **V2 status:** Stretch feature. It does not block V2 completion.
@@ -1375,6 +1435,14 @@ Committed release outcomes:
     structured pickup metadata.
 -   Persistent side filter/sort controls for Books on wide layouts, with
     an equivalent compact mobile treatment.
+-   Human-readable, canonical share URLs for named resources, backed by
+    stable server-resolved slugs while UUIDs remain internal identities.
+-   A Dashboard-backed Needs Reshelving queue with book-level mark and
+    clear actions.
+-   Optional editor, illustrator, and translator roles that render only
+    when populated.
+-   Camera ISBN capture styled as a native part of Shade without reducing
+    accessibility or scan usability.
 -   A shared accessible Back to Top control on automatic infinite-scroll
     surfaces.
 -   A documented, tested, tenant-safe restore-from-backup workflow with
@@ -1417,12 +1485,15 @@ Committed release outcomes:
     the V2 release window.
 -   Additional decorative/environmental polish beyond the committed
     lightweight seasonal personality.
+-   Integrated third-party image search for barcode-less lookup or missing
+    metadata. Provider privacy, licensing, safe-linking, and API terms need
+    a separate V3 research decision; V2 cover lookup/upload behavior remains
+    unchanged.
 -   Library Journal, On This Day, Book of the Day, weather-based
     recommendations, weather-aware quote selection, and deep
     time-of-day/living-environment behavior.
 -   Fully spatial or simulated library navigation, interactive
     rooms/shelves/desk, ambient sound, and environmental storytelling.
 
-Deliberately deferred ideas remain recorded here so they are not
-silently lost. The Product Brief documents may preserve additional
-rationale, but this definitive document controls the V2/V3 boundary.
+Deliberately deferred ideas remain recorded here so they are not silently
+lost. This definitive document controls the V2/V3 boundary.

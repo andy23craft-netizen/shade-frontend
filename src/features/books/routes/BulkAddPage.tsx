@@ -2480,26 +2480,6 @@ export function BulkAddPage() {
                                                                                 </Field>
 
                                                                                 <div className="book-form__category-dropdown-list">
-                                                                                    {searchName !== '' &&
-                                                                                    !hasExactMatch ? (
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            className="book-form__picker-create"
-                                                                                            disabled={
-                                                                                                isCreatingCategory
-                                                                                            }
-                                                                                            onClick={() => {
-                                                                                                void handleCreateCategory(
-                                                                                                    item,
-                                                                                                )
-                                                                                            }}
-                                                                                        >
-                                                                                            {isCreatingCategory
-                                                                                                ? 'Adding category…'
-                                                                                                : `+ Add “${searchName}”`}
-                                                                                        </button>
-                                                                                    ) : null}
-
                                                                                     {visibleCategories.length >
                                                                                     0 ? (
                                                                                         visibleCategories.map(
@@ -2549,6 +2529,26 @@ export function BulkAddPage() {
                                                                                             No categories match your search.
                                                                                         </p>
                                                                                     )}
+
+                                                                                    {searchName !== '' &&
+                                                                                    !hasExactMatch ? (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            className="book-form__picker-create"
+                                                                                            disabled={
+                                                                                                isCreatingCategory
+                                                                                            }
+                                                                                            onClick={() => {
+                                                                                                void handleCreateCategory(
+                                                                                                    item,
+                                                                                                )
+                                                                                            }}
+                                                                                        >
+                                                                                            {isCreatingCategory
+                                                                                                ? 'Adding category…'
+                                                                                                : `+ Add “${searchName}”`}
+                                                                                        </button>
+                                                                                    ) : null}
                                                                                 </div>
 
                                                                                 {categoryCreateError ? (

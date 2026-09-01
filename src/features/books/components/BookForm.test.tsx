@@ -546,6 +546,42 @@ describe('BookForm', () => {
         )
     })
 
+    it('places category creation after existing search matches', () => {
+        render(
+            <ControlledBookForm
+                onCreateCategory={vi.fn()}
+            />,
+        )
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: /Select categories/,
+            }),
+        )
+
+        fireEvent.change(
+            screen.getByLabelText('Search categories'),
+            {
+                target: { value: 'Fict' },
+            },
+        )
+
+        const fiction = screen.getByLabelText('Fiction')
+        const nonfiction = screen.getByLabelText('Nonfiction')
+        const create = screen.getByRole('button', {
+            name: '+ Add “Fict”',
+        })
+
+        expect(
+            fiction.compareDocumentPosition(create) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+        expect(
+            nonfiction.compareDocumentPosition(create) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+    })
+
     it('selects authors and preserves their selection order', () => {
         const onSubmit = vi.fn()
 

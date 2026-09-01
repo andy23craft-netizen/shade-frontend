@@ -16,7 +16,7 @@ interface RouteHandle {
     title?: string
 }
 
-const LAST_UPDATED = 'August 30, 2026'
+const LAST_UPDATED = 'September 01, 2026'
 
 export function AppShell() {
     const { data: versionData } = useVersion()

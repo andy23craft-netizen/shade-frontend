@@ -809,6 +809,25 @@ describe('BulkAddPage', () => {
         fireEvent.change(
             screen.getByLabelText('Search categories'),
             {
+                target: { value: 'Fict' },
+            },
+        )
+
+        const fiction = screen.getByRole('checkbox', {
+            name: 'Fiction',
+        })
+        const createFict = screen.getByRole('button', {
+            name: '+ Add “Fict”',
+        })
+
+        expect(
+            fiction.compareDocumentPosition(createFict) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+
+        fireEvent.change(
+            screen.getByLabelText('Search categories'),
+            {
                 target: { value: 'Epic Poetry' },
             },
         )
