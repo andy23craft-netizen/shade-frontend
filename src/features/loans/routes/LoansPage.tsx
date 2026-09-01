@@ -479,7 +479,7 @@ export function LoansPage() {
                                             <dt>
                                                 Checked Out
                                             </dt>
-                                            <dd>
+                                            <dd className="circulation-record-card__date-stamp">
                                                 {displayLoanDate(
                                                     loan.checked_out_at,
                                                 )}
@@ -586,7 +586,7 @@ export function LoansPage() {
                                             <dt>
                                                 Checked Out
                                             </dt>
-                                            <dd>
+                                            <dd className="circulation-record-card__date-stamp">
                                                 {displayLoanDate(
                                                     loan.checked_out_at,
                                                 )}
@@ -597,7 +597,7 @@ export function LoansPage() {
                                             <dt>
                                                 Returned
                                             </dt>
-                                            <dd>
+                                            <dd className="circulation-record-card__date-stamp">
                                                 {displayLoanDate(
                                                     loan.returned_at,
                                                 )}

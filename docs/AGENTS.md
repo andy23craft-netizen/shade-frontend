@@ -26,7 +26,8 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `CatalogGuide`). Brand image in `AppShell` recovers to `/` (Home). About is reachable from Home (hero and secondary
   links), not as a separate primary-nav item.
 - Primary navigation: Dashboard plus Collection and Circulation `DrawerNavMenu` drawers (`AppShell` /
-  `DrawerNavMenu`). Collection includes Browse, Manage, Collections, and Wishlists; Circulation is Loans only.
+  `DrawerNavMenu`). Drawer cards share one axis without per-item stagger. Collection includes Browse, Manage,
+  Collections, and Wishlists; Circulation is Loans only.
   `/collection/manage` links Add Book and Shelves only.
 - Dashboard on `/dashboard` (`DashboardPage`): desk layout with five indexed paper panels
   (`.dashboard-desk` / `.dashboard-paper*`, background `Dashboard_Background.webp`) -- summary metrics

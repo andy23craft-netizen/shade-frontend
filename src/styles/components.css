@@ -2608,6 +2608,8 @@
 .home-book-deck__stack {
   position: relative;
   min-height: 15rem;
+  overflow: hidden;
+  isolation: isolate;
   touch-action: pan-y;
   user-select: none;
 }
@@ -2671,10 +2673,13 @@
 }
 
 .home-book-deck__controls {
+  position: relative;
+  z-index: 6;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-4);
+  min-height: var(--control-target);
 }
 
 .home-book-deck__button {
@@ -3992,7 +3997,8 @@
 /*
  * File-tab cue at the top edge.
  */
-.wishlist-card::before {
+.wishlist-card::before,
+.collection-card::before {
   position: absolute;
 
   top: -0.7rem;
@@ -4248,7 +4254,8 @@
     transform: none;
   }
 
-  .wishlist-card::before {
+  .wishlist-card::before,
+  .collection-card::before {
     width: 5.5rem;
   }
 
@@ -6737,6 +6744,22 @@
   color: var(--color-surface-text-muted);
 }
 
+.circulation-record-card__metadata .circulation-record-card__date-stamp {
+  justify-self: start;
+  padding: 0.2rem 0.45rem 0.16rem;
+  border: 2px solid currentcolor;
+  border-radius: 0.12rem;
+  color: #74453a;
+  font-family: var(--font-family-heading);
+  font-size: clamp(0.82rem, 2vw, 0.95rem);
+  font-weight: 800;
+  letter-spacing: 0.075em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  transform: rotate(-0.35deg);
+  box-shadow: inset 0 0 0 1px rgb(116 69 58 / 18%);
+}
+
 .circulation-record-card__metadata {
   display: grid;
   grid-template-columns:
@@ -8776,6 +8799,7 @@
 }
 
 .collection-card {
+  position: relative;
   display: grid;
   gap: var(--space-4);
   padding: var(--space-4);
@@ -9482,6 +9506,7 @@
 }
 
 .books-toolbar__mobile-toggle {
+  display: none;
   width: 100%;
 
   padding:
@@ -9507,6 +9532,22 @@
   text-align: left;
 
   cursor: pointer;
+}
+
+.books-toolbar__mobile-toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.books-toolbar__mobile-toggle-hint {
+  display: block;
+  margin-top: var(--space-1);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-small);
+  font-weight: 400;
+  letter-spacing: normal;
 }
 
 .books-toolbar__mobile-toggle:hover,

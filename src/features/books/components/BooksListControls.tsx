@@ -321,7 +321,17 @@ export function BooksListControls({
                     )
                 }}
             >
-                Filters &amp; sort
+                <span className="books-toolbar__mobile-toggle-label">
+                    Filters &amp; search
+                    <span aria-hidden="true">
+                        {mobileControlsOpen ? '▴' : '▾'}
+                    </span>
+                </span>
+                <span className="books-toolbar__mobile-toggle-hint">
+                    {mobileControlsOpen
+                        ? 'Tap to collapse controls'
+                        : 'Tap to expand controls'}
+                </span>
             </button>
 
             <div

@@ -133,6 +133,8 @@
 
 ## Phase 3 — P3 visual polish
 
+**Status:** Implemented; pending full user-run quality gate and visual verification at desktop/mobile breakpoints.
+
 ### 1. Protect Staff Picks carousel controls
 
 - Establish an explicit control layer/protected zone using layout spacing, clipping, and stacking contexts. Decorative card transforms stay within the card viewport and cannot intercept pointer events.
