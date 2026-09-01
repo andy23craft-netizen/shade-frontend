@@ -91,5 +91,16 @@ ie, `https://shade.library.spir.es/books?category_id=842f7e13-8466-5d86-a61b-12f
 to become 
 `https://shade.library.spir.es/books?category=thriller`
 
-similarly with anything currently using a UUID in the URL. It would be nice to be able to just know the URL if I wanted to send it 
-to someone. 
+similarly, anything currently using a UUID in the URL. It would be nice to be able to just know the URL if I wanted to send it to someone. 
+
+I need a way to mark books that need to be re-shelved, if i realize they're in the wrong category but i'm not at home. just a little tag or a place on the dashboard to pin them. 
+
+I want to add non-required editor, illustrator, and translator fields to the book details form. but i only want them to show up on the finished, rendered version if they're filled. if there's no editor listed, it shouldn't show up as a null field on the metadata list. But it should be available to add after the fact if you decide you want it later. 
+
+The current filter box on the books page on mobile looks fantastic. i want to mirror that on the new left justified filter set on the redesigned books page. 
+
+I would like the ability to link a google image search (or another image search other than google, if there is one. I'd prefer not to use google). Either for searching for books without barcodes/isbn's, or also for tracking down missing metadata once it's already been added. This may be V3. 
+
+
+I love the new native camera feature. In v2 i'd like to make it feel even more native. Like the part around the view finder in the wooden brown of the header, the buttons stylized in our CSS, etc. 
+
