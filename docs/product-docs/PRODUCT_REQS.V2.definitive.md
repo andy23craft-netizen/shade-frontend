@@ -164,6 +164,25 @@ Owners are expected to correct malformed source data and re-import. This
 keeps the private-library path simple while leaving a stricter,
 better-documented import contract for open-source use.
 
+V2 accepts one canonical, versioned, header-based UTF-8 TSV template per
+supported media type rather than attempting to infer arbitrary legacy
+spreadsheet layouts. The templates should be downloadable from setup and
+use the same field names, normalization rules, required values, and
+vocabularies as the canonical create/import contracts. Multi-value fields
+use one documented delimiter and escaping rule. Location names resolve
+through the shared location catalog; import must not create near-duplicate
+locations silently.
+
+The backend ticket owns the exact ordered column lists and template version.
+Before commit, the frontend uploads the source for server validation and
+previews totals for ready, warning, and rejected rows. Each rejected row
+reports its source row number, field, stable error code, and plain-language
+message. Unknown columns are reported rather than silently discarded;
+missing optional columns are allowed; missing required headers or duplicate
+headers reject the file. Commit imports only the validated snapshot. Row
+correction occurs in the source file and is re-imported, not in a second
+spreadsheet UI.
+
 ### Known gap
 
 The current API has no setup-completion state or library-initialization
@@ -266,8 +285,9 @@ The locked model and its frontend consequences are:
 -   Album artwork is required for the first-class V2 experience. The
     backend album sequence needs a contract comparable to book covers:
     authenticated artwork reads, owner upload/remove, and provider
-    fallback where licensing and provider terms permit. The frontend
-    must not construct provider URLs itself.
+    fallback. Release-specific Cover Art Archive artwork is the approved
+    automatic source, resolved through the MusicBrainz Release ID. The
+    frontend must not construct provider URLs itself.
 -   V2 supports more than one owned physical copy of the same commercial
     book or album release. Commercial identifiers identify the
     edition/release; each owned copy retains its own UUID, location,
@@ -287,9 +307,23 @@ active media area and its visual identity establish whether the user is
 working with books or albums, and the UI must prevent cross-type
 membership choices that the backend would reject. Album artwork should
 mirror the existing book-cover contract: authenticated reads, owner
-upload/remove, and backend-owned provider fallback. The specific
-external artwork provider remains a research item because API and
-licensing terms still need approval.
+upload/remove, and backend-owned provider fallback.
+
+Album metadata lookup continues to prefer Discogs and fall back to
+MusicBrainz. Artwork lookup prefers the release-specific Cover Art Archive
+front image associated with the resolved MusicBrainz Release ID. Store the
+MusicBrainz release ID, Cover Art Archive image ID, source URL, and retrieval
+time with the provider result. Missing provider artwork is ordinary absence
+and must not fail album lookup. An owner upload overrides provider artwork;
+removing that upload may expose or refetch the provider result.
+
+Discogs images must not be durably imported or cached unless Discogs gives
+written confirmation that Shade's use complies with its then-current API
+terms. Discogs remains usable for release identification and metadata.
+Cover Art Archive content is also used with appropriate caution because the
+archive does not grant new copyright rights in the underlying cover art.
+Shade retains source provenance, supports removal, and makes no claim that
+provider artwork is owned or licensed by Shade.
 
 ### Deferred media
 
@@ -433,6 +467,14 @@ other living-environment simulation remain V3.
 interaction model with medium-specific capture, lookup, validation,
 editing, duplicate handling, and persistence.
 
+The refined book Bulk Add is the accepted reference interaction. No
+additional book-only workflow or status-filter gap is currently committed
+for V2. Book work is limited to shared requirements already recorded here,
+including durable local session recovery, navigation protection, guided
+first-run composition, and compatibility with final V2 contracts. New
+feature work in this area is the album adapter and its backend bulk
+lookup/import contract.
+
 `BULK_ADD_UX.md` already defines the generic boundary:
 
 > Choose destination/context → capture identifier or manual entry →
@@ -522,9 +564,13 @@ payload. Scanning is authenticated application behavior; V2 defines no
 unauthenticated public landing page for item labels.
 
 The initial physical target is approximately **3 × 3 inches** per label.
-The exact browser-print sheet dimensions, margins, and pagination remain
-to be chosen after a print prototype; generated PDF output is not
-required.
+The first browser-print template is a sustainability-oriented six-label
+sheet, arranged two across by three down on US Letter paper. The prototype
+must determine printable margins, gutters, cut guides, and any necessary
+printer-safe scaling while preserving the QR quiet zone and reliable phone
+decoding. A one-label reprint uses the same sheet geometry and lets the owner
+choose an available position so partially used stock is not wasted.
+Generated PDF output is not required.
 
 Label generation is part of the normal item-add path so a newly added
 owned item can immediately receive its QR. Manage Collection also
@@ -535,14 +581,22 @@ rotates the item identity.
 Decorative QR output must remain a standards-compliant QR rather than an
 image that only resembles one. The preferred V2 experiment is a
 high-error-correction QR with restrained styling and an optional
-centered portrait/cameo treatment, while preserving quiet zone,
-contrast, and finder-pattern readability. **QuickChart** is the first
-service to prototype, **QRCode Monkey** is a secondary hosted
-comparison, and **`qr-code-styling`** is the leading
-self-hosted/code-first candidate. Every decorative render must
-successfully decode and pass real supported-phone tests at intended
-print size; a conventional QR render is always available and should be
-used automatically when decorative validation fails.
+centered portrait/cameo treatment. V2 uses deterministic local generation
+in the frontend or print worker, not a required hosted rendering service.
+The conventional template uses square modules, an untouched four-module
+quiet zone, high contrast, and error-correction level H. Optional artwork
+may occupy only a bounded center area; it must not obscure or restyle the
+three finder patterns. SVG and print-resolution PNG output must encode the
+same canonical payload.
+
+Every render must pass automated decoding and real supported-phone tests
+at the smallest intended print size, in ordinary indoor light, and at
+modest angles and distances. A conventional QR render is always available
+and becomes the automatic fallback when decorative validation fails.
+QuickChart may be used for prototyping only; its hosted service is not the
+V2 default because it receives the label payload and normally requires
+publicly reachable center artwork. Any hosted use must be opt-in or
+self-hosted and pass the same acceptance tests.
 
 Scanner-first circulation follows item state rather than treating every
 successful scan as permission to act. An exact Shade QR resolves one
@@ -882,9 +936,13 @@ confirmation. The backend preserves enough assignment history to reverse
 an erroneous correction. Albums follow the same work-level principle
 within their media type.
 
-The next backend ticket should finalize same-work boundaries for
-translations, abridgements, adaptations, and substantially revised
-editions, plus the exact audit/reversal behavior for manual regrouping.
+Default grouping treats translations and ordinary editions as the same
+Work. Abridgements, adaptations, and substantially revised works default
+to separate Works. Ambiguous cases remain owner-correctable through the
+same atomic merge/split operations. Manual assignments take precedence
+over later provider refreshes; corrections retain an audit record and
+reassign historical feedback so aggregates immediately reflect the
+corrected grouping without changing the original loan or feedback identity.
 
 The current app has only a free-text borrower name on each loan. Owner
 rating/review live on `BookRead`; check-in accepts only an optional
@@ -953,6 +1011,22 @@ Media selection is an explicit physical-feeling control, visually
 conceived as moving through a doorway or hallway into another room. It
 must remain keyboard-accessible, mobile-appropriate, URL/deep-link
 compatible, and predictable when a medium is unavailable.
+
+Media areas use typed route prefixes. Book pages live under `/books`
+(including `/books/loans` and `/books/dashboard`) and album equivalents
+live under `/albums`. Switching media changes to the corresponding typed
+route without translating incompatible filters; browser history restores
+the previous media URL, filters, sort, and position. Home remains the
+library-wide entry point.
+
+For V2, switching may remain page-to-page rather than simulating movement
+between rooms. The transition uses a turning record when entering Albums
+and a book resting open with pages turning through a splayed arc when
+entering Books. These are brief loading/transition treatments, not delays
+added after content is ready. They have static reduced-motion fallbacks,
+never replace the destination heading or loading status, and cannot trap
+focus or block browser navigation. A later version may replace this with
+the fuller doorway/hallway room transition.
 
 Circulation is configurable per library through Manage Collection with
 an **Enable loans** setting. Disabled circulation hides or disables
@@ -1036,18 +1110,26 @@ The rail should:
     deep-link, and bulk-selection states understandable.
 
 The rail is a responsive enhancement, not a requirement to squeeze a
-sidebar beside a 320-pixel viewport. On narrow screens, the same
-controls open in a modal treatment while preserving active-filter
-summary and URL state. The exact wide-screen side, breakpoint, overflow
-behavior, and immediate-versus-explicit mobile application remain design
-decisions informed by further Discogs reference review.
+sidebar beside a 320-pixel viewport. Phones and smaller tablets, including
+small iPads, use the modal. The rail appears only once the layout has at
+least 75rem (1200 CSS pixels) of usable width; implementation may move that
+threshold upward if text zoom or real content would crowd the results, but
+must not lower it merely because a device reports itself as a tablet.
 
 The wide Books rail should visually mirror the successful current mobile
 filter modal: reuse its grouping, labels, control styling, active-state
 treatment, and clear/reset affordances. Desktop changes the spatial
 arrangement, not the filter interaction language. The rail is left-aligned;
-the remaining breakpoint, overflow, and mobile Apply behavior stay open
-until the responsive prototype is reviewed.
+when taller than the available viewport it remains sticky beneath the app
+header and scrolls internally, with an explicit maximum height and visible
+overflow affordance so every control remains reachable. At viewport heights
+where that pattern is not usable, the modal treatment is the fallback.
+
+URL-backed filter and sort changes apply immediately in both the rail and
+modal; there is no separate Apply step. This refers to refreshing catalog
+results after a filter changes, not to metadata or cover loading. Requests
+should use the existing cancellation/debouncing behavior so rapid changes
+do not present stale results.
 
 Bulk-selection actions join the side rail while selection mode is
 active. This requirement applies to the main Books catalog and its
@@ -1186,7 +1268,13 @@ are never ordinary tenant navigation. Pre-restore safety copies enter
 the normal backup retention policy after post-restore verification: all
 distinct backups for seven days, one per week for eight weeks, and one
 per month for twelve months. The exact free-space preflight threshold
-remains an operations/ticket-level decision.
+remains a backend operations/ticket-level decision because only the server
+knows the live database, backup, temporary replay, safety-copy, and
+filesystem constraints. The frontend does not calculate or override it.
+The preflight response should provide required and available space in
+display-safe values; insufficient space blocks confirmation and explains
+that server storage must be freed or expanded before retrying. It must not
+start a restore and discover the shortage after replacing the live database.
 
 ## 17. Discovery, analytics, and library personality
 
