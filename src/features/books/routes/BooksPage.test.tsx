@@ -30,6 +30,7 @@ const mockUseInfiniteIncompleteMetadataBooks =
     vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
 const mockUseBulkMoveBooksToShelf = vi.fn()
+const mockUseBulkStashBooks = vi.fn()
 const mockUseShelves = vi.fn()
 
 vi.mock('../../../api/booksQueries', () => ({
@@ -38,6 +39,9 @@ vi.mock('../../../api/booksQueries', () => ({
 
     useBulkMoveBooksToShelf: () =>
         mockUseBulkMoveBooksToShelf(),
+
+    useBulkStashBooks: () =>
+        mockUseBulkStashBooks(),
 }))
 
 vi.mock('../../../api/dashboardQueries', () => ({
@@ -197,9 +201,15 @@ describe('BooksPage', () => {
         mockUseInfiniteScrollTrigger.mockReset()
         mockUseCategories.mockReset()
         mockUseBulkMoveBooksToShelf.mockReset()
+        mockUseBulkStashBooks.mockReset()
         mockUseShelves.mockReset()
 
         mockUseBulkMoveBooksToShelf.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+        })
+
+        mockUseBulkStashBooks.mockReturnValue({
             mutate: vi.fn(),
             isPending: false,
         })
@@ -1918,6 +1928,24 @@ describe('BooksPage', () => {
                 name: 'Clear selection',
             }),
         ).toBeDisabled()
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Stash Books',
+            }),
+        ).toBeDisabled()
+
+        fireEvent.click(
+            screen.getByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            }),
+        )
+
+        expect(
+            screen.getByRole('button', {
+                name: 'Stash Books',
+            }),
+        ).toBeEnabled()
 
         fireEvent.click(
             screen.getByRole('button', {

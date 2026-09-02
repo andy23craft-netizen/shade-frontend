@@ -58,12 +58,10 @@ export function BooksBulkActions({
                     }}
                 />
 
-                {reviewMode ? (
-                    <BulkStashControl
-                        selectedBookIds={selectedBookIds}
-                        onSuccess={onClear}
-                    />
-                ) : null}
+                <BulkStashControl
+                    selectedBookIds={selectedBookIds}
+                    onSuccess={onClear}
+                />
 
                 <Button
                     type="button"
