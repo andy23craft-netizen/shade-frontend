@@ -11,12 +11,12 @@ The live library instance has diverged from the authoritative seed SQL in `shade
 `shade-backend/data/app.db`. That divergence is mostly **data drift** (~100 catalog rows, a few collections, and
 associated relationships) rather than a large-scale production migration problem.
 
-The team adopts **Option 1 (delete and rebootstrap)** from `docs/migration_plans.md` as the pre-launch schema and
-local-development strategy. That option is the simplest path: update the final clean schema and seed SQL, remove or
-move the existing database, and start fresh against a bootstrapped file. `migration_plans.md` already documents how to
-do this safely (backup, verification, retained rollback copy, fail-closed bootstrap).
+The team adopts **Option 1 (delete and re-bootstrap)** from `docs/migration_plans.md` as the pre-launch schema and
+local-development strategy. That option is the simplest path: update the final clean schema and seed SQL, remove or move
+the existing database, and start fresh against a bootstrapped file. `migration_plans.md` already documents how to do
+this safely (backup, verification, retained rollback copy, fail-closed bootstrap).
 
-The blocker today is not rebootstrap mechanics. It is that rebootstrap would **lose** live-only catalog data because
+The blocker today is not re-bootstrap mechanics. It is that re-bootstrap would **lose** live-only catalog data because
 committed seeds are stale. This document proposes **seed SQL sync** as the prerequisite step that makes Option 1 safe
 again: treat the running instance as the temporary source of truth, export it into seed-compatible SQL, reconcile that
 export with committed seed files, and refresh them in the backend repo. After sync, developers can follow the Option 1
@@ -29,16 +29,16 @@ The team **rejects Option 4 (maintain a V1 release branch)**. A long-lived relea
 without preserving production data, runtime assets, or deployed configuration. Continue on `main`; use an immutable tag
 and retained artifact only if a rollback drill requires a known V1 build.
 
-| Concern                          | Seed SQL sync + Option 1               | Options 2-3 in `migration_plans.md`     | Option 4 (release branch)      |
-|----------------------------------|----------------------------------------|-----------------------------------------|--------------------------------|
-| ~100 missing/edited catalog rows | Sync seeds, then rebootstrap           | Overkill for this scale                 | Does not help                  |
-| Schema changes (albums, tenants) | Update clean schema; delete and rebootstrap locally | Side-by-side or incremental migrations | Adds merge overhead only |
-| Running instance during dev      | Rebootstrap from updated seeds         | Parallel DB maintenance                 | No benefit                     |
-| Git workflow                     | Unchanged (`main` only)                | Unchanged                               | **Rejected**                   |
-| Post-launch operations           | Out of scope for seed sync             | PLAN-02/03 backup and restore           | Not applicable                 |
+| Concern                          | Seed SQL sync + Option 1                            | Options 2-3 in `migration_plans.md`    | Option 4 (release branch) |
+|----------------------------------|-----------------------------------------------------|----------------------------------------|---------------------------|
+| ~100 missing/edited catalog rows | Sync seeds, then re-bootstrap                        | Overkill for this scale                | Does not help             |
+| Schema changes (albums, tenants) | Update clean schema; delete and re-bootstrap locally | Side-by-side or incremental migrations | Adds merge overhead only  |
+| Running instance during dev      | Rebootstrap from updated seeds                      | Parallel DB maintenance                | No benefit                |
+| Git workflow                     | Unchanged (`main` only)                             | Unchanged                              | **Rejected**              |
+| Post-launch operations           | Out of scope for seed sync                          | PLAN-02/03 backup and restore          | Not applicable            |
 
 **Recommendation:** Use **seed SQL sync to unlock Option 1**. Do not adopt a V1 release branch. Apply the safety
-practices from `migration_plans.md` (immutable backups, verification, fail-closed behavior) to the sync-and-rebootstrap
+practices from `migration_plans.md` (immutable backups, verification, fail-closed behavior) to the sync-and-re-bootstrap
 workflow rather than building a side-by-side V1-to-V2 converter for pre-launch development.
 
 ## Problem restated
@@ -75,10 +75,10 @@ avoids that entanglement once seeds are current.
 ### Goal
 
 Keep `shade-backend/sql/*.sql` (excluding `0000-clean-schema.sql` and `migrations/`) aligned with the **current
-authoritative catalog** so that Option 1 rebootstrap works:
+authoritative catalog** so that Option 1 re-bootstrap works:
 
 - `rm -f data/app.db && make run` reproduces the live library for any developer.
-- Schema work updates `0000-clean-schema.sql`, then deletes and rebootstraps without manually re-entering catalog data.
+- Schema work updates `0000-clean-schema.sql`, then deletes and re-bootstraps without manually re-entering catalog data.
 - The junior engineer's instance can be refreshed from repo seeds after a sync, following the verification steps in
   `migration_plans.md`.
 
@@ -91,7 +91,7 @@ Live instance (andy.db or equivalent)
   -> row-level diff against committed sql/0100-*.sql ... sql/0400-*.sql
   -> human-reviewed patch (or auto-merge for unambiguous inserts)
   -> commit updated seed files to shade-backend
-  -> developers rebootstrap locally; CI loads seeds in fixture tests
+  -> developers re-bootstrap locally; CI loads seeds in fixture tests
 ```
 
 ### What already exists
@@ -130,11 +130,11 @@ strong operator UX need.
 
 ### Pros
 
-1. **Enables the chosen Option 1 loop.** Sync closes the data gap that currently makes delete-and-rebootstrap unsafe.
+1. **Enables the chosen Option 1 loop.** Sync closes the data gap that currently makes delete-and-re-bootstrap unsafe.
 2. **Right-sized for pre-launch scale.** ~100 rows and a few collections do not justify a full migration converter,
    release branch, or ongoing dual-database maintenance during feature development.
 3. **Separates data from schema.** Album and multi-tenant work can update `0000-clean-schema.sql`, sync catalog seeds,
-   and rebootstrap without constantly copying data out of a live `app.db`.
+   and re-bootstrap without constantly copying data out of a live `app.db`.
 4. **Matches existing repo behavior.** Bootstrap already loads top-level `sql/*.sql` on a fresh database; updating
    seeds extends that path rather than replacing it.
 5. **Improves onboarding and CI.** New clones and test fixtures match the real catalog the junior engineer uses.
@@ -160,8 +160,8 @@ strong operator UX need.
    `0425-collections.sql`, `0430-collection-books.sql`) and bootstrap ordering.
 6. **Operational data scope.** Decide whether loans, `schema_migrations`, and ephemeral state belong in seeds or only
    catalog entities. Including active loans in seeds may surprise developers; excluding them loses circulation history
-   on rebootstrap.
-7. **Option 1 preconditions still apply.** After sync, rebootstrap remains a deliberate operator action with backup,
+   on re-bootstrap.
+7. **Option 1 preconditions still apply.** After sync, re-bootstrap remains a deliberate operator action with backup,
    verification, and rollback copy per `migration_plans.md`. A failed bootstrap must not silently replace production
    with an empty library.
 8. **Secret and PII surface.** Backups and seed exports contain borrower names, notes, and reviews. Treat exports like
@@ -181,13 +181,13 @@ strong operator UX need.
 
 ## Alignment with `migration_plans.md` options
 
-### Option 1: Delete and rebootstrap (adopted)
+### Option 1: Delete and re-bootstrap (adopted)
 
 **This is the team's pre-launch strategy.** `migration_plans.md` describes the procedure: rewrite the final clean
 schema and seed files, take a backup, verify the bootstrapped database, retain the original file for rollback, and
 activate deliberately. Follow that runbook; do not invent a parallel path.
 
-Seed SQL sync is the **data step that makes Option 1 safe today**. Without it, rebootstrap drops the ~100 live-only
+Seed SQL sync is the **data step that makes Option 1 safe today**. Without it, re-bootstrap drops the ~100 live-only
 rows and runtime edits documented above. With current seeds, Option 1 is the preferred loop for:
 
 - Local development and CI fixtures.
@@ -201,14 +201,14 @@ for verification.
 ### Option 2: Side-by-side V1-to-V2 conversion (deferred)
 
 Not chosen for pre-launch development. Valuable at **launch** if multiple tenants have non-disposable production data,
-schema delta cannot be expressed by rebootstraping from updated clean schema + seeds, or zero-downtime cutover is
+schema delta cannot be expressed by re-bootstrapping from updated clean schema + seeds, or zero-downtime cutover is
 required. Until then, Option 1 plus seed sync is sufficient for a single semi-live user.
 
 ### Option 3: Incremental forward migrations (limited use)
 
 Not the primary pre-launch strategy. The repository already supports forward migrations for existing databases, but
-the team prefers delete-and-rebootstrap locally while the catalog remains seed-driven. Reserve incremental migrations for
-post-launch tenant databases that cannot be deleted, or for CI coverage of the migration runner itself.
+the team prefers delete-and-re-bootstrap locally while the catalog remains seed-driven. Reserve incremental migrations
+for post-launch tenant databases that cannot be deleted, or for CI coverage of the migration runner itself.
 
 Use seed sync for catalog content; use Option 1 for schema structure during pre-launch.
 
@@ -260,7 +260,7 @@ the tool is built. Do not implement **G**.
 1. `make backup` against the live instance (per Option 1 backup requirements in `migration_plans.md`).
 2. Identify missing books, collections, and relationships (SQL queries or diff by UUID).
 3. Manually add INSERTs to appropriate seed files (and add collection seed files if missing).
-4. Delete and rebootstrap a staging copy; verify catalog, covers, and integrity checks before touching production.
+4. Delete and re-bootstrap a staging copy; verify catalog, covers, and integrity checks before touching production.
 
 ### Phase 1: Backend seed exporter (MVP)
 
@@ -312,9 +312,9 @@ Use these as starting points for `docs/tickets/` in each repo. Adjust IDs to mat
    - Acceptance: clean bootstrap loads collections; OpenAPI/CI fixtures unchanged or updated.
 
 5. **BE-SEED-05: MAINTAINERS runbook (Option 1 + seed sync)**
-   - Document quiesce, backup, export, reconcile, verify, commit, delete-and-rebootstrap flow.
+   - Document quiesce, backup, export, reconcile, verify, commit, delete-and-re-bootstrap flow.
    - Cross-reference `migration_plans.md` Option 1 verification and rollback steps.
-   - Acceptance: another developer can rebootstrap matching catalog from updated seeds alone.
+   - Acceptance: another developer can re-bootstrap matching catalog from updated seeds alone.
 
 6. **BE-SEED-06: CI bootstrap verification**
    - Test that fresh bootstrap from seeds passes integrity checks and baseline counts.
@@ -335,24 +335,24 @@ No SPA download of SQL dumps is recommended unless operators explicitly request 
 
 ## Decision checklist
 
-Before adopting seed SQL sync and Option 1 rebootstrap, confirm:
+Before adopting seed SQL sync and Option 1 re-bootstrap, confirm:
 
 - [ ] Option 1 is the chosen pre-launch strategy; Option 4 (release branch) is explicitly out of scope.
 - [ ] The live instance is the authoritative catalog until the next sync (not stale TSV exports).
 - [ ] Writes can pause for a short export window, or staleness is acceptable.
 - [ ] UUID preservation is required for covers and relationships (yes for this project).
 - [ ] Scope is pre-launch only; launch triggers migration/backup strategy from PLAN-02/03.
-- [ ] Schema changes (albums, tenants) update `0000-clean-schema.sql`, then use delete-and-rebootstrap locally.
+- [ ] Schema changes (albums, tenants) update `0000-clean-schema.sql`, then use delete-and-re-bootstrap locally.
 - [ ] The team accepts human review for updates and deletes in seed files.
 - [ ] Loans and other operational history have an explicit in-scope / out-of-scope decision.
-- [ ] A full backup and rollback copy exist before the first `--apply` to committed seeds or production rebootstrap.
+- [ ] A full backup and rollback copy exist before the first `--apply` to committed seeds or production re-bootstrap.
 - [ ] Rebootstrap verification (integrity checks, row counts, smoke reads) passes before activation.
 
 ## Recommended decision
 
-**Adopt Option 1 (delete and rebootstrap) for pre-launch development, enabled by seed SQL sync.** Perform one manual
+**Adopt Option 1 (delete and re-bootstrap) for pre-launch development, enabled by seed SQL sync.** Perform one manual
 merge (Phase 0) if feature work is blocked today; build the exporter and reconcile tooling (Phases 1-2) so drift does
-not recur. Follow the Option 1 procedure and safety practices in `migration_plans.md` for every rebootstrap.
+not recur. Follow the Option 1 procedure and safety practices in `migration_plans.md` for every re-bootstrap.
 
 **Reject Option 4.** Do not create or maintain a V1 release branch; keep working on `main`.
 
