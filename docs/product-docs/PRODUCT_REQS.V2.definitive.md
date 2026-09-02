@@ -19,13 +19,22 @@ is not an implementation ticket or implementation plan.
 When documents disagree, use the following order:
 
 1.  A current sequenced feature ticket in the repository that owns the
-    work. This currently includes backend `FEAT-16` through `FEAT-23`
+    work. This currently includes backend `FEAT-16` through `FEAT-24`
     for the album catalog and backend `PLAN-02` for multi-tenancy.
 2.  The checked-in OpenAPI contract and `API-for-FE.md` for backend
     behavior.
 3.  A feature-specific product specification, such as `BULK_ADD_UX.md`.
 4.  This scope document for the intended user-facing outcome.
 5.  `UI_DESIGN_NOTES.MD` as design background and preserved rationale.
+
+Until V2 routes are implemented and exported to OpenAPI, frontend and
+backend planning use the backend's
+`docs/technical-reference/V2-proposed-contract.md` as the coherent
+integration target. It locks the proposed resource identities, routes,
+payload conventions, lifecycle behavior, and error classes, but it is not
+evidence that a route exists in the running API. Implemented OpenAPI and
+`API-for-FE.md` supersede it as each contract ships; a ticket that changes
+the proposal must identify the frontend impact.
 
 The frontend open-ticket directory currently contains no sequenced
 feature ticket. The referenced album and multi-tenant definitions live
@@ -39,6 +48,30 @@ consolidated into this document on September 1, 2026. They are no longer
 parallel scope sources. Their committed outcomes are recorded here and
 their later-version ideas are preserved under **Deferred or possible
 later work**.
+
+### Proposed-contract planning constraints
+
+Future frontend plans should assume the following until shipped OpenAPI
+replaces the proposal:
+
+-   Every book, album, Work, loan, membership, and vocabulary resource uses
+    an opaque UUID. `BookRead.id` becomes `book_id` in the coordinated V2
+    release; do not build compatibility assumptions around both names.
+-   Business requests send Bearer authentication plus hostname-derived
+    `Library-Username`; authentication fails before tenant validation, and
+    the UI must not expose an ordinary tenant switcher.
+-   Paired `skip`/`take` pagination returns `{ items, total }`; sending only
+    one pagination value is invalid. Authors/artists remain unpaginated
+    `{ items, total }`, while categories/genres/shelves remain plain arrays.
+-   Partial updates preserve omitted fields. Declared membership arrays may
+    use `[]` to clear but reject `null`; frontend payloads send only declared
+    properties.
+-   UI branching uses HTTP status and documented domain `code`/`field`
+    values when present, not comparisons against arbitrary error prose.
+    Whole-request failures use ordinary errors; bulk endpoints report
+    independent item failures inside a successful batch response.
+-   Binary artwork and signatures are authenticated resources served as
+    bytes, never public filesystem or provider URLs.
 
 ## 1. Version definition
 
@@ -112,11 +145,12 @@ First-run setup should reuse the same intake engine and real catalog
 operations. It should add only the guidance and orchestration needed to
 build an empty library:
 
-1.  Read explicit per-library setup state from the backend. Recommended
-    states are `not_started`, `in_progress`, and `complete`; a failed
-    request remains an error and must never be interpreted as an empty
-    or new library. Item counts may inform setup but are not the
-    completion signal.
+1.  Read explicit per-library setup state from `GET /library/setup`.
+    States are `required`, `in_progress`, `complete`, and `failed`; a
+    failed bootstrap is distinct from an API request failure and must never
+    be interpreted as an empty or new library. `has_catalog_items` may
+    inform setup but is not the completion signal. Completion uses the
+    idempotent `POST /library/setup/complete` contract.
 2.  Ask which supported media the owner is adding, then use that
     medium's user-facing location term and intake fields.
 3.  Ask whether the owner has a supported TSV bootstrap source. If so,
@@ -220,7 +254,7 @@ and terminology.
 
 ### Defined album workstream
 
-Backend `FEAT-16` through `FEAT-23` define an album-catalog MVP. In that
+Backend `FEAT-16` through `FEAT-24` define an album-catalog MVP. In that
 contract, one **album** is the catalog and loanable object, while
 `media_format` identifies `vinyl`, `cd`, `cassette`, `unknown`, or
 `other`. Vinyl, CDs, and cassettes therefore share one album experience
@@ -237,7 +271,8 @@ The locked model and its frontend consequences are:
     frontend contract change that must ship in the coordinated release
     window.
 -   Album records contain title, ordered structured artists, ordered
-    string genres, label, release date, media format, optional
+    normalized genres from the `/genres` vocabulary, label, release date,
+    media format, optional
     barcode/Discogs/MusicBrainz identifiers, notes, rating,
     lifecycle/played state, and optional tracks.
 -   Tracks are nested rows grouped by `disc_number` and `track_number`.
@@ -253,16 +288,23 @@ The locked model and its frontend consequences are:
     release-date, and creation-date sorts. Albums are not added to book
     filters.
 -   Album delete is soft delete: it moves the album to `removed`,
-    removes wishlist and album-collection memberships, and retains the
+    removes wishlist membership and any internal future-facing membership
+    rows defined by the backend contract, and retains the
     row. Restore moves it to `unknown`. This intentionally differs from
     book hard delete.
--   Albums reuse the shared shelf catalog through parallel album-shelf
-    membership. A shelf cannot mix book and album membership in this
-    MVP; cross-type placement returns an explicit `412`.
--   Collections also use parallel book and album membership and cannot
-    mix media in one collection. The collection catalog itself has no
-    `media_type` column, so the UI must make a collection's established
-    type clear and prevent invalid choices.
+-   Album lifecycle status is deliberately narrower than books:
+    `available`, `on_loan`, and `display_only`. Albums honor Enable Loans
+    but do not use book TBR automation, `reading`, `missing`, or TBR-derived
+    `reserved` states.
+-   Albums reuse the shared shelf catalog through parallel typed
+    album-shelf membership. The proposed contract does not define separate
+    book-only and album-only shelf catalogs; frontend planning must not
+    invent cross-type shelf exclusivity. Shelf/wishlist overlap remains the
+    placement conflict enforced by `412`.
+-   Collections remain book-only over HTTP in V2. Although the schema may
+    preserve future album membership structures, no album Collection UI or
+    album collection requests should be planned. Wishlists, not Collections,
+    are the mixed-media curated-membership surface in V2.
 -   Wishlists **can** mix books and albums. The mixed endpoint returns
     membership IDs plus nullable `book_id` and `album_id`; the frontend
     joins each row to the corresponding detail endpoint. Wishlist and
@@ -295,7 +337,7 @@ The locked model and its frontend consequences are:
     behavior must be revised by an authoritative backend ticket before
     frontend work.
 
-The frontend should wait for backend `FEAT-23` contract synchronization
+The frontend should wait for backend `FEAT-24` contract synchronization
 and use the resulting OpenAPI plus `API-for-FE.md`, rather than coding
 against proposed intermediate schemas.
 
@@ -324,6 +366,20 @@ Cover Art Archive content is also used with appropriate caution because the
 archive does not grant new copyright rights in the underlying cover art.
 Shade retains source provenance, supports removal, and makes no claim that
 provider artwork is owned or licensed by Shade.
+
+The proposed artwork surface is authenticated `GET`, `PUT`, and `DELETE`
+under `/albums/{album_id}/artwork`, plus explicit `POST .../artwork/refetch`.
+Refetch does not overwrite owner-uploaded bytes unless the request explicitly
+sets `replace_owner_upload: true`. Absence is `404` and renders the ordinary
+placeholder; it is not a failed album record.
+
+Album planning should use normalized `/artists` and `/genres` catalogs,
+ordered `artist_ids`/`genre_ids`, and full-list replacement for optional
+ordered tracks. Lookup accepts exactly one barcode or Discogs release ID,
+prefers configured Discogs, and uses MusicBrainz only when Discogs is
+unconfigured or returns not-found; Discogs transport/auth/server failures do
+not silently fall through. Lookup returns an editable draft and creates no
+catalog rows.
 
 ### Deferred media
 
@@ -481,6 +537,15 @@ lookup/import contract.
 > lookup → populate queue item → validate → classify → optionally edit →
 > persist valid rows → resolve exceptions.
 
+The proposed album adapter uses `/albums/bulk/lookup` and
+`/albums/bulk/import`, accepts batches of 1--50 barcode, Discogs release ID,
+or manual artist/title items, and preserves request order through stable
+client IDs. Provider outcomes distinguish found, not-found, invalid,
+timeout, and failure; catalog classification distinguishes new, owned,
+wishlist, unshelved, ambiguous, and soft-deleted matches. Import targets
+one shelf, resolves normalized artist/genre IDs before commit, uses
+independent savepoints, and never silently reuses a soft-deleted match.
+
 Books remain the reference implementation, but ISBN, author, and shelf
 cannot become assumptions of the generic intake engine. Each medium
 configuration should supply:
@@ -613,6 +678,15 @@ known but ineligible item should show that item's identity and the
 specific reason the action is unavailable rather than pretending the QR
 was not found.
 
+Resolution uses authenticated `POST /catalog/resolve-code`. A request may
+include the active media type as parsing context. Responses identify whether
+the input was a Shade item code or commercial identifier and return typed
+physical-item candidates with identity, creator, format, status, location,
+checkout eligibility, and active-loan context. A valid Shade payload returns
+zero or one candidate; commercial identifiers may return several. Malformed
+or unsupported Shade versions are `422`; a well-formed unknown or
+other-tenant label is the generic `404`.
+
 ## 9. Manual book availability and TBR-driven status
 
 **V2 commitment:** An owner can deliberately change a book's
@@ -672,8 +746,11 @@ in current use; it does not mark the book read.
 
 ### TBR shelf automation
 
-Moving a book to `Liz TBR` or `Andy TBR` sets it to `reserved` as part
-of the same successful operation. Moving it out of either TBR shelf
+Library settings identify TBR shelves by stable `shelf_id`, not by matching
+display names. The initial configured shelves may be displayed as `Liz TBR`
+and `Andy TBR`, but renaming one does not break the rule. Moving a book to a
+configured TBR shelf sets it to `reserved` as part of the same successful
+operation. Moving it out of every configured TBR shelf
 returns it to `available`. Starting the book is a separate manual action
 that sets `reading`. The status and shelf move must not visibly disagree
 because one update succeeded and the other failed.
@@ -683,7 +760,7 @@ reservation queue: Andy or Liz can hold a book so another borrower is
 not offered it. A later version may add an ordered reservation list for
 several people who want the same title back to back.
 
-The TBR shelf name is sufficient attribution for Andy or Liz in V2; no
+The configured TBR shelf is sufficient attribution for Andy or Liz in V2; no
 `reserved_for` field is required for those shelves. Manually setting
 `reserved` elsewhere displays the status stamp without changing location
 or naming a person.
@@ -865,6 +942,12 @@ presence only, while authenticated bytes are fetched from
 tenant-scoped, deleted with the loan, and the loan retains the
 acknowledgement text/version shown at signing.
 
+The staging route is `POST /loans/signatures/stage` with multipart field
+`file`; it returns a token and expiry. The checkout request carries the
+optional token. Frontend plans must handle token expiry and retry staging
+without assuming that a failed checkout consumed or preserved the token
+unless the final contract explicitly says so.
+
 ## 12. Borrower ratings and reviews
 
 **V2 commitment:** Every completed return records a borrower rating, and
@@ -879,6 +962,13 @@ failure cannot roll back or repeat check-in. Email review requests,
 signed public review links, SMTP/provider work, and borrower
 authentication are outside the minimum V2 contract and may be considered
 later.
+
+The proposed flow closes the loan with a required `rating` in check-in,
+then creates or edits the single loan feedback row idempotently through
+`PUT /loans/{loan_id}/feedback`; `DELETE` removes it. Per-item review lists
+are paginated at `/books/{book_id}/borrower-reviews` and
+`/albums/{album_id}/borrower-reviews`, while item reads embed only the
+count/nullable-average summary.
 
 Required separation:
 
@@ -935,6 +1025,12 @@ which owned editions/copies will share the borrower aggregate before
 confirmation. The backend preserves enough assignment history to reverse
 an erroneous correction. Albums follow the same work-level principle
 within their media type.
+
+Planning may rely on authenticated Work read plus atomic merge, split, and
+item-reassignment capabilities under `/works`, while exact request names
+remain proposed. A Work is media-specific and exposes its canonical title,
+member item IDs, provider evidence, assignment source, and whether the owner
+manually confirmed it.
 
 Default grouping treats translations and ordinary editions as the same
 Work. Abridgements, adaptations, and substantially revised works default
@@ -997,9 +1093,12 @@ exception.
 ### Dashboard and Home
 
 Home is library-wide and serves as the entry hall to the supported media
-areas. Recent Additions intentionally mixes media. Staff Picks remains a
-book collection; albums receive their own equivalent curated
-collection/presentation. Collections never mix media types.
+areas. Recent Additions intentionally mixes media through
+`GET /catalog/recent-additions?take=<n>` rather than merging book and album
+dashboard counters in the browser. Results are newest-first typed physical
+item summaries and exclude deleted or wishlist-only rows. Staff Picks
+remains a book Collection. V2 defines no album Collection UI or equivalent
+album curated collection until a separate contract is approved.
 
 Dashboard is media-specific in V2 and uses explicitly scoped
 keys/counts. Home remains library-wide, including mixed-media Recent
@@ -1186,12 +1285,11 @@ must never infer the target from dump contents, restore one person's
 data into another person's library, or silently affect every library on
 the instance.
 
-Manage Collection provides the user-facing **Restore from Backup** entry
-point. Browser code cannot open or browse an arbitrary directory on the
-server. The backend must instead return a constrained inventory of
-recognized backup files for the current library, including safe display
-metadata, and accept only an opaque server-issued backup identifier. It
-must never accept a client-supplied filesystem path.
+Restore is an operator workflow, not a normal frontend or Manage Collection
+surface. Browser backup download and restore inventory UI are not required
+for V2. Operator tooling must accept an explicit tenant and recognized
+server-side artifact; it must never infer the target from recent activity or
+accept an unvalidated path supplied by browser code.
 
 ### Required recovery behavior
 
@@ -1233,7 +1331,7 @@ V2 restore addresses database corruption. Existing sibling asset
 directories for covers, album artwork, and signatures remain in place
 and UUID-based references reconnect after database restoration. This
 does **not** recover assets after disk loss or corruption of those
-directories; the UI and runbook must describe the boundary accurately.
+directories; the operator runbook must describe the boundary accurately.
 
 Each SQL backup should have a small machine-readable manifest containing
 its originating library username, creation time, schema/application
@@ -1254,27 +1352,22 @@ Minimum verification before activation is: checksum match, successful
 SQL replay into a temporary database, `PRAGMA integrity_check`, expected
 migration/schema version and core tables, foreign-key validation, and
 read-only API smoke queries for the restored library. Row-count
-summaries and missing referenced assets should be warnings presented for
-owner confirmation, not logs of catalog contents. A quarterly
+summaries and missing referenced assets should be warnings in the operator
+report, not logs of catalog contents. A quarterly
 non-production restore drill---and another drill after any backup-format
 or restore-path change---is the V2 operating baseline.
 
-Restore authorization is defined as a short-lived, tenant-bound recovery
-token generated through an operator command, in addition to ordinary
-authentication and explicit typed confirmation. Manage Collection lists
-only recognized backups for the active tenant; cross-library
-support/destructive restores use the separate operator capability and
-are never ordinary tenant navigation. Pre-restore safety copies enter
+Restore authorization and explicit target confirmation belong to operator
+tooling; destructive restore is never ordinary tenant navigation.
+Pre-restore safety copies enter
 the normal backup retention policy after post-restore verification: all
 distinct backups for seven days, one per week for eight weeks, and one
 per month for twelve months. The exact free-space preflight threshold
 remains a backend operations/ticket-level decision because only the server
 knows the live database, backup, temporary replay, safety-copy, and
-filesystem constraints. The frontend does not calculate or override it.
-The preflight response should provide required and available space in
-display-safe values; insufficient space blocks confirmation and explains
-that server storage must be freed or expanded before retrying. It must not
-start a restore and discover the shortage after replacing the live database.
+filesystem constraints. Operator preflight reports required and available
+space and blocks before mutation when storage is insufficient. No frontend
+behavior should be planned around this internal threshold.
 
 ## 17. Discovery, analytics, and library personality
 
@@ -1316,6 +1409,14 @@ welcome when they improve the experience, but conventional charts are
 preferable whenever the metaphor makes the data harder to understand.
 Dashboard is naturally analytics-heavy on desktop, but its essential
 information must remain deliberately usable on mobile.
+
+Existing Dashboard book keys retain book-only meaning. The proposed V2
+contract adds explicitly named album totals, checked-out/recent counts,
+played/unplayed and average owner rating, plus album borrowing totals and
+average loan duration. Breakdowns add albums on loan and albums grouped by
+media format, shelf, and creation year. Album incomplete-metadata reporting
+is not part of V2; the frontend must not reinterpret missing tracks as an
+incomplete-metadata error.
 
 Shelf-capacity measurement is **not** a V2 commitment. V2 should not
 invent physical-capacity data merely to support a visualization.
