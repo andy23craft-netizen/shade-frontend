@@ -12,12 +12,12 @@ artifact.
 
 The practical options are:
 
-| Strategy | Implementation effort | Data risk | Rollback quality | Best fit |
-| --- | ---: | ---: | ---: | --- |
-| Delete the database and rebootstrap from seed files | Low | High after real use begins | Poor unless V1 data and artifact are retained | Disposable development or genuinely pre-launch data |
-| Build a new V2 database from the V1 database, verify it, then swap | Medium | Low | Excellent | Recommended coordinated V2 cutover |
-| Migrate the existing database incrementally | Medium–high | Medium unless rehearsed on a copy | Good with a preserved pre-migration database | Gradual schema delivery or conventional upgrades |
-| Maintain a V1 release branch | Ongoing overhead | Does not itself protect data | Helps code maintenance only | Extended parallel V1 support |
+| Strategy                                                           | Implementation effort |                         Data risk |                              Rollback quality | Best fit                                            |
+|--------------------------------------------------------------------|----------------------:|----------------------------------:|----------------------------------------------:|-----------------------------------------------------|
+| Delete the database and rebootstrap from seed files                |                   Low |        High after real use begins | Poor unless V1 data and artifact are retained | Disposable development or genuinely pre-launch data |
+| Build a new V2 database from the V1 database, verify it, then swap |                Medium |                               Low |                                     Excellent | Recommended coordinated V2 cutover                  |
+| Migrate the existing database incrementally                        |           Medium–high | Medium unless rehearsed on a copy |  Good with a preserved pre-migration database | Gradual schema delivery or conventional upgrades    |
+| Maintain a V1 release branch                                       |      Ongoing overhead |      Does not itself protect data |                   Helps code maintenance only | Extended parallel V1 support                        |
 
 The recommended approach is to avoid a long-lived release branch unless V1 needs parallel hotfix support, retain an
 immutable V1 tag and deployable artifact, and perform a side-by-side V1-to-V2 database conversion with verification and
