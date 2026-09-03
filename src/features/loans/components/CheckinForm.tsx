@@ -124,7 +124,7 @@ export function CheckinForm({
 
     const activeLoan = loans.find(
         (loan) =>
-            loan.book_id === book.id &&
+            loan.book_id === book.book_id &&
             loan.returned_at === null,
     )
 
@@ -162,7 +162,7 @@ export function CheckinForm({
         await Promise.all([
             queryClient.invalidateQueries({
                 queryKey:
-                    queryKeys.books.detail(book.id),
+                    queryKeys.books.detail(book.book_id),
             }),
             queryClient.invalidateQueries({
                 queryKey: queryKeys.books.all,
@@ -254,7 +254,7 @@ export function CheckinForm({
 
         checkinBook.mutate(
             {
-                id: book.id,
+                id: book.book_id,
                 request: pendingCheckinRequest,
             },
             {

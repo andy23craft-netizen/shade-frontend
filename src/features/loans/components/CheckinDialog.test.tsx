@@ -54,7 +54,7 @@ vi.mock('./CheckinForm', () => ({
 }))
 
 const book = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'The Left Hand of Darkness',
     authors: [
         {
@@ -68,6 +68,7 @@ const book = {
 
 const loans = [
     {
+        album_id: null,
         id: 'loan-1',
         book_id: 'book-1',
         borrower: 'Jane Reader',

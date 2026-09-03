@@ -118,7 +118,7 @@
         "title": "AuthorUpdate",
         "type": "object"
       },
-      "Body_upload_book_cover_books__id__cover_put": {
+      "Body_upload_book_cover_books__book_id__cover_put": {
         "properties": {
           "file": {
             "contentMediaType": "application/octet-stream",
@@ -129,7 +129,7 @@
         "required": [
           "file"
         ],
-        "title": "Body_upload_book_cover_books__id__cover_put",
+        "title": "Body_upload_book_cover_books__book_id__cover_put",
         "type": "object"
       },
       "BookAuthorRead": {
@@ -520,6 +520,10 @@
             ],
             "title": "Average Loan Days"
           },
+          "book_id": {
+            "title": "Book Id",
+            "type": "string"
+          },
           "categories": {
             "items": {
               "$ref": "#/components/schemas/BookCategoryRead"
@@ -551,10 +555,6 @@
           },
           "creation_date": {
             "title": "Creation Date",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
             "type": "string"
           },
           "is_read": {
@@ -736,7 +736,7 @@
         },
         "required": [
           "title",
-          "id",
+          "book_id",
           "placement_state",
           "creation_date",
           "updated_date",
@@ -2168,9 +2168,27 @@
       "LoanRead": {
         "description": "Read shape for loan history; loans are created by checkout and completed by check-in.",
         "properties": {
+          "album_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Album Id"
+          },
           "book_id": {
-            "title": "Book Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id"
           },
           "borrower": {
             "title": "Borrower",
@@ -2229,6 +2247,7 @@
         "required": [
           "id",
           "book_id",
+          "album_id",
           "borrower",
           "checked_out_at",
           "created_date",
@@ -2552,6 +2571,17 @@
       },
       "WishlistBookRead": {
         "properties": {
+          "album_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Album Id"
+          },
           "book_authors": {
             "items": {
               "$ref": "#/components/schemas/BookAuthorRead"
@@ -2560,8 +2590,15 @@
             "type": "array"
           },
           "book_id": {
-            "title": "Book Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id"
           },
           "book_status": {
             "$ref": "#/components/schemas/Status"
@@ -2610,20 +2647,21 @@
             ],
             "title": "Url"
           },
-          "wishlist_book_id": {
-            "title": "Wishlist Book Id",
-            "type": "string"
-          },
           "wishlist_id": {
             "title": "Wishlist Id",
+            "type": "string"
+          },
+          "wishlist_item_id": {
+            "title": "Wishlist Item Id",
             "type": "string"
           }
         },
         "required": [
-          "wishlist_book_id",
+          "wishlist_item_id",
           "wishlist_id",
           "created_date",
           "book_id",
+          "album_id",
           "book_title",
           "book_status",
           "status"
@@ -2788,7 +2826,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.0.3"
+    "version": "1.0.8"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3205,7 +3243,7 @@
           },
           {
             "in": "query",
-            "name": "id",
+            "name": "book_id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -3216,7 +3254,7 @@
                   "type": "null"
                 }
               ],
-              "title": "Id"
+              "title": "Book Id"
             }
           },
           {
@@ -4253,16 +4291,16 @@
         ]
       }
     },
-    "/books/{id}": {
+    "/books/{book_id}": {
       "delete": {
-        "operationId": "delete_book_books__id__delete",
+        "operationId": "delete_book_books__book_id__delete",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4323,14 +4361,14 @@
         ]
       },
       "get": {
-        "operationId": "get_book_books__id__get",
+        "operationId": "get_book_books__book_id__get",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4398,14 +4436,14 @@
         ]
       },
       "patch": {
-        "operationId": "update_book_books__id__patch",
+        "operationId": "update_book_books__book_id__patch",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4503,16 +4541,16 @@
         ]
       }
     },
-    "/books/{id}/checkin": {
+    "/books/{book_id}/checkin": {
       "post": {
-        "operationId": "checkin_book_books__id__checkin_post",
+        "operationId": "checkin_book_books__book_id__checkin_post",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4607,16 +4645,16 @@
         ]
       }
     },
-    "/books/{id}/checkout": {
+    "/books/{book_id}/checkout": {
       "post": {
-        "operationId": "checkout_book_books__id__checkout_post",
+        "operationId": "checkout_book_books__book_id__checkout_post",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4714,16 +4752,16 @@
         ]
       }
     },
-    "/books/{id}/cover": {
+    "/books/{book_id}/cover": {
       "delete": {
-        "operationId": "delete_book_cover_books__id__cover_delete",
+        "operationId": "delete_book_cover_books__book_id__cover_delete",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4784,14 +4822,14 @@
         ]
       },
       "get": {
-        "operationId": "get_book_cover_books__id__cover_get",
+        "operationId": "get_book_cover_books__book_id__cover_get",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4857,14 +4895,14 @@
         ]
       },
       "put": {
-        "operationId": "upload_book_cover_books__id__cover_put",
+        "operationId": "upload_book_cover_books__book_id__cover_put",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -4873,7 +4911,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_book_cover_books__id__cover_put"
+                "$ref": "#/components/schemas/Body_upload_book_cover_books__book_id__cover_put"
               }
             }
           },
@@ -4942,16 +4980,16 @@
         ]
       }
     },
-    "/books/{id}/mark-read": {
+    "/books/{book_id}/mark-read": {
       "post": {
-        "operationId": "mark_book_read_books__id__mark_read_post",
+        "operationId": "mark_book_read_books__book_id__mark_read_post",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "book_id",
             "required": true,
             "schema": {
-              "title": "Id",
+              "title": "Book Id",
               "type": "string"
             }
           }
@@ -6346,6 +6384,40 @@
           },
           {
             "in": "query",
+            "name": "album_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Album Id"
+            }
+          },
+          {
+            "description": "Filter by book or album. Invalid values return 400.",
+            "in": "query",
+            "name": "media_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by book or album. Invalid values return 400.",
+              "title": "Media Type"
+            }
+          },
+          {
+            "in": "query",
             "name": "skip",
             "required": false,
             "schema": {
@@ -7315,6 +7387,16 @@
             },
             "description": "Resource not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
           "412": {
             "content": {
               "application/json": {
@@ -7347,9 +7429,9 @@
         ]
       }
     },
-    "/wishlists/{wishlist_id}/books/{wishlist_book_id}": {
+    "/wishlists/{wishlist_id}/books/{wishlist_item_id}": {
       "delete": {
-        "operationId": "delete_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__delete",
+        "operationId": "delete_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__delete",
         "parameters": [
           {
             "in": "path",
@@ -7362,10 +7444,10 @@
           },
           {
             "in": "path",
-            "name": "wishlist_book_id",
+            "name": "wishlist_item_id",
             "required": true,
             "schema": {
-              "title": "Wishlist Book Id",
+              "title": "Wishlist Item Id",
               "type": "string"
             }
           }
@@ -7426,7 +7508,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__patch",
+        "operationId": "update_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -7439,10 +7521,10 @@
           },
           {
             "in": "path",
-            "name": "wishlist_book_id",
+            "name": "wishlist_item_id",
             "required": true,
             "schema": {
-              "title": "Wishlist Book Id",
+              "title": "Wishlist Item Id",
               "type": "string"
             }
           }

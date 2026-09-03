@@ -44,7 +44,7 @@ const SHELVES: ShelfRead[] = [
 ]
 
 const BOOK: BookRead = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'Dune',
     authors: [
         {

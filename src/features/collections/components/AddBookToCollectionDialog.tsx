@@ -431,7 +431,7 @@ export function AddBookToCollectionDialog({
                         ...emptyAddCollectionBookFormValues,
                         collectionId:
                         selectedCollectionId,
-                        bookId: book.id,
+                        bookId: book.book_id,
                         notes,
                     }),
             },

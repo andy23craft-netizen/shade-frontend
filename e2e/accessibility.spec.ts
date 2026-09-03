@@ -35,7 +35,7 @@ for (const route of criticalRoutes) {
                                                                                                    page,
                                                                                                }) => {
         const book = makeBook({
-            id: 'accessibility-book',
+            book_id: 'accessibility-book',
             title: 'Pale Fire',
         })
 

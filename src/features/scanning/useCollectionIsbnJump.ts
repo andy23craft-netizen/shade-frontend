@@ -52,7 +52,7 @@ export function useCollectionIsbnJump(): void {
 
                     if (soleBook !== undefined) {
                         navigate(
-                            `/books/${soleBook.id}`,
+                            `/books/${soleBook.book_id}`,
                         )
 
                         return

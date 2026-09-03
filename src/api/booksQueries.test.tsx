@@ -418,7 +418,7 @@ describe('book queries', () => {
                     length: 30,
                 },
                 (_, index) => ({
-                    id: `book-${index}`,
+                    book_id: `book-${index}`,
                 }),
             ) as BookList['items'],
             total: 65,
@@ -430,7 +430,7 @@ describe('book queries', () => {
                     length: 30,
                 },
                 (_, index) => ({
-                    id: `book-${index + 30}`,
+                    book_id: `book-${index + 30}`,
                 }),
             ) as BookList['items'],
             total: 65,
@@ -534,7 +534,7 @@ describe('book queries', () => {
                     length: 5,
                 },
                 (_, index) => ({
-                    id: `book-${index}`,
+                    book_id: `book-${index}`,
                 }),
             ) as BookList['items'],
             total: 5,
@@ -713,7 +713,7 @@ describe('book queries', () => {
             {} as BookCreate
 
         const createdBook = {
-            id: 'book-123',
+            book_id: 'book-123',
         } as BookRead
 
         mockCreate.mockResolvedValueOnce(
@@ -790,7 +790,7 @@ it(
             {} as BookUpdate
 
         const updatedBook = {
-            id: 'book-123',
+            book_id: 'book-123',
             title: 'Updated',
         } as BookRead
 
@@ -1143,7 +1143,7 @@ it(
             {} as CheckoutRequest
 
         const book = {
-            id: 'book-123',
+            book_id: 'book-123',
             status: 'available',
         } as BookRead
 
@@ -1233,7 +1233,7 @@ it(
             {} as CheckinRequest
 
         const book = {
-            id: 'book-123',
+            book_id: 'book-123',
         } as BookRead
 
         mockCheckin.mockResolvedValueOnce(
@@ -1322,7 +1322,7 @@ it(
             {} as MarkReadRequest
 
         const book = {
-            id: 'book-123',
+            book_id: 'book-123',
         } as BookRead
 
         mockMarkRead.mockResolvedValueOnce(
@@ -1537,7 +1537,7 @@ it(
         )
 
         const book = {
-            id: 'book-123',
+            book_id: 'book-123',
             cover_image_path:
                 'book-123.webp',
         } as BookRead

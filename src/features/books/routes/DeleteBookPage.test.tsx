@@ -65,7 +65,7 @@ const mockUseDeleteBook =
 const mockUseLoans = vi.mocked(useLoans)
 
 const book: BookRead = {
-    id: 'test-book-id',
+    book_id: 'test-book-id',
     title: 'The Pale Fire',
     authors: [
         {
@@ -101,8 +101,9 @@ const book: BookRead = {
 }
 
 const activeLoan: LoanRead = {
+    album_id: null,
     id: 'loan-1',
-    book_id: book.id,
+    book_id: book.book_id,
     borrower: 'Jane Reader',
     checked_out_at:
         '2026-08-12T14:00:00Z',

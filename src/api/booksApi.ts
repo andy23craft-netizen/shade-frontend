@@ -39,6 +39,7 @@ import {
 
 export interface ListBooksOptions
     extends ApiCallOptions {
+    bookId?: string
     isbn?: string
     author?: string
     title?: string
@@ -109,6 +110,10 @@ export function createBooksApi(
             options: ListBooksOptions = {},
         ): Promise<BookList> {
             const params = new URLSearchParams()
+
+            if (options.bookId !== undefined) {
+                params.set('book_id', options.bookId)
+            }
 
             setOptionalStringParam(
                 params,

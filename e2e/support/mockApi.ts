@@ -159,7 +159,7 @@ export function makeBook(
     overrides: Partial<BookRead> = {},
 ): BookRead {
     return {
-        id: 'e2e-book-1',
+        book_id: 'e2e-book-1',
         title: 'Pale Fire',
         authors: [
             {
@@ -205,8 +205,11 @@ export function makeLoan(
     overrides: Partial<LoanRead> = {},
 ): LoanRead {
     return {
+        album_id: null,
         id: 'e2e-loan-1',
         book_id: 'e2e-book-1',
+        created_date: NOW,
+        last_updated_date: NOW,
         borrower: 'Jane Reader',
         checked_out_at: NOW,
         due_at: null,
@@ -278,7 +281,7 @@ function findBook(
     id: string,
 ) {
     return state.books.find(
-        (book) => book.id === id,
+        (book) => book.book_id === id,
     )
 }
 
@@ -448,6 +451,14 @@ function listLoans(
                     loan.book_id === bookId,
             )
 
+    const albumId = url.searchParams.get('album_id')
+    const mediaType = url.searchParams.get('media_type')
+    loans = loans.filter((loan) =>
+        (albumId === null || loan.album_id === albumId) &&
+        (mediaType !== 'book' || loan.book_id !== null) &&
+        (mediaType !== 'album' || loan.album_id !== null),
+    )
+
     const total = loans.length
     const skip = Number(
         url.searchParams.get('skip') ?? 0,
@@ -493,7 +504,7 @@ function calculateDashboard(
     const activeBooks = state.books
 
     const activeBookIds = new Set(
-        activeBooks.map((book) => book.id),
+        activeBooks.map((book) => book.book_id),
     )
 
     const visibleLoans = state.loans.filter(
@@ -666,7 +677,7 @@ function createBookFromRequest(
         `e2e-book-${state.books.length + 1}`
 
     const book = makeBook({
-        id: nextId,
+        book_id: nextId,
         title:
             typeof body.title === 'string'
                 ? body.title
@@ -770,7 +781,7 @@ function removeBookFromState(
     id: string,
 ): void {
     state.books = state.books.filter(
-        (book) => book.id !== id,
+        (book) => book.book_id !== id,
     )
 
     state.loans = state.loans.filter(
@@ -1173,6 +1184,7 @@ export async function installMockApi(
                     NOW
 
                 const loan = makeLoan({
+                    album_id: null,
                     id: `e2e-loan-${state.loans.length + 1}`,
                     book_id: id,
                     borrower:

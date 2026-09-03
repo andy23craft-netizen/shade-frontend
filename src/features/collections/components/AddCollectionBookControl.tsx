@@ -691,8 +691,8 @@ export function AddCollectionBookControl() {
 
                         {matches.map((book) => (
                             <option
-                                key={book.id}
-                                value={book.id}
+                                key={book.book_id}
+                                value={book.book_id}
                             >
                                 {bookOptionLabel(book)}
                             </option>

@@ -26,7 +26,7 @@ vi.mock('../../../api/shelvesQueries', () => ({
 }))
 
 const stashedBook = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'Displaced Book',
     authors: [{
         author_id: 'author-1',

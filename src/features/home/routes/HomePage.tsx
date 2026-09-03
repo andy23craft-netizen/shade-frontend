@@ -203,7 +203,7 @@ export function HomePage() {
                         {recentBooks.map(
                             (book) => (
                                 <HomeRecentBook
-                                    key={book.id}
+                                    key={book.book_id}
                                     book={book}
                                 />
                             ),

@@ -182,7 +182,7 @@ export function EditBookPage() {
             categories === undefined ||
             authors === undefined ||
             initializedBookIdRef.current ===
-            book.id
+            book.book_id
         ) {
             return
         }
@@ -195,7 +195,7 @@ export function EditBookPage() {
         )
 
         initializedBookIdRef.current =
-            book.id
+            book.book_id
     }, [
         bookQuery.data,
         categoriesQuery.data,
@@ -302,13 +302,13 @@ export function EditBookPage() {
 
         updateBook.mutate(
             {
-                id: book.id,
+                id: book.book_id,
                 book: request,
             },
             {
                 onSuccess: (updatedBook) => {
                     navigate(
-                        `/books/${updatedBook.id}`,
+                        `/books/${updatedBook.book_id}`,
                     )
                 },
                 onError: (error) => {
@@ -555,7 +555,7 @@ export function EditBookPage() {
         <section className="route-page">
             <div className="book-details__topbar">
                 <AppLink
-                    to={`/books/${book.id}`}
+                    to={`/books/${book.book_id}`}
                     variant="secondary"
                 >
                     ← Back to Book
@@ -599,7 +599,7 @@ export function EditBookPage() {
                 onSubmit={handleSubmit}
                 onCancel={() => {
                     navigate(
-                        `/books/${book.id}`,
+                        `/books/${book.book_id}`,
                     )
                 }}
                 isSubmitting={

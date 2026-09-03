@@ -47,7 +47,7 @@ test('opens a unique scanned book directly from the dashboard and Back returns t
                                                                                                              page,
                                                                                                          }) => {
     const book = makeBook({
-        id: 'scan-target',
+        book_id: 'scan-target',
         title: 'Pale Fire',
         isbn13: SCANNED_ISBN,
     })
@@ -96,13 +96,13 @@ test('keeps multiple scanned ISBN matches on the books list', async ({
                                                                          page,
                                                                      }) => {
     const firstCopy = makeBook({
-        id: 'copy-1',
+        book_id: 'copy-1',
         title: 'Pale Fire — First Copy',
         isbn13: SCANNED_ISBN,
     })
 
     const secondCopy = makeBook({
-        id: 'copy-2',
+        book_id: 'copy-2',
         title: 'Pale Fire — Second Copy',
         isbn13: SCANNED_ISBN,
     })

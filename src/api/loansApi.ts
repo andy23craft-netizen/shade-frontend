@@ -12,6 +12,8 @@ import type {
 export interface ListLoansOptions
     extends ApiCallOptions {
     bookId?: string
+    albumId?: string
+    mediaType?: 'book' | 'album'
     skip?: number
     take?: number
 }
@@ -36,13 +38,20 @@ export function createLoansApi(
             const params = new URLSearchParams()
 
             if (
-                options.bookId !== undefined &&
-                options.bookId !== ''
+                options.bookId !== undefined
             ) {
                 params.set(
                     'book_id',
                     options.bookId,
                 )
+            }
+
+            if (options.albumId !== undefined) {
+                params.set('album_id', options.albumId)
+            }
+
+            if (options.mediaType !== undefined) {
+                params.set('media_type', options.mediaType)
             }
 
             if (options.skip !== undefined) {

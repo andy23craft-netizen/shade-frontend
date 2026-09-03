@@ -46,7 +46,7 @@ import {
 
 export interface MoveWishlistBookToShelfControlProps {
     wishlistId: string
-    wishlistBookId: string
+    wishlistItemId: string
     bookId: string
     bookTitle: string
     disabled?: boolean
@@ -54,7 +54,7 @@ export interface MoveWishlistBookToShelfControlProps {
 
 export function MoveWishlistBookToShelfControl({
                                                    wishlistId,
-                                                   wishlistBookId,
+                                                   wishlistItemId,
                                                    bookId,
                                                    bookTitle,
                                                    disabled = false,
@@ -203,7 +203,7 @@ export function MoveWishlistBookToShelfControl({
         moveBook.mutate(
             {
                 wishlistId,
-                wishlistBookId,
+                wishlistItemId,
                 bookId,
                 shelfName: update.shelf_name,
                 membershipRemoved,

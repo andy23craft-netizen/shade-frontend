@@ -155,7 +155,7 @@ export function StashPage() {
                                 setNotice(null)
                                 applyMutation.mutate(
                                     {
-                                        book_ids: selection.selectedBooks.map((book) => book.id),
+                                        book_ids: selection.selectedBooks.map((book) => book.book_id),
                                         shelf_name: shelfName,
                                     },
                                     {
@@ -188,15 +188,15 @@ export function StashPage() {
 
                     <ul className="stash-page__list">
                         {books.map((book) => (
-                            <li key={book.id} className="stash-page__book">
+                            <li key={book.book_id} className="stash-page__book">
                                 <BookSelectionControl
                                     bookTitle={book.title}
-                                    checked={selection.isSelected(book.id)}
-                                    onChange={() => selection.toggle(book.id)}
+                                    checked={selection.isSelected(book.book_id)}
+                                    onChange={() => selection.toggle(book.book_id)}
                                 />
                                 <div>
                                     <h2>
-                                        <AppLink to={`/books/${encodeURIComponent(book.id)}`}>
+                                        <AppLink to={`/books/${encodeURIComponent(book.book_id)}`}>
                                             {book.title}
                                         </AppLink>
                                     </h2>

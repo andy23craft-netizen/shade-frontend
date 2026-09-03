@@ -175,7 +175,7 @@ describe('createLoansApi', () => {
         )
     })
 
-    it('omits book_id when bookId is an empty string', async () => {
+    it('preserves an explicitly empty book filter for backend validation', async () => {
         const loans: LoanList = {
             items: [],
             total: 0,
@@ -194,7 +194,7 @@ describe('createLoansApi', () => {
 
         expect(
             client.getJson,
-        ).toHaveBeenCalledWith('/loans')
+        ).toHaveBeenCalledWith('/loans?book_id=')
     })
 
     it('forwards an abort signal when listing loans', async () => {
@@ -354,4 +354,19 @@ describe('createLoansApi', () => {
             'validation',
         )
     })
+})
+
+
+it('serializes typed catalog filters together with pagination', async () => {
+    const client = createMockClient()
+    await createLoansApi(client).list({
+        bookId: 'shared-id',
+        albumId: 'shared-id',
+        mediaType: 'book',
+        skip: 30,
+        take: 30,
+    })
+    expect(client.getJson).toHaveBeenCalledWith(
+        '/loans?book_id=shared-id&album_id=shared-id&media_type=book&skip=30&take=30',
+    )
 })

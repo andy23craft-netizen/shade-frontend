@@ -157,7 +157,7 @@ const TEST_CATEGORIES: CategoryRead[] = [
 ]
 
 const book: BookRead = {
-    id: 'test-book-id',
+    book_id: 'test-book-id',
     title: 'The Pale Fire',
     authors: [
         TEST_AUTHORS[0],

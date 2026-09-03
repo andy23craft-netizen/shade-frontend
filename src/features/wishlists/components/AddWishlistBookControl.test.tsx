@@ -121,7 +121,7 @@ const authors: AuthorRead[] = [
 ]
 
 const createdBook: BookRead = {
-    id: 'book-99',
+    book_id: 'book-99',
     title: 'A Book',
     authors: [
         {
@@ -155,7 +155,8 @@ const createdBook: BookRead = {
 }
 
 const membership: WishlistBookRead = {
-    wishlist_book_id: 'membership-1',
+    album_id: null,
+    wishlist_item_id: 'membership-1',
     wishlist_id: 'wishlist-1',
     book_id: 'book-99',
     book_title: 'A Book',

@@ -1339,3 +1339,10 @@ describe('createBooksApi', () => {
         expect(result).toBe(response)
     })
 })
+
+
+it('uses book_id for the exact catalog ID filter', async () => {
+    const client = createMockClient()
+    await createBooksApi(client).list({ bookId: 'book/123' })
+    expect(client.getJson).toHaveBeenCalledWith('/books?book_id=book%2F123')
+})

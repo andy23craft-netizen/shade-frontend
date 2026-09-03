@@ -69,7 +69,7 @@ const collections: CollectionList = {
 }
 
 const catalogBook: BookRead = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'The Dispossessed',
     authors: [
         {

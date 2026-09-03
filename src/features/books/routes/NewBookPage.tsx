@@ -453,7 +453,7 @@ export function NewBookPage() {
             {
                 onSuccess: (created) => {
                     navigate(
-                        `/books/${created.id}`,
+                        `/books/${created.book_id}`,
                     )
                 },
                 onError: (error) => {

@@ -35,7 +35,7 @@ const mockUseCheckinBook = vi.mocked(
 )
 
 const book = {
-    id: 'test-book-id',
+    book_id: 'test-book-id',
     title: 'The Pale Fire',
     authors: [
         {
@@ -48,6 +48,7 @@ const book = {
 } as BookRead
 
 const activeLoan = {
+    album_id: null,
     id: 'test-loan-id',
     book_id: 'test-book-id',
     borrower: 'Jane Reader',

@@ -22,7 +22,7 @@ vi.mock('../../scanning/useCollectionIsbnJump', () => ({
         mockUseCollectionIsbnJump(),
 }))
 vi.mock('../../../api/loansQueries', () => ({
-    useInfiniteLoans: () => mockUseInfiniteLoans(),
+    useInfiniteLoans: (options: unknown) => mockUseInfiniteLoans(options),
     useLoans: (options: unknown) =>
         mockUseLoans(options),
 }))
@@ -46,7 +46,7 @@ vi.mock('../components/CheckinDialog', () => ({
                         onClose,
                     }: {
         book: {
-            id: string
+            book_id: string
             title: string
         }
         onClose: () => void
@@ -83,7 +83,7 @@ function makeBookList(
     return {
         items: [
             {
-                id: 'book-1',
+                book_id: 'book-1',
                 title: 'The Left Hand of Darkness',
                 authors: [
                     {
@@ -128,6 +128,7 @@ function makeLoanList(
     return {
         items: [
             {
+                album_id: null,
                 id: 'loan-1',
                 book_id: 'book-1',
                 borrower: 'Jane Reader',
@@ -1242,4 +1243,32 @@ describe('LoansPage', () => {
             mockUseCollectionIsbnJump,
         ).toHaveBeenCalled()
     })
+})
+
+
+it('requests book loans and never uses an album reference for book actions', () => {
+    const bookLoan = makeLoanList().items[0]
+    mockUseBooks.mockReturnValue({
+        isPending: false,
+        isError: false,
+        data: makeBookList(),
+    })
+    mockUseInfiniteLoans.mockReturnValue(makeInfiniteLoansResult([{
+        items: [bookLoan, {
+            ...bookLoan,
+            id: 'album-loan',
+            book_id: null,
+            album_id: bookLoan.book_id,
+            borrower: 'Album borrower',
+        }],
+        total: 2,
+    }]))
+
+    renderPage()
+
+    expect(mockUseInfiniteLoans).toHaveBeenCalledWith({ mediaType: 'book' })
+    expect(screen.queryByText('Album borrower')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'The Left Hand of Darkness' }))
+        .toHaveAttribute('href', '/books/book-1')
+    expect(screen.getAllByRole('button', { name: /check in/i })).toHaveLength(1)
 })

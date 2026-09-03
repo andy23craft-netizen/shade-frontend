@@ -356,7 +356,7 @@ export function CheckoutDialog({
             }),
             queryClient.invalidateQueries({
                 queryKey:
-                    queryKeys.books.detail(book.id),
+                    queryKeys.books.detail(book.book_id),
             }),
             queryClient.invalidateQueries({
                 queryKey: queryKeys.loans.all,
@@ -482,7 +482,7 @@ export function CheckoutDialog({
 
         checkoutBook.mutate(
             {
-                id: book.id,
+                id: book.book_id,
                 request,
             },
             {

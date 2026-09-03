@@ -96,7 +96,7 @@ function makeBook(
     overrides: Partial<BookRead> = {},
 ): BookRead {
     return {
-        id: 'book-1',
+        book_id: 'book-1',
         title: 'The Left Hand of Darkness',
         authors: [
             {
@@ -358,7 +358,7 @@ describe('BooksPage', () => {
                 {
                     items: [
                         makeBook({
-                            id: 'book-cover-test',
+                            book_id: 'book-cover-test',
                             title: 'Pale Fire',
                             status: 'available',
                         }),
@@ -433,7 +433,7 @@ describe('BooksPage', () => {
                         },
                         (_, index) =>
                             makeBook({
-                                id: `book-${index}`,
+                                book_id: `book-${index}`,
                                 title: `Book ${index}`,
                             }),
                     ),
@@ -486,7 +486,7 @@ describe('BooksPage', () => {
                         },
                         (_, index) =>
                             makeBook({
-                                id: `book-${index}`,
+                                book_id: `book-${index}`,
                                 title: `Book ${index}`,
                             }),
                     ),
@@ -519,7 +519,7 @@ describe('BooksPage', () => {
                         },
                         (_, index) =>
                             makeBook({
-                                id: `book-${index}`,
+                                book_id: `book-${index}`,
                                 title: `Book ${index}`,
                             }),
                     ),
@@ -731,7 +731,7 @@ describe('BooksPage', () => {
                     items: [
                         makeBook(),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                     ],
@@ -990,7 +990,7 @@ describe('BooksPage', () => {
                                 {
                                     items: [
                                         makeBook({
-                                            id: 'book-dune',
+                                            book_id: 'book-dune',
                                             title: 'Dune',
                                             authors: [
                                                 {
@@ -1216,7 +1216,7 @@ describe('BooksPage', () => {
                         },
                         (_, index) =>
                             makeBook({
-                                id: `book-${index}`,
+                                book_id: `book-${index}`,
                                 title: `Book ${index}`,
                             }),
                     ),
@@ -1259,7 +1259,7 @@ describe('BooksPage', () => {
                         },
                         (_, index) =>
                             makeBook({
-                                id: `book-${index}`,
+                                book_id: `book-${index}`,
                                 title: `Book ${index}`,
                             }),
                     ),
@@ -1272,7 +1272,7 @@ describe('BooksPage', () => {
                         },
                         (_, index) =>
                             makeBook({
-                                id: `book-${index + 30}`,
+                                book_id: `book-${index + 30}`,
                                 title: `Book ${index + 30}`,
                             }),
                     ),
@@ -1307,7 +1307,7 @@ describe('BooksPage', () => {
                             },
                             (_, index) =>
                                 makeBook({
-                                    id: `book-${index}`,
+                                    book_id: `book-${index}`,
                                     title: `Book ${index}`,
                                 }),
                         ),
@@ -1343,7 +1343,7 @@ describe('BooksPage', () => {
                             },
                             (_, index) =>
                                 makeBook({
-                                    id: `book-${index}`,
+                                    book_id: `book-${index}`,
                                     title: `Book ${index}`,
                                 }),
                         ),
@@ -1391,7 +1391,7 @@ describe('BooksPage', () => {
                         },
                         (_, index) =>
                             makeBook({
-                                id: `book-${index}`,
+                                book_id: `book-${index}`,
                                 title: `Book ${index}`,
                             }),
                     ),
@@ -1421,7 +1421,7 @@ describe('BooksPage', () => {
                     items: [
                         makeBook(),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                             authors: [
                                 {
@@ -1556,13 +1556,13 @@ describe('BooksPage', () => {
                     total: 2,
                     items: [
                         makeBook({
-                            id: 'rated-book',
+                            book_id: 'rated-book',
                             title: 'Rated Book',
                             is_read: true,
                             rating: 5,
                         }),
                         makeBook({
-                            id: 'unrated-book',
+                            book_id: 'unrated-book',
                             title: 'Unrated Book',
                             is_read: false,
                             rating: null,
@@ -1615,10 +1615,10 @@ describe('BooksPage', () => {
                     total: 2,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                         }),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Second Copy',
                         }),
                     ],
@@ -1651,7 +1651,7 @@ describe('BooksPage', () => {
                     total: 1,
                     items: [
                         makeBook({
-                            id: 'unique-book',
+                            book_id: 'unique-book',
                             isbn13: '9780441172719',
                         }),
                     ],
@@ -1718,11 +1718,11 @@ describe('BooksPage', () => {
                     total: 2,
                     items: [
                         makeBook({
-                            id: 'copy-1',
+                            book_id: 'copy-1',
                             title: 'First Copy',
                         }),
                         makeBook({
-                            id: 'copy-2',
+                            book_id: 'copy-2',
                             title: 'Second Copy',
                         }),
                     ],
@@ -1760,7 +1760,7 @@ describe('BooksPage', () => {
                     total: 1,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                         }),
                     ],
                 },
@@ -1805,7 +1805,7 @@ describe('BooksPage', () => {
                     items: [
                         makeBook(),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                     ],
@@ -1973,14 +1973,14 @@ describe('BooksPage', () => {
                     total: 8,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                         }),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                         makeBook({
-                            id: 'book-3',
+                            book_id: 'book-3',
                             title: 'Invisible Cities',
                         }),
                     ],
@@ -2038,10 +2038,10 @@ describe('BooksPage', () => {
                     total: 2,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                         }),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                     ],
@@ -2108,10 +2108,10 @@ describe('BooksPage', () => {
                     total: 2,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                         }),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                     ],
@@ -2163,10 +2163,10 @@ describe('BooksPage', () => {
                     total: 2,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                         }),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                     ],
@@ -2216,12 +2216,12 @@ describe('BooksPage', () => {
                     total: 2,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                             title:
                                 'The Left Hand of Darkness',
                         }),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                     ],
@@ -2281,12 +2281,12 @@ describe('BooksPage', () => {
                     total: 5,
                     items: [
                         makeBook({
-                            id: 'book-1',
+                            book_id: 'book-1',
                             title:
                                 'The Left Hand of Darkness',
                         }),
                         makeBook({
-                            id: 'book-2',
+                            book_id: 'book-2',
                             title: 'Pale Fire',
                         }),
                     ],

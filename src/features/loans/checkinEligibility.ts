@@ -18,5 +18,5 @@ export function isCheckinEligible(
     book: BookRead,
     loans: readonly LoanRead[],
 ): boolean {
-    return findActiveLoan(book.id, loans) !== undefined
+    return findActiveLoan(book.book_id, loans) !== undefined
 }

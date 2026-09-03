@@ -42,11 +42,11 @@ const expectedPaths = [
     '/books/bulk/move-to-shelf',
     '/books/bulk/stash',
     '/books/lookup',
-    '/books/{id}',
-    '/books/{id}/checkin',
-    '/books/{id}/checkout',
-    '/books/{id}/cover',
-    '/books/{id}/mark-read',
+    '/books/{book_id}',
+    '/books/{book_id}/checkin',
+    '/books/{book_id}/checkout',
+    '/books/{book_id}/cover',
+    '/books/{book_id}/mark-read',
     '/categories',
     '/categories/{category_id}',
     '/collections',
@@ -67,7 +67,7 @@ const expectedPaths = [
     '/wishlists',
     '/wishlists/{wishlist_id}',
     '/wishlists/{wishlist_id}/books',
-    '/wishlists/{wishlist_id}/books/{wishlist_book_id}',
+    '/wishlists/{wishlist_id}/books/{wishlist_item_id}',
 ] as const
 
 describe('OpenAPI contract smoke', () => {

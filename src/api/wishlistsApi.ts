@@ -171,11 +171,11 @@ export function createWishlistsApi(
 
         async removeBook(
             wishlistId: string,
-            wishlistBookId: string,
+            wishlistItemId: string,
             options: ApiCallOptions = {},
         ): Promise<void> {
             await client.request(
-                `/wishlists/${encodeURIComponent(wishlistId)}/books/${encodeURIComponent(wishlistBookId)}`,
+                `/wishlists/${encodeURIComponent(wishlistId)}/books/${encodeURIComponent(wishlistItemId)}`,
                 {
                     method: 'DELETE',
                     ...withSignal(options.signal),
@@ -185,12 +185,12 @@ export function createWishlistsApi(
 
         async updateBook(
             wishlistId: string,
-            wishlistBookId: string,
+            wishlistItemId: string,
             wishlistBook: WishlistBookUpdate,
             options: ApiCallOptions = {},
         ): Promise<WishlistBookRead> {
             return client.requestJson<WishlistBookRead>(
-                `/wishlists/${encodeURIComponent(wishlistId)}/books/${encodeURIComponent(wishlistBookId)}`,
+                `/wishlists/${encodeURIComponent(wishlistId)}/books/${encodeURIComponent(wishlistItemId)}`,
                 {
                     method: 'PATCH',
                     body: pickWishlistBookUpdate(wishlistBook),

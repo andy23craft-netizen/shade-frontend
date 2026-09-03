@@ -14,7 +14,7 @@ import {
 } from './checkinEligibility'
 
 const book = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'Pale Fire',
     authors: [
         {
@@ -27,6 +27,7 @@ const book = {
 } as BookRead
 
 const activeLoan = {
+    album_id: null,
     id: 'loan-active',
     book_id: 'book-1',
     borrower: 'Jane Reader',
@@ -105,4 +106,13 @@ describe('checkinEligibility', () => {
         ).toBe(false)
     })
 
+})
+
+
+it('does not match an album loan with the same catalog UUID', () => {
+    expect(findActiveLoan(book.book_id, [{
+        ...activeLoan,
+        book_id: null,
+        album_id: book.book_id,
+    }])).toBeUndefined()
 })

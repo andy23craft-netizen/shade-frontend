@@ -18,7 +18,7 @@ function makeBook(
     overrides: Partial<BulkSelectableBook> = {},
 ): BulkSelectableBook {
     return {
-        id: 'book-1',
+        book_id: 'book-1',
         title: 'The Left Hand of Darkness',
         ...overrides,
     }
@@ -74,10 +74,10 @@ describe('bulkSelectionModel', () => {
         const selectedIds =
             selectVisibleEligibleBookIds([
                 makeBook({
-                    id: 'book-1',
+                    book_id: 'book-1',
                 }),
                 makeBook({
-                    id: 'book-2',
+                    book_id: 'book-2',
                     title: 'Pale Fire',
                 }),
             ])
@@ -104,10 +104,10 @@ describe('bulkSelectionModel', () => {
                 ]),
                 [
                     makeBook({
-                        id: 'book-1',
+                        book_id: 'book-1',
                     }),
                     makeBook({
-                        id: 'book-2',
+                        book_id: 'book-2',
                     }),
                 ],
                 true,
@@ -125,13 +125,13 @@ describe('bulkSelectionModel', () => {
                 ]),
                 [
                     makeBook({
-                        id: 'book-1',
+                        book_id: 'book-1',
                     }),
                     makeBook({
-                        id: 'book-2',
+                        book_id: 'book-2',
                     }),
                     makeBook({
-                        id: 'book-3',
+                        book_id: 'book-3',
                     }),
                 ],
                 false,
@@ -152,7 +152,7 @@ describe('bulkSelectionModel', () => {
                 ]),
                 [
                     makeBook({
-                        id: 'book-1',
+                        book_id: 'book-1',
                     }),
                 ],
                 false,
@@ -172,10 +172,10 @@ describe('bulkSelectionModel', () => {
                 ]),
                 [
                     makeBook({
-                        id: 'book-1',
+                        book_id: 'book-1',
                     }),
                     makeBook({
-                        id: 'book-2',
+                        book_id: 'book-2',
                     }),
                 ],
                 false,
@@ -192,15 +192,15 @@ describe('bulkSelectionModel', () => {
             getSelectedBookIdentities(
                 [
                     makeBook({
-                        id: 'book-1',
+                        book_id: 'book-1',
                         title: 'The Left Hand of Darkness',
                     }),
                     makeBook({
-                        id: 'book-2',
+                        book_id: 'book-2',
                         title: 'Pale Fire',
                     }),
                     makeBook({
-                        id: 'book-3',
+                        book_id: 'book-3',
                         title: 'Invisible Cities',
                     }),
                 ],
@@ -212,11 +212,11 @@ describe('bulkSelectionModel', () => {
 
         expect(selectedBooks).toEqual([
             {
-                id: 'book-1',
+                book_id: 'book-1',
                 title: 'The Left Hand of Darkness',
             },
             {
-                id: 'book-3',
+                book_id: 'book-3',
                 title: 'Invisible Cities',
             },
         ])

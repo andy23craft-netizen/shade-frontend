@@ -111,7 +111,7 @@ const incompleteBooksFixture = {
         {
             items: [
                 {
-                    id: 'book-1',
+                    book_id: 'book-1',
                     title: 'Incomplete Book',
                     authors: 'Example Author',
                 },

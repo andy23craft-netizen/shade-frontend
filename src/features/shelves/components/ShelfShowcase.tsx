@@ -48,7 +48,7 @@ function ShelfBookCard({
         <article className="book-card book-card--compact shelf-showcase__book-card">
             <div className="book-card__cover">
                 <BookCover
-                    bookId={book.id}
+                    bookId={book.book_id}
                     title={book.title}
                     status={book.status}
                     decorative
@@ -60,7 +60,7 @@ function ShelfBookCard({
                     <h3 className="book-card__title">
                         <AppLink
                             to={`/books/${encodeURIComponent(
-                                book.id,
+                                book.book_id,
                             )}`}
                         >
                             {book.title}
@@ -396,7 +396,7 @@ export function ShelfShowcase({
                             {booksQuery.data.items.map(
                                 (book) => (
                                     <li
-                                        key={book.id}
+                                        key={book.book_id}
                                         className="shelf-showcase__book"
                                     >
                                         <ShelfBookCard

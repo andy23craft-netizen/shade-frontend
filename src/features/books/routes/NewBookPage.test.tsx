@@ -502,7 +502,7 @@ describe('NewBookPage', () => {
         const options = mockMutate.mock.calls[0][1]
 
         options.onSuccess({
-            id: 'book-123',
+            book_id: 'book-123',
         })
 
         expect(mockNavigate).toHaveBeenCalledWith(

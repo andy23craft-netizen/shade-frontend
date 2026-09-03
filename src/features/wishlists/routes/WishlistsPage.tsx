@@ -112,7 +112,7 @@ function WishlistMembershipRow({
     const [confirmRemove, setConfirmRemove] = useState(false)
     const [removeError, setRemoveError] = useState<string | null>(null)
     const {
-        wishlist_book_id: membershipId,
+        wishlist_item_id: membershipId,
         wishlist_id: wishlistId,
         book_id: bookId,
         book_title: title,
@@ -122,6 +122,8 @@ function WishlistMembershipRow({
         notes,
         url,
     } = membership
+
+    if (bookId === null || membership.album_id !== null) return null
 
     const href = `/books/${encodeURIComponent(bookId)}`
     const safeUrl = safeHttpUrl(url)
@@ -199,14 +201,14 @@ function WishlistMembershipRow({
                 notes={notes}
                 onSave={(nextNotes) => updateMembership.mutateAsync({
                     wishlistId,
-                    wishlistBookId: membershipId,
+                    wishlistItemId: membershipId,
                     update: { notes: nextNotes },
                 })}
             />
 
             <MoveWishlistBookToShelfControl
                 wishlistId={wishlistId}
-                wishlistBookId={membershipId}
+                wishlistItemId={membershipId}
                 bookId={bookId}
                 bookTitle={title}
             />
@@ -232,7 +234,7 @@ function WishlistMembershipRow({
                     if (removeMembership.isPending) return
                     setRemoveError(null)
                     removeMembership.mutate(
-                        { wishlistId, wishlistBookId: membershipId },
+                        { wishlistId, wishlistItemId: membershipId },
                         {
                             onSuccess: () => setConfirmRemove(false),
                             onError: (error) => {
@@ -455,7 +457,7 @@ function WishlistSection({
                                 ) => (
                                     <WishlistMembershipRow
                                         key={
-                                            membership.wishlist_book_id
+                                            membership.wishlist_item_id
                                         }
                                         membership={
                                             membership

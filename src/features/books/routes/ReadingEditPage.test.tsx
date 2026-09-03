@@ -56,7 +56,7 @@ const mockUseUpdateBook =
     vi.mocked(useUpdateBook)
 
 const readBook: BookRead = {
-    id: 'test-book-id',
+    book_id: 'test-book-id',
     title: 'The Pale Fire',
     authors: [
     {

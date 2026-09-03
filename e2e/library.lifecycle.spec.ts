@@ -2,13 +2,14 @@ import { expect, test } from '@playwright/test'
 import {
     installMockApi,
     makeBook,
+    makeLoan,
 } from './support/mockApi'
 
 test('checks out and checks in a book through the browser', async ({
                                                                        page,
                                                                    }) => {
     const book = makeBook({
-        id: 'lifecycle-book',
+        book_id: 'lifecycle-book',
         title: 'Pale Fire',
         authors: [
             {
@@ -23,7 +24,7 @@ test('checks out and checks in a book through the browser', async ({
         books: [book],
     })
 
-    await page.goto(`/books/${book.id}`)
+    await page.goto(`/books/${book.book_id}`)
 
     await expect(
         page.getByRole('heading', {
@@ -73,7 +74,7 @@ test('checks out and checks in a book through the browser', async ({
     expect(
         api.state.books.find(
             (candidate) =>
-                candidate.id === book.id,
+                candidate.book_id === book.book_id,
         )?.status,
     ).toBe('on_loan')
 
@@ -90,7 +91,7 @@ test('checks out and checks in a book through the browser', async ({
             (request) =>
                 request.method === 'POST' &&
                 request.pathname ===
-                `/books/${book.id}/checkout`,
+                `/books/${book.book_id}/checkout`,
         ),
     ).toBe(true)
 
@@ -114,7 +115,7 @@ test('checks out and checks in a book through the browser', async ({
 
     await expect(page).toHaveURL(
         new RegExp(
-            `/loans\\?bookId=${book.id}`,
+            `/loans\\?bookId=${book.book_id}`,
         ),
     )
 
@@ -151,7 +152,7 @@ test('checks out and checks in a book through the browser', async ({
 
     await expect(page).toHaveURL(
         new RegExp(
-            `/loans\\?bookId=${book.id}`,
+            `/loans\\?bookId=${book.book_id}`,
         ),
     )
 
@@ -165,7 +166,7 @@ test('checks out and checks in a book through the browser', async ({
     expect(
         api.state.books.find(
             (candidate) =>
-                candidate.id === book.id,
+                candidate.book_id === book.book_id,
         )?.status,
     ).toBe('available')
 
@@ -173,7 +174,7 @@ test('checks out and checks in a book through the browser', async ({
         api.state.loans[0],
     ).toEqual(
         expect.objectContaining({
-            book_id: book.id,
+            book_id: book.book_id,
             borrower: 'Jane Reader',
             returned_at: expect.any(String),
         }),
@@ -184,7 +185,7 @@ test('checks out and checks in a book through the browser', async ({
             (request) =>
                 request.method === 'POST' &&
                 request.pathname ===
-                `/books/${book.id}/checkin`,
+                `/books/${book.book_id}/checkin`,
         ),
     ).toBe(true)
 
@@ -257,14 +258,14 @@ test('checks out and checks in a book through the browser', async ({
     expect(
         api.state.books.find(
             (candidate) =>
-                candidate.id === book.id,
+                candidate.book_id === book.book_id,
         )?.is_read,
     ).toBe(true)
 
     expect(
         api.state.books.find(
             (candidate) =>
-                candidate.id === book.id,
+                candidate.book_id === book.book_id,
         )?.rating,
     ).toBe(5)
 
@@ -273,7 +274,7 @@ test('checks out and checks in a book through the browser', async ({
             (request) =>
                 request.method === 'POST' &&
                 request.pathname ===
-                `/books/${book.id}/mark-read`,
+                `/books/${book.book_id}/mark-read`,
         ),
     ).toBe(true)
 
@@ -310,7 +311,7 @@ test('checks out and checks in a book through the browser', async ({
     expect(
         api.state.books.find(
             (candidate) =>
-                candidate.id === book.id,
+                candidate.book_id === book.book_id,
         ),
     ).toBeUndefined()
 
@@ -319,11 +320,11 @@ test('checks out and checks in a book through the browser', async ({
             (request) =>
                 request.method === 'DELETE' &&
                 request.pathname ===
-                `/books/${book.id}`,
+                `/books/${book.book_id}`,
         ),
     ).toBe(true)
 
-    await page.goto(`/books/${book.id}`)
+    await page.goto(`/books/${book.book_id}`)
 
     await expect(
         page.getByRole('heading', {
@@ -344,10 +345,35 @@ test('checks out and checks in a book through the browser', async ({
             (request) =>
                 request.method === 'PATCH' &&
                 request.pathname ===
-                `/books/${book.id}`,
+                `/books/${book.book_id}`,
         )
 
     expect(
         lifecyclePatchRequests,
     ).toEqual([])
+})
+
+
+test('keeps album loans out of book circulation after a reload', async ({ page }) => {
+    const book = makeBook({ book_id: 'shared-catalog-id', status: 'on_loan' })
+    const api = await installMockApi(page, {
+        books: [book],
+        loans: [
+            makeLoan({ book_id: book.book_id, borrower: 'Book borrower' }),
+            makeLoan({ id: 'album-loan', book_id: null, album_id: book.book_id, borrower: 'Album borrower' }),
+        ],
+    })
+
+    await page.goto('/loans')
+    await expect(page.getByText('Book borrower', { exact: true })).toBeVisible()
+    await expect(page.getByText('Album borrower', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('1 loan in the history.')).toBeVisible()
+    await page.reload()
+    await expect(page.getByText('Book borrower', { exact: true })).toBeVisible()
+    await page.getByRole('link', { name: book.title, exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/books/${book.book_id}$`))
+    expect(api.state.requests.filter((request) => request.pathname === '/loans')).toEqual(
+        expect.arrayContaining([expect.objectContaining({ search: '?media_type=book&skip=0&take=30' })]),
+    )
+    expect(api.state.requests.some((request) => /undefined|null/.test(request.pathname))).toBe(false)
 })

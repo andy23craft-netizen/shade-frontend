@@ -34,7 +34,8 @@ const wishlists: WishlistRead[] = [
 ]
 
 const membership: WishlistBookRead = {
-    wishlist_book_id: 'membership-1',
+    album_id: null,
+    wishlist_item_id: 'membership-1',
     wishlist_id: 'wishlist-1',
     book_id: 'book-1',
     book_title: 'The Dispossessed',

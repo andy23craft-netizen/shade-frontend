@@ -243,7 +243,7 @@ const staffPicksFixture: CollectionBookList = {
 const recentBooksFixture = {
     items: [
         {
-            id: 'recent-1',
+            book_id: 'recent-1',
             title: 'Newest Book',
             authors: [
                 {
@@ -255,7 +255,7 @@ const recentBooksFixture = {
             status: 'available',
         },
         {
-            id: 'recent-2',
+            book_id: 'recent-2',
             title: 'Second Newest Book',
             aauthors: [
                 {

@@ -24,9 +24,9 @@ import type {
 } from './apiTypes'
 
 describe('API transport types', () => {
-    it('preserves BookRead.id as the catalog identity field', () => {
+    it('preserves BookRead.book_id as the catalog identity field', () => {
         const book = {
-            id: '550e8400-e29b-41d4-a716-446655440000',
+            book_id: '550e8400-e29b-41d4-a716-446655440000',
             title: 'A Book',
             authors: [
                 {
@@ -47,10 +47,10 @@ describe('API transport types', () => {
             average_loan_days: 4.5,
         } satisfies BookRead
 
-        expect(book.id).toBe(
+        expect(book.book_id).toBe(
             '550e8400-e29b-41d4-a716-446655440000',
         )
-        expect(book).not.toHaveProperty('book_id')
+        expect(book).not.toHaveProperty('id')
 
         expect(book.creation_date)
             .toBe('2026-08-01T00:00:00Z')
@@ -96,8 +96,9 @@ describe('API transport types', () => {
         expect(update.description).toBe('Notes')
     })
 
-    it('preserves LoanRead.book_id as the FK to BookRead.id', () => {
+    it('preserves LoanRead.book_id as the FK to BookRead.book_id', () => {
         const loan = {
+            album_id: null,
             id: 'loan-1',
             book_id: '550e8400-e29b-41d4-a716-446655440000',
             borrower: 'Borrower',
@@ -204,7 +205,7 @@ describe('API transport types', () => {
         expect(list.total).toBe(1)
     })
 
-    it('preserves wishlist membership book_id as the FK to BookRead.id', () => {
+    it('preserves wishlist membership book_id as the FK to BookRead.book_id', () => {
         const status = 'wanted' satisfies WishlistBookStatus
 
         const create = {
@@ -213,7 +214,8 @@ describe('API transport types', () => {
         } satisfies WishlistBookCreate
 
         const membership = {
-            wishlist_book_id: 'membership-1',
+            album_id: null,
+            wishlist_item_id: 'membership-1',
             wishlist_id: 'wishlist-1',
             book_id: '550e8400-e29b-41d4-a716-446655440000',
             book_title: 'A Book',

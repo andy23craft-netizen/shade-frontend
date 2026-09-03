@@ -71,19 +71,19 @@ vi.mock(
     () => ({
         MoveWishlistBookToShelfControl: ({
                                              wishlistId,
-                                             wishlistBookId,
+                                             wishlistItemId,
                                              bookId,
                                              bookTitle,
                                          }: {
             wishlistId: string
-            wishlistBookId: string
+            wishlistItemId: string
             bookId: string
             bookTitle: string
         }) => (
             <div
                 data-testid="move-wishlist-book"
                 data-wishlist-id={wishlistId}
-                data-membership-id={wishlistBookId}
+                data-membership-id={wishlistItemId}
                 data-book-id={bookId}
                 data-book-title={bookTitle}
             />
@@ -100,7 +100,7 @@ vi.mock(
                                   }: {
             sourceWishlistId: string
             membership: {
-                wishlist_book_id: string
+                wishlist_item_id: string
                 wishlist_id: string
                 book_id: string
                 status: string
@@ -117,7 +117,7 @@ vi.mock(
                     sourceWishlistId
                 }
                 data-membership-id={
-                    membership.wishlist_book_id
+                    membership.wishlist_item_id
                 }
                 data-book-id={
                     membership.book_id
@@ -186,7 +186,8 @@ const wishlists: WishlistList = {
 const memberships: WishlistBookList = {
     items: [
         {
-            wishlist_book_id: 'membership-1',
+            album_id: null,
+            wishlist_item_id: 'membership-1',
             wishlist_id: 'wishlist-1',
             book_id: 'book-1',
             book_title: 'The Dispossessed',
@@ -205,7 +206,8 @@ const memberships: WishlistBookList = {
             created_date: '2026-08-02T00:00:00Z',
         },
         {
-            wishlist_book_id: 'membership-2',
+            album_id: null,
+            wishlist_item_id: 'membership-2',
             wishlist_id: 'wishlist-1',
             book_id: 'missing-book',
             book_title: 'Book missing-book',
@@ -678,7 +680,7 @@ describe('WishlistsPage', () => {
         expect(dialog).toHaveTextContent('without adding it to the owned collection')
         fireEvent.click(within(dialog).getByRole('button', { name: 'Remove from Wishlist' }))
         expect(mutate).toHaveBeenCalledWith(
-            { wishlistId: 'wishlist-1', wishlistBookId: 'membership-1' },
+            { wishlistId: 'wishlist-1', wishlistItemId: 'membership-1' },
             expect.any(Object),
         )
     })

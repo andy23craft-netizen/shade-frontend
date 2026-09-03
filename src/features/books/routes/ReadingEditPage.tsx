@@ -143,7 +143,7 @@ export function ReadingEditPage() {
         if (
             !book ||
             initializedBookIdRef.current ===
-                book.id
+                book.book_id
         ) {
             return
         }
@@ -153,7 +153,7 @@ export function ReadingEditPage() {
         )
 
         initializedBookIdRef.current =
-            book.id
+            book.book_id
     }, [bookQuery.data])
 
     const errorEntries = (
@@ -312,7 +312,7 @@ export function ReadingEditPage() {
 
         updateBook.mutate(
             {
-                id: book.id,
+                id: book.book_id,
                 book: pendingRequest,
             },
             {
@@ -321,7 +321,7 @@ export function ReadingEditPage() {
                     setPendingRequest(null)
 
                     navigate(
-                        `/books/${updatedBook.id}`,
+                        `/books/${updatedBook.book_id}`,
                     )
                 },
                 onError: (error) => {
@@ -425,7 +425,7 @@ export function ReadingEditPage() {
             <section className="route-page">
                 <div className="book-details__topbar">
                     <AppLink
-                        to={`/books/${book.id}`}
+                        to={`/books/${book.book_id}`}
                         variant="secondary"
                     >
                         ← Back to Book
@@ -450,7 +450,7 @@ export function ReadingEditPage() {
         <section className="route-page">
             <div className="book-details__topbar">
                 <AppLink
-                    to={`/books/${book.id}`}
+                    to={`/books/${book.book_id}`}
                     variant="secondary"
                 >
                     ← Back to Book
@@ -578,7 +578,7 @@ export function ReadingEditPage() {
                     </Button>
 
                     <AppLink
-                        to={`/books/${book.id}`}
+                        to={`/books/${book.book_id}`}
                         variant="secondary"
                     >
                         Cancel

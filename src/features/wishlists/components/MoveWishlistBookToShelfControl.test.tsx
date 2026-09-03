@@ -120,7 +120,7 @@ function renderControl() {
     render(
         <MoveWishlistBookToShelfControl
             wishlistId="wishlist-1"
-            wishlistBookId="membership-1"
+            wishlistItemId="membership-1"
             bookId="book-1"
             bookTitle="The Dispossessed"
         />,
@@ -291,7 +291,7 @@ describe('MoveWishlistBookToShelfControl', () => {
         expect(mockMove).toHaveBeenCalledWith(
             {
                 wishlistId: 'wishlist-1',
-                wishlistBookId: 'membership-1',
+                wishlistItemId: 'membership-1',
                 bookId: 'book-1',
                 shelfName: 'a1',
                 membershipRemoved: false,

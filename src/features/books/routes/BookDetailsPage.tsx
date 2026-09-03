@@ -266,7 +266,7 @@ export function BookDetailsPage() {
         !loansQuery.isPending &&
         !loansQuery.isError &&
         findActiveLoan(
-            book.id,
+            book.book_id,
             loansQuery.data?.items ?? [],
         ) !== undefined
 
@@ -295,7 +295,7 @@ export function BookDetailsPage() {
             <article className="book-details-card">
                 <div className="book-details-card__cover">
                     <BookCover
-                        bookId={book.id}
+                        bookId={book.book_id}
                         title={book.title}
                         status={book.status}
                         eager
@@ -303,7 +303,7 @@ export function BookDetailsPage() {
 
                     {canShowActiveActions ? (
                         <BookCoverManager
-                            bookId={book.id}
+                            bookId={book.book_id}
                         />
                     ) : null}
                 </div>
@@ -497,7 +497,7 @@ export function BookDetailsPage() {
                     aria-label="Book actions"
                 >
                     <AppLink
-                        to={`/books/${book.id}/edit`}
+                        to={`/books/${book.book_id}/edit`}
                         variant="secondary"
                     >
                         Edit Book
@@ -527,7 +527,7 @@ export function BookDetailsPage() {
 
                     {canCheckin ? (
                         <AppLink
-                            to={`/loans?bookId=${encodeURIComponent(book.id)}`}
+                            to={`/loans?bookId=${encodeURIComponent(book.book_id)}`}
                             variant="primary"
                         >
                             Check In
@@ -536,7 +536,7 @@ export function BookDetailsPage() {
 
                     {canMarkRead ? (
                         <AppLink
-                            to={`/books/${book.id}/mark-read`}
+                            to={`/books/${book.book_id}/mark-read`}
                             variant="secondary"
                         >
                             Mark Read
@@ -545,7 +545,7 @@ export function BookDetailsPage() {
 
                     {canEditReading ? (
                         <AppLink
-                            to={`/books/${book.id}/reading`}
+                            to={`/books/${book.book_id}/reading`}
                             variant="secondary"
                         >
                             Edit Reading
@@ -554,7 +554,7 @@ export function BookDetailsPage() {
 
                     {canDelete ? (
                         <AppLink
-                            to={`/books/${book.id}/delete`}
+                            to={`/books/${book.book_id}/delete`}
                             variant="secondary"
                         >
                             Delete Book

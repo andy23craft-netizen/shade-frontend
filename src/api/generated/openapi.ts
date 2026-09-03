@@ -178,7 +178,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/books/{id}": {
+    "/books/{book_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -186,18 +186,18 @@ export interface paths {
             cookie?: never;
         };
         /** Get Book */
-        get: operations["get_book_books__id__get"];
+        get: operations["get_book_books__book_id__get"];
         put?: never;
         post?: never;
         /** Delete Book */
-        delete: operations["delete_book_books__id__delete"];
+        delete: operations["delete_book_books__book_id__delete"];
         options?: never;
         head?: never;
         /** Update Book */
-        patch: operations["update_book_books__id__patch"];
+        patch: operations["update_book_books__book_id__patch"];
         trace?: never;
     };
-    "/books/{id}/checkin": {
+    "/books/{book_id}/checkin": {
         parameters: {
             query?: never;
             header?: never;
@@ -207,14 +207,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Checkin Book */
-        post: operations["checkin_book_books__id__checkin_post"];
+        post: operations["checkin_book_books__book_id__checkin_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/books/{id}/checkout": {
+    "/books/{book_id}/checkout": {
         parameters: {
             query?: never;
             header?: never;
@@ -224,14 +224,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Checkout Book */
-        post: operations["checkout_book_books__id__checkout_post"];
+        post: operations["checkout_book_books__book_id__checkout_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/books/{id}/cover": {
+    "/books/{book_id}/cover": {
         parameters: {
             query?: never;
             header?: never;
@@ -239,18 +239,18 @@ export interface paths {
             cookie?: never;
         };
         /** Get Book Cover */
-        get: operations["get_book_cover_books__id__cover_get"];
+        get: operations["get_book_cover_books__book_id__cover_get"];
         /** Upload Book Cover */
-        put: operations["upload_book_cover_books__id__cover_put"];
+        put: operations["upload_book_cover_books__book_id__cover_put"];
         post?: never;
         /** Delete Book Cover */
-        delete: operations["delete_book_cover_books__id__cover_delete"];
+        delete: operations["delete_book_cover_books__book_id__cover_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/books/{id}/mark-read": {
+    "/books/{book_id}/mark-read": {
         parameters: {
             query?: never;
             header?: never;
@@ -260,7 +260,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Mark Book Read */
-        post: operations["mark_book_read_books__id__mark_read_post"];
+        post: operations["mark_book_read_books__book_id__mark_read_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -628,7 +628,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/wishlists/{wishlist_id}/books/{wishlist_book_id}": {
+    "/wishlists/{wishlist_id}/books/{wishlist_item_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -639,11 +639,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Wishlist Book */
-        delete: operations["delete_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__delete"];
+        delete: operations["delete_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__delete"];
         options?: never;
         head?: never;
         /** Update Wishlist Book */
-        patch: operations["update_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__patch"];
+        patch: operations["update_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__patch"];
         trace?: never;
     };
 }
@@ -684,8 +684,8 @@ export interface components {
             /** Surname */
             surname?: string | null;
         };
-        /** Body_upload_book_cover_books__id__cover_put */
-        Body_upload_book_cover_books__id__cover_put: {
+        /** Body_upload_book_cover_books__book_id__cover_put */
+        Body_upload_book_cover_books__book_id__cover_put: {
             /** File */
             file: string;
         };
@@ -788,6 +788,8 @@ export interface components {
             authors?: components["schemas"]["BookAuthorRead"][];
             /** Average Loan Days */
             average_loan_days: number | null;
+            /** Book Id */
+            book_id: string;
             /** Categories */
             categories?: components["schemas"]["BookCategoryRead"][];
             /** Completion Date */
@@ -796,8 +798,6 @@ export interface components {
             cover_image_path?: string | null;
             /** Creation Date */
             creation_date: string;
-            /** Id */
-            id: string;
             /**
              * Is Read
              * @default false
@@ -1263,8 +1263,10 @@ export interface components {
          * @description Read shape for loan history; loans are created by checkout and completed by check-in.
          */
         LoanRead: {
+            /** Album Id */
+            album_id: string | null;
             /** Book Id */
-            book_id: string;
+            book_id: string | null;
             /** Borrower */
             borrower: string;
             /** Checked Out At */
@@ -1374,10 +1376,12 @@ export interface components {
         };
         /** WishlistBookRead */
         WishlistBookRead: {
+            /** Album Id */
+            album_id: string | null;
             /** Book Authors */
             book_authors?: components["schemas"]["BookAuthorRead"][];
             /** Book Id */
-            book_id: string;
+            book_id: string | null;
             book_status: components["schemas"]["Status"];
             /** Book Title */
             book_title: string;
@@ -1390,10 +1394,10 @@ export interface components {
             status: components["schemas"]["WishlistBookStatus"];
             /** Url */
             url?: string | null;
-            /** Wishlist Book Id */
-            wishlist_book_id: string;
             /** Wishlist Id */
             wishlist_id: string;
+            /** Wishlist Item Id */
+            wishlist_item_id: string;
         };
         /**
          * WishlistBookStatus
@@ -1691,7 +1695,7 @@ export interface operations {
                 title?: string | null;
                 publisher?: string | null;
                 acquisition_source?: string | null;
-                id?: string | null;
+                book_id?: string | null;
                 pages_min?: number | null;
                 pages_max?: number | null;
                 rating_min?: number | null;
@@ -2207,12 +2211,12 @@ export interface operations {
             };
         };
     };
-    get_book_books__id__get: {
+    get_book_books__book_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -2265,12 +2269,12 @@ export interface operations {
             };
         };
     };
-    delete_book_books__id__delete: {
+    delete_book_books__book_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -2321,12 +2325,12 @@ export interface operations {
             };
         };
     };
-    update_book_books__id__patch: {
+    update_book_books__book_id__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -2401,12 +2405,12 @@ export interface operations {
             };
         };
     };
-    checkin_book_books__id__checkin_post: {
+    checkin_book_books__book_id__checkin_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -2472,12 +2476,12 @@ export interface operations {
             };
         };
     };
-    checkout_book_books__id__checkout_post: {
+    checkout_book_books__book_id__checkout_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -2552,12 +2556,12 @@ export interface operations {
             };
         };
     };
-    get_book_cover_books__id__cover_get: {
+    get_book_cover_books__book_id__cover_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -2610,18 +2614,18 @@ export interface operations {
             };
         };
     };
-    upload_book_cover_books__id__cover_put: {
+    upload_book_cover_books__book_id__cover_put: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_book_cover_books__id__cover_put"];
+                "multipart/form-data": components["schemas"]["Body_upload_book_cover_books__book_id__cover_put"];
             };
         };
         responses: {
@@ -2672,12 +2676,12 @@ export interface operations {
             };
         };
     };
-    delete_book_cover_books__id__cover_delete: {
+    delete_book_cover_books__book_id__cover_delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -2728,12 +2732,12 @@ export interface operations {
             };
         };
     };
-    mark_book_read_books__id__mark_read_post: {
+    mark_book_read_books__book_id__mark_read_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                book_id: string;
             };
             cookie?: never;
         };
@@ -3708,6 +3712,9 @@ export interface operations {
         parameters: {
             query?: {
                 book_id?: string | null;
+                album_id?: string | null;
+                /** @description Filter by book or album. Invalid values return 400. */
+                media_type?: string | null;
                 skip?: number | null;
                 take?: number | null;
             };
@@ -4409,6 +4416,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Existing books cannot be added to a wishlist */
             412: {
                 headers: {
@@ -4429,13 +4445,13 @@ export interface operations {
             };
         };
     };
-    delete_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__delete: {
+    delete_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 wishlist_id: string;
-                wishlist_book_id: string;
+                wishlist_item_id: string;
             };
             cookie?: never;
         };
@@ -4486,13 +4502,13 @@ export interface operations {
             };
         };
     };
-    update_wishlist_book_wishlists__wishlist_id__books__wishlist_book_id__patch: {
+    update_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 wishlist_id: string;
-                wishlist_book_id: string;
+                wishlist_item_id: string;
             };
             cookie?: never;
         };

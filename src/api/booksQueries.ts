@@ -160,7 +160,7 @@ function writeBookDetailCache(
     book: BookRead,
 ): void {
     queryClient.setQueryData(
-        queryKeys.books.detail(book.id),
+        queryKeys.books.detail(book.book_id),
         book,
     )
 }
@@ -179,6 +179,7 @@ async function invalidateBookCover(
 
 export function useBooks(
     options: {
+        bookId?: string
         isbn?: string
         author?: string
         title?: string
@@ -200,6 +201,7 @@ export function useBooks(
     const booksApi =
         createBooksApi(apiClient)
 
+    const bookId = options.bookId
     const isbn = options.isbn
     const author = options.author
     const title = options.title
@@ -215,6 +217,7 @@ export function useBooks(
 
     return useQuery({
         queryKey: queryKeys.books.list({
+            bookId,
             isbn,
             author,
             title,
@@ -231,6 +234,7 @@ export function useBooks(
                       signal,
                   }) =>
             booksApi.list({
+                bookId,
                 isbn,
                 author,
                 title,
@@ -250,6 +254,7 @@ export function useBooks(
 
 export function useInfiniteBooks(
     options: {
+        bookId?: string
         isbn?: string
         author?: string
         title?: string
@@ -269,6 +274,7 @@ export function useInfiniteBooks(
     const booksApi =
         createBooksApi(apiClient)
 
+    const bookId = options.bookId
     const isbn = options.isbn
     const author = options.author
     const title = options.title
@@ -282,6 +288,7 @@ export function useInfiniteBooks(
 
     return useInfiniteQuery({
         queryKey: queryKeys.books.infiniteList({
+            bookId,
             isbn,
             author,
             title,
@@ -299,6 +306,7 @@ export function useInfiniteBooks(
             signal,
         }) =>
             booksApi.list({
+                bookId,
                 isbn,
                 author,
                 title,
@@ -457,7 +465,7 @@ export function useCreateBook() {
 
             await invalidateBookCaches(
                 queryClient,
-                book.id,
+                book.book_id,
             )
         },
     })
@@ -494,7 +502,7 @@ export function useUpdateBook() {
             )
             await invalidateBookCaches(
                 queryClient,
-                book.id,
+                book.book_id,
             )
         },
     })
@@ -536,7 +544,7 @@ export function useUploadBookCover() {
 
             await invalidateBookCover(
                 queryClient,
-                book.id,
+                book.book_id,
             )
         },
     })
@@ -760,7 +768,7 @@ export function useCheckoutBook() {
             )
             await invalidateBookCaches(
                 queryClient,
-                book.id,
+                book.book_id,
                 {
                     loans: true,
                 },
@@ -801,7 +809,7 @@ export function useCheckinBook() {
 
             await invalidateBookCaches(
                 queryClient,
-                book.id,
+                book.book_id,
                 {
                     loans: true,
                 },
@@ -841,7 +849,7 @@ export function useMarkBookRead() {
             )
             await invalidateBookCaches(
                 queryClient,
-                book.id,
+                book.book_id,
             )
         },
     })

@@ -244,7 +244,7 @@ export function LoansPage() {
     const selectedBookId =
         searchParams.get('bookId') ?? ''
 
-    const loansQuery = useInfiniteLoans()
+    const loansQuery = useInfiniteLoans({ mediaType: 'book' })
     const booksQuery = useBooks()
     const fetchNextLoansPage =
         loansQuery.fetchNextPage
@@ -254,7 +254,10 @@ export function LoansPage() {
             items: LoanRead[]
         },
         LoanRead
-    >(loansQuery.data?.pages)
+    >(loansQuery.data?.pages).filter(
+        (loan): loan is LoanRead & { book_id: string } =>
+            typeof loan.book_id === 'string' && loan.album_id === null,
+    )
     const total =
         loansQuery.data?.pages[0]?.total ?? 0
 
@@ -344,7 +347,7 @@ export function LoansPage() {
     // Book titles resolve from the unpaginated collection cache; paginate loans only.
     const booksById = new Map(
         booksQuery.data.items.map((book) => [
-            book.id,
+            book.book_id,
             book,
         ]),
     )
@@ -389,7 +392,7 @@ export function LoansPage() {
 
         return (
             <AppLink
-                to={`/books/${book.id}`}
+                to={`/books/${book.book_id}`}
             >
                 {book.title}
             </AppLink>
@@ -521,7 +524,7 @@ export function LoansPage() {
                                                     variant="primary"
                                                     onClick={() =>
                                                         selectBookForCheckin(
-                                                            book.id,
+                                                            book.book_id,
                                                         )
                                                     }
                                                 >

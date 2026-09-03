@@ -215,6 +215,7 @@ describe('loans and dashboard queries', () => {
                     length: 30,
                 },
                 (_, index) => ({
+                    album_id: null,
                     id: `loan-${index}`,
                     book_id: 'book-1',
                     borrower: 'Reader',
@@ -238,6 +239,7 @@ describe('loans and dashboard queries', () => {
                     length: 10,
                 },
                 (_, index) => ({
+                    album_id: null,
                     id: `loan-${index + 30}`,
                     book_id: 'book-1',
                     borrower: 'Reader',
@@ -733,7 +735,7 @@ describe('loans and dashboard queries', () => {
                     length: 30,
                 },
                 (_, index) => ({
-                    id: `book-${index}`,
+                    book_id: `book-${index}`,
                 }),
             ) as BookList['items'],
             total: 40,
@@ -745,7 +747,7 @@ describe('loans and dashboard queries', () => {
                     length: 10,
                 },
                 (_, index) => ({
-                    id: `book-${index + 30}`,
+                    book_id: `book-${index + 30}`,
                 }),
             ) as BookList['items'],
             total: 40,
@@ -826,4 +828,25 @@ describe('loans and dashboard queries', () => {
 
         queryClient.clear()
     })
+})
+
+
+it('retains typed loan filters across pages and keeps their caches separate', async () => {
+    const { Wrapper, queryClient } = createWrapper()
+    const first = { items: Array.from({ length: 30 }, (_, i) => ({
+        id: `typed-loan-${i}`, book_id: 'book-1', album_id: null,
+    })), total: 31 }
+    const second = { items: [{ id: 'typed-loan-30', book_id: 'book-1', album_id: null }], total: 31 }
+    mockListLoans.mockResolvedValueOnce(first).mockResolvedValueOnce(second)
+    const { result } = renderHook(() => useInfiniteLoans({ mediaType: 'book' }), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    await result.current.fetchNextPage()
+    expect(mockListLoans).toHaveBeenLastCalledWith(expect.objectContaining({
+        mediaType: 'book', skip: 30, take: 30,
+    }))
+    expect(queryClient.getQueryData(queryKeys.loans.infiniteList({ mediaType: 'book', take: 30 })))
+        .toMatchObject({ pages: [first, second] })
+    expect(queryClient.getQueryData(queryKeys.loans.infiniteList({ mediaType: 'album', take: 30 })))
+        .toBeUndefined()
+    queryClient.clear()
 })

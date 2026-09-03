@@ -56,7 +56,7 @@ const mockUseMarkBookRead =
     vi.mocked(useMarkBookRead)
 
 const unreadBook: BookRead = {
-    id: 'test-book-id',
+    book_id: 'test-book-id',
     title: 'The Pale Fire',
     authors: [
         {

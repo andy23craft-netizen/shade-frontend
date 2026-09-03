@@ -77,7 +77,7 @@ const collections: CollectionList = {
 }
 
 const book: BookRead = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'The Left Hand of Darkness',
     authors: [
         {

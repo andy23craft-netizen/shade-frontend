@@ -65,6 +65,10 @@ export function validateMoveWishlistBookFormValues(
 export function membershipToWishlistBookCreate(
     membership: WishlistBookRead,
 ): WishlistBookCreate {
+    if (membership.book_id === null || membership.album_id !== null) {
+        throw new Error('This membership does not reference a book.')
+    }
+
     return {
         book_id: membership.book_id,
         status: membership.status,

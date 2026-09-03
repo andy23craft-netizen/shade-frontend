@@ -148,7 +148,7 @@ export function DeleteBookPage() {
             <section className="route-page">
                 <div className="book-details__topbar">
                     <AppLink
-                        to={`/books/${book.id}`}
+                        to={`/books/${book.book_id}`}
                         variant="secondary"
                     >
                         ← Back to Book
@@ -169,7 +169,7 @@ export function DeleteBookPage() {
 
     const activeLoan =
         findActiveLoan(
-            book.id,
+            book.book_id,
             loansQuery.data?.items ?? [],
         )
 
@@ -182,7 +182,7 @@ export function DeleteBookPage() {
             <section className="route-page">
                 <div className="book-details__topbar">
                     <AppLink
-                        to={`/books/${book.id}`}
+                        to={`/books/${book.book_id}`}
                         variant="secondary"
                     >
                         ← Back to Book
@@ -239,7 +239,7 @@ export function DeleteBookPage() {
 
         const currentActiveLoan =
             findActiveLoan(
-                currentBook.id,
+                currentBook.book_id,
                 loansQuery.data?.items ?? [],
             )
 
@@ -256,7 +256,7 @@ export function DeleteBookPage() {
         }
 
         deleteBook.mutate(
-            currentBook.id,
+            currentBook.book_id,
             {
                 onSuccess: () => {
                     setIsConfirmationOpen(false)
@@ -289,7 +289,7 @@ export function DeleteBookPage() {
         <section className="route-page">
             <div className="book-details__topbar">
                 <AppLink
-                    to={`/books/${book.id}`}
+                    to={`/books/${book.book_id}`}
                     variant="secondary"
                 >
                     ← Back to Book
@@ -340,7 +340,7 @@ export function DeleteBookPage() {
                 </Button>
 
                 <AppLink
-                    to={`/books/${book.id}`}
+                    to={`/books/${book.book_id}`}
                     variant="secondary"
                 >
                     Cancel

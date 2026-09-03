@@ -182,3 +182,17 @@ describe('queryKeys.version', () => {
         ])
     })
 })
+
+
+it('separates typed loan filters and exact book filters in cache keys', () => {
+    expect(queryKeys.loans.list(undefined, { mediaType: 'book' }))
+        .not.toEqual(queryKeys.loans.list(undefined, { mediaType: 'album' }))
+    expect(queryKeys.loans.list('shared-id'))
+        .not.toEqual(queryKeys.loans.list(undefined, { albumId: 'shared-id' }))
+    expect(queryKeys.loans.infiniteList({ mediaType: 'book', take: 30 }))
+        .not.toEqual(queryKeys.loans.infiniteList({ mediaType: 'album', take: 30 }))
+    expect(queryKeys.books.list({ bookId: 'book-1' }))
+        .not.toEqual(queryKeys.books.list({ bookId: 'book-2' }))
+    expect(queryKeys.books.infiniteList({ bookId: 'book-1', take: 30 }))
+        .not.toEqual(queryKeys.books.infiniteList({ bookId: 'book-2', take: 30 }))
+})

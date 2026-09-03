@@ -57,7 +57,7 @@ export function HomeStaffPick({
             <article className="book-card book-card--compact">
                 <div className="book-card__cover">
                     <BookCover
-                        bookId={book.id}
+                        bookId={book.book_id}
                         title={book.title}
                         status={book.status}
                         decorative
@@ -69,7 +69,7 @@ export function HomeStaffPick({
                     <h3 className="book-card__title">
                         <AppLink
                             to={`/books/${encodeURIComponent(
-                                book.id,
+                                book.book_id,
                             )}`}
                         >
                             {book.title}

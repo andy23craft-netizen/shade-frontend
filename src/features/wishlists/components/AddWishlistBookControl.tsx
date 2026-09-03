@@ -419,7 +419,7 @@ export function AddWishlistBookControl() {
                         wishlistId:
                             nextValues.wishlistId,
                         wishlistBook: {
-                            book_id: created.id,
+                            book_id: created.book_id,
                             status: nextValues.status,
                         },
                     },

@@ -6,7 +6,7 @@ import {
 } from './guid'
 
 /**
- * Catalog books use `BookRead.id` (UUID). Child resources (loans, wishlist
+ * Catalog books use `BookRead.book_id` (UUID). Child resources (loans, wishlist
  * memberships) reference the same UUID as `book_id` -- never a second book
  * identity field on `BookRead`.
  */

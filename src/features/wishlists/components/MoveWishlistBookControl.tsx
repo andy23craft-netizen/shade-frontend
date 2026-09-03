@@ -167,8 +167,8 @@ export function MoveWishlistBookControl({
         moveBook.mutate(
             {
                 sourceWishlistId,
-                sourceWishlistBookId:
-                membership.wishlist_book_id,
+                sourceWishlistItemId:
+                membership.wishlist_item_id,
                 destinationWishlistId:
                 values.destinationWishlistId,
                 wishlistBook:
@@ -217,6 +217,13 @@ export function MoveWishlistBookControl({
                             return
                         }
 
+                        if (cause.status === 409) {
+                            setFormError(
+                                'This book is already in the destination wishlist. The source membership has been kept. Choose another destination or remove the existing destination membership first.',
+                            )
+                            return
+                        }
+
                         if (cause.status === 422) {
                             setFormError(
                                 'The book could not be moved because the wishlist membership data was rejected.',
@@ -255,6 +262,8 @@ export function MoveWishlistBookControl({
             />
         )
     }
+
+    if (membership.book_id === null || membership.album_id !== null) return null
 
     if (destinations.length === 0) {
         return null

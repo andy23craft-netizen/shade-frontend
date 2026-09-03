@@ -19,7 +19,7 @@ function makeBook(
     overrides: Partial<BulkSelectableBook> = {},
 ): BulkSelectableBook {
     return {
-        id: 'book-1',
+        book_id: 'book-1',
         title: 'The Left Hand of Darkness',
         ...overrides,
     }
@@ -81,14 +81,14 @@ describe('useBulkSelection', () => {
     it('selects every currently visible eligible book', () => {
         const books = [
             makeBook({
-                id: 'book-1',
+                book_id: 'book-1',
             }),
             makeBook({
-                id: 'book-2',
+                book_id: 'book-2',
                 title: 'Pale Fire',
             }),
             makeBook({
-                id: 'deleted-book',
+                book_id: 'deleted-book',
                 title: 'Deleted Book',
             }),
         ]
@@ -151,11 +151,11 @@ describe('useBulkSelection', () => {
     it('exposes selected book identity for downstream actions', () => {
         const books = [
             makeBook({
-                id: 'book-1',
+                book_id: 'book-1',
                 title: 'The Left Hand of Darkness',
             }),
             makeBook({
-                id: 'book-2',
+                book_id: 'book-2',
                 title: 'Pale Fire',
             }),
         ]
@@ -177,7 +177,7 @@ describe('useBulkSelection', () => {
             result.current.selectedBooks,
         ).toEqual([
             {
-                id: 'book-2',
+                book_id: 'book-2',
                 title: 'Pale Fire',
             },
         ])
@@ -186,7 +186,7 @@ describe('useBulkSelection', () => {
     it('preserves selection when more books load into the same result set', () => {
         const initialBooks = [
             makeBook({
-                id: 'book-1',
+                book_id: 'book-1',
             }),
         ]
 
@@ -219,7 +219,7 @@ describe('useBulkSelection', () => {
             books: [
                 ...initialBooks,
                 makeBook({
-                    id: 'book-2',
+                    book_id: 'book-2',
                     title: 'Pale Fire',
                 }),
             ],
@@ -235,11 +235,11 @@ describe('useBulkSelection', () => {
 
     it('removes a selected book when it disappears from the visible result set', () => {
         const book1 = makeBook({
-            id: 'book-1',
+            book_id: 'book-1',
         })
 
         const book2 = makeBook({
-            id: 'book-2',
+            book_id: 'book-2',
             title: 'Pale Fire',
         })
 

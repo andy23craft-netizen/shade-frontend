@@ -38,6 +38,7 @@ export const queryKeys = {
 
         infiniteList: (
             options: {
+                bookId?: string
                 isbn?: string
                 author?: string
                 title?: string
@@ -67,6 +68,7 @@ export const queryKeys = {
                 options.shelfName,
             )
             const key: {
+                bookId?: string
                 isbn?: string
                 author?: string
                 title?: string
@@ -81,6 +83,10 @@ export const queryKeys = {
             } = {
                 take: options.take,
                 infinite: true,
+            }
+
+            if (options.bookId !== undefined) {
+                key.bookId = options.bookId
             }
 
             if (isbn !== undefined) {
@@ -128,6 +134,7 @@ export const queryKeys = {
 
         list: (
             options: {
+                bookId?: string
                 isbn?: string
                 author?: string
                 title?: string
@@ -159,6 +166,7 @@ export const queryKeys = {
             )
 
             const key: {
+                bookId?: string
                 isbn?: string
                 author?: string
                 title?: string
@@ -171,6 +179,10 @@ export const queryKeys = {
                 sortBy?: string
                 sortOrder?: string
             } = {
+            }
+
+            if (options.bookId !== undefined) {
+                key.bookId = options.bookId
             }
 
             if (isbn !== undefined) {
@@ -248,21 +260,33 @@ export const queryKeys = {
     loans: {
         all: ['loans'] as const,
 
-        list: (bookId?: string) =>
-            bookId !== undefined
+        list: (
+            bookId?: string,
+            filters: {
+                albumId?: string
+                mediaType?: 'book' | 'album'
+            } = {},
+        ) =>
+            bookId !== undefined || filters.albumId !== undefined || filters.mediaType !== undefined
                 ? ['loans', {
-                    bookId,
+                    ...(bookId !== undefined ? { bookId } : {}),
+                    ...(filters.albumId !== undefined ? { albumId: filters.albumId } : {}),
+                    ...(filters.mediaType !== undefined ? { mediaType: filters.mediaType } : {}),
                 }] as const
                 : ['loans'] as const,
 
         infiniteList: (
             options: {
                 bookId?: string
+                albumId?: string
+                mediaType?: 'book' | 'album'
                 take: number
             },
         ) => {
             const key: {
                 bookId?: string
+                albumId?: string
+                mediaType?: 'book' | 'album'
                 take: number
                 infinite: true
             } = {
@@ -271,11 +295,13 @@ export const queryKeys = {
             }
 
             if (
-                options.bookId !== undefined &&
-                options.bookId !== ''
+                options.bookId !== undefined
             ) {
                 key.bookId = options.bookId
             }
+
+            if (options.albumId !== undefined) key.albumId = options.albumId
+            if (options.mediaType !== undefined) key.mediaType = options.mediaType
 
             return [
                 'loans',

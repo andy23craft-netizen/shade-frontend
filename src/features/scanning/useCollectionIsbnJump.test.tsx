@@ -144,7 +144,7 @@ describe('useCollectionIsbnJump', () => {
         mockList.mockResolvedValue({
             items: [
                 {
-                    id: 'book-1',
+                    book_id: 'book-1',
                 },
             ],
             total: 1,
@@ -171,7 +171,7 @@ describe('useCollectionIsbnJump', () => {
         mockList.mockResolvedValue({
             items: [
                 {
-                    id: 'book-1',
+                    book_id: 'book-1',
                 },
             ],
             total: 1,
@@ -227,10 +227,10 @@ describe('useCollectionIsbnJump', () => {
         mockList.mockResolvedValue({
             items: [
                 {
-                    id: 'book-1',
+                    book_id: 'book-1',
                 },
                 {
-                    id: 'book-2',
+                    book_id: 'book-2',
                 },
             ],
             total: 2,

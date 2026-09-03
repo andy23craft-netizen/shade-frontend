@@ -20,7 +20,7 @@ function createBook(
     index: number,
 ): BookRead {
     return {
-        id: `book-${index}`,
+        book_id: `book-${index}`,
         title: `Title ${index}`,
         authors: [
             {

@@ -36,7 +36,7 @@ const mockMutate = vi.fn()
 let mockCheckoutPending = false
 
 const availableBook = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'The Left Hand of Darkness',
     authors: [
         {
@@ -50,7 +50,7 @@ const availableBook = {
 
 const displayOnlyBook = {
     ...availableBook,
-    id: 'book-display-only',
+    book_id: 'book-display-only',
     title: 'Display Only Atlas',
     status: 'display_only',
 } as unknown as BookRead

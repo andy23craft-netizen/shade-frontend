@@ -40,6 +40,8 @@ function getNextListPageParam(
 export function useLoans(
     options: {
         bookId?: string
+        albumId?: string
+        mediaType?: 'book' | 'album'
         enabled?: boolean
     } = {},
 ) {
@@ -51,15 +53,19 @@ export function useLoans(
         createLoansApi(apiClient)
 
     const bookId = options.bookId
+    const albumId = options.albumId
+    const mediaType = options.mediaType
     const enabled = options.enabled ?? true
 
     return useQuery({
-        queryKey: queryKeys.loans.list(bookId),
+        queryKey: queryKeys.loans.list(bookId, { albumId, mediaType }),
         queryFn: ({
                       signal,
                   }) =>
             loansApi.list({
                 bookId,
+                albumId,
+                mediaType,
                 signal,
             }),
         enabled,
@@ -69,6 +75,8 @@ export function useLoans(
 export function useInfiniteLoans(
     options: {
         bookId?: string
+        albumId?: string
+        mediaType?: 'book' | 'album'
         enabled?: boolean
     } = {},
 ) {
@@ -80,11 +88,15 @@ export function useInfiniteLoans(
         createLoansApi(apiClient)
 
     const bookId = options.bookId
+    const albumId = options.albumId
+    const mediaType = options.mediaType
     const enabled = options.enabled ?? true
 
     return useInfiniteQuery({
         queryKey: queryKeys.loans.infiniteList({
             bookId,
+            albumId,
+            mediaType,
             take: INFINITE_SCROLL_BATCH_SIZE,
         }),
         initialPageParam: 0,
@@ -94,6 +106,8 @@ export function useInfiniteLoans(
         }) =>
             loansApi.list({
                 bookId,
+                albumId,
+                mediaType,
                 skip: pageParam,
                 take: INFINITE_SCROLL_BATCH_SIZE,
                 signal,

@@ -86,7 +86,7 @@ const mockedUseCheckoutBook =
     vi.mocked(useCheckoutBook)
 
 const completeBook: BookRead = {
-    id: 'test-book-id',
+    book_id: 'test-book-id',
     title: 'The Pale Fire',
     authors: [
         {
@@ -120,8 +120,9 @@ const completeBook: BookRead = {
 }
 
 const activeLoan = {
+    album_id: null,
     id: 'loan-1',
-    book_id: completeBook.id,
+    book_id: completeBook.book_id,
     borrower: 'Jane Reader',
     checked_out_at:
         '2026-08-12T14:00:00Z',
@@ -691,7 +692,7 @@ describe('BookDetailsPage', () => {
         ).toHaveAttribute(
             'href',
             `/loans?bookId=${encodeURIComponent(
-                completeBook.id,
+                completeBook.book_id,
             )}`
         )
 
@@ -777,7 +778,7 @@ describe('BookDetailsPage', () => {
         ).toHaveAttribute(
             'href',
             `/loans?bookId=${encodeURIComponent(
-                completeBook.id,
+                completeBook.book_id,
             )}`
         )
     })
@@ -888,7 +889,7 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/books/${completeBook.id}/edit`,
+            `/books/${completeBook.book_id}/edit`,
         )
 
         expect(
@@ -902,7 +903,7 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/books/${completeBook.id}/mark-read`,
+            `/books/${completeBook.book_id}/mark-read`,
         )
 
         expect(
@@ -911,7 +912,7 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/books/${completeBook.id}/delete`,
+            `/books/${completeBook.book_id}/delete`,
         )
 
         expect(
@@ -939,7 +940,7 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/books/${completeBook.id}/reading`,
+            `/books/${completeBook.book_id}/reading`,
         )
 
         expect(

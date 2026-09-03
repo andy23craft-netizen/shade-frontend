@@ -1,17 +1,17 @@
 export interface BulkSelectableBook {
-    id: string
+    book_id: string
     title: string
 }
 
 export interface SelectedBookIdentity {
-    id: string
+    book_id: string
     title: string
 }
 
 export function isBookBulkSelectable(
     book: BulkSelectableBook,
 ): boolean {
-    return Boolean(book.id)
+    return Boolean(book.book_id)
 }
 
 export function toggleSelectedBookId(
@@ -37,7 +37,7 @@ export function selectVisibleEligibleBookIds<
     return new Set(
         books
             .filter(isBookBulkSelectable)
-            .map((book) => book.id),
+            .map((book) => book.book_id),
     )
 }
 
@@ -76,10 +76,10 @@ export function getSelectedBookIdentities<
         .filter(
             (book) =>
                 isBookBulkSelectable(book) &&
-                selectedIds.has(book.id),
+                selectedIds.has(book.book_id),
         )
         .map((book) => ({
-            id: book.id,
+            book_id: book.book_id,
             title: book.title,
         }))
 }

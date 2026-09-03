@@ -79,7 +79,7 @@ function mockBookQuery(
 }
 
 const bookFixture = {
-    id: 'book-1',
+    book_id: 'book-1',
     title: 'Pale Fire',
     authors: [
         {

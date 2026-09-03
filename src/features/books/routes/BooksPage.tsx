@@ -421,7 +421,7 @@ export function BooksPage() {
         uniqueOpenedIsbnRef.current = isbn
 
         navigate(
-            `/books/${books[0].id}`,
+            `/books/${books[0].book_id}`,
             {
                 replace: true,
             },
@@ -507,7 +507,7 @@ export function BooksPage() {
                 <BooksBulkActions
                     selectedBookIds={
                         bulkSelection.selectedBooks.map(
-                            (book) => book.id,
+                            (book) => book.book_id,
                         )
                     }
                     selectedCount={
@@ -846,12 +846,12 @@ export function BooksPage() {
 
                         const isSelected =
                             bulkSelection.isSelected(
-                                book.id,
+                                book.book_id,
                             )
 
                         return (
                             <li
-                                key={book.id}
+                                key={book.book_id}
                                 ref={getRowRef(index)}
                                 className="books-list__item"
                             >
@@ -870,7 +870,7 @@ export function BooksPage() {
                                                 checked={isSelected}
                                                 onChange={() => {
                                                     bulkSelection.toggle(
-                                                        book.id,
+                                                        book.book_id,
                                                     )
                                                 }}
                                             />
@@ -879,7 +879,7 @@ export function BooksPage() {
 
                                     <div className="book-card__cover">
                                         <BookCover
-                                            bookId={book.id}
+                                            bookId={book.book_id}
                                             title={book.title}
                                             status={book.status}
                                             decorative
@@ -890,7 +890,7 @@ export function BooksPage() {
                                         <div className="book-card__heading">
                                             <h2 className="book-card__title">
                                                 <AppLink
-                                                    to={`/books/${book.id}`}
+                                                    to={`/books/${book.book_id}`}
                                                     state={{
                                                         booksReturnTo:
                                                             `${location.pathname}${location.search}`,

@@ -280,7 +280,7 @@ export function MarkReadPage() {
 
         markBookRead.mutate(
             {
-                id: book.id,
+                id: book.book_id,
                 request: pendingRequest,
             },
             {
@@ -289,7 +289,7 @@ export function MarkReadPage() {
                     setPendingRequest(null)
 
                     navigate(
-                        `/books/${updatedBook.id}`,
+                        `/books/${updatedBook.book_id}`,
                     )
                 },
                 onError: (error) => {
@@ -396,7 +396,7 @@ export function MarkReadPage() {
             <section className="route-page">
                 <div className="book-details__topbar">
                     <AppLink
-                        to={`/books/${book.id}`}
+                        to={`/books/${book.book_id}`}
                         variant="secondary"
                     >
                         ← Back to Book
@@ -421,7 +421,7 @@ export function MarkReadPage() {
         <section className="route-page">
             <div className="book-details__topbar">
                 <AppLink
-                    to={`/books/${book.id}`}
+                    to={`/books/${book.book_id}`}
                     variant="secondary"
                 >
                     ← Back to Book
@@ -549,7 +549,7 @@ export function MarkReadPage() {
                     </Button>
 
                     <AppLink
-                        to={`/books/${book.id}`}
+                        to={`/books/${book.book_id}`}
                         variant="secondary"
                     >
                         Cancel

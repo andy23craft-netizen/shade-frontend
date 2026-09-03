@@ -40,6 +40,7 @@ import {
     useWishlists,
     useInfiniteWishlistBooks,
 } from './wishlistsQueries'
+import { ApiError } from './apiErrors'
 import {
     queryKeys,
 } from './queryKeys'
@@ -125,7 +126,8 @@ const sampleWishlist: WishlistRead = {
 }
 
 const sampleMembership: WishlistBookRead = {
-    wishlist_book_id: 'membership-1',
+    album_id: null,
+    wishlist_item_id: 'membership-1',
     wishlist_id: 'wishlist-1',
     book_id: 'book-1',
     book_title: 'The Dispossessed',
@@ -460,7 +462,7 @@ describe('useRemoveWishlistBook', () => {
 
         result.current.mutate({
             wishlistId: 'wishlist-1',
-            wishlistBookId: 'membership-1',
+            wishlistItemId: 'membership-1',
         })
 
         await waitFor(() => {
@@ -496,7 +498,7 @@ describe('useMoveWishlistBookToShelf', () => {
                 calls.push('update')
 
                 return {
-                    id: 'book-1',
+                    book_id: 'book-1',
                     title: 'The Dispossessed',
                     shelf_name: 'a1',
                 } as BookRead
@@ -518,7 +520,7 @@ describe('useMoveWishlistBookToShelf', () => {
 
         result.current.mutate({
             wishlistId: 'wishlist-1',
-            wishlistBookId: 'membership-1',
+            wishlistItemId: 'membership-1',
             bookId: 'book-1',
             shelfName: 'a1',
         })
@@ -565,7 +567,7 @@ describe('useMoveWishlistBookToShelf', () => {
 
         result.current.mutate({
             wishlistId: 'wishlist-1',
-            wishlistBookId: 'membership-1',
+            wishlistItemId: 'membership-1',
             bookId: 'book-1',
             shelfName: 'a1',
         })
@@ -589,7 +591,7 @@ describe('useMoveWishlistBookToShelf', () => {
 
     it('skips membership removal when retrying after a partial failure', async () => {
         mockUpdateBook.mockResolvedValue({
-            id: 'book-1',
+            book_id: 'book-1',
             title: 'The Dispossessed',
             shelf_name: 'a1',
         } as BookRead)
@@ -609,7 +611,7 @@ describe('useMoveWishlistBookToShelf', () => {
 
         result.current.mutate({
             wishlistId: 'wishlist-1',
-            wishlistBookId: 'membership-1',
+            wishlistItemId: 'membership-1',
             bookId: 'book-1',
             shelfName: 'a1',
             membershipRemoved: true,
@@ -642,7 +644,8 @@ describe('useMoveWishlistBook', () => {
     }
 
     const destinationMembership: WishlistBookRead = {
-        wishlist_book_id: 'membership-2',
+        album_id: null,
+        wishlist_item_id: 'membership-2',
         wishlist_id: 'wishlist-2',
         book_id: 'book-1',
         book_title: 'The Dispossessed',
@@ -691,7 +694,7 @@ describe('useMoveWishlistBook', () => {
 
         await result.current.mutateAsync({
             sourceWishlistId: 'wishlist-1',
-            sourceWishlistBookId: 'membership-1',
+            sourceWishlistItemId: 'membership-1',
             destinationWishlistId: 'wishlist-2',
             wishlistBook,
         })
@@ -752,7 +755,7 @@ describe('useMoveWishlistBook', () => {
         try {
             await result.current.mutateAsync({
                 sourceWishlistId: 'wishlist-1',
-                sourceWishlistBookId:
+                sourceWishlistItemId:
                     'membership-1',
                 destinationWishlistId:
                     'wishlist-2',
@@ -807,7 +810,7 @@ describe('useMoveWishlistBook', () => {
         try {
             await result.current.mutateAsync({
                 sourceWishlistId: 'wishlist-1',
-                sourceWishlistBookId:
+                sourceWishlistItemId:
                     'membership-1',
                 destinationWishlistId:
                     'wishlist-2',
@@ -857,7 +860,7 @@ describe('useMoveWishlistBook', () => {
         const moved =
             await result.current.mutateAsync({
                 sourceWishlistId: 'wishlist-1',
-                sourceWishlistBookId:
+                sourceWishlistItemId:
                     'membership-1',
                 destinationWishlistId:
                     'wishlist-2',
@@ -890,7 +893,8 @@ describe('useInfiniteWishlistBooks', () => {
         mockListBooks.mockResolvedValue({
             items: [
                 {
-                    wishlist_book_id:
+                    album_id: null,
+                    wishlist_item_id:
                         'membership-1',
                     wishlist_id: 'wishlist-1',
                     book_id: 'book-1',
@@ -945,7 +949,8 @@ describe('useInfiniteWishlistBooks', () => {
                     length: 30,
                 },
                 (_, index) => ({
-                    wishlist_book_id:
+                    album_id: null,
+                    wishlist_item_id:
                         `membership-${index}`,
                     wishlist_id: 'wishlist-1',
                     book_id: `book-${index}`,
@@ -966,7 +971,8 @@ describe('useInfiniteWishlistBooks', () => {
             .mockResolvedValueOnce({
                 items: [
                     {
-                        wishlist_book_id:
+                        album_id: null,
+                        wishlist_item_id:
                             'membership-30',
                         wishlist_id:
                             'wishlist-1',
@@ -1043,3 +1049,47 @@ describe('useInfiniteWishlistBooks', () => {
 
 
 
+
+
+it('refreshes a duplicate add without creating an optimistic membership or retrying', async () => {
+    const { Wrapper, queryClient } = createWrapper()
+    const key = queryKeys.wishlists.books('wishlist-1')
+    const original = { items: [sampleMembership], total: 1 }
+    queryClient.setQueryData(key, original)
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const conflict = new ApiError({ kind: 'http', status: 409, message: 'Book is already in this wishlist' })
+    mockAddBook.mockRejectedValueOnce(conflict)
+    const { result } = renderHook(() => useAddWishlistBook(), { wrapper: Wrapper })
+
+    await expect(result.current.mutateAsync({
+        wishlistId: 'wishlist-1',
+        wishlistBook: { book_id: 'book-1', status: 'wanted' },
+    })).rejects.toBe(conflict)
+
+    expect(mockAddBook).toHaveBeenCalledTimes(1)
+    expect(queryClient.getQueryData(key)).toEqual(original)
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: key })
+    queryClient.clear()
+})
+
+it('preserves source membership on a destination conflict and refreshes both lists', async () => {
+    const { Wrapper, queryClient } = createWrapper()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const conflict = new ApiError({ kind: 'http', status: 409, message: 'Book is already in this wishlist' })
+    mockAddBook.mockRejectedValueOnce(conflict)
+    const { result } = renderHook(() => useMoveWishlistBook(), { wrapper: Wrapper })
+
+    await expect(result.current.mutateAsync({
+        sourceWishlistId: 'wishlist-1',
+        sourceWishlistItemId: 'membership-1',
+        destinationWishlistId: 'wishlist-2',
+        wishlistBook: { book_id: 'book-1', status: 'wanted', notes: 'Keep these notes' },
+    })).rejects.toMatchObject({ cause: conflict, destinationMembershipCreated: false })
+
+    expect(mockRemoveBook).not.toHaveBeenCalled()
+    expect(mockAddBook).toHaveBeenCalledTimes(1)
+    for (const wishlistId of ['wishlist-1', 'wishlist-2']) {
+        expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.wishlists.books(wishlistId) })
+    }
+    queryClient.clear()
+})

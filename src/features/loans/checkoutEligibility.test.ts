@@ -8,7 +8,7 @@ import type { BookRead } from '../../api/apiTypes'
 import { isCheckoutEligible } from './checkoutEligibility'
 
 const availableBook = {
-    id: 'book-1',
+    book_id: 'book-1',
     status: 'available',
 } as BookRead
 

@@ -23,6 +23,7 @@ import {
 import {
     createWishlistsApi,
 } from './wishlistsApi'
+import { isApiError } from './apiErrors'
 import {
     queryKeys,
 } from './queryKeys'
@@ -213,13 +214,13 @@ export function useMoveWishlistBookToShelf() {
     return useMutation({
         mutationFn: async ({
                                wishlistId,
-                               wishlistBookId,
+                               wishlistItemId,
                                bookId,
                                shelfName,
                                membershipRemoved = false,
                            }: {
             wishlistId: string
-            wishlistBookId: string
+            wishlistItemId: string
             bookId: string
             shelfName: string
             membershipRemoved?: boolean
@@ -230,7 +231,7 @@ export function useMoveWishlistBookToShelf() {
                 try {
                     await wishlistsApi.removeBook(
                         wishlistId,
-                        wishlistBookId,
+                        wishlistItemId,
                     )
 
                     removed = true
@@ -262,7 +263,7 @@ export function useMoveWishlistBookToShelf() {
             variables,
         ) => {
             queryClient.setQueryData(
-                queryKeys.books.detail(book.id),
+                queryKeys.books.detail(book.book_id),
                 book,
             )
 
@@ -305,13 +306,13 @@ export function useMoveWishlistBook() {
     return useMutation({
         mutationFn: async ({
                                sourceWishlistId,
-                               sourceWishlistBookId,
+                               sourceWishlistItemId,
                                destinationWishlistId,
                                wishlistBook,
                                destinationMembershipCreated = false,
                            }: {
             sourceWishlistId: string
-            sourceWishlistBookId: string
+            sourceWishlistItemId: string
             destinationWishlistId: string
             wishlistBook: WishlistBookCreate
             destinationMembershipCreated?: boolean
@@ -343,7 +344,7 @@ export function useMoveWishlistBook() {
             try {
                 await wishlistsApi.removeBook(
                     sourceWishlistId,
-                    sourceWishlistBookId,
+                    sourceWishlistItemId,
                 )
             } catch (error) {
                 throw new MoveWishlistBookError({
@@ -387,8 +388,9 @@ export function useMoveWishlistBook() {
             return movedMembership
         },
 
-        onSuccess: async (
+        onSettled: async (
             _membership,
+            _error,
             variables,
         ) => {
             await Promise.all([
@@ -515,10 +517,12 @@ export function useAddWishlistBook() {
                 wishlistBook,
             ),
 
-        onSuccess: async (
+        onSettled: async (
             _result,
+            error,
             variables,
         ) => {
+            if (error && !(isApiError(error) && error.status === 409)) return
             await queryClient.invalidateQueries({
                 queryKey:
                     queryKeys.wishlists.books(
@@ -543,14 +547,14 @@ export function useRemoveWishlistBook() {
     return useMutation({
         mutationFn: ({
                          wishlistId,
-                         wishlistBookId,
+                         wishlistItemId,
                      }: {
             wishlistId: string
-            wishlistBookId: string
+            wishlistItemId: string
         }) =>
             wishlistsApi.removeBook(
                 wishlistId,
-                wishlistBookId,
+                wishlistItemId,
             ),
 
         onSuccess: async (
@@ -573,11 +577,11 @@ export function useUpdateWishlistBook() {
     const wishlistsApi = createWishlistsApi(apiClient)
 
     return useMutation({
-        mutationFn: ({ wishlistId, wishlistBookId, update }: {
+        mutationFn: ({ wishlistId, wishlistItemId, update }: {
             wishlistId: string
-            wishlistBookId: string
+            wishlistItemId: string
             update: WishlistBookUpdate
-        }) => wishlistsApi.updateBook(wishlistId, wishlistBookId, update),
+        }) => wishlistsApi.updateBook(wishlistId, wishlistItemId, update),
         onSuccess: async (_result, variables) => {
             await queryClient.invalidateQueries({
                 queryKey: queryKeys.wishlists.books(variables.wishlistId),
