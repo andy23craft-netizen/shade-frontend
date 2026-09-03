@@ -250,3 +250,7 @@ until the album subset of that brief is approved.
 - Cross-media global text search.
 - External media beyond albums, including video, comics, board games, and digital-only media management.
 - Selectable album skins, reactive environment simulation, ambient audio, and a spatial record-store/jazz-bar world.
+
+
+## User notes
+- On the book side we use a hard delete now. I don't see why we should do albums any differently. 
