@@ -106,6 +106,11 @@ const mockUseDashboardBreakdowns =
     vi.mocked(useDashboardBreakdowns)
 
 const breakdownsFixture: DashboardBreakdowns = {
+    total_albums: 0,
+    albums_on_loan: 0,
+    albums_by_media_format: [],
+    albums_by_shelf: [],
+    albums_by_creation_year: [],
     total_books: 100,
     on_loan: 4,
     by_category: [

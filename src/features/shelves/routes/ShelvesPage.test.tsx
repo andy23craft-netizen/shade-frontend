@@ -74,6 +74,11 @@ vi.mock('../../../api/dashboardQueries', () => ({
             mockBreakdownsError !== null,
         error: mockBreakdownsError,
         data: {
+            total_albums: 0,
+            albums_on_loan: 0,
+            albums_by_media_format: [],
+            albums_by_shelf: [],
+            albums_by_creation_year: [],
             total_books: 3,
             on_loan: 0,
             by_category: [],

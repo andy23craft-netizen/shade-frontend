@@ -147,6 +147,19 @@ describe('API transport types', () => {
 
     it('preserves nullable dashboard averages', () => {
         const dashboard = {
+            total_albums: 0,
+            albums_checked_out: 0,
+            albums_recently_added: 0,
+            album_borrowing: {
+                active_loans: 0,
+                lifetime_loans: 0,
+                average_loan_days: null,
+            },
+            listening: {
+                albums_played: 0,
+                albums_unplayed: 0,
+                average_rating: null,
+            },
             total_books: 10,
             checked_out: 0,
             read: 0,

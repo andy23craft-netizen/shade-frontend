@@ -480,6 +480,11 @@ describe('loans and dashboard queries', () => {
 
     it('loads dashboard breakdowns with the shared breakdowns query key', async () => {
         const breakdowns: DashboardBreakdowns = {
+            total_albums: 0,
+            albums_on_loan: 0,
+            albums_by_media_format: [],
+            albums_by_shelf: [],
+            albums_by_creation_year: [],
             total_books: 542,
             on_loan: 7,
             by_category: [

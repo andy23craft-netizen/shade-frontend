@@ -32,6 +32,17 @@ const generatedTypesPath = join(
 )
 
 const expectedPaths = [
+    '/albums',
+    '/albums/lookup',
+    '/albums/{album_id}',
+    '/albums/{album_id}/artwork',
+    '/albums/{album_id}/artwork/refetch',
+    '/albums/{album_id}/checkin',
+    '/albums/{album_id}/checkout',
+    '/albums/{album_id}/mark-played',
+    '/albums/{album_id}/restore',
+    '/artists',
+    '/artists/{artist_id}',
     '/authors',
     '/authors/{author_id}',
     '/backup',
@@ -57,6 +68,8 @@ const expectedPaths = [
     '/dashboard/breakdowns',
     '/dashboard/incomplete-metadata',
     '/dashboard/incomplete-metadata/books',
+    '/genres',
+    '/genres/{genre_id}',
     '/health',
     '/loans',
     '/loans/{id}',
@@ -66,8 +79,11 @@ const expectedPaths = [
     '/version',
     '/wishlists',
     '/wishlists/{wishlist_id}',
+    '/wishlists/{wishlist_id}/albums',
+    '/wishlists/{wishlist_id}/albums/{wishlist_item_id}',
     '/wishlists/{wishlist_id}/books',
     '/wishlists/{wishlist_id}/books/{wishlist_item_id}',
+    '/wishlists/{wishlist_id}/items',
 ] as const
 
 describe('OpenAPI contract smoke', () => {

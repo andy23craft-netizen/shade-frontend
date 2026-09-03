@@ -40,6 +40,19 @@ export interface MockApiController {
 export type DashboardFixture = DashboardSummary
 
 export const emptyDashboardFixture: DashboardFixture = {
+    total_albums: 0,
+    albums_checked_out: 0,
+    albums_recently_added: 0,
+    album_borrowing: {
+        active_loans: 0,
+        lifetime_loans: 0,
+        average_loan_days: null,
+    },
+    listening: {
+        albums_played: 0,
+        albums_unplayed: 0,
+        average_rating: null,
+    },
     stash_count: 0,
     total_books: 0,
     checked_out: 0,
@@ -568,6 +581,19 @@ function calculateDashboard(
         activeBooks.length - booksRead
 
     return {
+        total_albums: 0,
+        albums_checked_out: 0,
+        albums_recently_added: 0,
+        album_borrowing: {
+            active_loans: 0,
+            lifetime_loans: 0,
+            average_loan_days: null,
+        },
+        listening: {
+            albums_played: 0,
+            albums_unplayed: 0,
+            average_rating: null,
+        },
         stash_count: activeBooks.filter(
             (book) =>
                 book.placement_state === 'stashed',

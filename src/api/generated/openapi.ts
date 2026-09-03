@@ -4,6 +4,201 @@
  */
 
 export interface paths {
+    "/albums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Albums */
+        get: operations["list_albums_albums_get"];
+        put?: never;
+        /** Create Album */
+        post: operations["create_album_albums_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lookup Album */
+        get: operations["lookup_album_albums_lookup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/{album_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Album */
+        get: operations["get_album_albums__album_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Album */
+        delete: operations["delete_album_albums__album_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Album */
+        patch: operations["update_album_albums__album_id__patch"];
+        trace?: never;
+    };
+    "/albums/{album_id}/artwork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Album Artwork */
+        get: operations["get_album_artwork_albums__album_id__artwork_get"];
+        /** Upload Album Artwork */
+        put: operations["upload_album_artwork_albums__album_id__artwork_put"];
+        post?: never;
+        /** Remove Album Artwork */
+        delete: operations["remove_album_artwork_albums__album_id__artwork_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/{album_id}/artwork/refetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refetch Album Artwork */
+        post: operations["refetch_album_artwork_albums__album_id__artwork_refetch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/{album_id}/checkin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Checkin Album */
+        post: operations["checkin_album_albums__album_id__checkin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/{album_id}/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Checkout Album */
+        post: operations["checkout_album_albums__album_id__checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/{album_id}/mark-played": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Album Played */
+        post: operations["mark_album_played_albums__album_id__mark_played_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/{album_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Album */
+        post: operations["restore_album_albums__album_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/artists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Artists */
+        get: operations["list_artists_artists_get"];
+        put?: never;
+        /** Create Artist */
+        post: operations["create_artist_artists_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/artists/{artist_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Artist */
+        get: operations["get_artist_artists__artist_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Artist */
+        delete: operations["delete_artist_artists__artist_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Artist */
+        patch: operations["update_artist_artists__artist_id__patch"];
+        trace?: never;
+    };
     "/authors": {
         parameters: {
             query?: never;
@@ -444,6 +639,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/genres": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Genres */
+        get: operations["list_genres_genres_get"];
+        put?: never;
+        /** Create Genre */
+        post: operations["create_genre_genres_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/genres/{genre_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Genre */
+        get: operations["get_genre_genres__genre_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Genre */
+        delete: operations["delete_genre_genres__genre_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Genre */
+        patch: operations["update_genre_genres__genre_id__patch"];
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -610,6 +842,40 @@ export interface paths {
         patch: operations["update_wishlist_wishlists__wishlist_id__patch"];
         trace?: never;
     };
+    "/wishlists/{wishlist_id}/albums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Wishlist Album */
+        post: operations["add_wishlist_album_wishlists__wishlist_id__albums_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/wishlists/{wishlist_id}/albums/{wishlist_item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Wishlist Album */
+        delete: operations["delete_wishlist_album_wishlists__wishlist_id__albums__wishlist_item_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/wishlists/{wishlist_id}/books": {
         parameters: {
             query?: never;
@@ -646,10 +912,326 @@ export interface paths {
         patch: operations["update_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__patch"];
         trace?: never;
     };
+    "/wishlists/{wishlist_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Wishlist Items */
+        get: operations["list_wishlist_items_wishlists__wishlist_id__items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AlbumArtistRead */
+        AlbumArtistRead: {
+            /** Artist Id */
+            artist_id: string;
+            /** First Name */
+            first_name: string | null;
+            /** Position */
+            position: number;
+            /** Surname */
+            surname: string;
+        };
+        /** AlbumArtworkRefetchRequest */
+        AlbumArtworkRefetchRequest: {
+            /**
+             * Replace Owner Upload
+             * @default false
+             */
+            replace_owner_upload: boolean;
+        };
+        /** AlbumCreate */
+        AlbumCreate: {
+            /** Artist Ids */
+            artist_ids: string[];
+            /** Barcode */
+            barcode?: string | null;
+            /** Completion Date */
+            completion_date?: string | null;
+            /** Discogs Release Id */
+            discogs_release_id?: string | null;
+            /** Genre Ids */
+            genre_ids?: string[];
+            /**
+             * Is Played
+             * @default false
+             */
+            is_played: boolean;
+            /** Label */
+            label?: string | null;
+            /** @default unknown */
+            media_format: components["schemas"]["MediaFormat"];
+            /** Musicbrainz Release Id */
+            musicbrainz_release_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Rating */
+            rating?: number | null;
+            /** Release Date */
+            release_date?: string | null;
+            /** Review */
+            review?: string | null;
+            /** Shelf Name */
+            shelf_name?: string | null;
+            /** @default available */
+            status: components["schemas"]["AlbumStatus"];
+            /** Title */
+            title: string;
+            /** Tracks */
+            tracks?: components["schemas"]["AlbumTrackWrite"][];
+        };
+        /** AlbumGenreRead */
+        AlbumGenreRead: {
+            /** Genre Id */
+            genre_id: string;
+            /** Name */
+            name: string;
+            /** Position */
+            position: number;
+            /** Slug */
+            slug: string;
+        };
+        /** AlbumList */
+        AlbumList: {
+            /** Items */
+            items: components["schemas"]["AlbumRead"][];
+            /** Total */
+            total: number;
+        };
+        /** AlbumLookupArtist */
+        AlbumLookupArtist: {
+            /** First Name */
+            first_name?: string | null;
+            /** Surname */
+            surname: string;
+        };
+        /** AlbumLookupDraft */
+        AlbumLookupDraft: {
+            /** Artists */
+            artists?: components["schemas"]["AlbumLookupArtist"][];
+            /** Barcode */
+            barcode?: string | null;
+            /** Discogs Release Id */
+            discogs_release_id?: string | null;
+            /** Genres */
+            genres?: string[];
+            /** Label */
+            label?: string | null;
+            /** @default unknown */
+            media_format: components["schemas"]["MediaFormat"];
+            /** Musicbrainz Release Id */
+            musicbrainz_release_id?: string | null;
+            /** Release Date */
+            release_date?: string | null;
+            /** Title */
+            title: string;
+            /** Tracks */
+            tracks?: components["schemas"]["AlbumLookupTrack"][];
+        };
+        /** AlbumLookupResponse */
+        AlbumLookupResponse: {
+            draft: components["schemas"]["AlbumLookupDraft"] | null;
+            /** Found */
+            found: boolean;
+        };
+        /** AlbumLookupTrack */
+        AlbumLookupTrack: {
+            /** Artists */
+            artists?: components["schemas"]["AlbumLookupArtist"][] | null;
+            /**
+             * Disc Number
+             * @default 1
+             */
+            disc_number: number;
+            /** Duration */
+            duration?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Title */
+            title: string;
+            /** Track Number */
+            track_number: number;
+        };
+        /** AlbumRead */
+        AlbumRead: {
+            /** Album Id */
+            album_id: string;
+            /** Artists */
+            artists: components["schemas"]["AlbumArtistRead"][];
+            /** Artwork Present */
+            artwork_present: boolean;
+            /** Average Loan Days */
+            average_loan_days: number | null;
+            /** Barcode */
+            barcode?: string | null;
+            /** Completion Date */
+            completion_date?: string | null;
+            /** Creation Date */
+            creation_date: string;
+            /** Deletion Date */
+            deletion_date: string | null;
+            /** Discogs Release Id */
+            discogs_release_id?: string | null;
+            /** Genres */
+            genres: components["schemas"]["AlbumGenreRead"][];
+            /**
+             * Is Played
+             * @default false
+             */
+            is_played: boolean;
+            /** Label */
+            label?: string | null;
+            /** Last Borrowed At */
+            last_borrowed_at: string | null;
+            /** @default unknown */
+            media_format: components["schemas"]["MediaFormat"];
+            /** Musicbrainz Release Id */
+            musicbrainz_release_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Rating */
+            rating?: number | null;
+            /** Release Date */
+            release_date?: string | null;
+            /** Review */
+            review?: string | null;
+            /** Shelf Name */
+            shelf_name: string;
+            /** @default available */
+            status: components["schemas"]["AlbumStatus"];
+            /** Times Borrowed */
+            times_borrowed: number;
+            /** Title */
+            title: string;
+            /** Tracks */
+            tracks: components["schemas"]["AlbumTrackRead"][];
+            /** Updated Date */
+            updated_date: string;
+        };
+        /**
+         * AlbumStatus
+         * @enum {string}
+         */
+        AlbumStatus: "available" | "on_loan" | "display_only";
+        /** AlbumTrackRead */
+        AlbumTrackRead: {
+            /** Album Track Id */
+            album_track_id: string;
+            /** Artists */
+            artists: components["schemas"]["AlbumArtistRead"][];
+            /** Disc Number */
+            disc_number: number;
+            /** Duration */
+            duration: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Title */
+            title: string;
+            /** Track Number */
+            track_number: number;
+        };
+        /** AlbumTrackWrite */
+        AlbumTrackWrite: {
+            /** Artist Ids */
+            artist_ids?: string[];
+            /**
+             * Disc Number
+             * @default 1
+             */
+            disc_number: number;
+            /** Duration */
+            duration?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Title */
+            title: string;
+            /** Track Number */
+            track_number: number;
+        };
+        /** AlbumUpdate */
+        AlbumUpdate: {
+            /** Artist Ids */
+            artist_ids?: string[] | null;
+            /** Barcode */
+            barcode?: string | null;
+            /** Completion Date */
+            completion_date?: string | null;
+            /** Discogs Release Id */
+            discogs_release_id?: string | null;
+            /** Genre Ids */
+            genre_ids?: string[] | null;
+            /** Is Played */
+            is_played?: boolean | null;
+            /** Label */
+            label?: string | null;
+            media_format?: components["schemas"]["MediaFormat"] | null;
+            /** Musicbrainz Release Id */
+            musicbrainz_release_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Rating */
+            rating?: number | null;
+            /** Release Date */
+            release_date?: string | null;
+            /** Review */
+            review?: string | null;
+            /** Shelf Name */
+            shelf_name?: string | null;
+            status?: components["schemas"]["AlbumStatus"] | null;
+            /** Title */
+            title?: string | null;
+            /** Tracks */
+            tracks?: components["schemas"]["AlbumTrackWrite"][] | null;
+        };
+        /**
+         * ArtistCreate
+         * @description Artist names follow the same validation rules as author names.
+         */
+        ArtistCreate: {
+            /** First Name */
+            first_name?: string | null;
+            /** Surname */
+            surname: string;
+        };
+        /** ArtistList */
+        ArtistList: {
+            /** Items */
+            items: components["schemas"]["ArtistRead"][];
+            /** Total */
+            total: number;
+        };
+        /** ArtistRead */
+        ArtistRead: {
+            /** Artist Id */
+            artist_id: string;
+            /** Created Date */
+            created_date: string;
+            /** First Name */
+            first_name: string | null;
+            /** Surname */
+            surname: string;
+            /** Updated Date */
+            updated_date: string;
+        };
+        /** ArtistUpdate */
+        ArtistUpdate: {
+            /** First Name */
+            first_name?: string | null;
+            /** Surname */
+            surname?: string | null;
+        };
         /** AuthorCreate */
         AuthorCreate: {
             /** First Name */
@@ -683,6 +1265,11 @@ export interface components {
             first_name?: string | null;
             /** Surname */
             surname?: string | null;
+        };
+        /** Body_upload_album_artwork_albums__album_id__artwork_put */
+        Body_upload_album_artwork_albums__album_id__artwork_put: {
+            /** File */
+            file: string;
         };
         /** Body_upload_book_cover_books__book_id__cover_put */
         Body_upload_book_cover_books__book_id__cover_put: {
@@ -1170,6 +1757,14 @@ export interface components {
         };
         /** DashboardBreakdowns */
         DashboardBreakdowns: {
+            /** Albums By Creation Year */
+            albums_by_creation_year: components["schemas"]["DashboardCountBucket"][];
+            /** Albums By Media Format */
+            albums_by_media_format: components["schemas"]["DashboardCountBucket"][];
+            /** Albums By Shelf */
+            albums_by_shelf: components["schemas"]["DashboardCountBucket"][];
+            /** Albums On Loan */
+            albums_on_loan: number;
             /** By Category */
             by_category: components["schemas"]["DashboardCountBucket"][];
             /** By Creation Year */
@@ -1178,6 +1773,8 @@ export interface components {
             by_shelf: components["schemas"]["DashboardCountBucket"][];
             /** On Loan */
             on_loan: number;
+            /** Total Albums */
+            total_albums: number;
             /** Total Books */
             total_books: number;
         };
@@ -1205,6 +1802,15 @@ export interface components {
             /** Total Incomplete */
             total_incomplete: number;
         };
+        /** DashboardListening */
+        DashboardListening: {
+            /** Albums Played */
+            albums_played: number;
+            /** Albums Unplayed */
+            albums_unplayed: number;
+            /** Average Rating */
+            average_rating: number | null;
+        };
         /** DashboardReading */
         DashboardReading: {
             /** Average Rating */
@@ -1216,9 +1822,15 @@ export interface components {
         };
         /** DashboardSummary */
         DashboardSummary: {
+            album_borrowing: components["schemas"]["DashboardBorrowing"];
+            /** Albums Checked Out */
+            albums_checked_out: number;
+            /** Albums Recently Added */
+            albums_recently_added: number;
             borrowing: components["schemas"]["DashboardBorrowing"];
             /** Checked Out */
             checked_out: number;
+            listening: components["schemas"]["DashboardListening"];
             /** Read */
             read: number;
             reading: components["schemas"]["DashboardReading"];
@@ -1228,6 +1840,8 @@ export interface components {
             recently_added: number;
             /** Stash Count */
             stash_count: number;
+            /** Total Albums */
+            total_albums: number;
             /** Total Books */
             total_books: number;
             /** Unread */
@@ -1237,6 +1851,36 @@ export interface components {
         ErrorDetail: {
             /** Detail */
             detail: string;
+        };
+        /**
+         * GenreCreate
+         * @description Genres use category name/slug normalization, with a separate vocabulary.
+         */
+        GenreCreate: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
+        /** GenreRead */
+        GenreRead: {
+            /** Created Date */
+            created_date: string;
+            /** Genre Id */
+            genre_id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Updated Date */
+            updated_date: string;
+        };
+        /** GenreUpdate */
+        GenreUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Slug */
+            slug?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1284,6 +1928,18 @@ export interface components {
             /** Returned At */
             returned_at?: string | null;
         };
+        /**
+         * MarkPlayedRequest
+         * @description Album listening completion, with the same fields and validation as mark-read.
+         */
+        MarkPlayedRequest: {
+            /** Completion Date */
+            completion_date?: string | null;
+            /** Rating */
+            rating?: number | null;
+            /** Review */
+            review?: string | null;
+        };
         /** MarkReadRequest */
         MarkReadRequest: {
             /** Completion Date */
@@ -1293,6 +1949,11 @@ export interface components {
             /** Review */
             review?: string | null;
         };
+        /**
+         * MediaFormat
+         * @enum {string}
+         */
+        MediaFormat: "unknown" | "vinyl" | "cd" | "cassette" | "other";
         /**
          * PlacementState
          * @enum {string}
@@ -1353,6 +2014,19 @@ export interface components {
         VersionResponse: {
             /** Version */
             version: string;
+        };
+        /** WishlistAlbumCreate */
+        WishlistAlbumCreate: {
+            /** Album Id */
+            album_id: string;
+            /** Notes */
+            notes?: string | null;
+            /** Priority */
+            priority?: number | null;
+            /** @default wanted */
+            status: components["schemas"]["WishlistBookStatus"];
+            /** Url */
+            url?: string | null;
         };
         /** WishlistBookCreate */
         WishlistBookCreate: {
@@ -1416,6 +2090,33 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** WishlistItemList */
+        WishlistItemList: {
+            /** Items */
+            items: components["schemas"]["WishlistItemRead"][];
+            /** Total */
+            total: number;
+        };
+        /** WishlistItemRead */
+        WishlistItemRead: {
+            /** Album Id */
+            album_id: string | null;
+            /** Book Id */
+            book_id: string | null;
+            /** Created Date */
+            created_date: string;
+            /** Notes */
+            notes?: string | null;
+            /** Priority */
+            priority?: number | null;
+            status: components["schemas"]["WishlistBookStatus"];
+            /** Url */
+            url?: string | null;
+            /** Wishlist Id */
+            wishlist_id: string;
+            /** Wishlist Item Id */
+            wishlist_item_id: string;
+        };
         /** WishlistList */
         WishlistList: {
             /** Items */
@@ -1452,6 +2153,1179 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_albums_albums_get: {
+        parameters: {
+            query?: {
+                artist?: string | null;
+                title?: string | null;
+                barcode?: string | null;
+                media_format?: components["schemas"]["MediaFormat"] | null;
+                include_deleted?: boolean;
+                sortBy?: string;
+                sortOrder?: string;
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_album_albums_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlbumCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lookup_album_albums_lookup_get: {
+        parameters: {
+            query?: {
+                barcode?: string | null;
+                discogs_release_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumLookupResponse"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Metadata provider failure */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Metadata provider timeout */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_album_albums__album_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_album_albums__album_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_album_albums__album_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlbumUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_album_artwork_albums__album_id__artwork_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_album_artwork_albums__album_id__artwork_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_album_artwork_albums__album_id__artwork_put"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    remove_album_artwork_albums__album_id__artwork_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refetch_album_artwork_albums__album_id__artwork_refetch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AlbumArtworkRefetchRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Metadata provider failure */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Metadata provider timeout */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    checkin_album_albums__album_id__checkin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CheckinRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkout_album_albums__album_id__checkout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Album is display only */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_album_played_albums__album_id__mark_played_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkPlayedRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_album_albums__album_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_artists_artists_get: {
+        parameters: {
+            query?: {
+                in_use?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtistList"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_artist_artists_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtistCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtistRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_artist_artists__artist_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtistRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_artist_artists__artist_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_artist_artists__artist_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtistUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtistRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_authors_authors_get: {
         parameters: {
             query?: {
@@ -1806,7 +3680,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
-            /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            /** @description The book must be removed from the wishlist before it can be placed on a shelf; A book cannot be placed on an album shelf */
             412: {
                 headers: {
                     [name: string]: unknown;
@@ -1944,6 +3818,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description The book must be removed from the wishlist before it can be placed on a shelf; A book cannot be placed on an album shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -2055,7 +3938,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
-            /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            /** @description The book must be removed from the wishlist before it can be placed on a shelf; A book cannot be placed on an album shelf */
             412: {
                 headers: {
                     [name: string]: unknown;
@@ -2385,7 +4268,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
-            /** @description The book must be removed from the wishlist before it can be placed on a shelf */
+            /** @description The book must be removed from the wishlist before it can be placed on a shelf; A book cannot be placed on an album shelf */
             412: {
                 headers: {
                     [name: string]: unknown;
@@ -3410,6 +5293,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Books cannot be added to an album collection; Albums cannot be added to a book collection */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3670,6 +5562,291 @@ export interface operations {
             };
             /** @description Authentication failure */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_genres_genres_get: {
+        parameters: {
+            query?: {
+                in_use?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenreRead"][];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_genre_genres_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenreCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenreRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_genre_genres__genre_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                genre_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenreRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_genre_genres__genre_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                genre_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_genre_genres__genre_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                genre_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenreUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenreRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4304,6 +6481,143 @@ export interface operations {
             };
         };
     };
+    add_wishlist_album_wishlists__wishlist_id__albums_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wishlist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistAlbumCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistItemRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Existing albums cannot be added to a wishlist; Soft-deleted albums cannot be added to a wishlist */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_wishlist_album_wishlists__wishlist_id__albums__wishlist_item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wishlist_id: string;
+                wishlist_item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_wishlist_books_wishlists__wishlist_id__books_get: {
         parameters: {
             query?: {
@@ -4525,6 +6839,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WishlistBookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_wishlist_items_wishlists__wishlist_id__items_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: never;
+            path: {
+                wishlist_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistItemList"];
                 };
             };
             /** @description Malformed or missing identifier */

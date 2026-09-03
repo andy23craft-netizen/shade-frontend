@@ -42,6 +42,19 @@ vi.mock('../../../api/dashboardQueries', () => ({
 }))
 
 const dashboardFixture: DashboardSummary = {
+    total_albums: 0,
+    albums_checked_out: 0,
+    albums_recently_added: 0,
+    album_borrowing: {
+        active_loans: 0,
+        lifetime_loans: 0,
+        average_loan_days: null,
+    },
+    listening: {
+        albums_played: 0,
+        albums_unplayed: 0,
+        average_rating: null,
+    },
     stash_count: 0,
     total_books: 542,
     checked_out: 7,
@@ -62,6 +75,11 @@ const dashboardFixture: DashboardSummary = {
 }
 
 const breakdownsFixture = {
+    total_albums: 0,
+    albums_on_loan: 0,
+    albums_by_media_format: [],
+    albums_by_shelf: [],
+    albums_by_creation_year: [],
     total_books: 542,
     on_loan: 7,
     by_category: [
@@ -364,6 +382,19 @@ describe('DashboardPage', () => {
     it('treats an all-zero dashboard as valid data', () => {
         mockDashboardQuery({
             data: {
+                total_albums: 0,
+                albums_checked_out: 0,
+                albums_recently_added: 0,
+                album_borrowing: {
+                    active_loans: 0,
+                    lifetime_loans: 0,
+                    average_loan_days: null,
+                },
+                listening: {
+                    albums_played: 0,
+                    albums_unplayed: 0,
+                    average_rating: null,
+                },
                 total_books: 0,
                 checked_out: 0,
                 read: 0,
@@ -828,6 +859,11 @@ describe('DashboardPage', () => {
     it('does not invent missing category breakdown buckets', () => {
         mockDashboardBreakdownsQuery({
             data: {
+                total_albums: 0,
+                albums_on_loan: 0,
+                albums_by_media_format: [],
+                albums_by_shelf: [],
+                albums_by_creation_year: [],
                 total_books: 10,
                 on_loan: 1,
                 by_category: [

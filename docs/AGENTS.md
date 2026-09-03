@@ -181,7 +181,7 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.0.8`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.0.15`). Prefer generating or fixture-checking TypeScript models
   from this file.
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, error
   meanings, lifecycle rules, ISBN quirks, book covers **200** image bytes / multipart semantics, SQL backup dump
@@ -208,6 +208,17 @@ continues to expose book workflows only; album management, album circulation, an
 - Release with backend 1.0.8 and its separately rehearsed database migration. The local backend was unavailable during
   this update; contract, unit, and mocked browser checks do not certify a live migration.
 
+### Backend 1.0.12–1.0.15 additive compatibility (2026-09-03)
+
+The contract includes album lookup/artwork, album dashboard values, and typed mixed-wishlist endpoints introduced in
+backend 1.0.12 through 1.0.15. These additions remain dormant in the book-focused frontend: do not export album API
+types, add album wrappers/query keys/routes/navigation, proxy album endpoints, or render album dashboard or wishlist
+content until that product work is scheduled. Existing Dashboard and Home widgets continue to read book-only fields,
+and existing wishlists continue to use their `/books` routes. Typed fixtures include zero/empty album dashboard values
+solely to match the complete response schemas. Backend 1.0.12 still requires the separately coordinated retained-data
+migration for its `album_artwork` storage; this cannot be addressed in the frontend. The consolidated pre-implementation
+handoff is `docs/technical-reference/ALBUM-MVP-frontend-handoff.md`.
+
 ### Book identifiers (`id` vs `book_id`)
 
 - Catalog rows expose identity as `BookRead.book_id` (UUID string). There is no `id` alias on `BookRead`.
@@ -220,7 +231,7 @@ continues to expose book workflows only; album management, album circulation, an
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
 
-### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.0.8`)
+### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.0.15`)
 
 Authors are backend data, not free-form book text. Books no longer store a string `authors` field on create/update.
 
@@ -245,7 +256,7 @@ SPA surface: `authorsApi` / `authorsQueries`, `authorDisplay.formatBookAuthors`,
 inline `useCreateAuthor` on ISBN lookup apply and wishlist add, and list/detail/join display. Do not send free-form
 author strings on `BookCreate` / `BookUpdate`.
 
-### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.0.8`)
+### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.0.15`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
