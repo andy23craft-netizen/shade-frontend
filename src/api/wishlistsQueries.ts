@@ -13,6 +13,7 @@ import type {
     WishlistBookUpdate,
     WishlistCreate,
     WishlistUpdate,
+    WishlistAlbumCreate,
 } from './apiTypes'
 import {
     INFINITE_SCROLL_BATCH_SIZE,
@@ -195,6 +196,21 @@ export function useWishlistBooks(
             ),
         enabled,
     })
+}
+
+export function useWishlistItems(wishlistId: string) {
+    const { apiClient } = useConnection(); const api = createWishlistsApi(apiClient)
+    return useQuery({ queryKey: queryKeys.wishlists.items(wishlistId), queryFn: ({ signal }) => api.listItems(wishlistId, { signal }), enabled: wishlistId !== '' })
+}
+
+export function useAddWishlistAlbum() {
+    const { apiClient } = useConnection(); const api = createWishlistsApi(apiClient); const qc = useQueryClient()
+    return useMutation({ mutationFn: ({ wishlistId, album }: { wishlistId: string; album: WishlistAlbumCreate }) => api.addAlbum(wishlistId, album), onSettled: async (_data, error, variables) => { if (!error || (isApiError(error) && error.status === 409)) await qc.invalidateQueries({ queryKey: queryKeys.wishlists.items(variables.wishlistId) }) } })
+}
+
+export function useRemoveWishlistAlbum() {
+    const { apiClient } = useConnection(); const api = createWishlistsApi(apiClient); const qc = useQueryClient()
+    return useMutation({ mutationFn: ({ wishlistId, wishlistItemId }: { wishlistId: string; wishlistItemId: string }) => api.removeAlbum(wishlistId, wishlistItemId), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.wishlists.items(variables.wishlistId) }) } })
 }
 
 export function useMoveWishlistBookToShelf() {

@@ -203,11 +203,11 @@ checkout/check-in/mark-played, Discogs/MusicBrainz lookup, private artwork get/u
 dashboard album fields, and typed mixed wishlist membership are shipped. Existing book, wishlist-book, and collection
 HTTP shapes stay compatible; album collection membership is not shipped.
 
-The live frontend remains book-only until `FEAT-02` is implemented. Regenerating `src/api/generated/openapi.ts` does
-not activate album UI. Do not export album/artist/genre wrappers, query keys, routes, navigation, proxy paths, artwork
-clients, lookup calls, mixed `/items` lists, or album dashboard widgets except as part of that ticket (or an explicit
-user request). Keep using book-specific wishlist `/books` routes and book-only dashboard fields. Typed fixtures may
-include zero/empty required album dashboard values so schemas type-check; that must not change rendered output.
+`FEAT-02` now activates the album catalog UI: `/albums` browse, add, detail, and edit routes; artist/genre-backed
+metadata entry and release lookup; private artwork management; checkout/check-in, mark-played, soft-delete/restore,
+album loan history, separate dashboard listening statistics, and typed mixed-wishlist API/query support. The Vite
+development proxy includes `/albums`, `/artists`, and `/genres`. Collections remain book-only. Existing book-specific
+wishlist rendering and notes editing remain isolated from album membership operations.
 
 Identifier and loan rules from 1.0.8 remain in force:
 

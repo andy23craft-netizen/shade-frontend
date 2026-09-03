@@ -101,6 +101,7 @@ export function AppShell() {
                             label="Collection"
                             activePrefixes={[
                                 '/books',
+                                '/albums',
                                 '/shelves',
                                 '/collection',
                                 '/wishlists',
@@ -111,6 +112,7 @@ export function AppShell() {
                                     label: 'Browse',
                                     to: '/books',
                                 },
+                                { label: 'Albums', to: '/albums' },
                                 {
                                     label: `Stash (${dashboardData?.stash_count ?? 0})`,
                                     to: '/stash',

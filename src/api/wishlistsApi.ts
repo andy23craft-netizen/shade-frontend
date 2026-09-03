@@ -7,6 +7,9 @@ import type {
     WishlistList,
     WishlistRead,
     WishlistUpdate,
+    WishlistAlbumCreate,
+    WishlistItemList,
+    WishlistItemRead,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -150,6 +153,16 @@ export function createWishlistsApi(
                     path,
                     signalOptions,
                 )
+        },
+        async listItems(wishlistId: string, options: ListWishlistBooksOptions = {}): Promise<WishlistItemList> {
+            const path = withPagination(`/wishlists/${encodeURIComponent(wishlistId)}/items`, options.skip, options.take)
+            return client.getJson<WishlistItemList>(path, withSignal(options.signal))
+        },
+        async addAlbum(wishlistId: string, album: WishlistAlbumCreate, options: ApiCallOptions = {}): Promise<WishlistItemRead> {
+            return client.requestJson<WishlistItemRead>(`/wishlists/${encodeURIComponent(wishlistId)}/albums`, { method: 'POST', body: album, ...withSignal(options.signal) })
+        },
+        async removeAlbum(wishlistId: string, wishlistItemId: string, options: ApiCallOptions = {}): Promise<void> {
+            await client.request(`/wishlists/${encodeURIComponent(wishlistId)}/albums/${encodeURIComponent(wishlistItemId)}`, { method: 'DELETE', ...withSignal(options.signal) })
         },
 
         async addBook(

@@ -179,6 +179,8 @@ export function DashboardPage() {
     }
 
     const dashboard = dashboardQuery.data
+    const listening = dashboard.listening ?? { albums_played: 0, albums_unplayed: 0, average_rating: null }
+    const albumBorrowing = dashboard.album_borrowing ?? { active_loans: 0, lifetime_loans: 0, average_loan_days: null }
 
     const readingCountsMatch =
         dashboard.read === dashboard.reading.books_read &&
@@ -763,6 +765,20 @@ export function DashboardPage() {
                             </p>
                         </div>
                     )}
+                </section>
+
+                <section className="dashboard-paper dashboard-paper--albums" aria-labelledby="dashboard-albums-heading">
+                    <header className="dashboard-paper__heading"><span className="dashboard-paper__index" aria-hidden="true">LP</span><h2 id="dashboard-albums-heading">Listening Room</h2><p>Album collection, circulation, and listening.</p></header>
+                    <dl className="dashboard-metrics">
+                        <div className="dashboard-metric"><dt>Total Albums</dt><dd><AppLink to="/albums">{dashboard.total_albums}</AppLink></dd></div>
+                        <div className="dashboard-metric"><dt>On Loan</dt><dd>{dashboard.albums_checked_out}</dd></div>
+                        <div className="dashboard-metric"><dt>Recently Added</dt><dd>{dashboard.albums_recently_added}</dd></div>
+                        <div className="dashboard-metric"><dt>Played</dt><dd>{listening.albums_played}</dd></div>
+                        <div className="dashboard-metric"><dt>Unplayed</dt><dd>{listening.albums_unplayed}</dd></div>
+                        <div className="dashboard-metric"><dt>Average Rating</dt><dd>{listening.average_rating === null ? 'Not enough album data' : displayAverage(listening.average_rating, ' / 5')}</dd></div>
+                        <div className="dashboard-metric"><dt>Lifetime Album Loans</dt><dd>{albumBorrowing.lifetime_loans}</dd></div>
+                    </dl>
+                    {breakdownsQuery.data ? <div className="album-dashboard-breakdowns"><h3>Formats</h3><dl>{(breakdownsQuery.data.albums_by_media_format ?? []).map(bucket => <div key={bucket.key}><dt>{bucket.key}</dt><dd>{bucket.count}</dd></div>)}</dl><h3>Album shelves</h3><dl>{(breakdownsQuery.data.albums_by_shelf ?? []).map(bucket => <div key={bucket.key}><dt>{bucket.key}</dt><dd>{bucket.count}</dd></div>)}</dl></div> : null}
                 </section>
             </div>
         </section>

@@ -21,6 +21,10 @@ import {
     ShelvesPage,
     StashPage,
     WishlistsPage,
+    AlbumsPage,
+    NewAlbumPage,
+    AlbumDetailsPage,
+    EditAlbumPage,
 } from './lazyRoutePages'
 import { routeMetadata } from './routeMetadata'
 
@@ -56,6 +60,10 @@ export const routeConfig = [
                 },
                 element: <BooksPage />,
             },
+            { path: routeMetadata.albums.path, handle: { title: routeMetadata.albums.title }, element: <AlbumsPage /> },
+            { path: routeMetadata.newAlbum.path, handle: { title: routeMetadata.newAlbum.title }, element: <NewAlbumPage /> },
+            { path: routeMetadata.editAlbum.path, handle: { title: routeMetadata.editAlbum.title }, element: <EditAlbumPage /> },
+            { path: routeMetadata.albumDetails.path, handle: { title: routeMetadata.albumDetails.title }, element: <AlbumDetailsPage /> },
             {
                 path: routeMetadata.stash.path,
                 handle: { title: routeMetadata.stash.title },

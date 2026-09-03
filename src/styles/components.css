@@ -17,6 +17,36 @@
           color var(--duration-normal) ease;
 }
 
+/* Album room: the same Shade house, with record-bin and listening-counter materials. */
+.page--albums, .page--album-detail, .page--album-form { --album-ink: #261b24; --album-wine: #6d263f; --album-cream: #f1e4c7; }
+.album-room__header { border-bottom: 4px solid var(--album-wine); }
+.album-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; padding: 1rem; background: #e4d2ad; border: 1px solid #8e724f; }
+.album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1.5rem; }
+.album-card { background: #33282c; box-shadow: .4rem .5rem 1rem #160f1280; border-bottom: .5rem solid #8e6939; }
+.album-card a { color: var(--album-cream); text-decoration: none; }
+.album-card__copy { padding: 1rem; }
+.album-card h2 { margin: 0; font-size: 1.15rem; }
+.album-card__meta { color: #d0b998; font-size: .85rem; }
+.album-card__stamp { color: #ffb6ad; border: 1px solid currentColor; padding: .15rem .4rem; text-transform: uppercase; font-size: .75rem; }
+.album-artwork { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #19151a; }
+.album-artwork--placeholder { display: grid; place-items: center; color: #d9b36c; font-size: 4rem; background: radial-gradient(circle, #5f5260 0 14%, #161318 15% 26%, #3a3038 27% 29%, #161318 30%); }
+.album-detail__hero { display: grid; grid-template-columns: minmax(15rem, 25rem) 1fr; gap: 2rem; align-items: center; background: #2c2027; color: var(--album-cream); padding: 2rem; }
+.album-detail__artist { font-size: 1.4rem; color: #d9b36c; }
+.album-detail__actions, .album-form__actions, .album-form__lookup-row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: end; }
+.album-detail__columns { display: grid; grid-template-columns: 1fr 1.25fr; gap: 2rem; margin: 2rem 0; }
+.track-list { background: #eee1c4; padding: 1.5rem 2.5rem; }
+.track-list li { padding: .5rem 0; border-bottom: 1px dotted #776650; }
+.track-list li span { display: inline-block; min-width: 2.75rem; color: #76542f; }
+.track-list small { float: right; }
+.album-counter, .album-artwork-manager { margin: 1.5rem 0; padding: 1.5rem; border: 1px solid #745765; background: #e8ddcb; }
+.album-form { display: grid; gap: 1.5rem; max-width: 60rem; }
+.album-form section { padding: 1.5rem; background: #eee1c4; border-left: .5rem solid var(--album-wine); }
+.album-form__choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .4rem; max-height: 12rem; overflow: auto; margin-bottom: .5rem; }
+.dashboard-paper--albums { border-top-color: #6d263f; }
+.album-dashboard-breakdowns dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .5rem; }
+.album-dashboard-breakdowns dl div { display: flex; justify-content: space-between; border-bottom: 1px dotted currentColor; }
+@media (max-width: 700px) { .album-filters, .album-detail__hero, .album-detail__columns { grid-template-columns: 1fr; } }
+
 .button--primary {
   border-color: var(--color-brass);
   background: var(--color-primary);
@@ -9698,4 +9728,21 @@
 .add-to-collection__wishlist-link:focus-visible {
   color: #fff8df;
   text-decoration-color: currentColor;
+}
+
+/* Temporary album typography baseline while the album palette is refined. */
+.page--albums,
+.page--albums *,
+.page--album-detail,
+.page--album-detail *,
+.page--album-form,
+.page--album-form * {
+  color: #000 !important;
+}
+
+.page--albums ::placeholder,
+.page--album-detail ::placeholder,
+.page--album-form ::placeholder {
+  color: #000 !important;
+  opacity: 1;
 }

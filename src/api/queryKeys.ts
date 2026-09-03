@@ -257,6 +257,26 @@ export const queryKeys = {
             ] as const,
     },
 
+    albums: {
+        all: ['albums'] as const,
+        list: (options: Record<string, unknown> = {}) => ['albums', options] as const,
+        detail: (id: string) => ['albums', id] as const,
+        lookup: (value: string, kind: 'barcode' | 'discogs') =>
+            ['albums', 'lookup', kind, value] as const,
+    },
+    albumArtwork: {
+        all: ['album-artwork'] as const,
+        detail: (id: string) => ['album-artwork', id] as const,
+    },
+    artists: {
+        all: ['artists'] as const,
+        list: (inUse = false) => ['artists', { list: true, ...(inUse ? { inUse: true } : {}) }] as const,
+    },
+    genres: {
+        all: ['genres'] as const,
+        list: (inUse = false) => ['genres', { list: true, ...(inUse ? { inUse: true } : {}) }] as const,
+    },
+
     loans: {
         all: ['loans'] as const,
 
@@ -449,6 +469,7 @@ export const queryKeys = {
                 wishlistId,
                 'books',
             ] as const,
+        items: (wishlistId: string) => ['wishlists', wishlistId, 'items'] as const,
     },
 
     collections: {

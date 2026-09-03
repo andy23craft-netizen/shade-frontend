@@ -37,6 +37,9 @@ import {
 import {
     createCollectionsApi,
 } from './collectionsApi'
+import { createAlbumsApi } from './albumsApi'
+import { createArtistsApi } from './artistsApi'
+import { createGenresApi } from './genresApi'
 
 export function createApi(
     options: Parameters<
@@ -58,5 +61,8 @@ export function createApi(
         version: createVersionApi(client),
         wishlists: createWishlistsApi(client),
         collections: createCollectionsApi(client),
+        albums: createAlbumsApi(client),
+        artists: createArtistsApi(client),
+        genres: createGenresApi(client),
     }
 }
