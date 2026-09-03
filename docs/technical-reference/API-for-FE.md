@@ -1,6 +1,6 @@
 # API for Frontend (supplementary)
 
-Backend **1.0.15** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Album catalog CRUD, soft-delete /
+Backend **1.0.16** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Album catalog CRUD, soft-delete /
 restore, artist/genre catalogs, circulation (checkout / check-in / mark-played), Discogs/MusicBrainz lookup, and
 private artwork get/upload/delete/refetch are shipped. Existing book, wishlist, and loan response shapes are
 unchanged aside from additive album fields noted below. Full schemas and authenticated paths live in the regenerated
@@ -86,8 +86,9 @@ Album behavior and frontend integration
   `artwork_present`. Album dashboard summary/breakdown fields and album wishlist membership routes are shipped.
   Albums never appear in GET `/books`. Album UI is needed to use the new resource; the existing book UI needs
   only the shelf/error handling adjustments above. Regenerating client types alone does not implement those
-  behaviors. See [the album contract handoff](FEAT-24-frontend-handoff.md) for compatibility-only adoption of
-  1.0.15 without activating album UI.
+  behaviors. Clients generated from this 1.0.16 contract remain compatible with the existing book UI: ignore
+  album routes, additive album dashboard/loan fields, and album membership until album UI ships. There is no
+  separate handoff document.
 
 Artist/genre catalog behavior
 
@@ -183,11 +184,11 @@ current single-library behavior.
 
 | Status | Meaning beyond the OpenAPI label |
 | --- | --- |
-| **400** | Malformed or empty GUID on book path `{book_id}` (GET / PATCH / DELETE / checkout / check-in / mark-read / cover get/upload/delete); malformed or empty GUID on album path `{album_id}` (catalog / artwork / circulation / restore); malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` / `album_id` query); invalid `media_type`; malformed or empty `wishlist_id` / membership `wishlist_item_id` / membership `book_id` on wishlist routes; malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on collection routes; malformed or empty `shelf_id` on shelf update/delete; empty/whitespace `isbn`, `author`, `title`, `publisher`, `acquisition_source`, or `shelf_name` on `GET /books`; blank album list filters (`artist`, `title`, `barcode`); malformed `book_id`; inverted numeric/date ranges; partial or invalid `skip`/`take` on list endpoints; invalid `sortBy` or `sortOrder` on `GET /books` or `GET /albums`; invalid or blank `field` on `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book/album create/update; placement onto system shelf `removed`; malformed or empty book GUID in a bulk shelf-move request; unknown destination `shelf_name` on bulk shelf move or bulk import; malformed or duplicate `category_id` on `GET /books`; malformed category, author, or genre GUID on catalog CRUD; create/rename/delete of system shelves `unknown` or `removed`, or rename to those names; combining `shelf_name` with a non-`shelved` `placement_state` on `GET /books` (`shelf_name requires shelved placement_state`) |
+| **400** | Malformed or empty GUID on book path `{book_id}` (GET / PATCH / DELETE / checkout / check-in / mark-read / cover get/upload/delete); malformed or empty GUID on album path `{album_id}` (catalog / artwork / circulation / restore); malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` / `album_id` query); invalid `media_type`; malformed or empty `wishlist_id` / membership `wishlist_item_id` / membership `book_id` or `album_id` on wishlist routes; malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on collection routes; malformed or empty `shelf_id` on shelf update/delete; empty/whitespace `isbn`, `author`, `title`, `publisher`, `acquisition_source`, or `shelf_name` on `GET /books`; blank album list filters (`artist`, `title`, `barcode`); malformed `book_id`; inverted numeric/date ranges; partial or invalid `skip`/`take` on list endpoints; invalid `sortBy` or `sortOrder` on `GET /books` or `GET /albums`; invalid or blank `field` on `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book/album create/update; placement onto system shelf `removed`; malformed or empty book GUID in a bulk shelf-move request; unknown destination `shelf_name` on bulk shelf move or bulk import; malformed or duplicate `category_id` on `GET /books`; malformed category or genre GUID on catalog CRUD (author and artist path IDs, including malformed, return **404**); create/rename/delete of system shelves `unknown` or `removed`, or rename to those names; combining `shelf_name` with a non-`shelved` `placement_state` on `GET /books` (`shelf_name requires shelved placement_state`) |
 | **403** | Missing or invalid Bearer token |
-| **404** | Book missing or already deleted on checkout / check-in / mark-read / PATCH / bulk shelf move / cover get/upload/delete / second delete / `GET /books/{book_id}`; no local cover and no usable ISBN cover fallback on `GET /books/{book_id}/cover` (`"Book cover not found"`); album missing or soft-deleted on PATCH / delete / restore / artwork / circulation (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork`; unknown book for `GET /loans?book_id=...`; unknown album for `GET /loans?album_id=...`; unknown loan for `GET /loans/{id}`; unknown wishlist, unknown book when adding a wishlist membership, or unknown wishlist book on remove; unknown collection, unknown book when adding a collection membership, or unknown collection book on reorder/remove; unknown shelf for PATCH / DELETE `/shelves/{shelf_id}`; unknown category, author, artist, or genre on catalog CRUD; unknown `category_id` on book create/update (`Category not found`) |
-| **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); restore when the album is not soft-deleted; artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`; duplicate shelf `common_name` on create/rename; delete shelf while books or albums remain; duplicate category/genre name/slug; delete category while book memberships remain; delete author while book memberships remain (`Author is referenced by one or more books`); delete artist while album/track credits remain; delete genre while album memberships remain; duplicate book or `order_num` in the same collection; duplicate book in the same wishlist; ordinary PATCH or bulk shelf move on a stashed book (`Book is stashed; use the stash apply operation`); bulk stash when a book is already stashed |
-| **412** | Checkout when the book or album has `status=display_only` (`"Book is display only"` / `"Album is display only"`); add a book with any shelf membership, including `unknown`, to a wishlist (`"Existing books cannot be added to a wishlist"`); assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist (`"The book must be removed from the wishlist before it can be placed on a shelf"`); assign `shelf_name` on album create/update when the album is on a wishlist (`"The album must be removed from the wishlist before it can be placed on a shelf"`); mixed media on a shelf or collection (`"A book cannot be placed on an album shelf"`, `"An album cannot be placed on a book shelf"`, `"Books cannot be added to an album collection"`); album soft-delete/restore when the destination system shelf is occupied by the other media type; add a stashed book to a wishlist (`"Stashed books cannot be added to a wishlist"`); bulk apply-stash to system shelf `unknown` |
+| **404** | Book missing or already deleted on checkout / check-in / mark-read / PATCH / bulk shelf move / cover get/upload/delete / second delete / `GET /books/{book_id}`; no local cover and no usable ISBN cover fallback on `GET /books/{book_id}/cover` (`"Book cover not found"`); album missing or soft-deleted on PATCH / delete / restore / artwork / circulation (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork` (`"Album artwork not found"`); unknown book for `GET /loans?book_id=...`; unknown album for `GET /loans?album_id=...`; unknown loan for `GET /loans/{id}`; unknown wishlist; unknown book or album when adding a typed wishlist membership; unknown or wrong-media membership on wishlist remove; unknown collection, unknown book when adding a collection membership, or unknown collection book on reorder/remove; unknown shelf for PATCH / DELETE `/shelves/{shelf_id}`; unknown category, author, artist, or genre on catalog CRUD; unknown `category_id` on book create/update (`Category not found`) |
+| **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); restore when the album is not soft-deleted; artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`; duplicate shelf `common_name` on create/rename; delete shelf while books or albums remain; duplicate category/genre name/slug; delete category while book memberships remain; delete author while book memberships remain (`Author is referenced by one or more books`); delete artist while album/track credits remain; delete genre while album memberships remain; duplicate book or `order_num` in the same collection; duplicate book or album in the same wishlist; ordinary PATCH or bulk shelf move on a stashed book (`Book is stashed; use the stash apply operation`); bulk stash when a book is already stashed |
+| **412** | Checkout when the book or album has `status=display_only` (`"Book is display only"` / `"Album is display only"`); add a book with any shelf membership, including `unknown`, to a wishlist (`"Existing books cannot be added to a wishlist"`); assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist (`"The book must be removed from the wishlist before it can be placed on a shelf"`); assign `shelf_name` on album create/update when the album is on a wishlist (`"The album must be removed from the wishlist before it can be placed on a shelf"`); mixed media on a shelf or collection (`"A book cannot be placed on an album shelf"`, `"An album cannot be placed on a book shelf"`, `"Books cannot be added to an album collection"`); album soft-delete/restore when the destination system shelf is occupied by the other media type; add a stashed book to a wishlist (`"Stashed books cannot be added to a wishlist"`); add a shelved album to a wishlist (`"Existing albums cannot be added to a wishlist"`); add a soft-deleted album to a wishlist (`"Soft-deleted albums cannot be added to a wishlist"`); bulk apply-stash to system shelf `unknown` |
 | **422** | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read or mark-played body; unsupported wishlist membership status; blank `shelf_name` on book create; JSON null `shelf_name` or `category_ids` on book update (omit those fields instead); null or blank shelf `common_name` on shelf create/update; empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; blank collection name on create/update; non-positive `order_num` on collection add/reorder; invalid/blank category/genre name or slug; invalid/blank author or artist surname or overlong name fields; empty/duplicate `author_ids` on book create/update, or null `author_ids` on update; empty/duplicate `artist_ids` on album create/update when supplied; empty items, duplicate `client_item_id`, or more than 50 items on bulk lookup/import; per-item book payload supplying `author_ids`, `shelf_name`, or `acquisition_source` on bulk import (use request-level `shelf_name` / `acquisition_source` and per-item `authors` instead); unknown `author_ids` on book create/update (422 object detail with message `One or more authors do not exist` and `author_ids` listing missing GUIDs); cover or album-artwork upload rejected (unsupported type, empty file, over 10 MB, or bytes/type mismatch); album lookup without exactly one of `barcode` / `discogs_release_id`; wishlist membership PATCH with omitted `notes` or `{}` (send `notes` explicitly) |
 | **500** | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
 | **502** | Metadata provider transport/5xx failure on `GET /books/lookup` or `GET /albums/lookup` (bulk book lookup uses per-item `provider_failure` with HTTP 200 instead); album artwork refetch provider failure |
@@ -485,7 +486,7 @@ GET /shelves:
 
     returns an unpaginated JSON array of ShelfRead objects (fields in OpenAPI), not { "items", "total" }
 
-    includes system shelf unknown
+    includes system shelves unknown and removed (exclude removed from every placement picker)
 
     orders by common_name ascending, then shelf_id ascending
 
@@ -838,7 +839,8 @@ album must exist, be unshelved, and not be soft-deleted. Shelved albums (includi
 `Existing albums cannot be added to a wishlist`; soft-deleted albums return 412
 `Soft-deleted albums cannot be added to a wishlist`. A duplicate in that wishlist returns 409
 `Album is already in this wishlist`. DELETE /wishlists/{wishlist_id}/albums/{wishlist_item_id} removes only an album
-membership and never deletes the catalog album. Book-only GET/PATCH/DELETE paths continue to ignore album rows.
+membership and never deletes the catalog album. There is no PATCH for album membership notes; book-only GET/PATCH/DELETE
+paths continue to ignore album rows.
 
 For path wishlist_id, membership wishlist_item_id, and membership book_id/album_id on add: 400 when empty or not a
 valid GUID; 404 when the GUID is well-formed but unknown. Wrong-media and cross-wishlist membership paths return 404.
@@ -932,7 +934,7 @@ Cover upload/delete UI (PUT/DELETE multipart file; do not PATCH cover_image_path
 Album artwork display via authenticated GET /albums/{album_id}/artwork (when album UI ships)	Frontend
 Album artwork upload/delete/refetch UI (when album UI ships)	Frontend
 Artist/genre picker and resolution UI for album forms (when album UI ships)	Frontend
-Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist	Frontend
+Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist; mixed items via GET .../items	Frontend
 Collection list/create/add/reorder UI	Frontend
 Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence	API
 Canonical project version (ci/VERSION via GET /version)	API
@@ -947,7 +949,7 @@ Album metadata lookup (Discogs/MusicBrainz) and Cover Art Archive artwork refetc
 Cover storage under COVER_DIR, cover_image_path, and server-side Open Library ISBN cover fallback	API
 Album artwork storage under ALBUM_ARTWORK_DIR and artwork_present on AlbumRead	API
 Wishlist/shelf mutual exclusion (412 when both would apply)	API
-Collections CRUD and ordered book membership (/collections)	API
+Collections CRUD and ordered book membership (/collections); album collection HTTP is not shipped	API
 Borrowing and dashboard statistics (explicit book and album fields)	API
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/catalog item) → POST .../checkout or
@@ -993,6 +995,8 @@ Recommended wishlist add: POST /books without shelf_name → POST /wishlists/{wi
 "Existing books cannot be added to a wishlist". Join membership book_id to GET /books/{book_id} for title/authors
 (unshelved books are omitted from GET /books items and total). Remove one membership with
 DELETE /wishlists/{wishlist_id}/books/{wishlist_item_id}; delete the whole wishlist to clear all memberships at once.
+Album add is the same pattern with POST /albums (omit shelf_name) then POST /wishlists/{wishlist_id}/albums
+{ "album_id" }, and DELETE .../albums/{wishlist_item_id}. Mixed lists use GET .../items.
 
 Recommended collection add: POST /collections/{collection_id}/books with { "book_id" } (optional order_num and
 notes). Shelved and wishlisted books may be added without 412. List memberships for shelf_name and
