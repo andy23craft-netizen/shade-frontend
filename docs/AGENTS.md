@@ -217,7 +217,7 @@ content until that product work is scheduled. Existing Dashboard and Home widget
 and existing wishlists continue to use their `/books` routes. Typed fixtures include zero/empty album dashboard values
 solely to match the complete response schemas. Backend 1.0.12 still requires the separately coordinated retained-data
 migration for its `album_artwork` storage; this cannot be addressed in the frontend. The consolidated pre-implementation
-handoff is `docs/tickets/album-mvp-frontend-handoff.md`.
+handoff is `docs/tickets/FEAT-02_album-support.md`.
 
 ### Book identifiers (`id` vs `book_id`)
 

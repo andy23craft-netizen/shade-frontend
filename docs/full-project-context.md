@@ -11,8 +11,8 @@ contract only when the task needs them.
 A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
 ticket or the checked-in API contract. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build
 ticket -- treat it as notes unless the user asks to implement items from it. When no ticket is supplied, check
-`docs/tickets/` for open sequenced work (currently `FEAT-PWA.md`) or ask which work to take next rather than inventing
-a follow-on feature.
+`docs/tickets/` for open sequenced work (`FEAT-01_long-titles.md`, `FEAT-02_album-support.md`) or ask which work to take
+next rather than inventing a follow-on feature.
 
 **Context pack version:** 2026-08-28
 
@@ -1076,8 +1076,9 @@ DELETE /books/{id}/cover
 Checked-in OpenAPI (`info.version` `0.2.15`) and generated types match. `contractSmoke.test.ts` includes author routes,
 bulk-move/bulk-lookup/bulk-import paths, and `/books/{id}/cover`.
 
-Treat an open sequenced ticket under `docs/tickets/` (currently `FEAT-PWA.md`), explicit user direction, or a green
-`make check` as the current open-work signal. Re-run `make check` before claiming a new change is release-ready.
+Treat an open sequenced ticket under `docs/tickets/` (`FEAT-01_long-titles.md`, `FEAT-02_album-support.md`), explicit
+user direction, or a green `make check` as the current open-work signal. Re-run `make check` before claiming a new
+change is release-ready.
 
 ---
 
@@ -1200,8 +1201,8 @@ Do not invent the next product feature merely because the API already supports i
 
 Sequenced feature tickets live under `docs/tickets/` while open and are removed after completion. Informal UI feedback
 such as `ui-nits.md` may also live there; it is not a sequenced build ticket unless the user asks to implement items
-from it. Open sequenced work currently includes `FEAT-PWA.md`. Prefer the supplied ticket, an explicit user request, or
-product docs when choosing further work.
+from it. Open sequenced work currently includes `FEAT-01_long-titles.md` and `FEAT-02_album-support.md`. Prefer the
+supplied ticket, an explicit user request, or product docs when choosing further work.
 
 Current product capabilities are described in the sections above, including:
 
@@ -1221,7 +1222,8 @@ cover routes.
 ## Remaining planned V1 work
 
 ```text
-docs/tickets/FEAT-PWA.md -- Progressive Web App installation and mobile quick actions (open sequenced ticket)
+docs/tickets/FEAT-01_long-titles.md -- long unbroken titles in New Additions (open sequenced ticket)
+docs/tickets/FEAT-02_album-support.md -- album MVP frontend handoff (open sequenced ticket)
 docs/tickets/ui-nits.md -- informal UI feedback (not a sequenced build ticket unless explicitly requested)
 ```
 ---
