@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-08-28 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-03 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -89,7 +89,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `POST /wishlists/{id}/books`, and move-to-shelf via `MoveWishlistBookToShelfControl` /
   `useMoveWishlistBookToShelf` (membership `DELETE` then `PATCH { shelf_name }`). Shelf/wishlist exclusivity is
   enforced with documented **412** responses. Membership contextual descriptions are editable through
-  `PATCH /wishlists/{id}/books/{membership_id}` with `WishlistBookUpdate.notes`; `null` clears notes.
+  `PATCH /wishlists/{id}/books/{wishlist_item_id}` with `WishlistBookUpdate.notes`; `null` clears notes.
 - Curated Collections on `/collections` (`collectionsApi` / `useCollections` / `useCollectionBooks` / write
   mutations): Collection-drawer link, create/edit/delete collections (`useUpdateCollection` for name/description;
   blank description clears via explicit JSON `null`), add shelved catalog books via `GET /books` search then
@@ -125,7 +125,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `make check`) and main-entry gzip budget enforcement via `scripts/checkBundleSize.mjs` (`yarn bundle:check` /
   `make bundle-check`, included in `make check`). The default workflow does not retain `dist/`, coverage, Playwright
   reports, or secrets as artifacts. Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in
-  `README.md` and `docs/MAINTAINERS.md`.
+  `README.md`.
 - Deployed-development container: `ci/Containerfile` (runtime-only `nginx:1.31-alpine`, HTTP 8080, copies host-built
   `dist/`, no Node/Yarn/Vite stage, no `.env` COPY), `ci/nginx.conf` (SPA `try_files`, no-cache `index.html` /
   `config.js`, long-lived hashed `/assets/`), `ci/container-entrypoint.sh` (start-time `config.js` from
@@ -139,16 +139,18 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   opt-in (not default CI upload). Production is the tarball plus the deployment repository, not another Podman image.
   HTTPS/CSP, atomic install, supervision, and rollback remain host-owned (`README.md`).
 
-Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, or cover
-upload/delete with generic `PATCH`. Sequenced feature tickets live under `docs/tickets/` while open and are removed
-after completion. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build ticket -- treat it as
-notes unless the user asks to implement items from it. When no sequenced feature ticket remains (directory holds only
-`.gitkeep` and/or informal notes), wait for an explicit request rather than inventing the next feature. Do not invent
-undocumented routes, realtime channels, or lifecycle shortcuts. Never invent a second telemetry transport or fabricate
-correlation IDs.
+Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, mark-played, cover
+upload/delete, or album artwork upload/delete/refetch with generic `PATCH`. Sequenced feature tickets live under
+`docs/tickets/` while open and are removed after completion. Open sequenced work currently includes
+`docs/tickets/FEAT-01_long-titles.md` and `docs/tickets/FEAT-02_album-support.md`. Informal UI feedback such as
+`docs/tickets/ui-nits.md` is not a sequenced build ticket -- treat it as notes unless the user asks to implement items
+from it. When no sequenced feature ticket remains (directory holds only `.gitkeep` and/or informal notes), wait for an
+explicit request rather than inventing the next feature. Do not invent undocumented routes, realtime channels, or
+lifecycle shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current sequenced ticket (when one
-exists), then the product requirements docs when deciding what to build next.
+exists), then the product requirements docs when deciding what to build next. Album UI is `FEAT-02`; do not start it
+from the shipped album contract alone.
 
 ## Technology
 
@@ -181,43 +183,57 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.0.15`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.0.16`). Prefer generating or fixture-checking TypeScript models
   from this file.
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, error
-  meanings, lifecycle rules, ISBN quirks, book covers **200** image bytes / multipart semantics, SQL backup dump
-  handling, FE vs API ownership). Prefer this document (and live router/`detail` strings) when OpenAPI is incomplete
-  for a shared status code, or when a schema shows `null` as allowed but validators reject it at runtime.
+  meanings, lifecycle rules, ISBN quirks, album lookup/artwork/circulation, mixed wishlists, book covers **200** image
+  bytes / multipart semantics, SQL backup dump handling, FE vs API ownership). Prefer this document (and live
+  router/`detail` strings) when OpenAPI is incomplete for a shared status code, or when a schema shows `null` as
+  allowed but validators reject it at runtime.
 
 Compare with a running backend `/openapi.json` before locking transport types; record drift as a blocker rather than
-inventing frontend semantics. Do not invent backend behavior from product docs alone.
+inventing frontend semantics. Do not invent backend behavior from product docs alone. There is no separate backend
+handoff: OpenAPI plus `API-for-FE.md` are the contract; `docs/tickets/FEAT-02_album-support.md` is the frontend album
+implementation ticket.
 
-### Backend 1.0.8 compatibility update (2026-09-03)
+### Backend 1.0.16 contract (2026-09-03)
 
-The checked-in contract and generated types match backend 1.0.8 from the adjacent backend checkout. The frontend
-continues to expose book workflows only; album management, album circulation, and mixed wishlists have no UI.
+The checked-in contract matches backend **1.0.16**. Album catalog CRUD, soft-delete/restore, artist/genre catalogs,
+checkout/check-in/mark-played, Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch, additive
+dashboard album fields, and typed mixed wishlist membership are shipped. Existing book, wishlist-book, and collection
+HTTP shapes stay compatible; album collection membership is not shipped.
 
-- All book responses use `book_id`; exact-ID list requests use `book_id`, with `bookId` included in list query keys.
+The live frontend remains book-only until `FEAT-02` is implemented. Regenerating `src/api/generated/openapi.ts` does
+not activate album UI. Do not export album/artist/genre wrappers, query keys, routes, navigation, proxy paths, artwork
+clients, lookup calls, mixed `/items` lists, or album dashboard widgets except as part of that ticket (or an explicit
+user request). Keep using book-specific wishlist `/books` routes and book-only dashboard fields. Typed fixtures may
+include zero/empty required album dashboard values so schemas type-check; that must not change rendered output.
+
+Identifier and loan rules from 1.0.8 remain in force:
+
+- All book responses use `book_id` (no `id` alias); exact-ID list requests use `book_id`, with `bookId` in list query
+  keys.
 - Wishlist memberships use `wishlist_item_id` for notes/removal/moves. Their `book_id` and `album_id` fields are
   nullable; book rows have non-null `book_id` and null `album_id`. Book controls guard these references.
-- Loans retain their own `id`. Both catalog references are required nullable fields. The global Loans page requests
+- Loans retain their own `id`. Exactly one of `book_id` / `album_id` is non-null. The global Loans page requests
   `media_type=book`; per-book history uses `book_id`. Loan wrappers/hooks/cache keys support `bookId`, `albumId`, and
-  `mediaType`, preserving filters across pagination. Album IDs are never used for book links or check-in actions.
-- Duplicate wishlist adds (409) refresh membership queries without optimistic duplicates. A destination conflict
-  preserves the source membership and notes; partial move recovery still uses the existing retry flags.
-- React Query state is memory-only, so a hard reload fetches the new response shapes without a persistence migration.
-- Release with backend 1.0.8 and its separately rehearsed database migration. The local backend was unavailable during
-  this update; contract, unit, and mocked browser checks do not certify a live migration.
+  `mediaType`. Never substitute `album_id` into book detail or check-in URLs.
+- Duplicate wishlist adds (**409**) refresh membership queries without optimistic duplicates. A destination conflict
+  preserves the source membership and notes.
+- React Query state is memory-only, so a hard reload fetches current response shapes without a persistence migration.
 
-### Backend 1.0.12–1.0.15 additive compatibility (2026-09-03)
+Book-only UI still needs the shared shelf/error adjustments: exclude `removed` from every placement picker; surface
+mixed-media **412** detail (`A book cannot be placed on an album shelf`, `Books cannot be added to an album
+collection`) without inventing a shelf `media_type` field. Shelf delete **409** applies when books or albums remain.
 
-The contract includes album lookup/artwork, album dashboard values, and typed mixed-wishlist endpoints introduced in
-backend 1.0.12 through 1.0.15. These additions remain dormant in the book-focused frontend: do not export album API
-types, add album wrappers/query keys/routes/navigation, proxy album endpoints, or render album dashboard or wishlist
-content until that product work is scheduled. Existing Dashboard and Home widgets continue to read book-only fields,
-and existing wishlists continue to use their `/books` routes. Typed fixtures include zero/empty album dashboard values
-solely to match the complete response schemas. Backend 1.0.12 still requires the separately coordinated retained-data
-migration for its `album_artwork` storage; this cannot be addressed in the frontend. The consolidated pre-implementation
-handoff is `docs/technical-reference/ALBUM-MVP-frontend-handoff.md`.
+Deploy frontend album UI with matching backend 1.0.16 and the separately rehearsed retained-data migration (including
+`album_artwork`). The frontend cannot compensate for an older database schema.
+
+When implementing `FEAT-02`, treat that ticket plus OpenAPI and `API-for-FE.md` as the work plan: add `/albums`,
+`/artists`, and `/genres` to the optional Vite proxy when the browser first needs them; lookup then resolve
+artists/genres then create; serve artwork only through authenticated album artwork routes; keep typed identifiers
+distinct; use `GET /wishlists/{wishlist_id}/items` for mixed lists (book notes stay on the book membership PATCH);
+keep collections book-only; add album dashboard widgets as separate album statistics.
 
 ### Book identifiers (`id` vs `book_id`)
 
@@ -231,7 +247,7 @@ handoff is `docs/technical-reference/ALBUM-MVP-frontend-handoff.md`.
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
 
-### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.0.15`)
+### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.0.16`)
 
 Authors are backend data, not free-form book text. Books no longer store a string `authors` field on create/update.
 
@@ -256,7 +272,7 @@ SPA surface: `authorsApi` / `authorsQueries`, `authorDisplay.formatBookAuthors`,
 inline `useCreateAuthor` on ISBN lookup apply and wishlist add, and list/detail/join display. Do not send free-form
 author strings on `BookCreate` / `BookUpdate`.
 
-### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.0.15`)
+### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.0.16`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
@@ -289,8 +305,9 @@ Documented filter families (see OpenAPI + `API-for-FE.md` for exact params and s
 
 - Text (case-insensitive substring except `isbn`): `isbn` (literal substring on stored `isbn13`), `author`, `title`,
   `publisher`, `acquisition_source`. Blank/whitespace text filters → **400**.
-- Exact/state: `id` (Book GUID; malformed → **400**; well-formed miss → empty list), `shelf_name` (trimmed/lowercased
-  membership; unknown valid name → empty list), `is_read`, `status`, repeated `category_id` (above).
+- Exact/state: `book_id` (Book GUID; malformed → **400**; well-formed miss → empty list), `shelf_name`
+  (trimmed/lowercased membership; unknown valid name → empty list), `is_read`, `status`, repeated `category_id`
+  (above).
 - Inclusive numeric ranges (either bound alone; inverted range → **400**): `pages_*`, `rating_*`,
   `purchase_price_*`, `publication_year_*`.
 - Inclusive `YYYY-MM-DD` date ranges (either bound alone; invalid syntax → **422**; inverted → **400**):
@@ -329,7 +346,8 @@ Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{book_id}/cover`. Beh
 - Browser `<img src>` cannot send `Authorization`. Use authenticated `fetch` to `GET /books/{book_id}/cover`: **200** →
   `response.blob()` + object URL (revoke on cleanup); **404** → intentional placeholder. Do not invent URLs from
   `cover_image_path`. Do not call Open Library from the SPA.
-- Non-JSON binary responses today: `GET /backup` (SQL attachment) and `GET /books/{book_id}/cover` (image bytes).
+- Non-JSON binary responses today: `GET /backup` (SQL attachment), `GET /books/{book_id}/cover` (image bytes), and
+  `GET /albums/{album_id}/artwork` (image bytes; no SPA caller until `FEAT-02`).
 
 SPA surface: `booksApi` cover helpers, React Query hooks, shared `BookCover`, `BookCoverManager` on Book Details, and
 cover display on Books / Home / Collections. Extend those surfaces; do not invent a second cover client.
@@ -383,6 +401,12 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 | Bulk ISBN lookup   | `POST /books/bulk/lookup` (API only; no SPA)    |
 | Bulk import        | `POST /books/bulk/import` (API only; no SPA)    |
 | Backup (ops)       | `GET /backup` (API host / cron; no SPA caller) |
+| Album catalog      | `/albums` CRUD + restore (no SPA until `FEAT-02`) |
+| Album circulation  | album checkout / check-in / mark-played (no SPA until `FEAT-02`) |
+| Album lookup       | `GET /albums/lookup` (no SPA until `FEAT-02`) |
+| Album artwork      | album artwork GET/PUT/DELETE/refetch (no SPA until `FEAT-02`) |
+| Artists / genres   | `/artists`, `/genres` CRUD (no SPA until `FEAT-02`) |
+| Mixed wishlist     | `GET .../items` and album membership routes (no SPA until `FEAT-02`) |
 
 Bulk shelf move is atomic: validate destination and every selected book before changing any membership. Do **not**
 implement bulk movement by looping individual `PATCH /books/{book_id}` requests. Destination follows ordinary `shelf_name`
@@ -410,7 +434,10 @@ wishlist membership). Do **not** set covers through create/update JSON (`cover_i
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Render unknown enum values safely (see `enumDisplayValue`).
 - Display API-provided dashboard statistics; do not recalculate business metrics. If an average is `null`, show
-  something like "Not enough data" -- do not invent zero.
+  something like "Not enough data" -- do not invent zero. Do not combine book and album dashboard totals; ignore
+  additive album keys until `FEAT-02` widgets exist.
+- Surface mixed-media **412** detail on shelf or collection writes (`A book cannot be placed on an album shelf`,
+  `Books cannot be added to an album collection`) and preserve form input. Shelves have no client `media_type` field.
 
 ### Scope
 
@@ -426,14 +453,15 @@ artifacts, wishlists, wishlist move-to-shelf, curated Collections (create/edit/d
 `shelf_name` / `is_read` / cleanup deep links, cover images across book surfaces, and the regression / deployment
 quality gate (`make check`).
 
-**Out of scope unless explicitly requested:** UPC, true multi-library tenancy, overdue notifications,
-Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, Build Mode bulk lookup/import UI
-(`POST /books/bulk/lookup`, `POST /books/bulk/import`), frontend author/category catalog admin pages, and remote
-Ansible/systemd/TLS/rollback orchestration. Categories are many-to-many via `GET /categories` and `category_ids`;
-authors are many-to-many via `GET /authors` and `author_ids` -- do not hard-code taxonomy or invent a second filter
-stack. Broader catalog filters beyond the current Books controls stay out unless a product need explicitly requires
-them. Collection browse (`BooksPage`) and loan history (`LoansPage`) use infinite scroll with backend pagination; other
-callers still fetch unpaginated full lists when needed.
+**Out of scope unless explicitly requested:** album catalog/circulation/artwork/mixed-wishlist UI except as
+`FEAT-02`, UPC, true multi-library tenancy, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime
+sync, loan CRUD, mark-unread, Build Mode bulk lookup/import UI (`POST /books/bulk/lookup`, `POST /books/bulk/import`),
+frontend author/category/artist/genre catalog admin pages, and remote Ansible/systemd/TLS/rollback orchestration.
+Categories are many-to-many via `GET /categories` and `category_ids`; authors are many-to-many via `GET /authors` and
+`author_ids` -- do not hard-code taxonomy or invent a second filter stack. Broader catalog filters beyond the current
+Books controls stay out unless a product need explicitly requires them. Collection browse (`BooksPage`) and loan
+history (`LoansPage`) use infinite scroll with backend pagination; other callers still fetch unpaginated full lists
+when needed.
 
 Do not expand a ticket into out-of-scope features. Do not invent the next product feature merely because the API
 supports it.
@@ -591,11 +619,13 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `CollectionList`, `CollectionBookCreate` / `CollectionBookRead` / `CollectionBookList` / `CollectionBookUpdate`,
   validation/error schemas, `Status`). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
   Catalog identity is `BookRead.book_id` (UUID); loans / wishlist / collection memberships reference that UUID as `book_id`.
-  Book category memberships are `BookRead.categories` (`BookCategoryRead[]`); create/update use `category_ids` (GUID
-  array). Book author memberships are `BookRead.authors` (`BookAuthorRead[]`); create/update use `author_ids` (ordered
-  GUID array). There is no singular `Category` enum alias. `BookRead.cover_image_path` is an optional read-only
-  filename (not a browser URL); covers are mutated only via `PUT` / `DELETE /books/{book_id}/cover` (helpers in `booksApi`
-  / cover queries).
+  Wishlist and loan reads also expose nullable `album_id`; do not export album/artist/genre schema aliases from
+  `apiTypes.ts` until `FEAT-02` consumes them. Dashboard summary/breakdown types include required album fields; fixtures
+  may zero them. Book category memberships are `BookRead.categories` (`BookCategoryRead[]`); create/update use
+  `category_ids` (GUID array). Book author memberships are `BookRead.authors` (`BookAuthorRead[]`); create/update use
+  `author_ids` (ordered GUID array). There is no singular `Category` enum alias. `BookRead.cover_image_path` is an
+  optional read-only filename (not a browser URL); covers are mutated only via `PUT` / `DELETE /books/{book_id}/cover`
+  (helpers in `booksApi` / cover queries).
 - `src/api/guid.ts` / `bookIdentity.ts`: GUID check for book path/query ids; `isBookIdentityError` /
   `isMalformedBookId` map API **400** / **404** for malformed or unknown book identity.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
@@ -622,8 +652,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/queryKeys.ts`: Shared React Query keys for books (`all`,
   `list({ includeDeleted, isbn?, author?, title?, categoryIds?, shelfName?, isRead?, skip?, take?, sortBy?,
   sortOrder? })`, `infiniteList({ includeDeleted, isbn?, author?, title?, categoryIds?, shelfName?, isRead?, sortBy?,
-  sortOrder?, take })`, `detail(id)`, `lookup(isbn)`), loans (`all`, `list(bookId?)`,
-  `infiniteList({ bookId?, take })`, `detail(id)`), dashboard (`all`, `breakdowns()`, `incompleteMetadata()`,
+  sortOrder?, take })`, `detail(id)`, `lookup(isbn)`), loans (`all`, `list(bookId?, { albumId?, mediaType? })`,
+  `infiniteList({ bookId?, albumId?, mediaType?, take })`, `detail(id)`), dashboard (`all`, `breakdowns()`,
+  `incompleteMetadata()`,
   `incompleteMetadataBooks({ field?, skip?, take? })`), version, shelves (`all`, `list()` unpaginated), categories
   (`all`, `list()` unpaginated), and authors (`all`, `list()` unpaginated `{ items, total }` envelope). Blank/whitespace
   `isbn` / `author` / `title` / `shelfName` / category IDs / incomplete-metadata `field` are omitted from keys (trimmed
@@ -648,8 +679,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `category` query/body fields or free-form author strings on book payloads. Do not implement bulk move as per-book
   `PATCH` loops. Do not invent cover URLs from `cover_image_path`. Bulk lookup/import routes exist in OpenAPI but have
   no SPA callers yet.
-- `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=...`, optional `skip`/`take` together;
-  omit empty/`undefined` `bookId` and omitted pagination params), `get(id)` (`GET /loans/{id}`).
+- `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=`, `albumId` → `?album_id=`,
+  `mediaType` → `?media_type=book|album`, optional `skip`/`take` together). The Loans page passes `mediaType: 'book'`.
+  `get(id)` is `GET /loans/{id}`.
 - `src/api/shelvesApi.ts`: `list()` (`GET /shelves`) returns a plain `ShelfRead[]` array (no pagination params);
   `create` (`POST` → **201**), `update` (`PATCH` → **200**), and `remove` (`DELETE` → **204**) serialize only
   documented `ShelfCreate` / `ShelfUpdate` fields.
@@ -673,9 +705,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   on checkout/check-in. Bulk move invalidates books / shelves / dashboard caches. Cover upload/remove invalidate
   `queryKeys.bookCovers.detail(id)` (and book detail after upload). `useDeleteBook` also invalidates
   `queryKeys.collections.all` (server removes collection memberships on hard delete).
-- `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId, enabled }`),
-  `useInfiniteLoans` (optional `{ bookId, enabled }`; batch size 30 via shared config), `useLoan(id)` (disabled when
-  falsy), `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
+- `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId, albumId,
+  mediaType, enabled }`), `useInfiniteLoans` (optional `{ bookId, albumId, mediaType, enabled }`; batch size 30),
+  `useLoan(id)` (disabled when falsy), `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
   `useInfiniteIncompleteMetadataBooks({ field?, enabled? })` (batch size 30 via shared config), `useShelves({ enabled?
   })`, plus `useCreateShelf` / `useUpdateShelf` / `useDeleteShelf` that invalidate `queryKeys.shelves.all` (and
   books/dashboard when a rename includes `common_name`).
@@ -901,7 +933,8 @@ Implemented:
   `CheckinForm.test.tsx`. `CheckinPage` is gone.
 - `src/features/loans/loansListModel.ts`: re-exports shared infinite-scroll constants and loan page flattening helper
 - `src/features/loans/routes/LoansPage.tsx` (`/loans`, infinite scroll + check-in + collection ISBN jump):
-  `useInfiniteLoans()` plus unpaginated `useBooks()` joins; `useCollectionIsbnJump` for hardware wedge jump; active vs
+  `useInfiniteLoans({ mediaType: 'book' })` plus unpaginated `useBooks()` joins; `useCollectionIsbnJump` for hardware
+  wedge jump; active vs
   returned sections from `returned_at`; due/overdue labels via `loanTemporal`; durable `Book {id}` fallback when the
   book is missing; empty / loading / retryable error states; bottom next-page loading and retry affordances. Eligible
   Active Loans rows offer Check In (`?bookId=`), which mounts `CheckinForm`; returned / missing / ineligible rows do
@@ -1325,7 +1358,8 @@ make check / yarn check
   files), global test setup, V8 coverage thresholds, `__APP_VERSION__` from `package.json`, and an optional
   same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
   `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, `/wishlists`, and `/collections`
-  (not `/shelves`, `/version`, or `/categories`).
+  (not `/shelves`, `/version`, `/categories`, `/albums`, `/artists`, or `/genres`). Add `/albums`, `/artists`, and
+  `/genres` only when `FEAT-02` first needs those endpoints in the browser.
 - `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`,
   `node_modules/`, and `ci/artifacts/` and treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.
@@ -1403,26 +1437,27 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Informal UI
-  feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket unless the user asks to
-  implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask which work to take next
-  rather than inventing a follow-on feature.
+- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
+  sequenced work: `FEAT-01_long-titles.md`, `FEAT-02_album-support.md` (album MVP frontend implementation against
+  backend 1.0.16). Informal UI feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket
+  unless the user asks to implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask
+  which work to take next rather than inventing a follow-on feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
+- `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with `FEAT-02`.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
-  `info.version` `0.2.15` -- see Backend Contract), including `GET /authors`, book `authors` / `author_ids`,
-  `GET /categories`, book `categories` / `category_ids`, expanded `GET /books` filter query params,
-  `POST /books/bulk/move-to-shelf`, `POST /books/bulk/lookup`, `POST /books/bulk/import`, book `cover_image_path`, and
-  `GET` / `PUT` / `DELETE /books/{book_id}/cover`.
+  `info.version` `1.0.16` -- see Backend Contract), including book `book_id` / covers / filters / bulk routes,
+  loans with nullable `book_id`/`album_id` and `media_type`, wishlist `wishlist_item_id` plus mixed `/items` and album
+  membership routes, album catalog/lookup/artwork/circulation, `/artists`, `/genres`, and additive album dashboard
+  fields.
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json` (including
-  normalized author/category catalog rules, atomic bulk shelf-move rules, Build Mode bulk lookup/import semantics,
-  wishlist **412** semantics, collection membership `shelf_name` null for unshelved rows, and Book covers
-  display/upload guidance for authenticated **200** image bytes / multipart `file`).
+  normalized author/category/artist/genre catalog rules, album lookup/artwork/circulation, mixed wishlists, atomic bulk
+  shelf-move rules, Build Mode bulk lookup/import semantics, wishlist **412** semantics, mixed-media shelf/collection
+  **412**, collection membership `shelf_name` null for unshelved rows, and Book covers display/upload guidance for
+  authenticated **200** image bytes / multipart `file`).
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
-- `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
-  this baseline). Includes production-host security ownership and tarball handoff notes.
 - `docs/full-project-context.md`: Optional slim always-on pack for chats without repo access (not required when
-  this file is already loaded; may lag this baseline).
+  this file is already loaded).
 
 ## Development Commands
 
@@ -1512,7 +1547,8 @@ make build
   There is no browser backup page (`/admin/backup`,
   `BackupLibraryPage`, or `backupApi`); never inspect, log, cache, or upload SQL dump contents. Leave dashboard under
   `DashboardPage` / `useDashboard` / `useDashboardBreakdowns` / `useDashboardIncompleteMetadata` (display API stats
-  only; null averages as "Not enough data"; do not recalculate from `GET /books`; deep-link into Books filters /
+  only; null averages as "Not enough data"; do not recalculate from `GET /books`; do not combine book and album
+  dashboard fields; deep-link into Books filters /
   cleanup mode; incomplete-metadata infinite list stays on Books via `useInfiniteIncompleteMetadataBooks`). Leave
   reading flows under `MarkReadPage` /
   `markReadModel` / `ReadingEditPage` / `readingEditModel`. Leave scanner code under `src/features/scanning/`: camera
@@ -1546,8 +1582,10 @@ make build
   Make `publish` / `ci/build-prod.sh`, gitignored `ci/artifacts/`, and the production-like host inspection tests; do
   not upload secret-bearing archives from default CI or treat the Compose image as production. Do not invent FE-only
   cover providers. Never
-  simulate checkout, check-in, initial mark-read, or cover upload/delete with generic `PATCH`. Never
-  implement bulk shelf moves as per-book `PATCH` loops.
+  simulate checkout, check-in, initial mark-read, mark-played, cover upload/delete, or album artwork
+  upload/delete/refetch with generic `PATCH`. Never
+  implement bulk shelf moves as per-book `PATCH` loops. Do not start album UI except under `FEAT-02` or an explicit
+  request.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a product need explicitly requires it.
 - Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after

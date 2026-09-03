@@ -85,7 +85,6 @@ application artifact remain available for rollback.
 
 Required validation includes SQLite integrity and foreign-key checks, migration/schema version, table and relationship
 invariants, row-count reconciliation, representative API reads, restart/idempotency, injected failure, and rollback.
-The complete strategy and alternatives live in `docs/migration_plans.md`.
 
 The final cutover absorbs album and tenant schema changes. Neither PLAN-01 nor PLAN-02 may treat recreation of the only
 live database as migration.
