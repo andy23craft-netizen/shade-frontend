@@ -121,7 +121,7 @@ a verified rollback copy. New tenant databases receive schema and system locatio
 
 Every V2 schema migration applies independently to every allowlisted database. A failure for one tenant must not be
 interpreted as a valid empty tenant or silently create a replacement database. Migration/cutover implementation and
-release gates belong to PLAN-03 and `docs/migration_plans.md`.
+release gates belong to PLAN-03.
 
 File-backed covers, album artwork, and signatures live in tenant-specific directories. The frontend never sees those
 paths; authenticated business routes select the active tenant and serve bytes.

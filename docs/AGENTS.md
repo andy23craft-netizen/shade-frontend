@@ -125,7 +125,7 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `make check`) and main-entry gzip budget enforcement via `scripts/checkBundleSize.mjs` (`yarn bundle:check` /
   `make bundle-check`, included in `make check`). The default workflow does not retain `dist/`, coverage, Playwright
   reports, or secrets as artifacts. Host-owned HTTPS/CSP, SPA fallback, and production configuration notes live in
-  `README.md` and `docs/MAINTAINERS.md`.
+  `README.md`.
 - Deployed-development container: `ci/Containerfile` (runtime-only `nginx:1.31-alpine`, HTTP 8080, copies host-built
   `dist/`, no Node/Yarn/Vite stage, no `.env` COPY), `ci/nginx.conf` (SPA `try_files`, no-cache `index.html` /
   `config.js`, long-lived hashed `/assets/`), `ci/container-entrypoint.sh` (start-time `config.js` from
@@ -1419,8 +1419,6 @@ their contents (for example, the active ticket's acceptance criteria or the Open
   wishlist **412** semantics, collection membership `shelf_name` null for unshelved rows, and Book covers
   display/upload guidance for authenticated **200** image bytes / multipart `file`).
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
-- `docs/MAINTAINERS.md`: Human-oriented maintainer guide (not required before starting from this document; may lag
-  this baseline). Includes production-host security ownership and tarball handoff notes.
 - `docs/full-project-context.md`: Optional slim always-on pack for chats without repo access (not required when
   this file is already loaded; may lag this baseline).
 

@@ -43,8 +43,7 @@ If repository contents are not visible:
 
 If deployment / packaging is involved:
 
-- `README.md`;
-- `docs/MAINTAINERS.md` when production-host ownership matters.
+- `README.md`.
 
 Do not paste a full API re-synthesis or large requirements documents into every conversation. Prefer the checked-in
 contract and the minimum relevant source files.
@@ -1414,11 +1413,10 @@ intentional current behavior.
 | Current sequenced product work         | relevant ticket under `docs/tickets/`    |
 | Informal UI feedback (not a ticket)    | `docs/tickets/ui-nits.md`                |
 | Setup / local development / release    | `README.md`                              |
-| Production-host ownership              | `docs/MAINTAINERS.md`                    |
 
 This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own for day-to-day
 implementation guidance. Everything needed for that baseline is in this document. Attach the rows above only when the
-task needs their contents (API schemas, design notes, an open ticket, or deployment ownership). Prefer the current
+task needs their contents (API schemas, design notes, an open ticket, or setup/release notes). Prefer the current
 sequenced ticket (when one exists) and the checked-in API contract over planning notes that may lag. When no sequenced
 feature ticket remains, ask which work to take next.
 
