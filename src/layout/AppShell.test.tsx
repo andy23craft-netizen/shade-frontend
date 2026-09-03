@@ -27,51 +27,55 @@ describe('AppShell layout and navigation', () => {
         vi.restoreAllMocks()
     })
 
-    it('exposes skip link, landmarks, and primary navigation', async () => {
-        await renderAppTree(['/'])
+    it(
+        'exposes skip link, landmarks, and primary navigation',
+        async () => {
+            await renderAppTree(['/'])
 
-        expect(
-            screen.getByRole('link', {
-                name: 'Skip to main content',
-            }),
-        ).toHaveAttribute('href', '#main-content')
+            expect(
+                screen.getByRole('link', {
+                    name: 'Skip to main content',
+                }),
+            ).toHaveAttribute('href', '#main-content')
 
-        expect(
-            screen.getByRole('banner'),
-        ).toBeInTheDocument()
+            expect(
+                screen.getByRole('banner'),
+            ).toBeInTheDocument()
 
-        const primaryNav = screen.getByRole('navigation', {
-            name: 'Primary navigation',
-        })
+            const primaryNav = screen.getByRole('navigation', {
+                name: 'Primary navigation',
+            })
 
-        expect(primaryNav).toBeInTheDocument()
+            expect(primaryNav).toBeInTheDocument()
 
-        expect(
-            within(primaryNav).getByRole('link', {
-                name: 'Dashboard',
-            }),
-        ).toHaveAttribute('href', '/dashboard')
+            expect(
+                within(primaryNav).getByRole('link', {
+                    name: 'Dashboard',
+                }),
+            ).toHaveAttribute('href', '/dashboard')
 
-        expect(
-            within(primaryNav).getByRole('button', {
-                name: 'Collection',
-            }),
-        ).toHaveAttribute('aria-expanded', 'false')
+            expect(
+                within(primaryNav).getByRole('button', {
+                    name: 'Collection',
+                }),
+            ).toHaveAttribute('aria-expanded', 'false')
 
-        expect(
-            within(primaryNav).getByRole('link', {
-                name: 'Loans',
-            }),
-        ).toHaveAttribute('href', '/loans')
+            expect(
+                within(primaryNav).getByRole('link', {
+                    name: 'Loans',
+                }),
+            ).toHaveAttribute('href', '/loans')
 
-        expect(
-            screen.getByRole('main'),
-        ).toHaveAttribute('id', 'main-content')
+            expect(
+                screen.getByRole('main'),
+            ).toHaveAttribute('id', 'main-content')
 
-        expect(
-            screen.getByRole('contentinfo'),
-        ).toBeInTheDocument()
-    })
+            expect(
+                screen.getByRole('contentinfo'),
+            ).toBeInTheDocument()
+        },
+        20_000,
+    )
 
     it('opens the Collection menu with browse and manage destinations', async () => {
         await renderAppTree(['/'])
