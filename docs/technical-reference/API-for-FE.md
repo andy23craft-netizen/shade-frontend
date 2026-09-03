@@ -86,7 +86,7 @@ Album behavior and frontend integration
   `artwork_present`. Album dashboard summary/breakdown fields and album wishlist membership routes are shipped.
   Albums never appear in GET `/books`. Album UI is needed to use the new resource; the existing book UI needs
   only the shelf/error handling adjustments above. Regenerating client types alone does not implement those
-  behaviors. See [the album MVP frontend handoff](ALBUM-MVP-frontend-handoff.md) for compatibility-only adoption of
+  behaviors. See [the album contract handoff](FEAT-24-frontend-handoff.md) for compatibility-only adoption of
   1.0.15 without activating album UI.
 
 Artist/genre catalog behavior
