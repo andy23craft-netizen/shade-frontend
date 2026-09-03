@@ -4,9 +4,9 @@ Slim always-on context for ChatGPT or any assistant without direct repository ac
 
 This document is the complete self-contained operating baseline for the Shade frontend. It covers working rules,
 architecture, non-negotiables, current product state, the backend contract summary, and the minimum reference index
-needed to continue development safely. Start from this file alone for that baseline. Everything needed for day-to-day
-implementation guidance is in this document. Attach the current feature ticket (when one exists) and the checked-in API
-contract only when the task needs them.
+needed to continue development safely. Start from this file alone for that baseline. Do not require any other project
+prompt or agents guide. Everything needed for day-to-day implementation guidance is in this document. Attach the
+current feature ticket (when one exists) and the checked-in API contract only when the task needs them.
 
 A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
 ticket or the checked-in API contract. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build
@@ -14,7 +14,7 @@ ticket -- treat it as notes unless the user asks to implement items from it. Whe
 `docs/tickets/` for open sequenced work (`FEAT-01_long-titles.md`, `FEAT-02_album-support.md`) or ask which work to take
 next rather than inventing a follow-on feature.
 
-**Context pack version:** 2026-08-28
+**Context pack version:** 2026-09-03
 
 ---
 
@@ -35,7 +35,8 @@ If work touches API behavior:
 
 If UI/design is in question:
 
-- `docs/product-docs/UI_DESIGN_NOTES.MD`.
+- `docs/product-docs/UI_DESIGN_NOTES.MD`;
+- `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md` when album UI (`FEAT-02`) is in scope.
 
 If repository contents are not visible:
 
@@ -162,11 +163,38 @@ docs/technical-reference/openapi.json
 docs/technical-reference/API-for-FE.md
 ```
 
-Checked-in OpenAPI is LibraryV2 with `info.version` currently `0.2.15` (includes normalized authors and
-`author_ids`, many-to-many categories, expanded `GET /books` filters, `POST /books/bulk/move-to-shelf`,
-`POST /books/bulk/lookup`, `POST /books/bulk/import`, `BookRead.cover_image_path`, and `GET` / `PUT` /
-`DELETE /books/{id}/cover`). Cover resolution -- including the Open Library ISBN fallback -- happens server-side; `GET
-/books/{id}/cover` returns **200** image bytes or **404**. Bulk lookup/import are API-only today (no SPA callers).
+Checked-in OpenAPI is LibraryV2 with `info.version` currently **1.0.16**. It includes book `book_id` (no `id` alias),
+normalized authors/`author_ids`, many-to-many categories, expanded `GET /books` filters, bulk book routes, book covers,
+typed loans (`book_id` / `album_id`, `media_type`), wishlist `wishlist_item_id`, mixed wishlist `/items` and album
+membership routes, album catalog/lookup/artwork/circulation, `/artists`, `/genres`, and additive album dashboard
+fields. Cover resolution -- including the Open Library ISBN fallback -- happens server-side; `GET
+/books/{book_id}/cover` returns **200** image bytes or **404**. Bulk lookup/import remain API-only (no SPA callers).
+
+The live SPA is still book-only. Album catalog, artwork, circulation, artists/genres, mixed wishlists, and album
+dashboard widgets ship only as `docs/tickets/FEAT-02_album-support.md` (or an explicit user request). Regenerating
+client types does not activate album UI. Collections remain book-only at membership HTTP. There is no separate backend
+handoff document: OpenAPI plus `API-for-FE.md` are the contract; FEAT-02 is the frontend album implementation ticket.
+
+Identifier and loan rules:
+
+- Book responses and exact-ID list filter use `book_id`. Path parameters use `{book_id}`; the URL is still
+  `/books/<uuid>`.
+- Wishlist membership reads and book notes PATCH/DELETE use `wishlist_item_id`. Book-specific `/wishlists/.../books`
+  routes remain the live UI until mixed lists are implemented.
+- Loans keep their own `id`. Exactly one of `book_id` / `album_id` is non-null. The Loans page requests
+  `media_type=book`. Never put `album_id` into a book detail or check-in URL.
+- Duplicate wishlist add is **409**; refresh membership instead of retrying as a new add.
+
+Book-only UI still excludes `removed` from placement pickers and must surface mixed-media **412** detail (`A book
+cannot be placed on an album shelf`, `Books cannot be added to an album collection`). Shelves have no client
+`media_type` field. Shelf delete **409** applies when books or albums remain. Deploy album UI with matching backend
+1.0.16 and the rehearsed retained-data migration (including `album_artwork`); the frontend cannot compensate for an
+older database.
+
+Optional same-origin Vite proxy (`SHADE_API_PROXY=1`) forwards `/health`, `/books`, `/loans`, `/dashboard`, `/backup`,
+`/docs`, `/redoc`, `/openapi.json`, `/wishlists`, and `/collections` -- not `/shelves`, `/version`, `/categories`,
+`/albums`, `/artists`, or `/genres`. Add `/albums`, `/artists`, and `/genres` only when FEAT-02 first needs them in
+the browser.
 
 Generated types:
 
@@ -175,10 +203,11 @@ src/api/generated/openapi.ts
 ```
 
 Regenerate generated types from the checked-in OpenAPI contract (`yarn api:generate` / `yarn api:check`); never edit
-them manually.
+them manually. Do not export album/artist/genre aliases from `src/api/apiTypes.ts` until FEAT-02 consumes them.
+Dashboard fixtures may zero required album fields so schemas type-check; do not render or combine those fields yet.
 
-Prefer dedicated lifecycle endpoints over generic `PATCH` for checkout, check-in, initial mark-read, bulk shelf move,
-and cover upload/delete.
+Prefer dedicated lifecycle endpoints over generic `PATCH` for checkout, check-in, initial mark-read, mark-played, bulk
+shelf move, cover upload/delete, and album artwork upload/delete/refetch.
 
 ---
 
@@ -211,7 +240,8 @@ Current registered product routes include:
 *
 ```
 
-There is no `/admin/deleted` route. Books are hard-deleted through `DELETE /books/{id}`; deletion is permanent.
+There is no `/admin/deleted` route. Books are hard-deleted through `DELETE /books/{book_id}`; deletion is permanent.
+Album catalog routes exist in the contract; album pages are not registered until FEAT-02.
 
 ## Navigation
 
@@ -497,7 +527,7 @@ Behavior:
 * exiting selection mode clears selection;
 * changing catalog filter identity clears selection;
 * sorting alone preserves selection;
-* selection is ID-based rather than tied to card instances.
+* selection is `book_id`-based rather than tied to card instances.
 
 Do not silently change Select All into an all-pages/server-wide operation.
 
@@ -666,14 +696,14 @@ Build Mode bulk lookup/import (`POST /books/bulk/lookup`, `POST /books/bulk/impo
 Authenticated cover routes:
 
 ```text
-GET    /books/{id}/cover
-PUT    /books/{id}/cover
-DELETE /books/{id}/cover
+GET    /books/{book_id}/cover
+PUT    /books/{book_id}/cover
+DELETE /books/{book_id}/cover
 ```
 
 Behavioral detail beyond OpenAPI schemas lives in `docs/technical-reference/API-for-FE.md` (Book covers). Cover
 resolution -- including the Open Library ISBN fallback -- happens server-side behind the authenticated cover endpoint
-(OpenAPI `0.2.15`; cover routes since `0.2.11+`).
+(OpenAPI `1.0.16`; cover routes since `0.2.11+`).
 
 Rules:
 
@@ -695,7 +725,8 @@ Rules:
 * Open Library timeout / network / missing / non-image responses resolve to the normal **404** cover state.
 * Missing or hard-deleted books reject cover get/upload/delete (**404**).
 
-Browser display cannot put `Authorization` on an `<img src>`. Use authenticated `fetch` to `GET /books/{id}/cover`:
+Browser display cannot put `Authorization` on an `<img src>`. Use authenticated `fetch` to
+`GET /books/{book_id}/cover`:
 
 * **200** → `response.blob()` and an object URL for `<img>` (revoke on cleanup);
 * **404** → intentional placeholder.
@@ -712,8 +743,8 @@ SPA surface:
 * `BookCoverManager` upload/remove on Book Details;
 * styles under `.book-cover*` in `src/styles/components.css`.
 
-Cover loading stays independent of core book queries. Non-JSON binary responses today are `GET /backup` and
-`GET /books/{id}/cover`.
+Cover loading stays independent of core book queries. Non-JSON binary responses today are `GET /backup`,
+`GET /books/{book_id}/cover`, and `GET /albums/{album_id}/artwork` (no SPA artwork caller until FEAT-02).
 
 ---
 
@@ -756,8 +787,11 @@ There is no hard-coded Shelf enum.
 * Create requires an explicit shelf selection.
 * `unknown` is selectable.
 * `removed` is excluded from ordinary assignment.
+* Mixed-media placement returns **412** (`A book cannot be placed on an album shelf`). Surface the server `detail` and
+  preserve form input. There is no shelf `media_type` field.
 * Edit may preserve/surface current `removed` membership.
 * System shelves `unknown` and `removed` cannot be renamed or deleted; allowed metadata edits remain supported.
+* Shelf delete **409** if any books or albums remain.
 
 ## Shelves page counts and navigation
 
@@ -805,7 +839,11 @@ useDashboardIncompleteMetadata()
 
 Shows API-provided collection statistics.
 
-Do not recalculate dashboard statistics from `GET /books`.
+Do not recalculate dashboard statistics from `GET /books`. Summary responses include additive album fields
+(`total_albums`, `albums_checked_out`, `albums_recently_added`, `album_borrowing`, `listening`). Breakdowns include
+`total_albums`, `albums_on_loan`, `albums_by_media_format`, `albums_by_shelf`, and `albums_by_creation_year`. Existing
+papers stay book-only; do not combine book and album totals until FEAT-02 widgets exist. Incomplete-metadata routes
+remain book-only.
 
 ## Paper II -- Circulation
 
@@ -897,6 +935,10 @@ Product check-in lives on `/loans`.
 
 `/loans?bookId=...` opens the relevant check-in workflow.
 
+The Loans page loads `useInfiniteLoans({ mediaType: 'book' })` so album loans do not appear. Loan wrappers accept
+`bookId`, `albumId`, and `mediaType`; include supplied filters in query keys. Guard nullable `book_id` / `album_id` on
+loan rows. Join books only on `loan.book_id === book.book_id`.
+
 There is no strict user-facing due-date workflow.
 
 ## Reading
@@ -913,7 +955,14 @@ Do not introduce Mark Unread unless explicitly requested.
 
 ## Wishlists
 
-Wishlists contain unshelved catalog books.
+Wishlists contain unshelved catalog books. Live UI uses book-specific membership routes. Membership identity is
+`wishlist_item_id` (not `wishlist_book_id`). Rows expose nullable `book_id` and `album_id`; current book endpoints
+return non-null `book_id` and null `album_id`. Book notes PATCH stays on
+`/wishlists/{wishlist_id}/books/{wishlist_item_id}`. There is no album membership PATCH.
+
+The contract also has `GET /wishlists/{wishlist_id}/items`, `POST /wishlists/{wishlist_id}/albums`, and
+`DELETE /wishlists/{wishlist_id}/albums/{wishlist_item_id}`. Do not wire mixed lists or album add/remove except under
+FEAT-02. When mixed UI ships, use `/items` rather than merging book and album list requests.
 
 Add flow:
 
@@ -928,7 +977,7 @@ catalog create.
 Move-to-shelf:
 
 ```text
-DELETE wishlist membership
+DELETE /wishlists/{wishlist_id}/books/{wishlist_item_id}
 then PATCH book { shelf_name }
 ```
 
@@ -949,9 +998,10 @@ Do not add `shelf_name` before removing wishlist membership.
 
 Book Details has Add to Collection.
 
-Collections are orthogonal to shelf placement.
+Collections are orthogonal to shelf placement. Collection membership HTTP remains book-only (`collection_book_id`).
+Album collection integration is outside the 1.0.16 contract.
 
-Membership rows join title/authors via `GET /books/{id}` and show shared `BookCover`. Location uses
+Membership rows join title/authors via `GET /books/{book_id}` and show shared `BookCover`. Location uses
 `displayCollectionBookLocation`: **Wishlist** when `on_wishlist`; otherwise Title Case shelf. Membership `shelf_name`
 may be JSON `null` for unshelved rows -- do not expect BookRead's synthesized `"unknown"`.
 
@@ -959,7 +1009,7 @@ may be JSON `null` for unshelved rows -- do not expect BookRead's synthesized `"
 
 # 14. Hard delete and backup boundary
 
-Books use permanent hard delete via `DELETE /books/{id}`.
+Books use permanent hard delete via `DELETE /books/{book_id}`.
 
 Product delete lives at:
 
@@ -1065,16 +1115,24 @@ The backend OpenAPI contract includes:
 ```text
 GET  /authors
 POST /authors
+GET  /artists
+GET  /genres
 POST /books/bulk/move-to-shelf
 POST /books/bulk/lookup
 POST /books/bulk/import
-GET  /books/{id}/cover
-PUT  /books/{id}/cover
-DELETE /books/{id}/cover
+GET  /books/{book_id}/cover
+PUT  /books/{book_id}/cover
+DELETE /books/{book_id}/cover
+GET  /albums
+GET  /albums/lookup
+GET  /albums/{album_id}/artwork
+GET  /wishlists/{wishlist_id}/items
+GET  /loans?media_type=book|album
 ```
 
-Checked-in OpenAPI (`info.version` `0.2.15`) and generated types match. `contractSmoke.test.ts` includes author routes,
-bulk-move/bulk-lookup/bulk-import paths, and `/books/{id}/cover`.
+Checked-in OpenAPI (`info.version` `1.0.16`) and generated types match. `contractSmoke.test.ts` includes author,
+artist, genre, album, mixed-wishlist, bulk-move/bulk-lookup/bulk-import, and `/books/{book_id}/cover` paths. Album
+routes in the generated contract do not mean album UI is live.
 
 Treat an open sequenced ticket under `docs/tickets/` (`FEAT-01_long-titles.md`, `FEAT-02_album-support.md`), explicit
 user direction, or a green `make check` as the current open-work signal. Re-run `make check` before claiming a new
@@ -1162,16 +1220,20 @@ Bundled WebP imagery under `src/assets/`:
 * Do not hand-edit generated OpenAPI types.
 * Reuse existing API helpers and React Query keys.
 * Do not duplicate server state into a second state store.
-* Do not silently recalculate API-owned dashboard metrics.
+* Do not silently recalculate API-owned dashboard metrics or combine book and album dashboard fields.
 * Preserve tenant header behavior.
-* Prefer dedicated lifecycle endpoints (checkout, check-in, mark-read, bulk shelf move, cover upload/delete -- never
-  simulate those with generic `PATCH`).
+* Prefer dedicated lifecycle endpoints (checkout, check-in, mark-read, mark-played, bulk shelf move, cover
+  upload/delete, album artwork upload/delete/refetch -- never simulate those with generic `PATCH`).
 * Bulk shelf movement must use the dedicated atomic endpoint, not repeated single-book PATCH requests.
-* Covers use `GET` / `PUT` / `DELETE /books/{id}/cover` only. Never invent browser URLs from `cover_image_path`, call
-  Open Library from the SPA, or set covers through create/update JSON.
+* Covers use `GET` / `PUT` / `DELETE /books/{book_id}/cover` only. Never invent browser URLs from `cover_image_path`,
+  call Open Library from the SPA, or set covers through create/update JSON.
+* Album artwork, when implemented, uses authenticated `/albums/{album_id}/artwork` routes only. Do not construct
+  browser URLs from private storage paths or call Discogs / MusicBrainz / Cover Art Archive from the SPA.
 * JSON `null` `shelf_name`, `category_ids`, or `author_ids` on book update is **422** -- omit those fields instead
   (OpenAPI may still show `null` as a schema option).
 * Book create requires ordered `author_ids`; do not send free-form author strings on book payloads.
+* Catalog identity is `book_id` / `album_id` / `wishlist_item_id` as documented. Do not read retired `book.id` or
+  `wishlist_book_id`.
 
 ## Product behavior
 
@@ -1186,14 +1248,18 @@ Bundled WebP imagery under `src/assets/`:
 * No Build Mode bulk lookup/import UI unless explicitly requested.
 * No Mark Unread unless explicitly requested.
 * No wishlist/shelf overlap.
-* Collections do not replace shelf placement.
+* Collections do not replace shelf placement and remain book-only at HTTP.
 * `removed` is not an ordinary shelf-assignment destination.
 * Cover display/upload stays on the authenticated cover routes and shared `BookCover` / `BookCoverManager` surfaces.
+* No album catalog, artwork, circulation, artist/genre admin, mixed-wishlist, or album dashboard UI except as FEAT-02
+  or an explicit request.
+* Surface mixed-media **412** detail on shelf/collection writes; do not invent a shelf `media_type` field.
 
 ## Scope discipline
 
 Do not invent the next product feature merely because the API already supports it. When no ticket is supplied, check
-`docs/tickets/` for open sequenced work or ask which work should be taken next rather than guessing.
+`docs/tickets/` for open sequenced work (`FEAT-01_long-titles.md`, `FEAT-02_album-support.md`) or ask which work should
+be taken next rather than guessing. Album endpoints in OpenAPI are not permission to start album UI.
 
 ---
 
@@ -1202,7 +1268,11 @@ Do not invent the next product feature merely because the API already supports i
 Sequenced feature tickets live under `docs/tickets/` while open and are removed after completion. Informal UI feedback
 such as `ui-nits.md` may also live there; it is not a sequenced build ticket unless the user asks to implement items
 from it. Open sequenced work currently includes `FEAT-01_long-titles.md` and `FEAT-02_album-support.md`. Prefer the
-supplied ticket, an explicit user request, or product docs when choosing further work.
+supplied ticket, an explicit user request, or product docs when choosing further work. FEAT-02 is the album MVP
+frontend implementation against backend 1.0.16: lookup then artist/genre resolution then create; authenticated artwork
+only; dedicated album circulation endpoints; mixed `GET .../items` for mixed lists; separate album dashboard widgets;
+keep typed IDs distinct; keep collections book-only; add `/albums`, `/artists`, and `/genres` to the Vite proxy when
+the browser first needs them. Attach that ticket plus OpenAPI and `API-for-FE.md` when implementing it.
 
 Current product capabilities are described in the sections above, including:
 
@@ -1223,9 +1293,10 @@ cover routes.
 
 ```text
 docs/tickets/FEAT-01_long-titles.md -- long unbroken titles in New Additions (open sequenced ticket)
-docs/tickets/FEAT-02_album-support.md -- album MVP frontend handoff (open sequenced ticket)
+docs/tickets/FEAT-02_album-support.md -- album MVP frontend implementation (open sequenced ticket)
 docs/tickets/ui-nits.md -- informal UI feedback (not a sequenced build ticket unless explicitly requested)
 ```
+
 ---
 
 # 21. Condensed source inventory
@@ -1406,18 +1477,19 @@ intentional current behavior.
 
 # 23. Document index -- attach on demand
 
-| Need                                   | Document                                 |
-| -------------------------------------- | ---------------------------------------- |
-| API paths, schemas, methods, enums     | `docs/technical-reference/openapi.json`  |
-| API behavioral guidance (incl. covers) | `docs/technical-reference/API-for-FE.md` |
-| UI/design decisions                    | `docs/product-docs/UI_DESIGN_NOTES.MD`   |
-| Product requirements drafts            | `docs/product-docs/PRODUCT_REQS.*.md`    |
-| Current sequenced product work         | relevant ticket under `docs/tickets/`    |
-| Informal UI feedback (not a ticket)    | `docs/tickets/ui-nits.md`                |
-| Setup / local development / release    | `README.md`                              |
+| Need                                   | Document                                          |
+| -------------------------------------- | ------------------------------------------------- |
+| API paths, schemas, methods, enums     | `docs/technical-reference/openapi.json`           |
+| API behavioral guidance                | `docs/technical-reference/API-for-FE.md`          |
+| UI/design decisions                    | `docs/product-docs/UI_DESIGN_NOTES.MD`            |
+| Album UI analogies (with FEAT-02)      | `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md` |
+| Product requirements drafts            | `docs/product-docs/PRODUCT_REQS.*.md`             |
+| Current sequenced product work         | relevant ticket under `docs/tickets/`             |
+| Informal UI feedback (not a ticket)    | `docs/tickets/ui-nits.md`                         |
+| Setup / local development / release    | `README.md`                                       |
 
 This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own for day-to-day
-implementation guidance. Everything needed for that baseline is in this document. Attach the rows above only when the
+implementation guidance. Do not require any other project prompt or agents guide. Attach the rows above only when the
 task needs their contents (API schemas, design notes, an open ticket, or setup/release notes). Prefer the current
 sequenced ticket (when one exists) and the checked-in API contract over planning notes that may lag. When no sequenced
 feature ticket remains, ask which work to take next.
