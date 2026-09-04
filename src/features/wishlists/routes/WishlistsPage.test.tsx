@@ -40,6 +40,7 @@ import {
     useRemoveWishlistBook,
     useUpdateWishlist,
     useUpdateWishlistBook,
+    useWishlistItems,
     useWishlists,
 } from '../../../api/wishlistsQueries'
 import {
@@ -65,6 +66,7 @@ vi.mock('../../../api/wishlistsQueries', () => ({
     useRemoveWishlistBook: vi.fn(),
     useUpdateWishlist: vi.fn(),
     useUpdateWishlistBook: vi.fn(),
+    useWishlistItems: vi.fn(),
 }))
 vi.mock(
     '../components/MoveWishlistBookToShelfControl',
@@ -169,6 +171,7 @@ const mockUseUpdateWishlist = vi.mocked(useUpdateWishlist)
 const mockUseUpdateWishlistBook = vi.mocked(useUpdateWishlistBook)
 const mockUseInfiniteWishlistBooks =
     vi.mocked(useInfiniteWishlistBooks)
+const mockUseWishlistItems = vi.mocked(useWishlistItems)
 
 const sampleWishlist: WishlistRead = {
     wishlist_id: 'wishlist-1',
@@ -286,6 +289,17 @@ function mockIdleWrites() {
     } as unknown as ReturnType<
         typeof useInfiniteWishlistBooks
     >)
+    mockUseWishlistItems.mockReturnValue({
+        data: {
+            items: [],
+            total: 0,
+        },
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        refetch: vi.fn(),
+        error: null,
+    } as unknown as ReturnType<typeof useWishlistItems>)
 }
 
 function renderPage() {
