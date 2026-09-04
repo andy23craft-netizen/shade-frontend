@@ -489,15 +489,15 @@ supports it.
 
 Associated projects (disk scope):
 
-- Backend: `~/Documents/Repos/shade-backend/`
-- Frontend: `~/Documents/Repos/shade-frontend/`
-- Orchestrator: `~/Documents/Repos/shade-orchestrator/`
+- Backend: `/home/johnshade23/Projects/shade-backend/`
+- Frontend: `/home/johnshade23/Projects/shade-frontend/`
+- Orchestrator: `/home/johnshade23/Projects/shade-orchestrator/`
 
 Disk location limitation:
 
-- Only write files that are in `~/Documents/Repos/shade-frontend/`.
+- Only write files that are in `/home/johnshade23/Projects/shade-frontend/`.
 - Never write files outside of this directory.
-- Only read files that are in `~/Documents/Repos/shade-frontend/` or the Associated Projects.
+- Only read files that are in `/home/johnshade23/Projects/shade-frontend/` or the Associated Projects.
 - Never read or write files outside of those directories.
 
 Git-specific rules:
