@@ -903,7 +903,10 @@ export async function installMockApi(
 
             if (
                 method === 'GET' &&
-                url.pathname === '/health'
+                (
+                    url.pathname === '/health' ||
+                    url.pathname === '/ready'
+                )
             ) {
                 await fulfillJson(route, {
                     body: {

@@ -20,7 +20,7 @@ registration, per-user authorization, or cross-library discovery.
 This plan owns the frontend consequences of:
 
 - hostname-derived library identity;
-- the required `Library-Username` request header;
+- trusted-proxy `X-Forwarded-Host` tenant routing;
 - the `andy` and `jamie` allowlist and per-library database separation;
 - per-library theme tokens and unknown-host behavior;
 - local `*.localhost` development hosts;
@@ -48,24 +48,23 @@ Every protected business request sends:
 
 ```http
 Authorization: Bearer <API_SECRET_KEY>
-Library-Username: <leftmost-hostname-label>
 ```
 
-The SPA derives the header from `window.location.hostname`; it must replace the existing hardcoded `shade` value.
-Missing/invalid Bearer authentication returns `403` before tenant validation. Missing, unknown, or disallowed library
-context returns a generic `400` without exposing the allowlist.
+The browser never sends tenant identity. The trusted same-origin proxy derives `X-Forwarded-Host` from the public
+request host. Missing/invalid Bearer authentication returns `403` before tenant validation. Missing, unknown, or
+disallowed forwarding context returns a generic `400` without exposing the allowlist.
 
-`Library-Username` is routing context, not a credential. Anyone possessing the shared Bearer token can technically
-select another allowlisted tenant outside the ordinary UI. V2 accepts that limitation for a small trusted deployment
-and does not misrepresent it as per-user authorization.
+`X-Forwarded-Host` is proxy-owned routing context, not a credential. The backend must not trust a forwarding header
+supplied through direct public access.
 
-Public health, version, API-documentation, and OpenAPI requests omit the tenant header.
+Public health, version, API-documentation, and OpenAPI routes remain host-independent even when reached through the
+same proxy.
 
 ## 3. Hostnames and navigation
 
 Initial production hostnames are:
 
-- `andy.library.spir.es`
+- `shade.library.spir.es` (public alias for tenant `andy`)
 - `jamie.library.spir.es`
 
 The leftmost label is authoritative. Do not add `www.` variants and do not redirect both libraries to a shared canonical
@@ -128,8 +127,8 @@ paths; authenticated business routes select the active tenant and serve bytes.
 
 ## 8. Backups and restore boundaries
 
-`GET /backup` is authenticated and tenant-scoped. Its attachment filename includes the tenant. No browser backup page
-or ordinary restore UI is part of V2.
+Database export and synchronization are operator workflows that iterate the tenant allowlist. There is no browser
+backup endpoint, backup page, or ordinary restore UI in V2.
 
 The automated job invokes the scoped backup once per allowlisted library and retains one dump plus manifest per tenant.
 Unchanged content is deduplicated per tenant. A job that backs up only the last-used or default library is incomplete.

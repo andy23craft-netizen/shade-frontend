@@ -144,7 +144,10 @@ describe('ConnectionProvider', () => {
                     async (input, init) => {
                         const url = String(input)
 
-                        if (url.endsWith('/health')) {
+                        if (
+                            url.endsWith('/health') ||
+                            url.endsWith('/ready')
+                        ) {
                             return new Response(
                                 JSON.stringify({
                                     status: 'ok',
@@ -239,6 +242,15 @@ describe('ConnectionProvider', () => {
                 fetchMock.mock.calls.some(
                     ([input]) =>
                         String(input).endsWith(
+                            '/ready',
+                        ),
+                ),
+            ).toBe(true)
+
+            expect(
+                fetchMock.mock.calls.some(
+                    ([input]) =>
+                        String(input).endsWith(
                             '/protected',
                         ),
                 ),
@@ -283,13 +295,67 @@ describe('ConnectionProvider', () => {
     )
 
     it(
-        'sets unauthorized on 403 without leaving a child query stuck pending',
+        'does not report connected when tenant readiness fails',
         async () => {
             vi.spyOn(globalThis, 'fetch').mockImplementation(
                 async (input) => {
                     const url = String(input)
 
                     if (url.endsWith('/health')) {
+                        return new Response('{}', {
+                            status: 200,
+                        })
+                    }
+
+                    if (url.endsWith('/ready')) {
+                        return new Response(
+                            JSON.stringify({
+                                detail:
+                                    'Invalid or unknown library host',
+                            }),
+                            {
+                                status: 400,
+                                headers: {
+                                    'Content-Type':
+                                        'application/json',
+                                },
+                            },
+                        )
+                    }
+
+                    throw new Error(
+                        `Unexpected request: ${url}`,
+                    )
+                },
+            )
+
+            renderProvider()
+
+            await waitFor(() => {
+                expect(
+                    screen.getByTestId('status'),
+                ).toHaveTextContent('unreachable')
+            })
+
+            expect(
+                screen.getByTestId('error-message'),
+            ).toHaveTextContent(
+                'Unable to connect to the Shade API.',
+            )
+        },
+    )
+
+    it(
+        'sets unauthorized on 403 without leaving a child query stuck pending',
+        async () => {
+            vi.spyOn(globalThis, 'fetch').mockImplementation(
+                async (input) => {
+                    const url = String(input)
+
+                    if (
+                        url.endsWith('/health') ||
+                        url.endsWith('/ready')
+                    ) {
                         return new Response('{}', {
                             status: 200,
                         })
@@ -334,7 +400,10 @@ describe('ConnectionProvider', () => {
                 async (input) => {
                     const url = String(input)
 
-                    if (url.endsWith('/health')) {
+                    if (
+                        url.endsWith('/health') ||
+                        url.endsWith('/ready')
+                    ) {
                         return new Response('{}', {
                             status: 200,
                         })

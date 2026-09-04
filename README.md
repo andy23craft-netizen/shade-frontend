@@ -174,7 +174,7 @@ require an image rebuild. Application release stays the `package.json` `version`
 | `SHADE_DIAGNOSTICS_ENDPOINT` | empty (`null` in `config.js`) | Diagnostics POST URL when enabled           |
 
 `SHADE_API_BASE_URL` is loaded by the browser. Keep the default root-relative `/api` so the same build follows the
-Andy, Jamie, bare-localhost, or legacy origin being browsed. An absolute `http:`/`https:` URL remains supported for
+Shade (the public alias for Andy), Jamie, or a bare-localhost origin being browsed. An absolute `http:`/`https:` URL remains supported for
 special development arrangements, but it must be coordinated with backend CORS and tenant-aware proxying.
 
 ### CORS and origin

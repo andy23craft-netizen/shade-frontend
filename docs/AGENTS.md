@@ -76,8 +76,8 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   plus rating (`N / 5`, or an em dash when null).
 - Hard delete on `/books/:bookId/delete` (`DELETE /books/{book_id}` permanently removes the book). On-loan blocking via
   `status === 'on_loan'` or `findActiveLoan`. Hard delete also invalidates `queryKeys.collections.all` (server removes
-  collection memberships). Authenticated SQL backup is an API-host concern (`GET /backup`), not a browser product
-  page; never inspect, log, cache, or upload dump contents.
+  collection memberships). Database backup is an operator workflow, not a browser API or product page; never inspect,
+  log, cache, or upload dump contents.
 - Shelves catalog CRUD on `/shelves` (`shelvesApi` / `useShelves` / write mutations) with system-shelf protection
   (`unknown` / `removed`); book payloads use `shelf_name` (string; no hard-coded `Shelf` enum). Title Case
   `common_name` labels; `unknown` allowed on books; `removed` excluded except edit may surface current membership.
@@ -346,7 +346,7 @@ Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{book_id}/cover`. Beh
 - Browser `<img src>` cannot send `Authorization`. Use authenticated `fetch` to `GET /books/{book_id}/cover`: **200** →
   `response.blob()` + object URL (revoke on cleanup); **404** → intentional placeholder. Do not invent URLs from
   `cover_image_path`. Do not call Open Library from the SPA.
-- Non-JSON binary responses today: `GET /backup` (SQL attachment), `GET /books/{book_id}/cover` (image bytes), and
+- Non-JSON binary responses today: `GET /books/{book_id}/cover` (image bytes) and
   `GET /albums/{album_id}/artwork` (image bytes; no SPA caller until `FEAT-02`).
 
 SPA surface: `booksApi` cover helpers, React Query hooks, shared `BookCover`, `BookCoverManager` on Book Details, and
@@ -375,9 +375,10 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 - Missing or invalid credentials return `403`; describe generically as "API access was rejected"
 - On `403`, show a page-level error via `QueryErrorState` / `formatApiQueryError`; do not clear the query cache or
   loop back into loading
-- Startup reachability uses public `GET /health` only; do not verify auth with `GET /protected`
-- `GET /ready` verifies database readiness and may return **503** with `Retry-After: 1`; do not poll it or substitute
-  it for the ordinary startup health check
+- Startup connectivity checks public `GET /health` first and tenant-aware `GET /ready` second; do not verify auth with
+  `GET /protected`
+- `GET /ready` verifies the selected tenant's database readiness and may return **503** with `Retry-After: 1`; do not
+  poll it
 - Use public `GET /version` for the footer API release string only; do not treat it as a health probe
 - Never commit the token, put it in URLs, log Authorization headers, or send it to analytics
 - A build-time token in JS bundles is inspectable by anyone with device or artifact access; that is an accepted risk
@@ -509,7 +510,7 @@ index.html
                    -> AppProviders (shared DiagnosticReporter)
                         -> NotificationsProvider
                         -> QueryClientProvider (createQueryClient())
-                        -> ConnectionProvider (createApiClient + onRequestFailure reporter, token, GET /health)
+                        -> ConnectionProvider (createApiClient + onRequestFailure reporter, token, GET /health + /ready)
                              -> RouterProvider(router from src/routes/routes.tsx)
                                   -> AppShell (layout route)
                                        -> Suspense + Outlet (lazy feature route pages)
@@ -687,7 +688,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
 - `src/api/dashboardApi.ts`: `get()` (`GET /dashboard`); `getBreakdowns()` (`GET /dashboard/breakdowns`);
   `getIncompleteMetadata()` (`GET /dashboard/incomplete-metadata`); `listIncompleteMetadataBooks({ field?, skip?,
   take? })` (`GET /dashboard/incomplete-metadata/books`; omit blank `field`; send `skip`/`take` together).
-- `src/api/healthApi.ts`: `get()` public (`GET /health`, `authenticated: false`).
+- `src/api/healthApi.ts`: `get()` for public liveness (`GET /health`) and `getReady()` for tenant-aware database
+  readiness (`GET /ready`); both omit authentication.
 - `src/api/versionApi.ts` / `versionQueries.ts`: `get()` public (`GET /version`, `authenticated: false`) and
   `useVersion` for the AppShell footer API release string (not a health probe).
 - `src/api/queryClient.ts`: `createQueryClient()` sets `staleTime` 30s, `refetchOnWindowFocus`, `refetchOnReconnect`,
@@ -1057,11 +1059,11 @@ Connection feature (build-time Bearer auth, complete):
   `unreachable`).
 - `src/features/connection/connectionToken.ts`: Reads the build-time token once via `readApiToken()`;
   `getCurrentToken()` returns it for `createApiClient`.
-- `src/features/connection/connectionApi.ts`: Public `GET /health` reachability check through typed `healthApi` with
-  connection error mapping.
+- `src/features/connection/connectionApi.ts`: Public `GET /health` liveness followed by tenant-aware `GET /ready`
+  through typed `healthApi`, with connection error mapping.
 - `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook (`status`, `apiBaseUrl`,
   `release` from `APP_VERSION`, `errorMessage`, `apiClient`).
-- `src/features/connection/ConnectionProvider.tsx`: Owns status, `apiClient`, startup health verification,
+- `src/features/connection/ConnectionProvider.tsx`: Owns status, `apiClient`, startup liveness/readiness verification,
   `onUnauthorized` page error state, and optional `diagnosticReporter` wired through `createApiClient`
   `onRequestFailure` (no connect / forget / retry / `hasToken`). Exposes `release: APP_VERSION` (not runtime config).
 
@@ -1273,8 +1275,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   them.
 - `e2e/support/mockApi.ts`: Stateful Playwright route mock for `http://127.0.0.1:8000/**` (health, version, shelves,
   categories, books with repeated `category_id` AND filters and `category_ids` on create/update, loans, dashboard
-  summary, lookup, and lifecycle mutations). No wishlist, Collections, dashboard-report, or `/backup` fixtures yet
-  (extend when a ticket needs them; SQL backup remains API-host-only).
+  summary, lookup, and lifecycle mutations). No wishlist, Collections, dashboard-report, or backup fixtures exist;
+  backup is an operator-only workflow.
 - `e2e/support/accessibility.ts`: `expectNoSeriousAccessibilityViolations` via `@axe-core/playwright`
 - `src/test/setup.ts`: Global Vitest setup that installs jest-dom matchers for every test.
 - `src/test/renderAppTree.tsx`: Shared helpers (`renderAppTree`, `renderWithProviders`, `mockReachableApi`,

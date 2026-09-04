@@ -5,7 +5,22 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import type { IncomingMessage } from 'node:http'
 
-const DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'
+export const DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'
+
+export function resolveForwardedLibraryHost(
+    host: string | undefined,
+): string {
+    const browserHost = host
+        ?.split(':')[0]
+        ?.trim()
+        .toLowerCase()
+
+    if (!browserHost || browserHost === 'localhost' || browserHost === '127.0.0.1') {
+        return DEFAULT_LOCAL_LIBRARY_HOST
+    }
+
+    return browserHost
+}
 
 const repositoryRoot = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -41,7 +56,7 @@ if (appVersion === '') {
  * Default local work does not need the proxy: the backend already allows the
  * Vite origins `http://localhost:5173` and `http://127.0.0.1:5173`.
  */
-function createDevServerProxy() {
+export function createDevServerProxy() {
     if (process.env.SHADE_API_PROXY !== '1') {
         return undefined
     }
@@ -49,19 +64,6 @@ function createDevServerProxy() {
     const target =
         process.env.SHADE_API_PROXY_TARGET ??
         'http://127.0.0.1:8000'
-
-    const forwardedLibraryHost = (request: IncomingMessage): string => {
-        const browserHost = request.headers.host
-            ?.split(':')[0]
-            ?.trim()
-            .toLowerCase()
-
-        if (!browserHost || browserHost === 'localhost' || browserHost === '127.0.0.1') {
-            return DEFAULT_LOCAL_LIBRARY_HOST
-        }
-
-        return browserHost
-    }
 
     return {
         '^/(api/)?(health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\\.json|wishlists|collections)':
@@ -83,7 +85,7 @@ function createDevServerProxy() {
                     proxy.on('proxyReq', (proxyRequest, request) => {
                         proxyRequest.setHeader(
                             'X-Forwarded-Host',
-                            forwardedLibraryHost(request),
+                            resolveForwardedLibraryHost(request.headers.host),
                         )
                     })
                 },

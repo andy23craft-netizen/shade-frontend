@@ -191,10 +191,9 @@ cannot be placed on an album shelf`, `Books cannot be added to an album collecti
 1.0.16 and the rehearsed retained-data migration (including `album_artwork`); the frontend cannot compensate for an
 older database.
 
-Optional same-origin Vite proxy (`SHADE_API_PROXY=1`) forwards `/health`, `/books`, `/loans`, `/dashboard`, `/backup`,
-`/docs`, `/redoc`, `/openapi.json`, `/wishlists`, and `/collections` -- not `/shelves`, `/version`, `/categories`,
-`/albums`, `/artists`, or `/genres`. Add `/albums`, `/artists`, and `/genres` only when FEAT-02 first needs them in
-the browser.
+Optional same-origin Vite proxy (`SHADE_API_PROXY=1`) forwards the current API surface, including `/health`, `/ready`,
+catalog routes, and API documentation. It excludes the removed browser backup route. Add new API paths when their
+features ship; tenant identity remains owned by the proxy rather than the browser.
 
 Generated types:
 
@@ -310,7 +309,6 @@ Authenticated API requests send:
 
 ```text
 Authorization: Bearer <VITE_API_SECRET_KEY>
-Library-Username: shade
 ```
 
 The token is build-time configuration from repository-root `.env`.
@@ -338,10 +336,11 @@ Application version comes from `package.json` via `APP_VERSION`, not runtime con
 
 ## Connection behavior
 
-Startup reachability uses public:
+Startup connectivity checks public liveness and then tenant-aware readiness:
 
 ```text
 GET /health
+GET /ready
 ```
 
 Connection states:
@@ -353,7 +352,7 @@ unauthorized
 unreachable
 ```
 
-Do not use `/protected` as the startup health check.
+Do not use `/protected` as the startup connectivity check.
 
 ## API client
 
@@ -362,7 +361,7 @@ Reuse `src/api/apiClient.ts`.
 It handles:
 
 * Bearer auth;
-* `Library-Username`;
+* omission of browser-owned tenant headers (the proxy supplies routing context);
 * timeout;
 * abort signals;
 * JSON helpers (`getJson` / `requestJson`);
@@ -743,8 +742,8 @@ SPA surface:
 * `BookCoverManager` upload/remove on Book Details;
 * styles under `.book-cover*` in `src/styles/components.css`.
 
-Cover loading stays independent of core book queries. Non-JSON binary responses today are `GET /backup`,
-`GET /books/{book_id}/cover`, and `GET /albums/{album_id}/artwork` (no SPA artwork caller until FEAT-02).
+Cover loading stays independent of core book queries. Non-JSON binary responses today are
+`GET /books/{book_id}/cover` and `GET /albums/{album_id}/artwork` (no SPA artwork caller until FEAT-02).
 
 ---
 
@@ -1020,7 +1019,7 @@ Product delete lives at:
 The frontend blocks delete when the book is on loan (`status === 'on_loan'` or an active loan exists), even though the
 backend would allow it. Hard delete removes the book and dependent memberships server-side; it cannot be restored.
 
-Authenticated SQL backup is an API-host concern (`GET /backup`).
+Database backup is an operator workflow outside the browser API.
 
 There is no browser Backup page/API caller.
 
@@ -1514,4 +1513,3 @@ Do not invent undocumented behavior that contradicts this baseline.
 Do not invent the next product feature merely because the API already supports it.
 
 When information is missing, request the minimum evidence needed to proceed.
-

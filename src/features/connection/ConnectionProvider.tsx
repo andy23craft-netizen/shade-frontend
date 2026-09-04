@@ -10,7 +10,7 @@ import { createApiClient } from '../../api/apiClient'
 import { APP_VERSION } from '../../config/appVersion'
 import type { RuntimeConfig } from '../../config/runtimeConfig'
 import {
-    checkHealth,
+    checkConnection,
 } from './connectionApi'
 import {
     getCurrentToken,
@@ -111,7 +111,7 @@ export function ConnectionProvider({
     useEffect(() => {
         let cancelled = false
 
-        checkHealth(runtimeConfig.apiBaseUrl)
+        checkConnection(runtimeConfig.apiBaseUrl)
             .then(() => {
                 if (cancelled) {
                     return

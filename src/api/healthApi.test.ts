@@ -47,4 +47,34 @@ describe('createHealthApi', () => {
 
         expect(result).toBe(health)
     })
+
+    it('gets tenant readiness without browser-owned authentication', async () => {
+        const readiness =
+            {} as HealthResponse
+
+        const client:
+            ReturnType<typeof createApiClient> = {
+            request: vi.fn(),
+            requestJson: vi.fn(),
+            get: vi.fn(),
+            getJson: vi.fn()
+                .mockResolvedValue(readiness),
+        }
+
+        const api =
+            createHealthApi(client)
+
+        const result = await api.getReady()
+
+        expect(
+            client.getJson,
+        ).toHaveBeenCalledWith(
+            '/ready',
+            {
+                authenticated: false,
+            },
+        )
+
+        expect(result).toBe(readiness)
+    })
 })

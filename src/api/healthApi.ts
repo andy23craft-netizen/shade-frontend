@@ -27,5 +27,20 @@ export function createHealthApi(
                 },
             )
         },
+        async getReady(
+            options: ApiCallOptions = {},
+        ): Promise<HealthResponse> {
+            return client.getJson<HealthResponse>(
+                '/ready',
+                {
+                    authenticated: false,
+                    ...(options.signal === undefined
+                        ? {}
+                        : {
+                            signal: options.signal,
+                        }),
+                },
+            )
+        },
     }
 }

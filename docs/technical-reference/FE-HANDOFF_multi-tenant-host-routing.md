@@ -5,7 +5,7 @@
 ## Objective
 
 Keep the existing site online while backend FEAT-04 begins requiring `X-Forwarded-Host` on every tenant-scoped API
-request, then support `andy.library.spir.es` and `jamie.library.spir.es` without exposing one library's data to the
+request, then support `shade.library.spir.es` (the public alias for Andy) and `jamie.library.spir.es` without exposing one library's data to the
 other.
 
 ## Backend contract
@@ -36,25 +36,24 @@ legacy-host compatibility mapping.
    `X-Forwarded-Host`.
 5. Update connection checks: `/health` remains a host-free liveness probe; `/ready` must travel through the same
    tenant-aware `/api` proxy path as catalog requests.
-6. Update documentation and production-like proxy tests to cover both library hosts and verify that forwarded host
-   context survives Caddy -> frontend nginx -> backend.
+6. Documentation and frontend proxy tests cover both library hosts and verify the forwarding value emitted by Vite
+   and configured by nginx. FEAT-08 owns the deployment-level Caddy -> frontend nginx -> backend verification.
 7. `/backup` is removed from the optional Vite proxy path list and from remaining mocks, generated-client assumptions,
    navigation, or documentation. Do not replace it with a tenant-specific browser download.
 
 ## No-downtime rollout
 
-1. Deploy proxy compatibility first. While the public site still uses its legacy hostname, explicitly map that host
-   to `andy.library.spir.es` in the trusted proxy header sent to the backend.
+1. Preserve `shade.library.spir.es` through the trusted proxy header; the backend resolves that public label to the
+   internal `andy` tenant.
 2. Verify the currently deployed backend still works through that proxy change; it ignores `X-Forwarded-Host`.
 3. Deploy the FEAT-04/05 backend only after every `/api` path, including `/ready`, carries the compatibility header
    and the deployed frontend has stopped sending `Library-Username`.
-4. Bring up `andy.library.spir.es` and `jamie.library.spir.es`, preserving each public hostname through the proxy
+4. Bring up `shade.library.spir.es` and `jamie.library.spir.es`, preserving each public hostname through the proxy
    chain. Verify tenant isolation before advertising Jamie's URL.
 5. Move runtime `apiBaseUrl` to same-origin `/api` if it is not already there. Retain the legacy-to-Andy mapping until
    bookmarks and monitoring have moved, then retire it in a separately reversible change.
 
-Do not deploy the FEAT-04/05 backend first: the current frontend proxy does not set `X-Forwarded-Host`, and the current
-browser client still requests the removed `Library-Username` CORS allowance.
+Do not deploy the FEAT-04/05 backend ahead of a frontend version containing these completed compatibility changes.
 
 ## Acceptance criteria
 
@@ -65,6 +64,9 @@ browser client still requests the removed `Library-Username` CORS allowance.
 - Direct backend access without the trusted forwarding header fails tenant-scoped requests with **400**.
 - Vite proxy, nginx/proxy inspection tests, API-client tests, and the full frontend check pass.
 - No frontend route, API wrapper, mock handler, or proxy rule depends on `GET /backup`.
+
+Frontend acceptance is complete. The public-host, live tenant-isolation, direct-backend, DNS, and certificate checks
+above are deployment gates for FEAT-08 because their infrastructure is not contained in this repository.
 
 ## Coordination
 

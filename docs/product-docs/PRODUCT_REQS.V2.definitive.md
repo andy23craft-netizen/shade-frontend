@@ -57,8 +57,8 @@ replaces the proposal:
 -   Every book, album, Work, loan, membership, and vocabulary resource uses
     an opaque UUID. `BookRead.id` becomes `book_id` in the coordinated V2
     release; do not build compatibility assumptions around both names.
--   Business requests send Bearer authentication plus hostname-derived
-    `Library-Username`; authentication fails before tenant validation, and
+-   Business requests send Bearer authentication while the trusted proxy
+    supplies hostname-derived `X-Forwarded-Host`; authentication fails before tenant validation, and
     the UI must not expose an ordinary tenant switcher.
 -   Paired `skip`/`take` pagination returns `{ items, total }`; sending only
     one pagination value is invalid. Authors/artists remain unpaginated
@@ -221,8 +221,8 @@ spreadsheet UI.
 
 The current API has no setup-completion state or library-initialization
 resource. Add library-scoped settings/setup state rather than encoding
-completion in the shared Bearer token: the hostname-derived
-`Library-Username` already selects the library. Browser persistence
+completion in the shared Bearer token: the trusted proxy's hostname context
+already selects the library. Browser persistence
 should include the library identity, media type, destination, stable
 client item IDs, drafts, lookup results, and save outcomes; never
 restore one library's intake into another. Different hostnames already
@@ -405,17 +405,17 @@ Locked behavior:
 -   The initial allowlist is `andy` and `jamie`. Adding a library is an
     operator/configuration change across frontend, backend, DNS, and
     Caddy---not runtime registration.
--   `andy.library.spir.es` and `jamie.library.spir.es` serve the same
+-   `shade.library.spir.es` (tenant `andy`) and `jamie.library.spir.es` serve the same
     static SPA and API process but route to separate `andy.db` and
     `jamie.db` SQLite files. Libraries cannot browse or join each
     other's data.
--   The frontend derives the library username from the hostname's
-    leftmost label. The same rule supports `andy.localhost:5173` and
+-   The frontend derives display context from the hostname's leftmost
+    label. The same rule supports `andy.localhost:5173` and
     `jamie.localhost:5173` for local development.
--   Every protected request sends the shared Bearer token plus
-    `Library-Username: <hostname label>`. Public health and version
-    requests omit the library header. Missing, unknown, or disallowed
-    usernames return `400`; the client must not fall back to another
+-   Every protected browser request sends the shared Bearer token. The trusted
+    proxy supplies `X-Forwarded-Host`; browser JavaScript never supplies tenant identity.
+    Public health and version requests remain host-independent. Missing, unknown, or disallowed
+    forwarding hosts return `400`; the client must not fall back to another
     library.
 -   The shared token remains. There are no login/logout flows,
     per-person credentials, runtime roles, tenant discovery, or library
@@ -449,13 +449,9 @@ Locked behavior:
 
 ### Contract status
 
-The current frontend already defines the `Library-Username` header but
-hardcodes the value `shade`; the current backend allows the header
-through CORS but ignores it. The frontend ticket begins only when the
-backend accepts `andy` and `jamie` and requires the header. `PLAN-02`
-still has open operational/backend decisions, but its frontend shape
-above is authoritative except for unknown-host UX, owner-switch policy,
-and final theme assets.
+FEAT-07 is complete: the frontend derives display context from the hostname, uses same-origin `/api`, and leaves tenant
+routing to trusted proxies through `X-Forwarded-Host`. The browser does not send `Library-Username` or forwarding
+headers. Public routing and live isolation verification remain deployment responsibilities.
 
 ## 5. Media-specific visual identities
 
@@ -1273,9 +1269,8 @@ restoration path is not sufficient disaster recovery.
 
 ### Current state and boundary
 
-The backend currently produces an authenticated `application/sql` dump
-through `GET /backup`, and the operator-side scheduled job retains
-changed dumps. The frontend deliberately has no backup-download page.
+Database export is an operator-only workflow that iterates the configured tenant allowlist. The backend has no browser
+`GET /backup` endpoint, and the frontend has no backup-download page.
 There is currently no supported restore command, restore endpoint,
 recovery runbook, or automated restore verification.
 

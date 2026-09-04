@@ -172,13 +172,10 @@ trailing slash), for example:
 CORS_ORIGINS=["https://library.john-shade.spir.es"]
 
 CORS does not replace authentication. The middleware handles browser preflight; frontend code should not send
-OPTIONS manually. Allowed request headers include Authorization, Content-Type, and Library-Username.
-Content-Disposition is exposed so download filenames are readable from JavaScript. Credentialed CORS (cookies) is
-disabled. A disallowed origin can still reach the server, but browser JS cannot read the response.
-
-Library-Username is allowed on CORS preflight today so the SPA can send it, but the backend does not yet validate
-or route on that header (multi-tenant selection is planned). Sending it is harmless; omitting it does not change
-current single-library behavior.
+OPTIONS manually. Allowed request headers include Authorization and Content-Type. Credentialed CORS (cookies) is
+disabled. A disallowed origin can still reach the server, but browser JS cannot read the response. Tenant identity is
+supplied by the trusted same-origin proxy through `X-Forwarded-Host`; browser JavaScript must not send that header or
+`Library-Username`.
 
 ## Error and validation semantics
 
@@ -190,7 +187,7 @@ current single-library behavior.
 | **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); restore when the album is not soft-deleted; artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`; duplicate shelf `common_name` on create/rename; delete shelf while books or albums remain; duplicate category/genre name/slug; delete category while book memberships remain; delete author while book memberships remain (`Author is referenced by one or more books`); delete artist while album/track credits remain; delete genre while album memberships remain; duplicate book or `order_num` in the same collection; duplicate book or album in the same wishlist; ordinary PATCH or bulk shelf move on a stashed book (`Book is stashed; use the stash apply operation`); bulk stash when a book is already stashed |
 | **412** | Checkout when the book or album has `status=display_only` (`"Book is display only"` / `"Album is display only"`); add a book with any shelf membership, including `unknown`, to a wishlist (`"Existing books cannot be added to a wishlist"`); assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist (`"The book must be removed from the wishlist before it can be placed on a shelf"`); assign `shelf_name` on album create/update when the album is on a wishlist (`"The album must be removed from the wishlist before it can be placed on a shelf"`); mixed media on a shelf or collection (`"A book cannot be placed on an album shelf"`, `"An album cannot be placed on a book shelf"`, `"Books cannot be added to an album collection"`); album soft-delete/restore when the destination system shelf is occupied by the other media type; add a stashed book to a wishlist (`"Stashed books cannot be added to a wishlist"`); add a shelved album to a wishlist (`"Existing albums cannot be added to a wishlist"`); add a soft-deleted album to a wishlist (`"Soft-deleted albums cannot be added to a wishlist"`); bulk apply-stash to system shelf `unknown` |
 | **422** | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read or mark-played body; unsupported wishlist membership status; blank `shelf_name` on book create; JSON null `shelf_name` or `category_ids` on book update (omit those fields instead); null or blank shelf `common_name` on shelf create/update; empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; blank collection name on create/update; non-positive `order_num` on collection add/reorder; invalid/blank category/genre name or slug; invalid/blank author or artist surname or overlong name fields; empty/duplicate `author_ids` on book create/update, or null `author_ids` on update; empty/duplicate `artist_ids` on album create/update when supplied; empty items, duplicate `client_item_id`, or more than 50 items on bulk lookup/import; per-item book payload supplying `author_ids`, `shelf_name`, or `acquisition_source` on bulk import (use request-level `shelf_name` / `acquisition_source` and per-item `authors` instead); unknown `author_ids` on book create/update (422 object detail with message `One or more authors do not exist` and `author_ids` listing missing GUIDs); cover or album-artwork upload rejected (unsupported type, empty file, over 10 MB, or bytes/type mismatch); album lookup without exactly one of `barcode` / `discogs_release_id`; wishlist membership PATCH with omitted `notes` or `{}` (send `notes` explicitly) |
-| **500** | Backup dump failed, or (edge case) unhandled parse of bad stored loan timestamps |
+| **500** | Edge case: unhandled parse of bad stored loan timestamps |
 | **502** | Metadata provider transport/5xx failure on `GET /books/lookup` or `GET /albums/lookup` (bulk book lookup uses per-item `provider_failure` with HTTP 200 instead); album artwork refetch provider failure |
 | **503** | `GET /ready` or SQLAlchemy connection-pool exhaustion (`{"detail": "Database is temporarily unavailable"}` with `Retry-After: 1`) |
 | **504** | Metadata provider timeout on `GET /books/lookup` or `GET /albums/lookup` (bulk book lookup uses per-item `provider_timeout` with HTTP 200 instead); album artwork refetch timeout |
@@ -203,10 +200,10 @@ validate format, timezone, ordering, or calendar correctness. Clients should sti
 UTC timestamps as ISO 8601 (e.g., 2026-08-08T10:00:00.000Z), because borrowing statistics parse them as datetimes.
 Malformed stored loan timestamps can later cause an unhandled 500 when those statistics run.
 
-There are no WebSocket, SSE, subscription, or push endpoints. Non-JSON binary responses today are GET /backup
-(SQL attachment), GET /books/{book_id}/cover (image bytes), and GET /albums/{album_id}/artwork (image bytes). Cover
-and artwork resolution, including Open Library ISBN fallback and Cover Art Archive refetch, happens server-side
-behind the authenticated endpoints.
+There are no WebSocket, SSE, subscription, or push endpoints. Non-JSON binary responses today are
+GET /books/{book_id}/cover (image bytes) and GET /albums/{album_id}/artwork (image bytes). Cover and artwork
+resolution, including Open Library ISBN fallback and Cover Art Archive refetch, happens server-side behind the
+authenticated endpoints.
 
 List endpoints (GET /books, GET /albums, GET /loans, GET /wishlists, GET /wishlists/{wishlist_id}/books,
 GET /wishlists/{wishlist_id}/items, GET /collections, GET /collections/{collection_id}/books, and
@@ -886,36 +883,8 @@ For path collection_id, membership collection_book_id, and membership book_id: 4
 GUID; 404 when the GUID is well-formed but unknown ("Collection not found", "Book not found", or
 "Collection book not found" as appropriate). Hard-deleting a catalog book removes all of its collection
 memberships and renumbers remaining rows in each affected collection.
-Backup download (browser)
-
-GET /backup returns an application/sql attachment (not JSON) of the current database contents.
-Filename pattern: Shade Library - YYYY-mm-dd_HH-MM-SS_Z.sql (UTC; literal Z). Dump failure → 500 with
-{"detail": "Failed to generate database backup"}.
-
-Direct navigation cannot attach the Bearer token. Use authenticated fetch, response.blob(), and a programmatic
-<a download>, copying the UTF-8 filename from Content-Disposition:
-
-const response = await fetch(`${apiBase}/backup`, {
-  headers: { Authorization: `Bearer ${apiSecretKey}` },
-});
-
-if (!response.ok) {
-  throw new Error(`Backup failed with status ${response.status}`);
-}
-
-const blob = await response.blob();
-const objectUrl = URL.createObjectURL(blob);
-const disposition = response.headers.get("Content-Disposition") ?? "";
-const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/)?.[1];
-const link = document.createElement("a");
-link.href = objectUrl;
-link.download = encodedFilename
-  ? decodeURIComponent(encodedFilename)
-  : "Shade Library backup.sql";
-document.body.appendChild(link);
-link.click();
-link.remove();
-URL.revokeObjectURL(objectUrl);
+Database backup is an operator workflow outside the browser API. The SPA must not expose, probe, or proxy a backup
+route.
 
 Frontend vs API ownership
 Responsibility	Owner

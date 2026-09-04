@@ -304,7 +304,13 @@ function handleMockApiRequest(
         return
     }
 
-    if (requestUrl.pathname === '/health' && method === 'GET') {
+    if (
+        (
+            requestUrl.pathname === '/health' ||
+            requestUrl.pathname === '/ready'
+        ) &&
+        method === 'GET'
+    ) {
         response.writeHead(
             200,
             {

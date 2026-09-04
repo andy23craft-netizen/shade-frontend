@@ -8,7 +8,8 @@ describe('resolveLibraryContext', () => {
     it.each([
         ['andy.localhost', 'andy'],
         ['ANDY.LOCALHOST', 'andy'],
-        ['andy.library.spir.es', 'andy'],
+        ['shade.library.spir.es', 'andy'],
+        ['SHADE.LIBRARY.SPIR.ES.', 'andy'],
         ['andy.example.test', 'andy'],
         ['jamie.localhost', 'jamie'],
         ['jamie.library.spir.es', 'jamie'],

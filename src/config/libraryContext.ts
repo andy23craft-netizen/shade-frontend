@@ -21,6 +21,10 @@ const LIBRARIES: Readonly<Record<LibraryId, LibraryContext>> = {
     },
 }
 
+const PUBLIC_HOST_ALIASES: Readonly<Record<string, LibraryId>> = {
+    'shade.library.spir.es': 'andy',
+}
+
 function isLibraryId(value: string): value is LibraryId {
     return Object.hasOwn(LIBRARIES, value)
 }
@@ -38,6 +42,11 @@ export function resolveLibraryContext(
         normalizedHostname === '127.0.0.1'
     ) {
         return LIBRARIES.andy
+    }
+
+    const aliasedLibraryId = PUBLIC_HOST_ALIASES[normalizedHostname]
+    if (aliasedLibraryId) {
+        return LIBRARIES[aliasedLibraryId]
     }
 
     const [libraryId = ''] = normalizedHostname.split('.')

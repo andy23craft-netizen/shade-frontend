@@ -49,7 +49,7 @@ function mapToConnectionError(
     }
 }
 
-export async function checkHealth(
+export async function checkConnection(
     apiBaseUrl: string,
 ): Promise<void> {
     const client = createApiClient({
@@ -57,7 +57,10 @@ export async function checkHealth(
     })
 
     try {
-        await createHealthApi(client).get()
+        const healthApi = createHealthApi(client)
+
+        await healthApi.get()
+        await healthApi.getReady()
     } catch (error) {
         throw mapToConnectionError(error)
     }
