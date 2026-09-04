@@ -63,6 +63,7 @@ import {
     type WishlistCreateFormValues,
 } from '../wishlistFormModel'
 import { MembershipNotesEditor } from '../../shared/MembershipNotesEditor'
+import { WishlistAlbums } from '../components/WishlistAlbums'
 
 const CREATE_FIELDS = new Set<string>([
     'name',
@@ -418,6 +419,7 @@ function WishlistSection({
 
             {!expanded ? null : (
                 <>
+                    <WishlistAlbums wishlistId={wishlist.wishlist_id} enabled={expanded} />
                     {membershipsQuery.isPending ? (
                         <LoadingState
                             label={`Loading ${wishlist.name}…`}
@@ -777,8 +779,8 @@ export function WishlistsPage() {
                 </h1>
 
                 <p>
-                    Keep track of books you want to add
-                    to the collection. A book cannot be
+                    Keep track of books and albums you want to add
+                    to the library. An item cannot be
                     on a shelf and a wishlist at the
                     same time.
                 </p>

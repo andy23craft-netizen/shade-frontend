@@ -874,8 +874,10 @@ export function ShelvesPage() {
                 </h1>
                 <p>
                     Manage the shelf catalog used
-                    when placing books. The Unknown
-                    shelf is reserved for books
+                    when placing books or albums. An
+                    empty shelf becomes a book or album
+                    shelf when its first item is placed.
+                    The Unknown shelf is reserved for items
                     without an assigned shelf and
                     cannot be renamed or deleted.
                 </p>

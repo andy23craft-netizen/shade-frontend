@@ -11,7 +11,6 @@ import { LoadingState } from '../components/LoadingState'
 import { APP_VERSION } from '../config/appVersion'
 import { DrawerNavMenu } from './DrawerNavMenu'
 import shadeLibraryHeader from '../assets/Shade_Library_Header.webp'
-import { resolveLibraryContext } from '../config/libraryContext'
 
 interface RouteHandle {
     title?: string
@@ -20,7 +19,6 @@ interface RouteHandle {
 const LAST_UPDATED = 'September 01, 2026'
 
 export function AppShell() {
-    const libraryContext = resolveLibraryContext(window.location.hostname)
     const { data: versionData } = useVersion()
     const { data: dashboardData } = useDashboard()
     const location = useLocation()
@@ -76,9 +74,6 @@ export function AppShell() {
                             alt=""
                             className="app-brand__image"
                         />
-                        <span className="app-brand__library-name">
-                            {libraryContext?.name ?? 'Shade Library'}
-                        </span>
                     </NavLink>
 
                     <nav
