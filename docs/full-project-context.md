@@ -4,9 +4,10 @@ Slim always-on context for ChatGPT or any assistant without direct repository ac
 
 This document is the complete self-contained operating baseline for the Shade frontend. It covers working rules,
 architecture, non-negotiables, current product state, the backend contract summary, and the minimum reference index
-needed to continue development safely. Start from this file alone for that baseline. Do not require any other project
-prompt or agents guide. Everything needed for day-to-day implementation guidance is in this document. Attach the
-current feature ticket (when one exists) and the checked-in API contract only when the task needs them.
+needed to continue development safely. Start from this file alone for that baseline. Do not require
+`docs/AGENTS.md`, any other project prompt, or a second agents guide -- this pack already contains the day-to-day
+implementation guidance those files would otherwise supply. Attach the current feature ticket (when one exists) and
+the checked-in API contract only when the task needs them.
 
 A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
 ticket or the checked-in API contract. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced build
@@ -14,7 +15,7 @@ ticket -- treat it as notes unless the user asks to implement items from it. Whe
 `docs/tickets/` for open sequenced work (`FEAT-01_long-titles.md`, `FEAT-02_album-support.md`) or ask which work to take
 next rather than inventing a follow-on feature.
 
-**Context pack version:** 2026-09-03
+**Context pack version:** 2026-09-04
 
 ---
 
@@ -163,12 +164,13 @@ docs/technical-reference/openapi.json
 docs/technical-reference/API-for-FE.md
 ```
 
-Checked-in OpenAPI is LibraryV2 with `info.version` currently **1.0.16**. It includes book `book_id` (no `id` alias),
+Checked-in OpenAPI is LibraryV2 with `info.version` currently **1.1.0**. It includes book `book_id` (no `id` alias),
 normalized authors/`author_ids`, many-to-many categories, expanded `GET /books` filters, bulk book routes, book covers,
 typed loans (`book_id` / `album_id`, `media_type`), wishlist `wishlist_item_id`, mixed wishlist `/items` and album
-membership routes, album catalog/lookup/artwork/circulation, `/artists`, `/genres`, and additive album dashboard
-fields. Cover resolution -- including the Open Library ISBN fallback -- happens server-side; `GET
-/books/{book_id}/cover` returns **200** image bytes or **404**. Bulk lookup/import remain API-only (no SPA callers).
+membership routes, album catalog/lookup/artwork/circulation, `/artists`, `/genres`, additive album dashboard fields,
+and hostname-scoped multi-tenant routing (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`). Cover resolution
+-- including the Open Library ISBN fallback -- happens server-side; `GET /books/{book_id}/cover` returns **200** image
+bytes or **404**. Bulk lookup/import remain API-only (no SPA callers).
 
 The live SPA is still book-only. Album catalog, artwork, circulation, artists/genres, mixed wishlists, and album
 dashboard widgets ship only as `docs/tickets/FEAT-02_album-support.md` (or an explicit user request). Regenerating
@@ -188,12 +190,24 @@ Identifier and loan rules:
 Book-only UI still excludes `removed` from placement pickers and must surface mixed-media **412** detail (`A book
 cannot be placed on an album shelf`, `Books cannot be added to an album collection`). Shelves have no client
 `media_type` field. Shelf delete **409** applies when books or albums remain. Deploy album UI with matching backend
-1.0.16 and the rehearsed retained-data migration (including `album_artwork`); the frontend cannot compensate for an
+1.1.0 and the rehearsed retained-data migration (including `album_artwork`); the frontend cannot compensate for an
 older database.
 
+Tenant and media storage (shipped; do not invent alternatives):
+
+- The trusted reverse proxy (or Vite `SHADE_API_PROXY`) sets `X-Forwarded-Host`; browser JS must not send that header or
+  `Library-Username`. Missing/unknown host context returns **400** `Invalid or unknown library host`; an empty header
+  returns **400** `X-Forwarded-Host must be a non-empty string`. Auth failures take precedence on protected routes.
+- Book covers live under `data/covers-for-books/<username>/`; album artwork under
+  `data/covers-for-albums/<username>/<album_id>/` (relative to `DB_DIR`). Tenant username comes from hostname routing.
+- Album barcode lookup falls through Discogs miss **and** Discogs failures/timeouts to MusicBrainz; explicit Discogs
+  release IDs have no MusicBrainz substitute (**502** / **504**). Artwork refetch uses Cover Art Archive front images
+  only (never Discogs artwork). Behavioral detail lives in `API-for-FE.md`.
+
 Optional same-origin Vite proxy (`SHADE_API_PROXY=1`) forwards the current API surface, including `/health`, `/ready`,
-catalog routes, and API documentation. It excludes the removed browser backup route. Add new API paths when their
-features ship; tenant identity remains owned by the proxy rather than the browser.
+catalog routes, and API documentation. It derives `X-Forwarded-Host` from the browser host (defaults bare local origins
+to `andy.localhost`) and excludes the removed browser backup route. Add new API paths when their features ship; tenant
+identity remains owned by the proxy rather than the browser.
 
 Generated types:
 
@@ -313,11 +327,20 @@ Authorization: Bearer <VITE_API_SECRET_KEY>
 
 The token is build-time configuration from repository-root `.env`.
 
+Every business route requires Bearer auth **and** tenant resolution via proxy-owned `X-Forwarded-Host` (leftmost label
+lowercased; `shade` → `andy`; allowlisted in `data/tenants.cfg`). Public `GET /health` and `GET /version` omit auth and
+do not require tenant context. `GET /ready` omits auth but is hostname-scoped.
+
 Do not introduce:
 
 * runtime token entry;
 * `sessionStorage` token storage;
-* a connection-settings token form.
+* a connection-settings token form;
+* browser-set `X-Forwarded-Host` or `Library-Username`.
+
+CORS allows local Vite origins plus `andy`/`jamie` localhost and deployed `shade`/`jamie` library hosts. Allowed request
+headers are `Authorization` and `Content-Type`. `Content-Disposition` is exposed so cover/artwork download filenames are
+readable from JavaScript. Credentialed CORS (cookies) is disabled.
 
 ## Runtime config
 
@@ -343,6 +366,10 @@ GET /health
 GET /ready
 ```
 
+`GET /ready` may return **503** with `Retry-After: 1` when the tenant database is unavailable. Missing/unknown/empty
+tenant host context returns **400** (same strings as protected routes). OpenAPI currently under-documents those
+`/ready` failure codes; prefer `API-for-FE.md`. Do not poll `/ready`.
+
 Connection states:
 
 ```text
@@ -352,7 +379,8 @@ unauthorized
 unreachable
 ```
 
-Do not use `/protected` as the startup connectivity check.
+Do not use `/protected` as the startup connectivity check. Use `GET /version` only for the footer API release string;
+do not treat it as a health probe.
 
 ## API client
 
@@ -702,7 +730,8 @@ DELETE /books/{book_id}/cover
 
 Behavioral detail beyond OpenAPI schemas lives in `docs/technical-reference/API-for-FE.md` (Book covers). Cover
 resolution -- including the Open Library ISBN fallback -- happens server-side behind the authenticated cover endpoint
-(OpenAPI `1.0.16`; cover routes since `0.2.11+`).
+(OpenAPI `1.1.0`; cover routes since `0.2.11+`). Local cover files are stored under
+`data/covers-for-books/<username>/` (relative to `DB_DIR`); the SPA never constructs paths from that layout.
 
 Rules:
 
@@ -998,7 +1027,7 @@ Do not add `shelf_name` before removing wishlist membership.
 Book Details has Add to Collection.
 
 Collections are orthogonal to shelf placement. Collection membership HTTP remains book-only (`collection_book_id`).
-Album collection integration is outside the 1.0.16 contract.
+Album collection integration is outside the 1.1.0 contract.
 
 Membership rows join title/authors via `GET /books/{book_id}` and show shared `BookCover`. Location uses
 `displayCollectionBookLocation`: **Wishlist** when `on_wishlist`; otherwise Title Case shelf. Membership `shelf_name`
@@ -1019,11 +1048,11 @@ Product delete lives at:
 The frontend blocks delete when the book is on loan (`status === 'on_loan'` or an active loan exists), even though the
 backend would allow it. Hard delete removes the book and dependent memberships server-side; it cannot be restored.
 
-Database backup is an operator workflow outside the browser API.
+There is no browser backup endpoint. Database export and seed synchronization are operator-owned workflows.
 
 There is no browser Backup page/API caller.
 
-Never inspect, log, cache, or upload backup contents from frontend code.
+Never inspect, log, cache, or upload SQL dump or backup contents from frontend code.
 
 ---
 
@@ -1129,7 +1158,7 @@ GET  /wishlists/{wishlist_id}/items
 GET  /loans?media_type=book|album
 ```
 
-Checked-in OpenAPI (`info.version` `1.0.16`) and generated types match. `contractSmoke.test.ts` includes author,
+Checked-in OpenAPI (`info.version` `1.1.0`) and generated types match. `contractSmoke.test.ts` includes author,
 artist, genre, album, mixed-wishlist, bulk-move/bulk-lookup/bulk-import, and `/books/{book_id}/cover` paths. Album
 routes in the generated contract do not mean album UI is live.
 
@@ -1220,7 +1249,9 @@ Bundled WebP imagery under `src/assets/`:
 * Reuse existing API helpers and React Query keys.
 * Do not duplicate server state into a second state store.
 * Do not silently recalculate API-owned dashboard metrics or combine book and album dashboard fields.
-* Preserve tenant header behavior.
+* Preserve proxy-owned tenant routing: send only the Bearer token from the browser; never set `X-Forwarded-Host` or
+  `Library-Username`. Treat missing/unknown host **400** and `/ready` tenant failures as connection/configuration
+  problems, not inventable SPA workarounds.
 * Prefer dedicated lifecycle endpoints (checkout, check-in, mark-read, mark-played, bulk shelf move, cover
   upload/delete, album artwork upload/delete/refetch -- never simulate those with generic `PATCH`).
 * Bulk shelf movement must use the dedicated atomic endpoint, not repeated single-book PATCH requests.
@@ -1268,7 +1299,7 @@ Sequenced feature tickets live under `docs/tickets/` while open and are removed 
 such as `ui-nits.md` may also live there; it is not a sequenced build ticket unless the user asks to implement items
 from it. Open sequenced work currently includes `FEAT-01_long-titles.md` and `FEAT-02_album-support.md`. Prefer the
 supplied ticket, an explicit user request, or product docs when choosing further work. FEAT-02 is the album MVP
-frontend implementation against backend 1.0.16: lookup then artist/genre resolution then create; authenticated artwork
+frontend implementation against backend 1.1.0: lookup then artist/genre resolution then create; authenticated artwork
 only; dedicated album circulation endpoints; mixed `GET .../items` for mixed lists; separate album dashboard widgets;
 keep typed IDs distinct; keep collections book-only; add `/albums`, `/artists`, and `/genres` to the Vite proxy when
 the browser first needs them. Attach that ticket plus OpenAPI and `API-for-FE.md` when implementing it.
@@ -1488,10 +1519,10 @@ intentional current behavior.
 | Setup / local development / release    | `README.md`                                       |
 
 This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own for day-to-day
-implementation guidance. Do not require any other project prompt or agents guide. Attach the rows above only when the
-task needs their contents (API schemas, design notes, an open ticket, or setup/release notes). Prefer the current
-sequenced ticket (when one exists) and the checked-in API contract over planning notes that may lag. When no sequenced
-feature ticket remains, ask which work to take next.
+implementation guidance. Do not require `docs/AGENTS.md` or any other project prompt for missing baseline context --
+attach the rows above only when the task needs their contents (API schemas, design notes, an open ticket, or
+setup/release notes). Prefer the current sequenced ticket (when one exists) and the checked-in API contract over
+planning notes that may lag. When no sequenced feature ticket remains, ask which work to take next.
 
 ---
 
