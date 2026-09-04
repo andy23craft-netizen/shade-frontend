@@ -64,7 +64,7 @@ function createDevServerProxy() {
     }
 
     return {
-        '^/(api/)?(health|ready|version|books|albums|artists|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\\.json|wishlists|collections)':
+        '^/(api/)?(health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\\.json|wishlists|collections)':
             {
                 target,
                 changeOrigin: true,
