@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-03 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-04 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -183,24 +183,25 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.0.16`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.1.0`). Prefer generating or fixture-checking TypeScript models
   from this file.
-- `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, error
-  meanings, lifecycle rules, ISBN quirks, album lookup/artwork/circulation, mixed wishlists, book covers **200** image
-  bytes / multipart semantics, SQL backup dump handling, FE vs API ownership). Prefer this document (and live
-  router/`detail` strings) when OpenAPI is incomplete for a shared status code, or when a schema shows `null` as
-  allowed but validators reject it at runtime.
+- `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, hostname
+  tenant routing, error meanings, lifecycle rules, ISBN quirks, album lookup/artwork/circulation, mixed wishlists,
+  book covers **200** image bytes / multipart semantics, operator-owned export/seed sync, FE vs API ownership). Prefer
+  this document (and live router/`detail` strings) when OpenAPI is incomplete for a shared status code, or when a
+  schema shows `null` as allowed but validators reject it at runtime.
 
 Compare with a running backend `/openapi.json` before locking transport types; record drift as a blocker rather than
 inventing frontend semantics. Do not invent backend behavior from product docs alone. There is no separate backend
 handoff: OpenAPI plus `API-for-FE.md` are the contract; `docs/tickets/FEAT-02_album-support.md` is the frontend album
 implementation ticket.
 
-### Backend 1.0.16 contract (2026-09-03)
+### Backend 1.1.0 contract (2026-09-04)
 
-The checked-in contract matches backend **1.0.16**. Album catalog CRUD, soft-delete/restore, artist/genre catalogs,
+The checked-in contract matches backend **1.1.0**. Album catalog CRUD, soft-delete/restore, artist/genre catalogs,
 checkout/check-in/mark-played, Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch, additive
-dashboard album fields, and typed mixed wishlist membership are shipped. Existing book, wishlist-book, and collection
+dashboard album fields, and typed mixed wishlist membership are shipped. Hostname-scoped multi-tenant routing is
+shipped (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`). Existing book, wishlist-book, and collection
 HTTP shapes stay compatible; album collection membership is not shipped.
 
 `FEAT-02` now activates the album catalog UI: `/albums` browse, add, detail, and edit routes; artist/genre-backed
@@ -226,7 +227,18 @@ Book-only UI still needs the shared shelf/error adjustments: exclude `removed` f
 mixed-media **412** detail (`A book cannot be placed on an album shelf`, `Books cannot be added to an album
 collection`) without inventing a shelf `media_type` field. Shelf delete **409** applies when books or albums remain.
 
-Deploy frontend album UI with matching backend 1.0.16 and the separately rehearsed retained-data migration (including
+Tenant and media storage notes agents must not invent around:
+
+- The trusted reverse proxy (or Vite `SHADE_API_PROXY`) sets `X-Forwarded-Host`; browser JS must not send that header or
+  `Library-Username`. Missing/unknown host context returns **400** `Invalid or unknown library host`; an empty header
+  returns **400** `X-Forwarded-Host must be a non-empty string`. Auth failures take precedence on protected routes.
+- Book covers live under `data/covers-for-books/<username>/`; album artwork under
+  `data/covers-for-albums/<username>/<album_id>/` (relative to `DB_DIR`). Tenant username comes from hostname routing.
+- Album barcode lookup falls through Discogs miss **and** Discogs failures/timeouts to MusicBrainz; explicit Discogs
+  release IDs have no MusicBrainz substitute (**502** / **504**). Artwork refetch uses Cover Art Archive front images
+  only (approved front, else first front, else release-group listing) and never Discogs artwork. See `API-for-FE.md`.
+
+Deploy frontend album UI with matching backend 1.1.0 and the separately rehearsed retained-data migration (including
 `album_artwork`). The frontend cannot compensate for an older database schema.
 
 When implementing `FEAT-02`, treat that ticket plus OpenAPI and `API-for-FE.md` as the work plan: add `/albums`,
@@ -247,7 +259,7 @@ keep collections book-only; add album dashboard widgets as separate album statis
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
 
-### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.0.16`)
+### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.1.0`)
 
 Authors are backend data, not free-form book text. Books no longer store a string `authors` field on create/update.
 
@@ -272,7 +284,7 @@ SPA surface: `authorsApi` / `authorsQueries`, `authorDisplay.formatBookAuthors`,
 inline `useCreateAuthor` on ISBN lookup apply and wishlist add, and list/detail/join display. Do not send free-form
 author strings on `BookCreate` / `BookUpdate`.
 
-### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.0.16`)
+### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.1.0`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
@@ -364,8 +376,11 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 ### Authentication
 
 - Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
-- Protected browser requests send only the shared Bearer token; tenant headers are proxy-owned.
-- Public `GET /health`, `GET /ready`, and `GET /version` omit authentication (`authenticated: false`).
+- Protected browser requests send only the shared Bearer token; tenant identity is proxy-owned via `X-Forwarded-Host`
+  (leftmost label lowercased; `shade` → `andy`; allowlisted in `data/tenants.cfg`). Do not send `X-Forwarded-Host` or
+  `Library-Username` from browser JS. Every business route requires Bearer auth **and** tenant resolution.
+- Public `GET /health`, `GET /ready`, and `GET /version` omit authentication (`authenticated: false`). `GET /ready` is
+  hostname-scoped; `/health` and `/version` do not require tenant context. FastAPI docs/OpenAPI routes are also public.
 - No login, logout, user accounts, sessions, or roles
 - Token comes from a repository-root `.env` file via `VITE_API_SECRET_KEY`; Vite injects it at dev-server and
   production build time into JS bundles (`.env` stays gitignored; `.env.example` is committed)
@@ -378,7 +393,11 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 - Startup connectivity checks public `GET /health` first and tenant-aware `GET /ready` second; do not verify auth with
   `GET /protected`
 - `GET /ready` verifies the selected tenant's database readiness and may return **503** with `Retry-After: 1`; do not
-  poll it
+  poll it. Missing/unknown/empty tenant host context returns **400** (same strings as protected routes). OpenAPI
+  currently under-documents those `/ready` failure codes; prefer `API-for-FE.md`.
+- CORS allows local Vite origins plus `andy`/`jamie` localhost and deployed `shade`/`jamie` library hosts; allowed
+  request headers are `Authorization` and `Content-Type`. `Content-Disposition` is exposed so cover/artwork download
+  filenames are readable from JavaScript. Credentialed CORS (cookies) is disabled.
 - Use public `GET /version` for the footer API release string only; do not treat it as a health probe
 - Never commit the token, put it in URLs, log Authorization headers, or send it to analytics
 - A build-time token in JS bundles is inspectable by anyone with device or artifact access; that is an accepted risk
@@ -446,17 +465,17 @@ incomplete-metadata reports and Books deep links), active books with multi-`cate
 `shelf_name` / `is_read` / cleanup-mode filtering and URL-backed sorting, bulk selection and atomic bulk
 move-to-shelf, detail (including cover display/upload), manual/ISBN/camera/scanner add flows, hardware ISBN
 collection jump on Dashboard / Books / Loans, edit, checkout on book details (display-only **412** messaging without
-alternate-copy offers), check-in, loan history, reading tracking, hard delete, authenticated
-SQL backup at the API host (not a browser download), runtime API config, CI, Podman preview, versioned production
-artifacts, wishlists, wishlist move-to-shelf, curated Collections (create/edit/delete/add/reorder/remove on
-`/collections`, plus Book Details add-to-collection), dynamic multi-category UI, Books filter plumbing through
-`shelf_name` / `is_read` / cleanup deep links, cover images across book surfaces, and the regression / deployment
-quality gate (`make check`).
+alternate-copy offers), check-in, loan history, reading tracking, hard delete, operator-owned database export/seed
+sync (no browser backup endpoint), runtime API config, CI, Podman preview, versioned production artifacts, wishlists,
+wishlist move-to-shelf, curated Collections (create/edit/delete/add/reorder/remove on `/collections`, plus Book
+Details add-to-collection), dynamic multi-category UI, Books filter plumbing through `shelf_name` / `is_read` /
+cleanup deep links, cover images across book surfaces, and the regression / deployment quality gate (`make check`).
 
 **Out of scope unless explicitly requested:** album catalog/circulation/artwork/mixed-wishlist UI except as
-`FEAT-02`, UPC, true multi-library tenancy, overdue notifications, Goodreads/StoryGraph, user accounts/roles, realtime
-sync, loan CRUD, mark-unread, Build Mode bulk lookup/import UI (`POST /books/bulk/lookup`, `POST /books/bulk/import`),
-frontend author/category/artist/genre catalog admin pages, and remote Ansible/systemd/TLS/rollback orchestration.
+`FEAT-02`, UPC, library-switcher UI (hostname tenant routing is proxy/API-owned), overdue notifications,
+Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, Build Mode bulk lookup/import UI
+(`POST /books/bulk/lookup`, `POST /books/bulk/import`), frontend author/category/artist/genre catalog admin pages, and
+remote Ansible/systemd/TLS/rollback orchestration.
 Categories are many-to-many via `GET /categories` and `category_ids`; authors are many-to-many via `GET /authors` and
 `author_ids` -- do not hard-code taxonomy or invent a second filter stack. Broader catalog filters beyond the current
 Books controls stay out unless a product need explicitly requires them. Collection browse (`BooksPage`) and loan
@@ -1143,7 +1162,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   assertions, and swallowed transport failures.
 - `src/api/apiClient.test.ts`: Bearer injection without browser-owned tenant headers, public requests omitting auth, `403`,
   `404`, `409`, both `422` detail shapes, `5xx`
-  (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success,
+  (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary cover success,
   `204`, and `onRequestFailure` diagnostic hooks.
 - `src/api/authorsApi.test.ts`: Author list/get/create/update/remove request shaping and paths.
 - `src/api/apiErrors.test.ts` / `apiTypes.test.ts` / `api.test.ts` / `apiRedaction.test.ts`: Error, schema alias,
@@ -1288,8 +1307,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/packRelease.ts` / `packRelease.test.ts`: Deterministic `dist/` tarball, SHA-256 sidecar, and release
   manifest (`make publish` / `yarn release:pack`; gitignored `ci/artifacts/shade-frontend-<version>.tar.gz`).
 - `scripts/productionLikeHost.ts` / `productionLikeHost.test.ts`: Production-like static host plus mock API checks
-  for SPA fallback, HTML/config revalidation, immutable `/assets/`, CORS preflight, Bearer access, and backup
-  `Content-Disposition`.
+  for SPA fallback, HTML/config revalidation, immutable `/assets/`, CORS preflight, Bearer access, and exposed
+  `Content-Disposition` for cover/artwork FileResponses.
 
 Evergreen browser targets: desktop Firefox / Chrome / Edge / Safari latest; mobile Safari on iOS and Chrome on
 Android. Smoke scope: shell and primary nav, route-title updates, heading focus, keyboard-only navigation, skip
@@ -1439,22 +1458,22 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 
 - `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
   sequenced work: `FEAT-01_long-titles.md`, `FEAT-02_album-support.md` (album MVP frontend implementation against
-  backend 1.0.16). Informal UI feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket
+  backend 1.1.0). Informal UI feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket
   unless the user asks to implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask
   which work to take next rather than inventing a follow-on feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with `FEAT-02`.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
-  `info.version` `1.0.16` -- see Backend Contract), including book `book_id` / covers / filters / bulk routes,
+  `info.version` `1.1.0` -- see Backend Contract), including book `book_id` / covers / filters / bulk routes,
   loans with nullable `book_id`/`album_id` and `media_type`, wishlist `wishlist_item_id` plus mixed `/items` and album
   membership routes, album catalog/lookup/artwork/circulation, `/artists`, `/genres`, and additive album dashboard
   fields.
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json` (including
-  normalized author/category/artist/genre catalog rules, album lookup/artwork/circulation, mixed wishlists, atomic bulk
-  shelf-move rules, Build Mode bulk lookup/import semantics, wishlist **412** semantics, mixed-media shelf/collection
-  **412**, collection membership `shelf_name` null for unshelved rows, and Book covers display/upload guidance for
-  authenticated **200** image bytes / multipart `file`).
+  hostname tenant routing via `X-Forwarded-Host`, normalized author/category/artist/genre catalog rules, album
+  lookup/artwork/circulation, mixed wishlists, atomic bulk shelf-move rules, Build Mode bulk lookup/import semantics,
+  wishlist **412** semantics, mixed-media shelf/collection **412**, collection membership `shelf_name` null for
+  unshelved rows, and Book covers display/upload guidance for authenticated **200** image bytes / multipart `file`).
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/full-project-context.md`: Optional slim always-on pack for chats without repo access (not required when
   this file is already loaded).
