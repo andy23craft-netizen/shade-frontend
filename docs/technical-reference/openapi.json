@@ -3575,6 +3575,20 @@
         "title": "LoanRead",
         "type": "object"
       },
+      "LoanUpdate": {
+        "properties": {
+          "borrower": {
+            "maxLength": 255,
+            "title": "Borrower",
+            "type": "string"
+          }
+        },
+        "required": [
+          "borrower"
+        ],
+        "title": "LoanUpdate",
+        "type": "object"
+      },
       "MarkPlayedRequest": {
         "description": "Album listening completion, with the same fields and validation as mark-read.",
         "properties": {
@@ -4353,7 +4367,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.1.0"
+    "version": "1.1.2"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -11207,6 +11221,107 @@
           }
         ],
         "summary": "Get Loan",
+        "tags": [
+          "loans"
+        ]
+      },
+      "patch": {
+        "operationId": "update_loan_loans__id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Loan",
         "tags": [
           "loans"
         ]

@@ -77,6 +77,7 @@ export type MarkReadRequest =
 
 export type LoanRead = Schemas['LoanRead']
 export type LoanList = Schemas['LoanList']
+export type LoanUpdate = Schemas['LoanUpdate']
 
 export type DashboardBorrowing =
     Schemas['DashboardBorrowing']

@@ -12,6 +12,7 @@ import { renderWithProviders } from '../../../test/renderAppTree'
 
 const mockUseInfiniteLoans = vi.fn()
 const mockUseLoans = vi.fn()
+const mockUseUpdateLoan = vi.fn()
 const mockUseBooks = vi.fn()
 const mockUseBook = vi.fn()
 const mockUseInfiniteScrollTrigger = vi.fn()
@@ -25,6 +26,7 @@ vi.mock('../../../api/loansQueries', () => ({
     useInfiniteLoans: (options: unknown) => mockUseInfiniteLoans(options),
     useLoans: (options: unknown) =>
         mockUseLoans(options),
+    useUpdateLoan: () => mockUseUpdateLoan(),
 }))
 
 vi.mock('../../../api/booksQueries', () => ({
@@ -187,6 +189,7 @@ describe('LoansPage', () => {
         mockUseBooks.mockReset()
         mockUseInfiniteScrollTrigger.mockReset()
         mockUseLoans.mockReset()
+        mockUseUpdateLoan.mockReset()
         mockUseBook.mockReset()
         mockUseCollectionIsbnJump.mockReset()
 
@@ -195,6 +198,11 @@ describe('LoansPage', () => {
             isError: false,
             data: makeLoanList(),
             refetch: vi.fn(),
+        })
+
+        mockUseUpdateLoan.mockReturnValue({
+            isPending: false,
+            mutate: vi.fn(),
         })
 
         mockUseBook.mockReturnValue({
@@ -858,6 +866,12 @@ describe('LoansPage', () => {
         expect(
             screen.getByText('Past Reader'),
         ).toBeInTheDocument()
+
+        expect(
+            screen.getAllByRole('button', {
+                name: 'Edit Borrower',
+            }),
+        ).toHaveLength(2)
 
         expect(
             screen.getByText(

@@ -52,10 +52,17 @@ export function HomeBookCarousel({
     function move(direction: -1 | 1) {
         const track = trackRef.current
         if (track === null) return
-        track.scrollBy({
-            left: direction * Math.max(track.clientWidth * 0.8, 1),
-            behavior: 'smooth',
-        })
+        const left = direction * Math.max(track.clientWidth * 0.8, 1)
+
+        if (typeof track.scrollBy === 'function') {
+            track.scrollBy({
+                left,
+                behavior: 'smooth',
+            })
+            return
+        }
+
+        track.scrollLeft += left
     }
 
     function pauseTemporarily() {
@@ -93,7 +100,11 @@ export function HomeBookCarousel({
             const track = trackRef.current
             if (track === null) return
             if (atEnd) {
-                track.scrollTo({ left: 0, behavior: 'smooth' })
+                if (typeof track.scrollTo === 'function') {
+                    track.scrollTo({ left: 0, behavior: 'smooth' })
+                } else {
+                    track.scrollLeft = 0
+                }
             } else {
                 move(1)
             }

@@ -274,6 +274,35 @@ describe('createLoansApi', () => {
         )
     })
 
+    it('updates a loan borrower', async () => {
+        const loan = {} as LoanRead
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue(loan)
+
+        const api = createLoansApi(client)
+        const result = await api.update(
+            'loan/123',
+            {
+                borrower: 'Corrected Name',
+            },
+        )
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/loans/loan%2F123',
+            {
+                method: 'PATCH',
+                body: {
+                    borrower: 'Corrected Name',
+                },
+            },
+        )
+        expect(result).toBe(loan)
+    })
+
     async function expectGetStatus(
         status: number,
         detail: unknown,

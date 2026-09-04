@@ -69,8 +69,8 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   not offer alternate copies. `/checkout` is a compatibility redirect (`LegacyCheckoutRedirect`), not a product page.
 - Check-in and loan history on `/loans` via `CheckinForm` (`POST /books/{book_id}/checkin`); eligibility via
   `findActiveLoan` / `isCheckinEligible` (not book `status` alone); blank return time omits body; active vs returned
-  sections with due/overdue labels and durable `Book {id}` fallback. `/checkin` is a compatibility redirect, not a
-  product page.
+  sections with due/overdue labels and durable `Book {id}` fallback. Active and returned records support borrower
+  correction through `PATCH /loans/{id}`. `/checkin` is a compatibility redirect, not a product page.
 - Reading completion and later edits (`/books/:bookId/mark-read`, `/books/:bookId/reading`); initial unread-to-read
   via `POST /books/{book_id}/mark-read` only; later edits via `PATCH`; no mark-unread. Collection cards show Read/Unread
   plus rating (`N / 5`, or an em dash when null).
@@ -729,7 +729,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   no SPA callers yet.
 - `src/api/loansApi.ts`: `list()` (`GET /loans`, optional `bookId` → `?book_id=`, `albumId` → `?album_id=`,
   `mediaType` → `?media_type=book|album`, optional `skip`/`take` together). The Loans page passes `mediaType: 'book'`.
-  `get(id)` is `GET /loans/{id}`.
+  `get(id)` is `GET /loans/{id}`; `update(id, { borrower })` is `PATCH /loans/{id}`.
 - `src/api/shelvesApi.ts`: `list()` (`GET /shelves`) returns a plain `ShelfRead[]` array (no pagination params);
   `create` (`POST` → **201**), `update` (`PATCH` → **200**), and `remove` (`DELETE` → **204**) serialize only
   documented `ShelfCreate` / `ShelfUpdate` fields.
@@ -756,7 +756,8 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `queryKeys.collections.all` (server removes collection memberships on hard delete).
 - `src/api/loansQueries.ts` / `dashboardQueries.ts` / `shelvesQueries.ts`: `useLoans` (optional `{ bookId, albumId,
   mediaType, enabled }`), `useInfiniteLoans` (optional `{ bookId, albumId, mediaType, enabled }`; batch size 30),
-  `useLoan(id)` (disabled when falsy), `useDashboard`, `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
+  `useLoan(id)` (disabled when falsy), `useUpdateLoan` (detail cache update plus loan invalidation), `useDashboard`,
+  `useDashboardBreakdowns`, `useDashboardIncompleteMetadata`,
   `useInfiniteIncompleteMetadataBooks({ field?, enabled? })` (batch size 30 via shared config), `useShelves({ enabled?
   })`, plus `useCreateShelf` / `useUpdateShelf` / `useDeleteShelf` that invalidate `queryKeys.shelves.all` (and
   books/dashboard when a rename includes `common_name`).
@@ -990,6 +991,9 @@ Implemented:
   not. In-page loan/book when Check In is opened from Active Loans; otherwise `useLoans({ bookId })` plus `useBooks()`
   cache, with `useBook(bookId)` only on cache miss. Targeted queries are not mounted when `bookId` is unset. Colocated
   `LoansPage.test.tsx`
+- `src/features/loans/components/EditLoanBorrower.tsx` / `borrowerEditModel.ts`: inline borrower correction for active
+  and returned loan cards via `useUpdateLoan`; nonblank / 255-character validation, Field-linked **422**, documented
+  **400** / **403** / **404** messaging, pending guards, and cancel/reset behavior. Colocated component and model tests.
 - `src/features/wishlists/routes/WishlistsPage.tsx` (`/wishlists`): `useWishlists` plus nested `useWishlistBooks`;
   membership catalog join via `useBook` / `GET /books/{book_id}` (not `useBooks()` / `GET /books`, which omits unshelved
   rows) with durable `Book {id}` fallback; create form with Field-linked **422**; add via `AddWishlistBookControl`

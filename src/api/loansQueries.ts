@@ -1,6 +1,8 @@
 import {
     useInfiniteQuery,
+    useMutation,
     useQuery,
+    useQueryClient,
 } from '@tanstack/react-query'
 
 import {
@@ -20,6 +22,7 @@ import {
 
 import type {
     LoanList,
+    LoanUpdate,
 } from './apiTypes'
 
 function getNextListPageParam(
@@ -136,5 +139,33 @@ export function useLoan(
                 signal,
             }),
         enabled: Boolean(id),
+    })
+}
+
+export function useUpdateLoan() {
+    const {
+        apiClient,
+    } = useConnection()
+    const queryClient = useQueryClient()
+    const loansApi = createLoansApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({
+            id,
+            update,
+        }: {
+            id: string
+            update: LoanUpdate
+        }) => loansApi.update(id, update),
+        onSuccess: (loan) => {
+            queryClient.setQueryData(
+                queryKeys.loans.detail(loan.id),
+                loan,
+            )
+
+            return queryClient.invalidateQueries({
+                queryKey: queryKeys.loans.all,
+            })
+        },
     })
 }

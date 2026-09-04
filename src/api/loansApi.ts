@@ -1,6 +1,7 @@
 import type {
     LoanList,
     LoanRead,
+    LoanUpdate,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -100,6 +101,35 @@ export function createLoansApi(
                 : client.getJson<LoanRead>(
                     path,
                     signalOptions,
+                )
+        },
+
+        async update(
+            id: string,
+            update: LoanUpdate,
+            options: ApiCallOptions = {},
+        ): Promise<LoanRead> {
+            const path =
+                `/loans/${encodeURIComponent(id)}`
+            const signalOptions = withSignal(
+                options.signal,
+            )
+
+            return signalOptions === undefined
+                ? client.requestJson<LoanRead>(
+                    path,
+                    {
+                        method: 'PATCH',
+                        body: update,
+                    },
+                )
+                : client.requestJson<LoanRead>(
+                    path,
+                    {
+                        method: 'PATCH',
+                        body: update,
+                        ...signalOptions,
+                    },
                 )
         },
     }

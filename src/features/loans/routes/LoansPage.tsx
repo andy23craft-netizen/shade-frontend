@@ -34,6 +34,9 @@ import {
     CheckinDialog,
 } from '../components/CheckinDialog'
 import {
+    EditLoanBorrower,
+} from '../components/EditLoanBorrower'
+import {
     flattenInfiniteListPages,
 } from '../loansListModel'
 import {
@@ -507,29 +510,27 @@ export function LoansPage() {
                                                 loan.book_id,
                                             )
 
-                                        if (
-                                            !book ||
-                                            !isCheckinEligible(
-                                                book,
-                                                loans,
-                                            )
-                                        ) {
-                                            return null
-                                        }
-
                                         return (
                                             <div className="circulation-record-card__actions">
-                                                <Button
-                                                    type="button"
-                                                    variant="primary"
-                                                    onClick={() =>
-                                                        selectBookForCheckin(
-                                                            book.book_id,
-                                                        )
-                                                    }
-                                                >
-                                                    Check In
-                                                </Button>
+                                                <EditLoanBorrower loan={loan} />
+
+                                                {book &&
+                                                isCheckinEligible(
+                                                    book,
+                                                    loans,
+                                                ) ? (
+                                                    <Button
+                                                        type="button"
+                                                        variant="primary"
+                                                        onClick={() =>
+                                                            selectBookForCheckin(
+                                                                book.book_id,
+                                                            )
+                                                        }
+                                                    >
+                                                        Check In
+                                                    </Button>
+                                                ) : null}
                                             </div>
                                         )
                                     })()}
@@ -620,6 +621,10 @@ export function LoansPage() {
                                             </div>
                                         ) : null}
                                     </dl>
+
+                                    <div className="circulation-record-card__actions">
+                                        <EditLoanBorrower loan={loan} />
+                                    </div>
                                 </article>
                             </li>
                         ))}

@@ -710,7 +710,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Loan */
+        patch: operations["update_loan_loans__id__patch"];
         trace?: never;
     };
     "/ready": {
@@ -1910,6 +1911,11 @@ export interface components {
             notes?: string | null;
             /** Returned At */
             returned_at?: string | null;
+        };
+        /** LoanUpdate */
+        LoanUpdate: {
+            /** Borrower */
+            borrower: string;
         };
         /**
          * MarkPlayedRequest
@@ -6054,6 +6060,70 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_loan_loans__id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoanUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

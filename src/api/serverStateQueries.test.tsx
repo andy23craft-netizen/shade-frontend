@@ -34,6 +34,7 @@ import {
     useLoan,
     useLoans,
     useInfiniteLoans,
+    useUpdateLoan,
 } from './loansQueries'
 import {
     queryKeys,
@@ -41,6 +42,7 @@ import {
 
 const mockListLoans = vi.fn()
 const mockGetLoan = vi.fn()
+const mockUpdateLoan = vi.fn()
 const mockGetDashboard = vi.fn()
 const mockGetDashboardBreakdowns = vi.fn()
 const mockGetIncompleteMetadata = vi.fn()
@@ -50,6 +52,7 @@ vi.mock('./loansApi', () => ({
     createLoansApi: () => ({
         list: mockListLoans,
         get: mockGetLoan,
+        update: mockUpdateLoan,
     }),
 }))
 
@@ -441,6 +444,54 @@ describe('loans and dashboard queries', () => {
         expect(
             mockGetLoan,
         ).not.toHaveBeenCalled()
+    })
+
+    it('updates a loan and refreshes loan queries', async () => {
+        const loan = {
+            id: 'loan-1',
+            borrower: 'Corrected Name',
+        } as LoanRead
+
+        mockUpdateLoan.mockResolvedValueOnce(loan)
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+        const invalidateQueries = vi.spyOn(
+            queryClient,
+            'invalidateQueries',
+        )
+        const { result } = renderHook(
+            () => useUpdateLoan(),
+            {
+                wrapper: Wrapper,
+            },
+        )
+
+        await result.current.mutateAsync({
+            id: 'loan-1',
+            update: {
+                borrower: 'Corrected Name',
+            },
+        })
+
+        expect(mockUpdateLoan).toHaveBeenCalledWith(
+            'loan-1',
+            {
+                borrower: 'Corrected Name',
+            },
+        )
+        expect(
+            queryClient.getQueryData(
+                queryKeys.loans.detail('loan-1'),
+            ),
+        ).toEqual(loan)
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey: queryKeys.loans.all,
+        })
+
+        queryClient.clear()
     })
 
     it('loads dashboard with the shared dashboard query key', async () => {

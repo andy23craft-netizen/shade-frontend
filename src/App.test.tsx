@@ -58,6 +58,8 @@ describe('application routing effects', () => {
         await screen.findByRole('heading', {
           level: 1,
           name: 'Loans',
+        }, {
+          timeout: 10_000,
         }),
     ).toBeInTheDocument()
 

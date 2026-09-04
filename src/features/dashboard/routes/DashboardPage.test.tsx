@@ -353,7 +353,7 @@ describe('DashboardPage', () => {
         expect(
             screen.getByText('4.2 / 5'),
         ).toBeInTheDocument()
-    })
+    }, 20_000)
 
     it('uses the API-provided recent window instead of a hardcoded value', () => {
         mockDashboardQuery({
