@@ -17,30 +17,41 @@
           color var(--duration-normal) ease;
 }
 
-/* Album room: the same Shade house, with record-bin and listening-counter materials. */
-.page--albums, .page--album-detail, .page--album-form { --album-ink: #261b24; --album-wine: #6d263f; --album-cream: #f1e4c7; }
-.album-room__header { border-bottom: 4px solid var(--album-wine); }
-.album-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; padding: 1rem; background: #e4d2ad; border: 1px solid #8e724f; }
+/* Albums currently share the books' catalog typography and paper-card treatment. */
+.album-room__header { align-items: end; }
+.albums-page__heading { display: grid; gap: var(--space-2); }
+.albums-page__heading p { color: var(--color-text-muted); }
+.album-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; padding: var(--space-5); background: var(--color-card-muted); border: 1px solid var(--color-card-border); border-radius: var(--radius-card); box-shadow: var(--shadow-small); color: var(--color-surface-text); }
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1.5rem; }
-.album-card { background: #33282c; box-shadow: .4rem .5rem 1rem #160f1280; border-bottom: .5rem solid #8e6939; }
-.album-card a { color: var(--album-cream); text-decoration: none; }
-.album-card__copy { padding: 1rem; }
-.album-card h2 { margin: 0; font-size: 1.15rem; }
-.album-card__meta { color: #d0b998; font-size: .85rem; }
-.album-card__stamp { color: #ffb6ad; border: 1px solid currentColor; padding: .15rem .4rem; text-transform: uppercase; font-size: .75rem; }
+.album-card { position: relative; margin-block-start: .65rem; border: 1px solid var(--color-card-border); border-radius: .15rem; background: linear-gradient(rgb(255 255 255 / 10%), rgb(0 0 0 / 2%)), var(--color-card); box-shadow: 0 1px 0 rgb(255 255 255 / 18%) inset, 0 .2rem .45rem rgb(0 0 0 / 16%); color: var(--color-surface-text); }
+.album-card::after { position: absolute; z-index: -1; top: -.62rem; left: 1.25rem; width: 4.5rem; height: .7rem; border: 1px solid var(--color-card-border); border-bottom: 0; background: var(--color-card); content: ''; clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%); }
+.album-card::before { position: absolute; inset: .18rem -.12rem -.16rem .12rem; z-index: -1; border: 1px solid var(--color-card-border); background: var(--color-card-muted); content: ''; transform: rotate(-.18deg); }
+.album-card > .app-link { display: block; min-height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--color-surface-text); text-decoration: none; }
+.album-card > .app-link:hover { background: transparent; color: var(--color-surface-text); }
+.album-card__copy { display: grid; gap: var(--space-4); padding: var(--space-5); }
+.album-card__heading { display: grid; gap: var(--space-1); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-card-rule); }
+.album-card h2 { margin: 0; overflow-wrap: anywhere; color: var(--color-surface-text); font-family: var(--font-family-heading); font-size: var(--font-size-h3); line-height: 1.15; letter-spacing: .025em; }
+.album-card > .app-link:hover h2 { color: var(--color-link); text-decoration: underline; text-decoration-thickness: .08em; text-underline-offset: .15em; }
+.album-card__artist { margin: 0; overflow-wrap: anywhere; color: var(--color-surface-text-muted); font-family: var(--font-family-heading); font-size: var(--font-size-small); letter-spacing: .035em; }
+.album-card__metadata { display: grid; gap: 0; margin: 0; }
+.album-card__metadata div { display: grid; grid-template-columns: minmax(4.75rem, auto) 1fr; gap: var(--space-2); padding-block: var(--space-2); border-bottom: 1px dotted var(--color-card-rule); }
+.album-card__metadata dt { color: var(--color-surface-text); font-family: var(--font-family-heading); font-size: var(--font-size-small); font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
+.album-card__metadata dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--color-surface-text-muted); }
+.album-card__stamp { justify-self: start; color: var(--color-danger-text); border: 1px solid currentColor; padding: .15rem .4rem; font-family: var(--font-family-heading); font-size: .75rem; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
 .album-artwork { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #19151a; }
 .album-artwork--placeholder { display: grid; place-items: center; color: #d9b36c; font-size: 4rem; background: radial-gradient(circle, #5f5260 0 14%, #161318 15% 26%, #3a3038 27% 29%, #161318 30%); }
-.album-detail__hero { display: grid; grid-template-columns: minmax(15rem, 25rem) 1fr; gap: 2rem; align-items: center; background: #2c2027; color: var(--album-cream); padding: 2rem; }
-.album-detail__artist { font-size: 1.4rem; color: #d9b36c; }
+.album-detail__hero { display: grid; grid-template-columns: minmax(15rem, 25rem) 1fr; gap: 2rem; align-items: center; padding: 2rem; border: 1px solid var(--color-card-border); border-radius: .15rem; background: linear-gradient(rgb(255 255 255 / 10%), rgb(0 0 0 / 2%)), var(--color-card); box-shadow: var(--shadow-card); color: var(--color-surface-text); }
+.album-detail__hero h1 { margin: 0; color: var(--color-surface-text); font-family: var(--font-family-heading); letter-spacing: .025em; }
+.album-detail__artist { margin-block: var(--space-2); color: var(--color-surface-text-muted); font-family: var(--font-family-heading); font-size: 1.05rem; letter-spacing: .035em; }
 .album-detail__actions, .album-form__actions, .album-form__lookup-row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: end; }
 .album-detail__columns { display: grid; grid-template-columns: 1fr 1.25fr; gap: 2rem; margin: 2rem 0; }
-.track-list { background: #eee1c4; padding: 1.5rem 2.5rem; }
-.track-list li { padding: .5rem 0; border-bottom: 1px dotted #776650; }
-.track-list li span { display: inline-block; min-width: 2.75rem; color: #76542f; }
+.track-list { background: var(--color-card-muted); padding: 1.5rem 2.5rem; border: 1px solid var(--color-card-border); border-radius: var(--radius-card); color: var(--color-surface-text); }
+.track-list li { padding: .5rem 0; border-bottom: 1px dotted var(--color-card-rule); }
+.track-list li span { display: inline-block; min-width: 2.75rem; color: var(--color-surface-text-muted); }
 .track-list small { float: right; }
-.album-counter, .album-artwork-manager { margin: 1.5rem 0; padding: 1.5rem; border: 1px solid #745765; background: #e8ddcb; }
+.album-counter, .album-artwork-manager { margin: 1.5rem 0; padding: 1.5rem; border: 1px solid var(--color-card-border); border-radius: var(--radius-card); background: var(--color-card-muted); box-shadow: var(--shadow-small); color: var(--color-surface-text); }
 .album-form { display: grid; gap: 1.5rem; max-width: 60rem; }
-.album-form section { padding: 1.5rem; background: #eee1c4; border-left: .5rem solid var(--album-wine); }
+.album-form section { padding: 1.5rem; border: 1px solid var(--color-card-border); border-radius: var(--radius-card); background: var(--color-card-muted); box-shadow: var(--shadow-small); color: var(--color-surface-text); }
 .album-form__choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .4rem; max-height: 12rem; overflow: auto; margin-bottom: .5rem; }
 .dashboard-paper--albums { border-top-color: #6d263f; }
 .album-dashboard-breakdowns dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .5rem; }
@@ -9728,21 +9739,4 @@
 .add-to-collection__wishlist-link:focus-visible {
   color: #fff8df;
   text-decoration-color: currentColor;
-}
-
-/* Temporary album typography baseline while the album palette is refined. */
-.page--albums,
-.page--albums *,
-.page--album-detail,
-.page--album-detail *,
-.page--album-form,
-.page--album-form * {
-  color: #000 !important;
-}
-
-.page--albums ::placeholder,
-.page--album-detail ::placeholder,
-.page--album-form ::placeholder {
-  color: #000 !important;
-  opacity: 1;
 }
