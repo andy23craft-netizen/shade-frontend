@@ -1,8 +1,9 @@
 # API for Frontend (supplementary)
 
-Backend **1.0.16** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Album catalog CRUD, soft-delete /
+Backend **1.1.0** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Album catalog CRUD, soft-delete /
 restore, artist/genre catalogs, circulation (checkout / check-in / mark-played), Discogs/MusicBrainz lookup, and
-private artwork get/upload/delete/refetch are shipped. Existing book, wishlist, and loan response shapes are
+private artwork get/upload/delete/refetch are shipped. Hostname-scoped multi-tenant routing is shipped
+(`X-Forwarded-Host`, with `shade` remapped to tenant `andy`). Existing book, wishlist, and loan response shapes are
 unchanged aside from additive album fields noted below. Full schemas and authenticated paths live in the regenerated
 `openapi.json`.
 
@@ -12,7 +13,7 @@ Album circulation (shipped)
   `completion_date`, and `review`. New albums default to available, not played, with null completion/review.
   PATCH omission preserves these values; null status/is_played is 422. Null completion_date/review clears them.
   Albums have no `reading`, `reserved`, or TBR automation. Played state is independent of circulation status.
-- POST `/albums/{album_id}/checkout` uses the existing required `CheckoutRequest`: borrower is required (1–255
+- POST `/albums/{album_id}/checkout` uses the existing required `CheckoutRequest`: borrower is required (1-255
   characters); checked_out_at, due_at, notes are optional. Omitted/null checked_out_at defaults to now.
   Returns 200 AlbumRead, creates a loan with album_id set and book_id null, and sets status to on_loan.
   Display-only albums return 412 `Album is display only`; an active loan or on_loan status returns
@@ -22,7 +23,7 @@ Album circulation (shipped)
   to use now, or supply returned_at. It closes the active album loan and returns 200 AlbumRead with status
   available. No active loan returns 409 `Album is not checked out`.
 - POST `/albums/{album_id}/mark-played` requires a body (`{}` is valid), sets is_played=true and returns
-  200 AlbumRead. Optional fields are completion_date, rating (1–5 or null), review. Omitted fields preserve
+  200 AlbumRead. Optional fields are completion_date, rating (1-5 or null), review. Omitted fields preserve
   their values, except a missing completion_date defaults to today (UTC) if none exists. Explicit null clears
   each optional field. This action never changes status or loan history. PATCH is_played=false marks unplayed.
 - All three routes use existing Bearer auth (403 if unauthorized); malformed album IDs return 400, missing
@@ -86,7 +87,7 @@ Album behavior and frontend integration
   `artwork_present`. Album dashboard summary/breakdown fields and album wishlist membership routes are shipped.
   Albums never appear in GET `/books`. Album UI is needed to use the new resource; the existing book UI needs
   only the shelf/error handling adjustments above. Regenerating client types alone does not implement those
-  behaviors. Clients generated from this 1.0.16 contract remain compatible with the existing book UI: ignore
+  behaviors. Clients generated from this 1.1.0 contract remain compatible with the existing book UI: ignore
   album routes, additive album dashboard/loan fields, and album membership until album UI ships. There is no
   separate handoff document.
 
@@ -154,28 +155,39 @@ There is no login, logout, or session system. Missing or invalid credentials ret
 {"detail": "Invalid authentication credentials"}.
 
 Public routes: `GET /health`, `GET /ready`, `GET /version`, and FastAPI's generated docs/OpenAPI routes (`/docs`,
-`/redoc`, `/openapi.json`, `/docs/oauth2-redirect`). Every other business route requires the Bearer token.
+`/redoc`, `/openapi.json`, `/docs/oauth2-redirect`). `GET /ready` is hostname-scoped; the others do not require tenant
+context. Every other business route requires the Bearer token and tenant resolution.
 
 There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated;
 does not touch the database). Use `GET /ready` when the UI needs to know the database connection is usable; failure
-returns **503** with `Retry-After: 1`. Use `GET /version` when the UI needs the running API release string (same value
+returns **503** with `Retry-After: 1`. Missing/unknown/empty tenant host context returns **400** (same strings as
+protected routes). OpenAPI currently under-documents those `/ready` failure codes; prefer this section and the
+error table. Use `GET /version` when the UI needs the running API release string (same value
 as `ci/VERSION` and OpenAPI `info.version`); do not treat it as a health probe. Learn whether credentials are accepted
 from the first protected request you need (e.g., `GET /books` or `GET /dashboard`); a **403** means the token is
 missing or invalid.
 
 ## CORS
 
-Default allowed origins are the local Vite origins http://localhost:5173 and http://127.0.0.1:5173. For a
-deployed frontend, set CORS_ORIGINS to a JSON array of exact origins (scheme, hostname, and port; no path or
-trailing slash), for example:
+Default allowed origins are the local Vite origins http://localhost:5173 and http://127.0.0.1:5173, plus
+http://andy.localhost:5173, http://jamie.localhost:5173, https://shade.library.spir.es, and
+https://jamie.library.spir.es. For a deployed frontend, set CORS_ORIGINS to a JSON array of exact origins
+(scheme, hostname, and port; no path or trailing slash), for example:
 
-CORS_ORIGINS=["https://library.john-shade.spir.es"]
+CORS_ORIGINS=["https://shade.library.spir.es","https://jamie.library.spir.es"]
 
 CORS does not replace authentication. The middleware handles browser preflight; frontend code should not send
-OPTIONS manually. Allowed request headers include Authorization and Content-Type. Credentialed CORS (cookies) is
-disabled. A disallowed origin can still reach the server, but browser JS cannot read the response. Tenant identity is
-supplied by the trusted same-origin proxy through `X-Forwarded-Host`; browser JavaScript must not send that header or
-`Library-Username`.
+OPTIONS manually. Allowed request headers are Authorization and Content-Type.
+Content-Disposition is exposed so image download filenames from cover/artwork FileResponses are readable from
+JavaScript. Credentialed CORS (cookies) is disabled. A disallowed origin can still reach the server, but browser
+JS cannot read the response.
+
+The trusted reverse proxy must set `X-Forwarded-Host` to the public library hostname. The backend lowercases its
+leftmost label, remaps `shade` to tenant `andy` (`HOSTNAME_TENANT_ALIASES`), and accepts the result only when
+allowlisted in `data/tenants.cfg`. Browser code must not set this proxy-owned header. Missing or unknown host
+context returns **400** `Invalid or unknown library host`; an explicitly empty header returns **400**
+`X-Forwarded-Host must be a non-empty string`. Authentication failures take precedence on protected routes.
+`Library-Username` is not allowed by CORS and is not used for routing.
 
 ## Error and validation semantics
 
@@ -183,14 +195,14 @@ supplied by the trusted same-origin proxy through `X-Forwarded-Host`; browser Ja
 | --- | --- |
 | **400** | Malformed or empty GUID on book path `{book_id}` (GET / PATCH / DELETE / checkout / check-in / mark-read / cover get/upload/delete); malformed or empty GUID on album path `{album_id}` (catalog / artwork / circulation / restore); malformed or empty GUID on loan reads (`GET /loans/{id}` path, or `book_id` / `album_id` query); invalid `media_type`; malformed or empty `wishlist_id` / membership `wishlist_item_id` / membership `book_id` or `album_id` on wishlist routes; malformed or empty `collection_id` / `collection_book_id` / membership `book_id` on collection routes; malformed or empty `shelf_id` on shelf update/delete; empty/whitespace `isbn`, `author`, `title`, `publisher`, `acquisition_source`, or `shelf_name` on `GET /books`; blank album list filters (`artist`, `title`, `barcode`); malformed `book_id`; inverted numeric/date ranges; partial or invalid `skip`/`take` on list endpoints; invalid `sortBy` or `sortOrder` on `GET /books` or `GET /albums`; invalid or blank `field` on `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book/album create/update; placement onto system shelf `removed`; malformed or empty book GUID in a bulk shelf-move request; unknown destination `shelf_name` on bulk shelf move or bulk import; malformed or duplicate `category_id` on `GET /books`; malformed category or genre GUID on catalog CRUD (author and artist path IDs, including malformed, return **404**); create/rename/delete of system shelves `unknown` or `removed`, or rename to those names; combining `shelf_name` with a non-`shelved` `placement_state` on `GET /books` (`shelf_name requires shelved placement_state`) |
 | **403** | Missing or invalid Bearer token |
-| **404** | Book missing or already deleted on checkout / check-in / mark-read / PATCH / bulk shelf move / cover get/upload/delete / second delete / `GET /books/{book_id}`; no local cover and no usable ISBN cover fallback on `GET /books/{book_id}/cover` (`"Book cover not found"`); album missing or soft-deleted on PATCH / delete / restore / artwork / circulation (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork` (`"Album artwork not found"`); unknown book for `GET /loans?book_id=...`; unknown album for `GET /loans?album_id=...`; unknown loan for `GET /loans/{id}`; unknown wishlist; unknown book or album when adding a typed wishlist membership; unknown or wrong-media membership on wishlist remove; unknown collection, unknown book when adding a collection membership, or unknown collection book on reorder/remove; unknown shelf for PATCH / DELETE `/shelves/{shelf_id}`; unknown category, author, artist, or genre on catalog CRUD; unknown `category_id` on book create/update (`Category not found`) |
-| **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); restore when the album is not soft-deleted; artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`; duplicate shelf `common_name` on create/rename; delete shelf while books or albums remain; duplicate category/genre name/slug; delete category while book memberships remain; delete author while book memberships remain (`Author is referenced by one or more books`); delete artist while album/track credits remain; delete genre while album memberships remain; duplicate book or `order_num` in the same collection; duplicate book or album in the same wishlist; ordinary PATCH or bulk shelf move on a stashed book (`Book is stashed; use the stash apply operation`); bulk stash when a book is already stashed |
+| **404** | Book missing or already deleted on checkout / check-in / mark-read / PATCH / bulk shelf move / cover get/upload/delete / second delete / `GET /books/{book_id}`; no local cover and no usable ISBN cover fallback on `GET /books/{book_id}/cover` (`"Book cover not found"`); album missing or soft-deleted on PATCH / delete / restore / artwork / circulation (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork` (`"Album artwork not found"`); Cover Art Archive refetch finds no usable front image (`"Album artwork not found"`); unknown book for `GET /loans?book_id=...`; unknown album for `GET /loans?album_id=...`; unknown loan for `GET /loans/{id}`; unknown wishlist; unknown book or album when adding a typed wishlist membership; unknown or wrong-media membership on wishlist remove; unknown collection, unknown book when adding a collection membership, or unknown collection book on reorder/remove; unknown shelf for PATCH / DELETE `/shelves/{shelf_id}`; unknown category, author, artist, or genre on catalog CRUD; unknown `category_id` on book create/update (`Category not found`) |
+| **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); restore when the album is not soft-deleted; artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`, or when the album's MusicBrainz Release ID changes during refetch; duplicate shelf `common_name` on create/rename; delete shelf while books or albums remain; duplicate category/genre name/slug; delete category while book memberships remain; delete author while book memberships remain (`Author is referenced by one or more books`); delete artist while album/track credits remain; delete genre while album memberships remain; duplicate book or `order_num` in the same collection; duplicate book or album in the same wishlist; ordinary PATCH or bulk shelf move on a stashed book (`Book is stashed; use the stash apply operation`); bulk stash when a book is already stashed |
 | **412** | Checkout when the book or album has `status=display_only` (`"Book is display only"` / `"Album is display only"`); add a book with any shelf membership, including `unknown`, to a wishlist (`"Existing books cannot be added to a wishlist"`); assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist (`"The book must be removed from the wishlist before it can be placed on a shelf"`); assign `shelf_name` on album create/update when the album is on a wishlist (`"The album must be removed from the wishlist before it can be placed on a shelf"`); mixed media on a shelf or collection (`"A book cannot be placed on an album shelf"`, `"An album cannot be placed on a book shelf"`, `"Books cannot be added to an album collection"`); album soft-delete/restore when the destination system shelf is occupied by the other media type; add a stashed book to a wishlist (`"Stashed books cannot be added to a wishlist"`); add a shelved album to a wishlist (`"Existing albums cannot be added to a wishlist"`); add a soft-deleted album to a wishlist (`"Soft-deleted albums cannot be added to a wishlist"`); bulk apply-stash to system shelf `unknown` |
-| **422** | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read or mark-played body; unsupported wishlist membership status; blank `shelf_name` on book create; JSON null `shelf_name` or `category_ids` on book update (omit those fields instead); null or blank shelf `common_name` on shelf create/update; empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; blank collection name on create/update; non-positive `order_num` on collection add/reorder; invalid/blank category/genre name or slug; invalid/blank author or artist surname or overlong name fields; empty/duplicate `author_ids` on book create/update, or null `author_ids` on update; empty/duplicate `artist_ids` on album create/update when supplied; empty items, duplicate `client_item_id`, or more than 50 items on bulk lookup/import; per-item book payload supplying `author_ids`, `shelf_name`, or `acquisition_source` on bulk import (use request-level `shelf_name` / `acquisition_source` and per-item `authors` instead); unknown `author_ids` on book create/update (422 object detail with message `One or more authors do not exist` and `author_ids` listing missing GUIDs); cover or album-artwork upload rejected (unsupported type, empty file, over 10 MB, or bytes/type mismatch); album lookup without exactly one of `barcode` / `discogs_release_id`; wishlist membership PATCH with omitted `notes` or `{}` (send `notes` explicitly) |
-| **500** | Edge case: unhandled parse of bad stored loan timestamps |
-| **502** | Metadata provider transport/5xx failure on `GET /books/lookup` or `GET /albums/lookup` (bulk book lookup uses per-item `provider_failure` with HTTP 200 instead); album artwork refetch provider failure |
+| **422** | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read or mark-played body; unsupported wishlist membership status; blank `shelf_name` on book create; JSON null `shelf_name` or `category_ids` on book update (omit those fields instead); null or blank shelf `common_name` on shelf create/update; empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; blank collection name on create/update; non-positive `order_num` on collection add/reorder; invalid/blank category/genre name or slug; invalid/blank author or artist surname or overlong name fields; empty/duplicate `author_ids` on book create/update, or null `author_ids` on update; empty/duplicate `artist_ids` on album create/update when supplied; empty items, duplicate `client_item_id`, or more than 50 items on bulk lookup/import; per-item book payload supplying `author_ids`, `shelf_name`, or `acquisition_source` on bulk import (use request-level `shelf_name` / `acquisition_source` and per-item `authors` instead); unknown `author_ids` on book create/update (422 object detail with message `One or more authors do not exist` and `author_ids` listing missing GUIDs); cover or album-artwork upload rejected (unsupported type, empty file, over 10 MB, or bytes/type mismatch); album lookup without exactly one of `barcode` / `discogs_release_id`; album artwork refetch when the album has no usable MusicBrainz Release ID; wishlist membership PATCH with omitted `notes` or `{}` (send `notes` explicitly) |
+| **500** | Edge-case unhandled parse of bad stored loan timestamps when borrow statistics run |
+| **502** | Metadata provider transport/5xx failure on `GET /books/lookup`; final provider failure on `GET /albums/lookup` after Discogs barcode failover is exhausted or when an explicit Discogs release ID / MusicBrainz path fails (bulk book lookup uses per-item `provider_failure` with HTTP 200 instead); album artwork refetch provider or storage failure |
 | **503** | `GET /ready` or SQLAlchemy connection-pool exhaustion (`{"detail": "Database is temporarily unavailable"}` with `Retry-After: 1`) |
-| **504** | Metadata provider timeout on `GET /books/lookup` or `GET /albums/lookup` (bulk book lookup uses per-item `provider_timeout` with HTTP 200 instead); album artwork refetch timeout |
+| **504** | Metadata provider timeout on `GET /books/lookup`; final provider timeout on `GET /albums/lookup` under the same Discogs/MusicBrainz rules as **502** (bulk book lookup uses per-item `provider_timeout` with HTTP 200 instead); album artwork refetch timeout |
 
 Explicit API errors use string `detail`. FastAPI framework validation uses the usual detail array. Invalid ISBN
 lookup is a special case: 422 with string detail because the route raises that error explicitly.
@@ -201,9 +213,9 @@ UTC timestamps as ISO 8601 (e.g., 2026-08-08T10:00:00.000Z), because borrowing s
 Malformed stored loan timestamps can later cause an unhandled 500 when those statistics run.
 
 There are no WebSocket, SSE, subscription, or push endpoints. Non-JSON binary responses today are
-GET /books/{book_id}/cover (image bytes) and GET /albums/{album_id}/artwork (image bytes). Cover and artwork
-resolution, including Open Library ISBN fallback and Cover Art Archive refetch, happens server-side behind the
-authenticated endpoints.
+GET /books/{book_id}/cover (image bytes) and GET /albums/{album_id}/artwork (image bytes). Cover
+and artwork resolution, including Open Library ISBN fallback and Cover Art Archive refetch, happens server-side
+behind the authenticated endpoints.
 
 List endpoints (GET /books, GET /albums, GET /loans, GET /wishlists, GET /wishlists/{wishlist_id}/books,
 GET /wishlists/{wishlist_id}/items, GET /collections, GET /collections/{collection_id}/books, and
@@ -680,13 +692,18 @@ optional; manual create without lookup is fine, but book creation still requires
 Album metadata and artwork lookup
 
 `GET /albums/lookup` is an authenticated, non-mutating lookup. Send exactly one of `barcode` (spaces and hyphens
-are ignored) or `discogs_release_id`. Discogs is preferred when `DISCOGS_TOKEN` is configured; an ordinary Discogs
-miss falls through to MusicBrainz, while provider failures and timeouts return 502 and 504. Without a Discogs token,
-barcode lookup uses MusicBrainz directly. Unknown releases return `200 {"found": false, "draft": null}`.
-An explicit Discogs ID needs a configured token; without one there is no barcode for MusicBrainz to search.
-On a Discogs hit, a best-effort MusicBrainz barcode search may enrich only the exact Release ID using format/date/label
-evidence; Discogs metadata remains authoritative. MusicBrainz metadata fallback fetches the selected concrete release
-to obtain tracks and labels. Each outbound call uses `METADATA_TIMEOUT_SECONDS` (default 3), not a whole-request budget.
+are ignored) or `discogs_release_id`. Discogs is preferred when `DISCOGS_TOKEN` is configured. For barcode
+lookups, an ordinary Discogs miss and Discogs provider failures/timeouts both fall through to MusicBrainz. Explicit
+Discogs release IDs have no MusicBrainz substitute: Discogs failures/timeouts return **502** / **504**, and a
+configured token is required (without one there is no barcode for MusicBrainz to search). Without a Discogs token,
+barcode lookup uses MusicBrainz directly. Unknown releases return `200 {"found": false, "draft": null}`. Final
+MusicBrainz failures/timeouts (after any Discogs barcode failover) also return **502** / **504**.
+
+On a Discogs hit, a best-effort MusicBrainz barcode search may enrich only the exact Release ID using
+format/date/label evidence; Discogs metadata remains authoritative. MusicBrainz metadata fallback fetches the
+selected concrete release to obtain tracks and labels. Each outbound call uses `METADATA_TIMEOUT_SECONDS`
+(default 3), not a whole-request budget. MusicBrainz requests are paced at most one per second per process, so a
+lookup that needs MusicBrainz search plus release fetch can take longer than a single timeout window.
 
 The add-album flow is: scan barcode → lookup → resolve each textual draft artist and genre through `/artists` and
 `/genres` → let the user edit the draft/tracks → submit normalized `artist_ids` and `genre_ids` to `POST /albums`.
@@ -694,14 +711,18 @@ Lookup never assigns a shelf and never persists the draft.
 
 Album reads expose `artwork_present`. Authenticated `GET`, `PUT`, and `DELETE /albums/{album_id}/artwork` serve,
 replace, and remove private local artwork. Missing artwork returns 404 `Album artwork not found`.
-`POST /albums/{album_id}/artwork/refetch` uses only the album's exact MusicBrainz Release ID and an approved front
-image from the Cover Art Archive. It does not use Discogs artwork. Albums without a usable MusicBrainz Release ID
-return 422. Refetch preserves owner-uploaded artwork unless the JSON body explicitly sends
+`POST /albums/{album_id}/artwork/refetch` uses only the album's exact MusicBrainz Release ID and Cover Art Archive
+front images (never Discogs artwork). It prefers an approved CAA front image, otherwise the first front image, and
+falls back to the release-group CAA listing when the release has no front. Albums without a usable MusicBrainz
+Release ID return 422. Refetch preserves owner-uploaded artwork unless the JSON body explicitly sends
 `{"replace_owner_upload": true}`; otherwise it returns 409 `Owner artwork replacement was not authorized`.
-Deleting artwork does not clear catalog provider identifiers, so a later explicit refetch remains possible.
-Uploads accept JPEG, PNG, and WebP only (10 MB maximum, with bytes/type validation). Artwork files are runtime data under
-`ALBUM_ARTWORK_DIR`, isolated by configured database identity and album ID. This is a deployment/library namespace;
-multi-tenant request routing is still deferred. No provider request occurs during artwork GET or DELETE.
+Failed artwork writes leave the previous file in place. Deleting artwork does not clear catalog provider
+identifiers, so a later explicit refetch remains possible. Uploads accept JPEG, PNG, and WebP only (10 MB
+maximum, with bytes/type validation). Artwork files are runtime data under
+`data/covers-for-albums/<username>/<album_id>/` (relative to `DB_DIR`). Book covers use
+`data/covers-for-books/<username>/`. Tenant username comes from hostname routing (`X-Forwarded-Host`, with `shade`
+remapped to `andy`). No provider request occurs during artwork GET or DELETE. Refetch releases its database
+session before waiting on Cover Art Archive / MusicBrainz.
 
 For shelf-at-a-time onboarding, prefer POST /books/bulk/lookup followed by POST /books/bulk/import (see Build Mode
 above) instead of looping single-book lookup/create.
@@ -883,8 +904,7 @@ For path collection_id, membership collection_book_id, and membership book_id: 4
 GUID; 404 when the GUID is well-formed but unknown ("Collection not found", "Book not found", or
 "Collection book not found" as appropriate). Hard-deleting a catalog book removes all of its collection
 memberships and renumbers remaining rows in each affected collection.
-Database backup is an operator workflow outside the browser API. The SPA must not expose, probe, or proxy a backup
-route.
+There is no browser backup endpoint. Database export and seed synchronization are operator-owned workflows.
 
 Frontend vs API ownership
 Responsibility	Owner
@@ -915,8 +935,9 @@ Category catalog CRUD (/categories), normalized book memberships, and category i
 Author catalog CRUD (/authors), ordered normalized book-author memberships, and author filtering/sorting	API
 Artist/genre catalog CRUD (/artists, /genres) and ordered album memberships	API
 Album metadata lookup (Discogs/MusicBrainz) and Cover Art Archive artwork refetch	API
-Cover storage under COVER_DIR, cover_image_path, and server-side Open Library ISBN cover fallback	API
-Album artwork storage under ALBUM_ARTWORK_DIR and artwork_present on AlbumRead	API
+Cover storage under data/covers-for-books/<username>/, cover_image_path, and Open Library ISBN cover fallback	API
+Album artwork under data/covers-for-albums/<username>/<album_id>/ and artwork_present on AlbumRead	API
+Hostname tenant routing via X-Forwarded-Host (shade→andy alias)	API
 Wishlist/shelf mutual exclusion (412 when both would apply)	API
 Collections CRUD and ordered book membership (/collections); album collection HTTP is not shipped	API
 Borrowing and dashboard statistics (explicit book and album fields)	API
