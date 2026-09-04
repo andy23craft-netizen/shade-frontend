@@ -487,12 +487,39 @@ supports it.
 
 ## Agent Operating Rules
 
-- Work only inside the frontend repository.
-- The related backend and orchestrator repositories may be read when cross-project context is necessary.
-- Do not mutate Git state. Do not stage, unstage, commit, check out, push, pull, add, remove, or delete through Git. Ask
-  before stashing or unstashing.
+Associated projects (disk scope):
+
+- Backend: `/home/johnshade23/Projects/shade-backend/`
+- Frontend: `/home/johnshade23/Projects/shade-frontend/`
+- Orchestrator: `/home/johnshade23/Projects/shade-orchestrator/`
+
+Disk location limitation:
+
+- Only write files that are in `/home/johnshade23/Projects/shade-frontend/`.
+- Never write files outside of this directory.
+- Only read files that are in `/home/johnshade23/Projects/shade-frontend/` or the Associated Projects.
+- Never read or write files outside of those directories.
+
+Git-specific rules:
+
+- Read-only commands like `git status` and `git log` are allowed.
+- Do not `git add`, `git remove`, or `git rm`.
+- Do not `git commit`, `git checkout`, `git push`, or `git pull`.
+- Staging or unstaging changes with Git is not allowed.
+- Stashing and unstashing with Git requires permission.
 - Use read-only Git commands only when needed to understand the working tree or history.
 - Do not overwrite or revert unrelated user changes.
+
+Search tooling:
+
+- The `rg` (ripgrep) command is not installed in this environment.
+- Do not use `rg` in any commands or examples.
+- Always prefer `grep` for text searching instead.
+- Use common `grep` flags when appropriate (e.g., `-r` for recursive, `-n` for line numbers, `-i` for
+  case-insensitive).
+
+General operating rules:
+
 - Use Yarn rather than npm.
 - Do not edit `yarn.lock` manually; update dependencies through Yarn.
 - Keep secrets, local databases, dependencies, coverage, and build output untracked.
@@ -503,14 +530,16 @@ supports it.
   requirements instead of silently inventing behavior.
 - Do not casually replace Yarn, Make, Vitest, or the existing quality gate. Extend `make check` rather than replace it.
 
-When writing Markdown:
+Writing and formatting rules for Markdown files:
 
-- Use straight quotation marks and apostrophes.
-- Use `...` instead of the ellipsis character.
-- Use `--` instead of an em dash and `-` instead of an en dash.
-- Follow "e.g.," and "i.e.," with a comma.
-- Keep lines at or below 120 characters, excluding Markdown tables.
-- End files with a newline.
+- Always prefer straight double quotes `"` over curly quotes `“”`.
+- Always prefer straight single quotes `'` over curly apostrophes `’`.
+- Always prefer three dots `...` over the ellipsis character `…`.
+- Always prefer two hyphens `--` over the em dash `—`.
+- Always prefer a hyphen `-` over the en dash `–`.
+- Always follow "e.g." and "i.e." with a comma (e.g., like this).
+- Maximum line length is 120 characters (excluding Markdown tables).
+- Always end files with a newline.
 
 ## Runtime Architecture
 
@@ -1445,12 +1474,16 @@ Versioned static archive for the deployment repository. Not host Vite and not th
 - `.gitignore`: Excludes dependencies, generated output (`dist/`, `coverage/`, `.vite/`, `playwright-report/`,
   `test-results/`, `ci/artifacts/`), secrets, local data, editor files, and OS metadata.
 - `.gitattributes`: Normalizes text files to LF line endings and marks common binary extensions.
-- `.cursor/rules/documentation-style.mdc`: Markdown punctuation, line-length, and newline rules for Cursor.
-- `.cursor/rules/grep-tool.mdc`: Requires `grep` rather than the `rg` shell command in this environment.
-- `.cursor/rules/readonly-git.mdc`: Prohibits Cursor from changing Git state.
-- `.cursor/rules/scope.mdc`: Defines allowed repository read/write boundaries and related Shade repositories.
+- `.cursor/rules/documentation-style.mdc`: Same Markdown punctuation, line-length, and newline rules as Agent Operating
+  Rules (Cursor always-apply mirror).
+- `.cursor/rules/grep-tool.mdc`: Same `grep`-not-`rg` search tooling rules as Agent Operating Rules (Cursor always-apply
+  mirror).
+- `.cursor/rules/readonly-git.mdc`: Same Git read-only rules as Agent Operating Rules (Cursor always-apply mirror).
+- `.cursor/rules/scope.mdc`: Same associated-project and disk-location rules as Agent Operating Rules (Cursor
+  always-apply mirror).
 
-The `.cursor` rules control AI-assisted work. They are not loaded by the application or included in builds.
+The `.cursor` rules mirror the Agent Operating Rules above for Cursor sessions. They are not loaded by the application
+or included in builds.
 
 Useful documents under `docs/` when a task needs them. This file is the complete LLM baseline on its own; do not treat
 another project prompt as required reading before starting. Attach the items below only when the current work requires

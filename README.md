@@ -273,7 +273,7 @@ The frontend build does not create, package, upload, or deploy a production `.en
 this trusted personal deployment, not multi-user authentication. If the application becomes publicly reachable or
 supports untrusted users, release must be blocked until authentication is redesigned.
 
-Browser support for production smoke and scanner hardware checks live in `docs/AGENTS.md`. Do not duplicate those
+Browser support for production smoke and scanner hardware checks live in `AGENTS.md`. Do not duplicate those
 matrices here.
 
 These requirements are deployment assumptions, not frontend implementations. This repository documents them for handoff;

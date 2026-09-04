@@ -5,7 +5,7 @@ Slim always-on context for ChatGPT or any assistant without direct repository ac
 This document is the complete self-contained operating baseline for the Shade frontend. It covers working rules,
 architecture, non-negotiables, current product state, the backend contract summary, and the minimum reference index
 needed to continue development safely. Start from this file alone for that baseline. Do not require
-`docs/AGENTS.md`, any other project prompt, or a second agents guide -- this pack already contains the day-to-day
+`AGENTS.md`, any other project prompt, or a second agents guide -- this pack already contains the day-to-day
 implementation guidance those files would otherwise supply. Attach the current feature ticket (when one exists) and
 the checked-in API contract only when the task needs them.
 
@@ -1519,7 +1519,7 @@ intentional current behavior.
 | Setup / local development / release    | `README.md`                                       |
 
 This Master Implementation Context is the complete always-on baseline. Treat it as sufficient on its own for day-to-day
-implementation guidance. Do not require `docs/AGENTS.md` or any other project prompt for missing baseline context --
+implementation guidance. Do not require `AGENTS.md` or any other project prompt for missing baseline context --
 attach the rows above only when the task needs their contents (API schemas, design notes, an open ticket, or
 setup/release notes). Prefer the current sequenced ticket (when one exists) and the checked-in API contract over
 planning notes that may lag. When no sequenced feature ticket remains, ask which work to take next.
