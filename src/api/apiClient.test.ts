@@ -7,11 +7,7 @@ import {
 } from 'vitest'
 
 
-import {
-    createApiClient,
-    LIBRARY_USERNAME,
-    LIBRARY_USERNAME_HEADER,
-} from './apiClient'
+import { createApiClient } from './apiClient'
 
 describe('createApiClient', () => {
     afterEach(() => {
@@ -19,7 +15,7 @@ describe('createApiClient', () => {
     })
 
     it(
-        'adds the current bearer token and library username to authenticated requests',
+        'adds the current bearer token without browser-owned tenant headers',
         async () => {
             const fetchMock =
                 vi.spyOn(
@@ -76,18 +72,13 @@ describe('createApiClient', () => {
                 'Bearer secret-token',
             )
 
-            expect(
-                headers.get(
-                    LIBRARY_USERNAME_HEADER,
-                ),
-            ).toBe(
-                LIBRARY_USERNAME,
-            )
+            expect(headers.get('Library-Username')).toBeNull()
+            expect(headers.get('X-Forwarded-Host')).toBeNull()
         },
     )
 
     it(
-        'does not add a bearer token or library username to public requests',
+        'does not add authentication or tenant headers to public requests',
         async () => {
             const fetchMock =
                 vi.spyOn(
@@ -134,11 +125,8 @@ describe('createApiClient', () => {
                 ),
             ).toBeNull()
 
-            expect(
-                headers.get(
-                    LIBRARY_USERNAME_HEADER,
-                ),
-            ).toBeNull()
+            expect(headers.get('Library-Username')).toBeNull()
+            expect(headers.get('X-Forwarded-Host')).toBeNull()
         },
     )
 
@@ -458,7 +446,7 @@ describe('createApiClient', () => {
                 })
 
             await expect(
-                client.get('/backup'),
+                client.get('/books'),
             ).rejects.toMatchObject({
                 kind: 'server',
                 status,
@@ -541,12 +529,12 @@ describe('createApiClient', () => {
         async () => {
             const response =
                 new Response(
-                    'CREATE TABLE books (...);',
+                    'image-bytes',
                     {
                         status: 200,
                         headers: {
                             'Content-Type':
-                                'application/sql',
+                                'image/jpeg',
                         },
                     },
                 )
@@ -566,7 +554,7 @@ describe('createApiClient', () => {
 
             const result =
                 await client.get(
-                    '/backup',
+                    '/books/book-id/cover',
                 )
 
             expect(
@@ -576,7 +564,7 @@ describe('createApiClient', () => {
             expect(
                 await result.text(),
             ).toBe(
-                'CREATE TABLE books (...);',
+                'image-bytes',
             )
         },
     )

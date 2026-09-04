@@ -28,6 +28,22 @@ describe('loadRuntimeConfig', () => {
         ).toBe('https://library.example.com')
     })
 
+    it('accepts and normalizes a same-origin API path', () => {
+        expect(
+            loadRuntimeConfig({
+                apiBaseUrl: ' /api/ ',
+            }).apiBaseUrl,
+        ).toBe('/api')
+    })
+
+    it('rejects a protocol-relative API URL', () => {
+        expect(() =>
+            loadRuntimeConfig({
+                apiBaseUrl: '//example.test/api',
+            }),
+        ).toThrow(RuntimeConfigError)
+    })
+
     it('loads enabled diagnostic reporting from runtime configuration', () => {
         expect(
             loadRuntimeConfig({

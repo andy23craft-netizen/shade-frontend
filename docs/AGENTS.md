@@ -364,8 +364,8 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 ### Authentication
 
 - Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
-- Protected requests also send `Library-Username: shade` (injected by `apiClient` with the Bearer token)
-- Public `GET /health`, `GET /ready`, and `GET /version` omit both headers (`authenticated: false`)
+- Protected browser requests send only the shared Bearer token; tenant headers are proxy-owned.
+- Public `GET /health`, `GET /ready`, and `GET /version` omit authentication (`authenticated: false`).
 - No login, logout, user accounts, sessions, or roles
 - Token comes from a repository-root `.env` file via `VITE_API_SECRET_KEY`; Vite injects it at dev-server and
   production build time into JS bundles (`.env` stays gitignored; `.env.example` is committed)
@@ -400,7 +400,6 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 | ISBN lookup        | `GET /books/lookup?isbn={isbn}`                |
 | Bulk ISBN lookup   | `POST /books/bulk/lookup` (API only; no SPA)    |
 | Bulk import        | `POST /books/bulk/import` (API only; no SPA)    |
-| Backup (ops)       | `GET /backup` (API host / cron; no SPA caller) |
 | Album catalog      | `/albums` CRUD + restore (no SPA until `FEAT-02`) |
 | Album circulation  | album checkout / check-in / mark-played (no SPA until `FEAT-02`) |
 | Album lookup       | `GET /albums/lookup` (no SPA until `FEAT-02`) |
@@ -630,7 +629,7 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `isMalformedBookId` map API **400** / **404** for malformed or unknown book identity.
 - `src/api/enumDisplay.ts`: `enumDisplayValue` for known vs unknown enum strings with a neutral fallback.
 - `src/api/apiCallOptions.ts`: Shared optional `AbortSignal` options type used by typed route helpers.
-- `src/api/apiClient.ts`: `createApiClient` with Bearer and `Library-Username: shade` injection on authenticated
+- `src/api/apiClient.ts`: `createApiClient` with Bearer injection on authenticated
   requests, path joining at the configured base URL (no `/api`
   prefix), timeout (default 10s), caller `AbortSignal`, `get` / `request` / `getJson` / `requestJson`, empty `204`
   handling, invalid-JSON errors, `403` via `onUnauthorized`, and optional `onRequestFailure` for allowlisted/redacted
@@ -1140,7 +1139,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 - `scripts/appVersionConsistency.test.ts`: Asserts `APP_VERSION` matches `package.json` `version`.
 - `src/diagnostics/diagnosticReporter.test.ts`: Disabled/enabled reporters, allowlisted payloads, redaction
   assertions, and swallowed transport failures.
-- `src/api/apiClient.test.ts`: Bearer and `Library-Username` injection, public requests omitting both headers, `403`,
+- `src/api/apiClient.test.ts`: Bearer injection without browser-owned tenant headers, public requests omitting auth, `403`,
   `404`, `409`, both `422` detail shapes, `5xx`
   (including `500` / `502` / `504`), network failure, timeout, cancellation, invalid JSON, binary backup success,
   `204`, and `onRequestFailure` diagnostic hooks.
@@ -1170,7 +1169,7 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
   books query, create/update/delete invalidation of `collections.all`, and membership write invalidation of
   `collections.books(collectionId)`.
 - `scripts/contractSmoke.test.ts`: Checked-in OpenAPI path/type smoke when live backend comparison is unavailable
-  (includes `/authors`, `/authors/{author_id}`, `/categories`, `/shelves`, `/shelves/{shelf_id}`, `/version`, `/backup`,
+  (includes `/authors`, `/authors/{author_id}`, `/categories`, `/shelves`, `/shelves/{shelf_id}`, `/version`,
   `/books/{book_id}/cover`, `/books/bulk/lookup`, `/books/bulk/import`, wishlist paths including membership DELETE,
   Collections paths, dashboard-report paths, and existing lifecycle routes).
 - `src/features/connection/ConnectionProvider.test.tsx` / `connectionToken.test.ts`: Health startup check,
@@ -1356,10 +1355,9 @@ make check / yarn check
 
 - `vite.config.ts`: Shared Vite and Vitest configuration. Enables React, jsdom tests (`src/**` and `scripts/**` test
   files), global test setup, V8 coverage thresholds, `__APP_VERSION__` from `package.json`, and an optional
-  same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy forwards `/health`,
-  `/books`, `/loans`, `/dashboard`, `/backup`, `/docs`, `/redoc`, `/openapi.json`, `/wishlists`, and `/collections`
-  (not `/shelves`, `/version`, `/categories`, `/albums`, `/artists`, or `/genres`). Add `/albums`, `/artists`, and
-  `/genres` only when `FEAT-02` first needs those endpoints in the browser.
+  tenant-aware same-origin API proxy when `SHADE_API_PROXY=1` (optional `SHADE_API_PROXY_TARGET`). The proxy accepts
+  `*.localhost`, derives `X-Forwarded-Host` from the browser host, defaults bare local origins to `andy.localhost`, and
+  forwards the current API surface under either `/api/*` or root paths. It does not proxy `/backup`.
 - `eslint.config.js`: Flat ESLint configuration for TypeScript and React Hooks. It ignores `dist/`, `coverage/`,
   `node_modules/`, and `ci/artifacts/` and treats warnings as failures through the package script.
 - `tsconfig.json`: TypeScript solution file that references the application and Node/tooling configurations.

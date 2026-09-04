@@ -42,21 +42,21 @@ Start the local Vite development server:
 make run
 ```
 
-By default the app calls the API at the base URL in `public/config.js` (`http://127.0.0.1:8000`). The Shade backend
-already allows the Vite origins `http://localhost:5173` and `http://127.0.0.1:5173`, so no proxy is required for local
-cross-origin development.
+By default the app calls the same-origin API path in `public/config.js` (`/api`). Run the tenant-aware Vite proxy for
+local development so requests carry trusted hostname context to the backend.
 
-To use an optional same-origin Vite proxy instead:
+To use the tenant-aware same-origin Vite proxy:
 
-1. Set `apiBaseUrl` in `public/config.js` to the Vite origin (for example `http://localhost:5173`).
-2. Start the dev server with the proxy enabled:
+Start the dev server with the proxy enabled:
 
 ```sh
 SHADE_API_PROXY=1 make run
 ```
 
-Optionally set `SHADE_API_PROXY_TARGET` (default `http://127.0.0.1:8000`) when the API listens elsewhere. That proxy is
-host `make run` only; it is not available inside the Podman image.
+Open `http://andy.localhost:5173` or `http://jamie.localhost:5173` to select a library. Bare
+`http://localhost:5173` and `http://127.0.0.1:5173` select Andy. Optionally set `SHADE_API_PROXY_TARGET` (default
+`http://127.0.0.1:8000`) when the API listens elsewhere. The proxy derives `X-Forwarded-Host` from the browser host;
+browser code never sends that header. This proxy is host `make run` only and is not available inside the Podman image.
 
 Run the complete lint, type-check, test, and build quality gate:
 
@@ -149,7 +149,7 @@ To run the image outside orchestrator Compose for local smoke testing:
 podman run --rm \
   --name shade-frontend-dev \
   -p 8080:8080 \
-  -e SHADE_API_BASE_URL="${SHADE_API_BASE_URL:-http://127.0.0.1:8000}" \
+  -e SHADE_API_BASE_URL="${SHADE_API_BASE_URL:-/api}" \
   -e SHADE_DIAGNOSTICS_ENABLED="${SHADE_DIAGNOSTICS_ENABLED:-false}" \
   -e SHADE_DIAGNOSTICS_ENDPOINT="${SHADE_DIAGNOSTICS_ENDPOINT:-}" \
   shade-frontend:latest
@@ -169,13 +169,13 @@ require an image rebuild. Application release stays the `package.json` `version`
 
 | Variable                     | Default                       | Meaning                                     |
 |------------------------------|-------------------------------|---------------------------------------------|
-| `SHADE_API_BASE_URL`         | `http://127.0.0.1:8000`       | Browser-visible API base URL (`apiBaseUrl`) |
+| `SHADE_API_BASE_URL`         | `/api`                        | Browser-visible API base URL (`apiBaseUrl`) |
 | `SHADE_DIAGNOSTICS_ENABLED`  | `false`                       | Must be `true` or `false`                   |
 | `SHADE_DIAGNOSTICS_ENDPOINT` | empty (`null` in `config.js`) | Diagnostics POST URL when enabled           |
 
-`SHADE_API_BASE_URL` is loaded by the browser, so it must be an absolute `http:`/`https:` URL ending in `/api` that
-matches the origin you browse (e.g., `http://shade.library.spir.es/api`, `http://localhost/api`). Orchestrator Compose
-defaults to the DNS name; set the frontend service env to match localhost or LAN when testing those entrypoints.
+`SHADE_API_BASE_URL` is loaded by the browser. Keep the default root-relative `/api` so the same build follows the
+Andy, Jamie, bare-localhost, or legacy origin being browsed. An absolute `http:`/`https:` URL remains supported for
+special development arrangements, but it must be coordinated with backend CORS and tenant-aware proxying.
 
 ### CORS and origin
 
@@ -244,8 +244,8 @@ Production must choose and verify one connectivity arrangement before release:
 - Same-origin: put a deployment-managed reverse proxy in front of the API.
 
 Either choice remains a release blocker until authenticated requests and browser CORS preflights are verified.
-Cross-origin requests may send `Authorization`, `Content-Type`, and `Library-Username`. Cookies and credentialed CORS
-are not used.
+Cross-origin requests may send `Authorization` and `Content-Type`. Tenant identity is supplied only by the trusted
+proxy through `X-Forwarded-Host`; cookies and credentialed CORS are not used.
 
 ## Production host security
 
@@ -288,7 +288,7 @@ existing product coverage; this is host and config confirmation, not a second en
 - [ ] Checksum and manifest match the archive; version equals `package.json` / footer `Release`
 - [ ] Deployment-managed `config.js` points at the production API; diagnostics values are intentional
 - [ ] Protected API access works with the baked Bearer token
-- [ ] CORS/preflight or same-origin proxy permits `Authorization`, `Content-Type`, and `Library-Username`; cookies are
+- [ ] CORS/preflight or same-origin proxy permits `Authorization` and `Content-Type`; cookies are
       not used
 - [ ] Direct-route refresh uses SPA fallback; `index.html` / `config.js` revalidate; hashed `/assets/` are long-lived
 - [ ] Collections create / delete / add existing books / remove membership / reorder books

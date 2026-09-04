@@ -236,23 +236,6 @@ export interface paths {
         patch: operations["update_author_authors__author_id__patch"];
         trace?: never;
     };
-    "/backup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Backup */
-        get: operations["get_backup_backup_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/books": {
         parameters: {
             query?: never;
@@ -2166,7 +2149,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2213,7 +2198,9 @@ export interface operations {
     create_album_albums_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2332,7 +2319,9 @@ export interface operations {
     get_album_albums__album_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2390,7 +2379,9 @@ export interface operations {
     delete_album_albums__album_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2464,7 +2455,9 @@ export interface operations {
     update_album_albums__album_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2535,7 +2528,9 @@ export interface operations {
     get_album_artwork_albums__album_id__artwork_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2593,7 +2588,9 @@ export interface operations {
     upload_album_artwork_albums__album_id__artwork_put: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2655,7 +2652,9 @@ export interface operations {
     remove_album_artwork_albums__album_id__artwork_delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2711,7 +2710,9 @@ export interface operations {
     refetch_album_artwork_albums__album_id__artwork_refetch_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2800,7 +2801,9 @@ export interface operations {
     checkin_album_albums__album_id__checkin_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2871,7 +2874,9 @@ export interface operations {
     checkout_album_albums__album_id__checkout_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -2951,7 +2956,9 @@ export interface operations {
     mark_album_played_albums__album_id__mark_played_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -3013,7 +3020,9 @@ export interface operations {
     restore_album_albums__album_id__restore_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 album_id: string;
             };
@@ -3091,7 +3100,9 @@ export interface operations {
             query?: {
                 in_use?: boolean;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3129,7 +3140,9 @@ export interface operations {
     create_artist_artists_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3171,7 +3184,9 @@ export interface operations {
     get_artist_artists__artist_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 artist_id: string;
             };
@@ -3220,7 +3235,9 @@ export interface operations {
     delete_artist_artists__artist_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 artist_id: string;
             };
@@ -3276,7 +3293,9 @@ export interface operations {
     update_artist_artists__artist_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 artist_id: string;
             };
@@ -3331,7 +3350,9 @@ export interface operations {
             query?: {
                 in_use?: boolean;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3360,7 +3381,9 @@ export interface operations {
     create_author_authors_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3393,7 +3416,9 @@ export interface operations {
     get_author_authors__author_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 author_id: string;
             };
@@ -3433,7 +3458,9 @@ export interface operations {
     delete_author_authors__author_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 author_id: string;
             };
@@ -3480,7 +3507,9 @@ export interface operations {
     update_author_authors__author_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 author_id: string;
             };
@@ -3521,46 +3550,6 @@ export interface operations {
             };
         };
     };
-    get_backup_backup_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SQLite database dump as an SQL attachment */
-            200: {
-                headers: {
-                    /** @description Attachment filename for the SQL dump */
-                    "Content-Disposition"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/sql": string;
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Backup generation failure */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-        };
-    };
     list_books_books_get: {
         parameters: {
             query?: {
@@ -3596,7 +3585,9 @@ export interface operations {
                 sortBy?: string | null;
                 sortOrder?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3643,7 +3634,9 @@ export interface operations {
     create_book_books_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3703,7 +3696,9 @@ export interface operations {
     bulk_apply_stash_books_bulk_apply_stash_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3781,7 +3776,9 @@ export interface operations {
     bulk_import_books_books_bulk_import_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3841,7 +3838,9 @@ export interface operations {
     bulk_lookup_books_books_bulk_lookup_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3883,7 +3882,9 @@ export interface operations {
     bulk_move_books_to_shelf_books_bulk_move_to_shelf_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3961,7 +3962,9 @@ export interface operations {
     bulk_stash_books_books_bulk_stash_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4097,7 +4100,9 @@ export interface operations {
     get_book_books__book_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4155,7 +4160,9 @@ export interface operations {
     delete_book_books__book_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4211,7 +4218,9 @@ export interface operations {
     update_book_books__book_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4291,7 +4300,9 @@ export interface operations {
     checkin_book_books__book_id__checkin_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4362,7 +4373,9 @@ export interface operations {
     checkout_book_books__book_id__checkout_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4442,7 +4455,9 @@ export interface operations {
     get_book_cover_books__book_id__cover_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4500,7 +4515,9 @@ export interface operations {
     upload_book_cover_books__book_id__cover_put: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4562,7 +4579,9 @@ export interface operations {
     delete_book_cover_books__book_id__cover_delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4618,7 +4637,9 @@ export interface operations {
     mark_book_read_books__book_id__mark_read_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 book_id: string;
             };
@@ -4682,7 +4703,9 @@ export interface operations {
             query?: {
                 in_use?: boolean;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4720,7 +4743,9 @@ export interface operations {
     create_category_categories_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4771,7 +4796,9 @@ export interface operations {
     get_category_categories__category_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 category_id: string;
             };
@@ -4829,7 +4856,9 @@ export interface operations {
     delete_category_categories__category_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 category_id: string;
             };
@@ -4894,7 +4923,9 @@ export interface operations {
     update_category_categories__category_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 category_id: string;
             };
@@ -4968,7 +4999,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5015,7 +5048,9 @@ export interface operations {
     create_collection_collections_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5057,7 +5092,9 @@ export interface operations {
     delete_collection_collections__collection_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 collection_id: string;
             };
@@ -5113,7 +5150,9 @@ export interface operations {
     update_collection_collections__collection_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 collection_id: string;
             };
@@ -5178,7 +5217,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 collection_id: string;
             };
@@ -5236,7 +5277,9 @@ export interface operations {
     add_collection_book_route_collections__collection_id__books_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 collection_id: string;
             };
@@ -5316,7 +5359,9 @@ export interface operations {
     delete_collection_book_route_collections__collection_id__books__collection_book_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 collection_id: string;
                 collection_book_id: string;
@@ -5373,7 +5418,9 @@ export interface operations {
     update_collection_book_route_collections__collection_id__books__collection_book_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 collection_id: string;
                 collection_book_id: string;
@@ -5445,7 +5492,9 @@ export interface operations {
     get_dashboard_dashboard_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5469,12 +5518,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_dashboard_breakdowns_dashboard_breakdowns_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5498,12 +5558,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_dashboard_incomplete_metadata_dashboard_incomplete_metadata_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5527,6 +5598,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     list_incomplete_metadata_books_dashboard_incomplete_metadata_books_get: {
@@ -5536,7 +5616,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5585,7 +5667,9 @@ export interface operations {
             query?: {
                 in_use?: boolean;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5623,7 +5707,9 @@ export interface operations {
     create_genre_genres_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5674,7 +5760,9 @@ export interface operations {
     get_genre_genres__genre_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 genre_id: string;
             };
@@ -5732,7 +5820,9 @@ export interface operations {
     delete_genre_genres__genre_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 genre_id: string;
             };
@@ -5797,7 +5887,9 @@ export interface operations {
     update_genre_genres__genre_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 genre_id: string;
             };
@@ -5895,7 +5987,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5951,7 +6045,9 @@ export interface operations {
     get_loan_loans__id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 id: string;
             };
@@ -6009,7 +6105,9 @@ export interface operations {
     readiness_ready_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6024,12 +6122,23 @@ export interface operations {
                     "application/json": components["schemas"]["HealthResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     list_shelves_shelves_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6053,12 +6162,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     create_shelf_shelves_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6118,7 +6238,9 @@ export interface operations {
     delete_shelf_shelves__shelf_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 shelf_id: string;
             };
@@ -6183,7 +6305,9 @@ export interface operations {
     update_shelf_shelves__shelf_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 shelf_id: string;
             };
@@ -6277,7 +6401,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6324,7 +6450,9 @@ export interface operations {
     create_wishlist_wishlists_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6366,7 +6494,9 @@ export interface operations {
     delete_wishlist_wishlists__wishlist_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
             };
@@ -6422,7 +6552,9 @@ export interface operations {
     update_wishlist_wishlists__wishlist_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
             };
@@ -6484,7 +6616,9 @@ export interface operations {
     add_wishlist_album_wishlists__wishlist_id__albums_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
             };
@@ -6564,7 +6698,9 @@ export interface operations {
     delete_wishlist_album_wishlists__wishlist_id__albums__wishlist_item_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
                 wishlist_item_id: string;
@@ -6624,7 +6760,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
             };
@@ -6682,7 +6820,9 @@ export interface operations {
     add_wishlist_book_wishlists__wishlist_id__books_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
             };
@@ -6762,7 +6902,9 @@ export interface operations {
     delete_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
                 wishlist_item_id: string;
@@ -6819,7 +6961,9 @@ export interface operations {
     update_wishlist_book_wishlists__wishlist_id__books__wishlist_item_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
                 wishlist_item_id: string;
@@ -6885,7 +7029,9 @@ export interface operations {
                 skip?: number | null;
                 take?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path: {
                 wishlist_id: string;
             };

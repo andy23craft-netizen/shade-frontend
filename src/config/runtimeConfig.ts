@@ -52,6 +52,14 @@ function normalizeHttpUrl(
 }
 
 function normalizeApiBaseUrl(value: unknown): string {
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+
+        if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+            return trimmed.replace(/\/+$/u, '') || '/'
+        }
+    }
+
     return normalizeHttpUrl(
         value,
         'API base URL',

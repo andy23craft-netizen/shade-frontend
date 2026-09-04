@@ -867,14 +867,33 @@ export async function installMockApi(
         requests: [],
     }
 
+    const apiPathPattern =
+        /^\/(?:api\/)?(?:health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
+
     await page.route(
-        'http://127.0.0.1:8000/**',
+        (url) => apiPathPattern.test(url.pathname),
         async (route) => {
             const request = route.request()
+
+            if (
+                request.resourceType() !== 'fetch' &&
+                request.resourceType() !== 'xhr'
+            ) {
+                await route.continue()
+                return
+            }
+
             const method = request.method()
             const url = new URL(
                 request.url(),
             )
+
+            if (url.pathname.startsWith('/api/')) {
+                url.pathname = url.pathname.replace(
+                    /^\/api/u,
+                    '',
+                )
+            }
 
             recordRequest(
                 state,

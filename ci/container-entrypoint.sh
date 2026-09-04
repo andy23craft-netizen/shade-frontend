@@ -3,7 +3,7 @@ set -eu
 
 CONFIG_PATH='/usr/share/nginx/html/config.js'
 
-api_base_url="${SHADE_API_BASE_URL:-http://127.0.0.1:8000}"
+api_base_url="${SHADE_API_BASE_URL:-/api}"
 diagnostics_enabled="${SHADE_DIAGNOSTICS_ENABLED:-false}"
 diagnostics_endpoint="${SHADE_DIAGNOSTICS_ENDPOINT:-}"
 

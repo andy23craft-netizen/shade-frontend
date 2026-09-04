@@ -109,6 +109,30 @@
   --duration-reduced: 0ms;
 }
 
+:root[data-library="jamie"] {
+  --color-page: #28203b;
+  --color-border: #9b6e9e;
+  --color-link: #65426d;
+  --color-link-hover: #442d4a;
+  --color-primary: #4a3154;
+  --color-primary-hover: #33223b;
+  --color-card-border: #9b6e9e;
+  --color-wood: #4a243f;
+  --color-wood-dark: #30182a;
+  --color-brass: #9b6e9e;
+  --color-brass-light: #c393bd;
+  --color-focus: #d39ac8;
+}
+
+:root[data-library="unknown"] {
+  --color-page: #25282a;
+  --color-border: #73797d;
+  --color-primary: #41474b;
+  --color-primary-hover: #2e3336;
+  --color-brass: #73797d;
+  --color-focus: #aeb4b8;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duration-normal: var(--duration-reduced);

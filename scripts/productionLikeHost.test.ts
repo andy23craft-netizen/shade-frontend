@@ -152,7 +152,7 @@ describe('production-like tarball host', () => {
         expect(missingAssetResponse.status).toBe(404)
     })
 
-    it('verifies CORS preflight, Bearer access, and backup Content-Disposition', async () => {
+    it('verifies CORS preflight and Bearer access', async () => {
         const site = await createExtractedSite()
         const frontend = await startStaticSpaServer(site)
 
@@ -162,7 +162,6 @@ describe('production-like tarball host', () => {
         const api = await startMockApiServer({
             allowedOrigin: frontend.url,
             bearerToken: token,
-            backupFilename: 'library-backup.sql',
         })
 
         servers.push(api)
@@ -175,7 +174,7 @@ describe('production-like tarball host', () => {
                     Origin: frontend.url,
                     'Access-Control-Request-Method': 'GET',
                     'Access-Control-Request-Headers':
-                        'authorization,content-type,library-username',
+                        'authorization,content-type',
                 },
             },
         )
@@ -196,11 +195,6 @@ describe('production-like tarball host', () => {
                 'access-control-allow-headers',
             )?.toLowerCase(),
         ).toContain('content-type')
-        expect(
-            preflight.headers.get(
-                'access-control-allow-headers',
-            )?.toLowerCase(),
-        ).toContain('library-username')
         expect(
             preflight.headers.get(
                 'access-control-allow-credentials',
@@ -224,7 +218,6 @@ describe('production-like tarball host', () => {
                 headers: {
                     Origin: frontend.url,
                     Authorization: `Bearer ${token}`,
-                    'Library-Username': 'shade',
                     'Content-Type': 'application/json',
                 },
             },
@@ -232,42 +225,5 @@ describe('production-like tarball host', () => {
 
         expect(authorized.status).toBe(200)
 
-        const backup = await fetch(
-            `${api.url}/backup`,
-            {
-                headers: {
-                    Origin: frontend.url,
-                    Authorization: `Bearer ${token}`,
-                    'Library-Username': 'shade',
-                },
-            },
-        )
-
-        expect(backup.status).toBe(200)
-        expect(
-            backup.headers.get(
-                'access-control-expose-headers',
-            ),
-        ).toMatch(
-            /content-disposition/iu,
-        )
-
-        const contentDisposition = backup.headers.get(
-            'content-disposition',
-        )
-
-        expect(contentDisposition).toContain(
-            'library-backup.sql',
-        )
-        expect(contentDisposition).toContain(
-            "filename*=UTF-8''library-backup.sql",
-        )
-
-        const backupBody = await backup.text()
-
-        expect(backupBody.length).toBeGreaterThan(0)
-        expect(backupBody).toContain(
-            'SELECT 1',
-        )
     })
 })

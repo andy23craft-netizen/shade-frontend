@@ -7,6 +7,11 @@ import { RuntimeConfigScreen } from './config/RuntimeConfigScreen'
 import { readApiToken } from './config/apiToken'
 import { APP_VERSION } from './config/appVersion'
 import { readRuntimeConfig } from './config/runtimeConfigState'
+import { UnknownLibraryScreen } from './config/UnknownLibraryScreen'
+import {
+    applyLibraryTheme,
+    resolveLibraryContext,
+} from './config/libraryContext'
 import { router } from './routes/routes'
 import './index.css'
 import {
@@ -20,8 +25,23 @@ if (!rootElement) {
 }
 
 const root = createRoot(rootElement)
+const libraryContext = resolveLibraryContext(window.location.hostname)
+
+applyLibraryTheme(libraryContext)
 
 function renderApplication() {
+    if (!libraryContext) {
+        root.render(
+            <StrictMode>
+                <UnknownLibraryScreen
+                    hostname={window.location.hostname}
+                />
+            </StrictMode>,
+        )
+
+        return
+    }
+
     readApiToken()
 
     const runtimeConfigState = readRuntimeConfig()

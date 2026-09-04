@@ -3,6 +3,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
+import type { IncomingMessage } from 'node:http'
+
+const DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'
 
 const repositoryRoot = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -47,11 +50,43 @@ function createDevServerProxy() {
         process.env.SHADE_API_PROXY_TARGET ??
         'http://127.0.0.1:8000'
 
+    const forwardedLibraryHost = (request: IncomingMessage): string => {
+        const browserHost = request.headers.host
+            ?.split(':')[0]
+            ?.trim()
+            .toLowerCase()
+
+        if (!browserHost || browserHost === 'localhost' || browserHost === '127.0.0.1') {
+            return DEFAULT_LOCAL_LIBRARY_HOST
+        }
+
+        return browserHost
+    }
+
     return {
-        '^/(health|books|albums|artists|genres|loans|dashboard|backup|docs|redoc|openapi\\.json|wishlists|collections)':
+        '^/(api/)?(health|ready|version|books|albums|artists|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\\.json|wishlists|collections)':
             {
                 target,
                 changeOrigin: true,
+                rewrite: (path: string) => path.replace(/^\/api/u, ''),
+                configure: (proxy: {
+                    on: (
+                        event: 'proxyReq',
+                        listener: (
+                            proxyRequest: {
+                                setHeader: (name: string, value: string) => void
+                            },
+                            request: IncomingMessage,
+                        ) => void,
+                    ) => void
+                }) => {
+                    proxy.on('proxyReq', (proxyRequest, request) => {
+                        proxyRequest.setHeader(
+                            'X-Forwarded-Host',
+                            forwardedLibraryHost(request),
+                        )
+                    })
+                },
             },
     }
 }
@@ -63,13 +98,14 @@ export default defineConfig({
     define: {
         __APP_VERSION__: JSON.stringify(appVersion),
     },
-    ...(apiProxy
-        ? {
-              server: {
+    server: {
+        allowedHosts: ['.localhost'],
+        ...(apiProxy
+            ? {
                   proxy: apiProxy,
-              },
-          }
-        : {}),
+              }
+            : {}),
+    },
     test: {
         environment: 'jsdom',
         setupFiles: './src/test/setup.ts',

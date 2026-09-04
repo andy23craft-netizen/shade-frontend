@@ -4353,7 +4353,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.0.18"
+    "version": "1.0.22"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -4486,6 +4486,22 @@
               ],
               "title": "Take"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -4542,6 +4558,24 @@
       },
       "post": {
         "operationId": "create_album_albums_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4727,6 +4761,22 @@
               "title": "Album Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -4815,6 +4865,22 @@
               "title": "Album Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -4889,6 +4955,22 @@
             "schema": {
               "title": "Album Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -4987,6 +5069,22 @@
               "title": "Album Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -5054,6 +5152,22 @@
             "schema": {
               "title": "Album Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -5127,6 +5241,22 @@
             "schema": {
               "title": "Album Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -5214,6 +5344,22 @@
             "schema": {
               "title": "Album Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -5339,6 +5485,22 @@
               "title": "Album Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "requestBody": {
@@ -5442,6 +5604,22 @@
             "schema": {
               "title": "Album Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -5550,6 +5728,22 @@
               "title": "Album Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "requestBody": {
@@ -5636,6 +5830,22 @@
             "schema": {
               "title": "Album Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -5735,6 +5945,22 @@
               "title": "In Use",
               "type": "boolean"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -5781,6 +6007,24 @@
       },
       "post": {
         "operationId": "create_artist_artists_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5845,6 +6089,22 @@
             "schema": {
               "title": "Artist Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -5914,6 +6174,22 @@
               "title": "Artist Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -5978,6 +6254,22 @@
             "schema": {
               "title": "Artist Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -6057,6 +6349,22 @@
               "title": "In Use",
               "type": "boolean"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -6093,6 +6401,24 @@
       },
       "post": {
         "operationId": "create_author_authors_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -6147,6 +6473,22 @@
             "schema": {
               "title": "Author Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -6206,6 +6548,22 @@
               "title": "Author Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -6261,6 +6619,22 @@
               "title": "Author Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "requestBody": {
@@ -6313,61 +6687,6 @@
         "summary": "Update Author",
         "tags": [
           "authors"
-        ]
-      }
-    },
-    "/backup": {
-      "get": {
-        "operationId": "get_backup_backup_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/sql": {
-                "schema": {
-                  "format": "binary",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "SQLite database dump as an SQL attachment",
-            "headers": {
-              "Content-Disposition": {
-                "description": "Attachment filename for the SQL dump",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Authentication failure"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Backup generation failure"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Get Backup",
-        "tags": [
-          "backup"
         ]
       }
     },
@@ -6889,6 +7208,22 @@
               ],
               "title": "Sortorder"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -6945,6 +7280,24 @@
       },
       "post": {
         "operationId": "create_book_books_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7021,6 +7374,24 @@
     "/books/bulk/apply-stash": {
       "post": {
         "operationId": "bulk_apply_stash_books_bulk_apply_stash_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7117,6 +7488,24 @@
     "/books/bulk/import": {
       "post": {
         "operationId": "bulk_import_books_books_bulk_import_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7193,6 +7582,24 @@
     "/books/bulk/lookup": {
       "post": {
         "operationId": "bulk_lookup_books_books_bulk_lookup_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7249,6 +7656,24 @@
     "/books/bulk/move-to-shelf": {
       "post": {
         "operationId": "bulk_move_books_to_shelf_books_bulk_move_to_shelf_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7345,6 +7770,24 @@
     "/books/bulk/stash": {
       "post": {
         "operationId": "bulk_stash_books_books_bulk_stash_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7527,6 +7970,22 @@
               "title": "Book Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -7594,6 +8053,22 @@
             "schema": {
               "title": "Book Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -7669,6 +8144,22 @@
             "schema": {
               "title": "Book Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -7777,6 +8268,22 @@
               "title": "Book Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "requestBody": {
@@ -7880,6 +8387,22 @@
             "schema": {
               "title": "Book Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -7988,6 +8511,22 @@
               "title": "Book Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -8055,6 +8594,22 @@
             "schema": {
               "title": "Book Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -8128,6 +8683,22 @@
             "schema": {
               "title": "Book Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -8215,6 +8786,22 @@
             "schema": {
               "title": "Book Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -8304,6 +8891,22 @@
               "title": "In Use",
               "type": "boolean"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -8354,6 +8957,24 @@
       },
       "post": {
         "operationId": "create_category_categories_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -8428,6 +9049,22 @@
             "schema": {
               "title": "Category Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -8507,6 +9144,22 @@
               "title": "Category Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -8581,6 +9234,22 @@
             "schema": {
               "title": "Category Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -8702,6 +9371,22 @@
               ],
               "title": "Take"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -8758,6 +9443,24 @@
       },
       "post": {
         "operationId": "create_collection_collections_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -8822,6 +9525,22 @@
             "schema": {
               "title": "Collection Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -8890,6 +9609,22 @@
             "schema": {
               "title": "Collection Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -9010,6 +9745,22 @@
               ],
               "title": "Take"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -9084,6 +9835,22 @@
             "schema": {
               "title": "Collection Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -9201,6 +9968,22 @@
               "title": "Collection Book Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -9277,6 +10060,22 @@
             "schema": {
               "title": "Collection Book Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -9366,6 +10165,24 @@
     "/dashboard": {
       "get": {
         "operationId": "get_dashboard_dashboard_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -9386,6 +10203,16 @@
               }
             },
             "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -9402,6 +10229,24 @@
     "/dashboard/breakdowns": {
       "get": {
         "operationId": "get_dashboard_breakdowns_dashboard_breakdowns_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -9422,6 +10267,16 @@
               }
             },
             "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -9438,6 +10293,24 @@
     "/dashboard/incomplete-metadata": {
       "get": {
         "operationId": "get_dashboard_incomplete_metadata_dashboard_incomplete_metadata_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -9458,6 +10331,16 @@
               }
             },
             "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -9521,6 +10404,22 @@
                 }
               ],
               "title": "Take"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -9590,6 +10489,22 @@
               "title": "In Use",
               "type": "boolean"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -9640,6 +10555,24 @@
       },
       "post": {
         "operationId": "create_genre_genres_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -9714,6 +10647,22 @@
             "schema": {
               "title": "Genre Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -9793,6 +10742,22 @@
               "title": "Genre Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -9867,6 +10832,22 @@
             "schema": {
               "title": "Genre Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -10057,6 +11038,22 @@
               ],
               "title": "Take"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -10134,6 +11131,22 @@
               "title": "Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -10203,6 +11216,24 @@
       "get": {
         "description": "Readiness check that verifies a database connection can be acquired.",
         "operationId": "readiness_ready_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -10213,6 +11244,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Readiness"
@@ -10221,6 +11262,24 @@
     "/shelves": {
       "get": {
         "operationId": "list_shelves_shelves_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -10245,6 +11304,16 @@
               }
             },
             "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -10259,6 +11328,24 @@
       },
       "post": {
         "operationId": "create_shelf_shelves_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -10344,6 +11431,22 @@
               "title": "Shelf Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -10421,6 +11524,22 @@
             "schema": {
               "title": "Shelf Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -10561,6 +11680,22 @@
               ],
               "title": "Take"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -10617,6 +11752,24 @@
       },
       "post": {
         "operationId": "create_wishlist_wishlists_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -10681,6 +11834,22 @@
             "schema": {
               "title": "Wishlist Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -10749,6 +11918,22 @@
             "schema": {
               "title": "Wishlist Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -10836,6 +12021,22 @@
             "schema": {
               "title": "Wishlist Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -10953,6 +12154,22 @@
               "title": "Wishlist Item Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -11055,6 +12272,22 @@
               ],
               "title": "Take"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -11129,6 +12362,22 @@
             "schema": {
               "title": "Wishlist Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -11246,6 +12495,22 @@
               "title": "Wishlist Item Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
           }
         ],
         "responses": {
@@ -11322,6 +12587,22 @@
             "schema": {
               "title": "Wishlist Item Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],
@@ -11441,6 +12722,22 @@
                 }
               ],
               "title": "Take"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
             }
           }
         ],

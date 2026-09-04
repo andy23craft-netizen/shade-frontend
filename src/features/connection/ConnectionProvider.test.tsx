@@ -171,9 +171,13 @@ describe('ConnectionProvider', () => {
                                 headers.get(
                                     'Library-Username',
                                 ),
-                            ).toBe(
-                                'shade',
-                            )
+                            ).toBeNull()
+
+                            expect(
+                                headers.get(
+                                    'X-Forwarded-Host',
+                                ),
+                            ).toBeNull()
 
                             return new Response('{}', {
                                 status: 200,

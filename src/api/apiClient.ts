@@ -5,10 +5,6 @@ import {
     mapValidationFieldErrors,
 } from './apiErrors'
 
-export const LIBRARY_USERNAME_HEADER =
-    'Library-Username'
-export const LIBRARY_USERNAME = 'shade'
-
 export interface ApiClientOptions {
     apiBaseUrl: string
     getToken?: () => string | null
@@ -112,11 +108,6 @@ export function createApiClient({
         const headers = new Headers(requestHeaders)
 
         if (authenticated) {
-            headers.set(
-                LIBRARY_USERNAME_HEADER,
-                LIBRARY_USERNAME,
-            )
-
             const token = getToken?.() ?? null
 
             if (token) {

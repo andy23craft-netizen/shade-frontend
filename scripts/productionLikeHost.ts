@@ -216,21 +216,11 @@ async function handleStaticRequest(
 export interface MockApiOptions {
     allowedOrigin: string
     bearerToken: string
-    backupBody?: Buffer
-    backupFilename?: string
 }
 
 export async function startMockApiServer(
     options: MockApiOptions,
 ): Promise<StartedServer> {
-    const backupBody = options.backupBody ??
-        Buffer.from(
-            '-- Shade library backup fixture\nSELECT 1;\n',
-            'utf8',
-        )
-    const backupFilename = options.backupFilename ??
-        'backup.sql'
-
     const server = createServer(
         (request, response) => {
             handleMockApiRequest(
@@ -239,8 +229,6 @@ export async function startMockApiServer(
                 {
                     allowedOrigin: options.allowedOrigin,
                     bearerToken: options.bearerToken,
-                    backupBody,
-                    backupFilename,
                 },
             )
         },
@@ -259,7 +247,7 @@ function applyCors(
     )
     response.setHeader(
         'Access-Control-Allow-Headers',
-        'Authorization, Content-Type, Library-Username',
+        'Authorization, Content-Type',
     )
     response.setHeader(
         'Access-Control-Allow-Methods',
@@ -297,8 +285,6 @@ function handleMockApiRequest(
     options: {
         allowedOrigin: string
         bearerToken: string
-        backupBody: Buffer
-        backupFilename: string
     },
 ): void {
     applyCors(
@@ -363,24 +349,6 @@ function handleMockApiRequest(
                 total: 0,
             }),
         )
-        return
-    }
-
-    if (requestUrl.pathname === '/backup' && method === 'GET') {
-        const encodedName = encodeURIComponent(
-            options.backupFilename,
-        )
-
-        response.writeHead(
-            200,
-            {
-                'Content-Type': 'application/sql; charset=utf-8',
-                'Content-Disposition':
-                    `attachment; filename="${options.backupFilename}"; filename*=UTF-8''${encodedName}`,
-                'Content-Length': options.backupBody.length,
-            },
-        )
-        response.end(options.backupBody)
         return
     }
 

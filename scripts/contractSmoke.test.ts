@@ -45,7 +45,6 @@ const expectedPaths = [
     '/artists/{artist_id}',
     '/authors',
     '/authors/{author_id}',
-    '/backup',
     '/books',
     '/books/bulk/apply-stash',
     '/books/bulk/import',
