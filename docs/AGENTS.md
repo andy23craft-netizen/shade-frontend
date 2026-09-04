@@ -142,11 +142,11 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
 Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, mark-played, cover
 upload/delete, or album artwork upload/delete/refetch with generic `PATCH`. Sequenced feature tickets live under
 `docs/tickets/` while open and are removed after completion. Open sequenced work currently includes
-`docs/tickets/FEAT-01_long-titles.md` and `docs/tickets/FEAT-02_album-support.md`. Informal UI feedback such as
-`docs/tickets/ui-nits.md` is not a sequenced build ticket -- treat it as notes unless the user asks to implement items
-from it. When no sequenced feature ticket remains (directory holds only `.gitkeep` and/or informal notes), wait for an
-explicit request rather than inventing the next feature. Do not invent undocumented routes, realtime channels, or
-lifecycle shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
+`docs/tickets/FEAT-02_album-support.md`. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced
+build ticket -- treat it as notes unless the user asks to implement items from it. When no sequenced feature ticket
+remains (directory holds only `.gitkeep` and/or informal notes), wait for an explicit request rather than inventing
+the next feature. Do not invent undocumented routes, realtime channels, or lifecycle shortcuts. Never invent a second
+telemetry transport or fabricate correlation IDs.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current sequenced ticket (when one
 exists), then the product requirements docs when deciding what to build next. Album UI is `FEAT-02`; do not start it
@@ -1457,10 +1457,10 @@ another project prompt as required reading before starting. Attach the items bel
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
 - `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
-  sequenced work: `FEAT-01_long-titles.md`, `FEAT-02_album-support.md` (album MVP frontend implementation against
-  backend 1.1.0). Informal UI feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket
-  unless the user asks to implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask
-  which work to take next rather than inventing a follow-on feature.
+  sequenced work: `FEAT-02_album-support.md` (album MVP frontend implementation against backend 1.1.0). Informal UI
+  feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket unless the user asks to
+  implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask which work to take next
+  rather than inventing a follow-on feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with `FEAT-02`.
