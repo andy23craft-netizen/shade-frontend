@@ -224,9 +224,11 @@ describe('AppShell layout and navigation', () => {
                 timeout: 5000,
             },
         )
-      expect(
-          screen.getByRole('main'),
-      ).toHaveFocus()
+        await waitFor(() => {
+            expect(
+                screen.getByRole('main'),
+            ).toHaveFocus()
+        })
 
         expect(
             window.history.length,
