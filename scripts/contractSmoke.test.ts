@@ -33,6 +33,8 @@ const generatedTypesPath = join(
 
 const expectedPaths = [
     '/albums',
+    '/albums/bulk/import',
+    '/albums/bulk/lookup',
     '/albums/lookup',
     '/albums/{album_id}',
     '/albums/{album_id}/artwork',
@@ -60,6 +62,7 @@ const expectedPaths = [
     '/books/{book_id}/checkout',
     '/books/{book_id}/cover',
     '/books/{book_id}/mark-read',
+    '/catalog/recent-additions',
     '/catalog/resolve-code',
     '/categories',
     '/categories/{category_id}',
