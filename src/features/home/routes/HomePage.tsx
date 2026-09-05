@@ -34,7 +34,11 @@ import {
 import {
     HomeRecentBook,
 } from '../components/HomeRecentBook'
-import shadeLibrarySign from '../../../assets/Shade_Library_Hero.webp'
+import { getLibraryBranding } from '../../../config/libraryBranding'
+import {
+    getLibraryDisplayName,
+    resolveLibraryContext,
+} from '../../../config/libraryContext'
 import {
     useState,
 } from 'react'
@@ -46,6 +50,12 @@ import {
 const STAFF_PICKS_NAME = 'Staff Picks'
 
 export function HomePage() {
+    const libraryContext = resolveLibraryContext(
+        window.location.hostname,
+    )
+    const libraryName = getLibraryDisplayName(libraryContext)
+    const libraryBranding = getLibraryBranding(libraryContext)
+
     const breakdownsQuery =
         useDashboardBreakdowns()
 
@@ -122,10 +132,10 @@ export function HomePage() {
                 <AppLink
                     to="/about"
                     className="home-page__hero-link"
-                    aria-label="About Shade Library"
+                    aria-label={`About ${libraryName}`}
                 >
                     <img
-                        src={shadeLibrarySign}
+                        src={libraryBranding.hero}
                         alt=""
                         className="home-page__hero-image"
                     />
@@ -135,21 +145,22 @@ export function HomePage() {
                     className="sr-only"
                     tabIndex={-1}
                 >
-                    Shade Library
+                    {libraryName}
                 </h1>
 
-                <div className="home-page__quote">
-                    <button
-                        type="button"
-                        className="home-page__quote-trigger"
-                        aria-expanded={quoteContextOpen}
-                        aria-controls="home-quote-context"
-                        onClick={() => {
-                            setQuoteContextOpen(
-                                (current) => !current,
-                            )
-                        }}
-                    >
+                {libraryBranding.showHomeQuote ? (
+                    <div className="home-page__quote">
+                        <button
+                            type="button"
+                            className="home-page__quote-trigger"
+                            aria-expanded={quoteContextOpen}
+                            aria-controls="home-quote-context"
+                            onClick={() => {
+                                setQuoteContextOpen(
+                                    (current) => !current,
+                                )
+                            }}
+                        >
         <span className="home-page__quote-text">
             {quote.text}
         </span>
@@ -157,17 +168,18 @@ export function HomePage() {
                         <cite className="home-page__quote-author">
                             — {quote.author}
                         </cite>
-                    </button>
+                        </button>
 
-                    {quoteContextOpen ? (
-                        <p
-                            id="home-quote-context"
-                            className="home-page__quote-context"
-                        >
-                            {quote.context}
-                        </p>
-                    ) : null}
-                </div>
+                        {quoteContextOpen ? (
+                            <p
+                                id="home-quote-context"
+                                className="home-page__quote-context"
+                            >
+                                {quote.context}
+                            </p>
+                        ) : null}
+                    </div>
+                ) : null}
             </div>
 
             <section

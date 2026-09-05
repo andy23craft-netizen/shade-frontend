@@ -11,10 +11,11 @@ import { LoadingState } from '../components/LoadingState'
 import { APP_VERSION } from '../config/appVersion'
 import {
     formatLibraryDocumentTitle,
+    getLibraryDisplayName,
     resolveLibraryContext,
 } from '../config/libraryContext'
+import { getLibraryBranding } from '../config/libraryBranding'
 import { DrawerNavMenu } from './DrawerNavMenu'
-import shadeLibraryHeader from '../assets/Shade_Library_Header.webp'
 
 interface RouteHandle {
     title?: string
@@ -29,6 +30,11 @@ export function AppShell() {
     const matches = useMatches()
     const mainRef = useRef<HTMLElement>(null)
     const initialPathname = useRef(location.pathname)
+    const libraryContext = resolveLibraryContext(
+        window.location.hostname,
+    )
+    const libraryName = getLibraryDisplayName(libraryContext)
+    const libraryBranding = getLibraryBranding(libraryContext)
 
     const currentRoute = [...matches]
         .reverse()
@@ -50,9 +56,9 @@ export function AppShell() {
     useEffect(() => {
         document.title = formatLibraryDocumentTitle(
             routeTitle,
-            resolveLibraryContext(window.location.hostname),
+            libraryContext,
         )
-    }, [routeTitle])
+    }, [libraryContext, routeTitle])
 
     useEffect(() => {
         if (location.pathname === initialPathname.current) {
@@ -74,10 +80,10 @@ export function AppShell() {
                         className="app-brand"
                         to="/"
                         end
-                        aria-label="Shade Library"
+                        aria-label={libraryName}
                     >
                         <img
-                            src={shadeLibraryHeader}
+                            src={libraryBranding.header}
                             alt=""
                             className="app-brand__image"
                         />

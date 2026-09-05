@@ -1176,6 +1176,8 @@ Preserve the import order in `src/index.css`: tokens, base, shell, components.
 
 ### Tests
 
+**the full suite is blocked any time changes are made to the openapi file. The junior engineer will run `make check` when the code is complete, verify your tests with separate `make test` and `yarn playwright test` commands to cover the test behaviors.**
+
 - `src/App.test.tsx`: Document title and heading-focus behavior for client-side navigations (including drawer-menu
   hops) via `renderAppTree`.
 - `src/RootErrorBoundary.test.tsx`: Recoverable root error-boundary fallback and redacted render-failure reporting.

@@ -72,9 +72,15 @@ export function formatLibraryDocumentTitle(
     pageTitle: string,
     context: LibraryContext | null,
 ): string {
-    const libraryName = context?.id === 'andy'
-        ? 'Shade Library'
-        : context?.name ?? 'Shade Library'
+    const libraryName = getLibraryDisplayName(context)
 
     return `${pageTitle} — ${libraryName}`
+}
+
+export function getLibraryDisplayName(
+    context: LibraryContext | null,
+): string {
+    return context?.id === 'andy'
+        ? 'Shade Library'
+        : context?.name ?? 'Shade Library'
 }
