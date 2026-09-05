@@ -908,7 +908,7 @@ describe('createBooksApi', () => {
         expect(result).toBe(response)
     })
 
-    it('omits the check-in body when the request is undefined', async () => {
+    it('sends the required rating in the check-in body', async () => {
         const response =
             {} as BookRead
 
@@ -921,6 +921,7 @@ describe('createBooksApi', () => {
 
         const result = await api.checkin(
             'book/123',
+            { rating: 5 },
         )
 
         expect(
@@ -929,6 +930,7 @@ describe('createBooksApi', () => {
             '/books/book%2F123/checkin',
             {
                 method: 'POST',
+                body: { rating: 5 },
             },
         )
 

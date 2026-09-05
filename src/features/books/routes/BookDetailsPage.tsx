@@ -425,14 +425,23 @@ export function BookDetailsPage() {
                     </div>
 
                     <div className="book-details-card__field">
-                        <dt>Rating</dt>
+                        <dt>Owner rating</dt>
                         <dd>
                             {displayValue(book.rating)}
                         </dd>
                     </div>
 
+                    <div className="book-details-card__field">
+                        <dt>Borrower rating</dt>
+                        <dd>
+                            {book.borrower_rating?.count
+                                ? `${book.borrower_rating.average ?? 'Not provided'} / 5 (${book.borrower_rating.count})`
+                                : 'No borrower ratings'}
+                        </dd>
+                    </div>
+
                     <div className="book-details-card__field book-details-card__field--wide">
-                        <dt>Review</dt>
+                        <dt>Owner review</dt>
                         <dd>
                             {displayValue(book.review)}
                         </dd>

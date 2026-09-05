@@ -53,7 +53,7 @@ Start the dev server with the proxy enabled:
 SHADE_API_PROXY=1 make run
 ```
 
-Open `http://andy.localhost:5173` or `http://jamie.localhost:5173` to select a library. Bare
+Open `http://andy.localhost:5173`, `http://dalmo.localhost:5173`, or `http://jamie.localhost:5173` to select a library. Bare
 `http://localhost:5173` and `http://127.0.0.1:5173` select Andy. Optionally set `SHADE_API_PROXY_TARGET` (default
 `http://127.0.0.1:8000`) when the API listens elsewhere. The proxy derives `X-Forwarded-Host` from the browser host;
 browser code never sends that header. This proxy is host `make run` only and is not available inside the Podman image.
@@ -174,7 +174,7 @@ require an image rebuild. Application release stays the `package.json` `version`
 | `SHADE_DIAGNOSTICS_ENDPOINT` | empty (`null` in `config.js`) | Diagnostics POST URL when enabled           |
 
 `SHADE_API_BASE_URL` is loaded by the browser. Keep the default root-relative `/api` so the same build follows the
-Shade (the public alias for Andy), Jamie, or a bare-localhost origin being browsed. An absolute `http:`/`https:` URL remains supported for
+Shade (the public alias for Andy), Dalmo (`https://dalmo.library.spir.es`), Jamie, or a bare-localhost origin being browsed. An absolute `http:`/`https:` URL remains supported for
 special development arrangements, but it must be coordinated with backend CORS and tenant-aware proxying.
 
 ### CORS and origin

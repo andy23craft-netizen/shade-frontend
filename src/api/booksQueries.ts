@@ -794,7 +794,7 @@ export function useCheckinBook() {
             request,
         }: {
             id: string
-            request?: CheckinRequest
+            request: CheckinRequest
         }) =>
             booksApi.checkin(
                 id,

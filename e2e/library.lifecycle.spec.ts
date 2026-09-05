@@ -136,6 +136,10 @@ test('checks out and checks in a book through the browser', async ({
      * This opens the nested confirmation dialog.
      */
 
+    await page
+        .getByLabel('Borrower rating')
+        .selectOption('5')
+
     await page.getByRole('button', {
         name: 'Check In Book',
     }).click()
@@ -185,7 +189,8 @@ test('checks out and checks in a book through the browser', async ({
             (request) =>
                 request.method === 'POST' &&
                 request.pathname ===
-                `/books/${book.book_id}/checkin`,
+                `/books/${book.book_id}/checkin` &&
+                (request.body as { rating?: number }).rating === 5,
         ),
     ).toBe(true)
 

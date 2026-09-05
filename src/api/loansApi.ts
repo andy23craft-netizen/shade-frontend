@@ -1,5 +1,7 @@
 import type {
     LoanList,
+    LoanFeedbackRead,
+    LoanFeedbackWrite,
     LoanRead,
     LoanUpdate,
 } from './apiTypes'
@@ -131,6 +133,23 @@ export function createLoansApi(
                         ...signalOptions,
                     },
                 )
+        },
+
+        putFeedback(
+            id: string,
+            feedback: LoanFeedbackWrite,
+        ): Promise<LoanFeedbackRead> {
+            return client.requestJson<LoanFeedbackRead>(
+                `/loans/${encodeURIComponent(id)}/feedback`,
+                { method: 'PUT', body: feedback },
+            )
+        },
+
+        async deleteFeedback(id: string): Promise<void> {
+            await client.request(
+                `/loans/${encodeURIComponent(id)}/feedback`,
+                { method: 'DELETE' },
+            )
         },
     }
 }

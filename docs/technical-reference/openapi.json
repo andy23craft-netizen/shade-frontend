@@ -506,6 +506,9 @@
             ],
             "title": "Barcode"
           },
+          "borrower_rating": {
+            "$ref": "#/components/schemas/BorrowerRatingSummary"
+          },
           "completion_date": {
             "anyOf": [
               {
@@ -665,11 +668,17 @@
           "updated_date": {
             "title": "Updated Date",
             "type": "string"
+          },
+          "work_id": {
+            "title": "Work Id",
+            "type": "string"
           }
         },
         "required": [
           "title",
           "album_id",
+          "work_id",
+          "borrower_rating",
           "creation_date",
           "updated_date",
           "deletion_date",
@@ -1389,6 +1398,11 @@
             ],
             "title": "Isbn13"
           },
+          "isbn_not_applicable": {
+            "default": false,
+            "title": "Isbn Not Applicable",
+            "type": "boolean"
+          },
           "notes": {
             "anyOf": [
               {
@@ -1563,6 +1577,11 @@
             "title": "Isbn13",
             "type": "string"
           },
+          "isbn_not_applicable": {
+            "default": false,
+            "title": "Isbn Not Applicable",
+            "type": "boolean"
+          },
           "pages": {
             "anyOf": [
               {
@@ -1672,6 +1691,9 @@
             "title": "Book Id",
             "type": "string"
           },
+          "borrower_rating": {
+            "$ref": "#/components/schemas/BorrowerRatingSummary"
+          },
           "categories": {
             "items": {
               "$ref": "#/components/schemas/BookCategoryRead"
@@ -1721,6 +1743,11 @@
               }
             ],
             "title": "Isbn13"
+          },
+          "isbn_not_applicable": {
+            "default": false,
+            "title": "Isbn Not Applicable",
+            "type": "boolean"
           },
           "last_borrowed_at": {
             "anyOf": [
@@ -1828,6 +1855,16 @@
             ],
             "title": "Rating"
           },
+          "reservation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReservationWrite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "review": {
             "anyOf": [
               {
@@ -1880,11 +1917,17 @@
           "updated_date": {
             "title": "Updated Date",
             "type": "string"
+          },
+          "work_id": {
+            "title": "Work Id",
+            "type": "string"
           }
         },
         "required": [
           "title",
           "book_id",
+          "work_id",
+          "borrower_rating",
           "placement_state",
           "creation_date",
           "updated_date",
@@ -1969,6 +2012,17 @@
               }
             ],
             "title": "Isbn13"
+          },
+          "isbn_not_applicable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn Not Applicable"
           },
           "notes": {
             "anyOf": [
@@ -2112,6 +2166,31 @@
           }
         },
         "title": "BookUpdate",
+        "type": "object"
+      },
+      "BorrowerRatingSummary": {
+        "properties": {
+          "average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count",
+          "average"
+        ],
+        "title": "BorrowerRatingSummary",
         "type": "object"
       },
       "BulkBookCatalogState": {
@@ -2700,6 +2779,12 @@
       },
       "CheckinRequest": {
         "properties": {
+          "rating": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "type": "integer"
+          },
           "returned_at": {
             "anyOf": [
               {
@@ -2712,11 +2797,19 @@
             "title": "Returned At"
           }
         },
+        "required": [
+          "rating"
+        ],
         "title": "CheckinRequest",
         "type": "object"
       },
       "CheckoutRequest": {
         "properties": {
+          "availability_override": {
+            "default": false,
+            "title": "Availability Override",
+            "type": "boolean"
+          },
           "borrower": {
             "maxLength": 255,
             "minLength": 1,
@@ -3039,6 +3132,26 @@
           }
         },
         "title": "CollectionUpdate",
+        "type": "object"
+      },
+      "CompleteLibrarySetupRequest": {
+        "properties": {
+          "initial_media": {
+            "$ref": "#/components/schemas/MediaType"
+          },
+          "shelf_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Shelf Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "shelf_ids",
+          "initial_media"
+        ],
+        "title": "CompleteLibrarySetupRequest",
         "type": "object"
       },
       "DashboardBorrowing": {
@@ -3463,6 +3576,236 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "LibrarySettingsRead": {
+        "properties": {
+          "book_tbr_shelf_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Book Tbr Shelf Ids",
+            "type": "array"
+          },
+          "enable_loans": {
+            "title": "Enable Loans",
+            "type": "boolean"
+          },
+          "reserved_shelf_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserved Shelf Id"
+          }
+        },
+        "required": [
+          "enable_loans",
+          "book_tbr_shelf_ids",
+          "reserved_shelf_id"
+        ],
+        "title": "LibrarySettingsRead",
+        "type": "object"
+      },
+      "LibrarySettingsUpdate": {
+        "properties": {
+          "book_tbr_shelf_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Tbr Shelf Ids"
+          },
+          "enable_loans": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enable Loans"
+          },
+          "reserved_shelf_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserved Shelf Id"
+          }
+        },
+        "title": "LibrarySettingsUpdate",
+        "type": "object"
+      },
+      "LibrarySetupRead": {
+        "properties": {
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "has_catalog_items": {
+            "title": "Has Catalog Items",
+            "type": "boolean"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LibrarySetupState"
+          },
+          "supported_media": {
+            "items": {
+              "$ref": "#/components/schemas/MediaType"
+            },
+            "title": "Supported Media",
+            "type": "array"
+          },
+          "system_shelves_ready": {
+            "title": "System Shelves Ready",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "state",
+          "has_catalog_items",
+          "system_shelves_ready",
+          "supported_media",
+          "failure_code"
+        ],
+        "title": "LibrarySetupRead",
+        "type": "object"
+      },
+      "LibrarySetupState": {
+        "enum": [
+          "required",
+          "in_progress",
+          "complete",
+          "failed"
+        ],
+        "title": "LibrarySetupState",
+        "type": "string"
+      },
+      "LoanFeedbackList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LoanFeedbackRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "LoanFeedbackList",
+        "type": "object"
+      },
+      "LoanFeedbackRead": {
+        "properties": {
+          "borrower_display_name": {
+            "title": "Borrower Display Name",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "feedback_id": {
+            "title": "Feedback Id",
+            "type": "string"
+          },
+          "loan_id": {
+            "title": "Loan Id",
+            "type": "string"
+          },
+          "rating": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "type": "integer"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "work_id": {
+            "title": "Work Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rating",
+          "feedback_id",
+          "loan_id",
+          "work_id",
+          "borrower_display_name",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "LoanFeedbackRead",
+        "type": "object"
+      },
+      "LoanFeedbackWrite": {
+        "properties": {
+          "rating": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "type": "integer"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review"
+          }
+        },
+        "required": [
+          "rating"
+        ],
+        "title": "LoanFeedbackWrite",
+        "type": "object"
+      },
       "LoanList": {
         "properties": {
           "items": {
@@ -3532,6 +3875,10 @@
             ],
             "title": "Due At"
           },
+          "feedback_present": {
+            "title": "Feedback Present",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -3570,7 +3917,8 @@
           "borrower",
           "checked_out_at",
           "created_date",
-          "last_updated_date"
+          "last_updated_date",
+          "feedback_present"
         ],
         "title": "LoanRead",
         "type": "object"
@@ -3683,6 +4031,31 @@
         "title": "MediaFormat",
         "type": "string"
       },
+      "MediaType": {
+        "enum": [
+          "book",
+          "album"
+        ],
+        "title": "MediaType",
+        "type": "string"
+      },
+      "MergeWorksRequest": {
+        "properties": {
+          "source_work_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Work Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source_work_ids"
+        ],
+        "title": "MergeWorksRequest",
+        "type": "object"
+      },
       "PlacementState": {
         "enum": [
           "shelved",
@@ -3691,6 +4064,54 @@
         ],
         "title": "PlacementState",
         "type": "string"
+      },
+      "ReservationWrite": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "pickup_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Pickup Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pickup_name"
+        ],
+        "title": "ReservationWrite",
+        "type": "object"
+      },
+      "SetBookAvailabilityRequest": {
+        "properties": {
+          "reservation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReservationWrite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "SetBookAvailabilityRequest",
+        "type": "object"
       },
       "ShelfCreate": {
         "properties": {
@@ -3816,6 +4237,36 @@
           }
         },
         "title": "ShelfUpdate",
+        "type": "object"
+      },
+      "SplitWorkRequest": {
+        "properties": {
+          "canonical_title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Title"
+          },
+          "item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Item Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "item_ids"
+        ],
+        "title": "SplitWorkRequest",
         "type": "object"
       },
       "Status": {
@@ -4354,6 +4805,80 @@
           }
         },
         "title": "WishlistUpdate",
+        "type": "object"
+      },
+      "WorkAssignmentSource": {
+        "enum": [
+          "provider",
+          "heuristic",
+          "manual"
+        ],
+        "title": "WorkAssignmentSource",
+        "type": "string"
+      },
+      "WorkExternalIdRead": {
+        "properties": {
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "external_id"
+        ],
+        "title": "WorkExternalIdRead",
+        "type": "object"
+      },
+      "WorkRead": {
+        "properties": {
+          "assignment_source": {
+            "$ref": "#/components/schemas/WorkAssignmentSource"
+          },
+          "canonical_title": {
+            "title": "Canonical Title",
+            "type": "string"
+          },
+          "external_ids": {
+            "items": {
+              "$ref": "#/components/schemas/WorkExternalIdRead"
+            },
+            "title": "External Ids",
+            "type": "array"
+          },
+          "item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Item Ids",
+            "type": "array"
+          },
+          "manually_confirmed": {
+            "title": "Manually Confirmed",
+            "type": "boolean"
+          },
+          "media_type": {
+            "$ref": "#/components/schemas/MediaType"
+          },
+          "work_id": {
+            "title": "Work Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_id",
+          "media_type",
+          "canonical_title",
+          "item_ids",
+          "external_ids",
+          "assignment_source",
+          "manually_confirmed"
+        ],
+        "title": "WorkRead",
         "type": "object"
       }
     },
@@ -5482,6 +6007,111 @@
           }
         ],
         "summary": "Refetch Album Artwork",
+        "tags": [
+          "albums"
+        ]
+      }
+    },
+    "/albums/{album_id}/borrower-reviews": {
+      "get": {
+        "operationId": "get_album_borrower_reviews_albums__album_id__borrower_reviews_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "album_id",
+            "required": true,
+            "schema": {
+              "title": "Album Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Take"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanFeedbackList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Album Borrower Reviews",
         "tags": [
           "albums"
         ]
@@ -8270,6 +8900,244 @@
         ]
       }
     },
+    "/books/{book_id}/availability": {
+      "post": {
+        "operationId": "set_book_availability_books__book_id__availability_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBookAvailabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Book Availability",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/{book_id}/borrower-reviews": {
+      "get": {
+        "operationId": "get_book_borrower_reviews_books__book_id__borrower_reviews_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Take"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanFeedbackList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Book Borrower Reviews",
+        "tags": [
+          "books"
+        ]
+      }
+    },
     "/books/{book_id}/checkin": {
       "post": {
         "operationId": "checkin_book_books__book_id__checkin_post",
@@ -10967,6 +11835,290 @@
         "summary": "Health"
       }
     },
+    "/library/settings": {
+      "get": {
+        "operationId": "read_settings_library_settings_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarySettingsRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Settings",
+        "tags": [
+          "library"
+        ]
+      },
+      "patch": {
+        "operationId": "update_settings_library_settings_patch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibrarySettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarySettingsRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Validation failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Settings",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/library/setup": {
+      "get": {
+        "operationId": "get_setup_library_setup_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarySetupRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Setup",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/library/setup/complete": {
+      "post": {
+        "operationId": "complete_setup_library_setup_complete_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteLibrarySetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarySetupRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Validation failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Complete Setup",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/loans": {
       "get": {
         "operationId": "list_loans_loans_get",
@@ -11322,6 +12474,153 @@
           }
         ],
         "summary": "Update Loan",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/loans/{id}/feedback": {
+      "delete": {
+        "operationId": "delete_loan_feedback_loans__id__feedback_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Loan Feedback",
+        "tags": [
+          "loans"
+        ]
+      },
+      "put": {
+        "operationId": "put_loan_feedback_loans__id__feedback_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanFeedbackWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanFeedbackRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Loan Feedback",
         "tags": [
           "loans"
         ]
@@ -12916,6 +14215,356 @@
         "summary": "List Wishlist Items",
         "tags": [
           "wishlists"
+        ]
+      }
+    },
+    "/works/{work_id}": {
+      "get": {
+        "operationId": "get_work_works__work_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_id",
+            "required": true,
+            "schema": {
+              "title": "Work Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Work",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/works/{work_id}/items/{media_type}/{item_id}": {
+      "post": {
+        "operationId": "assign_item_to_work_works__work_id__items__media_type___item_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_id",
+            "required": true,
+            "schema": {
+              "title": "Work Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "media_type",
+            "required": true,
+            "schema": {
+              "title": "Media Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Assign Item To Work",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/works/{work_id}/merge": {
+      "post": {
+        "operationId": "merge_work_works__work_id__merge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_id",
+            "required": true,
+            "schema": {
+              "title": "Work Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergeWorksRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Merge Work",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/works/{work_id}/split": {
+      "post": {
+        "operationId": "split_existing_work_works__work_id__split_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_id",
+            "required": true,
+            "schema": {
+              "title": "Work Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitWorkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Split Existing Work",
+        "tags": [
+          "works"
         ]
       }
     }

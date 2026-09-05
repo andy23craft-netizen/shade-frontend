@@ -2,10 +2,13 @@ import type { components } from './generated/openapi'
 
 type Schemas = components['schemas']
 
-export type BookCreate = Schemas['BookCreate']
+export type BookCreate = Omit<Schemas['BookCreate'], 'isbn_not_applicable'> &
+    Partial<Pick<Schemas['BookCreate'], 'isbn_not_applicable'>>
 export type BookUpdate = Schemas['BookUpdate']
-export type BookRead = Schemas['BookRead']
-export type BookList = Schemas['BookList']
+type GeneratedBookRead = Schemas['BookRead']
+export type BookRead = Omit<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'work_id'> &
+    Partial<Pick<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'work_id'>>
+export type BookList = Omit<Schemas['BookList'], 'items'> & { items: BookRead[] }
 
 export type BulkBookCatalogState =
     Schemas['BulkBookCatalogState']
@@ -31,14 +34,21 @@ export type BulkBookImportResultStatus =
 export type BulkBookLookupItemRequest =
     Schemas['BulkBookLookupItemRequest']
 
-export type BulkBookLookupItemResult =
-    Schemas['BulkBookLookupItemResult']
+type GeneratedBulkBookLookupItemResult = Schemas['BulkBookLookupItemResult']
+export type BulkBookLookupItemResult = Omit<GeneratedBulkBookLookupItemResult, 'draft'> & {
+    draft?: GeneratedBulkBookLookupItemResult['draft'] extends infer Draft
+        ? Draft extends { isbn_not_applicable: boolean }
+            ? Omit<Draft, 'isbn_not_applicable'> & Partial<Pick<Draft, 'isbn_not_applicable'>>
+            : Draft
+        : never
+}
 
 export type BulkBookLookupRequest =
     Schemas['BulkBookLookupRequest']
 
-export type BulkBookLookupResponse =
-    Schemas['BulkBookLookupResponse']
+export type BulkBookLookupResponse = Omit<Schemas['BulkBookLookupResponse'], 'items'> & {
+    items: BulkBookLookupItemResult[]
+}
 
 export type BulkBookLookupStatus =
     Schemas['BulkBookLookupStatus']
@@ -66,8 +76,8 @@ export type BookLookupDraft =
 export type BookLookupResponse =
     Schemas['BookLookupResponse']
 
-export type CheckoutRequest =
-    Schemas['CheckoutRequest']
+export type CheckoutRequest = Omit<Schemas['CheckoutRequest'], 'availability_override'> &
+    Partial<Pick<Schemas['CheckoutRequest'], 'availability_override'>>
 
 export type CheckinRequest =
     Schemas['CheckinRequest']
@@ -75,9 +85,23 @@ export type CheckinRequest =
 export type MarkReadRequest =
     Schemas['MarkReadRequest']
 
-export type LoanRead = Schemas['LoanRead']
-export type LoanList = Schemas['LoanList']
+type GeneratedLoanRead = Schemas['LoanRead']
+export type LoanRead = Omit<GeneratedLoanRead, 'feedback_present'> &
+    Partial<Pick<GeneratedLoanRead, 'feedback_present'>>
+export type LoanList = Omit<Schemas['LoanList'], 'items'> & { items: LoanRead[] }
 export type LoanUpdate = Schemas['LoanUpdate']
+export type LoanFeedbackWrite = Schemas['LoanFeedbackWrite']
+export type LoanFeedbackRead = Schemas['LoanFeedbackRead']
+export type LoanFeedbackList = Schemas['LoanFeedbackList']
+export type BorrowerRatingSummary = Schemas['BorrowerRatingSummary']
+
+export type LibrarySetupRead = Schemas['LibrarySetupRead']
+export type CompleteLibrarySetupRequest = Schemas['CompleteLibrarySetupRequest']
+export type LibrarySettingsRead = Schemas['LibrarySettingsRead']
+export type LibrarySettingsUpdate = Schemas['LibrarySettingsUpdate']
+export type SetBookAvailabilityRequest = Schemas['SetBookAvailabilityRequest']
+export type ReservationWrite = Schemas['ReservationWrite']
+export type WorkRead = Schemas['WorkRead']
 
 export type DashboardBorrowing =
     Schemas['DashboardBorrowing']

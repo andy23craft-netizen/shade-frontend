@@ -85,7 +85,7 @@ describe('booksApi conflict responses', () => {
     it('surfaces check-in 409 bodies as ApiError', async () => {
         await expectConflict(
             '/books/book-1/checkin',
-            (api) => api.checkin('book-1'),
+            (api) => api.checkin('book-1', { rating: 5 }),
         )
     })
 

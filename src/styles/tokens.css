@@ -110,18 +110,33 @@
 }
 
 :root[data-library="jamie"] {
-  --color-page: #28203b;
-  --color-border: #9b6e9e;
-  --color-link: #65426d;
-  --color-link-hover: #442d4a;
-  --color-primary: #4a3154;
-  --color-primary-hover: #33223b;
-  --color-card-border: #9b6e9e;
-  --color-wood: #4a243f;
-  --color-wood-dark: #30182a;
-  --color-brass: #9b6e9e;
-  --color-brass-light: #c393bd;
-  --color-focus: #d39ac8;
+  --color-page: #4b2117;
+  --color-border: #a85f32;
+  --color-link: #793a24;
+  --color-link-hover: #512617;
+  --color-primary: #652d1c;
+  --color-primary-hover: #481f14;
+  --color-card-border: #a85f32;
+  --color-wood: #3b1811;
+  --color-wood-dark: #26100c;
+  --color-brass: #a85f32;
+  --color-brass-light: #d58a52;
+  --color-focus: #efad68;
+}
+
+:root[data-library="dalmo"] {
+  --color-page: #073f43;
+  --color-border: #a96d43;
+  --color-link: #17635f;
+  --color-link-hover: #0e4542;
+  --color-primary: #125551;
+  --color-primary-hover: #0a3b3a;
+  --color-card-border: #a96d43;
+  --color-wood: #153f42;
+  --color-wood-dark: #092b2d;
+  --color-brass: #a96d43;
+  --color-brass-light: #d29a6e;
+  --color-focus: #e6a875;
 }
 
 :root[data-library="unknown"] {

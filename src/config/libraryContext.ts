@@ -1,6 +1,6 @@
 export const DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'
 
-export type LibraryId = 'andy' | 'jamie'
+export type LibraryId = 'andy' | 'dalmo' | 'jamie'
 
 export interface LibraryContext {
     id: LibraryId
@@ -13,6 +13,11 @@ const LIBRARIES: Readonly<Record<LibraryId, LibraryContext>> = {
         id: 'andy',
         name: "Andy's Library",
         wordmark: 'Shade Library',
+    },
+    dalmo: {
+        id: 'dalmo',
+        name: "Dalmo's Library",
+        wordmark: "Dalmo's Shade Library",
     },
     jamie: {
         id: 'jamie',

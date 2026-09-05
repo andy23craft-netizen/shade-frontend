@@ -78,6 +78,7 @@ export const CHECKOUT_REQUEST_KEYS = [
 ] as const satisfies readonly (keyof CheckoutRequest)[]
 
 export const CHECKIN_REQUEST_KEYS = [
+    'rating',
     'returned_at',
 ] as const satisfies readonly (keyof CheckinRequest)[]
 

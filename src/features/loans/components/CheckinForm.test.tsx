@@ -109,6 +109,12 @@ function renderForm(
 }
 
 function submitForm() {
+    fireEvent.change(
+        screen.getByRole('combobox', {
+            name: 'Borrower rating',
+        }),
+        { target: { value: '5' } },
+    )
     fireEvent.click(
         screen.getByRole('button', {
             name: 'Check In Book',
@@ -196,7 +202,7 @@ describe('CheckinForm', () => {
         expect(mutate).toHaveBeenCalledWith(
             {
                 id: 'test-book-id',
-                request: undefined,
+                request: { rating: 5 },
             },
             expect.objectContaining({
                 onSuccess: expect.any(Function),
@@ -236,6 +242,7 @@ describe('CheckinForm', () => {
             {
                 id: 'test-book-id',
                 request: {
+                    rating: 5,
                     returned_at:
                         new Date(
                             2026,

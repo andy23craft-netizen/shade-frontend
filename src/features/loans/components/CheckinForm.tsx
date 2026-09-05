@@ -49,6 +49,7 @@ function focusSummary(
 }
 
 const CHECKIN_FORM_FIELDS = new Set<string>([
+    'rating',
     'returned_at',
 ])
 
@@ -177,6 +178,7 @@ export function CheckinForm({
         value: string,
     ) {
         setValues({
+            ...values,
             returned_at: value,
         })
 
@@ -194,6 +196,17 @@ export function CheckinForm({
             return next
         })
 
+        setFormError(null)
+    }
+
+    function updateRating(value: string) {
+        setValues({ ...values, rating: value })
+        setFieldErrors((current) => {
+            if (!current.rating) return current
+            const next = { ...current }
+            delete next.rating
+            return next
+        })
         setFormError(null)
     }
 
@@ -353,9 +366,8 @@ export function CheckinForm({
                                      message,
                                  ]) => (
                                     <li key={field}>
-                                        <a href="#checkin-returned-at">
-                                            Return date and
-                                            time: {message}
+                                        <a href={field === 'rating' ? '#checkin-rating' : '#checkin-returned-at'}>
+                                            {field === 'rating' ? 'Rating' : 'Return date and time'}: {message}
                                         </a>
                                     </li>
                                 ),
@@ -413,6 +425,25 @@ export function CheckinForm({
                         </div>
                     </dl>
                 </section>
+
+                <Field
+                    label="Borrower rating"
+                    id="checkin-rating"
+                    helpText="Required. This records the borrower’s rating, separately from the owner catalog rating."
+                    error={fieldErrors.rating}
+                >
+                    <select
+                        id="checkin-rating"
+                        value={values.rating}
+                        onChange={(event) => updateRating(event.target.value)}
+                        required
+                    >
+                        <option value="">Choose a rating</option>
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                            <option key={rating} value={rating}>{rating} / 5</option>
+                        ))}
+                    </select>
+                </Field>
 
                 <Field
                     label="Return date and time"

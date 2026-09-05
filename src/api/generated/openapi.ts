@@ -94,6 +94,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/albums/{album_id}/borrower-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Album Borrower Reviews */
+        get: operations["get_album_borrower_reviews_albums__album_id__borrower_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/albums/{album_id}/checkin": {
         parameters: {
             query?: never;
@@ -373,6 +390,40 @@ export interface paths {
         head?: never;
         /** Update Book */
         patch: operations["update_book_books__book_id__patch"];
+        trace?: never;
+    };
+    "/books/{book_id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Book Availability */
+        post: operations["set_book_availability_books__book_id__availability_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/{book_id}/borrower-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Book Borrower Reviews */
+        get: operations["get_book_borrower_reviews_books__book_id__borrower_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/books/{book_id}/checkin": {
@@ -679,6 +730,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/library/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Settings */
+        get: operations["read_settings_library_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Settings */
+        patch: operations["update_settings_library_settings_patch"];
+        trace?: never;
+    };
+    "/library/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Setup */
+        get: operations["get_setup_library_setup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/setup/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Setup */
+        post: operations["complete_setup_library_setup_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/loans": {
         parameters: {
             query?: never;
@@ -712,6 +815,24 @@ export interface paths {
         head?: never;
         /** Update Loan */
         patch: operations["update_loan_loans__id__patch"];
+        trace?: never;
+    };
+    "/loans/{id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Loan Feedback */
+        put: operations["put_loan_feedback_loans__id__feedback_put"];
+        post?: never;
+        /** Delete Loan Feedback */
+        delete: operations["delete_loan_feedback_loans__id__feedback_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/ready": {
@@ -913,6 +1034,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works/{work_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Work */
+        get: operations["get_work_works__work_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/works/{work_id}/items/{media_type}/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign Item To Work */
+        post: operations["assign_item_to_work_works__work_id__items__media_type___item_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/works/{work_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge Work */
+        post: operations["merge_work_works__work_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/works/{work_id}/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Split Existing Work */
+        post: operations["split_existing_work_works__work_id__split_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1060,6 +1249,7 @@ export interface components {
             average_loan_days: number | null;
             /** Barcode */
             barcode?: string | null;
+            borrower_rating: components["schemas"]["BorrowerRatingSummary"];
             /** Completion Date */
             completion_date?: string | null;
             /** Creation Date */
@@ -1103,6 +1293,8 @@ export interface components {
             tracks: components["schemas"]["AlbumTrackRead"][];
             /** Updated Date */
             updated_date: string;
+            /** Work Id */
+            work_id: string;
         };
         /**
          * AlbumStatus
@@ -1295,6 +1487,11 @@ export interface components {
             is_read: boolean;
             /** Isbn13 */
             isbn13?: string | null;
+            /**
+             * Isbn Not Applicable
+             * @default false
+             */
+            isbn_not_applicable: boolean;
             /** Notes */
             notes?: string | null;
             /** Pages */
@@ -1336,6 +1533,11 @@ export interface components {
             authors?: string | null;
             /** Isbn13 */
             isbn13: string;
+            /**
+             * Isbn Not Applicable
+             * @default false
+             */
+            isbn_not_applicable: boolean;
             /** Pages */
             pages?: number | null;
             /** Publication Date */
@@ -1361,6 +1563,7 @@ export interface components {
             average_loan_days: number | null;
             /** Book Id */
             book_id: string;
+            borrower_rating: components["schemas"]["BorrowerRatingSummary"];
             /** Categories */
             categories?: components["schemas"]["BookCategoryRead"][];
             /** Completion Date */
@@ -1376,6 +1579,11 @@ export interface components {
             is_read: boolean;
             /** Isbn13 */
             isbn13?: string | null;
+            /**
+             * Isbn Not Applicable
+             * @default false
+             */
+            isbn_not_applicable: boolean;
             /** Last Borrowed At */
             last_borrowed_at: string | null;
             /** Notes */
@@ -1395,6 +1603,7 @@ export interface components {
             purchase_price?: number | null;
             /** Rating */
             rating?: number | null;
+            reservation?: components["schemas"]["ReservationWrite"] | null;
             /** Review */
             review?: string | null;
             /** Shelf Name */
@@ -1409,6 +1618,8 @@ export interface components {
             title: string;
             /** Updated Date */
             updated_date: string;
+            /** Work Id */
+            work_id: string;
         };
         /** BookUpdate */
         BookUpdate: {
@@ -1424,6 +1635,8 @@ export interface components {
             is_read?: boolean | null;
             /** Isbn13 */
             isbn13?: string | null;
+            /** Isbn Not Applicable */
+            isbn_not_applicable?: boolean | null;
             /** Notes */
             notes?: string | null;
             /** Pages */
@@ -1447,6 +1660,13 @@ export interface components {
             tags?: string[] | null;
             /** Title */
             title?: string | null;
+        };
+        /** BorrowerRatingSummary */
+        BorrowerRatingSummary: {
+            /** Average */
+            average: number | null;
+            /** Count */
+            count: number;
         };
         /**
          * BulkBookCatalogState
@@ -1635,11 +1855,18 @@ export interface components {
         };
         /** CheckinRequest */
         CheckinRequest: {
+            /** Rating */
+            rating: number;
             /** Returned At */
             returned_at?: string | null;
         };
         /** CheckoutRequest */
         CheckoutRequest: {
+            /**
+             * Availability Override
+             * @default false
+             */
+            availability_override: boolean;
             /** Borrower */
             borrower: string;
             /** Checked Out At */
@@ -1729,6 +1956,12 @@ export interface components {
             description?: string | null;
             /** Name */
             name?: string | null;
+        };
+        /** CompleteLibrarySetupRequest */
+        CompleteLibrarySetupRequest: {
+            initial_media: components["schemas"]["MediaType"];
+            /** Shelf Ids */
+            shelf_ids: string[];
         };
         /** DashboardBorrowing */
         DashboardBorrowing: {
@@ -1879,6 +2112,74 @@ export interface components {
              */
             status: string;
         };
+        /** LibrarySettingsRead */
+        LibrarySettingsRead: {
+            /** Book Tbr Shelf Ids */
+            book_tbr_shelf_ids: string[];
+            /** Enable Loans */
+            enable_loans: boolean;
+            /** Reserved Shelf Id */
+            reserved_shelf_id: string | null;
+        };
+        /** LibrarySettingsUpdate */
+        LibrarySettingsUpdate: {
+            /** Book Tbr Shelf Ids */
+            book_tbr_shelf_ids?: string[] | null;
+            /** Enable Loans */
+            enable_loans?: boolean | null;
+            /** Reserved Shelf Id */
+            reserved_shelf_id?: string | null;
+        };
+        /** LibrarySetupRead */
+        LibrarySetupRead: {
+            /** Failure Code */
+            failure_code: string | null;
+            /** Has Catalog Items */
+            has_catalog_items: boolean;
+            state: components["schemas"]["LibrarySetupState"];
+            /** Supported Media */
+            supported_media: components["schemas"]["MediaType"][];
+            /** System Shelves Ready */
+            system_shelves_ready: boolean;
+        };
+        /**
+         * LibrarySetupState
+         * @enum {string}
+         */
+        LibrarySetupState: "required" | "in_progress" | "complete" | "failed";
+        /** LoanFeedbackList */
+        LoanFeedbackList: {
+            /** Items */
+            items: components["schemas"]["LoanFeedbackRead"][];
+            /** Total */
+            total: number;
+        };
+        /** LoanFeedbackRead */
+        LoanFeedbackRead: {
+            /** Borrower Display Name */
+            borrower_display_name: string;
+            /** Created At */
+            created_at: string;
+            /** Feedback Id */
+            feedback_id: string;
+            /** Loan Id */
+            loan_id: string;
+            /** Rating */
+            rating: number;
+            /** Review */
+            review?: string | null;
+            /** Updated At */
+            updated_at: string;
+            /** Work Id */
+            work_id: string;
+        };
+        /** LoanFeedbackWrite */
+        LoanFeedbackWrite: {
+            /** Rating */
+            rating: number;
+            /** Review */
+            review?: string | null;
+        };
         /** LoanList */
         LoanList: {
             /** Items */
@@ -1903,6 +2204,8 @@ export interface components {
             created_date: string;
             /** Due At */
             due_at?: string | null;
+            /** Feedback Present */
+            feedback_present: boolean;
             /** Id */
             id: string;
             /** Last Updated Date */
@@ -1944,10 +2247,32 @@ export interface components {
          */
         MediaFormat: "unknown" | "vinyl" | "cd" | "cassette" | "other";
         /**
+         * MediaType
+         * @enum {string}
+         */
+        MediaType: "book" | "album";
+        /** MergeWorksRequest */
+        MergeWorksRequest: {
+            /** Source Work Ids */
+            source_work_ids: string[];
+        };
+        /**
          * PlacementState
          * @enum {string}
          */
         PlacementState: "shelved" | "stashed" | "unshelved";
+        /** ReservationWrite */
+        ReservationWrite: {
+            /** Note */
+            note?: string | null;
+            /** Pickup Name */
+            pickup_name: string;
+        };
+        /** SetBookAvailabilityRequest */
+        SetBookAvailabilityRequest: {
+            reservation?: components["schemas"]["ReservationWrite"] | null;
+            status: components["schemas"]["Status"];
+        };
         /** ShelfCreate */
         ShelfCreate: {
             /** Common Name */
@@ -1980,6 +2305,13 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
+        };
+        /** SplitWorkRequest */
+        SplitWorkRequest: {
+            /** Canonical Title */
+            canonical_title?: string | null;
+            /** Item Ids */
+            item_ids: string[];
         };
         /**
          * Status
@@ -2132,6 +2464,33 @@ export interface components {
             description?: string | null;
             /** Name */
             name?: string | null;
+        };
+        /**
+         * WorkAssignmentSource
+         * @enum {string}
+         */
+        WorkAssignmentSource: "provider" | "heuristic" | "manual";
+        /** WorkExternalIdRead */
+        WorkExternalIdRead: {
+            /** External Id */
+            external_id: string;
+            /** Provider */
+            provider: string;
+        };
+        /** WorkRead */
+        WorkRead: {
+            assignment_source: components["schemas"]["WorkAssignmentSource"];
+            /** Canonical Title */
+            canonical_title: string;
+            /** External Ids */
+            external_ids: components["schemas"]["WorkExternalIdRead"][];
+            /** Item Ids */
+            item_ids: string[];
+            /** Manually Confirmed */
+            manually_confirmed: boolean;
+            media_type: components["schemas"]["MediaType"];
+            /** Work Id */
+            work_id: string;
         };
     };
     responses: never;
@@ -2800,6 +3159,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_album_borrower_reviews_albums__album_id__borrower_reviews_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanFeedbackList"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4285,6 +4689,142 @@ export interface operations {
             };
             /** @description The book must be removed from the wishlist before it can be placed on a shelf; A book cannot be placed on an album shelf */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_book_availability_books__book_id__availability_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBookAvailabilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_book_borrower_reviews_books__book_id__borrower_reviews_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanFeedbackList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5983,6 +6523,183 @@ export interface operations {
             };
         };
     };
+    read_settings_library_settings_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySettingsRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_library_settings_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibrarySettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySettingsRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_setup_library_setup_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySetupRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_setup_library_setup_complete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteLibrarySetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySetupRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
     list_loans_loans_get: {
         parameters: {
             query?: {
@@ -6154,6 +6871,92 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_loan_feedback_loans__id__feedback_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoanFeedbackWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanFeedbackRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_loan_feedback_loans__id__feedback_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication failure */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7138,6 +7941,202 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_work_works__work_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                work_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_item_to_work_works__work_id__items__media_type___item_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                work_id: string;
+                media_type: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_work_works__work_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                work_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeWorksRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    split_existing_work_works__work_id__split_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                work_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SplitWorkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

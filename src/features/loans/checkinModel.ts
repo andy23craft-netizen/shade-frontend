@@ -56,14 +56,17 @@ function normalizeCheckinDateTime(
 }
 
 export interface CheckinFormValues {
+    rating?: string
     returned_at: string
 }
 
 export interface CheckinFormFieldErrors {
+    rating?: string
     returned_at?: string
 }
 
 export const checkinFormDefaults: CheckinFormValues = {
+    rating: '',
     returned_at: '',
 }
 
@@ -71,6 +74,11 @@ export function validateCheckinFormValues(
     values: CheckinFormValues,
 ): CheckinFormFieldErrors {
     const errors: CheckinFormFieldErrors = {}
+
+    const rating = Number(values.rating)
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        errors.rating = 'Choose a rating from 1 to 5.'
+    }
 
     if (values.returned_at.trim()) {
         try {
@@ -88,12 +96,15 @@ export function validateCheckinFormValues(
 
 export function checkinFormValuesToRequest(
     values: CheckinFormValues,
-): CheckinRequest | undefined {
+): CheckinRequest {
+    const rating = Number(values.rating)
+
     if (!values.returned_at.trim()) {
-        return undefined
+        return { rating }
     }
 
     return {
+        rating,
         returned_at:
             normalizeCheckinDateTime(
                 values.returned_at,

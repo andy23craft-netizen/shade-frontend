@@ -31,7 +31,7 @@ export function createAlbumsApi(client: ReturnType<typeof createApiClient>) {
             return client.getJson<AlbumLookupResponse>(`/albums/lookup?${params}`, signalOptions(options.signal))
         },
         checkout: (id: string, request: CheckoutRequest) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/checkout`, { method: 'POST', body: request }),
-        checkin: (id: string, request: CheckinRequest = {}) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/checkin`, { method: 'POST', body: request }),
+        checkin: (id: string, request: CheckinRequest) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/checkin`, { method: 'POST', body: request }),
         markPlayed: (id: string, request: MarkPlayedRequest = {}) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/mark-played`, { method: 'POST', body: request }),
         getArtwork: async (id: string, options: ApiCallOptions = {}) => (await client.get(`/albums/${encodeURIComponent(id)}/artwork`, signalOptions(options.signal))).blob(),
         uploadArtwork: async (id: string, file: File) => { const body = new FormData(); body.set('file', file); const response = await client.request(`/albums/${encodeURIComponent(id)}/artwork`, { method: 'PUT', body }); return response.json() as Promise<AlbumRead> },

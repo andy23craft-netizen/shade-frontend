@@ -66,7 +66,7 @@ export function createDevServerProxy() {
         'http://127.0.0.1:8000'
 
     return {
-        '^/(api/)?(health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\\.json|wishlists|collections)':
+        '^/(api/)?(health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|library|works|docs|redoc|openapi\\.json|wishlists|collections)':
             {
                 target,
                 changeOrigin: true,
@@ -101,7 +101,7 @@ export default defineConfig({
         __APP_VERSION__: JSON.stringify(appVersion),
     },
     server: {
-        allowedHosts: ['.localhost'],
+        allowedHosts: ['.localhost', 'dalmo.library.spir.es'],
         ...(apiProxy
             ? {
                   proxy: apiProxy,

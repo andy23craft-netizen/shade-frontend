@@ -11,6 +11,8 @@ describe('resolveLibraryContext', () => {
         ['shade.library.spir.es', 'andy'],
         ['SHADE.LIBRARY.SPIR.ES.', 'andy'],
         ['andy.example.test', 'andy'],
+        ['dalmo.localhost', 'dalmo'],
+        ['dalmo.library.spir.es', 'dalmo'],
         ['jamie.localhost', 'jamie'],
         ['jamie.library.spir.es', 'jamie'],
         ['jamie.example.test.', 'jamie'],

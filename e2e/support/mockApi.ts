@@ -89,6 +89,7 @@ interface CheckoutBody {
 }
 
 interface CheckinBody {
+    rating?: number
     returned_at?: string
 }
 
@@ -1309,6 +1310,14 @@ export async function installMockApi(
                     readRequestBody(
                         route,
                     ) as CheckinBody
+
+                if (!Number.isInteger(body.rating) || body.rating! < 1 || body.rating! > 5) {
+                    await fulfillJson(route, {
+                        status: 422,
+                        body: { detail: 'Rating must be an integer from 1 through 5' },
+                    })
+                    return
+                }
 
                 const returnedAt =
                     body.returned_at ?? NOW

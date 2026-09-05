@@ -16,10 +16,12 @@ describe('tenant-aware proxy configuration', () => {
     it.each([
         ['andy.localhost:5173', 'andy.localhost'],
         ['jamie.localhost:5173', 'jamie.localhost'],
+        ['dalmo.localhost:5173', 'dalmo.localhost'],
         ['localhost:5173', 'andy.localhost'],
         ['127.0.0.1:5173', 'andy.localhost'],
         ['SHADE.LIBRARY.SPIR.ES', 'shade.library.spir.es'],
         ['jamie.library.spir.es', 'jamie.library.spir.es'],
+        ['dalmo.library.spir.es', 'dalmo.library.spir.es'],
     ])('derives %s as forwarded host %s', (host, expected) => {
         expect(resolveForwardedLibraryHost(host)).toBe(expected)
     })
@@ -27,6 +29,7 @@ describe('tenant-aware proxy configuration', () => {
     it.each([
         ['shade.library.spir.es', 'shade.library.spir.es'],
         ['jamie.library.spir.es', 'jamie.library.spir.es'],
+        ['dalmo.library.spir.es', 'dalmo.library.spir.es'],
         ['localhost:5173', 'andy.localhost'],
     ])(
         'injects browser host %s as %s into proxied Vite requests',
@@ -35,7 +38,7 @@ describe('tenant-aware proxy configuration', () => {
 
             const proxy = createDevServerProxy()
             const proxyOptions = proxy?.[
-                '^/(api/)?(health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\\.json|wishlists|collections)'
+            '^/(api/)?(health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|library|works|docs|redoc|openapi\\.json|wishlists|collections)'
             ]
             let listener: ((
                 proxyRequest: {
@@ -71,7 +74,7 @@ describe('tenant-aware proxy configuration', () => {
     it('trusts localhost subdomains and excludes backup from Vite', async () => {
         const config = await readFile('vite.config.ts', 'utf8')
 
-        expect(config).toContain("allowedHosts: ['.localhost']")
+        expect(config).toContain("allowedHosts: ['.localhost', 'dalmo.library.spir.es']")
         expect(config).toContain("'X-Forwarded-Host'")
         expect(config).toContain("DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'")
         expect(config).not.toMatch(/\|backup\|/u)
@@ -81,5 +84,6 @@ describe('tenant-aware proxy configuration', () => {
         const config = await readFile('ci/nginx.conf', 'utf8')
 
         expect(config).toContain('proxy_set_header X-Forwarded-Host $host;')
+        expect(config).not.toContain('proxy_set_header Library-Username')
     })
 })

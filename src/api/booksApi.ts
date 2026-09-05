@@ -18,6 +18,7 @@ import type {
     CheckoutRequest,
     MarkReadRequest,
     PlacementState,
+    SetBookAvailabilityRequest,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -489,23 +490,11 @@ export function createBooksApi(
 
         async checkin(
             id: string,
-            request?: CheckinRequest,
+            request: CheckinRequest,
             options: ApiCallOptions = {},
         ): Promise<BookRead> {
             const path =
                 `/books/${encodeURIComponent(id)}/checkin`
-
-            if (request === undefined) {
-                return client.requestJson<BookRead>(
-                    path,
-                    {
-                        method: 'POST',
-                        ...withSignal(
-                            options.signal,
-                        ),
-                    },
-                )
-            }
 
             return client.requestJson<BookRead>(
                 path,
@@ -516,6 +505,16 @@ export function createBooksApi(
                     ),
                     ...withSignal(options.signal),
                 },
+            )
+        },
+
+        setAvailability(
+            id: string,
+            request: SetBookAvailabilityRequest,
+        ): Promise<BookRead> {
+            return client.requestJson<BookRead>(
+                `/books/${encodeURIComponent(id)}/availability`,
+                { method: 'POST', body: request },
             )
         },
 
