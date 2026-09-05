@@ -9,6 +9,10 @@ import { useVersion } from '../api/versionQueries'
 import { useDashboard } from '../api/dashboardQueries'
 import { LoadingState } from '../components/LoadingState'
 import { APP_VERSION } from '../config/appVersion'
+import {
+    formatLibraryDocumentTitle,
+    resolveLibraryContext,
+} from '../config/libraryContext'
 import { DrawerNavMenu } from './DrawerNavMenu'
 import shadeLibraryHeader from '../assets/Shade_Library_Header.webp'
 
@@ -44,7 +48,10 @@ export function AppShell() {
             : `Release ${APP_VERSION}`
 
     useEffect(() => {
-        document.title = `${routeTitle} — Shade`
+        document.title = formatLibraryDocumentTitle(
+            routeTitle,
+            resolveLibraryContext(window.location.hostname),
+        )
     }, [routeTitle])
 
     useEffect(() => {

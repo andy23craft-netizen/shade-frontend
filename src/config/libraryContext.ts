@@ -67,3 +67,14 @@ export function applyLibraryTheme(
 ): void {
     root.dataset.library = context?.id ?? 'unknown'
 }
+
+export function formatLibraryDocumentTitle(
+    pageTitle: string,
+    context: LibraryContext | null,
+): string {
+    const libraryName = context?.id === 'andy'
+        ? 'Shade Library'
+        : context?.name ?? 'Shade Library'
+
+    return `${pageTitle} — ${libraryName}`
+}

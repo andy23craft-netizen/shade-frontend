@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
     applyLibraryTheme,
+    formatLibraryDocumentTitle,
     resolveLibraryContext,
 } from './libraryContext'
 
@@ -50,5 +51,20 @@ describe('applyLibraryTheme', () => {
         applyLibraryTheme(null, root)
 
         expect(root.dataset.library).toBe('unknown')
+    })
+})
+
+describe('formatLibraryDocumentTitle', () => {
+    it.each([
+        ['shade.library.spir.es', 'Home — Shade Library'],
+        ['jamie.library.spir.es', "Home — Jamie's Library"],
+        ['dalmo.library.spir.es', "Home — Dalmo's Library"],
+    ])('formats the title for %s', (hostname, expectedTitle) => {
+        expect(
+            formatLibraryDocumentTitle(
+                'Home',
+                resolveLibraryContext(hostname),
+            ),
+        ).toBe(expectedTitle)
     })
 })

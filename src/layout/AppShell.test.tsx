@@ -348,7 +348,9 @@ describe('AppShell layout and navigation', () => {
         ).toBeInTheDocument()
 
         await waitFor(() => {
-            expect(document.title).toBe('Loans — Shade')
+            expect(document.title).toBe(
+                'Loans — Shade Library',
+            )
         })
     })
 
