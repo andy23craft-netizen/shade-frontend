@@ -1381,6 +1381,30 @@
             ],
             "title": "Completion Date"
           },
+          "editor": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editor"
+          },
+          "illustrator": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Illustrator"
+          },
           "is_read": {
             "default": false,
             "title": "Is Read",
@@ -1727,6 +1751,30 @@
             "title": "Creation Date",
             "type": "string"
           },
+          "editor": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editor"
+          },
+          "illustrator": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Illustrator"
+          },
           "is_read": {
             "default": false,
             "title": "Is Read",
@@ -1989,6 +2037,30 @@
               }
             ],
             "title": "Completion Date"
+          },
+          "editor": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editor"
+          },
+          "illustrator": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Illustrator"
           },
           "is_read": {
             "anyOf": [
@@ -2631,6 +2703,8 @@
             "title": "Release Date"
           },
           "title": {
+            "maxLength": 255,
+            "minLength": 1,
             "title": "Title",
             "type": "string"
           },

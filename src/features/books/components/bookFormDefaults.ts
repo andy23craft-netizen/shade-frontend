@@ -5,6 +5,8 @@ export const bookFormDefaults: BookFormValues = {
     authorIds: [],
     isbn13: '',
     publisher: '',
+    illustrator: '',
+    editor: '',
     publication_date: '',
     pages: '',
     categoryIds: [],

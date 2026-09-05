@@ -237,6 +237,28 @@ describe('formValuesToBookCreate', () => {
         ])
     })
 
+    it('trims populated contributors and omits blank contributors', () => {
+        const populated = formValuesToBookCreate(
+            makeValues({
+                illustrator: '  Jillian Tamaki  ',
+                editor: '  Louise DeSalvo  ',
+            }),
+            SHELVES,
+        )
+        const blank = formValuesToBookCreate(
+            makeValues({
+                illustrator: ' ',
+                editor: '',
+            }),
+            SHELVES,
+        )
+
+        expect(populated.illustrator).toBe('Jillian Tamaki')
+        expect(populated.editor).toBe('Louise DeSalvo')
+        expect(blank).not.toHaveProperty('illustrator')
+        expect(blank).not.toHaveProperty('editor')
+    })
+
     it('passes through year-only publication_date', () => {
         expect(
             formValuesToBookCreate(

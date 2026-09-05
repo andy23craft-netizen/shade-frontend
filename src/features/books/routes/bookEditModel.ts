@@ -28,6 +28,8 @@ export function bookFormValuesFromBook(
         ),
         isbn13: book.isbn13 ?? '',
         publisher: book.publisher ?? '',
+        illustrator: book.illustrator ?? '',
+        editor: book.editor ?? '',
         publication_date:
             book.publication_date ?? '',
         pages:
@@ -155,6 +157,16 @@ export function bookFormValuesToUpdate(
         (original.publisher ?? null)
     ) {
         update.publisher = publisher
+    }
+
+    const illustrator = nullableString(values.illustrator)
+    if (illustrator !== (original.illustrator ?? null)) {
+        update.illustrator = illustrator
+    }
+
+    const editor = nullableString(values.editor)
+    if (editor !== (original.editor ?? null)) {
+        update.editor = editor
     }
 
     const publicationDate =

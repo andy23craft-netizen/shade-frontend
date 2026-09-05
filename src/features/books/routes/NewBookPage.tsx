@@ -58,6 +58,8 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'authorIds',
     'isbn13',
     'publisher',
+    'illustrator',
+    'editor',
     'publication_date',
     'pages',
     'categoryIds',

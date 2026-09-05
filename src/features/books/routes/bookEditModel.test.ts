@@ -55,6 +55,8 @@ const BOOK: BookRead = {
     ],
     isbn13: '9780441172719',
     publisher: 'Ace',
+    illustrator: 'Sam Weber',
+    editor: 'John W. Campbell',
     publication_date: '1965',
     pages: 412,
     categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
@@ -91,6 +93,8 @@ describe('bookFormValuesFromBook', () => {
             ],
             isbn13: '9780441172719',
             publisher: 'Ace',
+            illustrator: 'Sam Weber',
+            editor: 'John W. Campbell',
             publication_date: '1965',
             pages: '412',
             categoryIds: ['cat-fiction'],
@@ -109,6 +113,8 @@ describe('bookFormValuesFromBook', () => {
                 ...BOOK,
                 isbn13: null,
                 publisher: null,
+                illustrator: null,
+                editor: null,
                 publication_date: null,
                 pages: null,
                 tags: null,
@@ -122,6 +128,8 @@ describe('bookFormValuesFromBook', () => {
 
         expect(values.isbn13).toBe('')
         expect(values.publisher).toBe('')
+        expect(values.illustrator).toBe('')
+        expect(values.editor).toBe('')
         expect(values.publication_date).toBe('')
         expect(values.pages).toBe('')
         expect(values.tags).toBe('')
@@ -178,6 +186,8 @@ describe('bookFormValuesToUpdate', () => {
             ),
             isbn13: '',
             publisher: '',
+            illustrator: '',
+            editor: '',
             pages: '',
             tags: '',
             purchase_price: '',
@@ -193,6 +203,8 @@ describe('bookFormValuesToUpdate', () => {
         ).toEqual({
             isbn13: null,
             publisher: null,
+            illustrator: null,
+            editor: null,
             pages: null,
             tags: null,
             purchase_price: null,

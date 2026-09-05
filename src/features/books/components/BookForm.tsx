@@ -35,6 +35,8 @@ export interface BookFormValues {
     authorIds: string[]
     isbn13: string
     publisher: string
+    illustrator: string
+    editor: string
     publication_date: string
     pages: string
     categoryIds: string[]
@@ -54,6 +56,8 @@ const FIELD_LABELS: Record<
     authorIds: 'Authors',
     isbn13: 'ISBN',
     publisher: 'Publisher',
+    illustrator: 'Illustrator',
+    editor: 'Editor',
     publication_date: 'Publication date',
     pages: 'Pages',
     categoryIds: 'Categories',
@@ -593,6 +597,8 @@ export function BookForm({
             | 'title'
             | 'isbn13'
             | 'publisher'
+            | 'illustrator'
+            | 'editor'
             | 'publication_date'
             | 'acquisition_source'
             | 'purchase_date'
@@ -1042,6 +1048,32 @@ export function BookForm({
                                 event,
                             )
                         }
+                    />
+                </Field>
+
+                <Field
+                    label="Illustrator"
+                    id={fieldId('illustrator')}
+                    error={fieldErrors.illustrator}
+                >
+                    <input
+                        type="text"
+                        value={values.illustrator}
+                        maxLength={255}
+                        onChange={(event) => handleTextChange('illustrator', event)}
+                    />
+                </Field>
+
+                <Field
+                    label="Editor"
+                    id={fieldId('editor')}
+                    error={fieldErrors.editor}
+                >
+                    <input
+                        type="text"
+                        value={values.editor}
+                        maxLength={255}
+                        onChange={(event) => handleTextChange('editor', event)}
                     />
                 </Field>
 

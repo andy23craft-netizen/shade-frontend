@@ -1548,6 +1548,10 @@ export interface components {
             category_ids?: string[];
             /** Completion Date */
             completion_date?: string | null;
+            /** Editor */
+            editor?: string | null;
+            /** Illustrator */
+            illustrator?: string | null;
             /**
              * Is Read
              * @default false
@@ -1640,6 +1644,10 @@ export interface components {
             cover_image_path?: string | null;
             /** Creation Date */
             creation_date: string;
+            /** Editor */
+            editor?: string | null;
+            /** Illustrator */
+            illustrator?: string | null;
             /**
              * Is Read
              * @default false
@@ -1699,6 +1707,10 @@ export interface components {
             category_ids?: string[] | null;
             /** Completion Date */
             completion_date?: string | null;
+            /** Editor */
+            editor?: string | null;
+            /** Illustrator */
+            illustrator?: string | null;
             /** Is Read */
             is_read?: boolean | null;
             /** Isbn13 */

@@ -43,6 +43,10 @@ This plan still owns:
 - shared media-navigation polish and book-side camera/visual polish;
 - V3 deferrals, observation closeout, and release gates.
 
+**Added another feature to work into a ticket, it should be small**
+- do not return `null` fields on book/album forms. ie, `editor`, `illustrator`, or even `acquisition source`.
+	if there's no entry in the field, it should not be present on the rendered/saved book form. 
+
 `FEAT-01` through `FEAT-06` own the album work indexed here.
 Hostname-derived library identity, owner theme tokens, unknown-host UX, and `*.localhost`
 hosts are shipped; do not reopen them. Namespace browser-persisted setup and Bulk Add

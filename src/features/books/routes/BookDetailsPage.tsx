@@ -366,6 +366,20 @@ export function BookDetailsPage() {
                         </dd>
                     </div>
 
+                    {book.illustrator?.trim() ? (
+                        <div className="book-details-card__field">
+                            <dt>Illustrator</dt>
+                            <dd>{book.illustrator}</dd>
+                        </div>
+                    ) : null}
+
+                    {book.editor?.trim() ? (
+                        <div className="book-details-card__field">
+                            <dt>Editor</dt>
+                            <dd>{book.editor}</dd>
+                        </div>
+                    ) : null}
+
                     <div className="book-details-card__field">
                         <dt>Publication Date</dt>
                         <dd>
