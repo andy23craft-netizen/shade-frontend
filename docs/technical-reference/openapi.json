@@ -2193,6 +2193,462 @@
         "title": "BorrowerRatingSummary",
         "type": "object"
       },
+      "BulkAlbumCatalogState": {
+        "enum": [
+          "new",
+          "owned",
+          "wishlist",
+          "unshelved",
+          "ambiguous",
+          "soft_deleted"
+        ],
+        "title": "BulkAlbumCatalogState",
+        "type": "string"
+      },
+      "BulkAlbumImportAction": {
+        "enum": [
+          "create",
+          "acquire_wishlist"
+        ],
+        "title": "BulkAlbumImportAction",
+        "type": "string"
+      },
+      "BulkAlbumImportItemRequest": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/BulkAlbumImportAction"
+          },
+          "album": {
+            "additionalProperties": true,
+            "title": "Album",
+            "type": "object"
+          },
+          "allow_duplicate": {
+            "default": false,
+            "title": "Allow Duplicate",
+            "type": "boolean"
+          },
+          "client_item_id": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "existing_album_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Album Id"
+          }
+        },
+        "required": [
+          "client_item_id",
+          "action"
+        ],
+        "title": "BulkAlbumImportItemRequest",
+        "type": "object"
+      },
+      "BulkAlbumImportItemResult": {
+        "properties": {
+          "album_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Album Id"
+          },
+          "client_item_id": {
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "conflicting_album_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflicting Album Ids",
+            "type": "array"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BulkAlbumImportResultStatus"
+          }
+        },
+        "required": [
+          "client_item_id",
+          "status"
+        ],
+        "title": "BulkAlbumImportItemResult",
+        "type": "object"
+      },
+      "BulkAlbumImportRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkAlbumImportItemRequest"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "shelf_name": {
+            "maxLength": 32,
+            "title": "Shelf Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shelf_name",
+          "items"
+        ],
+        "title": "BulkAlbumImportRequest",
+        "type": "object"
+      },
+      "BulkAlbumImportResponse": {
+        "properties": {
+          "created_count": {
+            "title": "Created Count",
+            "type": "integer"
+          },
+          "failed_count": {
+            "title": "Failed Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkAlbumImportItemResult"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "submitted_count": {
+            "title": "Submitted Count",
+            "type": "integer"
+          },
+          "succeeded_count": {
+            "title": "Succeeded Count",
+            "type": "integer"
+          },
+          "wishlist_acquired_count": {
+            "title": "Wishlist Acquired Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "submitted_count",
+          "succeeded_count",
+          "failed_count",
+          "created_count",
+          "wishlist_acquired_count",
+          "items"
+        ],
+        "title": "BulkAlbumImportResponse",
+        "type": "object"
+      },
+      "BulkAlbumImportResultStatus": {
+        "enum": [
+          "created",
+          "wishlist_acquired",
+          "already_exists",
+          "validation_failed",
+          "stale_reference",
+          "persistence_failed"
+        ],
+        "title": "BulkAlbumImportResultStatus",
+        "type": "string"
+      },
+      "BulkAlbumLookupItemRequest": {
+        "properties": {
+          "barcode": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode"
+          },
+          "client_item_id": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "discogs_release_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discogs Release Id"
+          },
+          "manual": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BulkAlbumManualDraft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "client_item_id"
+        ],
+        "title": "BulkAlbumLookupItemRequest",
+        "type": "object"
+      },
+      "BulkAlbumLookupItemResult": {
+        "properties": {
+          "barcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode"
+          },
+          "catalog_album_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Catalog Album Ids",
+            "type": "array"
+          },
+          "catalog_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BulkAlbumCatalogState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "client_item_id": {
+            "title": "Client Item Id",
+            "type": "string"
+          },
+          "discogs_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discogs Release Id"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlbumLookupDraft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BulkAlbumLookupStatus"
+          }
+        },
+        "required": [
+          "client_item_id",
+          "status"
+        ],
+        "title": "BulkAlbumLookupItemResult",
+        "type": "object"
+      },
+      "BulkAlbumLookupRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkAlbumLookupItemRequest"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BulkAlbumLookupRequest",
+        "type": "object"
+      },
+      "BulkAlbumLookupResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkAlbumLookupItemResult"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BulkAlbumLookupResponse",
+        "type": "object"
+      },
+      "BulkAlbumLookupStatus": {
+        "enum": [
+          "found",
+          "not_found",
+          "invalid_identifier",
+          "provider_timeout",
+          "provider_failure"
+        ],
+        "title": "BulkAlbumLookupStatus",
+        "type": "string"
+      },
+      "BulkAlbumManualDraft": {
+        "properties": {
+          "artists": {
+            "items": {
+              "$ref": "#/components/schemas/AlbumLookupArtist"
+            },
+            "minItems": 1,
+            "title": "Artists",
+            "type": "array"
+          },
+          "barcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode"
+          },
+          "discogs_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discogs Release Id"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "media_format": {
+            "$ref": "#/components/schemas/MediaFormat",
+            "default": "unknown"
+          },
+          "musicbrainz_release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Musicbrainz Release Id"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/AlbumLookupTrack"
+            },
+            "title": "Tracks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "artists"
+        ],
+        "title": "BulkAlbumManualDraft",
+        "type": "object"
+      },
       "BulkBookCatalogState": {
         "enum": [
           "new",
@@ -5018,7 +5474,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.1.2"
+    "version": "1.1.3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -5309,6 +5765,174 @@
           }
         ],
         "summary": "Create Album",
+        "tags": [
+          "albums"
+        ]
+      }
+    },
+    "/albums/bulk/import": {
+      "post": {
+        "operationId": "bulk_import_albums_albums_bulk_import_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkAlbumImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkAlbumImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Import Albums",
+        "tags": [
+          "albums"
+        ]
+      }
+    },
+    "/albums/bulk/lookup": {
+      "post": {
+        "operationId": "bulk_lookup_albums_albums_bulk_lookup_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkAlbumLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkAlbumLookupResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Lookup Albums",
         "tags": [
           "albums"
         ]
@@ -9883,6 +10507,86 @@
         "summary": "Mark Book Read",
         "tags": [
           "books"
+        ]
+      }
+    },
+    "/catalog/recent-additions": {
+      "get": {
+        "operationId": "recent_additions_catalog_recent_additions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Take",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PhysicalItemSummary"
+                  },
+                  "title": "Response Recent Additions Catalog Recent Additions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recent Additions",
+        "tags": [
+          "catalog"
         ]
       }
     },

@@ -1,29 +1,32 @@
-# PLAN-03 -- Remaining Book, Global, and Release Work
+# PLAN-03 -- Consolidated Remaining V2 Work
 
-**Status:** Planning decomposition of remaining definitive V2 scope. Not an implementation
-ticket. Book Bulk Add, hostname multi-tenant UI, Stash, and album Listening Room dashboard
-widgets are shipped baseline.
+**Status:** Consolidated planning decomposition of all remaining definitive V2 scope. This
+document is ready to be broken into implementation tickets after owner review. Book Bulk Add,
+the album MVP, hostname multi-tenant UI, Stash, and album Listening Room dashboard widgets
+are shipped baseline.
 
 **Backend alignment:** Backend `PLAN-03_remaining-v2-features.md` and unshipped surfaces in
 `V2-proposed-contract.md`. Orchestrator multi-host production handoff remains FEAT-08.
 
 **Authority:** `PRODUCT_REQS.V2.definitive.md` remains the product source of truth. Current
 tickets own their feature details; implemented OpenAPI and `API-for-FE.md` own shipped
-transport behavior. This plan groups remaining book/global/release work not owned by
-PLAN-01 Albums.
+transport behavior. This plan is the complete remaining-work index; album-specific delivery
+is split into `FEAT-01` through `FEAT-06` without defining a separate release boundary.
 
-**Last updated:** September 4, 2026
+**Last updated:** September 5, 2026
 
 ## Goal
 
-Complete V2's book improvements, shared physical-item capabilities, discovery and analytics
-work, visual refinement, and safe release path. V2 finishes the digital catalog's data use
-and personality without becoming a spatial library simulation.
+Complete V2's book and album improvements, shared physical-item capabilities, discovery and
+analytics work, visual refinement, and safe release path. V2 finishes the digital catalog's
+data use and personality without becoming a spatial library simulation.
 
 ## Scope boundary
 
 This plan still owns:
 
+- album Bulk Add, album browse polish, album visual identity, and album participation in
+  shared QR, feedback/Work, and mixed Home features (`FEAT-01` through `FEAT-06`);
 - guided first-run setup and canonical TSV bootstrap experience;
 - production-safe V1-to-V2 migration and operator restore (FE constraints: no ordinary
   browser restore surface);
@@ -33,14 +36,14 @@ This plan still owns:
 - human-readable share/deep links;
 - Needs Reshelving and optional book contributors;
 - quote-coordinated Home presentation;
-- borrower signatures, feedback, and Work correction UI;
+- borrower-name presentation, feedback, and Work correction UI;
 - persistent catalog controls and Back to Top;
 - book analytics, New Releases, Current Reading, seasonal personality, and optional
   serendipity;
 - shared media-navigation polish and book-side camera/visual polish;
 - V3 deferrals, observation closeout, and release gates.
 
-Album Bulk Add, album visual identity, and album-specific browse polish belong to PLAN-01.
+`FEAT-01` through `FEAT-06` own the album work indexed here.
 Hostname-derived library identity, owner theme tokens, unknown-host UX, and `*.localhost`
 hosts are shipped; do not reopen them. Namespace browser-persisted setup and Bulk Add
 sessions by library identity when those flows land.
@@ -48,7 +51,7 @@ sessions by library identity when those flows land.
 ## Shipped baseline (do not re-plan)
 
 - Book Build Mode at `/books/bulk-add` (lookup/import, drafts, partial success, Start Next
-  Shelf / Finish). Shared intake must remain adaptable for PLAN-01 album Bulk Add without
+  Shelf / Finish). Shared intake must remain adaptable for album Bulk Add without
   treating ISBN, author, or book status as universal.
 - Stash, Collections, Wishlists, Loans, covers, Shelves, Dashboard book papers, and Home
   quote/discovery modules already in the tree.
@@ -94,7 +97,7 @@ migration UI.
 Deleting and rebootstraping a disposable development database remains acceptable. It is not
 the production upgrade path once V1 data is authoritative. Every V2 schema change needs a
 clean-install representation and a data-preserving upgrade path with rehearsal, failure
-injection, idempotency, and rollback. PLAN-01 may not treat recreation of the only live
+injection, idempotency, and rollback. Album work may not treat recreation of the only live
 database as migration.
 
 ## 3. Operator backup restoration
@@ -185,18 +188,14 @@ Missing mappings use the ordinary heading. Quote content is never interpreted as
 executable content, or an asset path. Quote mappings change section-header treatment only.
 Weather-aware selection remains V3.
 
-## 10. Borrower signature
+## 10. Borrower name presentation
 
-**State:** Committed remaining, with a bounded prototype feasibility gate.
+**State:** Ready in `FEAT-30_borrower-name-presentation.md`.
 
-Typed full borrower name is always required; signature is optional. The borrower signs a
-bounded canvas, may clear/retry or skip, and confirms a transparent PNG no larger than
-800x300 and 250 KiB. Stage through the authenticated loan signature endpoint; supply the
-single-use token with checkout as one compensated operation.
-
-Confirmed signatures are immutable loan artifacts, tenant-private, retrieved as authenticated
-image bytes, and deleted with the loan. Reduced-motion, touch, keyboard, error, retry, and
-handoff states require prototype coverage.
+Book and album loan cards present the existing typed borrower name with one shared,
+accessible cursive-style treatment. Names remain selectable semantic text with a legible
+fallback and responsive handling for long values. Handwritten signature capture, canvas
+input, image upload/storage, and backend signature contracts are out of scope.
 
 ## 11. Borrower feedback and Work identity
 
@@ -234,7 +233,8 @@ Bulk-selection actions join the rail while selection mode is active.
 
 Every progressively appended list shows the shared Back to Top control after another batch
 loads. It returns focus to the list's search/filter entry, respects reduced motion and safe
-areas, and never obscures important controls. Album lists inherit the pattern via PLAN-01.
+areas, and never obscures important controls. Album lists inherit the pattern through
+`FEAT-02`.
 
 ## 14. Dashboard analytics
 
@@ -276,7 +276,7 @@ recommendation engine. Its omission does not make V2 incomplete.
 
 **State:** Committed remaining.
 
-V2 supplies one approved book identity, one approved album identity (PLAN-01), and restrained
+V2 supplies one cohesive book identity, one cohesive album identity, and restrained
 seasonal atmosphere without changing navigation or layout semantics. Decorative elements
 cannot become required navigation.
 
@@ -285,16 +285,13 @@ and accessible focus, permission, error, reduced-motion, and small-screen states
 shrinking the usable viewfinder. Empty states may use concise library-specific personality
 while preserving the next action.
 
-## Open visual-design question
+## Settled presentation decisions
 
-What concrete reference designs and assets are approved for the book area, album area,
-library-wide Home, and each hosted library identity? Ownership rules, analogies, performance
-budgets, and broad visual language are settled. Implementation still requires an approved
-brief and asset inventory. Also recorded in
-`PRODUCT_REQS.V2.pre-planning-questions.md`.
-
-PLAN-01 separately retains the open album location noun question. Hosted-library identity
-assets are part of this brief; hostname-owned theme selection itself is already shipped.
+Albums use **crate** as their user-facing location noun while transport continues to use the
+shared shelf/location contract. Visual work does not require a complete up-front brief or
+asset inventory: each bounded implementation ticket identifies and reviews the references,
+art direction, and assets needed for its own acceptance. Hostname-owned theme selection is
+already shipped.
 
 ## 17. Visual quality gates
 
@@ -312,10 +309,82 @@ After normal V1 use, classify observations as defects, small polish, V2 candidat
 ideas. Accepted additions receive user-facing acceptance criteria and required contracts
 before scheduling.
 
+## Ticket decomposition
+
+Create implementation tickets from these bounded work packages. A package may be split by
+frontend/backend ownership or delivery risk, but unrelated packages should not be combined
+merely to reduce ticket count.
+
+The album tickets are grouped by dependency boundary:
+
+- **Album intake and setup:** `FEAT-01` (album Bulk Add), coordinated with the shared guided
+  setup contract and ticket.
+- **Album catalog presentation:** `FEAT-02` (browse completion) and `FEAT-06` (visual
+  identity/crate language), which can proceed independently except for shared control and
+  visual-quality primitives.
+- **Shared physical-item and circulation contracts:** `FEAT-03` (feedback/Work) and
+  `FEAT-04` (QR/scanning). These should follow their respective shared backend contracts;
+  `FEAT-03` also consumes the existing `FEAT-30` borrower-name treatment.
+- **Library-wide Home discovery:** `FEAT-05` (mixed Recent Additions), coordinated with the
+  shared Home composition work.
+
+1. **Guided setup and TSV bootstrap:** explicit setup state, media selection, canonical
+   templates, validation preview, location creation, Build Mode handoff, local recovery, and
+   completion/resume behavior.
+2. **Album Bulk Add:** barcode/Discogs/manual capture, ordered lookup results, editable
+   drafts, duplicate and soft-delete resolution, partial import, local recovery, and
+   create-or-select-next-crate flow.
+3. **Album browse completion:** album-owned URL filters and sorts, progressive loading,
+   history restoration, wide control rail, compact modal controls, and Back to Top.
+4. **Library settings and book availability:** Enable Loans, TBR shelf IDs, Reserved shelf,
+   manual availability, checkout overrides, structured pickup metadata, and atomic single
+   and bulk shelf/status changes.
+5. **ISBN applicability:** create/edit/Build Mode input, mutual-exclusion confirmation,
+   detail presentation, and cleanup/dashboard exclusion.
+6. **Readable resource URLs:** backend-owned slugs, resolution, canonical links, rename
+   redirects, and replacement of human-facing GUID query values.
+7. **Needs Reshelving:** book-level mark/clear with reason and the pinned Dashboard queue.
+8. **Book contributors:** normalized editor, illustrator, and translator roles across
+   create/edit/detail and Build Mode where applicable.
+9. **Exact-copy QR labels:** versioned payload, single/batch generation, six-up browser print
+   layout, selectable reprint position, deterministic decode checks, and phone validation.
+10. **Unified code resolution and circulation scanning:** typed book/album resolution,
+    commercial-code ambiguity, lifecycle actions and warnings, and Enable Loans behavior.
+11. **Borrower name presentation:** implement the already-ready `FEAT-30` treatment across
+    book and album loan cards without signature capture or backend work.
+12. **Borrower feedback:** required check-in rating, optional idempotent review, initials and
+    accessible disclosure, summaries, and strict separation from owner ratings/read state.
+13. **Work identity correction:** same-media grouping preview, merge/separate actions,
+    historical aggregate reassignment, auditability, and reversal.
+14. **Home presentation and discovery:** quote-coordinated headings, Current Reading, owned
+    New Releases, and a deliberate mobile composition of existing modules.
+15. **Mixed-media Recent Additions:** use a dedicated typed catalog feed when shipped APIs
+    cannot satisfy the agreed entry decision; keep Staff Picks book-backed.
+16. **Dashboard book analytics:** Pages Owned, Pages Turned, annual counts, trends, and
+    shelf/category reading views without shelf-capacity invention.
+17. **Media and library visual identity:** implement book, album, Home, and hosted-library
+    treatments in bounded surface tickets; decide references/assets per ticket and apply
+    **crate** consistently in album presentation.
+18. **Media navigation and camera polish:** accessible media switching/transition behavior
+    plus the native Shade treatment for camera ISBN capture.
+19. **Shared progressive-list navigation:** common Back to Top behavior and persistent wide
+    controls for remaining applicable book, shelf, loan, collection, and wishlist surfaces.
+20. **Seasonal and empty-state personality:** bounded decorative treatments and copy that do
+    not alter navigation, accessibility, or performance expectations.
+21. **Migration and operator recovery gates:** data-preserving upgrade rehearsal, failure
+    and rollback checks, tenant-targeted database restore, and asset reconnection rules; no
+    ordinary frontend restore page.
+22. **Observation and release closeout:** triage accepted post-V1 observations, verify
+    generated contracts/docs/routes, run accessibility/responsive/performance gates, and
+    coordinate the separately owned production multi-host handoff.
+
+**Stretch only:** Surprise Me receives a ticket only if explicitly promoted without
+displacing committed work.
+
 ## Release gates
 
-- PLAN-01 remaining album journeys (Bulk Add, identity, QR/feedback participation) pass;
-  `FEAT-02` MVP coverage/release pairing passes.
+- Remaining album journeys in `FEAT-01` through `FEAT-06` (Bulk Add, browse polish,
+  identity, QR/feedback participation, and mixed Home integration) pass.
 - Shipped hostname multi-tenant UI remains correct; backend tenant isolation, per-file
   migration, CORS, assets, and backup tests pass; orchestrator FEAT-08 multi-host handoff
   passes where required for deployment.
@@ -325,12 +394,13 @@ before scheduling.
   representative V1 data.
 - Tenant-targeted restore drills cannot replace the wrong library.
 - QR conventional/decorative templates pass automated and supported-phone print tests.
-- Signature prototype passes or records an approved bounded simplification/deferral.
+- `FEAT-30` borrower-name presentation passes responsive and accessibility coverage; no
+  signature capture is introduced.
 - Work correction moves historical feedback aggregates correctly.
 - Frontend routes, generated OpenAPI, supplementary API guidance, and documentation agree.
 - Accessibility, responsive, performance, and post-V1 observation reviews pass.
-- The open visual-design decisions are resolved before their dependent visual tickets are
-  finalized.
+- Each visual ticket records the bounded reference and asset decisions needed for its own
+  acceptance.
 
 ## Deferred or later work
 

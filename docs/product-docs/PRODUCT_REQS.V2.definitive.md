@@ -1,15 +1,15 @@
 # Shade Library UI V2 -- Definitive Design & Scope
 
 **Status:** Living product/design scope for remaining V2 work against the current shipped
-frontend and backend 1.1.0 baseline. Open design decisions remain only where this document
-or `PRODUCT_REQS.V2.pre-planning-questions.md` marks them.
+frontend and backend 1.1.0 baseline. The pre-planning questions are resolved; implementation
+details may still be settled in the tickets that own them.
 
 **Purpose:** Define the authoritative user-facing vision, design direction, feature boundary,
 and completion scope for Shade Library V2. This is a product/design document, not an
 implementation plan or ticket specification. Detailed API contracts and implementation
 sequencing remain in their owning technical documents and tickets.
 
-**Last updated:** September 4, 2026
+**Last updated:** September 5, 2026
 
 ## Authority and document relationships
 
@@ -19,10 +19,10 @@ ticket.
 
 When documents disagree, use the following order:
 
-1. A current sequenced feature ticket in the repository that owns the work. Frontend open
-   sequenced work currently includes `docs/tickets/FEAT-02_album-support.md` (album MVP
-   test/coverage closeout). Backend remaining V2 planning lives in backend
-   `PLAN-03_remaining-v2-features.md` and orchestrator `FEAT-08`.
+1. A current sequenced feature ticket in the repository that owns the work. Frontend ready
+   work currently includes `docs/tickets/FEAT-30_borrower-name-presentation.md` and
+   `docs/tickets/FEAT-38_frontend-v2-experience-handoff.md`. Backend remaining V2 planning
+   lives in backend `PLAN-03_remaining-v2-features.md` and orchestrator `FEAT-08`.
 2. The checked-in OpenAPI contract and `API-for-FE.md` for shipped backend behavior.
 3. A feature-specific product specification when one exists.
 4. This scope document for the intended user-facing outcome.
@@ -34,10 +34,12 @@ implemented routes. Backend
 `docs/technical-reference/V2-proposed-contract.md` locks only **unshipped** V2 surfaces
 until each route ships into OpenAPI.
 
-Frontend planning decompositions live in `PRODUCT_REQS.V2.PLAN-01-albums.md` and
-`PRODUCT_REQS.V2.PLAN-03-books-global.md`. They group remaining work for estimation; they do
-not replace this document or OpenAPI. Frontend multi-tenant hostname routing is shipped
-baseline; production multi-host handoff remains orchestrator `FEAT-08`.
+Frontend planning decompositions live in
+`docs/tickets/PRODUCT_REQS.V2.PLAN-03-books-global.md`. PLAN-03 is the consolidated
+remaining-work breakdown; its former album decomposition is split into `FEAT-01` through
+`FEAT-06` in `docs/tickets`. Neither the plan nor its tickets replace this document or
+OpenAPI. Frontend multi-tenant hostname routing is shipped baseline; production multi-host
+handoff remains orchestrator `FEAT-08`.
 
 Labels used below:
 
@@ -86,8 +88,8 @@ Already shipped and therefore not restated as open V2 work:
 - Album MVP UI against backend 1.1.0: `/albums` browse/add/detail/edit, artists/genres,
   Discogs/MusicBrainz lookup, artwork get/upload/delete/refetch, checkout/check-in,
   mark-played, soft-delete/restore, album loan history, dashboard Listening Room widgets,
-  typed mixed wishlist membership. Collections remain book-only. `FEAT-02` remaining work is
-  focused unit/e2e coverage and release pairing, not greenfield album product design.
+  typed mixed wishlist membership. Collections remain book-only. The album MVP is shipped
+  baseline rather than remaining greenfield product scope.
 - Media navigation already exposes Albums beside Books; deeper media-identity packaging and
   album Bulk Add remain below.
 
@@ -135,9 +137,10 @@ second catalog form. Ordinary Bulk Add remains available after first-run setup.
 ### Shared location and bootstrap decisions
 
 V2 treats physical placement as one shared **location** concept internally. Media-specific
-words are presentation: books use **shelf**; the album UI may use **crate**, **bin**, or
-another collector-tested term (see pre-planning questions). V2 does not require a
-location-type hierarchy merely to support different vocabulary.
+words are presentation: books use **shelf** and albums use **crate**. Existing album MVP
+surfaces and transport fields may still use `shelf_name` / "Shelf" until the presentation
+terminology is updated; the underlying shared location model does not change. V2 does not
+require a location-type hierarchy merely to support different vocabulary.
 
 First-run TSV bootstrap is a validated import rather than a spreadsheet-cleanup editor. V2
 accepts one canonical, versioned, header-based UTF-8 TSV template per supported media type.
@@ -156,8 +159,8 @@ intake into another.
 
 ## 4. Additional physical media (remaining)
 
-**State:** Album MVP shipped; remaining work is media-aware Bulk Add, approved visual
-identity packaging, and deferred media types.
+**State:** Album MVP shipped; remaining work is media-aware Bulk Add and visual identity
+packaging. Additional media types are deferred.
 
 Vinyl, CDs, and cassettes remain first-class formats within the shipped album catalog. Books
 remain first-class through the book catalog. Movies/video (DVD, VHS) and comics are V3.
@@ -205,8 +208,9 @@ Shipped frontend behavior (do not reopen):
 
 Remaining related product outcomes live elsewhere in this document (setup state, Enable
 Loans and other library settings, operator restore) or in orchestrator deployment work.
-Approved visual assets for each hosted library identity remain an open design dependency
-(see pre-planning questions).
+Library-specific visual assets do not require a separate up-front approval phase. Each
+implementation ticket should identify and review the assets it needs as that part of the
+experience is built, while preserving the shipped hostname-specific identity behavior.
 
 ## 6. Media-specific visual identities
 
@@ -224,8 +228,10 @@ Administrative surfaces keep the same functional names and controls across media
 terminology changes only where the physical-location noun genuinely differs.
 
 The current app still primarily uses one global token/stylesheet system plus book/library
-raster assets, with early album-room cues. Owner-approved art direction and an asset
-inventory are required for each medium before implementation tickets can be estimated.
+raster assets, with early album-room cues. V2 does not require a complete approved brief or
+asset inventory before this work is broken into tickets. Art direction, reference choices,
+and required assets should be decided and reviewed one bounded surface at a time during
+implementation, with each ticket recording the decisions needed for its own acceptance.
 
 Performance guardrails (not hard release blockers): keep route-specific decorative assets to
 roughly **500 KiB** compressed on initial view; keep any single decorative raster normally
@@ -443,34 +449,18 @@ asset path. Quote mappings may affect **section-header treatment only**.
 The V2 **Current Reading** module should receive the same curated heading treatment when it
 is added.
 
-## 13. Borrower signature capture
+## 13. Borrower name presentation
 
-**State:** Committed remaining, with a bounded prototype feasibility gate.
+**State:** Committed remaining; owned by `docs/tickets/FEAT-30_borrower-name-presentation.md`.
 
-Signature capture and rendering are one feature. It moves to V3 only if a small prototype
-demonstrates a concrete blocker such as unreliable canvas export on supported phones,
-inability to guarantee signature retention with successful checkout, or disproportionate
-tenant-safe private-file storage constraints.
+Checkout continues to record the borrower's typed full name. Book and album loan cards
+present that existing name in an attractive cursive-style treatment while keeping it
+legible, selectable, and available to assistive technology as ordinary semantic text. The
+treatment needs a readable fallback and must handle long names, supported viewport sizes,
+zoom, contrast modes, and text settings.
 
-Intended experience:
-
-1. The owner begins checkout on a phone-friendly surface and always records the borrower's
-   typed full name.
-2. The device may be handed to the borrower, who signs in a touch-capable signature area.
-3. The borrower can clear and retry, Confirm the signature, or Skip and use the typed name
-   only.
-4. Signature and loan creation complete as one user-visible operation.
-5. The confirmed signature is saved to that loan, not to a reusable borrower profile.
-6. Book Details renders loan-history cards beneath the main book record, including the typed
-   borrower name and, when present, the signature.
-
-The signature is a library artifact and acknowledgement, not a claim of legal
-enforceability.
-
-Recommended V2 representation: a small transparent PNG from a bounded signature canvas,
-staged through `POST /loans/signatures/stage`, then submitted as a single-use token with
-checkout. `LoanRead` exposes signature presence only; bytes come from
-`GET /loans/{loan_id}/signature`. Confirmed signatures are immutable and tenant-scoped.
+Handwritten signature capture, canvas input, generated signature images, upload or staging
+flows, signature storage/retrieval, and related backend contract changes are not part of V2.
 
 ## 14. Borrower ratings and reviews
 
@@ -489,7 +479,7 @@ Required separation:
 - Owner `rating`, `review`, and read/played status remain owner collection data.
 - Borrower feedback never marks the owner as having read/played an item.
 - At most one rating/review record per returned loan.
-- Loan cards show the rating beside the signature/typed borrower record; written reviews use
+- Loan cards show the rating beside the typed borrower-name presentation; written reviews use
   accessible disclosure (hover alone is insufficient). Written reviews display **initials**;
   the loan record continues to show the typed full name.
 - Aggregates combine physical copies of the same work/title within one media type only.
@@ -522,7 +512,7 @@ Ambiguous commercial identifiers need an explicit disambiguation experience.
 ### Generalized circulation
 
 Circulation should be evaluated as an owned-physical-item capability rather than a book-only
-feature. Eligibility, loan history, borrower feedback, signature capture, and
+feature. Eligibility, loan history, borrower feedback, borrower-name presentation, and
 scan-to-checkout/check-in behavior should use shared lifecycle concepts unless a medium has
 a documented exception.
 
@@ -616,9 +606,8 @@ recent activity or accept an unvalidated path supplied by browser code.
 Required recovery behavior (backend/ops): explicit source and target; validate before
 mutation; pre-restore safety copy; temporary replay with integrity checks; atomic
 activation; rollback on failure; operator runbook and repeatable recovery test. V2 restore
-addresses database corruption; sibling asset directories for covers, artwork, and signatures
-reconnect by UUID when still present, but restore does not recover those directories after
-disk loss.
+addresses database corruption; sibling asset directories for covers and artwork reconnect by
+UUID when still present, but restore does not recover those directories after disk loss.
 
 ## 19. Discovery, analytics, and library personality
 
@@ -731,8 +720,8 @@ Committed remaining release outcomes:
 - New Releases based on owned publication dates.
 - Responsive Current Reading module on Home.
 - Lightweight seasonal/theme-aware visual personality.
-- Optional borrower signature capture with typed-name fallback and per-book loan-card
-  rendering, subject only to the bounded prototype blocker criteria.
+- Shared accessible cursive-style presentation of the existing typed borrower name on book
+  and album loan cards (`FEAT-30`); no handwritten-signature capture or backend changes.
 - Required borrower rating at check-in, optional written review under borrower initials,
   owner-data separation, and owner-correctable Work-level aggregates within one media type.
 - Enable Loans and related library-scoped settings.
@@ -741,7 +730,7 @@ Committed remaining release outcomes:
   (`FEAT-08`).
 
 Already shipped (not open checklist items): book Build Mode; album MVP UI against backend
-1.1.0 (FEAT-02 remaining coverage/release pairing); hostname multi-tenant UI; Stash; typed
+1.1.0; hostname multi-tenant UI; Stash; typed
 loans/wishlists; authenticated covers/artwork; book Collections.
 
 ## Deferred or possible later work

@@ -22,6 +22,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/albums/bulk/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Import Albums */
+        post: operations["bulk_import_albums_albums_bulk_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/albums/bulk/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Lookup Albums */
+        post: operations["bulk_lookup_albums_albums_bulk_lookup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/albums/lookup": {
         parameters: {
             query?: never;
@@ -490,6 +524,23 @@ export interface paths {
         put?: never;
         /** Mark Book Read */
         post: operations["mark_book_read_books__book_id__mark_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/catalog/recent-additions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent Additions */
+        get: operations["recent_additions_catalog_recent_additions_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1686,6 +1737,138 @@ export interface components {
             count: number;
         };
         /**
+         * BulkAlbumCatalogState
+         * @enum {string}
+         */
+        BulkAlbumCatalogState: "new" | "owned" | "wishlist" | "unshelved" | "ambiguous" | "soft_deleted";
+        /**
+         * BulkAlbumImportAction
+         * @enum {string}
+         */
+        BulkAlbumImportAction: "create" | "acquire_wishlist";
+        /** BulkAlbumImportItemRequest */
+        BulkAlbumImportItemRequest: {
+            action: components["schemas"]["BulkAlbumImportAction"];
+            /** Album */
+            album?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Allow Duplicate
+             * @default false
+             */
+            allow_duplicate: boolean;
+            /** Client Item Id */
+            client_item_id: string;
+            /** Existing Album Id */
+            existing_album_id?: string | null;
+        };
+        /** BulkAlbumImportItemResult */
+        BulkAlbumImportItemResult: {
+            /** Album Id */
+            album_id?: string | null;
+            /** Client Item Id */
+            client_item_id: string;
+            /** Conflicting Album Ids */
+            conflicting_album_ids?: string[];
+            /** Detail */
+            detail?: string | null;
+            /** Error Code */
+            error_code?: string | null;
+            status: components["schemas"]["BulkAlbumImportResultStatus"];
+        };
+        /** BulkAlbumImportRequest */
+        BulkAlbumImportRequest: {
+            /** Items */
+            items: components["schemas"]["BulkAlbumImportItemRequest"][];
+            /** Shelf Name */
+            shelf_name: string;
+        };
+        /** BulkAlbumImportResponse */
+        BulkAlbumImportResponse: {
+            /** Created Count */
+            created_count: number;
+            /** Failed Count */
+            failed_count: number;
+            /** Items */
+            items: components["schemas"]["BulkAlbumImportItemResult"][];
+            /** Submitted Count */
+            submitted_count: number;
+            /** Succeeded Count */
+            succeeded_count: number;
+            /** Wishlist Acquired Count */
+            wishlist_acquired_count: number;
+        };
+        /**
+         * BulkAlbumImportResultStatus
+         * @enum {string}
+         */
+        BulkAlbumImportResultStatus: "created" | "wishlist_acquired" | "already_exists" | "validation_failed" | "stale_reference" | "persistence_failed";
+        /** BulkAlbumLookupItemRequest */
+        BulkAlbumLookupItemRequest: {
+            /** Barcode */
+            barcode?: string | null;
+            /** Client Item Id */
+            client_item_id: string;
+            /** Discogs Release Id */
+            discogs_release_id?: string | null;
+            manual?: components["schemas"]["BulkAlbumManualDraft"] | null;
+        };
+        /** BulkAlbumLookupItemResult */
+        BulkAlbumLookupItemResult: {
+            /** Barcode */
+            barcode?: string | null;
+            /** Catalog Album Ids */
+            catalog_album_ids?: string[];
+            catalog_state?: components["schemas"]["BulkAlbumCatalogState"] | null;
+            /** Client Item Id */
+            client_item_id: string;
+            /** Discogs Release Id */
+            discogs_release_id?: string | null;
+            draft?: components["schemas"]["AlbumLookupDraft"] | null;
+            /** Missing Fields */
+            missing_fields?: string[];
+            status: components["schemas"]["BulkAlbumLookupStatus"];
+        };
+        /** BulkAlbumLookupRequest */
+        BulkAlbumLookupRequest: {
+            /** Items */
+            items: components["schemas"]["BulkAlbumLookupItemRequest"][];
+        };
+        /** BulkAlbumLookupResponse */
+        BulkAlbumLookupResponse: {
+            /** Items */
+            items: components["schemas"]["BulkAlbumLookupItemResult"][];
+        };
+        /**
+         * BulkAlbumLookupStatus
+         * @enum {string}
+         */
+        BulkAlbumLookupStatus: "found" | "not_found" | "invalid_identifier" | "provider_timeout" | "provider_failure";
+        /** BulkAlbumManualDraft */
+        BulkAlbumManualDraft: {
+            /** Artists */
+            artists: components["schemas"]["AlbumLookupArtist"][];
+            /** Barcode */
+            barcode?: string | null;
+            /** Discogs Release Id */
+            discogs_release_id?: string | null;
+            /** Genres */
+            genres?: string[];
+            /** Label */
+            label?: string | null;
+            /** @default unknown */
+            media_format: components["schemas"]["MediaFormat"];
+            /** Musicbrainz Release Id */
+            musicbrainz_release_id?: string | null;
+            /** Release Date */
+            release_date?: string | null;
+            /** Title */
+            title: string;
+            /** Tracks */
+            tracks?: components["schemas"]["AlbumLookupTrack"][];
+        };
+        /**
          * BulkBookCatalogState
          * @enum {string}
          */
@@ -2658,6 +2841,112 @@ export interface operations {
             };
             /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_import_albums_albums_bulk_import_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkAlbumImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkAlbumImportResponse"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_lookup_albums_albums_bulk_lookup_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkAlbumLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkAlbumLookupResponse"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5280,6 +5569,48 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recent_additions_catalog_recent_additions_get: {
+        parameters: {
+            query?: {
+                take?: number;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhysicalItemSummary"][];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
