@@ -36,7 +36,7 @@ describe('application routing effects', () => {
       await renderAppTree(['/books'])
 
       await waitFor(() => {
-        expect(document.title).toBe('Books — Shade')
+        expect(document.title).toBe('Books — Shade Library')
       })
 
       expect(document.activeElement).toBe(focusTarget)
@@ -64,7 +64,7 @@ describe('application routing effects', () => {
     ).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(document.title).toBe('Loans — Shade')
+      expect(document.title).toBe('Loans — Shade Library')
       expect(document.activeElement).toBe(
           screen.getByRole('main'),
       )

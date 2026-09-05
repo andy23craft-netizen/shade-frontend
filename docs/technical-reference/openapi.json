@@ -4056,6 +4056,79 @@
         "title": "MergeWorksRequest",
         "type": "object"
       },
+      "PhysicalItemSummary": {
+        "properties": {
+          "active_loan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Loan Id"
+          },
+          "checkout_eligible": {
+            "title": "Checkout Eligible",
+            "type": "boolean"
+          },
+          "format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "media_type": {
+            "$ref": "#/components/schemas/MediaType"
+          },
+          "primary_creator": {
+            "title": "Primary Creator",
+            "type": "string"
+          },
+          "shelf_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shelf Name"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "media_type",
+          "item_id",
+          "title",
+          "primary_creator",
+          "format",
+          "status",
+          "shelf_name",
+          "checkout_eligible",
+          "active_loan_id"
+        ],
+        "title": "PhysicalItemSummary",
+        "type": "object"
+      },
       "PlacementState": {
         "enum": [
           "shelved",
@@ -4089,6 +4162,59 @@
           "pickup_name"
         ],
         "title": "ReservationWrite",
+        "type": "object"
+      },
+      "ResolveCodeKind": {
+        "enum": [
+          "shade_item",
+          "commercial_identifier"
+        ],
+        "title": "ResolveCodeKind",
+        "type": "string"
+      },
+      "ResolveCodeRequest": {
+        "properties": {
+          "active_media_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "ResolveCodeRequest",
+        "type": "object"
+      },
+      "ResolveCodeResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/PhysicalItemSummary"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ResolveCodeKind"
+          }
+        },
+        "required": [
+          "kind",
+          "candidates"
+        ],
+        "title": "ResolveCodeResponse",
         "type": "object"
       },
       "SetBookAvailabilityRequest": {
@@ -9757,6 +9883,90 @@
         "summary": "Mark Book Read",
         "tags": [
           "books"
+        ]
+      }
+    },
+    "/catalog/resolve-code": {
+      "post": {
+        "operationId": "resolve_code_catalog_resolve_code_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Validation failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resolve Code",
+        "tags": [
+          "catalog"
         ]
       }
     },

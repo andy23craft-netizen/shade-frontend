@@ -496,6 +496,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/catalog/resolve-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Code */
+        post: operations["resolve_code_catalog_resolve_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/categories": {
         parameters: {
             query?: never;
@@ -2256,6 +2273,26 @@ export interface components {
             /** Source Work Ids */
             source_work_ids: string[];
         };
+        /** PhysicalItemSummary */
+        PhysicalItemSummary: {
+            /** Active Loan Id */
+            active_loan_id: string | null;
+            /** Checkout Eligible */
+            checkout_eligible: boolean;
+            /** Format */
+            format: string | null;
+            /** Item Id */
+            item_id: string;
+            media_type: components["schemas"]["MediaType"];
+            /** Primary Creator */
+            primary_creator: string;
+            /** Shelf Name */
+            shelf_name: string | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
         /**
          * PlacementState
          * @enum {string}
@@ -2267,6 +2304,23 @@ export interface components {
             note?: string | null;
             /** Pickup Name */
             pickup_name: string;
+        };
+        /**
+         * ResolveCodeKind
+         * @enum {string}
+         */
+        ResolveCodeKind: "shade_item" | "commercial_identifier";
+        /** ResolveCodeRequest */
+        ResolveCodeRequest: {
+            active_media_type?: components["schemas"]["MediaType"] | null;
+            /** Value */
+            value: string;
+        };
+        /** ResolveCodeResponse */
+        ResolveCodeResponse: {
+            /** Candidates */
+            candidates: components["schemas"]["PhysicalItemSummary"][];
+            kind: components["schemas"]["ResolveCodeKind"];
         };
         /** SetBookAvailabilityRequest */
         SetBookAvailabilityRequest: {
@@ -5240,6 +5294,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_code_catalog_resolve_code_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveCodeResponse"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
         };
