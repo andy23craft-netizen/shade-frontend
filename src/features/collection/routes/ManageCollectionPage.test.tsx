@@ -48,6 +48,8 @@ describe('ManageCollectionPage', () => {
             '/shelves',
         )
 
+        expect(within(main).getByRole('link', { name: /^Library Settings/i })).toHaveAttribute('href', '/library/settings')
+
         expect(within(main).getByRole('link', { name: /^Add Album/i })).toHaveAttribute('href', '/albums/new')
         expect(within(main).getByRole('link', { name: /^Bulk Add Albums/i })).toHaveAttribute('href', '/albums/bulk-add')
 

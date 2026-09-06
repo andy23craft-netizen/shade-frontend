@@ -85,6 +85,12 @@ export function ManageCollectionPage() {
                             </span>
                         </AppLink>
 
+                        <AppLink to="/library/settings" className="manage-collection-action">
+                            <span className="manage-collection-action__title">Library Settings</span>
+                            <span className="manage-collection-action__description">Configure circulation and special-purpose shelves.</span>
+                            <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
+                        </AppLink>
+
                         <AppLink to="/albums/new" className="manage-collection-action">
                             <span className="manage-collection-action__title">Add Album</span>
                             <span className="manage-collection-action__description">File a new release in the album catalog.</span>

@@ -402,6 +402,12 @@ export const queryKeys = {
             ] as const,
     },
 
+    library: {
+        all: (host: string) => ['library', host] as const,
+        setup: (host: string) => ['library', host, 'setup'] as const,
+        settings: (host: string) => ['library', host, 'settings'] as const,
+    },
+
     categories: {
         all: ['categories'] as const,
 

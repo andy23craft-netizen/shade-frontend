@@ -95,6 +95,14 @@ describe('queryKeys.shelves', () => {
     })
 })
 
+describe('queryKeys.library', () => {
+    it('isolates setup and settings cache entries by host', () => {
+        expect(queryKeys.library.setup('andy.localhost')).not.toEqual(queryKeys.library.setup('jamie.localhost'))
+        expect(queryKeys.library.settings('andy.localhost')).toEqual(['library', 'andy.localhost', 'settings'])
+        expect(queryKeys.library.setup('andy.localhost')).not.toEqual(queryKeys.library.settings('andy.localhost'))
+    })
+})
+
 describe('queryKeys.wishlists', () => {
     it('uses unpaginated list and books keys under the wishlists prefix', () => {
         expect(queryKeys.wishlists.all).toEqual([

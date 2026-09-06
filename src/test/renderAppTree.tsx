@@ -182,6 +182,17 @@ export function mockReachableApi() {
                     )
                 }
 
+                if (pathname === '/library/settings') {
+                    return new Response(JSON.stringify({
+                        enable_loans: true,
+                        book_tbr_shelf_ids: [],
+                        reserved_shelf_id: null,
+                    }), {
+                        status: 200,
+                        headers: { 'Content-Type': 'application/json' },
+                    })
+                }
+
                 if (pathname === '/categories') {
                     return new Response(
                         JSON.stringify([]),

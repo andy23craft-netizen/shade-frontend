@@ -73,6 +73,12 @@ export const ManageCollectionPage = lazy(() =>
     })),
 )
 
+export const LibrarySettingsPage = lazy(() =>
+    import('../features/library/routes/LibrarySettingsPage').then(
+        (module) => ({ default: module.LibrarySettingsPage }),
+    ),
+)
+
 export const NewBookPage = lazy(() =>
     import('../features/books/routes/NewBookPage').then(
         (module) => ({

@@ -44,6 +44,11 @@ export const routeMetadata = {
     title: 'Manage Collection',
     heading: 'Manage Collection',
   },
+  librarySettings: {
+    path: '/library/settings',
+    title: 'Library Settings',
+    heading: 'Library Settings',
+  },
   newBook: {
     path: '/books/new',
     title: 'Add Book',

@@ -28,6 +28,7 @@ describe('lazyRoutePages preloading', () => {
         ['/wishlists'],
         ['/collections'],
         ['/collection/manage'],
+        ['/library/settings'],
         ['/books/new'],
         ['/books/book-1'],
         ['/books/book-1/mark-read'],

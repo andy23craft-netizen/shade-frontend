@@ -14,6 +14,7 @@ import {
     HomePage,
     LoansPage,
     ManageCollectionPage,
+    LibrarySettingsPage,
     MarkReadPage,
     NewBookPage,
     NotFoundPage,
@@ -99,6 +100,11 @@ export const routeConfig = [
                     title: routeMetadata.manageCollection.title,
                 },
                 element: <ManageCollectionPage />,
+            },
+            {
+                path: routeMetadata.librarySettings.path,
+                handle: { title: routeMetadata.librarySettings.title },
+                element: <LibrarySettingsPage />,
             },
             {
                 path: routeMetadata.newBook.path,
