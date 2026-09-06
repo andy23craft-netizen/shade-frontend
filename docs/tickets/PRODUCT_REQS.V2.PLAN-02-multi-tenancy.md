@@ -3,9 +3,10 @@
 **Status:** Planning decomposition of remaining multi-tenant V2 work. Hostname routing,
 unknown-host UX, and the initial Andy/Jamie theme entry points are shipped baseline.
 
-**Backend alignment:** Library setup/settings contracts and tenant-safe operational work in
-the backend remaining-features plan. Production multi-host deployment remains orchestrator
-`FEAT-08`.
+**Backend alignment:** Library setup/settings contracts are shipped in backend 1.1.3 and
+checked into this repository's OpenAPI; tenant-safe operational work remains. All three
+approved production library sites are live; orchestrator `FEAT-08` retains only dependent
+isolation/identity/content verification and runbook evidence.
 
 **Authority:** `docs/product-docs/PRODUCT_REQS.V2.definitive.md` remains the product source of
 truth. OpenAPI and `API-for-FE.md` own shipped transport behavior.
@@ -48,6 +49,10 @@ through `FEAT-05` and deferred tickets `FEAT-90` through `FEAT-92`.
 - Development supports the documented `*.localhost` hosts.
 - There is no login, runtime tenant switcher, tenant discovery, or self-service tenant
   registration.
+- Tenant-scoped `GET /library/setup`, `POST /library/setup/complete`, and `GET` / `PATCH
+  /library/settings` are shipped, together with generated frontend types and the base
+  `libraryApi` adapter. The settings fields are Enable Loans, book TBR shelf IDs, and one
+  optional Reserved shelf ID.
 
 ## 1. Per-library first-run setup
 
@@ -62,9 +67,9 @@ unresolved rows, supports another location, and permits explicit completion even
 was added. Completion routes to Dashboard and Manage Collection provides a later resume
 entry.
 
-The backend owns durable setup state and idempotent completion. The frontend owns transient
-wizard state and composes the shipped book intake or `FEAT-01` album intake rather than
-creating another catalog form.
+The shipped backend owns durable setup state and completion. The frontend owns transient
+wizard state and composes the shipped book and album Bulk Add engines rather than creating
+another catalog form.
 
 ### TSV bootstrap
 
@@ -128,28 +133,63 @@ Send the following questions to each additional library owner. Their answers sho
 a short identity brief, not a feature request or page redesign.
 
 1. What should the library be called in the header and Home hero? Is there a short tagline?
+Dalmo: Dalmo's Libary. No. 
+Jamie: Jamie's Library. "What's the vibe?"
+
 2. Choose three to five words for the library's personality (for example: cozy, scholarly,
    playful, modern, gothic, bright, quiet, eclectic, nostalgic).
+Dalmo: Eclectic, Delightful, enlightening. 
+Jamie: 
+
 3. Which two or three colors feel most like the library? Are there colors the owner dislikes
    or needs avoided?
+Dalmo: Teal and Magenta.
+Jamie: Orange and 
+
 4. Should the palette feel light, dark, warm, cool, muted, saturated, or mixed?
+Dalmo: Cheerful and inviting
+Jamie: 
+
 5. What visual setting best represents the library: a reading room, study, neighborhood
    shop, archive, garden room, music room, or something else?
+Dalmo: A sunny reading room 
+Jamie: 
+
 6. Name a few objects or motifs that belong in that setting (plants, lamps, animals, local
    landmarks, paper textures, wood species, patterns, keepsakes, and so on).
+Dalmo: Paper textures, sacred geometry, foreign language scripts
+Jamie: 
+
 7. What should the header or hero image communicate at first glance? If the owner has a
    preferred photograph, illustration, logo, or personal asset, can they provide it and
    confirm it may be used?
+Dalmo: existing logo
+Jamie: existing logo
+
 8. Does the owner prefer refined serif, friendly handwritten accents, clean modern type, or
    another typographic mood? Cursive/decorative type will remain accent-only.
+Dalmo: clean and elegant, easy to read, approachable typeface
+Jamie: 
+
 9. Should the interface voice feel formal, warm, witty, whimsical, understated, or another
    tone? Provide one example phrase they would enjoy seeing and one they would dislike.
+Dalmo: understated and minimalistic, virtually invisible/frictionless, intuitive UI
+Jamie: 
+
 10. Are there cultural, religious, family, accessibility, or personal symbols and themes to
     include or avoid?
+Dalmo: as appropriate, incorporate symbols from christian traditions and integral metatheory.
+Jamie: 
+
 11. Are there seasonal touches they would enjoy, and are there seasons or holidays that
     should not be represented?
+Dalmo: N/A 
+Jamie: 
+
 12. Which existing Jamie or Andy identity details feel useful as references, and which would
     feel wrong for this library?
+Dalmo: reference dalmo.ai , hiredalmo.com , and integral.dalmo.ai for design references. 
+Jamie: 
 
 ### Identity brief produced from the answers
 
@@ -194,7 +234,8 @@ do not cross library hostnames.
 
 ## 6. Production multi-host handoff
 
-**State:** Frontend behavior shipped; deployment completion remains orchestrator-owned.
+**State:** Substantially shipped. Andy/Shade, Dalmo, and Jamie are live; final verification
+depends on the tenant-state, identity-package, and Quote Library tickets.
 
 Production must route every approved hostname through trusted TLS/proxy configuration that
 sets tenant context server-side. The browser continues to send no tenant header. CORS,
@@ -216,23 +257,43 @@ do not add backup download, restore inventory, path entry, or threshold UI.
 
 ## Ticket decomposition
 
-1. **Library setup/settings contract:** durable setup state, idempotent completion, Enable
-   Loans, TBR IDs, and Reserved shelf ID.
-2. **Guided multi-media setup UI:** TSV validation, first location, book/album Build Mode
-   composition, completion, and resume.
-3. **Tenant-safe browser state audit:** persistence namespaces, cache/object URL boundaries,
-   diagnostics, and multi-host automated tests.
-4. **Library identity cleanup:** remove unintended Shade/Andy/Jamie references and centralize
-   explicit per-library names, copy, tokens, and assets.
-5. **Per-library identity packages:** run the questionnaire and implement one bounded visual
-   brief per additional owner without layout changes.
-6. **Tenant Quote Library contract and menu:** quote CRUD, enable/disable, ordering,
-   restore-defaults behavior, Home selection/fallback, optional complete heading mappings,
-   and cross-host isolation tests.
-7. **Production multi-host handoff:** proxy/TLS/CORS/asset/unknown-host verification with
-   orchestrator `FEAT-08`.
-8. **Tenant migration and restore drill:** upgrade, failure injection, rollback, wrong-tenant
-   prevention, and asset reconnection runbook.
+### Group A -- tenant foundations
+
+1. [`FEAT-06 -- Library Setup and Settings Frontend Integration`](FEAT-06_library-setup-and-settings-contract.md):
+   add query/mutation integration and the settings UI for the shipped durable setup state,
+   Enable Loans, TBR IDs, and Reserved shelf ID contract.
+2. [`FEAT-07 -- Tenant-Safe Client State Audit`](FEAT-07_tenant-safe-client-state-audit.md):
+   persistence namespaces, cache/object URL boundaries, diagnostics, and multi-host automated
+   tests. This can proceed in parallel with `FEAT-06`.
+
+### Group B -- setup and shared identity
+
+3. [`FEAT-09 -- Guided Multi-Media Library Setup`](FEAT-09_guided-multi-media-library-setup.md):
+   TSV validation, first location, book/album Build Mode composition, completion, and resume.
+   This depends on both Group A tickets and the applicable media intake engines.
+4. [`FEAT-10 -- Library Identity Cleanup and Centralization`](FEAT-10_library-identity-cleanup.md):
+   remove unintended Shade/Andy/Jamie references and centralize explicit per-library names,
+   copy, tokens, and assets. This may proceed alongside `FEAT-09`.
+
+### Group C -- tenant presentation and content
+
+5. [`FEAT-11 -- Per-Library Identity Packages`](FEAT-11_per-library-identity-packages.md):
+   run the questionnaire and implement one bounded visual brief per additional owner without
+   layout changes. This depends on `FEAT-10`; each owner's delivery is independently shippable.
+6. [`FEAT-12 -- Tenant-Owned Home Quote Library`](FEAT-12_tenant-quote-library.md): quote
+   CRUD, enable/disable, ordering, restore-defaults behavior, Home selection/fallback, optional
+   complete heading mappings, and cross-host isolation tests. This depends on the Group A
+   isolation/contract conventions and `FEAT-10`'s content boundaries.
+
+### Group D -- release and operations gates
+
+7. [`FEAT-08 -- Production Multi-Host Handoff`](FEAT-08_production-multi-host-handoff.md): the
+   three production sites are live. Remaining work is the dependent cross-host state,
+   identity, and quote verification plus final smoke/rollback runbook evidence. The existing
+   product-wide `FEAT-08` identifier is intentionally preserved.
+8. [`FEAT-13 -- Tenant Migration and Restore Drill`](FEAT-13_tenant-migration-and-restore-drill.md):
+   upgrade, failure injection, rollback, wrong-tenant prevention, and asset reconnection
+   runbook. Final execution waits for all tenant-scoped V2 schema work.
 
 ## Completion criteria
 
