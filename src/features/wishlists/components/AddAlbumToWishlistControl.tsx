@@ -2,7 +2,15 @@ import { useState, type FormEvent } from 'react'
 
 import { Alert, Button, Field, ModalDialog, QueryErrorState } from '../../../components'
 import { isApiError } from '../../../api/apiErrors'
-import { useAddWishlistAlbum, useWishlists } from '../../../api/wishlistsQueries'
+import { useAddWishlistAlbum, useRemoveWishlistAlbum, useWishlistItems, useWishlists } from '../../../api/wishlistsQueries'
+import type { WishlistRead } from '../../../api/apiTypes'
+
+function WishlistMembershipChoice({ wishlist, albumId, selected, onSelect }: { wishlist: WishlistRead; albumId: string; selected: boolean; onSelect: () => void }) {
+    const items = useWishlistItems(wishlist.wishlist_id); const remove = useRemoveWishlistAlbum()
+    const membership = items.data?.items.find((item) => item.album_id === albumId)
+    if (membership) return <div className="album-wishlist-control__membership"><span>{wishlist.name} — already added</span><Button type="button" variant="danger" disabled={remove.isPending} onClick={() => remove.mutate({ wishlistId: wishlist.wishlist_id, wishlistItemId: membership.wishlist_item_id })}>{remove.isPending ? 'Removing…' : 'Remove'}</Button></div>
+    return <label><input type="radio" name={`wishlist-${albumId}`} checked={selected} onChange={onSelect} /> {wishlist.name}</label>
+}
 
 export function AddAlbumToWishlistControl({ albumId, albumTitle, compact = false }: { albumId: string; albumTitle: string; compact?: boolean }) {
     const wishlists = useWishlists()
@@ -50,12 +58,7 @@ export function AddAlbumToWishlistControl({ albumId, albumTitle, compact = false
                 ) : null}
                 <form className="album-wishlist-control__form" onSubmit={submit}>
                     {error ? <Alert variant="error">{error}</Alert> : null}
-                    <Field label="Wishlist">
-                        <select value={wishlistId} onChange={(event) => setWishlistId(event.target.value)} disabled={wishlists.isPending || addAlbum.isPending}>
-                            <option value="">Choose a wishlist</option>
-                            {(wishlists.data?.items ?? []).map((wishlist) => <option key={wishlist.wishlist_id} value={wishlist.wishlist_id}>{wishlist.name}</option>)}
-                        </select>
-                    </Field>
+                    <Field label="Wishlist"><div className="album-wishlist-control__choices">{(wishlists.data?.items ?? []).map((wishlist) => <WishlistMembershipChoice key={wishlist.wishlist_id} wishlist={wishlist} albumId={albumId} selected={wishlistId === wishlist.wishlist_id} onSelect={() => setWishlistId(wishlist.wishlist_id)} />)}</div></Field>
                     <Button type="submit" disabled={!wishlistId || wishlists.isPending || addAlbum.isPending}>
                         {addAlbum.isPending ? 'Adding…' : 'Add Album'}
                     </Button>

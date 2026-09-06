@@ -489,5 +489,8 @@ export const queryKeys = {
                 collectionId,
                 'books',
             ] as const,
+
+        albums: (collectionId: string) =>
+            ['collections', collectionId, 'albums'] as const,
     },
 } as const

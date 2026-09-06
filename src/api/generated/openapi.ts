@@ -637,6 +637,42 @@ export interface paths {
         patch: operations["update_collection_collections__collection_id__patch"];
         trace?: never;
     };
+    "/collections/{collection_id}/albums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Collection Albums */
+        get: operations["list_collection_albums_collections__collection_id__albums_get"];
+        put?: never;
+        /** Add Collection Album Route */
+        post: operations["add_collection_album_route_collections__collection_id__albums_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collection_id}/albums/{collection_album_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Collection Album Route */
+        delete: operations["delete_collection_album_route_collections__collection_id__albums__collection_album_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Collection Album Route */
+        patch: operations["update_collection_album_route_collections__collection_id__albums__collection_album_id__patch"];
+        trace?: never;
+    };
     "/collections/{collection_id}/books": {
         parameters: {
             query?: never;
@@ -1046,6 +1082,24 @@ export interface paths {
         delete: operations["delete_wishlist_album_wishlists__wishlist_id__albums__wishlist_item_id__delete"];
         options?: never;
         head?: never;
+        /** Update Wishlist Album */
+        patch: operations["update_wishlist_album_wishlists__wishlist_id__albums__wishlist_item_id__patch"];
+        trace?: never;
+    };
+    "/wishlists/{wishlist_id}/albums/{wishlist_item_id}/move-to-shelf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move Wishlist Album To Shelf */
+        post: operations["move_wishlist_album_to_shelf_wishlists__wishlist_id__albums__wishlist_item_id__move_to_shelf_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -1305,6 +1359,11 @@ export interface components {
             /** Track Number */
             track_number: number;
         };
+        /**
+         * AlbumPlacementState
+         * @enum {string}
+         */
+        AlbumPlacementState: "shelved" | "unshelved";
         /** AlbumRead */
         AlbumRead: {
             /** Album Id */
@@ -2088,6 +2147,63 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** CollectionAlbumArtistRead */
+        CollectionAlbumArtistRead: {
+            /** Artist Id */
+            artist_id: string;
+            /** First Name */
+            first_name: string | null;
+            /** Surname */
+            surname: string;
+        };
+        /** CollectionAlbumCreate */
+        CollectionAlbumCreate: {
+            /** Album Id */
+            album_id: string;
+            /** Notes */
+            notes?: string | null;
+            /** Order Num */
+            order_num?: number | null;
+        };
+        /** CollectionAlbumList */
+        CollectionAlbumList: {
+            /** Items */
+            items: components["schemas"]["CollectionAlbumRead"][];
+            /** Total */
+            total: number;
+        };
+        /** CollectionAlbumRead */
+        CollectionAlbumRead: {
+            /** Album Artists */
+            album_artists?: components["schemas"]["CollectionAlbumArtistRead"][];
+            /** Album Id */
+            album_id: string;
+            /** Album Status */
+            album_status: string;
+            /** Album Title */
+            album_title: string;
+            /** Collection Album Id */
+            collection_album_id: string;
+            /** Collection Id */
+            collection_id: string;
+            /** Created Date */
+            created_date: string;
+            /** Notes */
+            notes?: string | null;
+            /** On Wishlist */
+            on_wishlist: boolean;
+            /** Order Num */
+            order_num: number;
+            /** Shelf Name */
+            shelf_name?: string | null;
+        };
+        /** CollectionAlbumUpdate */
+        CollectionAlbumUpdate: {
+            /** Notes */
+            notes?: string | null;
+            /** Order Num */
+            order_num?: number | null;
+        };
         /** CollectionBookCreate */
         CollectionBookCreate: {
             /** Book Id */
@@ -2159,6 +2275,7 @@ export interface components {
             description?: string | null;
             /** Last Updated Date */
             last_updated_date: string;
+            media_type?: components["schemas"]["MediaType"] | null;
             /** Name */
             name: string;
         };
@@ -2598,6 +2715,28 @@ export interface components {
             /** Url */
             url?: string | null;
         };
+        /** WishlistAlbumMoveRequest */
+        WishlistAlbumMoveRequest: {
+            /** Shelf Name */
+            shelf_name: string;
+        };
+        /** WishlistAlbumMoveResponse */
+        WishlistAlbumMoveResponse: {
+            album: components["schemas"]["AlbumRead"];
+            /** Album Id */
+            album_id: string;
+            /** Shelf Name */
+            shelf_name: string;
+            /** Wishlist Id */
+            wishlist_id: string;
+            /** Wishlist Item Id */
+            wishlist_item_id: string;
+        };
+        /** WishlistAlbumUpdate */
+        WishlistAlbumUpdate: {
+            /** Notes */
+            notes: string | null;
+        };
         /** WishlistBookCreate */
         WishlistBookCreate: {
             /** Book Id */
@@ -2757,6 +2896,7 @@ export interface operations {
                 title?: string | null;
                 barcode?: string | null;
                 media_format?: components["schemas"]["MediaFormat"] | null;
+                placement_state?: components["schemas"]["AlbumPlacementState"];
                 include_deleted?: boolean;
                 sortBy?: string;
                 sortOrder?: string;
@@ -6207,6 +6347,284 @@ export interface operations {
             };
         };
     };
+    list_collection_albums_collections__collection_id__albums_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionAlbumList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_collection_album_route_collections__collection_id__albums_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionAlbumCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionAlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Collection membership conflict (duplicate book or order number) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Books cannot be added to an album collection; Albums cannot be added to a book collection */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_collection_album_route_collections__collection_id__albums__collection_album_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                collection_id: string;
+                collection_album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_collection_album_route_collections__collection_id__albums__collection_album_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                collection_id: string;
+                collection_album_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionAlbumUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionAlbumRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Collection membership conflict (duplicate book or order number) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_collection_books_collections__collection_id__books_get: {
         parameters: {
             query?: {
@@ -8059,6 +8477,145 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_wishlist_album_wishlists__wishlist_id__albums__wishlist_item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                wishlist_id: string;
+                wishlist_item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistAlbumUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistItemRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_wishlist_album_to_shelf_wishlists__wishlist_id__albums__wishlist_item_id__move_to_shelf_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                wishlist_id: string;
+                wishlist_item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistAlbumMoveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WishlistAlbumMoveResponse"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Existing albums cannot be added to a wishlist; Soft-deleted albums cannot be added to a wishlist */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };

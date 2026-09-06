@@ -9055,6 +9055,27 @@
   gap: var(--space-4);
 }
 
+.album-wishlist-control__choices {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.album-wishlist-control__membership {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid rgb(89 61 39 / 28%);
+}
+
+.wishlist-album__move,
+.wishlist-album__move label {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .album-detail__wishlist {
   padding: var(--space-5);
   border: 2px solid #292749;
@@ -9270,6 +9291,54 @@
 
 .collection-membership--wishlist {
   border-style: dashed;
+}
+
+.collection-albums {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.collection-membership--album {
+  border-color: #8f6438;
+  background: #ead9b8;
+}
+
+.collection-albums__add {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid rgb(89 61 39 / 28%);
+  background: rgb(255 249 231 / 65%);
+}
+
+.collection-albums__results {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.collection-albums__results li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.add-album-to-collection {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 36rem;
+}
+
+.album-detail__collection {
+  padding: var(--space-5);
+  border: 2px solid #292749;
+  border-radius: 0.2rem;
+  background: #f7ebcd;
+  box-shadow: 0.35rem 0.4rem 0 rgb(54 35 24 / 16%);
+  color: #2f2117;
 }
 
 

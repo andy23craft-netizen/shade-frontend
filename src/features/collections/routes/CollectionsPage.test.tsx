@@ -63,6 +63,15 @@ vi.mock(
     }),
 )
 
+vi.mock(
+    '../components/CollectionAlbums',
+    () => ({
+        CollectionAlbums: () => (
+            <section data-testid="collection-albums">Album memberships</section>
+        ),
+    }),
+)
+
 const mockMembershipRow = vi.fn()
 
 vi.mock(
@@ -256,19 +265,19 @@ describe('CollectionsPage', () => {
 
         expect(
             screen.getByText(
-                /Curate ordered groups of books/i,
+                /Curate ordered groups of books and albums/i,
             ),
         ).toBeInTheDocument()
 
         expect(
             screen.getByText(
-                /Use Browse for the full shelved catalog/i,
+                /Use Browse and Albums for the owned catalog/i,
             ),
         ).toBeInTheDocument()
 
         expect(
             screen.getByText(
-                /Use Wishlists for books you want to acquire/i,
+                /Use Wishlists for books and albums you want to acquire/i,
             ),
         ).toBeInTheDocument()
     })

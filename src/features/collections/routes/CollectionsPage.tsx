@@ -39,6 +39,7 @@ import {
 import {
     CollectionMembershipRow,
 } from '../components/CollectionMembershipRow'
+import { CollectionAlbums } from '../components/CollectionAlbums'
 import {
     collectionEditFormValuesFromCollection,
     emptyCollectionCreateFormValues,
@@ -705,6 +706,7 @@ function CollectionSection({
 
             {!expanded ? null : (
                 <>
+                    <CollectionAlbums collectionId={collection.collection_id} enabled={expanded} />
                     {membershipsQuery.isPending ? (
                         <LoadingState
                             label={`Loading ${collection.name}…`}
@@ -726,8 +728,7 @@ function CollectionSection({
                     {membershipsQuery.isSuccess &&
                     total === 0 ? (
                         <p>
-                            No books have been added to this
-                            collection yet.
+                            No books have been added to this collection yet. Albums are listed separately above.
                         </p>
                     ) : null}
 
@@ -911,17 +912,16 @@ export function CollectionsPage() {
                 </h1>
 
                 <p>
-                    Curate ordered groups of books from
-                    the catalog. Collections can include
-                    books on shelves as well as books
-                    already represented on a wishlist.
+                    Curate ordered groups of books and
+                    albums from the catalog. Collections
+                    can include items already represented
+                    on a wishlist.
                 </p>
 
                 <p>
-                    Use Browse for the full shelved
-                    catalog. Use Wishlists for books you
-                    want to acquire that are not yet on
-                    a shelf.
+                    Use Browse and Albums for the owned
+                    catalog. Use Wishlists for books and
+                    albums you want to acquire.
                 </p>
             </header>
 
@@ -935,7 +935,7 @@ export function CollectionsPage() {
             {collections.length === 0 ? (
                 <EmptyState title="No collections yet">
                     Create your first collection to start
-                    curating groups of books.
+                    curating books and albums.
                 </EmptyState>
             ) : (
                 <ul

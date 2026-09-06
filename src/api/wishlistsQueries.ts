@@ -21,7 +21,6 @@ import {
 import {
     createBooksApi,
 } from './booksApi'
-import { createAlbumsApi } from './albumsApi'
 import {
     createWishlistsApi,
 } from './wishlistsApi'
@@ -214,6 +213,11 @@ export function useRemoveWishlistAlbum() {
     return useMutation({ mutationFn: ({ wishlistId, wishlistItemId }: { wishlistId: string; wishlistItemId: string }) => api.removeAlbum(wishlistId, wishlistItemId), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.wishlists.items(variables.wishlistId) }) } })
 }
 
+export function useUpdateWishlistAlbum() {
+    const { apiClient } = useConnection(); const api = createWishlistsApi(apiClient); const qc = useQueryClient()
+    return useMutation({ mutationFn: ({ wishlistId, wishlistItemId, notes }: { wishlistId: string; wishlistItemId: string; notes: string | null }) => api.updateAlbum(wishlistId, wishlistItemId, { notes }), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.wishlists.items(variables.wishlistId) }) } })
+}
+
 export class MoveWishlistAlbumToShelfError extends Error {
     readonly membershipRemoved: boolean
 
@@ -233,7 +237,6 @@ export function useMoveWishlistAlbumToShelf() {
     const { apiClient } = useConnection()
     const queryClient = useQueryClient()
     const wishlistsApi = createWishlistsApi(apiClient)
-    const albumsApi = createAlbumsApi(apiClient)
 
     return useMutation({
         mutationFn: async ({
@@ -241,33 +244,17 @@ export function useMoveWishlistAlbumToShelf() {
             wishlistItemId,
             albumId,
             shelfName,
-            membershipRemoved = false,
         }: {
             wishlistId: string
             wishlistItemId: string
             albumId: string
             shelfName: string
-            membershipRemoved?: boolean
         }) => {
-            let removed = membershipRemoved
-
-            if (!removed) {
-                try {
-                    await wishlistsApi.removeAlbum(wishlistId, wishlistItemId)
-                    removed = true
-                } catch (error) {
-                    throw new MoveWishlistAlbumToShelfError({ cause: error, membershipRemoved: false })
-                }
-            }
-
-            try {
-                return await albumsApi.update(albumId, { shelf_name: shelfName })
-            } catch (error) {
-                throw new MoveWishlistAlbumToShelfError({ cause: error, membershipRemoved: removed })
-            }
+            void albumId
+            return wishlistsApi.moveAlbumToShelf(wishlistId, wishlistItemId, { shelf_name: shelfName })
         },
-        onSuccess: async (album, variables) => {
-            queryClient.setQueryData(queryKeys.albums.detail(album.album_id), album)
+        onSuccess: async (response, variables) => {
+            queryClient.setQueryData(queryKeys.albums.detail(response.album_id), response.album)
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: queryKeys.wishlists.items(variables.wishlistId) }),
                 queryClient.invalidateQueries({ queryKey: queryKeys.albums.all }),

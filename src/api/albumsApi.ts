@@ -4,7 +4,7 @@ import type { AlbumArtworkRefetchRequest, AlbumCreate, AlbumList, AlbumLookupRes
 
 export interface ListAlbumsOptions extends ApiCallOptions {
     artist?: string; title?: string; barcode?: string; mediaFormat?: string
-    includeDeleted?: boolean; skip?: number; take?: number; sortBy?: string; sortOrder?: string
+    includeDeleted?: boolean; placementState?: 'shelved' | 'unshelved'; skip?: number; take?: number; sortBy?: string; sortOrder?: string
 }
 
 const signalOptions = (signal?: AbortSignal) => signal ? { signal } : undefined
@@ -13,7 +13,7 @@ export function createAlbumsApi(client: ReturnType<typeof createApiClient>) {
     return {
         async list(options: ListAlbumsOptions = {}): Promise<AlbumList> {
             const params = new URLSearchParams()
-            const strings = { artist: options.artist, title: options.title, barcode: options.barcode, media_format: options.mediaFormat, sortBy: options.sortBy, sortOrder: options.sortOrder }
+            const strings = { artist: options.artist, title: options.title, barcode: options.barcode, media_format: options.mediaFormat, placement_state: options.placementState, sortBy: options.sortBy, sortOrder: options.sortOrder }
             for (const [name, value] of Object.entries(strings)) if (value?.trim()) params.set(name, value.trim())
             if (options.includeDeleted) params.set('include_deleted', 'true')
             if (options.skip !== undefined) params.set('skip', String(options.skip))

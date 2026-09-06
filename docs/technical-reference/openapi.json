@@ -466,6 +466,14 @@
         "title": "AlbumLookupTrack",
         "type": "object"
       },
+      "AlbumPlacementState": {
+        "enum": [
+          "shelved",
+          "unshelved"
+        ],
+        "title": "AlbumPlacementState",
+        "type": "string"
+      },
       "AlbumRead": {
         "additionalProperties": false,
         "properties": {
@@ -3386,6 +3394,199 @@
         "title": "CheckoutRequest",
         "type": "object"
       },
+      "CollectionAlbumArtistRead": {
+        "properties": {
+          "artist_id": {
+            "title": "Artist Id",
+            "type": "string"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "surname": {
+            "title": "Surname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artist_id",
+          "first_name",
+          "surname"
+        ],
+        "title": "CollectionAlbumArtistRead",
+        "type": "object"
+      },
+      "CollectionAlbumCreate": {
+        "properties": {
+          "album_id": {
+            "title": "Album Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "order_num": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Num"
+          }
+        },
+        "required": [
+          "album_id"
+        ],
+        "title": "CollectionAlbumCreate",
+        "type": "object"
+      },
+      "CollectionAlbumList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CollectionAlbumRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "CollectionAlbumList",
+        "type": "object"
+      },
+      "CollectionAlbumRead": {
+        "properties": {
+          "album_artists": {
+            "items": {
+              "$ref": "#/components/schemas/CollectionAlbumArtistRead"
+            },
+            "title": "Album Artists",
+            "type": "array"
+          },
+          "album_id": {
+            "title": "Album Id",
+            "type": "string"
+          },
+          "album_status": {
+            "title": "Album Status",
+            "type": "string"
+          },
+          "album_title": {
+            "title": "Album Title",
+            "type": "string"
+          },
+          "collection_album_id": {
+            "title": "Collection Album Id",
+            "type": "string"
+          },
+          "collection_id": {
+            "title": "Collection Id",
+            "type": "string"
+          },
+          "created_date": {
+            "title": "Created Date",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "on_wishlist": {
+            "title": "On Wishlist",
+            "type": "boolean"
+          },
+          "order_num": {
+            "title": "Order Num",
+            "type": "integer"
+          },
+          "shelf_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shelf Name"
+          }
+        },
+        "required": [
+          "collection_album_id",
+          "collection_id",
+          "album_id",
+          "album_title",
+          "album_status",
+          "order_num",
+          "created_date",
+          "on_wishlist"
+        ],
+        "title": "CollectionAlbumRead",
+        "type": "object"
+      },
+      "CollectionAlbumUpdate": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "order_num": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Num"
+          }
+        },
+        "title": "CollectionAlbumUpdate",
+        "type": "object"
+      },
       "CollectionBookCreate": {
         "properties": {
           "book_id": {
@@ -3619,6 +3820,16 @@
           "last_updated_date": {
             "title": "Last Updated Date",
             "type": "string"
+          },
+          "media_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "title": "Name",
@@ -5041,6 +5252,72 @@
         "title": "WishlistAlbumCreate",
         "type": "object"
       },
+      "WishlistAlbumMoveRequest": {
+        "properties": {
+          "shelf_name": {
+            "maxLength": 32,
+            "title": "Shelf Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shelf_name"
+        ],
+        "title": "WishlistAlbumMoveRequest",
+        "type": "object"
+      },
+      "WishlistAlbumMoveResponse": {
+        "properties": {
+          "album": {
+            "$ref": "#/components/schemas/AlbumRead"
+          },
+          "album_id": {
+            "title": "Album Id",
+            "type": "string"
+          },
+          "shelf_name": {
+            "title": "Shelf Name",
+            "type": "string"
+          },
+          "wishlist_id": {
+            "title": "Wishlist Id",
+            "type": "string"
+          },
+          "wishlist_item_id": {
+            "title": "Wishlist Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "wishlist_id",
+          "wishlist_item_id",
+          "album_id",
+          "shelf_name",
+          "album"
+        ],
+        "title": "WishlistAlbumMoveResponse",
+        "type": "object"
+      },
+      "WishlistAlbumUpdate": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "notes"
+        ],
+        "title": "WishlistAlbumUpdate",
+        "type": "object"
+      },
       "WishlistBookCreate": {
         "properties": {
           "book_id": {
@@ -5618,6 +5895,15 @@
                 }
               ],
               "title": "Media Format"
+            }
+          },
+          {
+            "in": "query",
+            "name": "placement_state",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AlbumPlacementState",
+              "default": "shelved"
             }
           },
           {
@@ -11571,6 +11857,467 @@
         ]
       }
     },
+    "/collections/{collection_id}/albums": {
+      "get": {
+        "operationId": "list_collection_albums_collections__collection_id__albums_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Take"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionAlbumList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Collection Albums",
+        "tags": [
+          "collections"
+        ]
+      },
+      "post": {
+        "operationId": "add_collection_album_route_collections__collection_id__albums_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionAlbumCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionAlbumRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Collection membership conflict (duplicate book or order number)"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Books cannot be added to an album collection; Albums cannot be added to a book collection"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Collection Album Route",
+        "tags": [
+          "collections"
+        ]
+      }
+    },
+    "/collections/{collection_id}/albums/{collection_album_id}": {
+      "delete": {
+        "operationId": "delete_collection_album_route_collections__collection_id__albums__collection_album_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_album_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Album Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Collection Album Route",
+        "tags": [
+          "collections"
+        ]
+      },
+      "patch": {
+        "operationId": "update_collection_album_route_collections__collection_id__albums__collection_album_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_album_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Album Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionAlbumUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionAlbumRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Collection membership conflict (duplicate book or order number)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Collection Album Route",
+        "tags": [
+          "collections"
+        ]
+      }
+    },
     "/collections/{collection_id}/books": {
       "get": {
         "operationId": "list_collection_books_collections__collection_id__books_get",
@@ -14625,6 +15372,238 @@
           }
         ],
         "summary": "Delete Wishlist Album",
+        "tags": [
+          "wishlists"
+        ]
+      },
+      "patch": {
+        "operationId": "update_wishlist_album_wishlists__wishlist_id__albums__wishlist_item_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "wishlist_item_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WishlistAlbumUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistItemRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Wishlist Album",
+        "tags": [
+          "wishlists"
+        ]
+      }
+    },
+    "/wishlists/{wishlist_id}/albums/{wishlist_item_id}/move-to-shelf": {
+      "post": {
+        "operationId": "move_wishlist_album_to_shelf_wishlists__wishlist_id__albums__wishlist_item_id__move_to_shelf_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wishlist_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "wishlist_item_id",
+            "required": true,
+            "schema": {
+              "title": "Wishlist Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WishlistAlbumMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishlistAlbumMoveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Existing albums cannot be added to a wishlist; Soft-deleted albums cannot be added to a wishlist"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Move Wishlist Album To Shelf",
         "tags": [
           "wishlists"
         ]

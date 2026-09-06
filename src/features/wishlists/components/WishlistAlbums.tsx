@@ -2,17 +2,23 @@ import { useState } from 'react'
 
 import { Alert, AppLink, Button, ConfirmationDialog, LoadingState, QueryErrorState } from '../../../components'
 import { useAlbum } from '../../../api/albumsQueries'
-import { useRemoveWishlistAlbum, useWishlistItems } from '../../../api/wishlistsQueries'
+import { useShelves } from '../../../api/shelvesQueries'
+import { useMoveWishlistAlbumToShelf, useRemoveWishlistAlbum, useUpdateWishlistAlbum, useWishlistItems } from '../../../api/wishlistsQueries'
 import type { WishlistItemRead } from '../../../api/apiTypes'
 import { isApiError } from '../../../api/apiErrors'
 import { displayMediaFormat, formatAlbumArtists } from '../../albums/albumDisplay'
 import { AlbumArtwork } from '../../albums/components/AlbumArtwork'
 import { displayWishlistBookStatus, displayWishlistPriority, safeHttpUrl } from '../wishlistDisplay'
+import { MembershipNotesEditor } from '../../shared/MembershipNotesEditor'
 
 function WishlistAlbumRow({ membership }: { membership: WishlistItemRead }) {
     const albumId = membership.album_id ?? ''
     const album = useAlbum(albumId)
     const removeMembership = useRemoveWishlistAlbum()
+    const updateMembership = useUpdateWishlistAlbum()
+    const moveMembership = useMoveWishlistAlbumToShelf()
+    const shelves = useShelves()
+    const [shelfName, setShelfName] = useState('')
     const [confirmRemove, setConfirmRemove] = useState(false)
     const [removeError, setRemoveError] = useState<string | null>(null)
 
@@ -40,6 +46,11 @@ function WishlistAlbumRow({ membership }: { membership: WishlistItemRead }) {
                 {safeUrl ? <div><dt>URL</dt><dd><a href={safeUrl} rel="noreferrer" target="_blank">{safeUrl}</a></dd></div> : null}
             </dl>
             {removeError ? <Alert variant="error">{removeError}</Alert> : null}
+            <MembershipNotesEditor label="Wishlist description" notes={membership.notes} onSave={(notes) => updateMembership.mutateAsync({ wishlistId: membership.wishlist_id, wishlistItemId: membership.wishlist_item_id, notes })} />
+            <form className="wishlist-album__move" onSubmit={(event) => { event.preventDefault(); if (!shelfName) return; setRemoveError(null); moveMembership.mutate({ wishlistId: membership.wishlist_id, wishlistItemId: membership.wishlist_item_id, albumId, shelfName }, { onError: (error) => setRemoveError(error instanceof Error ? error.message : 'The album could not be moved to the crate.') }) }}>
+                <label>Move to crate<select value={shelfName} onChange={(event) => setShelfName(event.target.value)} disabled={shelves.isPending || moveMembership.isPending}><option value="">Choose a crate</option>{(shelves.data ?? []).filter((shelf) => shelf.common_name !== 'removed').map((shelf) => <option key={shelf.shelf_id} value={shelf.common_name}>{shelf.common_name}</option>)}</select></label>
+                <Button type="submit" disabled={!shelfName || shelves.isPending || moveMembership.isPending}>{moveMembership.isPending ? 'Moving…' : 'Move to Crate'}</Button>
+            </form>
             <Button type="button" variant="danger" disabled={removeMembership.isPending} onClick={() => setConfirmRemove(true)}>
                 Remove from Wishlist
             </Button>

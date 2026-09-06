@@ -12,6 +12,8 @@ import type {
     CollectionBookUpdate,
     CollectionCreate,
     CollectionUpdate,
+    CollectionAlbumCreate,
+    CollectionAlbumUpdate,
 } from './apiTypes'
 import {
     createCollectionsApi,
@@ -50,6 +52,26 @@ export function useCollections(
             }),
         enabled,
     })
+}
+
+export function useCollectionAlbums(collectionId: string, options: { enabled?: boolean } = {}) {
+    const { apiClient } = useConnection(); const api = createCollectionsApi(apiClient)
+    return useQuery({ queryKey: queryKeys.collections.albums(collectionId), queryFn: ({ signal }) => api.listAlbums(collectionId, { signal }), enabled: collectionId !== '' && (options.enabled ?? true) })
+}
+
+export function useAddCollectionAlbum() {
+    const { apiClient } = useConnection(); const api = createCollectionsApi(apiClient); const qc = useQueryClient()
+    return useMutation({ mutationFn: ({ collectionId, album }: { collectionId: string; album: CollectionAlbumCreate }) => api.addAlbum(collectionId, album), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.collections.albums(variables.collectionId) }) } })
+}
+
+export function useUpdateCollectionAlbum() {
+    const { apiClient } = useConnection(); const api = createCollectionsApi(apiClient); const qc = useQueryClient()
+    return useMutation({ mutationFn: ({ collectionId, collectionAlbumId, update }: { collectionId: string; collectionAlbumId: string; update: CollectionAlbumUpdate }) => api.updateAlbum(collectionId, collectionAlbumId, update), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.collections.albums(variables.collectionId) }) } })
+}
+
+export function useRemoveCollectionAlbum() {
+    const { apiClient } = useConnection(); const api = createCollectionsApi(apiClient); const qc = useQueryClient()
+    return useMutation({ mutationFn: ({ collectionId, collectionAlbumId }: { collectionId: string; collectionAlbumId: string }) => api.removeAlbum(collectionId, collectionAlbumId), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.collections.albums(variables.collectionId) }) } })
 }
 
 function getNextCollectionBooksPageParam(

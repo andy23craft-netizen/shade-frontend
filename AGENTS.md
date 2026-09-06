@@ -83,13 +83,13 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `common_name` labels; `unknown` allowed on books; `removed` excluded except edit may surface current membership.
   Shelf rows show counts from `useDashboardBreakdowns` `by_shelf` and deep-link into `/books?shelf_name=`. No shelf
   CRUD on book forms.
-- Wishlists on `/wishlists` (`wishlistsApi` / `useWishlists` / `useWishlistBooks` / write mutations): Collection-drawer
-  link, nested memberships joined via `GET /books/{book_id}` (not `GET /books`), add via unshelved `POST /books` (omit
+- Wishlists on `/wishlists` (`wishlistsApi` / `useWishlists` / mixed membership mutations): Collection-drawer
+  link, typed book and album rows from `GET /wishlists/{id}/items`, book add via unshelved `POST /books` (omit
   `shelf_name`; `author_ids` required -- text input resolved/reused/created via `useAuthors` / `useCreateAuthor`) then
   `POST /wishlists/{id}/books`, and move-to-shelf via `MoveWishlistBookToShelfControl` /
   `useMoveWishlistBookToShelf` (membership `DELETE` then `PATCH { shelf_name }`). Shelf/wishlist exclusivity is
-  enforced with documented **412** responses. Membership contextual descriptions are editable through
-  `PATCH /wishlists/{id}/books/{wishlist_item_id}` with `WishlistBookUpdate.notes`; `null` clears notes.
+  enforced with documented **412** responses. Album rows use authenticated artwork and album routes; album notes use
+  the typed album membership `PATCH`, and album placement uses the atomic `move-to-shelf` endpoint. `null` clears notes.
 - Curated Collections on `/collections` (`collectionsApi` / `useCollections` / `useCollectionBooks` / write
   mutations): Collection-drawer link, create/edit/delete collections (`useUpdateCollection` for name/description;
   blank description clears via explicit JSON `null`), add shelved catalog books via `GET /books` search then
@@ -99,8 +99,9 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   `shelf_name` may be JSON `null` for unshelved rows -- do not expect BookRead's synthesized `"unknown"`);
   duplicate add is **409**; library delete drops memberships server-side
   (`useDeleteBook` invalidates `queryKeys.collections.all`). Orthogonal to shelf/wishlist placement (no
-  shelf/wishlist overlap **412**; no move-to-shelf on collection rows). Book Details adds the current active book via
-  `AddBookToCollectionDialog` (`useAddCollectionBook` with the detail `book.book_id`; no catalog search).
+  shelf/wishlist overlap **412**; no move-to-shelf on collection rows). Typed album Collection routes mirror the book
+  add, notes, reorder, and removal workflow without changing placement; Album Details can add the current album and
+  Collection rows use authenticated artwork plus album-native metadata and routes.
 - Book covers via authenticated `GET` / `PUT` / `DELETE /books/{book_id}/cover` (`booksApi.getCover` / `uploadCover` /
   `removeCover`, `useBookCover` / `useUploadBookCover` / `useRemoveBookCover`, `queryKeys.bookCovers`). Shared
   `BookCover` (lazy authenticated blob + status stamp + placeholder) on Book Details, Books list, Home New
@@ -183,7 +184,7 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.1.0`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.1.3`). Prefer generating or fixture-checking TypeScript models
   from this file.
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, hostname
   tenant routing, error meanings, lifecycle rules, ISBN quirks, album lookup/artwork/circulation, mixed wishlists,
@@ -196,19 +197,20 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 handoff: OpenAPI plus `API-for-FE.md` are the contract; `docs/tickets/FEAT-02_album-support.md` is the frontend album
 implementation ticket.
 
-### Backend 1.1.0 contract (2026-09-04)
+### Backend 1.1.3 contract (2026-09-06)
 
-The checked-in contract matches backend **1.1.0**. Album catalog CRUD, soft-delete/restore, artist/genre catalogs,
+The checked-in contract matches backend **1.1.3**. Album catalog CRUD, soft-delete/restore, artist/genre catalogs,
 checkout/check-in/mark-played, Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch, additive
 dashboard album fields, and typed mixed wishlist membership are shipped. Hostname-scoped multi-tenant routing is
 shipped (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`). Existing book, wishlist-book, and collection
-HTTP shapes stay compatible; album collection membership is not shipped.
+HTTP shapes stay compatible. Album collection membership, album wishlist-note updates, atomic wishlist-to-crate
+movement, and album placement-state filtering are shipped.
 
 `FEAT-02` now activates the album catalog UI: `/albums` browse, add, detail, and edit routes; artist/genre-backed
 metadata entry and release lookup; private artwork management; checkout/check-in, mark-played, soft-delete/restore,
 album loan history, separate dashboard listening statistics, and typed mixed-wishlist API/query support. The Vite
-development proxy includes `/albums`, `/artists`, and `/genres`. Collections remain book-only. Existing book-specific
-wishlist rendering and notes editing remain isolated from album membership operations.
+development proxy includes `/albums`, `/artists`, and `/genres`. Collections support explicitly typed book and album
+membership routes. Book-specific and album-specific wishlist and Collection operations remain isolated.
 
 Identifier and loan rules from 1.0.8 remain in force:
 
@@ -238,14 +240,14 @@ Tenant and media storage notes agents must not invent around:
   release IDs have no MusicBrainz substitute (**502** / **504**). Artwork refetch uses Cover Art Archive front images
   only (approved front, else first front, else release-group listing) and never Discogs artwork. See `API-for-FE.md`.
 
-Deploy frontend album UI with matching backend 1.1.0 and the separately rehearsed retained-data migration (including
+Deploy frontend album UI with matching backend 1.1.3 and the separately rehearsed retained-data migration (including
 `album_artwork`). The frontend cannot compensate for an older database schema.
 
 When implementing `FEAT-02`, treat that ticket plus OpenAPI and `API-for-FE.md` as the work plan: add `/albums`,
 `/artists`, and `/genres` to the optional Vite proxy when the browser first needs them; lookup then resolve
 artists/genres then create; serve artwork only through authenticated album artwork routes; keep typed identifiers
-distinct; use `GET /wishlists/{wishlist_id}/items` for mixed lists (book notes stay on the book membership PATCH);
-keep collections book-only; add album dashboard widgets as separate album statistics.
+distinct; use `GET /wishlists/{wishlist_id}/items` for mixed lists and the typed membership PATCH routes;
+use typed album Collection routes rather than book membership routes; add album dashboard widgets as separate album statistics.
 
 ### Book identifiers (`id` vs `book_id`)
 
@@ -259,7 +261,7 @@ keep collections book-only; add album dashboard widgets as separate album statis
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
   when they do not enforce GUID validation.
 
-### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.1.0`)
+### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.1.3`)
 
 Authors are backend data, not free-form book text. Books no longer store a string `authors` field on create/update.
 
@@ -284,7 +286,7 @@ SPA surface: `authorsApi` / `authorsQueries`, `authorDisplay.formatBookAuthors`,
 inline `useCreateAuthor` on ISBN lookup apply and wishlist add, and list/detail/join display. Do not send free-form
 author strings on `BookCreate` / `BookUpdate`.
 
-### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.1.0`)
+### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.1.3`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
@@ -1496,7 +1498,7 @@ another project prompt as required reading before starting. Attach the items bel
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
 - `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
-  sequenced work: `FEAT-02_album-support.md` (album MVP frontend implementation against backend 1.1.0). Informal UI
+  sequenced work begins with `FEAT-05_dedicated-album-section.md`. Informal UI
   feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket unless the user asks to
   implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask which work to take next
   rather than inventing a follow-on feature.
@@ -1504,7 +1506,7 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with `FEAT-02`.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
-  `info.version` `1.1.0` -- see Backend Contract), including book `book_id` / covers / filters / bulk routes,
+  `info.version` `1.1.3` -- see Backend Contract), including book `book_id` / covers / filters / bulk routes,
   loans with nullable `book_id`/`album_id` and `media_type`, wishlist `wishlist_item_id` plus mixed `/items` and album
   membership routes, album catalog/lookup/artwork/circulation, `/artists`, `/genres`, and additive album dashboard
   fields.

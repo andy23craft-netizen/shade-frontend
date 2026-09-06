@@ -10,15 +10,16 @@ const cleanOptions = (options: ListAlbumsOptions) => ({
     ...(options.barcode?.trim() ? { barcode: options.barcode.trim() } : {}),
     ...(options.mediaFormat ? { mediaFormat: options.mediaFormat } : {}),
     ...(options.includeDeleted ? { includeDeleted: true } : {}),
+    ...(options.placementState ? { placementState: options.placementState } : {}),
     ...(options.skip !== undefined ? { skip: options.skip } : {}),
     ...(options.take !== undefined ? { take: options.take } : {}),
     ...(options.sortBy ? { sortBy: options.sortBy } : {}),
     ...(options.sortOrder ? { sortOrder: options.sortOrder } : {}),
 })
 
-export function useAlbums(options: ListAlbumsOptions = {}) {
+export function useAlbums(options: ListAlbumsOptions = {}, queryOptions: { enabled?: boolean } = {}) {
     const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); const key = cleanOptions(options)
-    return useQuery({ queryKey: queryKeys.albums.list(key), queryFn: ({ signal }) => api.list({ ...options, signal }) })
+    return useQuery({ queryKey: queryKeys.albums.list(key), queryFn: ({ signal }) => api.list({ ...options, signal }), enabled: queryOptions.enabled ?? true })
 }
 const ALBUM_PAGE_SIZE = 24
 export function useInfiniteAlbums(options: Omit<ListAlbumsOptions, 'skip' | 'take'> = {}) {

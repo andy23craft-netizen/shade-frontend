@@ -7,6 +7,10 @@ import type {
     CollectionList,
     CollectionRead,
     CollectionUpdate,
+    CollectionAlbumCreate,
+    CollectionAlbumList,
+    CollectionAlbumRead,
+    CollectionAlbumUpdate,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -221,6 +225,19 @@ export function createCollectionsApi(
                     ...withSignal(options.signal),
                 },
             )
+        },
+        async listAlbums(collectionId: string, options: ListCollectionBooksOptions = {}): Promise<CollectionAlbumList> {
+            const path = withPagination(`/collections/${encodeURIComponent(collectionId)}/albums`, options.skip, options.take)
+            return client.getJson<CollectionAlbumList>(path, withSignal(options.signal))
+        },
+        async addAlbum(collectionId: string, album: CollectionAlbumCreate): Promise<CollectionAlbumRead> {
+            return client.requestJson<CollectionAlbumRead>(`/collections/${encodeURIComponent(collectionId)}/albums`, { method: 'POST', body: album })
+        },
+        async updateAlbum(collectionId: string, collectionAlbumId: string, update: CollectionAlbumUpdate): Promise<CollectionAlbumRead> {
+            return client.requestJson<CollectionAlbumRead>(`/collections/${encodeURIComponent(collectionId)}/albums/${encodeURIComponent(collectionAlbumId)}`, { method: 'PATCH', body: update })
+        },
+        async removeAlbum(collectionId: string, collectionAlbumId: string): Promise<void> {
+            await client.request(`/collections/${encodeURIComponent(collectionId)}/albums/${encodeURIComponent(collectionAlbumId)}`, { method: 'DELETE' })
         },
     }
 }

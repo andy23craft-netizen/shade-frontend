@@ -1,6 +1,6 @@
 # API for Frontend (supplementary)
 
-Backend **1.1.0** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Album catalog CRUD, soft-delete /
+Backend **1.1.3** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Album catalog CRUD, soft-delete /
 restore, artist/genre catalogs, circulation (checkout / check-in / mark-played), Discogs/MusicBrainz lookup, and
 private artwork get/upload/delete/refetch are shipped. Hostname-scoped multi-tenant routing is shipped
 (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`). Existing book, wishlist, and loan response shapes are
@@ -47,9 +47,10 @@ Album behavior and frontend integration
 - Create requires `title` and nonempty ordered `artist_ids`. Resolve/create artist and genre catalog records
   first. `genre_ids` and `tracks` default to empty arrays; `media_format` defaults to `unknown`
   (other values: `vinyl`, `cd`, `cassette`, `other`). Identifiers are optional; barcode has no checksum validation.
-- Omit or send null `shelf_name` on create for an unshelved album. List inner-joins shelf membership and omits
-  unshelved albums. Detail represents their shelf as `unknown`; that string alone cannot distinguish an
-  unshelved album from actual membership on the system `unknown` shelf. Book placement fields are unchanged.
+- Omit or send null `shelf_name` on create for an unshelved album. GET `/albums` defaults to
+  `placement_state=shelved`; pass `placement_state=unshelved` to retrieve wishlist candidates. Detail still
+  represents an absent membership as `unknown`, so list context is required to distinguish it from actual membership
+  on system crate `unknown`. Book placement fields are unchanged.
 - PATCH omission preserves fields and child lists. Sending `artist_ids` replaces album credits and requires
   at least one ID. Sending `genre_ids` or `tracks` replaces the whole list; `[]` clears it. Null child lists,
   null title/media_format, and null shelf_name are 422. Optional scalar fields can be cleared with null.
@@ -81,13 +82,14 @@ Album behavior and frontend integration
   field on the shared shelf catalog.
 - An album on a wishlist cannot be assigned a shelf (412: `The album must be removed from the wishlist before
   it can be placed on a shelf`). Album wishlist membership uses POST `/wishlists/{wishlist_id}/albums`, DELETE
-  `/wishlists/{wishlist_id}/albums/{wishlist_item_id}`, and the mixed GET `/wishlists/{wishlist_id}/items`.
-  Collections remain book-only at membership HTTP routes; deleting a collection clears either type of membership.
+  `/wishlists/{wishlist_id}/albums/{wishlist_item_id}`, PATCH on that path for notes, the atomic nested
+  `/move-to-shelf` operation, and the mixed GET `/wishlists/{wishlist_id}/items`. Collections expose parallel,
+  explicitly typed book and album membership routes.
 - Album reads include `times_borrowed`, `last_borrowed_at`, `average_loan_days` from album loans only, plus
   `artwork_present`. Album dashboard summary/breakdown fields and album wishlist membership routes are shipped.
   Albums never appear in GET `/books`. Album UI is needed to use the new resource; the existing book UI needs
   only the shelf/error handling adjustments above. Regenerating client types alone does not implement those
-  behaviors. Clients generated from this 1.1.0 contract remain compatible with the existing book UI: ignore
+  behaviors. Clients generated from this 1.1.3 contract remain compatible with the existing book UI: ignore
   album routes, additive album dashboard/loan fields, and album membership until album UI ships. There is no
   separate handoff document.
 
@@ -857,8 +859,10 @@ album must exist, be unshelved, and not be soft-deleted. Shelved albums (includi
 `Existing albums cannot be added to a wishlist`; soft-deleted albums return 412
 `Soft-deleted albums cannot be added to a wishlist`. A duplicate in that wishlist returns 409
 `Album is already in this wishlist`. DELETE /wishlists/{wishlist_id}/albums/{wishlist_item_id} removes only an album
-membership and never deletes the catalog album. There is no PATCH for album membership notes; book-only GET/PATCH/DELETE
-paths continue to ignore album rows.
+membership and never deletes the catalog album. PATCH on the same album-membership path updates notes; send a string
+to replace notes or JSON null to clear them. POST `/wishlists/{wishlist_id}/albums/{wishlist_item_id}/move-to-shelf`
+atomically validates the typed membership and album crate, removes the wishlist membership, and places the album.
+Failures preserve the membership and its metadata. Book-only GET/PATCH/DELETE paths continue to ignore album rows.
 
 For path wishlist_id, membership wishlist_item_id, and membership book_id/album_id on add: 400 when empty or not a
 valid GUID; 404 when the GUID is well-formed but unknown. Wrong-media and cross-wishlist membership paths return 404.
@@ -896,6 +900,13 @@ be null.
 
 DELETE /collections/{collection_id}/books/{collection_book_id} removes one membership and renumbers remaining rows
 (204).
+
+Album collection membership uses the parallel typed `/collections/{collection_id}/albums` routes and
+`CollectionAlbumCreate`, `CollectionAlbumRead`, and `CollectionAlbumUpdate` schemas. GET returns ordered album rows
+with album identity, title, artists, status, nullable crate, wishlist state, notes, and order number. POST appends or
+uses an explicit order number; PATCH updates notes and/or position while preserving omitted fields; DELETE removes
+only the membership and closes the ordering gap. These operations never change crate, wishlist, lifecycle, played,
+or circulation state. Album and book identifiers are not interchangeable across membership routes.
 
 Join membership book_id to GET /books/{book_id} for title and authors. Pagination matches wishlists (skip/take
 together, { items, total } wrapper).
@@ -939,7 +950,7 @@ Cover storage under data/covers-for-books/<username>/, cover_image_path, and Ope
 Album artwork under data/covers-for-albums/<username>/<album_id>/ and artwork_present on AlbumRead	API
 Hostname tenant routing via X-Forwarded-Host (shade→andy alias)	API
 Wishlist/shelf mutual exclusion (412 when both would apply)	API
-Collections CRUD and ordered book membership (/collections); album collection HTTP is not shipped	API
+Collections CRUD and typed ordered book/album membership (`/collections/{id}/books`, `/collections/{id}/albums`)	API
 Borrowing and dashboard statistics (explicit book and album fields)	API
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/catalog item) → POST .../checkout or
