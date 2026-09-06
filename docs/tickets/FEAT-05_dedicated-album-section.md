@@ -1,6 +1,6 @@
 # FEAT-05 -- Dedicated Album Section
 
-**Status:** Ready to be implemented.
+**Status:** In progress -- awaiting Listening Dashboard design feedback.
 
 **Dependency group:** Room-level navigation and album section composition.
 
@@ -11,50 +11,49 @@ its room navigation can target completed routes.
 
 ## Objective
 
-Organize Shade as a shared Home with two distinct rooms: the existing book area becomes the
-**Reading Room**, and the album area becomes the **Listening Room**. Shared Home is the only
-route between the two rooms. Inside either room, navigation, color palette, assets, and
-visual metaphors belong to that room while their overall information architecture and
-interaction quality remain parallel.
+Complete the final design treatment for the room-specific **Listening Dashboard**. The
+dashboard is functionally separated from the Reading Dashboard and displays the shipped
+album collection, circulation, format, crate, and listening statistics, but its final
+composition and visual hierarchy are intentionally deferred until user feedback is
+available.
 
 Use `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md` as design direction. The initial
 section uses the global album palette and identity; per-library variants remain later work.
 
-## Acceptance criteria
+## Remaining acceptance criteria
 
-- [ ] Shared Home clearly offers entry into either the Reading Room or the Listening Room;
-      it does not silently choose a room or behave as either room's internal landing page.
-- [ ] The Listening Room has a dedicated landing experience rather than dropping users
-      directly into a book-like catalog list. It provides clear entry points to Browse, Add
-      Album, Bulk Add, Wishlists, Collections, album circulation, and listening statistics.
-- [ ] The Reading Room retains the setup and destinations of the existing book area. The
-      Listening Room mirrors that setup with album-native routes and controls rather than
-      reusing book identities, copy, or transport.
-- [ ] Direct navigation from the Reading Room to the Listening Room, or from the Listening
-      Room to the Reading Room, is not exposed. A user returns to shared Home before entering
-      the other room.
-- [ ] Each room's navigation bar contains that room's destinations plus a clear, accessible
-      route back to shared Home. Room changes are predictable and preserve ordinary browser
-      Back/Forward behavior.
-- [ ] Entering a room changes the complete room-level presentation: navigation treatment,
-      color palette, imagery/assets, terminology, and visual metaphors. The Reading Room uses
-      the library language; the Listening Room uses record-shop/listening-room language.
-- [ ] The album section uses the record-shop/listening-room visual language and complementary
-      global palette defined by `FEAT-03`, while preserving recognizable Shade branding.
-- [ ] Album discovery modules use album-native artwork, title, artist, format, played state,
-      and **crate** language; no book-only labels or identifiers leak into the section.
-- [ ] Browse remains the task-focused grid owned by `FEAT-02`; the landing experience does
-      not duplicate its filters, pagination state, or results model.
-- [ ] Direct links enter the correct room shell and browser history preserves the distinction
-      among shared Home, room landing pages, browse, detail, create/edit, Wishlist,
-      Collection, and circulation destinations.
-- [ ] Responsive, keyboard, focus, reduced-motion, contrast, 200% text zoom, loading, empty,
-      and partial-error behavior meet the shared application standard.
-- [ ] Automated tests cover Home-to-room entry, mandatory room-to-Home exit, the absence of
-      direct cross-room navigation, deep links, navigation and theme state, landmark
-      structure, mobile behavior, and representative discovery cards.
+- [ ] Gather user feedback on the Listening Dashboard's information hierarchy and visual
+      metaphor.
+- [ ] Refine the Listening Dashboard so album inventory, circulation, listening, format, and
+      crate statistics are easy to scan and feel native to the record-shop/listening-room
+      design language.
+- [ ] Verify the final dashboard treatment for responsive layout, keyboard and focus behavior,
+      reduced motion, contrast, 200% text zoom, loading, empty, and partial-error states.
+- [ ] Add or update representative automated coverage for the approved dashboard composition.
+
+## Implemented in the 1.2.0 work
+
+- Shared Home has no application header and offers image-based entrances to `/reading-room`
+  and `/listening-room`. Its existing discovery content remains book-oriented until the
+  separately planned multimedia Home work.
+- Reading Room and Listening Room have distinct landing pages, palettes, terminology, and
+  mirrored room-specific navigation. The shared brand returns to Home.
+- Manage, Collections, and Wishlists are neutral shared "hallway" spaces with links to both
+  rooms. They are no longer required to route through Home before entering another room.
+- Reading and Listening dashboards are separate routes. The temporary album panel was removed
+  from the Reading Dashboard.
+- Book and album loan histories are separate room-specific pages. Album circulation uses the
+  typed album loan contract.
+- Album Browse, Add/Edit, Details, and Bulk Add use the Listening Room palette and primary
+  action treatment. Album cards, filters, normalized artist/genre pickers, artwork, crate
+  language, and detail presentation are in place.
+- The shared Manage page exposes both book and album intake actions.
+- A separate Crates administration page was considered and deferred because `/shelves`
+  currently exposes no media designation for reliably separating empty shelves from empty
+  crates.
 
 ## Out of scope
 
 A fully navigable virtual room, time/weather simulation, ambient audio, per-library album
-themes, global cross-media search, and replacement of the shared Shade shell.
+themes, global cross-media search, multimedia Home discovery, a separate Crates catalog
+without backend media typing, and replacement of the shared Shade shell.

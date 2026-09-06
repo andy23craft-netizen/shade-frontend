@@ -775,7 +775,7 @@ describe('DashboardPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            '/loans',
+            '/reading-room/loans',
         )
 
         expect(
@@ -784,7 +784,7 @@ describe('DashboardPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            '/loans',
+            '/reading-room/loans',
         )
     })
 

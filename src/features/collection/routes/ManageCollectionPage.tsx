@@ -85,6 +85,18 @@ export function ManageCollectionPage() {
                             </span>
                         </AppLink>
 
+                        <AppLink to="/albums/new" className="manage-collection-action">
+                            <span className="manage-collection-action__title">Add Album</span>
+                            <span className="manage-collection-action__description">File a new release in the album catalog.</span>
+                            <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
+                        </AppLink>
+
+                        <AppLink to="/albums/bulk-add" className="manage-collection-action">
+                            <span className="manage-collection-action__title">Bulk Add Albums</span>
+                            <span className="manage-collection-action__description">Look up and import a stack of releases.</span>
+                            <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
+                        </AppLink>
+
                     </nav>
                 </article>
 

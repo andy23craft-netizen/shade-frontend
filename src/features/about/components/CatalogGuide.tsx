@@ -206,7 +206,7 @@ export function CatalogGuide() {
                                 Check Out
                             </AppLink>
                             {' '}to lend a book, and visit{' '}
-                            <AppLink to="/loans">
+                            <AppLink to="/reading-room/loans">
                                 Loans
                             </AppLink>
                             {' '}to check books in and review
@@ -219,7 +219,7 @@ export function CatalogGuide() {
                             </AppLink>
                             {' '}used to organize the collection,
                             and review collection statistics on the{' '}
-                            <AppLink to="/dashboard">
+                            <AppLink to="/reading-room/dashboard">
                                 Dashboard
                             </AppLink>
                             .

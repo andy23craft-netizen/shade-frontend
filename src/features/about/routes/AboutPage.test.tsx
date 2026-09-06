@@ -182,7 +182,7 @@ describe('AboutPage', () => {
             guide.getByRole('link', {
                 name: 'Loans',
             }),
-        ).toHaveAttribute('href', '/loans')
+        ).toHaveAttribute('href', '/reading-room/loans')
 
         expect(
             guide.queryByRole('link', {
@@ -200,7 +200,7 @@ describe('AboutPage', () => {
             guide.getByRole('link', {
                 name: 'Dashboard',
             }),
-        ).toHaveAttribute('href', '/dashboard')
+        ).toHaveAttribute('href', '/reading-room/dashboard')
 
         expect(
             guide.getByRole('link', {

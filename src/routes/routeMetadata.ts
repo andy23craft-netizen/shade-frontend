@@ -10,7 +10,7 @@ export const routeMetadata = {
     heading: 'Shade Library',
   },
   dashboard: {
-    path: '/dashboard',
+    path: '/reading-room/dashboard',
     title: 'Dashboard',
     heading: 'Dashboard',
   },
@@ -86,9 +86,29 @@ export const routeMetadata = {
     path: '/checkin',
   },
   loans: {
-    path: '/loans',
+    path: '/reading-room/loans',
     title: 'Loans',
     heading: 'Loans',
+  },
+  readingRoom: {
+    path: '/reading-room',
+    title: 'Reading Room',
+    heading: 'Reading Room',
+  },
+  listeningRoom: {
+    path: '/listening-room',
+    title: 'Listening Room',
+    heading: 'Listening Room',
+  },
+  listeningDashboard: {
+    path: '/listening-room/dashboard',
+    title: 'Listening Dashboard',
+    heading: 'Listening Dashboard',
+  },
+  albumLoans: {
+    path: '/listening-room/loans',
+    title: 'Album Loans',
+    heading: 'Album Loans',
   },
   shelves: {
     path: '/shelves',

@@ -393,6 +393,10 @@ describe('HomePage', () => {
             '/about',
         )
 
+        expect(screen.getByRole('link', { name: /Listening Room/ })).toHaveAttribute('href', '/listening-room')
+        expect(screen.getByRole('link', { name: /Reading Room/ })).toHaveAttribute('href', '/reading-room')
+        expect(screen.queryByRole('navigation', { name: /Room navigation/ })).not.toBeInTheDocument()
+
         await waitFor(() => {
             expect(document.title).toBe(
                 'Shade Library — Shade Library',

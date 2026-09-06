@@ -35,6 +35,14 @@ export function AppShell() {
     )
     const libraryName = getLibraryDisplayName(libraryContext)
     const libraryBranding = getLibraryBranding(libraryContext)
+    const isListeningRoom = location.pathname === '/listening-room' || location.pathname.startsWith('/albums') || location.pathname.startsWith('/listening-room/')
+    const isReadingRoom = location.pathname === '/reading-room' || location.pathname.startsWith('/books') || location.pathname.startsWith('/stash') || location.pathname.startsWith('/shelves') || location.pathname.startsWith('/reading-room/')
+    const room = isListeningRoom ? 'listening' : isReadingRoom ? 'reading' : 'neutral'
+    const isHome = location.pathname === '/'
+    const isHallway = ['/collection/manage', '/collections', '/wishlists'].includes(location.pathname)
+    const dashboardHref = room === 'listening' ? '/listening-room/dashboard' : '/reading-room/dashboard'
+    const loansHref = room === 'listening' ? '/listening-room/loans' : '/reading-room/loans'
+    const browseHref = room === 'listening' ? '/albums' : '/books'
 
     const currentRoute = [...matches]
         .reverse()
@@ -69,12 +77,12 @@ export function AppShell() {
     }, [location.pathname])
 
     return (
-        <div className="app-shell">
+        <div className={`app-shell app-shell--${room}`} data-room={room}>
             <a className="skip-link" href="#main-content">
                 Skip to main content
             </a>
 
-            <header className="app-header">
+            {!isHome ? <header className="app-header">
                 <div className="app-header__inner">
                     <NavLink
                         className="app-brand"
@@ -89,13 +97,13 @@ export function AppShell() {
                         />
                     </NavLink>
 
-                    <nav
+                    {room !== 'neutral' ? <nav
                         className="app-nav"
-                        aria-label="Primary navigation"
+                        aria-label={`${room === 'listening' ? 'Listening' : 'Reading'} Room navigation`}
                     >
                         <NavLink
                             className="app-nav__link"
-                            to="/dashboard"
+                            to={dashboardHref}
                             end
                         >
     <span className="drawer-nav-menu__label-holder">
@@ -114,22 +122,19 @@ export function AppShell() {
                             label="Collection"
                             activePrefixes={[
                                 '/books',
-                                '/albums',
+                                ...(room === 'listening' ? ['/albums'] : []),
                                 '/shelves',
-                                '/collection',
-                                '/wishlists',
                                 '/stash',
                             ]}
                             items={[
                                 {
                                     label: 'Browse',
-                                    to: '/books',
+                                    to: browseHref,
                                 },
-                                { label: 'Albums', to: '/albums' },
-                                {
+                                ...(room === 'reading' ? [{
                                     label: `Stash (${dashboardData?.stash_count ?? 0})`,
                                     to: '/stash',
-                                },
+                                }] : []),
                                 {
                                     label: 'Manage',
                                     to: '/collection/manage',
@@ -147,7 +152,7 @@ export function AppShell() {
 
                         <NavLink
                             className="app-nav__link"
-                            to="/loans"
+                            to={loansHref}
                         >
     <span className="drawer-nav-menu__label-holder">
         <span className="drawer-nav-menu__label">
@@ -160,9 +165,12 @@ export function AppShell() {
                                 aria-hidden="true"
                             />
                         </NavLink>
-                    </nav>
+                    </nav> : isHallway ? <nav className="app-nav app-nav--hallway" aria-label="Shared spaces navigation">
+                        <NavLink className="app-nav__link" to="/reading-room"><span className="drawer-nav-menu__label-holder"><span className="drawer-nav-menu__label">Reading Room</span></span><span className="drawer-nav-menu__pull" aria-hidden="true" /></NavLink>
+                        <NavLink className="app-nav__link" to="/listening-room"><span className="drawer-nav-menu__label-holder"><span className="drawer-nav-menu__label">Listening Room</span></span><span className="drawer-nav-menu__pull" aria-hidden="true" /></NavLink>
+                    </nav> : null}
                 </div>
-            </header>
+            </header> : null}
 
             <main
                 ref={mainRef}

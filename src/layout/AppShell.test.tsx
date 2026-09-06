@@ -30,7 +30,7 @@ describe('AppShell layout and navigation', () => {
     it(
         'exposes skip link, landmarks, and primary navigation',
         async () => {
-            await renderAppTree(['/'])
+            await renderAppTree(['/reading-room'])
 
             expect(
                 screen.getByRole('link', {
@@ -43,7 +43,7 @@ describe('AppShell layout and navigation', () => {
             ).toBeInTheDocument()
 
             const primaryNav = screen.getByRole('navigation', {
-                name: 'Primary navigation',
+                name: 'Reading Room navigation',
             })
 
             expect(primaryNav).toBeInTheDocument()
@@ -52,7 +52,7 @@ describe('AppShell layout and navigation', () => {
                 within(primaryNav).getByRole('link', {
                     name: 'Dashboard',
                 }),
-            ).toHaveAttribute('href', '/dashboard')
+            ).toHaveAttribute('href', '/reading-room/dashboard')
 
             expect(
                 within(primaryNav).getByRole('button', {
@@ -64,7 +64,7 @@ describe('AppShell layout and navigation', () => {
                 within(primaryNav).getByRole('link', {
                     name: 'Loans',
                 }),
-            ).toHaveAttribute('href', '/loans')
+            ).toHaveAttribute('href', '/reading-room/loans')
 
             expect(
                 screen.getByRole('main'),
@@ -78,7 +78,7 @@ describe('AppShell layout and navigation', () => {
     )
 
     it('opens the Collection menu with browse and manage destinations', async () => {
-        await renderAppTree(['/'])
+        await renderAppTree(['/reading-room'])
 
         const collectionButton = screen.getByRole(
             'button',
@@ -96,7 +96,7 @@ describe('AppShell layout and navigation', () => {
 
         const primaryNav = within(
             screen.getByRole('navigation', {
-                name: 'Primary navigation',
+                name: 'Reading Room navigation',
             }),
         )
 
@@ -146,6 +146,16 @@ describe('AppShell layout and navigation', () => {
         ).not.toBeInTheDocument()
     })
 
+    it('uses album-native destinations in the Listening Room without a cross-room link', async () => {
+        await renderAppTree(['/listening-room'])
+        const navigation = screen.getByRole('navigation', { name: 'Listening Room navigation' })
+        expect(within(navigation).getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/listening-room/dashboard')
+        expect(within(navigation).getByRole('link', { name: 'Loans' })).toHaveAttribute('href', '/listening-room/loans')
+        fireEvent.click(within(navigation).getByRole('button', { name: 'Collection' }))
+        expect(within(navigation).getByRole('link', { name: 'Browse' })).toHaveAttribute('href', '/albums')
+        expect(within(navigation).queryByRole('link', { name: /Reading Room/i })).not.toBeInTheDocument()
+    })
+
 
     it('marks the active navigation trunk for child routes', async () => {
         await renderAppTree(['/books'])
@@ -169,24 +179,13 @@ describe('AppShell layout and navigation', () => {
         ).not.toHaveAttribute('aria-current')
     })
 
-    it('marks the Collection trunk as active on /wishlists', async () => {
+    it('keeps shared wishlists outside either room navigation', async () => {
         await renderAppTree(['/wishlists'])
-
-        expect(
-            screen.getByRole('button', {
-                name: 'Collection',
-            }),
-        ).toHaveAttribute('data-active', 'true')
-
-        expect(
-            screen.getByRole('link', {
-                name: 'Loans',
-            }),
-        ).not.toHaveAttribute('aria-current')
+        expect(screen.queryByRole('navigation', { name: /Room navigation/ })).not.toBeInTheDocument()
     })
 
-    it('marks Dashboard as current at /dashboard', async () => {
-        await renderAppTree(['/dashboard'])
+    it('marks Dashboard as current in the Reading Room', async () => {
+        await renderAppTree(['/reading-room/dashboard'])
 
         expect(
             screen.getByRole('link', {
@@ -251,23 +250,9 @@ describe('AppShell layout and navigation', () => {
         ).toBeInTheDocument()
     })
 
-    it('marks the Collection trunk as active on /collections', async () => {
+    it('keeps shared collections outside either room navigation', async () => {
         await renderAppTree(['/collections'])
-
-        expect(
-            screen.getByRole('button', {
-                name: 'Collection',
-            }),
-        ).toHaveAttribute(
-            'data-active',
-            'true',
-        )
-
-        expect(
-            screen.getByRole('link', {
-                name: 'Loans',
-            }),
-        ).not.toHaveAttribute('aria-current')
+        expect(screen.queryByRole('navigation', { name: /Room navigation/ })).not.toBeInTheDocument()
     })
 
     it('recovers from unknown routes with a home link', async () => {
@@ -287,8 +272,8 @@ describe('AppShell layout and navigation', () => {
         ).toHaveAttribute('href', '/')
     })
 
-    it('marks Loans as current at /loans', async () => {
-        await renderAppTree(['/loans'])
+    it('marks Loans as current in the Reading Room', async () => {
+        await renderAppTree(['/reading-room/loans'])
 
         expect(
             screen.getByRole('link', {
@@ -335,7 +320,7 @@ describe('AppShell layout and navigation', () => {
         await waitFor(() => {
             expect(
                 router.state.location.pathname,
-            ).toBe('/loans')
+            ).toBe('/reading-room/loans')
 
             expect(
                 router.state.location.search,

@@ -46,6 +46,8 @@ import {
 import {
     randomHomeQuote,
 } from '../homeQuotes'
+import listeningRoomImage from '../../../assets/Listening_Room.png'
+import readingRoomImage from '../../../assets/Reading_Room.png'
 
 const STAFF_PICKS_NAME = 'Staff Picks'
 
@@ -181,6 +183,17 @@ export function HomePage() {
                     </div>
                 ) : null}
             </div>
+
+            <nav className="home-room-links" aria-label="Enter a room">
+                <AppLink to="/listening-room">
+                    <strong className="home-room-links__label">Listening Room</strong>
+                    <img src={listeningRoomImage} alt="" />
+                </AppLink>
+                <AppLink to="/reading-room">
+                    <strong className="home-room-links__label">Reading Room</strong>
+                    <img src={readingRoomImage} alt="" />
+                </AppLink>
+            </nav>
 
             <section
                 className="home-section home-section--recent"

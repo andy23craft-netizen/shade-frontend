@@ -550,7 +550,7 @@ export function BookDetailsPage() {
 
                     {canCheckin ? (
                         <AppLink
-                            to={`/loans?bookId=${encodeURIComponent(book.book_id)}`}
+                            to={`/reading-room/loans?bookId=${encodeURIComponent(book.book_id)}`}
                             variant="primary"
                         >
                             Check In

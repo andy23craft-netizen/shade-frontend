@@ -8,6 +8,11 @@ export const HomePage = lazy(() =>
     ),
 )
 
+export const ReadingRoomPage = lazy(() => import('../features/rooms/routes/ReadingRoomPage').then(module => ({ default: module.ReadingRoomPage })))
+export const ListeningRoomPage = lazy(() => import('../features/rooms/routes/ListeningRoomPage').then(module => ({ default: module.ListeningRoomPage })))
+export const ListeningDashboardPage = lazy(() => import('../features/dashboard/routes/ListeningDashboardPage').then(module => ({ default: module.ListeningDashboardPage })))
+export const AlbumLoansPage = lazy(() => import('../features/loans/routes/AlbumLoansPage').then(module => ({ default: module.AlbumLoansPage })))
+
 export const AboutPage = lazy(() =>
     import('../features/about/routes/AboutPage').then(
         (module) => ({

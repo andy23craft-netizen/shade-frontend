@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { LegacyCheckinRedirect } from './LegacyCheckinRedirect'
 import { AppShell } from '../layout/AppShell'
 import { LegacyCheckoutRedirect } from './LegacyCheckoutRedirect'
@@ -26,6 +26,10 @@ import {
     AlbumDetailsPage,
     EditAlbumPage,
     AlbumBulkAddPage,
+    ReadingRoomPage,
+    ListeningRoomPage,
+    ListeningDashboardPage,
+    AlbumLoansPage,
 } from './lazyRoutePages'
 import { routeMetadata } from './routeMetadata'
 
@@ -47,6 +51,8 @@ export const routeConfig = [
                 },
                 element: <AboutPage />,
             },
+            { path: routeMetadata.readingRoom.path, handle: { title: routeMetadata.readingRoom.title }, element: <ReadingRoomPage /> },
+            { path: routeMetadata.listeningRoom.path, handle: { title: routeMetadata.listeningRoom.title }, element: <ListeningRoomPage /> },
             {
                 path: routeMetadata.dashboard.path,
                 handle: {
@@ -54,6 +60,8 @@ export const routeConfig = [
                 },
                 element: <DashboardPage />,
             },
+            { path: '/dashboard', element: <Navigate to={routeMetadata.dashboard.path} replace /> },
+            { path: routeMetadata.listeningDashboard.path, handle: { title: routeMetadata.listeningDashboard.title }, element: <ListeningDashboardPage /> },
             {
                 path: routeMetadata.books.path,
                 handle: {
@@ -156,6 +164,8 @@ export const routeConfig = [
                 },
                 element: <LoansPage />,
             },
+            { path: '/loans', element: <Navigate to={routeMetadata.loans.path} replace /> },
+            { path: routeMetadata.albumLoans.path, handle: { title: routeMetadata.albumLoans.title }, element: <AlbumLoansPage /> },
             {
                 path: routeMetadata.shelves.path,
                 handle: {

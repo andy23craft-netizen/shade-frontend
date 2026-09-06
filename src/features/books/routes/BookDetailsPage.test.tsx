@@ -691,7 +691,7 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/loans?bookId=${encodeURIComponent(
+            `/reading-room/loans?bookId=${encodeURIComponent(
                 completeBook.book_id,
             )}`
         )
@@ -777,7 +777,7 @@ describe('BookDetailsPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            `/loans?bookId=${encodeURIComponent(
+            `/reading-room/loans?bookId=${encodeURIComponent(
                 completeBook.book_id,
             )}`
         )

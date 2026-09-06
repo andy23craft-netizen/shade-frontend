@@ -24,9 +24,9 @@
 .album-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; padding: var(--space-5); background: var(--color-card-muted); border: 1px solid var(--color-card-border); border-radius: var(--radius-card); box-shadow: var(--shadow-small); color: var(--color-surface-text); }
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1.5rem; }
 .album-browser { display: grid; grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2.5rem); align-items: start; }
-.album-browser__rail { position: sticky; top: calc(var(--header-height, 5rem) + 1rem); max-height: calc(100vh - 7rem); overflow: auto; padding: var(--space-5); border: 1px solid var(--color-card-border); border-radius: var(--radius-card); background: var(--color-card-muted); color: var(--color-surface-text); }
+.album-browser__rail { position: sticky; top: calc(var(--header-height, 5rem) + 1rem); padding: var(--space-5); border: 1px solid var(--color-card-border); border-radius: var(--radius-card); background: var(--color-card-muted); color: var(--color-surface-text); }
 .album-browser__rail h2 { margin-top: 0; }
-.album-browser__rail .album-filters { display: grid; grid-template-columns: 1fr; margin: 0; padding: 0; border: 0; box-shadow: none; }
+.album-browser__rail .album-filters { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; box-shadow: none; }
 .album-browser__mobile { display: none; }
 .album-filters__deleted { display: flex; gap: .625rem; align-items: start; }
 .album-browser__results { min-width: 0; }
@@ -61,10 +61,65 @@
 .album-form { display: grid; gap: 1.5rem; max-width: 60rem; }
 .album-form section { padding: 1.5rem; border: 1px solid var(--color-card-border); border-radius: var(--radius-card); background: var(--color-card-muted); box-shadow: var(--shadow-small); color: var(--color-surface-text); }
 .album-form__choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .4rem; max-height: 12rem; overflow: auto; margin-bottom: .5rem; }
+.album-form__picker { display: grid; gap: var(--space-3); }
+.album-form__picker select[multiple] { min-height: 8.5rem; padding: var(--space-2); background: var(--color-surface); }
+.album-form__picker .button { justify-self: start; }
+.album-form__vocabulary { position: relative; min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.album-form__vocabulary legend { padding: 0; font-weight: 700; }
+.album-form__vocabulary-empty { color: var(--color-surface-text-muted); font-style: italic; }
+.album-form__vocabulary .book-form__category-dropdown { width: min(28rem, calc(100vw - 5rem)); }
 .dashboard-paper--albums { border-top-color: #6d263f; }
 .album-dashboard-breakdowns dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .5rem; }
 .album-dashboard-breakdowns dl div { display: flex; justify-content: space-between; border-bottom: 1px dotted currentColor; }
 @media (max-width: 700px) { .album-filters, .album-detail__hero, .album-detail__columns { grid-template-columns: 1fr; } .album-browser { display: block; } .album-browser__rail { display: none; } .album-browser__mobile { display: block; margin-block: 1rem; } .album-browser__mobile .album-filters { margin: 0; padding: 0; border: 0; box-shadow: none; } }
+
+/* Room-level navigation and landing surfaces. */
+.app-shell--listening { --color-focus: #d6a84f; }
+.app-shell--listening .app-header { background: linear-gradient(90deg, #271b22, #29294f); }
+.app-shell--listening .drawer-nav-menu__panel { border-color: #d6a84f; background: #4a2d25; }
+.app-shell--neutral .app-header { background: transparent; box-shadow: none; }
+.app-shell--neutral .app-header__inner { justify-content: center; }
+
+.home-room-links, .room-landing__destinations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 2rem); width: min(100%, 58rem); margin-inline: auto; }
+.home-room-links .app-link, .room-landing__destinations .app-link { display: grid; align-content: center; gap: var(--space-2); min-height: 8rem; padding: var(--space-6); border: 1px solid var(--color-card-border); background: var(--color-card); color: var(--color-surface-text); box-shadow: var(--shadow-card); text-align: left; }
+.home-room-links strong, .room-landing__destinations strong { font-family: var(--font-family-heading); font-size: var(--font-size-h3); letter-spacing: .045em; text-transform: uppercase; }
+.home-room-links span, .room-landing__destinations span { color: var(--color-surface-text-muted); }
+.home-room-links .app-link:first-child { border-top: .35rem solid #c95f54; }
+.home-room-links .app-link:last-child { border-top: .35rem solid var(--color-brass); }
+.home-room-links .app-link { grid-template-rows: auto 1fr; min-height: 0; padding: 0; gap: 0; overflow: hidden; background: transparent; }
+.home-room-links__label { padding: var(--space-3) var(--space-4); background: var(--color-card); color: var(--color-surface-text); text-align: center; }
+.home-room-links img { display: block; width: 100%; aspect-ratio: 1370 / 1148; object-fit: cover; transition: transform var(--duration-normal) ease, filter var(--duration-normal) ease; }
+.home-room-links .app-link:hover img { transform: scale(1.015); filter: brightness(1.06); }
+.home-room-links .app-link:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+
+.room-landing { display: grid; gap: clamp(2.5rem, 6vw, 5rem); padding-block: clamp(2rem, 5vw, 5rem); }
+.room-landing__heading { display: grid; gap: var(--space-3); max-width: 48rem; margin-inline: auto; text-align: center; }
+.room-landing__heading h1, .room-landing__heading p { margin: 0; }
+.room-landing__heading h1 { position: relative; padding-block-end: var(--space-5); color: var(--color-brass); font-family: var(--font-family-heading); font-size: clamp(2.75rem, 8vw, 5.75rem); font-weight: 800; line-height: .95; letter-spacing: .055em; text-transform: uppercase; text-shadow: .025em .035em 0 rgb(0 0 0 / 28%); }
+.room-landing__heading h1::after { position: absolute; bottom: 0; left: 50%; width: min(80%, 28rem); height: .25rem; background: currentColor; content: ''; clip-path: polygon(.5% 8%, 99.5% 0, 100% 88%, 1% 100%); transform: translateX(-50%); opacity: .75; }
+.room-landing__eyebrow, .album-loans-page__eyebrow { font-family: var(--font-family-heading); font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.room-landing--reading { background: radial-gradient(circle at 85% 10%, rgb(169 134 72 / 12%), transparent 28rem); }
+.room-landing--listening, .listening-dashboard, .album-loans-page { --album-ivory: #f2e7ce; --album-paper: #fff8e8; --album-walnut: #4a2d25; --album-indigo: #29294f; --album-coral: #c95f54; --album-honey: #d6a84f; --album-teal: #397a78; }
+.room-landing--listening { margin: -2rem max(-4vw, -3rem); padding-inline: clamp(1rem, 5vw, 4rem); background: radial-gradient(circle at 82% 4%, rgb(214 168 79 / 28%), transparent 30rem), linear-gradient(135deg, rgb(41 41 79 / 12%), transparent 48%), var(--album-ivory); color: #271b22; }
+.room-landing--listening .room-landing__eyebrow { color: var(--album-indigo); }
+.room-landing--listening .room-landing__heading h1 { color: var(--album-indigo); text-shadow: .025em .035em 0 rgb(74 45 37 / 28%); }
+.room-landing--listening .room-landing__destinations .app-link { border-color: #b59669; background: var(--album-paper); box-shadow: .45rem .55rem 0 rgb(74 45 37 / 20%); }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 1) { border-top: .35rem solid var(--album-indigo); }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 2) { border-top: .35rem solid var(--album-coral); }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 3) { border-top: .35rem solid var(--album-teal); }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n) { border-top: .35rem solid var(--album-honey); }
+
+.listening-dashboard, .album-loans-page { position: relative; isolation: isolate; color: #271b22; }
+.listening-dashboard::before, .album-loans-page::before { position: absolute; inset: -2rem max(-4vw, -3rem); z-index: -1; background: radial-gradient(circle at 85% 5%, rgb(214 168 79 / 24%), transparent 28rem), var(--album-ivory); content: ''; }
+.listening-dashboard__heading { padding: var(--space-6); border-bottom: .35rem solid var(--album-indigo); background: var(--album-paper); }
+.listening-dashboard__heading :where(h1, p, span) { margin: 0; }
+.listening-dashboard__heading p { color: var(--album-indigo); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.listening-dashboard__console { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); margin-block-start: var(--space-6); }
+.listening-dashboard__console > section { padding: var(--space-6); border: .18rem solid var(--album-indigo); background: var(--album-paper); box-shadow: .45rem .55rem 0 rgb(74 45 37 / 20%); }
+.listening-dashboard__console h2 { color: var(--album-indigo); }
+.album-loans-page .circulation-record-card--album { border-top: .35rem solid var(--album-coral); background: var(--album-paper); }
+
+@media (max-width: 42rem) { .home-room-links, .room-landing__destinations, .listening-dashboard__console { grid-template-columns: 1fr; } }
 
 /* Listening Room: warm record-shop materials shared by album-only surfaces. */
 :where(.page--albums, .page--album-detail, .page--album-form, .album-bulk-add-page) {
@@ -122,6 +177,16 @@
   color: var(--album-walnut-dark);
 }
 
+.page--album-form .page-header h1 {
+  margin: 0;
+  color: var(--album-walnut-dark);
+  font-family: var(--font-family-heading);
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  letter-spacing: .045em;
+  text-transform: uppercase;
+  text-shadow: .025em .035em 0 rgb(74 45 37 / 18%);
+}
+
 .page--albums .albums-page__heading p {
   color: #51434a;
 }
@@ -153,6 +218,8 @@
 }
 
 .page--albums .album-browser__rail .field {
+  width: 100%;
+  min-width: 0;
   padding: .65rem .7rem;
   border-left: 0;
   background: #efe3ca;
@@ -164,6 +231,8 @@
 }
 
 .page--albums .album-browser__rail :where(input, select) {
+  width: 100%;
+  min-width: 0;
   color: #17131a;
 }
 
@@ -218,6 +287,9 @@
 .page--album-detail .album-detail__hero :where(h1, p) { color: inherit; }
 .page--album-detail .album-detail__artist { color: #efc979; }
 .page--album-detail .album-artwork { box-shadow: .65rem .75rem 0 rgb(0 0 0 / 32%); }
+.page--album-detail > .app-link:first-child { margin-block-end: var(--space-5); border-color: var(--album-indigo); background: var(--album-paper); color: var(--album-indigo); box-shadow: .2rem .25rem 0 rgb(74 45 37 / 18%); font-weight: 800; }
+.page--album-detail .detail-list dt { color: var(--album-walnut-dark); font-family: var(--font-family-sans); font-weight: 800; }
+.page--album-detail .detail-list dd { color: #51434a; font-family: var(--font-family-sans); font-weight: 400; }
 
 .album-liner-notes,
 .page--album-detail .album-detail__columns > section:last-child,
@@ -238,6 +310,24 @@
   letter-spacing: .045em;
 }
 
+.page--album-form .album-form .album-form__track-list {
+  border-color: #a98652;
+  background:
+    repeating-linear-gradient(90deg, #38343c 0 .3rem, #302d34 .3rem .6rem);
+  box-shadow:
+    inset 0 0 0 .25rem rgb(214 168 79 / 12%),
+    .35rem .45rem 0 rgb(39 27 34 / 18%);
+  color: #fff7e4;
+}
+
+.page--album-form .album-form .album-form__track-list h2 {
+  color: #efc979;
+}
+
+.page--album-form .album-form .album-form__track-list :where(.field__label, .field__help) {
+  color: #fff7e4;
+}
+
 .page--album-detail :where(.album-counter, .album-artwork-manager) {
   border-color: #a98652;
   background:
@@ -247,6 +337,31 @@
 }
 
 .page--album-detail :where(.album-counter, .album-artwork-manager) h2 { color: #efc979; }
+:is(
+  .page--albums,
+  .page--album-detail,
+  .page--album-form,
+  .album-bulk-add-page,
+  .album-loans-page,
+  .listening-dashboard
+) .button--primary {
+  border-color: #1d193d;
+  background: var(--album-indigo);
+  color: #fff8e8;
+}
+
+:is(
+  .page--albums,
+  .page--album-detail,
+  .page--album-form,
+  .album-bulk-add-page,
+  .album-loans-page,
+  .listening-dashboard
+) .button--primary:hover:not(:disabled) {
+  border-color: var(--album-honey);
+  background: #3b3b70;
+  color: #fff;
+}
 
 .wishlist-membership--album {
   border-left: .35rem solid #397a78;
