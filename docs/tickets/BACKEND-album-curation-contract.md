@@ -8,6 +8,7 @@ Backend 1.1.0 supports mixed wishlist reads plus album add/remove, but it does n
 
 ## Required wishlist additions
 
+- Extend `GET /albums` with an explicit placement-state filter that can return unshelved albums. The default owned-album view may remain shelved-only, but the frontend needs a supported recovery/browse path for albums created without `shelf_name` before they receive a wishlist membership.
 - Add an album-specific membership update route for notes, with explicit `notes: string | null` semantics and omission/empty-body validation matching the existing book membership update.
 - Add one atomic operation that moves an album wishlist membership to an eligible album crate. It must validate the wishlist, typed album membership, album, and destination before changing state.
 - On every validation, conflict, or persistence failure, preserve the source membership and all membership metadata, including notes, priority, status, URL, and creation/order data.
