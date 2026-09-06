@@ -1,3 +1,5 @@
+import dalmoHeader from '../assets/Dalmo_header.webp'
+import dalmoHero from '../assets/Dalmo_hero.webp'
 import jamiesHeader from '../assets/Jamies_header.webp'
 import jamiesHero from '../assets/Jamies_hero.webp'
 import shadeHeader from '../assets/Shade_Library_Header.webp'
@@ -22,10 +24,22 @@ const JAMIE_BRANDING: LibraryBranding = {
     showHomeQuote: false,
 }
 
+const DALMO_BRANDING: LibraryBranding = {
+    header: dalmoHeader,
+    hero: dalmoHero,
+    showHomeQuote: true,
+}
+
 export function getLibraryBranding(
     context: LibraryContext | null,
 ): LibraryBranding {
-    return context?.id === 'jamie'
-        ? JAMIE_BRANDING
-        : SHADE_BRANDING
+    if (context?.id === 'jamie') {
+        return JAMIE_BRANDING
+    }
+
+    if (context?.id === 'dalmo') {
+        return DALMO_BRANDING
+    }
+
+    return SHADE_BRANDING
 }

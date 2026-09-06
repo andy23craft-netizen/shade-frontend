@@ -35,11 +35,12 @@ implemented routes. Backend
 until each route ships into OpenAPI.
 
 Frontend planning decompositions live in
-`docs/tickets/PRODUCT_REQS.V2.PLAN-03-books-global.md`. PLAN-03 is the consolidated
-remaining-work breakdown; its former album decomposition is split into `FEAT-01` through
-`FEAT-06` in `docs/tickets`. Neither the plan nor its tickets replace this document or
-OpenAPI. Frontend multi-tenant hostname routing is shipped baseline; production multi-host
-handoff remains orchestrator `FEAT-08`.
+`docs/tickets/PRODUCT_REQS.V2.PLAN-02-multi-tenancy.md` and
+`docs/tickets/PRODUCT_REQS.V2.PLAN-03-books.md`. PLAN-02 owns multi-tenant setup, settings,
+identity, deployment, and operational isolation; PLAN-03 owns book-side features. Music
+support is split into `FEAT-01` through `FEAT-06` in `docs/tickets`. Neither the plans nor
+their tickets replace this document or OpenAPI. Frontend multi-tenant hostname routing is
+shipped baseline; production multi-host handoff remains orchestrator `FEAT-08`.
 
 Labels used below:
 

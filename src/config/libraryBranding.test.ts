@@ -13,22 +13,23 @@ describe('getLibraryBranding', () => {
         expect(branding.showHomeQuote).toBe(false)
     })
 
-    it('keeps Shade artwork for Andy and Dalmo', () => {
-        for (const hostname of [
-            'shade.library.spir.es',
-            'dalmo.library.spir.es',
-        ]) {
-            const branding = getLibraryBranding(
-                resolveLibraryContext(hostname),
-            )
+    it('uses Dalmo-specific header and hero artwork', () => {
+        const branding = getLibraryBranding(
+            resolveLibraryContext('dalmo.library.spir.es'),
+        )
 
-            expect(branding.header).toContain(
-                'Shade_Library_Header.webp',
-            )
-            expect(branding.hero).toContain(
-                'Shade_Library_Hero.webp',
-            )
-            expect(branding.showHomeQuote).toBe(true)
-        }
+        expect(branding.header).toContain('Dalmo_header.webp')
+        expect(branding.hero).toContain('Dalmo_hero.webp')
+        expect(branding.showHomeQuote).toBe(true)
+    })
+
+    it('uses Shade artwork for Andy', () => {
+        const branding = getLibraryBranding(
+            resolveLibraryContext('shade.library.spir.es'),
+        )
+
+        expect(branding.header).toContain('Shade_Library_Header.webp')
+        expect(branding.hero).toContain('Shade_Library_Hero.webp')
+        expect(branding.showHomeQuote).toBe(true)
     })
 })

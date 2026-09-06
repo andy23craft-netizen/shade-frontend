@@ -6,7 +6,7 @@ infrastructure derived from PLAN-03.
 **Dependency group:** Exact-copy QR labels and circulation scanning.
 
 **Depends on:** Backend `POST /catalog/resolve-code`; shared QR generation/printing;
-shared scanner and circulation selection; Enable Loans settings.
+shared scanner and circulation selection from PLAN-03; Enable Loans settings from PLAN-02.
 
 ## Objective
 

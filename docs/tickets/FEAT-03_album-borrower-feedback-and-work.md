@@ -5,7 +5,7 @@
 **Dependency group:** Borrower feedback and media-specific Work identity.
 
 **Depends on:** Backend loan-feedback and Work grouping routes; `FEAT-30` for shared borrower
-name presentation; Enable Loans settings work derived from PLAN-03.
+name presentation; Enable Loans settings work derived from PLAN-02.
 
 ## Objective
 

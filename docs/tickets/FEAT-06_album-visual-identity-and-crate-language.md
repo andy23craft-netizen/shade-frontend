@@ -2,10 +2,11 @@
 
 **Status:** Ready to implement in bounded surface slices.
 
-**Dependency group:** Media and hosted-library visual identity.
+**Dependency group:** Album media identity.
 
-**Depends on:** Shared visual-quality and media-navigation work derived from PLAN-03. A
-complete up-front visual brief or asset inventory is not required.
+**Depends on:** Shared visual-quality conventions and any media-navigation work. PLAN-02 owns
+per-library color/personality identity. A complete up-front visual brief or asset inventory
+is not required.
 
 ## Objective
 

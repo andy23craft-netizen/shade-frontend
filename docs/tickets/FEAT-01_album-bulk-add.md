@@ -5,7 +5,7 @@
 **Dependency group:** Album intake and guided setup.
 
 **Depends on:** Shipped book Build Mode patterns; backend album bulk lookup/import routes;
-the guided setup ticket derived from PLAN-03 for first-run composition.
+the guided setup ticket derived from PLAN-02 for first-run composition.
 
 ## Objective
 

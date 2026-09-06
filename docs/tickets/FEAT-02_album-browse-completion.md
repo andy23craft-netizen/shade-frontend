@@ -26,6 +26,9 @@ controls while preserving route history independently from Books.
       equivalent accessible modal treatment.
 - [ ] Progressive loading uses the shared Back to Top behavior and preserves focus,
       cancellation, loading, empty, and error semantics.
+- [ ] Album forms and rendered metadata omit absent optional values instead of presenting or
+      accidentally serializing `null`; intentional clear operations follow the authoritative
+      API contract.
 - [ ] Automated tests cover URL round trips, history restoration, keyboard behavior, mobile
       layout, 200% text zoom, and progressive loading.
 
