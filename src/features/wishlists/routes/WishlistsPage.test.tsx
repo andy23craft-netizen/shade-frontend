@@ -38,6 +38,7 @@ import {
     useDeleteWishlist,
     useInfiniteWishlistBooks,
     useRemoveWishlistBook,
+    useRemoveWishlistAlbum,
     useUpdateWishlist,
     useUpdateWishlistBook,
     useWishlistItems,
@@ -64,6 +65,7 @@ vi.mock('../../../api/wishlistsQueries', () => ({
     useDeleteWishlist: vi.fn(),
     useAddWishlistBook: vi.fn(),
     useRemoveWishlistBook: vi.fn(),
+    useRemoveWishlistAlbum: vi.fn(),
     useUpdateWishlist: vi.fn(),
     useUpdateWishlistBook: vi.fn(),
     useWishlistItems: vi.fn(),
@@ -167,6 +169,7 @@ const mockUseDeleteWishlist = vi.mocked(
 )
 const mockUseAddWishlistBook = vi.mocked(useAddWishlistBook)
 const mockUseRemoveWishlistBook = vi.mocked(useRemoveWishlistBook)
+const mockUseRemoveWishlistAlbum = vi.mocked(useRemoveWishlistAlbum)
 const mockUseUpdateWishlist = vi.mocked(useUpdateWishlist)
 const mockUseUpdateWishlistBook = vi.mocked(useUpdateWishlistBook)
 const mockUseInfiniteWishlistBooks =
@@ -261,6 +264,9 @@ function mockIdleWrites() {
     )
     mockUseRemoveWishlistBook.mockReturnValue(
         idleMutation() as unknown as ReturnType<typeof useRemoveWishlistBook>,
+    )
+    mockUseRemoveWishlistAlbum.mockReturnValue(
+        idleMutation() as unknown as ReturnType<typeof useRemoveWishlistAlbum>,
     )
     mockUseUpdateWishlist.mockReturnValue(
         idleMutation() as unknown as ReturnType<typeof useUpdateWishlist>,
@@ -572,7 +578,7 @@ describe('WishlistsPage', () => {
 
         expect(
             screen.getByText(
-                'No books have been added to this wishlist yet.',
+                'No books or albums have been added to this wishlist yet.',
             ),
         ).toBeInTheDocument()
     })
@@ -653,7 +659,7 @@ describe('WishlistsPage', () => {
         const dialog = screen.getByRole('dialog')
 
         expect(dialog).toHaveTextContent(
-            'catalog books remain',
+            'catalog books and albums remain',
         )
 
         fireEvent.click(
@@ -678,7 +684,7 @@ describe('WishlistsPage', () => {
         fireEvent.change(within(wishlistCard!).getByLabelText('Description'), { target: { value: 'Updated list' } })
         fireEvent.click(within(wishlistCard!).getByRole('button', { name: 'Save Wishlist' }))
         expect(mutate).toHaveBeenCalledWith(
-            { wishlistId: 'wishlist-1', wishlist: { description: 'Updated list' } },
+            { wishlistId: 'wishlist-1', wishlist: { name: 'TBR', description: 'Updated list' } },
             expect.any(Object),
         )
     })

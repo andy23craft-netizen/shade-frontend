@@ -1,6 +1,7 @@
 # FEAT-04 -- Album Wishlists and Collections
 
-**Status:** Ready to be implemented.
+**Status:** In progress — frontend work supported by backend 1.1.0 is implemented; remaining work is blocked on
+`BACKEND-album-curation-contract.md`.
 
 **Dependency group:** Album curation and acquisition.
 
@@ -15,12 +16,13 @@ while retaining album-specific identity, artwork, metadata, and **crate** termin
 
 ## Acceptance criteria
 
-- [ ] Album users can create, rename, describe, and delete Wishlists and Collections through
+- [x] Album users can create, rename, describe, and delete Wishlists and Collections through
       the same shared management patterns used for books.
-- [ ] Wishlist views render book and album memberships as explicitly typed rows; album rows
+- [x] Wishlist views render book and album memberships as explicitly typed rows; album rows
       use `album_id`, authenticated artwork, title, artists, format, and album routes without
       passing album identifiers into book APIs or controls.
-- [ ] Albums can be added to and removed from a Wishlist from album browse/detail flows, with
+- [ ] Albums can be added from album browse/detail and removed from the Wishlist view; direct
+      browse/detail removal still needs a membership lookup/typed mutation contract, with
       duplicate and stale-state behavior matching the existing book experience.
 - [ ] Album Wishlist membership notes can be added, edited, and cleared without changing
       book membership operations.

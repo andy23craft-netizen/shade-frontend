@@ -277,6 +277,7 @@ function WishlistSection({
 }) {
     const updateWishlist = useUpdateWishlist()
     const [editing, setEditing] = useState(false)
+    const [name, setName] = useState(wishlist.name)
     const [description, setDescription] = useState(wishlist.description ?? '')
     const [editError, setEditError] = useState<string | null>(null)
     const membershipsQuery =
@@ -326,14 +327,6 @@ function WishlistSection({
                         <p>{wishlist.description}</p>
                     ) : null}
 
-                    {expanded &&
-                    membershipsQuery.isSuccess ? (
-                        <p>
-                            {total === 1
-                                ? '1 book'
-                                : `${total} books`}
-                        </p>
-                    ) : null}
                 </div>
 
                 <div className="wishlist-card__actions">
@@ -341,6 +334,7 @@ function WishlistSection({
                         type="button"
                         variant="secondary"
                         onClick={() => {
+                            setName(wishlist.name)
                             setDescription(wishlist.description ?? '')
                             setEditError(null)
                             setEditing(true)
@@ -378,11 +372,19 @@ function WishlistSection({
                         event.preventDefault()
                         if (updateWishlist.isPending) return
                         setEditError(null)
+                        const trimmedName = name.trim()
                         const trimmed = description.trim()
+                        if (trimmedName === '') {
+                            setEditError('Enter a wishlist name.')
+                            return
+                        }
                         updateWishlist.mutate(
                             {
                                 wishlistId: wishlist.wishlist_id,
-                                wishlist: { description: trimmed === '' ? null : trimmed },
+                                wishlist: {
+                                    name: trimmedName,
+                                    description: trimmed === '' ? null : trimmed,
+                                },
                             },
                             {
                                 onSuccess: () => setEditing(false),
@@ -398,6 +400,14 @@ function WishlistSection({
                     }}
                 >
                     {editError ? <Alert variant="error">{editError}</Alert> : null}
+                    <Field label="Name">
+                        <input
+                            value={name}
+                            maxLength={255}
+                            disabled={updateWishlist.isPending}
+                            onChange={(event) => setName(event.target.value)}
+                        />
+                    </Field>
                     <Field label="Description">
                         <textarea
                             value={description}
@@ -419,7 +429,7 @@ function WishlistSection({
 
             {!expanded ? null : (
                 <>
-                    <WishlistAlbums wishlistId={wishlist.wishlist_id} enabled={expanded} />
+                    <WishlistAlbums wishlistId={wishlist.wishlist_id} enabled={expanded} bookTotal={total} />
                     {membershipsQuery.isPending ? (
                         <LoadingState
                             label={`Loading ${wishlist.name}…`}
@@ -439,19 +449,13 @@ function WishlistSection({
                     ) : null}
 
                     {membershipsQuery.isSuccess &&
-                    total === 0 ? (
-                        <p>
-                            No books have been added to this
-                            wishlist yet.
-                        </p>
-                    ) : null}
-
-                    {membershipsQuery.isSuccess &&
                     items.length > 0 ? (
-                        <ul
-                            className="wishlist-memberships"
-                            aria-label={`${wishlist.name} books`}
-                        >
+                        <section className="wishlist-books">
+                            <div className="wishlist-media-heading">
+                                <h3>Books</h3>
+                                <span>{total} {total === 1 ? 'book' : 'books'}</span>
+                            </div>
+                            <ul className="wishlist-memberships" aria-label={`${wishlist.name} books`}>
                             {items.map(
                                 (
                                     membership,
@@ -472,7 +476,8 @@ function WishlistSection({
                                     />
                                 ),
                             )}
-                        </ul>
+                            </ul>
+                        </section>
                     ) : null}
 
                     {membershipsQuery.isFetchingNextPage ? (
@@ -796,7 +801,7 @@ export function WishlistsPage() {
             {wishlists.length === 0 ? (
                 <EmptyState title="No wishlists yet">
                     Create your first wishlist to start
-                    collecting books you want.
+                    collecting books and albums you want.
                 </EmptyState>
             ) : (
                 <ul
@@ -897,9 +902,7 @@ export function WishlistsPage() {
                         </strong>
                         ? Memberships on this wishlist
                         are removed permanently, but
-                        catalog books remain. Individual
-                        books can be moved to a shelf
-                        without deleting the wishlist.
+                        catalog books and albums remain.
                     </p>
                 ) : (
                     <p>

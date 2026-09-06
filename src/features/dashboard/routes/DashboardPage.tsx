@@ -778,7 +778,7 @@ export function DashboardPage() {
                         <div className="dashboard-metric"><dt>Average Rating</dt><dd>{listening.average_rating === null ? 'Not enough album data' : displayAverage(listening.average_rating, ' / 5')}</dd></div>
                         <div className="dashboard-metric"><dt>Lifetime Album Loans</dt><dd>{albumBorrowing.lifetime_loans}</dd></div>
                     </dl>
-                    {breakdownsQuery.data ? <div className="album-dashboard-breakdowns"><h3>Formats</h3><dl>{(breakdownsQuery.data.albums_by_media_format ?? []).map(bucket => <div key={bucket.key}><dt>{bucket.key}</dt><dd>{bucket.count}</dd></div>)}</dl><h3>Album shelves</h3><dl>{(breakdownsQuery.data.albums_by_shelf ?? []).map(bucket => <div key={bucket.key}><dt>{bucket.key}</dt><dd>{bucket.count}</dd></div>)}</dl></div> : null}
+                    {breakdownsQuery.data ? <div className="album-dashboard-breakdowns"><h3>Formats</h3><dl>{(breakdownsQuery.data.albums_by_media_format ?? []).map(bucket => <div key={bucket.key}><dt>{bucket.key}</dt><dd>{bucket.count}</dd></div>)}</dl><h3>Album crates</h3><dl>{(breakdownsQuery.data.albums_by_shelf ?? []).map(bucket => <div key={bucket.key}><dt>{bucket.key}</dt><dd>{bucket.count}</dd></div>)}</dl></div> : null}
                 </section>
             </div>
         </section>
