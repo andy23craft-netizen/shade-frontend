@@ -5,12 +5,15 @@ contract additions required only where current query parameters are insufficient
 
 **Dependency group:** Catalog navigation and progressive-list controls.
 
-**Depends on:** Shared persistent-control and Back to Top work derived from PLAN-03.
+**Does not depend on:** Shared persistent-control and Back to Top work derived from PLAN-03;
+those features can be added afterward.
 
 ## Objective
 
 Complete album browsing with album-owned URL state, progressive loading, and responsive
-controls while preserving route history independently from Books.
+controls while preserving route history independently from Books. Create a visually distinct
+album area that is immediately distinguishable from book browsing: use a grid rather than a
+list, guided by `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`.
 
 ## Acceptance criteria
 

@@ -1,4 +1,4 @@
-# FEAT-05 -- Mixed-media Home Recent Additions
+# FEAT-92 -- Mixed-media Home Recent Additions
 
 **Status:** Blocked on the catalog recent-additions contract or an explicit decision that the
 shipped APIs are sufficient.

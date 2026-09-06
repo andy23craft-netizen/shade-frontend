@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useConnection } from '../features/connection/useConnection'
 import { createAlbumsApi, type ListAlbumsOptions } from './albumsApi'
-import type { AlbumCreate, AlbumUpdate, CheckinRequest, CheckoutRequest, MarkPlayedRequest } from './apiTypes'
+import type { AlbumCreate, AlbumUpdate, BulkAlbumImportRequest, BulkAlbumLookupRequest, CheckinRequest, CheckoutRequest, MarkPlayedRequest } from './apiTypes'
 import { queryKeys } from './queryKeys'
 
 const cleanOptions = (options: ListAlbumsOptions) => ({
@@ -20,8 +20,39 @@ export function useAlbums(options: ListAlbumsOptions = {}) {
     const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); const key = cleanOptions(options)
     return useQuery({ queryKey: queryKeys.albums.list(key), queryFn: ({ signal }) => api.list({ ...options, signal }) })
 }
+const ALBUM_PAGE_SIZE = 24
+export function useInfiniteAlbums(options: Omit<ListAlbumsOptions, 'skip' | 'take'> = {}) {
+    const { apiClient } = useConnection()
+    const api = createAlbumsApi(apiClient)
+    const key = cleanOptions({ ...options, take: ALBUM_PAGE_SIZE })
+    return useInfiniteQuery({
+        queryKey: queryKeys.albums.list({ ...key, infinite: true }),
+        initialPageParam: 0,
+        queryFn: ({ pageParam, signal }) => api.list({ ...options, skip: pageParam, take: ALBUM_PAGE_SIZE, signal }),
+        getNextPageParam: (lastPage, pages) => {
+            const loaded = pages.reduce((count, page) => count + page.items.length, 0)
+            return loaded < lastPage.total ? loaded : undefined
+        },
+    })
+}
 export function useAlbum(id: string) { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useQuery({ queryKey: queryKeys.albums.detail(id), queryFn: ({ signal }) => api.get(id, { signal }), enabled: id !== '' }) }
 export function useAlbumLookup(value: string, kind: 'barcode' | 'discogs', enabled = false) { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useQuery({ queryKey: queryKeys.albums.lookup(value.trim(), kind), queryFn: ({ signal }) => api.lookup(value.trim(), kind, { signal }), enabled: enabled && value.trim() !== '', retry: false }) }
+export function useBulkAlbumLookup() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useMutation({ mutationFn: (request: BulkAlbumLookupRequest) => api.bulkLookup(request) }) }
+export function useBulkAlbumImport() {
+    const { apiClient } = useConnection()
+    const api = createAlbumsApi(apiClient)
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (request: BulkAlbumImportRequest) => api.bulkImport(request),
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: queryKeys.albums.all }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.wishlists.all }),
+            ])
+        },
+    })
+}
 
 function useAlbumMutation<T>(mutationFn: (value: T) => Promise<unknown>) { const queryClient = useQueryClient(); return useMutation({ mutationFn, onSuccess: async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: queryKeys.albums.all }), queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }), queryClient.invalidateQueries({ queryKey: queryKeys.loans.all }), queryClient.invalidateQueries({ queryKey: queryKeys.wishlists.all })]) } }) }
 export function useCreateAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation((album: AlbumCreate) => api.create(album)) }

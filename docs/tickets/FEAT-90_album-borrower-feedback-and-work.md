@@ -1,6 +1,6 @@
-# FEAT-03 -- Album borrower feedback and Work correction
+# FEAT-90 -- Album borrower feedback and Work correction
 
-**Status:** Blocked on the shared borrower-feedback and Work contracts.
+**Status:** Blocked on the shared borrower-feedback and Work contracts; defer until borrower feedback is in place for books to mirror existing schema.
 
 **Dependency group:** Borrower feedback and media-specific Work identity.
 

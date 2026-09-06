@@ -21,6 +21,7 @@ export const routeMetadata = {
   },
   albums: { path: '/albums', title: 'Albums', heading: 'Albums' },
   newAlbum: { path: '/albums/new', title: 'Add Album', heading: 'Add Album' },
+  bulkAddAlbums: { path: '/albums/bulk-add', title: 'Album Bulk Add', heading: 'Album Bulk Add' },
   albumDetails: { path: '/albums/:albumId', title: 'Album Details', heading: 'Album Details' },
   editAlbum: { path: '/albums/:albumId/edit', title: 'Edit Album', heading: 'Edit Album' },
   stash: {

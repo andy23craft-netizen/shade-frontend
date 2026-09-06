@@ -25,6 +25,7 @@ import {
     NewAlbumPage,
     AlbumDetailsPage,
     EditAlbumPage,
+    AlbumBulkAddPage,
 } from './lazyRoutePages'
 import { routeMetadata } from './routeMetadata'
 
@@ -62,6 +63,7 @@ export const routeConfig = [
             },
             { path: routeMetadata.albums.path, handle: { title: routeMetadata.albums.title }, element: <AlbumsPage /> },
             { path: routeMetadata.newAlbum.path, handle: { title: routeMetadata.newAlbum.title }, element: <NewAlbumPage /> },
+            { path: routeMetadata.bulkAddAlbums.path, handle: { title: routeMetadata.bulkAddAlbums.title }, element: <AlbumBulkAddPage /> },
             { path: routeMetadata.editAlbum.path, handle: { title: routeMetadata.editAlbum.title }, element: <EditAlbumPage /> },
             { path: routeMetadata.albumDetails.path, handle: { title: routeMetadata.albumDetails.title }, element: <AlbumDetailsPage /> },
             {

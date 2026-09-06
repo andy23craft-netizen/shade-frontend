@@ -33,7 +33,8 @@ This plan owns:
 
 This plan does not allow tenant themes to rearrange pages, change information architecture,
 rename shared administrative concepts, remove required state, or alter feature eligibility.
-Book features remain in PLAN-03; album/music features remain in `FEAT-01` through `FEAT-06`.
+Book features remain in PLAN-03; album/music features remain in ready tickets `FEAT-01`
+through `FEAT-05` and deferred tickets `FEAT-90` through `FEAT-92`.
 
 ## Shipped baseline (do not re-plan)
 

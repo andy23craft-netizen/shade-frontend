@@ -20,8 +20,9 @@ visual refinement.
 
 ## Scope boundary
 
-This plan owns only book-facing behavior. Music/album work lives in `FEAT-01` through
-`FEAT-06`. Multi-tenancy, per-library setup/settings, hosted-library identity, production
+This plan owns only book-facing behavior. Music/album work lives in ready tickets `FEAT-01`
+through `FEAT-05` and deferred tickets `FEAT-90` through `FEAT-92`. Multi-tenancy,
+per-library setup/settings, hosted-library identity, production
 multi-host delivery, and tenant-safe restore live in PLAN-02.
 
 Plan 3 may consume shared contracts, but its acceptance criteria describe the book
@@ -152,7 +153,7 @@ Browse/categories, Staff Picks, and Current Reading, with the stable functional 
 beneath it. Missing mappings fall back to ordinary headings. Quote data remains inert content
 and affects section headers only.
 
-Weather-aware selection remains V3. Mixed-media Recent Additions belongs to `FEAT-05`; this
+Weather-aware selection remains V3. Mixed-media Recent Additions belongs to `FEAT-92`; this
 section owns the book-side heading treatment and composition.
 
 ## 11. Book Dashboard analytics
@@ -227,7 +228,8 @@ reduced motion, and stay within the definitive visual performance guardrails.
 
 ## Deferred
 
-- Album/music work and mixed-media Home feed (`FEAT-01` through `FEAT-06`).
+- Album/music work and mixed-media Home feed (ready `FEAT-01` through `FEAT-05`; deferred
+  `FEAT-90` through `FEAT-92`).
 - Multi-tenant setup, identity, settings, deployment, and restore (PLAN-02).
 - Video, comics, board games, digital-media management, and album Collections.
 - Weather-aware discovery, historical resurfacing, spatial simulation, ambient audio,

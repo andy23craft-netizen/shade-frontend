@@ -1,4 +1,4 @@
-# Album UI Analogies — From Private Library to Record Store / Jazz Bar
+# Album UI Analogies — From Reading Room to Record Store Crate Digging
 
 **Status:** Ideation reference. These analogies are intentionally broader than current V2 scope. They describe a
 coherent album-side visual language without committing every idea to implementation.
@@ -7,50 +7,53 @@ coherent album-side visual language without committing every idea to implementat
 
 ## Core translation
 
-The book UI evokes a private library: Nabokov's office, card catalogs, loan cards, paper, dark wood, brass, glass,
-cloth binding, and ink stamps. The album UI should feel like the adjoining room in the same house, converted into an
-independent record shop that becomes a small jazz listening bar after dark.
+Shade is one library with multiple rooms. The book UI is the **Reading Room**, evoking Nabokov's office, card catalogs,
+loan cards, paper, dark wood, brass, glass, cloth binding, and ink stamps. The album UI is the **Listening Room**, an
+adjoining room shaped by the experience of crate digging in a warm, curated independent record shop.
 
 The two areas should clearly belong to one product and one physical imagination, but they should not be identical skins.
-The album side translates each library object into an object from record retail, hi-fi listening, live jazz, or archival
-music culture.
+The Listening Room translates each library object into an object from record retail, home hi-fi listening, collecting,
+or archival music culture. It should feel cozy but more colorful than the Reading Room, with confident handwritten
+accents and carefully restrained visual energy.
 
 | Library language | Album-side analogue |
 | --- | --- |
-| Private library / writer's office | Independent record store / intimate jazz listening bar |
+| Private library / writer's office | Warm, curated independent record store |
 | Card catalog | Record-bin dividers and handwritten shop index cards |
 | Catalog drawer | LP storage bin, flight case, or amplifier cabinet |
-| Library card | Record-shop price sticker, listening-station slip, or gig handbill |
-| Ink date stamp | Rubber-stamped arrival date, venue hand stamp, or pressing note |
+| Library card | Record-shop price sticker, want-list card, or staff recommendation slip |
+| Ink date stamp | Rubber-stamped arrival date, condition mark, or pressing note |
 | Book spine | LP spine in a tightly packed bin |
 | Book cover | Album sleeve displayed face-out |
 | Reading desk | Listening counter with turntable, headphones, and sleeve-rest |
 | Brass drawer pull | Knurled brass stereo knob, toggle switch, or case latch |
-| Library signage | Hand-painted shop sign, marquee lettering, or small neon wordmark |
-| Quiet stacks | Dense record bins and acoustically warm listening booths |
-| Librarian | Record-store clerk, selector, DJ, or house curator |
+| Library signage | Hand-painted shop sign, bold window lettering, or marker-written placard |
+| Quiet stacks | Dense record bins, face-out displays, and a cozy listening corner |
+| Librarian | Record-store clerk, collector, selector, or shop curator |
 | Author quote | Musician, composer, producer, or liner-notes quote |
 | Staff Picks | Staff Picks / Now Spinning wall |
-| Loan card | Checkout sleeve, listening log, or stamped tour-card grid |
+| Loan card | Checkout sleeve, listening log, or stamped shop ledger |
 | Footnote | Liner note, matrix/runout annotation, or session personnel note |
-| Dust motes in window light | Haze in a projector beam, warm lamp glow, or subtle vinyl dust |
+| Dust motes in window light | Sun across a record bin, warm lamp glow, or subtle vinyl dust |
 
 The target is not a photorealistic record store pasted behind the application. As on the book side, the interface should
-**behave** like its reference place: flipping through bins, pulling a sleeve forward, reading liner notes, setting a
-record on the listening counter, and seeing what the clerk recommends.
+**behave** like its reference place: flipping through bins, scanning handwritten dividers, pulling a sleeve forward,
+reading the back cover and liner notes, making a want-list discovery, and seeing what the clerk recommends. Crate digging
+is the primary interaction metaphor, not merely one decorative option among several.
 
 ## Illustration and art direction
 
 The original notes leave the exact illustrative style open. Album-side treatments can use the same chosen rendering
 family as the library while changing the subject matter. For example:
 
-- A mid-century library illustration becomes a Blue Note-era record-shop illustration with strong geometry and
-  restrained silhouettes.
-- Cozy anime library light becomes a late-night listening bar with amber lamps, rain on glass, and a slowly turning
-  record.
-- Graphic-novel stacks become high-contrast sleeve art, gig posters, inked musicians, and blocks of stage light.
+- A mid-century library illustration becomes a neighborhood record-shop illustration with strong geometry, colorful
+  sleeve blocks, and restrained silhouettes.
+- Cozy anime library light becomes a sunlit or lamplit record store with packed bins, plants, handwritten signs, and a
+  record waiting at a small listening station.
+- Graphic-novel stacks become high-contrast sleeve art, bold shop posters, inked hands flipping through records, and
+  blocks of saturated retail color.
 - Flat-vector card catalogs become modular record bins, speaker grilles, equalizer bars, and abstract sleeve shapes.
-- Cutout paper becomes layered concert posters, pasted price labels, torn ticket stubs, and collage-like album art.
+- Cutout paper becomes layered shop posters, pasted price labels, handwritten divider cards, and collage-like album art.
 - Stylized 3D furniture becomes walnut speaker cabinets, a turntable plinth, chrome controls, and rows of jacket spines.
 
 Psychedelic references can appear selectively for genre or collection accents, but should not become the default visual
@@ -58,38 +61,42 @@ language. The base room should remain calm enough for browsing metadata.
 
 ## Color palettes
 
-The house jewel tones, gold accents, plants, and dark wood can carry across both media areas. The album room can shift
-their balance toward stage light, lacquer, vinyl, and illuminated signage.
+The house jewel tones, gold accents, plants, and dark wood can carry across both rooms. The Listening Room shifts their
+balance toward colorful sleeve art, painted bins, glossy vinyl, bright shop signs, and sun-warmed surfaces. It should be
+noticeably brighter and bolder than the Reading Room without becoming loud or visually indiscriminate.
 
-| Existing palette idea | Record-store / jazz-bar use |
+| Existing palette idea | Listening Room use |
 | --- | --- |
-| Slate Storm | Speaker cloth, equipment panels, evening walls |
-| Mahogany Roast / Rosewood | Record bins, speaker cabinets, bar or listening counter |
+| Slate Storm | Speaker cloth, equipment panels, shadow beneath bins |
+| Mahogany Roast / Rosewood | Record bins, speaker cabinets, listening counter |
 | Golden Honey / Antique Bronze | Dial markings, case hardware, warm lamps, selected states |
-| Teal Canopy / Deep Forest | Upholstery, painted walls, plant accents, cool stage fill |
-| Ember Brick / Oxide Red | Neon accents, venue curtains, sale stickers, urgent states |
-| Ruby Leaf | Velvet banquette, record-label accents, featured releases |
-| Indigo Rain / Sapphire Blue | Late-night atmosphere, jazz-stage shadow, focused listening mode |
+| Teal Canopy / Deep Forest | Painted dividers, walls, plant accents, cool sleeve colors |
+| Ember Brick / Oxide Red | Sale stickers, shop signage, featured dividers, urgent states |
+| Ruby Leaf | Record-label accents, featured releases, handwritten recommendation cards |
+| Indigo Rain / Sapphire Blue | Painted fixtures, sleeve accents, focused listening mode |
 | Olive Moss | Plants, vintage equipment paint, quieter secondary panels |
 | Pearl White | Sleeve inserts, track sheets, receipts, high-contrast reading surfaces |
 
-The 60/30/10 rule still applies. A useful album-side default would be dark wood or indigo as the environmental base,
-warm ivory as the metadata surface, and honey/brass or ruby as the interactive accent. Pure black should be reserved for
-vinyl, typography, or deep contrast rather than swallowing the entire interface.
+The 60/30/10 rule still applies, but the Listening Room should not inherit the Reading Room's darkness. A useful default
+would be warm ivory or a clear muted color as the environmental base, wood and deep indigo for structure, and coral,
+honey, teal, or ruby for controlled high-energy accents. Brighter colors can appear in sleeve-sized blocks and bin
+dividers rather than washing every surface. Pure black should be reserved for vinyl, Sharpie-like lettering,
+typography, or deep contrast rather than swallowing the interface.
 
 ## Typography
 
 The book side's typewriter and stamp faces translate into a small family of music-retail typography:
 
 - Typewriter text becomes typed liner notes, session sheets, inventory cards, and used-record grading notes.
-- Stampwriter text becomes arrival stamps, price marks, catalog numbers, and venue-entry stamps.
-- Institutional library headings become condensed record-shop signage or jazz-poster display type.
+- Stampwriter text becomes arrival stamps, price marks, catalog numbers, and shop inventory stamps.
+- Institutional library headings become condensed record-shop signage or bold hand-lettered display type.
 - Small-cap metadata becomes record-label typography for label, catalog number, format, speed, and release year.
-- Handwriting can be reserved for clerk recommendations, crate-divider labels, or “Ask me about this one” notes.
+- A Sharpie-like handwritten face can be reserved for clerk recommendations, crate-divider labels, price notes, or
+  “Ask me about this one” cards. It should feel quick and human, with enough weight and spacing to stay legible.
 
-Display typography may echo mid-century jazz sleeves, but metadata and controls must remain highly readable. Avoid
-turning every heading into a novelty poster. Font loading and fallbacks should follow the same practical constraints as
-the main UI.
+Display typography may echo independent-shop signs and hand-marked dividers, but metadata and controls must remain
+highly readable. The handwritten voice is an accent, not the default body or control face. Avoid turning every heading
+into a novelty poster. Font loading and fallbacks should follow the same practical constraints as the main UI.
 
 ## Materials and component metaphors
 
@@ -98,13 +105,13 @@ the main UI.
 | Aged ivory paper | Liner-note paper, shop receipt, track sheet, or sleeve insert |
 | Dark stained wood | Record bin, listening counter, speaker cabinet, turntable plinth |
 | Brass | Knurled knobs, toggle hardware, case corners, small lamps |
-| Library-card cardstock | Bin divider, price card, “recommended” card, or show flyer |
+| Library-card cardstock | Bin divider, price card, “recommended” card, or shop flyer |
 | Glass | Dust cover over a turntable, record-shop window, framed gold record |
-| Cloth/book binding | Speaker grille cloth, acoustic panel, velvet curtain |
+| Cloth/book binding | Speaker grille cloth, acoustic panel, or fabric-lined bin |
 | Ink/rubber stamps | Arrival date, condition grade, “used,” “promo,” or “staff pick” |
 | File separator tab | Genre/artist alphabet divider protruding above a record bin |
 | Brass pull handle | Amp knob or recessed road-case handle |
-| Checkout stamp button | Turntable start/stop control, illuminated console button, or venue stamp |
+| Checkout stamp button | Turntable start/stop control, illuminated console button, or shop stamp |
 
 Panels can resemble sleeves pulled partly from jackets, track-list inserts, shop index cards, or equipment faceplates.
 The metaphors should clarify hierarchy rather than obscure familiar controls.
@@ -126,29 +133,30 @@ The book UI's footnotes become **liner notes** on the album side. Secondary expl
 notes, annotated with an asterisk like a pressing detail, or revealed as the reverse side of a track sheet. Easter eggs
 can reference catalog numbers, matrix markings, recording dates, studios, personnel, and small bits of music history.
 
-The album interface can preserve the sense of furniture by using a record-bin edge along one side, a walnut listening
-console across a page boundary, or amplifier-like panels for controls. It should still acknowledge that it is software:
-responsive search, predictable navigation, accessible dialogs, and fast filtering take priority over literal simulation.
+The album interface can preserve the sense of furniture by using a record-bin edge along one side, rows of divider tabs,
+a walnut listening counter across a page boundary, or amplifier-like panels for controls. It should still acknowledge
+that it is software: responsive search, predictable navigation, accessible dialogs, and fast filtering take priority
+over literal simulation.
 
 ## Landing page
 
 **Library original:** An old library with stacks, card catalogs, ladder, dust, clock, window, and a “Welcome to Shade
 Library” sign.
 
-**Album analogue:** The entrance to an independent record shop at blue hour, with a glimpse of a small jazz bar or
-listening room beyond it.
+**Album analogue:** The entrance to the Listening Room: a warm, curated independent record shop with colorful sleeves,
+handwritten signs, deep bins, and a small hi-fi corner visible beyond the counter.
 
 Possible elements:
 
 - Face-out sleeves in the front window and dense album spines farther inside.
 - A hand-painted or softly illuminated “Shade Records — est. 2026” sign.
-- A chalkboard or letter-board listing “Now Spinning” and a fictional evening set.
+- A chalkboard or marker board listing “Now Spinning,” “New in the Bins,” and staff recommendations.
 - A listening counter with turntable, headphones, small lamp, and a record waiting beside the platter.
-- Warm pools of imperfect light instead of uniform illumination.
+- Warm daylight and pools of imperfect lamp light instead of uniform illumination.
 - A wall clock, eventually showing actual time.
-- A rain-streaked or sunlit window, eventually reflecting weather or season.
-- Fine projector haze or floating vinyl dust in place of library dust motes.
-- A doorway toward the library room so switching media feels like moving through the same building.
+- A rain-streaked or sunlit front window, eventually reflecting weather or season.
+- Floating vinyl dust caught in window or task-lamp light in place of library dust motes.
+- A clear route back to the shared Home; the user returns there before entering the Reading Room.
 
 Clicking the sign enters the album Home. Time-of-day lighting, live weather, and a fully navigable room remain future
 possibilities even though the analogy is useful now.
@@ -157,9 +165,10 @@ possibilities even though the analogy is useful now.
 
 **Library original:** A conversational home full of card-catalog-like discovery modules.
 
-**Album analogue:** The shop's feature wall and clerk's counter—the place where someone asks what is playing, what just
-came in, and what they should hear next. Mobile modules can still occupy roughly one screen each, but should resemble
-adjacent displays rather than an undifferentiated feed.
+**Album analogue:** The shop's feature wall and central row of bins—the place where someone sees what is playing, what
+just came in, what the staff loves, and which unexpected sleeve rewards another pass through the crate. Mobile modules
+can still occupy roughly one screen each, but should resemble adjacent bins and displays rather than an undifferentiated
+feed.
 
 Cards can look like sleeves in shallow display rails, compact shop recommendation cards, or liner-note panels. Selecting
 one opens the album, artist, or collection detail page.
@@ -167,8 +176,8 @@ one opens the album, artist, or collection detail page.
 ### Musician quotes
 
 Author quotes become quotes from musicians, composers, arrangers, producers, engineers, critics, or liner notes. A quote
-can appear on a narrow marquee, a framed wall card, or a typed note taped beside the listening station. Selecting it
-opens the artist's albums or an appropriate curated view.
+can appear on a hand-lettered wall card, a printed insert, or a typed note taped beside the listening station. Selecting
+it opens the artist's albums or an appropriate curated view.
 
 ### Staff Picks
 
@@ -185,7 +194,7 @@ long album titles without imitating the square cover's typography.
 ### Prominent Collections
 
 Featured book collections become changing bins or endcaps such as “Spiritual Jazz,” “Tulsa Sound,” “Blue Note,” “Live
-Albums,” “Sunday Morning,” or “Liz's Favorites.” Genre dividers, listening-mood cards, or small gig-poster headers can
+Albums,” “Sunday Morning,” or “Liz's Favorites.” Genre dividers, listening-mood cards, or small shop-poster headers can
 give each collection an identity without making mixed-media collections.
 
 ### Random album
@@ -206,7 +215,7 @@ unless the system really tracks it.
 **Library original:** An owner-focused desk of collection totals, circulation state, reading history, capacity, and
 category charts.
 
-**Album analogue:** The record-store back counter, inventory clipboard, or compact studio console. It is still primarily
+**Album analogue:** The record-store back counter, inventory clipboard, or compact hi-fi console. It is still primarily
 for the owner and can be a little showy.
 
 Possible translations:
@@ -221,7 +230,7 @@ Possible translations:
 - Wishlist count → “Want list” card at the shop counter.
 - Acquisitions by year → stacked arrival cards, price labels, or a conventional timeline.
 - Gifts → a small “From friends” crate or acquisition-source breakdown.
-- Listening by year → a session ledger, calendar heatmap, or conventional trend chart with subtle equalizer styling.
+- Listening by year → a play log, calendar heatmap, or conventional trend chart with subtle equalizer styling.
 - Weather quote → a track, lyric-free music note, or album recommendation suited to the imagined room's atmosphere;
   actual weather integration remains a later concern.
 
@@ -232,11 +241,13 @@ make the dashboard feel musical.
 
 **Library original:** Browsing prized shelves and book spines through searchable catalog cards.
 
-**Album analogue:** Flipping through the owner's record bins. The collection should make it immediately obvious whether
-a particular artist, title, release, label, or format is present.
+**Album analogue:** Flipping through the owner's record bins. This is the clearest expression of the crate-digging
+metaphor: dense enough to invite discovery, organized enough to find a known record quickly, and tactile without slowing
+the search. The collection should make it immediately obvious whether a particular artist, title, release, label, or
+format is present.
 
-The introductory “How to use this catalog” card becomes a red or cream **How to browse these bins** divider. It can look
-like a shop policy card or an alphabet separator and still offer Skip.
+The introductory “How to use this catalog” card becomes a bright **How to browse these bins** divider. It can look like
+a marker-lettered shop card or an alphabet separator and still offer Skip.
 
 Filters and search sit to the left on wide screens, styled like a vertical stack of bin dividers or a record-store index.
 Potential filters include artist, album title, genre, subgenre, label, format, year, country, pressing/release, speed,
@@ -247,7 +258,7 @@ View analogies:
 - **List:** A shop inventory card or liner-note strip: small sleeve left, album/artist prominent, pressing and location
   below.
 - **Grid:** A face-out display wall, similar to browsing album art in a media server but grounded with sleeve shadows,
-  price tabs, and condition/status marks.
+  price tabs, colorful divider accents, and condition/status marks.
 - **Bin:** A denser optional view showing jacket spines and alphabet/genre separators. This can remain conceptual until
   it offers better usability than list or grid.
 
@@ -281,14 +292,14 @@ Possible composition:
 └──────────────────────────────────────────────────┘
 ```
 
-The sleeve may sit beside a partially visible inner sleeve or record label. Metadata can borrow from liner notes and
-record-center labels: artist, title, label, catalog number, release year, format, country, pressing, condition, genres,
-styles, track list, personnel, producer, engineer, and location. Empty fields should disappear rather than leaving a
-wall of blank studio credits.
+The sleeve may sit beside a partially visible inner sleeve, a record label, or the next jacket in the crate. Metadata can
+borrow from liner notes and record-center labels: artist, title, label, catalog number, release year, format, country,
+pressing, condition, genres, styles, track list, personnel, producer, engineer, and location. Empty fields should
+disappear rather than leaving a wall of blank studio credits.
 
-Loan history can resemble a stamped shop checkout sleeve, a tour itinerary, or a listening-station log. Borrower
-signatures translate naturally to a signed merchandise wall, venue guest book, or handwritten checkout slip while
-remaining unmistakably a loan record.
+Loan history can resemble a stamped shop checkout sleeve, a lending ledger, or a listening-station log. Borrower
+signatures translate naturally to a handwritten checkout slip or signed shop ledger while remaining unmistakably a loan
+record.
 
 A selected contextual quote could come from liner notes or an artist interview, but rights, sourcing, and manual curation
 must be resolved before it becomes data-driven. External metadata import is analogous to the book lookup question and
@@ -309,7 +320,7 @@ artist's discography?”, or “Which wants are available locally?” Seller lin
 label, artist store, marketplace, or special edition rather than assuming one distributor.
 
 When a wanted album is acquired, “Where did you get this?” becomes especially natural and can capture shop, record fair,
-gift, label, concert merch table, or online seller.
+gift, label, artist store, or online seller.
 
 ## Digital library record / shop ledger
 
@@ -326,7 +337,8 @@ Example entries:
 - “Cassette returned and rated.”
 - “New Staff Pick placed in the front display.”
 
-Visually, it could resemble a bound shop ledger, a studio session log, a stack of dated receipts, or a venue calendar.
+Visually, it could resemble a bound shop ledger, a studio session log, a stack of dated receipts, or a wall inventory
+calendar.
 Over time it can support “On this day,” collection history, acquisition stories, and changing displays, even if those
 features are outside V2.
 
@@ -337,8 +349,8 @@ features are outside V2.
 **Album analogue:** **Listening History** or **Records Played**, initially a straightforward sequence of albums and
 eventually a memory of listening sessions.
 
-It might resemble a radio-station playlist log, DJ set sheet, notebook beside a turntable, or date-stamped stack of
-sleeves. Later entries could include who listened, where, format, rating, notes, or the occasion. Digital listening
+It might resemble a shop play log, notebook beside a turntable, or date-stamped stack of sleeves. Later entries could
+include who listened, where, format, rating, notes, or the occasion. Digital listening
 services might someday contribute plays, but importing streams should not erase the distinction between listening to
 music and owning a physical album.
 
@@ -346,7 +358,8 @@ music and owning a physical album.
 
 **Library original:** A minimal scan-first desk that determines whether a book is coming or going.
 
-**Album analogue:** A minimal checkout station at the record-store counter or coat-check window in a jazz club.
+**Album analogue:** A minimal lending station at the record-store counter, with a checkout sleeve, shop stamp, and the
+album pulled from its usual bin.
 
 The page can use a deep indigo, oxblood, or forest background with one illuminated equipment-like panel in the center.
 Scan the album's Shade QR code or supported commercial identifier; the system determines whether it is being loaned or
@@ -356,21 +369,26 @@ fake stereo.
 - Checkout asks for the borrower and any required acknowledgement.
 - Check-in asks for the borrower's rating and optional review.
 - The confirmation can resemble a stamped receipt, claim ticket, or checkout sleeve.
-- An eventual borrower email can resemble a tasteful shop receipt or gig confirmation and include the lending policy.
+- An eventual borrower email can resemble a tasteful shop receipt or hold confirmation and include the lending policy.
 - Overdue reminders can feel like courteous record-store follow-up, not a punitive library fine notice.
 
-The interaction remains deliberately sparse. The jazz-bar atmosphere comes from color, materials, typography, and light,
-not from hiding the scan and confirmation steps inside a theatrical simulation.
+The interaction remains deliberately sparse. The shop atmosphere comes from color, materials, typography, and tactile
+inventory details, not from hiding the scan and confirmation steps inside a literal simulation.
 
 ## Shared identity and boundaries
 
-The library and album areas should share navigation logic, accessibility standards, interaction timing, responsive
-behavior, and a recognizable Shade brand. Their physical metaphors then distinguish the rooms:
+Shade's shared Home is the doorway to both rooms. A user enters either the Reading Room or the Listening Room from Home
+and returns to Home before moving between them. The rooms should share accessibility standards, interaction timing,
+responsive behavior, and a recognizable Shade brand while their navigation and presentation make the current room
+unmistakable:
 
-- The library is paper, catalog furniture, book cloth, stamps, and daylight through dust.
-- The album room is sleeves, walnut hi-fi furniture, speaker cloth, knobs, shop cards, neon, and evening light.
-- Brass, jewel tones, plants, imperfect light, restrained depth, and personal curation connect them.
+- The Reading Room is paper, catalog furniture, book cloth, stamps, and daylight through dust.
+- The Listening Room is colorful sleeves, walnut record bins, speaker cloth, knobs, Sharpie-lettered dividers, shop
+  cards, warm daylight, and cozy pools of task light.
+- Brass, jewel tones, plants, imperfect light, restrained depth, and personal curation connect the rooms.
+- Brighter controlled colors, denser face-out artwork, and handwritten retail marks make the Listening Room feel more
+  energetic without sacrificing calm, hierarchy, or legibility.
 
 Not every analogy needs to become a component, and many are explicitly useful only as future design vocabulary. The
-best implementation choices will be the ones that make ordinary catalog actions feel native to the album room while
-remaining fast, legible, accessible, and unmistakably digital.
+best implementation choices will be the ones that make ordinary catalog actions feel native to crate digging in the
+Listening Room while remaining fast, legible, accessible, and unmistakably digital.

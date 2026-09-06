@@ -1,6 +1,6 @@
 import type { createApiClient } from './apiClient'
 import type { ApiCallOptions } from './apiCallOptions'
-import type { AlbumArtworkRefetchRequest, AlbumCreate, AlbumList, AlbumLookupResponse, AlbumRead, AlbumUpdate, CheckinRequest, CheckoutRequest, MarkPlayedRequest } from './apiTypes'
+import type { AlbumArtworkRefetchRequest, AlbumCreate, AlbumList, AlbumLookupResponse, AlbumRead, AlbumUpdate, BulkAlbumImportRequest, BulkAlbumImportResponse, BulkAlbumLookupRequest, BulkAlbumLookupResponse, CheckinRequest, CheckoutRequest, MarkPlayedRequest } from './apiTypes'
 
 export interface ListAlbumsOptions extends ApiCallOptions {
     artist?: string; title?: string; barcode?: string; mediaFormat?: string
@@ -30,6 +30,8 @@ export function createAlbumsApi(client: ReturnType<typeof createApiClient>) {
             const params = new URLSearchParams(kind === 'barcode' ? { barcode: value } : { discogs_release_id: value })
             return client.getJson<AlbumLookupResponse>(`/albums/lookup?${params}`, signalOptions(options.signal))
         },
+        bulkLookup: (request: BulkAlbumLookupRequest) => client.requestJson<BulkAlbumLookupResponse>('/albums/bulk/lookup', { method: 'POST', body: request }),
+        bulkImport: (request: BulkAlbumImportRequest) => client.requestJson<BulkAlbumImportResponse>('/albums/bulk/import', { method: 'POST', body: request }),
         checkout: (id: string, request: CheckoutRequest) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/checkout`, { method: 'POST', body: request }),
         checkin: (id: string, request: CheckinRequest) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/checkin`, { method: 'POST', body: request }),
         markPlayed: (id: string, request: MarkPlayedRequest = {}) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/mark-played`, { method: 'POST', body: request }),

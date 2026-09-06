@@ -20,9 +20,11 @@ ticket.
 When documents disagree, use the following order:
 
 1. A current sequenced feature ticket in the repository that owns the work. Frontend ready
-   work currently includes `docs/tickets/FEAT-30_borrower-name-presentation.md` and
-   `docs/tickets/FEAT-38_frontend-v2-experience-handoff.md`. Backend remaining V2 planning
-   lives in backend `PLAN-03_remaining-v2-features.md` and orchestrator `FEAT-08`.
+   album work is ordered as `FEAT-01` through `FEAT-05`; other ready work includes
+   `docs/tickets/FEAT-30_borrower-name-presentation.md` and
+   `docs/tickets/FEAT-38_frontend-v2-experience-handoff.md`. Deferred album work remains at
+   `FEAT-90` through `FEAT-92`. Backend remaining V2 planning lives in backend
+   `PLAN-03_remaining-v2-features.md` and orchestrator `FEAT-08`.
 2. The checked-in OpenAPI contract and `API-for-FE.md` for shipped backend behavior.
 3. A feature-specific product specification when one exists.
 4. This scope document for the intended user-facing outcome.
@@ -38,7 +40,8 @@ Frontend planning decompositions live in
 `docs/tickets/PRODUCT_REQS.V2.PLAN-02-multi-tenancy.md` and
 `docs/tickets/PRODUCT_REQS.V2.PLAN-03-books.md`. PLAN-02 owns multi-tenant setup, settings,
 identity, deployment, and operational isolation; PLAN-03 owns book-side features. Music
-support is split into `FEAT-01` through `FEAT-06` in `docs/tickets`. Neither the plans nor
+support is split into ready tickets `FEAT-01` through `FEAT-05` and deferred tickets
+`FEAT-90` through `FEAT-92` in `docs/tickets`. Neither the plans nor
 their tickets replace this document or OpenAPI. Frontend multi-tenant hostname routing is
 shipped baseline; production multi-host handoff remains orchestrator `FEAT-08`.
 

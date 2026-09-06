@@ -23,6 +23,14 @@
 .albums-page__heading p { color: var(--color-text-muted); }
 .album-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; padding: var(--space-5); background: var(--color-card-muted); border: 1px solid var(--color-card-border); border-radius: var(--radius-card); box-shadow: var(--shadow-small); color: var(--color-surface-text); }
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1.5rem; }
+.album-browser { display: grid; grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2.5rem); align-items: start; }
+.album-browser__rail { position: sticky; top: calc(var(--header-height, 5rem) + 1rem); max-height: calc(100vh - 7rem); overflow: auto; padding: var(--space-5); border: 1px solid var(--color-card-border); border-radius: var(--radius-card); background: var(--color-card-muted); color: var(--color-surface-text); }
+.album-browser__rail h2 { margin-top: 0; }
+.album-browser__rail .album-filters { display: grid; grid-template-columns: 1fr; margin: 0; padding: 0; border: 0; box-shadow: none; }
+.album-browser__mobile { display: none; }
+.album-filters__deleted { display: flex; gap: .625rem; align-items: start; }
+.album-browser__results { min-width: 0; }
+.back-to-top { position: fixed; right: clamp(1rem, 3vw, 2rem); bottom: clamp(1rem, 3vw, 2rem); z-index: 5; box-shadow: var(--shadow-medium); }
 .album-card { position: relative; margin-block-start: .65rem; border: 1px solid var(--color-card-border); border-radius: .15rem; background: linear-gradient(rgb(255 255 255 / 10%), rgb(0 0 0 / 2%)), var(--color-card); box-shadow: 0 1px 0 rgb(255 255 255 / 18%) inset, 0 .2rem .45rem rgb(0 0 0 / 16%); color: var(--color-surface-text); }
 .album-card::after { position: absolute; z-index: -1; top: -.62rem; left: 1.25rem; width: 4.5rem; height: .7rem; border: 1px solid var(--color-card-border); border-bottom: 0; background: var(--color-card); content: ''; clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%); }
 .album-card::before { position: absolute; inset: .18rem -.12rem -.16rem .12rem; z-index: -1; border: 1px solid var(--color-card-border); background: var(--color-card-muted); content: ''; transform: rotate(-.18deg); }
@@ -56,7 +64,7 @@
 .dashboard-paper--albums { border-top-color: #6d263f; }
 .album-dashboard-breakdowns dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .5rem; }
 .album-dashboard-breakdowns dl div { display: flex; justify-content: space-between; border-bottom: 1px dotted currentColor; }
-@media (max-width: 700px) { .album-filters, .album-detail__hero, .album-detail__columns { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .album-filters, .album-detail__hero, .album-detail__columns { grid-template-columns: 1fr; } .album-browser { display: block; } .album-browser__rail { display: none; } .album-browser__mobile { display: block; margin-block: 1rem; } .album-browser__mobile .album-filters { margin: 0; padding: 0; border: 0; box-shadow: none; } }
 
 .button--primary {
   border-color: var(--color-brass);

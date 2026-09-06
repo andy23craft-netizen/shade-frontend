@@ -1,4 +1,4 @@
-# FEAT-04 -- Album QR labels and scanning
+# FEAT-91 -- Album QR labels and scanning
 
 **Status:** Blocked on the shared catalog code-resolution contract and label/scanner
 infrastructure derived from PLAN-03.

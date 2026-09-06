@@ -1,4 +1,4 @@
-# FEAT-06 -- Album visual identity and crate language
+# FEAT-03 -- Album visual identity and crate language
 
 **Status:** Ready to implement in bounded surface slices.
 
@@ -12,6 +12,9 @@ is not required.
 
 Give Albums a cohesive record-store/listening-room identity within the shared Shade
 application and consistently use **crate** as the album location noun.
+Use `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md` as reference. The color palette
+should change while remaining complementary to the existing Books area. These choices are
+global for now; per-tenant decisions will come later.
 
 ## Acceptance criteria
 
