@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-04 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-07 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -10,7 +10,15 @@ request takes precedence over general guidance here.
 
 ## Project Summary
 
-Shade is a browser UI for a personal home-library FastAPI backend. Current functionality includes:
+Shade is a browser UI for a personal home-library FastAPI backend. Backend contract is OpenAPI/API-for-FE
+**1.2.4**; frontend package version is currently **1.2.6**. The live product shell is room-based: Home (`/`) chooses
+Reading Room or Listening Room; shared Manage / Collections / Wishlists act as hallway spaces; Reading and Listening
+each have their own dashboard and loans routes (legacy `/dashboard` and `/loans` redirect into the Reading Room).
+Album catalog UI lives under `src/features/albums/` and `/albums*`; library setup/settings live under
+`src/features/library/`. Some inventory bullets below still describe older book-centric path names -- prefer
+`src/routes/routes.tsx`, `routeMetadata.ts`, and the active ticket when paths disagree.
+
+Current functionality includes:
 
 - Application shell, shared UI primitives, runtime config, build-time Bearer auth, and typed OpenAPI + React Query
   server state (mutation invalidation of lists, detail, dashboard, and loans on checkout/check-in; bulk shelf-move
@@ -141,17 +149,19 @@ Shade is a browser UI for a personal home-library FastAPI backend. Current funct
   HTTPS/CSP, atomic install, supervision, and rollback remain host-owned (`README.md`).
 
 Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, mark-played, cover
-upload/delete, or album artwork upload/delete/refetch with generic `PATCH`. Sequenced feature tickets live under
-`docs/tickets/` while open and are removed after completion. Open sequenced work currently includes
-`docs/tickets/FEAT-02_album-support.md`. Informal UI feedback such as `docs/tickets/ui-nits.md` is not a sequenced
-build ticket -- treat it as notes unless the user asks to implement items from it. When no sequenced feature ticket
-remains (directory holds only `.gitkeep` and/or informal notes), wait for an explicit request rather than inventing
-the next feature. Do not invent undocumented routes, realtime channels, or lifecycle shortcuts. Never invent a second
-telemetry transport or fabricate correlation IDs.
+upload/delete, availability, stash/apply-stash, or album artwork upload/delete/refetch with generic `PATCH`. Sequenced
+feature tickets live under `docs/tickets/` while open and are removed after completion. Open sequenced work currently
+centers on finishing the Listening Dashboard design (`docs/tickets/FEAT-89_finish-dedicated-album-section.md`, titled
+FEAT-05 inside the file) plus remaining V2 book/album slices (`FEAT-88`, FEAT-39--55, FEAT-90--93, and related PLAN
+docs). Informal UI feedback notes are not sequenced build tickets -- treat them as notes unless the user asks to
+implement items from them. When the directory holds only `.gitkeep` and/or informal notes, wait for an explicit
+request rather than inventing the next feature. Do not invent undocumented routes, realtime channels, or lifecycle
+shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current sequenced ticket (when one
-exists), then the product requirements docs when deciding what to build next. Album UI is `FEAT-02`; do not start it
-from the shipped album contract alone.
+exists), then the product requirements docs when deciding what to build next. Album catalog UI is largely shipped;
+do not re-implement album Browse/Add/Details from the OpenAPI contract alone -- extend the existing
+`src/features/albums/` surfaces and follow the active ticket.
 
 ## Technology
 
@@ -184,70 +194,149 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.1.3`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.2.4`). Prefer generating or fixture-checking TypeScript models
   from this file.
 - `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, hostname
-  tenant routing, error meanings, lifecycle rules, ISBN quirks, album lookup/artwork/circulation, mixed wishlists,
-  book covers **200** image bytes / multipart semantics, operator-owned export/seed sync, FE vs API ownership). Prefer
-  this document (and live router/`detail` strings) when OpenAPI is incomplete for a shared status code, or when a
-  schema shows `null` as allowed but validators reject it at runtime.
+  tenant routing, error meanings, lifecycle rules, ISBN quirks, album lookup/artwork/circulation, placement/stash,
+  availability/TBR/Reserved, `/library` setup/settings, `/works` corrections, `/catalog` resolve/recent-additions,
+  loan feedback, mixed wishlists, book covers **200** image bytes / multipart semantics, Build Mode bulk lookup/import,
+  operator-owned export/seed sync, FE vs API ownership). Prefer this document (and live router/`detail` strings) when
+  OpenAPI is incomplete for a shared status code, or when a schema shows `null` as allowed but validators reject it at
+  runtime.
 
 Compare with a running backend `/openapi.json` before locking transport types; record drift as a blocker rather than
 inventing frontend semantics. Do not invent backend behavior from product docs alone. There is no separate backend
-handoff: OpenAPI plus `API-for-FE.md` are the contract; `docs/tickets/FEAT-02_album-support.md` is the frontend album
-implementation ticket.
+handoff: OpenAPI plus `API-for-FE.md` are the contract. Frontend album and V2 book work is ticket-driven under
+`docs/tickets/` (see Useful documents); regenerating client types alone does not implement UI.
 
-### Backend 1.1.3 contract (2026-09-06)
+### Backend 1.2.4 contract (2026-09-07)
 
-The checked-in contract matches backend **1.1.3**. Album catalog CRUD, soft-delete/restore, artist/genre catalogs,
-checkout/check-in/mark-played, Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch, additive
-dashboard album fields, and typed mixed wishlist membership are shipped. Hostname-scoped multi-tenant routing is
-shipped (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`). Existing book, wishlist-book, and collection
-HTTP shapes stay compatible. Album collection membership, album wishlist-note updates, atomic wishlist-to-crate
-movement, and album placement-state filtering are shipped.
+The checked-in contract matches backend **1.2.4** (`ci/VERSION` / OpenAPI `info.version`). Existing book, wishlist, and
+loan response shapes remain stable aside from additive fields noted below. Shipped surfaces include:
 
-`FEAT-02` now activates the album catalog UI: `/albums` browse, add, detail, and edit routes; artist/genre-backed
-metadata entry and release lookup; private artwork management; checkout/check-in, mark-played, soft-delete/restore,
-album loan history, separate dashboard listening statistics, and typed mixed-wishlist API/query support. The Vite
-development proxy includes `/albums`, `/artists`, and `/genres`. Collections support explicitly typed book and album
-membership routes. Book-specific and album-specific wishlist and Collection operations remain isolated.
+- Album catalog CRUD, soft-delete/restore, artist/genre catalogs, circulation (checkout / check-in / mark-played),
+  Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch, album bulk lookup/import, album collection
+  membership, typed mixed wishlist membership (including album wishlist-note updates and atomic wishlist-to-crate
+  `move-to-shelf`), album placement-state filtering, and additive album dashboard/listening fields.
+- Hostname-scoped multi-tenant routing (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`).
+- `/library` setup and settings (`enable_loans`, book TBR shelf IDs, reserved shelf).
+- `/works` identity corrections (read / merge / split / reassign).
+- `/catalog/resolve-code` and `/catalog/recent-additions`.
+- Book bulk and single-item availability; book bulk stash and apply-stash.
+- Loan borrower `PATCH`; returned-loan feedback (`PUT` / `DELETE /loans/{id}/feedback`); paginated book/album
+  borrower-review lists.
+- Additive read fields: `work_id`, `borrower_rating`, `feedback_present`, `isbn_not_applicable`, plus album
+  dashboard/loan fields and required album `artwork_present`.
 
-Identifier and loan rules from 1.0.8 remain in force:
+Clients generated from this contract remain compatible with book-only UI if they ignore album routes and album-only
+fields until those screens are enabled. Coordinate deployment with matching frontend and any required retained-data
+migration. The frontend cannot compensate for an older database schema.
+
+Identifier and loan rules remain in force:
 
 - All book responses use `book_id` (no `id` alias); exact-ID list requests use `book_id`, with `bookId` in list query
   keys.
 - Wishlist memberships use `wishlist_item_id` for notes/removal/moves. Their `book_id` and `album_id` fields are
   nullable; book rows have non-null `book_id` and null `album_id`. Book controls guard these references.
-- Loans retain their own `id`. Exactly one of `book_id` / `album_id` is non-null. The global Loans page requests
-  `media_type=book`; per-book history uses `book_id`. Loan wrappers/hooks/cache keys support `bookId`, `albumId`, and
-  `mediaType`. Never substitute `album_id` into book detail or check-in URLs.
+- Loans retain their own `id`. Exactly one of `book_id` / `album_id` is non-null. Reading-room Loans request
+  `media_type=book`; listening-room Loans request `media_type=album`; per-item history uses `book_id` or `album_id`.
+  Loan wrappers/hooks/cache keys support `bookId`, `albumId`, and `mediaType`. Never substitute `album_id` into book
+  detail or check-in URLs (or the reverse).
 - Duplicate wishlist adds (**409**) refresh membership queries without optimistic duplicates. A destination conflict
   preserves the source membership and notes.
 - React Query state is memory-only, so a hard reload fetches current response shapes without a persistence migration.
 
-Book-only UI still needs the shared shelf/error adjustments: exclude `removed` from every placement picker; surface
-mixed-media **412** detail (`A book cannot be placed on an album shelf`, `Books cannot be added to an album
-collection`) without inventing a shelf `media_type` field. Shelf delete **409** applies when books or albums remain.
+Book and shared shelf/error rules agents must not invent around:
 
-Tenant and media storage notes agents must not invent around:
+- Exclude `removed` from every placement picker (including bulk import, move, and stash apply). Manual placement on
+  `removed` is **400**. Surface mixed-media **412** detail without inventing a shelf `media_type` field:
+  `A book cannot be placed on an album shelf`, `An album cannot be placed on a book shelf`,
+  `Books cannot be added to an album collection`, `Albums cannot be added to a book collection`.
+- Shelf delete **409** applies when books or albums remain.
+- When `enable_loans=false`, new book and album checkouts return **412** `Loans are disabled for this library`; loan
+  history and check-in remain available.
+- Book and album check-in **require** `CheckinRequest.rating` (integer 1--5). Omitted rating is invalid. Check-in
+  records initial returned-loan feedback atomically; owner catalog `rating`/`review` and borrower feedback are separate.
+- Checkout of `reserved` or `reading` books requires `availability_override=true`; `display_only` is never overridable
+  (**412** `Book is display only` / `Album is display only`).
+
+Tenant, CORS, and media storage notes:
 
 - The trusted reverse proxy (or Vite `SHADE_API_PROXY`) sets `X-Forwarded-Host`; browser JS must not send that header or
   `Library-Username`. Missing/unknown host context returns **400** `Invalid or unknown library host`; an empty header
   returns **400** `X-Forwarded-Host must be a non-empty string`. Auth failures take precedence on protected routes.
+- Default CORS origins include local Vite hosts plus `andy` / `dalmo` / `jamie` localhost and deployed `shade` /
+  `dalmo` / `jamie` library hosts. Allowed request headers are `Authorization` and `Content-Type`.
+  `Content-Disposition` is exposed so cover/artwork download filenames are readable from JavaScript. Credentialed CORS
+  is disabled.
 - Book covers live under `data/covers-for-books/<username>/`; album artwork under
   `data/covers-for-albums/<username>/<album_id>/` (relative to `DB_DIR`). Tenant username comes from hostname routing.
 - Album barcode lookup falls through Discogs miss **and** Discogs failures/timeouts to MusicBrainz; explicit Discogs
   release IDs have no MusicBrainz substitute (**502** / **504**). Artwork refetch uses Cover Art Archive front images
   only (approved front, else first front, else release-group listing) and never Discogs artwork. See `API-for-FE.md`.
 
-Deploy frontend album UI with matching backend 1.1.3 and the separately rehearsed retained-data migration (including
-`album_artwork`). The frontend cannot compensate for an older database schema.
+#### `/library` setup and settings
 
-When implementing `FEAT-02`, treat that ticket plus OpenAPI and `API-for-FE.md` as the work plan: add `/albums`,
-`/artists`, and `/genres` to the optional Vite proxy when the browser first needs them; lookup then resolve
-artists/genres then create; serve artwork only through authenticated album artwork routes; keep typed identifiers
-distinct; use `GET /wishlists/{wishlist_id}/items` for mixed lists and the typed membership PATCH routes;
-use typed album Collection routes rather than book membership routes; add album dashboard widgets as separate album statistics.
+- `GET /library/setup` returns durable tenant state (`required`, `in_progress`, `complete`, or `failed`). A completed
+  tenant stays complete even with an empty catalog. Wizard draft UX is frontend-owned; the API owns durable setup
+  state only.
+- `POST /library/setup/complete` validates supplied shelf UUIDs plus system shelves `unknown` / `removed`; completion
+  is idempotent.
+- `GET` / `PATCH /library/settings` expose `enable_loans`, ordered `book_tbr_shelf_ids`, and nullable
+  `reserved_shelf_id`. TBR and Reserved accept user book-compatible shelf UUIDs only; validation is atomic.
+
+#### Book placement, stash, and availability
+
+- Books expose `placement_state`: `shelved` (default `GET /books`), `stashed`, or `unshelved`. `shelf_name` is
+  populated only for `shelved` (including real membership on system `unknown`); it is JSON `null` for `stashed` and
+  `unshelved`. `previous_shelf_name` is populated only for stashed books while the source shelf still exists.
+- `GET /books/{book_id}` returns explicit placement fields; it **no longer synthesizes** `shelf_name: "unknown"` for a
+  missing membership. Combining `shelf_name` with a non-`shelved` `placement_state` returns **400**.
+- Stash is not a shelf and not circulation status. `POST /books/bulk/stash` (1--100 unique IDs) stashes currently
+  shelved, non-wishlisted books while preserving `status` and active loans. Already-stashed → **409**; wishlist →
+  **412**. `POST /books/bulk/apply-stash` requires a user shelf (system `unknown` → **412**). Ordinary PATCH / bulk
+  shelf move on a stashed book → **409** `Book is stashed; use the stash apply operation`. Stashed books cannot join
+  wishlists (**412**). Albums do **not** support `stashed`.
+- Book `Status` includes `unknown`, `available`, `on_loan`, `missing`, `display_only`, `reserved`, `reading`. Manual
+  availability uses `POST /books/{book_id}/availability` and atomic `POST /books/bulk/availability` (1--100 IDs).
+  `on_loan` cannot be selected manually. Manual `reserved` requires `reservation.pickup_name` and a configured
+  Reserved shelf (**412** `A reserved shelf must be configured` when unset). Moving onto a configured TBR shelf sets
+  `reserved` (with `reading` taking precedence); albums do not inherit TBR/Reserved automation.
+- `isbn_not_applicable` defaults `false` and is mutually exclusive with non-empty `isbn13`. Confirmed not-applicable
+  books are excluded from dashboard missing-ISBN counts. Optional nullable `illustrator` / `editor` (max 255) exist on
+  create/update/read.
+
+#### `/works`, `/catalog`, and borrower feedback
+
+- Every `BookRead` and `AlbumRead` includes stable `work_id` and `borrower_rating` (`{ count, average }`; average null
+  when count is zero). `LoanRead` includes `feedback_present`.
+- `GET /works/{work_id}` plus owner correction routes: `POST .../merge`, `POST .../split`, and
+  `POST .../items/{media_type}/{item_id}`. Refresh affected item reads and borrower-review lists after corrections.
+  Prefer `work_id` for alternate-copy lookup; exclude the current item and prefer `status=available` when offering
+  checkout substitutes.
+- `POST /catalog/resolve-code` accepts trimmed `value` and optional `active_media_type` (`book`|`album`). Unknown /
+  other-tenant / soft-deleted Shade items → **404** `Physical item not found`. Malformed/unsupported codes → **422**.
+  Supported commercial identifiers → **200** with zero or more typed candidates (`checkout_eligible` accounts for
+  loans, lifecycle, override needs, and `enable_loans`).
+- `GET /catalog/recent-additions` returns typed summaries newest-first across owned books (shelved or stashed) and
+  active shelved albums (default 10; `take` 1--50). Soft-deleted albums and unshelved/wishlist-only rows are excluded.
+- Returned-loan feedback: `PUT` / `DELETE /loans/{id}/feedback` (active loan → **409** `Feedback requires a returned
+  loan`). Paginated `GET /books/{book_id}/borrower-reviews` and `GET /albums/{album_id}/borrower-reviews` list work
+  feedback. Do not combine or overwrite owner catalog rating/review with borrower feedback.
+
+#### Album contract reminders (SPA already consumes most of these)
+
+- Album create requires `title` and nonempty ordered `artist_ids`; resolve/create artists and genres first. Omit or
+  send null `shelf_name` for unshelved albums. Soft-delete moves to `removed` and drops wishlist/collection memberships;
+  restore clears `deletion_date` and moves to `unknown` (does not restore prior shelf/wishlists/collections).
+- Album check-in requires rating 1--5. Mark-played never changes loan history; `PATCH is_played=false` marks unplayed.
+- Album wishlist move uses atomic `POST /wishlists/{wishlist_id}/albums/{wishlist_item_id}/move-to-shelf` (contrast
+  books: membership `DELETE` then `PATCH { shelf_name }` / bulk move).
+- Build Mode: prefer `POST /albums/bulk/lookup` + `POST /albums/bulk/import` (and book equivalents) over looping single
+  lookup/create. Per-item results return HTTP **200** with item statuses; do not invent whole-request **502**/**504**
+  for bulk lookup.
+- Do not combine book and album dashboard totals; keep `borrowing` / `reading` book-only and use `album_borrowing` /
+  `listening` separately. Dashboard `stash_count` is book-only; incomplete-metadata routes remain book-only.
 
 ### Book identifiers (`id` vs `book_id`)
 
@@ -259,14 +348,16 @@ use typed album Collection routes rather than book membership routes; add album 
 - Frontend helpers: `isGuid` (`src/api/guid.ts`), `isBookIdentityError` / `isMalformedBookId`
   (`src/api/bookIdentity.ts`). Treat **400** and **404** from book-identity lookups as "book not available".
 - Do not hard-code `SL-*` deeplinks or fixtures against a live API. Unit/e2e mocks may still use opaque strings
-  when they do not enforce GUID validation.
+  when they do not enforce GUID validation. Prefer `POST /catalog/resolve-code` for Shade labels and commercial
+  identifiers rather than inventing FE-only decode rules.
 
-### Authors (normalized resources; OpenAPI `0.2.12+`, checked-in `info.version` currently `1.1.3`)
+### Authors (normalized resources; checked-in `info.version` currently `1.2.4`)
 
 Authors are backend data, not free-form book text. Books no longer store a string `authors` field on create/update.
 
 - `GET /authors`: authenticated; returns `{ "items": [...], "total": <int> }` (`AuthorList` in OpenAPI). No `skip` /
-  `take`; always the full catalog ordered by surname, first name, then `author_id`.
+  `take`; always the full catalog ordered by surname, first name, then `author_id`. Optional `in_use=true` limits to
+  authors referenced by at least one book.
 - Author catalog CRUD: `POST /authors` (**201**), `GET /authors/{author_id}`, `PATCH /authors/{author_id}`,
   `DELETE /authors/{author_id}` (**204** when unreferenced). Referenced authors return **409**
   `{"detail": "Author is referenced by one or more books"}`.
@@ -280,19 +371,21 @@ Authors are backend data, not free-form book text. Books no longer store a strin
 - `GET /books/lookup` draft may include textual `draft.authors` from the metadata provider; that does not create author
   records. Resolve/reuse matching authors or create them with `POST /authors` before `POST /books`.
 - Do not hard-code author names. Load vocabulary from `GET /authors` (`useAuthors`) and submit stable GUIDs as
-  `author_ids`. Frontend author catalog admin (create/edit/delete outside inline book flows) is out of V1.
+  `author_ids`. Frontend author catalog admin (create/edit/delete outside inline book flows) remains out of V1 unless a
+  ticket explicitly requires it.
 
 SPA surface: `authorsApi` / `authorsQueries`, `authorDisplay.formatBookAuthors`, create/edit/wishlist author pickers,
 inline `useCreateAuthor` on ISBN lookup apply and wishlist add, and list/detail/join display. Do not send free-form
 author strings on `BookCreate` / `BookUpdate`.
 
-### Categories (normalized resources; OpenAPI `0.2.8+`, checked-in `info.version` currently `1.1.3`)
+### Categories (normalized resources; checked-in `info.version` currently `1.2.4`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
 
 - `GET /categories`: authenticated, unpaginated JSON **array** of `CategoryRead` (`category_id`, `name`, `slug`,
-  `created_date`, `updated_date`); same list pattern as `GET /shelves`.
+  `created_date`, `updated_date`); same list pattern as `GET /shelves`. Optional `in_use=true` limits to categories
+  assigned to at least one book.
 - `BookRead.categories`: array of `BookCategoryRead` (`category_id`, `name`, `slug`). A book may have zero, one, or
   many memberships.
 - `BookCreate.category_ids` / `BookUpdate.category_ids`: array of category GUIDs. Create may omit or send `[]`
@@ -302,7 +395,8 @@ string enum.
   Blank/absent selection sends no category filter. Unknown or malformed IDs follow the OpenAPI contract; a valid
   selection with no matches returns an empty `BookList`, not **404**.
 - Do not hard-code category names or slugs. Load vocabulary from `GET /categories` (`useCategories`) and submit stable
-  GUIDs as `category_ids`. Frontend category catalog admin (create/rename/merge/delete) is out of V1.
+  GUIDs as `category_ids`. Frontend category catalog admin (create/rename/merge/delete) remains out of V1 unless a
+  ticket explicitly requires it.
 - Dashboard: `by_category` buckets use category display names; a multi-category book contributes once per applicable
   bucket. Incomplete-metadata "missing category" means **no memberships** (empty `categories`, not a sentinel string).
 
@@ -312,20 +406,22 @@ URL filters, and list/detail display. Do not use a singular `category` / `Catego
 ### Catalog list filters (`GET /books`)
 
 Optional filters form one composable catalog-query surface (AND across different filter types). They compose with
-  supported sorting, and `skip` / `take`. No matches → empty `BookList` (`items: []`, `total: 0`),
-not **404**. When paginated, `total` remains the full matching count.
+supported sorting, and `skip` / `take`. No matches → empty `BookList` (`items: []`, `total: 0`),
+not **404**. When paginated, `total` remains the full matching count for the active placement filter.
 
 Documented filter families (see OpenAPI + `API-for-FE.md` for exact params and status codes):
 
 - Text (case-insensitive substring except `isbn`): `isbn` (literal substring on stored `isbn13`), `author`, `title`,
   `publisher`, `acquisition_source`. Blank/whitespace text filters → **400**.
 - Exact/state: `book_id` (Book GUID; malformed → **400**; well-formed miss → empty list), `shelf_name`
-  (trimmed/lowercased membership; unknown valid name → empty list), `is_read`, `status`, repeated `category_id`
-  (above).
+  (trimmed/lowercased membership; unknown valid name → empty list; requires `placement_state=shelved`),
+  `placement_state` (`shelved` default, `stashed`, `unshelved`), `is_read`, `status`, repeated `category_id` (above).
 - Inclusive numeric ranges (either bound alone; inverted range → **400**): `pages_*`, `rating_*`,
   `purchase_price_*`, `publication_year_*`.
 - Inclusive `YYYY-MM-DD` date ranges (either bound alone; invalid syntax → **422**; inverted → **400**):
   `purchase_date_*`, `completion_date_*`, `creation_date_*`, `updated_date_*`.
+
+Allowed `sortBy` values include `author` (default), `title`, `creationDate`, `publicationDate`, and `shelf`.
 
 Intentionally not normal V1 list filters: `notes`, `review`, `tags` (JSON text), and derived loan stats
 (`times_borrowed`, `last_borrowed_at`, `average_loan_days`).
@@ -333,10 +429,10 @@ Intentionally not normal V1 list filters: `notes`, `review`, `tags` (JSON text),
 **Books URL filters:** collection browse wires `author` / `title` / repeated `category_id` / `isbn` / `shelf_name` /
 `is_read` / `cleanup_field` (plus sort) through the centralized Books URL model. Visible controls cover category /
 author / title / read status / sort; `shelf_name` and ISBN stay URL/deep-link/hardware driven. Broader contract filters
-(publisher, ranges, `status`, etc.) stay out unless a product need explicitly requires them. Do not invent page-local
-filter stacks.
+(publisher, ranges, `status`, `placement_state`, etc.) stay out of ordinary Browse unless a product need or ticket
+explicitly requires them. Do not invent page-local filter stacks.
 
-### Book covers (OpenAPI `0.2.11+`)
+### Book covers (authenticated binary routes)
 
 Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{book_id}/cover`. Behavioral detail lives in
 `docs/technical-reference/API-for-FE.md` (Book covers). Cover resolution -- including the Open Library ISBN fallback
@@ -356,15 +452,16 @@ Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{book_id}/cover`. Beh
 - Database-pool saturation may return **503** with `Retry-After: 1`. Keep that as an error rather than a successful
   no-cover result. Cover queries do not automatically retry; a later remount or explicit invalidation may retry.
 - Missing books reject cover get/upload/delete (**404**), same as checkout / check-in / mark-read / `PATCH` /
-  bulk shelf move.
+  bulk shelf move / availability.
 - Browser `<img src>` cannot send `Authorization`. Use authenticated `fetch` to `GET /books/{book_id}/cover`: **200** →
   `response.blob()` + object URL (revoke on cleanup); **404** → intentional placeholder. Do not invent URLs from
   `cover_image_path`. Do not call Open Library from the SPA.
 - Non-JSON binary responses today: `GET /books/{book_id}/cover` (image bytes) and
-  `GET /albums/{album_id}/artwork` (image bytes; no SPA caller until `FEAT-02`).
+  `GET /albums/{album_id}/artwork` (image bytes; album SPA uses the authenticated artwork client).
 
 SPA surface: `booksApi` cover helpers, React Query hooks, shared `BookCover`, `BookCoverManager` on Book Details, and
-cover display on Books / Home / Collections. Extend those surfaces; do not invent a second cover client.
+cover display on Books / Home / Collections. Extend those surfaces; do not invent a second cover client. Album artwork
+follows the parallel authenticated album artwork helpers -- do not invent browser URLs from storage paths.
 
 ### Authority when sources disagree
 
@@ -397,9 +494,9 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 - `GET /ready` verifies the selected tenant's database readiness and may return **503** with `Retry-After: 1`; do not
   poll it. Missing/unknown/empty tenant host context returns **400** (same strings as protected routes). OpenAPI
   currently under-documents those `/ready` failure codes; prefer `API-for-FE.md`.
-- CORS allows local Vite origins plus `andy`/`jamie` localhost and deployed `shade`/`jamie` library hosts; allowed
-  request headers are `Authorization` and `Content-Type`. `Content-Disposition` is exposed so cover/artwork download
-  filenames are readable from JavaScript. Credentialed CORS (cookies) is disabled.
+- CORS allows local Vite origins plus `andy`/`dalmo`/`jamie` localhost and deployed `shade`/`dalmo`/`jamie` library
+  hosts; allowed request headers are `Authorization` and `Content-Type`. `Content-Disposition` is exposed so
+  cover/artwork download filenames are readable from JavaScript. Credentialed CORS (cookies) is disabled.
 - Use public `GET /version` for the footer API release string only; do not treat it as a health probe
 - Never commit the token, put it in URLs, log Authorization headers, or send it to analytics
 - A build-time token in JS bundles is inspectable by anyone with device or artifact access; that is an accepted risk
@@ -407,82 +504,95 @@ cover display on Books / Home / Collections. Extend those surfaces; do not inven
 
 ### Lifecycle endpoints (never simulate with generic PATCH)
 
-| Operation          | Endpoint                                       |
+| Operation | Endpoint |
 |--------------------|------------------------------------------------|
-| Create             | `POST /books`                                  |
-| Edit metadata      | `PATCH /books/{book_id}`                            |
-| Delete             | `DELETE /books/{book_id}`                           |
-| Checkout           | `POST /books/{book_id}/checkout`                    |
-| Check-in           | `POST /books/{book_id}/checkin`                     |
-| Mark read          | `POST /books/{book_id}/mark-read`                   |
-| Bulk move to shelf | `POST /books/bulk/move-to-shelf`               |
-| Cover get          | `GET /books/{book_id}/cover`                        |
-| Cover upload       | `PUT /books/{book_id}/cover` (multipart `file`)     |
-| Cover delete       | `DELETE /books/{book_id}/cover`                     |
-| ISBN lookup        | `GET /books/lookup?isbn={isbn}`                |
-| Bulk ISBN lookup   | `POST /books/bulk/lookup` (API only; no SPA)    |
-| Bulk import        | `POST /books/bulk/import` (API only; no SPA)    |
-| Album catalog      | `/albums` CRUD + restore (no SPA until `FEAT-02`) |
-| Album circulation  | album checkout / check-in / mark-played (no SPA until `FEAT-02`) |
-| Album lookup       | `GET /albums/lookup` (no SPA until `FEAT-02`) |
-| Album artwork      | album artwork GET/PUT/DELETE/refetch (no SPA until `FEAT-02`) |
-| Artists / genres   | `/artists`, `/genres` CRUD (no SPA until `FEAT-02`) |
-| Mixed wishlist     | `GET .../items` and album membership routes (no SPA until `FEAT-02`) |
+| Create | `POST /books` |
+| Edit metadata | `PATCH /books/{book_id}` |
+| Delete | `DELETE /books/{book_id}` |
+| Checkout | `POST /books/{book_id}/checkout` |
+| Check-in | `POST /books/{book_id}/checkin` (requires `rating` 1--5) |
+| Mark read | `POST /books/{book_id}/mark-read` |
+| Availability | `POST /books/{book_id}/availability` |
+| Bulk availability | `POST /books/bulk/availability` |
+| Bulk move to shelf | `POST /books/bulk/move-to-shelf` |
+| Bulk stash | `POST /books/bulk/stash` |
+| Bulk apply-stash | `POST /books/bulk/apply-stash` |
+| Cover get | `GET /books/{book_id}/cover` |
+| Cover upload | `PUT /books/{book_id}/cover` (multipart `file`) |
+| Cover delete | `DELETE /books/{book_id}/cover` |
+| Borrower reviews | `GET /books/{book_id}/borrower-reviews` |
+| ISBN lookup | `GET /books/lookup?isbn={isbn}` |
+| Bulk ISBN lookup | `POST /books/bulk/lookup` (Build Mode) |
+| Bulk import | `POST /books/bulk/import` (Build Mode) |
+| Album catalog | `/albums` CRUD + restore |
+| Album circulation | album checkout / check-in (requires `rating`) / mark-played |
+| Album lookup | `GET /albums/lookup` |
+| Album bulk lookup/import | `POST /albums/bulk/lookup`, `POST /albums/bulk/import` |
+| Album artwork | album artwork GET/PUT/DELETE/refetch |
+| Album borrower reviews | `GET /albums/{album_id}/borrower-reviews` |
+| Artists / genres | `/artists`, `/genres` CRUD |
+| Mixed wishlist | `GET .../items` and typed book/album membership routes |
+| Album wishlist move | `POST .../albums/{wishlist_item_id}/move-to-shelf` |
+| Library setup/settings | `GET /library/setup`, `POST /library/setup/complete`, `GET`/`PATCH /library/settings` |
+| Works | `GET /works/{work_id}` plus merge/split/assign |
+| Catalog resolve | `POST /catalog/resolve-code` |
+| Catalog recent | `GET /catalog/recent-additions` |
+| Loan feedback | `PUT` / `DELETE /loans/{id}/feedback` |
 
 Bulk shelf move is atomic: validate destination and every selected book before changing any membership. Do **not**
-implement bulk movement by looping individual `PATCH /books/{book_id}` requests. Destination follows ordinary `shelf_name`
-rules (`unknown` allowed; `removed` rejected). Wishlist conflict → documented **412** (API does not auto-remove
-wishlist membership). Do **not** set covers through create/update JSON (`cover_image_path` is read-only); use cover
-`PUT` / `DELETE` only.
+implement bulk movement by looping individual `PATCH /books/{book_id}` requests. Destination follows ordinary
+`shelf_name` rules (`unknown` allowed; `removed` rejected). Wishlist conflict → documented **412** (API does not
+auto-remove wishlist membership). Do **not** set covers through create/update JSON (`cover_image_path` is read-only);
+use cover `PUT` / `DELETE` only. Do **not** simulate availability, stash/apply-stash, mark-played, or artwork refetch
+with generic `PATCH`.
 
 ### Frontend compensations for known backend limits
 
 - Validate ISBN-10 check digits (backend does not do this correctly).
 - Send normalized `YYYY-MM-DD` dates and UTC ISO 8601 timestamps.
-- Do not send `null` for required DB fields (title, `author_ids` on create, shelf_name on create, is_read, status).
-  Category membership is optional (`category_ids` omit/`[]` allowed); never send a singular `category` enum field. JSON
-  `null` `shelf_name`, `category_ids`, or `author_ids` on book update is **422** (omit those fields instead; OpenAPI
-  may still show `null` as a schema option). Do not set covers through create/update JSON -- use
+- Always send check-in `rating` (1--5); blank return time may omit `returned_at`.
+- Do not send `null` for required DB fields (title, `author_ids` on create, shelf_name on create when shelving, is_read,
+  status). Category membership is optional (`category_ids` omit/`[]` allowed); never send a singular `category` enum
+  field. JSON `null` `shelf_name`, `category_ids`, or `author_ids` on book update is **422** (omit those fields instead;
+  OpenAPI may still show `null` as a schema option). Do not set covers through create/update JSON -- use
   `PUT` / `DELETE /books/{book_id}/cover`.
 - Load shelves from `GET /shelves` for book placement; send selected `common_name` as `shelf_name` (never Title Case
   display strings). Collection create on `/books/new` requires an explicit shelf. Wishlist-only catalog rows omit
   `shelf_name` on `POST /books`. Manage the catalog on `/shelves` with documented `POST` / `PATCH` / `DELETE` (do not
-  invent shelf CRUD on Add/Edit Book).
+  invent shelf CRUD on Add/Edit Book). Use stash/apply-stash endpoints for stash flows; do not PATCH stashed books onto
+  shelves.
 - Load categories from `GET /categories` (`useCategories`); submit GUIDs as `category_ids`. Load authors from
   `GET /authors` (`useAuthors`); submit ordered GUIDs as `author_ids`. Do not hard-code category or author vocabulary
   or invent hard-coded labels as fake options.
-- Prevent blank title, at least one author (`author_ids`), borrower, and (on create) unselected shelf.
+- Prevent blank title, at least one author (`author_ids`), borrower, required check-in rating, and (on create)
+  unselected shelf when shelving.
 - Prevent deletion of on-loan books (backend allows it; frontend must not).
 - Render unknown enum values safely (see `enumDisplayValue`).
 - Display API-provided dashboard statistics; do not recalculate business metrics. If an average is `null`, show
-  something like "Not enough data" -- do not invent zero. Do not combine book and album dashboard totals; ignore
-  additive album keys until `FEAT-02` widgets exist.
-- Surface mixed-media **412** detail on shelf or collection writes (`A book cannot be placed on an album shelf`,
-  `Books cannot be added to an album collection`) and preserve form input. Shelves have no client `media_type` field.
+  something like "Not enough data" -- do not invent zero. Do not combine book and album dashboard totals.
+- Surface mixed-media **412** detail on shelf or collection writes and preserve form input. Shelves have no client
+  `media_type` field. Surface `enable_loans` / display-only / reserved-shelf **412** detail honestly.
 
 ### Scope
 
-**In scope for MVP:** discovery Home at `/` with About at `/about`, dashboard (summary plus breakdown /
-incomplete-metadata reports and Books deep links), active books with multi-`category_id` / author / title / ISBN /
-`shelf_name` / `is_read` / cleanup-mode filtering and URL-backed sorting, bulk selection and atomic bulk
-move-to-shelf, detail (including cover display/upload), manual/ISBN/camera/scanner add flows, hardware ISBN
-collection jump on Dashboard / Books / Loans, edit, checkout on book details (display-only **412** messaging without
-alternate-copy offers), check-in, loan history, reading tracking, hard delete, operator-owned database export/seed
-sync (no browser backup endpoint), runtime API config, CI, Podman preview, versioned production artifacts, wishlists,
-wishlist move-to-shelf, curated Collections (create/edit/delete/add/reorder/remove on `/collections`, plus Book
-Details add-to-collection), dynamic multi-category UI, Books filter plumbing through `shelf_name` / `is_read` /
-cleanup deep links, cover images across book surfaces, and the regression / deployment quality gate (`make check`).
+**In scope for the current product shell:** room-based Reading / Listening navigation (`/reading-room`,
+`/listening-room`) with Home as the room chooser; discovery Home content that remains book-oriented until multimedia
+Home tickets land; separate Reading and Listening dashboards and loan histories; book Browse / detail / create / edit /
+delete / covers / checkout / check-in / reading tracking / bulk selection / bulk move / stash / availability / bulk add
+where implemented; album Browse / detail / create / edit / artwork / circulation / bulk add where implemented; shared
+hallway Manage / Collections / Wishlists / Shelves; library setup and settings; wishlists and curated Collections with
+typed book and album membership; runtime API config; CI; Podman preview; versioned production artifacts; and the
+regression / deployment quality gate (`make check`). Prefer the current ticket's acceptance criteria over inventing
+adjacent surfaces.
 
-**Out of scope unless explicitly requested:** album catalog/circulation/artwork/mixed-wishlist UI except as
-`FEAT-02`, UPC, library-switcher UI (hostname tenant routing is proxy/API-owned), overdue notifications,
-Goodreads/StoryGraph, user accounts/roles, realtime sync, loan CRUD, mark-unread, Build Mode bulk lookup/import UI
-(`POST /books/bulk/lookup`, `POST /books/bulk/import`), frontend author/category/artist/genre catalog admin pages, and
-remote Ansible/systemd/TLS/rollback orchestration.
-Categories are many-to-many via `GET /categories` and `category_ids`; authors are many-to-many via `GET /authors` and
-`author_ids` -- do not hard-code taxonomy or invent a second filter stack. Broader catalog filters beyond the current
-Books controls stay out unless a product need explicitly requires them. Collection browse (`BooksPage`) and loan
-history (`LoansPage`) use infinite scroll with backend pagination; other callers still fetch unpaginated full lists
-when needed.
+**Out of scope unless explicitly requested by a ticket or user:** inventing routes not in OpenAPI, library-switcher UI
+(hostname tenant routing is proxy/API-owned), overdue notifications, Goodreads/StoryGraph, user accounts/roles,
+realtime sync, mark-unread, frontend author/category/artist/genre catalog admin pages (beyond inline create used by
+forms), remote Ansible/systemd/TLS/rollback orchestration, and features still blocked or deferred in `docs/tickets/`
+(for example work-correction UI, QR generation, borrower-feedback presentation, and mixed-media Home recent additions
+until their tickets are active). Categories are many-to-many via `GET /categories` and `category_ids`; authors are
+many-to-many via `GET /authors` and `author_ids` -- do not hard-code taxonomy or invent a second filter stack. Broader
+catalog filters beyond current Books/Albums controls stay out unless a product need explicitly requires them.
 
 Do not expand a ticket into out-of-scope features. Do not invent the next product feature merely because the API
 supports it.
@@ -669,9 +779,9 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `CollectionList`, `CollectionBookCreate` / `CollectionBookRead` / `CollectionBookList` / `CollectionBookUpdate`,
   validation/error schemas, `Status`). Book payloads use `shelf_name` (string); there is no hard-coded `Shelf` enum.
   Catalog identity is `BookRead.book_id` (UUID); loans / wishlist / collection memberships reference that UUID as `book_id`.
-  Wishlist and loan reads also expose nullable `album_id`; do not export album/artist/genre schema aliases from
-  `apiTypes.ts` until `FEAT-02` consumes them. Dashboard summary/breakdown types include required album fields; fixtures
-  may zero them. Book category memberships are `BookRead.categories` (`BookCategoryRead[]`); create/update use
+  Wishlist and loan reads also expose nullable `album_id`. Export album/artist/genre/library/work schema aliases from
+  `apiTypes.ts` when a ticket needs them; many are already exported. Dashboard summary/breakdown types include required
+  album fields; fixtures may zero them. Book category memberships are `BookRead.categories` (`BookCategoryRead[]`); create/update use
   `category_ids` (GUID array). Book author memberships are `BookRead.authors` (`BookAuthorRead[]`); create/update use
   `author_ids` (ordered GUID array). There is no singular `Category` enum alias. `BookRead.cover_image_path` is an
   optional read-only filename (not a browser URL); covers are mutated only via `PUT` / `DELETE /books/{book_id}/cover`
@@ -1498,23 +1608,28 @@ another project prompt as required reading before starting. Attach the items bel
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
 - `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
-  sequenced work begins with `FEAT-05_dedicated-album-section.md`. Informal UI
-  feedback such as `ui-nits.md` may also live here; it is not a sequenced build ticket unless the user asks to
-  implement items from it. When the directory holds only `.gitkeep` and/or informal notes, ask which work to take next
-  rather than inventing a follow-on feature.
+  sequenced work includes `FEAT-89_finish-dedicated-album-section.md` (Listening Dashboard finish; body title FEAT-05),
+  `FEAT-88_frontend-v2-experience-handoff.md`, remaining book V2 tickets (FEAT-39--55, FEAT-93), album follow-ons
+  (FEAT-90--92), and PLAN docs. Informal UI feedback notes may also live here; they are not sequenced build tickets
+  unless the user asks to implement items from them. When the directory holds only `.gitkeep` and/or informal notes,
+  ask which work to take next rather than inventing a follow-on feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
-- `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with `FEAT-02`.
+- `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with Listening Room / album
+  tickets (for example `FEAT-89`).
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
-  `info.version` `1.1.3` -- see Backend Contract), including book `book_id` / covers / filters / bulk routes,
-  loans with nullable `book_id`/`album_id` and `media_type`, wishlist `wishlist_item_id` plus mixed `/items` and album
-  membership routes, album catalog/lookup/artwork/circulation, `/artists`, `/genres`, and additive album dashboard
-  fields.
+  `info.version` `1.2.4` -- see Backend Contract), including book `book_id` / covers / filters / bulk / stash /
+  availability routes, loans with nullable `book_id`/`album_id`, `media_type`, and `feedback_present`, wishlist
+  `wishlist_item_id` plus mixed `/items` and album membership/move-to-shelf routes, album catalog/lookup/artwork/
+  circulation/bulk, `/artists`, `/genres`, `/library`, `/works`, `/catalog`, borrower-reviews, and additive album
+  dashboard fields.
 - `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json` (including
-  hostname tenant routing via `X-Forwarded-Host`, normalized author/category/artist/genre catalog rules, album
-  lookup/artwork/circulation, mixed wishlists, atomic bulk shelf-move rules, Build Mode bulk lookup/import semantics,
-  wishlist **412** semantics, mixed-media shelf/collection **412**, collection membership `shelf_name` null for
-  unshelved rows, and Book covers display/upload guidance for authenticated **200** image bytes / multipart `file`).
+  hostname tenant routing via `X-Forwarded-Host`, CORS hosts including dalmo, normalized author/category/artist/genre
+  catalog rules, album lookup/artwork/circulation, placement/stash, availability/TBR/Reserved, `/library` setup/
+  settings, `/works` corrections, `/catalog` resolve/recent-additions, loan feedback, mixed wishlists, atomic bulk
+  shelf-move and Build Mode bulk lookup/import semantics, wishlist **412** semantics, mixed-media shelf/collection
+  **412**, collection membership `shelf_name` null for unshelved rows, and Book covers / album artwork display/upload
+  guidance for authenticated **200** image bytes / multipart `file`).
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
 - `docs/full-project-context.md`: Optional slim always-on pack for chats without repo access (not required when
   this file is already loaded).
@@ -1642,9 +1757,9 @@ make build
   Make `publish` / `ci/build-prod.sh`, gitignored `ci/artifacts/`, and the production-like host inspection tests; do
   not upload secret-bearing archives from default CI or treat the Compose image as production. Do not invent FE-only
   cover providers. Never
-  simulate checkout, check-in, initial mark-read, mark-played, cover upload/delete, or album artwork
-  upload/delete/refetch with generic `PATCH`. Never
-  implement bulk shelf moves as per-book `PATCH` loops. Do not start album UI except under `FEAT-02` or an explicit
+  simulate checkout, check-in, initial mark-read, mark-played, cover upload/delete, availability, stash/apply-stash, or
+  album artwork upload/delete/refetch with generic `PATCH`. Never implement bulk shelf moves as per-book `PATCH` loops.
+  Do not reinvent album UI from OpenAPI alone; extend `src/features/albums/` under the active ticket or an explicit
   request.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a product need explicitly requires it.
