@@ -58,4 +58,20 @@ describe('library identity packages', () => {
             seasonalVariants: [],
         })
     })
+
+    it('records Jamie\'s approved saturated Y2K identity choices', () => {
+        expect(getKnownLibraryIdentity('jamie')).toMatchObject({
+            libraryName: "Jamie's Library",
+            wordmark: "Jamie's Library",
+            tagline: "What's the vibe?",
+            palette: 'jamie',
+            typographyAccent: 'warm',
+            motifs: ['monstera', 'parrot', 'disco-ball'],
+            personalityCopy: {
+                homeQuote: false,
+                emptyCatalog: null,
+            },
+            seasonalVariants: [],
+        })
+    })
 })

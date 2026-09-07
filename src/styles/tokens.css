@@ -7,6 +7,8 @@
   --font-family-heading:
           "Courier Prime", "Courier New", Courier, monospace;
 
+  --font-family-accent: var(--font-family-heading);
+
   --font-size-body: 1rem;
   --font-size-small: 0.875rem;
   --font-size-h1: clamp(2rem, 5vw, 3rem);
@@ -110,18 +112,23 @@
 }
 
 :root[data-library="jamie"] {
-  --color-page: #4b2117;
-  --color-border: #a85f32;
-  --color-link: #793a24;
-  --color-link-hover: #512617;
-  --color-primary: #652d1c;
-  --color-primary-hover: #481f14;
-  --color-card-border: #a85f32;
-  --color-wood: #3b1811;
-  --color-wood-dark: #26100c;
-  --color-brass: #a85f32;
-  --color-brass-light: #d58a52;
-  --color-focus: #efad68;
+  --font-family-accent:
+          "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --color-page: #0b402d;
+  --color-text: #fff4dd;
+  --color-text-muted: #d9e8d7;
+  --color-border: #e85d18;
+  --color-link: #16613f;
+  --color-link-hover: #0b402d;
+  --color-primary: #145b3c;
+  --color-primary-hover: #0b402d;
+  --color-card-border: #e85d18;
+  --color-card-rule: #ed8b4b;
+  --color-wood: #155c3e;
+  --color-wood-dark: #082f22;
+  --color-brass: #e85d18;
+  --color-brass-light: #ff9a4f;
+  --color-focus: #ffb36f;
 }
 
 :root[data-library="dalmo"] {

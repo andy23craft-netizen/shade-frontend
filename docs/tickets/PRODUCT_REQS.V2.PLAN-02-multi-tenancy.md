@@ -139,26 +139,26 @@ Jamie: Jamie's Library. "What's the vibe?"
 2. Choose three to five words for the library's personality (for example: cozy, scholarly,
    playful, modern, gothic, bright, quiet, eclectic, nostalgic).
 Dalmo: Eclectic, Delightful, enlightening. 
-Jamie: 
+Jamie: Funky, nostalgic, Y2K
 
 3. Which two or three colors feel most like the library? Are there colors the owner dislikes
    or needs avoided?
 Dalmo: Teal and Magenta.
-Jamie: Orange and 
+Jamie: (current Orange) and Forest green. 
 
 4. Should the palette feel light, dark, warm, cool, muted, saturated, or mixed?
 Dalmo: Cheerful and inviting
-Jamie: 
+Jamie: Saturated. 
 
 5. What visual setting best represents the library: a reading room, study, neighborhood
    shop, archive, garden room, music room, or something else?
 Dalmo: A sunny reading room 
-Jamie: 
+Jamie: disco dance floor/early 2000's skating rink 
 
 6. Name a few objects or motifs that belong in that setting (plants, lamps, animals, local
    landmarks, paper textures, wood species, patterns, keepsakes, and so on).
 Dalmo: Paper textures, sacred geometry, foreign language scripts
-Jamie: 
+Jamie: monstera, parrots, disco ball. 
 
 7. What should the header or hero image communicate at first glance? If the owner has a
    preferred photograph, illustration, logo, or personal asset, can they provide it and
@@ -169,27 +169,27 @@ Jamie: existing logo
 8. Does the owner prefer refined serif, friendly handwritten accents, clean modern type, or
    another typographic mood? Cursive/decorative type will remain accent-only.
 Dalmo: clean and elegant, easy to read, approachable typeface
-Jamie: 
+Jamie: Friendly handwritten accents 
 
 9. Should the interface voice feel formal, warm, witty, whimsical, understated, or another
    tone? Provide one example phrase they would enjoy seeing and one they would dislike.
 Dalmo: understated and minimalistic, virtually invisible/frictionless, intuitive UI
-Jamie: 
+Jamie: Warm. 
 
 10. Are there cultural, religious, family, accessibility, or personal symbols and themes to
     include or avoid?
 Dalmo: as appropriate, incorporate symbols from christian traditions and integral metatheory.
-Jamie: 
+Jamie: N/A 
 
 11. Are there seasonal touches they would enjoy, and are there seasons or holidays that
     should not be represented?
 Dalmo: N/A 
-Jamie: 
+Jamie: N/A 
 
 12. Which existing Jamie or Andy identity details feel useful as references, and which would
     feel wrong for this library?
 Dalmo: reference dalmo.ai , hiredalmo.com , and integral.dalmo.ai for design references. 
-Jamie: 
+Jamie: n/a
 
 ### Identity brief produced from the answers
 

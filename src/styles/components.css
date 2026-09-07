@@ -3590,6 +3590,82 @@
   );
 }
 
+/* Jamie: saturated roller-rink color and disco glints stay decorative. */
+:root[data-library="jamie"] .home-page {
+  --home-rule-brass: #ff9a4f;
+  --home-accent-recent: #e85d18;
+  --home-accent-categories: #178252;
+  --home-accent-staff: #ff7a2f;
+}
+
+:root[data-library="jamie"] .home-page__intro {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-large);
+  background:
+          radial-gradient(circle at 8% 18%, rgb(255 255 255 / 82%) 0 0.12rem, transparent 0.17rem),
+          radial-gradient(circle at 91% 30%, rgb(255 179 111 / 88%) 0 0.16rem, transparent 0.21rem),
+          radial-gradient(circle at 15% 82%, rgb(255 154 79 / 60%) 0 0.1rem, transparent 0.16rem),
+          linear-gradient(135deg, rgb(232 93 24 / 10%), transparent 38% 62%, rgb(255 154 79 / 10%));
+}
+
+:root[data-library="jamie"] .home-page__intro::before,
+:root[data-library="jamie"] .home-page__intro::after {
+  position: absolute;
+  z-index: -1;
+  width: clamp(2.5rem, 8vw, 5rem);
+  aspect-ratio: 1;
+  border: 0.18rem solid var(--color-brass-light);
+  border-radius: 50%;
+  background:
+          linear-gradient(90deg, transparent 47%, rgb(255 255 255 / 35%) 48% 52%, transparent 53%),
+          linear-gradient(transparent 47%, rgb(255 255 255 / 35%) 48% 52%, transparent 53%),
+          radial-gradient(circle, #7c8a89, #263433 68%);
+  box-shadow: 0 0 1.5rem rgb(255 122 47 / 45%);
+  content: "";
+  opacity: 0.55;
+}
+
+:root[data-library="jamie"] .home-page__intro::before {
+  top: 4%;
+  left: 1%;
+}
+
+:root[data-library="jamie"] .home-page__intro::after {
+  right: 1%;
+  bottom: 5%;
+}
+
+:root[data-library="jamie"] .home-page > section > h2,
+:root[data-library="jamie"] .home-room-links__label,
+:root[data-library="jamie"] .room-landing__eyebrow,
+:root[data-library="jamie"] .dashboard-page__eyebrow,
+:root[data-library="jamie"] .circulation-card__eyebrow,
+:root[data-library="jamie"] .about-page__intro > h1 {
+  font-family: var(--font-family-accent);
+  letter-spacing: 0.015em;
+  text-transform: none;
+}
+
+:root[data-library="jamie"] .home-room-links .app-link:first-child {
+  border-top-color: #e85d18;
+}
+
+:root[data-library="jamie"] .home-room-links .app-link:last-child {
+  border-top-color: #178252;
+}
+
+@media (forced-colors: active) {
+  :root[data-library="jamie"] .home-page__intro {
+    background: transparent;
+  }
+
+  :root[data-library="jamie"] .home-page__intro::before,
+  :root[data-library="jamie"] .home-page__intro::after {
+    content: none;
+  }
+}
+
 .home-page__intro {
   display: grid;
   justify-items: center;

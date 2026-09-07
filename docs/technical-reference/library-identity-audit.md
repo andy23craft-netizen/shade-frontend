@@ -71,3 +71,33 @@ Implementation brief recorded September 7, 2026:
 The repository records these checked-in logo derivatives as owner-supplied assets authorized
 for this library deployment. Original-source provenance or broader reuse rights are not
 asserted by the frontend package.
+
+## Jamie package (FEAT-11)
+
+Implementation brief recorded September 7, 2026:
+
+- **Name and tagline:** "Jamie's Library" with "What's the vibe?" The tagline is already part
+  of the canonical Home artwork and remains visible on the neutral About surface; it is not
+  repeated next to the hero.
+- **Palette:** saturated current orange and forest green, with warm paper cards retained for
+  legible content. Pale orange is the focus color against dark green; dark forest green is used
+  for links and controls on paper surfaces.
+- **Typography:** a friendly handwritten system-font stack is limited to expressive headings
+  and library wordmark accents. Body copy, forms, navigation, small labels, and status text keep
+  the shared legible faces. No font download or third-party request is introduced.
+- **Assets:** existing `Jamies_header.webp` and `Jamies_hero.webp` logo derivatives are the
+  approved package assets. The full-width Home image and compact header crop are decorative
+  (`alt=""`); their surrounding links retain the functional accessible names "About Jamie's
+  Library" and "Jamie's Library". The frontend repository records them as owner-supplied and
+  approved for this library deployment, without asserting broader reuse rights.
+- **Motifs and copy:** monstera, parrots, and disco balls are the bounded motif vocabulary.
+  Existing logo disco balls and lightweight CSS disco glints carry the early-2000s skating-rink
+  mood. No parrot or monstera artwork is invented without an approved source asset. Shared warm,
+  neutral interface copy remains in place; the Home quote treatment is absent.
+- **Accessibility and motion:** the shared hierarchy, focus order, controls, responsive image
+  sizing, and reduced-motion rules remain unchanged. Decorative glints contain no motion and
+  disappear in forced-colors mode. The palette retains high-contrast text and focus pairs.
+- **Seasonal choices:** none.
+- **Avoid list:** no cultural, religious, family, or seasonal symbols were requested; do not add
+  unapproved symbols, owner-authored CSS, alternate layouts, workflows, or navigation. Andy and
+  Dalmo assets, copy, and palette values are not fallbacks for Jamie.

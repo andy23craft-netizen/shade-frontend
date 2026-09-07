@@ -81,7 +81,7 @@ const IDENTITIES: Readonly<Record<LibraryId, LibraryIdentity>> = {
         palette: 'jamie',
         typographyAccent: 'warm',
         assets: { header: jamiesHeader, hero: jamiesHero },
-        motifs: [],
+        motifs: ['monstera', 'parrot', 'disco-ball'],
         personalityCopy: {
             homeQuote: false,
             emptyCatalog: null,

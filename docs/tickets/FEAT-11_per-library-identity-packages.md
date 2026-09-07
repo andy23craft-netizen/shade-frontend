@@ -1,6 +1,6 @@
 # FEAT-11 -- Per-Library Identity Packages
 
-**Status:** Dalmo implemented pending owner visual review; Jamie awaits owner input.
+**Status:** Dalmo and Jamie implemented pending owner visual review.
 
 **Dependency group:** C -- tenant presentation.
 
@@ -60,9 +60,8 @@ data-model changes return to product planning rather than entering the identity 
 Use a separate implementation PR or clearly separable commit for each owner so approval,
 assets, rollback, and deployment can proceed independently.
 
-Dalmo's bounded implementation brief and asset-rights record are captured in
-[`library-identity-audit.md`](../technical-reference/library-identity-audit.md). Jamie remains
-out of scope until her owner brief is complete.
+Dalmo's and Jamie's bounded implementation briefs and asset-rights records are captured in
+[`library-identity-audit.md`](../technical-reference/library-identity-audit.md).
 
 ## Out of scope
 

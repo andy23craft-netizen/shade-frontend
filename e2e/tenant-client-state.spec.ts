@@ -38,6 +38,25 @@ test('serves Dalmo artwork only on Dalmo hosts', async ({ page }) => {
     await expect(page.locator('img[src*="Dalmo_"]')).toHaveCount(0)
 })
 
+test('serves Jamie identity only on Jamie hosts', async ({ page }) => {
+    await page.goto('http://jamie.localhost:4173/')
+    await expect(page.locator('.home-page__hero-image')).toHaveAttribute(
+        'src',
+        /Jamies_hero/u,
+    )
+    await expect(page.getByRole('link', { name: "About Jamie's Library" })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('data-library', 'jamie')
+    await expect(page.locator('html')).toHaveAttribute('data-typography-accent', 'warm')
+
+    await page.goto('http://dalmo.localhost:4173/')
+    await expect(page.locator('img[src*="Jamies_"]')).toHaveCount(0)
+    await expect(page.locator('html')).not.toHaveAttribute('data-library', 'jamie')
+
+    await page.goto('http://unknown.localhost:4173/')
+    await expect(page.getByRole('heading', { name: 'Library not found' })).toBeVisible()
+    await expect(page.locator('img[src*="Jamies_"]')).toHaveCount(0)
+})
+
 test('known hosts and unknown hosts cannot reuse private browser persistence', async ({ page }) => {
     await page.goto('http://andy.localhost:4173/')
     await page.evaluate(() => localStorage.setItem('shade:andy:album:bulk-add:v1', JSON.stringify({ title: 'Andy private draft' })))
