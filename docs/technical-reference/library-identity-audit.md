@@ -38,3 +38,36 @@ or arbitrary runtime asset paths. Unknown hosts use the asset-free neutral packa
 All other occurrences of “Shade” in application code refer to the fixed product/API rather
 than a hosted library. No tenant switcher, selectable skin, alternate route, or feature fork
 is introduced by identity selection.
+
+## Dalmo package (FEAT-11)
+
+Implementation brief recorded September 7, 2026:
+
+- **Name and tagline:** "Dalmo's Library" with no tagline. The spelling follows the supplied
+  logo and the existing production identity rather than the questionnaire's apparent
+  "Libary" typo.
+- **Palette:** deep teal page and control colors with magenta borders and accents, held against
+  the shared warm paper surfaces. Bright pink is reserved for the focus indicator and light
+  decorative accent so interaction state remains conspicuous.
+- **Typography:** clean system sans-serif stacks for both body and heading roles. No downloaded
+  or decorative typeface is required; the lettering inside the supplied artwork remains
+  artwork-only.
+- **Assets:** `Dalmo_header.webp` and `Dalmo_hero.webp`, derived from the owner's existing logo
+  and supplied in the repository for this package. Both are transparent WebP assets; the Home
+  image is the canonical full-width mark and the header uses its compact crop. The linked
+  images are decorative (`alt=""`); the surrounding links carry the functional accessible
+  names "About Dalmo's Library" and "Dalmo's Library".
+- **Motifs and copy:** paper texture, sacred geometry, and multilingual script are the bounded
+  motif vocabulary. No owner-specific interface phrase was approved, so shared neutral copy
+  is retained and the optional Home quote treatment is absent.
+- **Accessibility and motion:** shared focus order, semantics, responsive image sizing,
+  forced-colors behavior, and reduced-motion rules remain unchanged. Identity imagery may
+  disappear in forced-colors contexts without removing its link's accessible name.
+- **Seasonal choices:** none.
+- **Avoid list:** no unapproved religious or metatheory symbols, no invented foreign-language
+  text, no owner-authored CSS, and no alternate layout, workflow, or navigation. Jamie and
+  Andy assets, copy, and palette values are not fallbacks for Dalmo.
+
+The repository records these checked-in logo derivatives as owner-supplied assets authorized
+for this library deployment. Original-source provenance or broader reuse rights are not
+asserted by the frontend package.

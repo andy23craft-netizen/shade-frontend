@@ -125,18 +125,23 @@
 }
 
 :root[data-library="dalmo"] {
-  --color-page: #073f43;
-  --color-border: #a96d43;
-  --color-link: #17635f;
-  --color-link-hover: #0e4542;
-  --color-primary: #125551;
-  --color-primary-hover: #0a3b3a;
-  --color-card-border: #a96d43;
-  --color-wood: #153f42;
-  --color-wood-dark: #092b2d;
-  --color-brass: #a96d43;
-  --color-brass-light: #d29a6e;
-  --color-focus: #e6a875;
+  --font-family-sans:
+          "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+  --font-family-heading:
+          "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+  --color-page: #064c50;
+  --color-border: #9d236f;
+  --color-link: #0b6462;
+  --color-link-hover: #074745;
+  --color-primary: #075857;
+  --color-primary-hover: #043e3e;
+  --color-card-border: #9d236f;
+  --color-card-rule: #ca80ae;
+  --color-wood: #65164e;
+  --color-wood-dark: #430d34;
+  --color-brass: #9d236f;
+  --color-brass-light: #ed78bd;
+  --color-focus: #ff91d2;
 }
 
 :root[data-library="unknown"] {

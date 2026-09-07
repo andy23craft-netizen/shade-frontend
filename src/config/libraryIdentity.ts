@@ -66,9 +66,9 @@ const IDENTITIES: Readonly<Record<LibraryId, LibraryIdentity>> = {
         palette: 'dalmo',
         typographyAccent: 'clean',
         assets: { header: dalmoHeader, hero: dalmoHero },
-        motifs: ['paper', 'geometry'],
+        motifs: ['paper', 'sacred-geometry', 'multilingual-script'],
         personalityCopy: {
-            homeQuote: true,
+            homeQuote: false,
             emptyCatalog: null,
         },
         seasonalVariants: [],

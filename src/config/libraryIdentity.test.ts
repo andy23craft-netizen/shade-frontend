@@ -45,4 +45,17 @@ describe('library identity packages', () => {
             expect(getKnownLibraryIdentity(id).seasonalVariants).toEqual([])
         }
     })
+
+    it('records Dalmo\'s approved restrained identity choices', () => {
+        expect(getKnownLibraryIdentity('dalmo')).toMatchObject({
+            tagline: null,
+            typographyAccent: 'clean',
+            motifs: ['paper', 'sacred-geometry', 'multilingual-script'],
+            personalityCopy: {
+                homeQuote: false,
+                emptyCatalog: null,
+            },
+            seasonalVariants: [],
+        })
+    })
 })

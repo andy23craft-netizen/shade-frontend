@@ -20,7 +20,16 @@ describe('getLibraryBranding', () => {
 
         expect(branding.header).toContain('Dalmo_header.webp')
         expect(branding.hero).toContain('Dalmo_hero.webp')
-        expect(branding.showHomeQuote).toBe(true)
+        expect(branding.showHomeQuote).toBe(false)
+    })
+
+    it('does not leak Dalmo artwork onto another known host', () => {
+        const branding = getLibraryBranding(
+            resolveLibraryContext('jamie.library.spir.es'),
+        )
+
+        expect(branding.header).not.toContain('Dalmo_header.webp')
+        expect(branding.hero).not.toContain('Dalmo_hero.webp')
     })
 
     it('uses Shade artwork for Andy', () => {
