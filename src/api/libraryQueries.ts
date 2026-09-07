@@ -3,9 +3,10 @@ import type { CompleteLibrarySetupRequest, LibrarySettingsUpdate } from './apiTy
 import { createLibraryApi } from './libraryApi'
 import { queryKeys } from './queryKeys'
 import { useConnection } from '../features/connection/useConnection'
+import { requireLibraryClientNamespace } from '../config/libraryNamespace'
 
 export function currentLibraryHost(): string {
-    return window.location.hostname.trim().toLowerCase().replace(/\.$/u, '')
+    return requireLibraryClientNamespace(window.location.hostname).libraryId
 }
 
 export function useLibrarySetup() {

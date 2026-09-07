@@ -48,6 +48,7 @@ describe('AboutPage', () => {
     })
 
     it('does not load dashboard data from the About route', async () => {
+        vi.mocked(globalThis.fetch).mockClear()
         await renderAppTree(['/about'])
 
         await screen.findByRole('heading', {

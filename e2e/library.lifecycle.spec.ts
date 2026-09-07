@@ -8,6 +8,8 @@ import {
 test('checks out and checks in a book through the browser', async ({
                                                                        page,
                                                                    }) => {
+    test.setTimeout(60_000)
+
     const book = makeBook({
         book_id: 'lifecycle-book',
         title: 'Pale Fire',

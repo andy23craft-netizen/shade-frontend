@@ -5,6 +5,7 @@ import {
 import type {
     RuntimeDiagnosticConfig,
 } from '../config/runtimeConfig'
+import type { LibraryId } from '../config/libraryContext'
 
 export interface DiagnosticReporter {
     reportApiFailure(
@@ -18,6 +19,7 @@ export interface DiagnosticReporter {
 interface ApiFailureDiagnostic {
     event: 'api_request_failure'
     release: string
+    libraryId: LibraryId
     operation: string | undefined
     error: {
         kind: ApiError['kind']
@@ -29,6 +31,7 @@ interface ApiFailureDiagnostic {
 interface RenderFailureDiagnostic {
     event: 'render_failure'
     release: string
+    libraryId: LibraryId
 }
 
 type DiagnosticPayload =
@@ -38,6 +41,7 @@ type DiagnosticPayload =
 export interface CreateDiagnosticReporterOptions {
     config: RuntimeDiagnosticConfig
     release: string
+    libraryId: LibraryId
 }
 
 function createDisabledReporter(): DiagnosticReporter {
@@ -74,6 +78,7 @@ function sendDiagnostic(
 export function createDiagnosticReporter({
                                              config,
                                              release,
+                                             libraryId,
                                          }: CreateDiagnosticReporterOptions): DiagnosticReporter {
     if (!config.enabled || config.endpoint === null) {
         return createDisabledReporter()
@@ -91,6 +96,7 @@ export function createDiagnosticReporter({
                 {
                     event: 'api_request_failure',
                     release,
+                    libraryId,
                     operation,
                     error: {
                         kind: error.kind,
@@ -108,6 +114,7 @@ export function createDiagnosticReporter({
                 {
                     event: 'render_failure',
                     release,
+                    libraryId,
                 },
             )
         },

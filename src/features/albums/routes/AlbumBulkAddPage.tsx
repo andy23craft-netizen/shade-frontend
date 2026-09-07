@@ -7,7 +7,7 @@ import { useShelves } from '../../../api/shelvesQueries'
 import { Alert, AppLink, Button, Field, LoadingState, QueryErrorState } from '../../../components'
 import { resolveLibraryContext } from '../../../config/libraryContext'
 import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
-import { albumBulkStorageKey, albumCatalogStateLabel, albumLookupStatusLabel, canImportAlbum, draftFromAlbumLookup, emptyAlbumDraft, loadAlbumBulkSession, type AlbumBulkQueueItem, type AlbumCaptureKind } from '../albumBulkAddModel'
+import { albumBulkStorageKey, albumCatalogStateLabel, albumLookupStatusLabel, canImportAlbum, discardLegacyUnscopedAlbumBulkSession, draftFromAlbumLookup, emptyAlbumDraft, loadAlbumBulkSession, type AlbumBulkQueueItem, type AlbumCaptureKind } from '../albumBulkAddModel'
 
 const MAX_ITEMS = 50
 const FORMATS = ['vinyl', 'cd', 'cassette', 'other', 'unknown'] as const
@@ -19,6 +19,7 @@ const statusDetail = (item: AlbumBulkQueueItem) => item.saveDetail ?? (item.resu
 export function AlbumBulkAddPage() {
     const navigate = useNavigate()
     const storageKey = albumBulkStorageKey(window.location.hostname)
+    const [discardedLegacySession] = useState(() => discardLegacyUnscopedAlbumBulkSession(window.localStorage))
     const [initialSession] = useState(() => loadAlbumBulkSession(window.localStorage, storageKey))
     const [shelfName, setShelfName] = useState(initialSession?.shelfName ?? '')
     const [started, setStarted] = useState(initialSession?.started ?? false)
@@ -28,7 +29,11 @@ export function AlbumBulkAddPage() {
     const [capture, setCapture] = useState('')
     const [manualTitle, setManualTitle] = useState('')
     const [manualArtists, setManualArtists] = useState('')
-    const [message, setMessage] = useState<string | null>(initialSession ? 'Restored your saved album intake session.' : null)
+    const [message, setMessage] = useState<string | null>(initialSession
+        ? 'Restored your saved album intake session.'
+        : discardedLegacySession
+            ? 'A saved intake draft from an older version could not be restored safely and was discarded.'
+            : null)
     const [error, setError] = useState<string | null>(null)
     const lookup = useBulkAlbumLookup()
     const importer = useBulkAlbumImport()

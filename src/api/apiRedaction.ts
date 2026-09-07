@@ -34,6 +34,14 @@ const SENSITIVE_KEYS = new Set([
     'isbn13',
     'backup',
     'blob',
+    'file',
+    'filename',
+    'path',
+    'draft',
+    'lookup',
+    'result',
+    'destination',
+    'saveoutcome',
 ])
 
 const SENSITIVE_VALUE_PATTERNS = [

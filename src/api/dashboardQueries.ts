@@ -17,7 +17,7 @@ import {
     INFINITE_SCROLL_BATCH_SIZE,
 } from '../features/shared/infiniteScrollConfig'
 
-export function useDashboard() {
+export function useDashboard(options: { enabled?: boolean } = {}) {
     const {
         apiClient,
     } = useConnection()
@@ -33,6 +33,7 @@ export function useDashboard() {
             dashboardApi.get({
                 signal,
             }),
+        enabled: options.enabled ?? true,
     })
 }
 

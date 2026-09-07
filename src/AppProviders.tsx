@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
     QueryClientProvider,
 } from '@tanstack/react-query'
@@ -16,8 +16,6 @@ import type {
     DiagnosticReporter,
 } from './diagnostics/diagnosticReporter'
 
-const queryClient = createQueryClient()
-
 interface AppProvidersProps {
     children: ReactNode
     runtimeConfig: RuntimeConfig
@@ -29,6 +27,11 @@ export function AppProviders({
                                  runtimeConfig,
                                  diagnosticReporter,
                              }: AppProvidersProps) {
+    // A provider instance belongs to exactly one document/hostname. Keeping
+    // the client here prevents query data and Blob responses from crossing
+    // application mounts (including test and host transitions).
+    const [queryClient] = useState(createQueryClient)
+
     return (
         <NotificationsProvider>
             <QueryClientProvider client={queryClient}>

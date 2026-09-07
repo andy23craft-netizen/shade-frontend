@@ -61,6 +61,7 @@ function renderApplication() {
             config:
             runtimeConfigState.config.diagnostics,
             release: APP_VERSION,
+            libraryId: libraryContext.id,
         })
 
     root.render(

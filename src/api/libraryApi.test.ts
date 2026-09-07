@@ -19,6 +19,8 @@ describe('createLibraryApi', () => {
         expect(settingsRequest?.method).toBe('PATCH')
         expect(settingsRequest?.body).toBe(JSON.stringify({ enable_loans: false }))
         expect(new Headers(settingsRequest?.headers).get('Authorization')).toBe('Bearer secret')
+        expect(new Headers(settingsRequest?.headers).has('X-Forwarded-Host')).toBe(false)
+        expect(new Headers(settingsRequest?.headers).has('Library-Username')).toBe(false)
     })
 
     it.each([

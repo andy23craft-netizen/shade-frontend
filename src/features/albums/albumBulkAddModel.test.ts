@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { albumBulkStorageKey, canImportAlbum, emptyAlbumDraft, loadAlbumBulkSession, type AlbumBulkQueueItem } from './albumBulkAddModel'
+import { albumBulkStorageKey, canImportAlbum, discardLegacyUnscopedAlbumBulkSession, emptyAlbumDraft, loadAlbumBulkSession, type AlbumBulkQueueItem } from './albumBulkAddModel'
 
 const item = (state: string): AlbumBulkQueueItem => ({ clientItemId: 'album-1', kind: 'barcode', value: '123', status: 'found', result: { client_item_id: 'album-1', status: 'found', catalog_state: state as never }, draft: { ...emptyAlbumDraft(), title: 'Blue', artistIds: ['artist-1'] } })
 
 describe('albumBulkAddModel', () => {
-    it('namespaces persisted album intake by library host', () => expect(albumBulkStorageKey('Jamie.Localhost')).toBe('shade:bulk-add:jamie.localhost:album:v1'))
+    it('namespaces persisted album intake by canonical library and media', () => {
+        expect(albumBulkStorageKey('Jamie.Localhost')).toBe('shade:jamie:album:bulk-add:v1')
+        expect(albumBulkStorageKey('jamie.library.spir.es')).toBe('shade:jamie:album:bulk-add:v1')
+        expect(albumBulkStorageKey('andy.localhost')).not.toBe(albumBulkStorageKey('jamie.localhost'))
+    })
     it('blocks deleted and ambiguous matches and requires explicit duplicate/acquisition choices', () => {
         expect(canImportAlbum(item('soft_deleted'))).toBe(false)
         expect(canImportAlbum(item('ambiguous'))).toBe(false)
@@ -15,4 +19,11 @@ describe('albumBulkAddModel', () => {
         expect(canImportAlbum(wishlist)).toBe(true)
     })
     it('ignores corrupt persisted state', () => expect(loadAlbumBulkSession({ getItem: () => '{' }, 'key')).toBeNull())
+
+    it('discards legacy unscoped data once instead of restoring it', () => {
+        const values = new Map([['shade:bulk-add:album:v1', '{"private":"draft"}']])
+        const storage = { getItem: (key: string) => values.get(key) ?? null, removeItem: (key: string) => values.delete(key) }
+        expect(discardLegacyUnscopedAlbumBulkSession(storage)).toBe(true)
+        expect(discardLegacyUnscopedAlbumBulkSession(storage)).toBe(false)
+    })
 })

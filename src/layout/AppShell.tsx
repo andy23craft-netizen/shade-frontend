@@ -25,7 +25,6 @@ const LAST_UPDATED = 'September 01, 2026'
 
 export function AppShell() {
     const { data: versionData } = useVersion()
-    const { data: dashboardData } = useDashboard()
     const location = useLocation()
     const matches = useMatches()
     const mainRef = useRef<HTMLElement>(null)
@@ -37,6 +36,7 @@ export function AppShell() {
     const libraryBranding = getLibraryBranding(libraryContext)
     const isListeningRoom = location.pathname === '/listening-room' || location.pathname.startsWith('/albums') || location.pathname.startsWith('/listening-room/')
     const isReadingRoom = location.pathname === '/reading-room' || location.pathname.startsWith('/books') || location.pathname.startsWith('/stash') || location.pathname.startsWith('/shelves') || location.pathname.startsWith('/reading-room/')
+    const { data: dashboardData } = useDashboard({ enabled: isReadingRoom })
     const room = isListeningRoom ? 'listening' : isReadingRoom ? 'reading' : 'neutral'
     const isHome = location.pathname === '/'
     const isHallway = ['/collection/manage', '/collections', '/wishlists'].includes(location.pathname)

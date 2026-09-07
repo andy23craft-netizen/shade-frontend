@@ -24,7 +24,7 @@ describe('library queries', () => {
             const { client, Wrapper } = wrapper()
             const result = renderHook(() => useLibrarySetup(), { wrapper: Wrapper })
             await waitFor(() => expect(result.result.current.isSuccess).toBe(true))
-            expect(client.getQueryData(queryKeys.library.setup(window.location.hostname))).toEqual(setup)
+            expect(client.getQueryData(queryKeys.library.setup('andy'))).toEqual(setup)
         }
     })
 
@@ -37,8 +37,8 @@ describe('library queries', () => {
         const result = renderHook(() => ({ complete: useCompleteLibrarySetup(), settings: useUpdateLibrarySettings() }), { wrapper: Wrapper })
         await act(() => result.result.current.complete.mutateAsync({ initial_media: 'book', shelf_ids: ['shelf-2'] }))
         await act(() => result.result.current.settings.mutateAsync({ book_tbr_shelf_ids: ['shelf-2'] }))
-        expect(client.getQueryData(queryKeys.library.setup(window.location.hostname))).toEqual(setup)
-        expect(client.getQueryData(queryKeys.library.settings(window.location.hostname))).toEqual(saved)
+        expect(client.getQueryData(queryKeys.library.setup('andy'))).toEqual(setup)
+        expect(client.getQueryData(queryKeys.library.settings('andy'))).toEqual(saved)
     })
 
     it('loads settings and leaves cached confirmation intact on failure', async () => {
@@ -49,6 +49,6 @@ describe('library queries', () => {
         const result = renderHook(() => ({ query: useLibrarySettings(), mutation: useUpdateLibrarySettings() }), { wrapper: Wrapper })
         await waitFor(() => expect(result.result.current.query.isSuccess).toBe(true))
         await expect(result.result.current.mutation.mutateAsync({ enable_loans: false })).rejects.toThrow('offline')
-        expect(client.getQueryData(queryKeys.library.settings(window.location.hostname))).toEqual(confirmed)
+        expect(client.getQueryData(queryKeys.library.settings('andy'))).toEqual(confirmed)
     })
 })

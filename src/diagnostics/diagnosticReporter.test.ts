@@ -29,6 +29,7 @@ describe('createDiagnosticReporter', () => {
                     endpoint: null,
                 },
                 release: '2026.08.16',
+                libraryId: 'andy',
             })
 
         reporter.reportApiFailure(
@@ -63,6 +64,7 @@ describe('createDiagnosticReporter', () => {
                         'https://diagnostics.example.test/report',
                 },
                 release: '2026.08.16',
+                libraryId: 'andy',
             })
 
         reporter.reportApiFailure(
@@ -100,6 +102,7 @@ describe('createDiagnosticReporter', () => {
                     event:
                         'api_request_failure',
                     release: '2026.08.16',
+                    libraryId: 'andy',
                     operation: 'books.list',
                     error: {
                         kind: 'server',
@@ -150,6 +153,7 @@ describe('createDiagnosticReporter', () => {
                         'https://diagnostics.example.test/report',
                 },
                 release: '2026.08.16',
+                libraryId: 'andy',
             })
 
         reporter.reportApiFailure(
@@ -173,6 +177,7 @@ describe('createDiagnosticReporter', () => {
             JSON.stringify({
                 event: 'api_request_failure',
                 release: '2026.08.16',
+                libraryId: 'andy',
                 operation: 'books.checkout',
                 error: {
                     kind: 'http',
@@ -202,6 +207,7 @@ describe('createDiagnosticReporter', () => {
                         'https://diagnostics.example.test/report',
                 },
                 release: '2026.08.16',
+                libraryId: 'andy',
             })
 
         reporter.reportApiFailure(
@@ -243,6 +249,7 @@ describe('createDiagnosticReporter', () => {
                         'https://diagnostics.example.test/report',
                 },
                 release: '2026.08.16',
+                libraryId: 'andy',
             })
 
         reporter.reportRenderFailure()
@@ -257,6 +264,7 @@ describe('createDiagnosticReporter', () => {
             JSON.stringify({
                 event: 'render_failure',
                 release: '2026.08.16',
+                libraryId: 'andy',
             }),
         )
     })
@@ -279,6 +287,7 @@ describe('createDiagnosticReporter', () => {
                         'https://diagnostics.example.test/report',
                 },
                 release: '2026.08.16',
+                libraryId: 'andy',
             })
 
         expect(() => {
@@ -302,6 +311,7 @@ describe('createDiagnosticReporter', () => {
                         'https://diagnostics.example.test/report',
                 },
                 release: '2026.08.16',
+                libraryId: 'andy',
             })
 
         expect(() => {

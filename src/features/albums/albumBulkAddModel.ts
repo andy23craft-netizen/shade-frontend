@@ -1,4 +1,5 @@
 import type { BulkAlbumLookupItemResult, MediaFormat } from '../../api/apiTypes'
+import { requireLibraryClientNamespace } from '../../config/libraryNamespace'
 
 export type AlbumCaptureKind = 'barcode' | 'discogs' | 'manual'
 
@@ -39,7 +40,21 @@ export interface AlbumBulkSession {
 export const emptyAlbumDraft = (): AlbumBulkDraft => ({ title: '', artistIds: [], genreIds: [], artistNames: [], genreNames: [], barcode: '', discogsReleaseId: '', musicbrainzReleaseId: '', label: '', releaseDate: '', mediaFormat: 'unknown', acquireWishlist: false, allowDuplicate: false })
 
 export function albumBulkStorageKey(hostname: string): string {
-    return `shade:bulk-add:${hostname.trim().toLowerCase()}:album:v1`
+    const namespace = requireLibraryClientNamespace(hostname, 'album')
+    return `${namespace.key}:bulk-add:v1`
+}
+
+const LEGACY_UNSCOPED_ALBUM_KEYS = [
+    'shade:bulk-add:album:v1',
+    'shade:album-bulk-add:v1',
+] as const
+
+export function discardLegacyUnscopedAlbumBulkSession(
+    storage: Pick<Storage, 'getItem' | 'removeItem'>,
+): boolean {
+    const found = LEGACY_UNSCOPED_ALBUM_KEYS.some((key) => storage.getItem(key) !== null)
+    for (const key of LEGACY_UNSCOPED_ALBUM_KEYS) storage.removeItem(key)
+    return found
 }
 
 export function loadAlbumBulkSession(storage: Pick<Storage, 'getItem'>, key: string): AlbumBulkSession | null {
