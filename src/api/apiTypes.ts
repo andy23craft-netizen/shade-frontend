@@ -17,13 +17,16 @@ export type BulkBookImportAction =
     Schemas['BulkBookImportAction']
 
 export type BulkBookImportItemRequest =
-    Schemas['BulkBookImportItemRequest']
+    Omit<Schemas['BulkBookImportItemRequest'], 'allow_duplicate'> &
+    Partial<Pick<Schemas['BulkBookImportItemRequest'], 'allow_duplicate'>>
 
 export type BulkBookImportItemResult =
     Schemas['BulkBookImportItemResult']
 
 export type BulkBookImportRequest =
-    Schemas['BulkBookImportRequest']
+    Omit<Schemas['BulkBookImportRequest'], 'items'> & {
+        items: BulkBookImportItemRequest[]
+    }
 
 export type BulkBookImportResponse =
     Schemas['BulkBookImportResponse']
@@ -100,6 +103,8 @@ export type CompleteLibrarySetupRequest = Schemas['CompleteLibrarySetupRequest']
 export type LibrarySettingsRead = Schemas['LibrarySettingsRead']
 export type LibrarySettingsUpdate = Schemas['LibrarySettingsUpdate']
 export type SetBookAvailabilityRequest = Schemas['SetBookAvailabilityRequest']
+export type BulkBookAvailabilityRequest = Schemas['BulkBookAvailabilityRequest']
+export type BulkBookAvailabilityResponse = Omit<Schemas['BulkBookAvailabilityResponse'], 'items'> & { items: BookRead[] }
 export type ReservationWrite = Schemas['ReservationWrite']
 export type WorkRead = Schemas['WorkRead']
 

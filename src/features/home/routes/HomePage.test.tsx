@@ -20,6 +20,8 @@ import type {
 } from '../../../api/apiTypes'
 import {
     useRecentBooks,
+    useNewReleaseBooks,
+    useCurrentReadingBooks,
 } from '../../../api/booksQueries'
 import {
     useCategories,
@@ -47,6 +49,8 @@ vi.mock('../../../api/booksQueries', async (importOriginal) => {
     return {
         ...actual,
         useRecentBooks: vi.fn(),
+        useNewReleaseBooks: vi.fn(),
+        useCurrentReadingBooks: vi.fn(),
     }
 })
 
@@ -92,6 +96,10 @@ vi.mock(
 
 const mockUseRecentBooks =
     vi.mocked(useRecentBooks)
+const mockUseNewReleaseBooks =
+    vi.mocked(useNewReleaseBooks)
+const mockUseCurrentReadingBooks =
+    vi.mocked(useCurrentReadingBooks)
 
 const mockUseCategories =
     vi.mocked(useCategories)
@@ -352,6 +360,16 @@ function mockBreakdownsQuery(
 
 function mockSuccessState() {
     mockRecentBooksQuery()
+    const emptyBookQuery = {
+        data: { items: [], total: 0 },
+        error: null,
+        isPending: false,
+        isError: false,
+    } as unknown as ReturnType<typeof useNewReleaseBooks>
+    mockUseNewReleaseBooks.mockReturnValue(emptyBookQuery)
+    mockUseCurrentReadingBooks.mockReturnValue(
+        emptyBookQuery as ReturnType<typeof useCurrentReadingBooks>,
+    )
     mockCategoriesQuery()
     mockCollectionsQuery()
     mockCollectionBooksQuery()

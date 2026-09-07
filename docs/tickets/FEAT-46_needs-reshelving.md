@@ -24,4 +24,7 @@ General task management, notifications, and automatic catalog correction.
 ## Open questions
 
 1. Is the reason optional free text only, or should there be a small reason vocabulary plus note?
+- yeah, i think i just need to be able to say, `in wrong section` or just whatever the reason is. Just free text. 
+
 2. Should clearing require confirmation, and should resolved tasks remain visible in history?
+- Yes to confirmation, no to historical record. 

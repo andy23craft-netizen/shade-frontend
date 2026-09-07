@@ -18,6 +18,7 @@ import { QueryErrorState } from '../../../components/QueryErrorState'
 import {
     useBookLookup,
     useCreateBook,
+    useBooks,
 } from '../../../api/booksQueries'
 import {
     useCategories,
@@ -29,6 +30,8 @@ import {
 } from '../../../api/authorsQueries'
 import type {
     AuthorRead,
+    BookCreate,
+    BookRead,
     CategoryRead,
 } from '../../../api/apiTypes'
 import {
@@ -274,8 +277,35 @@ export function NewBookPage() {
     )
 
     const createBook = useCreateBook()
+    const existingCopiesQuery = useBooks({
+        isbn: values.isbn13 || undefined,
+        take: 20,
+        enabled: false,
+    })
     const createAuthor = useCreateAuthor()
     const createCategory = useCreateCategory()
+    const [duplicateCopies, setDuplicateCopies] = useState<BookRead[]>([])
+    const [pendingDuplicateCreate, setPendingDuplicateCreate] = useState<BookCreate | null>(null)
+
+    function create(book: BookCreate) {
+        createBook.mutate(
+            book,
+            {
+                onSuccess: (created) => navigate(`/books/${created.book_id}`),
+                onError: (error) => {
+                    if (isApiError(error) && error.fieldErrors.length > 0) {
+                        setServerFieldErrors(mapCreateFieldErrors(error.fieldErrors))
+                        setFormError(error.message)
+                        return
+                    }
+                    if (isApiError(error) && error.status === 400) {
+                        setServerFieldErrors({ shelfId: error.detail ?? error.message })
+                    }
+                    setFormError(isApiError(error) ? error.detail ?? error.message : error instanceof Error ? error.message : 'The book could not be created.')
+                },
+            },
+        )
+    }
 
     function handleIsbnDetected(
         isbn: string,
@@ -437,7 +467,7 @@ export function NewBookPage() {
         }))
     }
 
-    function handleSubmit(
+    async function handleSubmit(
         nextValues: BookFormValues,
     ) {
         setServerFieldErrors({})
@@ -462,58 +492,21 @@ export function NewBookPage() {
             return
         }
 
-        createBook.mutate(
-            book,
-            {
-                onSuccess: (created) => {
-                    navigate(
-                        `/books/${created.book_id}`,
-                    )
-                },
-                onError: (error) => {
-                    if (
-                        isApiError(error) &&
-                        error.fieldErrors.length >
-                            0
-                    ) {
-                        setServerFieldErrors(
-                            mapCreateFieldErrors(
-                                error.fieldErrors,
-                            ),
-                        )
-                        setFormError(
-                            error.message,
-                        )
-                        return
-                    }
+        if (book.isbn13) {
+            const result = await existingCopiesQuery.refetch()
+            if (result.isError) {
+                setFormError('Existing copies could not be checked. Retry before adding this book.')
+                return
+            }
+            const copies = result.data?.items ?? []
+            if (copies.length > 0) {
+                setDuplicateCopies(copies)
+                setPendingDuplicateCreate(book)
+                return
+            }
+        }
 
-                    if (
-                        isApiError(error) &&
-                        error.status === 400
-                    ) {
-                        setServerFieldErrors({
-                            shelfId:
-                                error.detail ??
-                                error.message,
-                        })
-                        setFormError(
-                            error.detail ??
-                                error.message,
-                        )
-                        return
-                    }
-
-                    setFormError(
-                        isApiError(error)
-                            ? error.message
-                            : error instanceof
-                                  Error
-                              ? error.message
-                              : 'The book could not be created.',
-                    )
-                },
-            },
-        )
+        create(book)
     }
 
     const lookupReady =
@@ -898,6 +891,29 @@ export function NewBookPage() {
                 }
                 formError={formError}
             />
+
+            {pendingDuplicateCreate ? (
+                <Alert variant="warning" title="You already own this ISBN">
+                    <p>Choose an existing physical copy, or explicitly add another copy with separate placement and history.</p>
+                    <ul>
+                        {duplicateCopies.map((copy) => (
+                            <li key={copy.book_id}>
+                                <AppLink to={`/books/${copy.book_id}`}>
+                                    Use {copy.title} — {authorDisplayName(copy.authors?.[0] ?? { first_name: null, surname: 'Unknown author' })} — {copy.shelf_name ?? 'Unshelved'} — {copy.status} — added {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(copy.creation_date))}
+                                </AppLink>
+                            </li>
+                        ))}
+                    </ul>
+                    <div>
+                        <Button type="button" variant="primary" onClick={() => create(pendingDuplicateCreate)}>
+                            Add another copy
+                        </Button>
+                        <Button type="button" variant="secondary" onClick={() => setPendingDuplicateCreate(null)}>
+                            Keep editing
+                        </Button>
+                    </div>
+                </Alert>
+            ) : null}
         </section>
     )
 }

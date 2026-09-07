@@ -31,6 +31,7 @@ const mockUseInfiniteIncompleteMetadataBooks =
 const mockUseInfiniteScrollTrigger = vi.fn()
 const mockUseBulkMoveBooksToShelf = vi.fn()
 const mockUseBulkStashBooks = vi.fn()
+const mockUseSetBulkBookAvailability = vi.fn()
 const mockUseShelves = vi.fn()
 
 vi.mock('../../../api/booksQueries', () => ({
@@ -42,6 +43,8 @@ vi.mock('../../../api/booksQueries', () => ({
 
     useBulkStashBooks: () =>
         mockUseBulkStashBooks(),
+    useSetBulkBookAvailability: () =>
+        mockUseSetBulkBookAvailability(),
 }))
 
 vi.mock('../../../api/dashboardQueries', () => ({
@@ -202,6 +205,7 @@ describe('BooksPage', () => {
         mockUseCategories.mockReset()
         mockUseBulkMoveBooksToShelf.mockReset()
         mockUseBulkStashBooks.mockReset()
+        mockUseSetBulkBookAvailability.mockReset()
         mockUseShelves.mockReset()
 
         mockUseBulkMoveBooksToShelf.mockReturnValue({
@@ -212,6 +216,12 @@ describe('BooksPage', () => {
         mockUseBulkStashBooks.mockReturnValue({
             mutate: vi.fn(),
             isPending: false,
+        })
+
+        mockUseSetBulkBookAvailability.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+            isError: false,
         })
 
         mockUseShelves.mockReturnValue({

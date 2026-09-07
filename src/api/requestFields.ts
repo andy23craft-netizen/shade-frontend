@@ -74,6 +74,7 @@ export const BULK_SHELF_MOVE_REQUEST_KEYS = [
 ] as const satisfies readonly (keyof BulkShelfMoveRequest)[]
 
 export const CHECKOUT_REQUEST_KEYS = [
+    'availability_override',
     'borrower',
     'checked_out_at',
     'notes',

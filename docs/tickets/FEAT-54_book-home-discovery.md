@@ -28,5 +28,10 @@ External release feeds, recommendation engines, mixed-media Recent Additions, an
 ## Open questions
 
 1. What publication window and maximum card count define “New Releases”?
+- `in the current calendar year`, and I'd say... the five most recent. I don't have ton right now, but maybe eventually. 
+
 2. Should Current Reading order by last update, title, or an explicitly added reading-start signal?
+- there should only be two books marked "reading" at any one time, one for me and one for my wife. I want to just display those two (or one, or none -- there should be an explicit empty state for this module. something like -- nothing worse than not having a book to read...) 
+
 3. Is Surprise Me promoted into this ticket or kept deferred?
+- deferred for now. that feels firmly v3 

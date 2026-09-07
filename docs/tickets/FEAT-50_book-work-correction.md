@@ -24,5 +24,10 @@ Automatic clustering UI, cross-media Works, and editing historical loans.
 ## Open questions
 
 1. Where should owners discover Work correction: Book Details only, or also duplicate-resolution flows?
+- Book details is fine. 
+
 2. What minimum preview evidence makes a merge/split safe enough to confirm?
+- title and author and shelf, for physical check. 
+
 3. Does “reversible” require a dedicated undo action, or is an inverse merge/split workflow sufficient?
+- the latter

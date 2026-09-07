@@ -17,6 +17,8 @@ import {
 } from '../../../api/dashboardQueries'
 import {
     useRecentBooks,
+    useNewReleaseBooks,
+    useCurrentReadingBooks,
 } from '../../../api/booksQueries'
 import {
     HomeStaffPick,
@@ -70,6 +72,12 @@ export function HomePage() {
     const recentBooksQuery =
         useRecentBooks()
 
+    const newReleasesQuery =
+        useNewReleaseBooks()
+
+    const currentReadingQuery =
+        useCurrentReadingBooks()
+
     const [quote] = useState(
         randomHomeQuote,
     )
@@ -119,6 +127,15 @@ export function HomePage() {
 
     const recentBooks =
         recentBooksQuery.data?.items ?? []
+
+    const newReleases =
+        (newReleasesQuery.data?.items ?? []).filter(
+            (book) => book.publication_date &&
+                !Number.isNaN(Date.parse(book.publication_date)),
+        )
+
+    const currentReading =
+        currentReadingQuery.data?.items ?? []
 
     const categoriesPending =
         breakdownsQuery.isPending ||
@@ -235,6 +252,40 @@ export function HomePage() {
                                 />
                             ),
                         )}
+                    </HomeBookCarousel>
+                ) : null}
+            </section>
+
+            <section
+                className="home-section home-section--new-releases"
+                aria-labelledby="home-new-releases-heading"
+            >
+                <h2 id="home-new-releases-heading">New Releases</h2>
+                {newReleasesQuery.isPending ? <LoadingState label="Loading new releases…" /> : null}
+                {newReleasesQuery.isError ? <p role="alert">New releases could not be loaded.</p> : null}
+                {!newReleasesQuery.isPending && !newReleasesQuery.isError && newReleases.length === 0 ? (
+                    <p>No owned books with publication dates are available yet.</p>
+                ) : null}
+                {newReleases.length > 0 ? (
+                    <HomeBookCarousel ariaLabel="New releases books">
+                        {newReleases.map((book) => <HomeRecentBook key={book.book_id} book={book} />)}
+                    </HomeBookCarousel>
+                ) : null}
+            </section>
+
+            <section
+                className="home-section home-section--current-reading"
+                aria-labelledby="home-current-reading-heading"
+            >
+                <h2 id="home-current-reading-heading">Current Reading</h2>
+                {currentReadingQuery.isPending ? <LoadingState label="Loading current reading…" /> : null}
+                {currentReadingQuery.isError ? <p role="alert">Current reading could not be loaded.</p> : null}
+                {!currentReadingQuery.isPending && !currentReadingQuery.isError && currentReading.length === 0 ? (
+                    <p>Nothing worse than not having a book to read…</p>
+                ) : null}
+                {currentReading.length > 0 ? (
+                    <HomeBookCarousel ariaLabel="Current reading books">
+                        {currentReading.map((book) => <HomeRecentBook key={book.book_id} book={book} />)}
                     </HomeBookCarousel>
                 ) : null}
             </section>

@@ -6,6 +6,8 @@ import type {
     BookUpdate,
     BulkBookImportRequest,
     BulkBookImportResponse,
+    BulkBookAvailabilityRequest,
+    BulkBookAvailabilityResponse,
     BulkBookLookupRequest,
     BulkBookLookupResponse,
     BulkBookStashRequest,
@@ -18,6 +20,7 @@ import type {
     CheckoutRequest,
     MarkReadRequest,
     PlacementState,
+    Status,
     SetBookAvailabilityRequest,
 } from './apiTypes'
 import type {
@@ -48,6 +51,9 @@ export interface ListBooksOptions
     shelfName?: string
     placementState?: PlacementState
     isRead?: boolean
+    status?: Status
+    publicationYearMin?: number
+    publicationYearMax?: number
     skip?: number
     take?: number
     sortBy?: string
@@ -154,6 +160,18 @@ export function createBooksApi(
                 )
             }
 
+            if (options.status !== undefined) {
+                params.set('status', options.status)
+            }
+
+            if (options.publicationYearMin !== undefined) {
+                params.set('publication_year_min', String(options.publicationYearMin))
+            }
+
+            if (options.publicationYearMax !== undefined) {
+                params.set('publication_year_max', String(options.publicationYearMax))
+            }
+
             if (options.skip !== undefined) {
                 params.set(
                     'skip',
@@ -254,6 +272,16 @@ export function createBooksApi(
                         client_item_id:
                         item.client_item_id,
                     } as BulkBookImportRequest['items'][number]
+
+                    if (
+                        Object.hasOwn(
+                            item,
+                            'allow_duplicate',
+                        )
+                    ) {
+                        picked.allow_duplicate =
+                            item.allow_duplicate
+                    }
 
                     if (
                         Object.hasOwn(
@@ -515,6 +543,24 @@ export function createBooksApi(
             return client.requestJson<BookRead>(
                 `/books/${encodeURIComponent(id)}/availability`,
                 { method: 'POST', body: request },
+            )
+        },
+
+        setBulkAvailability(
+            request: BulkBookAvailabilityRequest,
+        ): Promise<BulkBookAvailabilityResponse> {
+            return client.requestJson<BulkBookAvailabilityResponse>(
+                '/books/bulk/availability',
+                {
+                    method: 'POST',
+                    body: {
+                        book_ids: [...request.book_ids],
+                        status: request.status,
+                        ...(Object.hasOwn(request, 'reservation')
+                            ? { reservation: request.reservation }
+                            : {}),
+                    },
+                },
             )
         },
 

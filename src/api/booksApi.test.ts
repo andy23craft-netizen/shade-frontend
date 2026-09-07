@@ -1340,6 +1340,42 @@ describe('createBooksApi', () => {
         )
         expect(result).toBe(response)
     })
+
+    it('lists current-year shelved releases in backend order', async () => {
+        const client = createMockClient()
+        vi.mocked(client.getJson).mockResolvedValue({ items: [], total: 0 })
+
+        await createBooksApi(client).list({
+            placementState: 'shelved',
+            publicationYearMin: 2026,
+            publicationYearMax: 2026,
+            take: 5,
+            sortBy: 'publicationDate',
+            sortOrder: 'desc',
+        })
+
+        expect(client.getJson).toHaveBeenCalledWith(
+            '/books?placement_state=shelved&publication_year_min=2026&publication_year_max=2026&take=5&sortBy=publicationDate&sortOrder=desc',
+        )
+    })
+
+    it('sets selected book availability atomically', async () => {
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue({ updated_count: 2, items: [] })
+
+        await createBooksApi(client).setBulkAvailability({
+            book_ids: ['book-1', 'book-2'],
+            status: 'missing',
+        })
+
+        expect(client.requestJson).toHaveBeenCalledWith(
+            '/books/bulk/availability',
+            {
+                method: 'POST',
+                body: { book_ids: ['book-1', 'book-2'], status: 'missing' },
+            },
+        )
+    })
 })
 
 

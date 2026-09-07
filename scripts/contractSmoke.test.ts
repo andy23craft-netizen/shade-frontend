@@ -50,6 +50,7 @@ const expectedPaths = [
     '/authors/{author_id}',
     '/books',
     '/books/bulk/apply-stash',
+    '/books/bulk/availability',
     '/books/bulk/import',
     '/books/bulk/lookup',
     '/books/bulk/move-to-shelf',

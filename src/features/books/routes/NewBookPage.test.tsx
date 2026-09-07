@@ -30,6 +30,7 @@ const mockAuthorsRefetch = vi.fn()
 const mockCreateAuthor = vi.fn()
 const mockUseBookLookup = vi.fn()
 const mockCreateCategoryMutateAsync = vi.fn()
+const mockExistingCopiesRefetch = vi.fn()
 
 const TEST_SHELVES: ShelfRead[] = [
     {
@@ -147,6 +148,9 @@ vi.mock('../../../api/booksQueries', () => ({
             refetch: mockRefetch,
         }
     },
+    useBooks: () => ({
+        refetch: mockExistingCopiesRefetch,
+    }),
 }))
 
 vi.mock('../../../api/shelvesQueries', () => ({
@@ -234,6 +238,11 @@ describe('NewBookPage', () => {
         mockCreateAuthor.mockReset()
         mockUseBookLookup.mockReset()
         mockCreateCategoryMutateAsync.mockReset()
+        mockExistingCopiesRefetch.mockReset()
+        mockExistingCopiesRefetch.mockResolvedValue({
+            isError: false,
+            data: { items: [], total: 0 },
+        })
         shelvesState.data = TEST_SHELVES
         shelvesState.isPending = false
         shelvesState.isError = false

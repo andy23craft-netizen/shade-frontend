@@ -24,5 +24,10 @@ Borrower authentication, signature capture, email requests, and public reviews.
 ## Open questions
 
 1. After check-in succeeds but feedback fails, where should the durable retry entry live?
+- um. Idk. Wherever makes sense. 
+
 2. Should the UI expose feedback deletion, or only rating/review replacement and review clearing?
+- I don't think we need delete. 
+
 3. Should review attribution use backend display name verbatim or a frontend-derived initials presentation?
+- frontend derived initials presentation. 

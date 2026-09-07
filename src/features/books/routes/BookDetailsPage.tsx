@@ -39,6 +39,7 @@ import { formatBookAuthors } from '../authorDisplay'
 import { Button } from '../../../components/Button'
 import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
 import { isCheckoutEligible } from '../../loans/checkoutEligibility'
+import { BookAvailabilityControl } from '../components/BookAvailabilityControl'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -251,7 +252,9 @@ export function BookDetailsPage() {
     const canShowActiveActions = true
 
     const canCheckout =
-        isCheckoutEligible(book)
+        isCheckoutEligible(book) ||
+        book.status === 'reserved' ||
+        book.status === 'reading'
 
     const canCheckin =
         canShowActiveActions &&
@@ -484,6 +487,11 @@ export function BookDetailsPage() {
                     </p>
                 </section>
             ) : null}
+
+            <BookAvailabilityControl
+                book={book}
+                hasActiveLoan={hasActiveLoan}
+            />
 
             <section className="book-details-panel">
                 <h2>Borrowing History</h2>

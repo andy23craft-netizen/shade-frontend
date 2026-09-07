@@ -24,5 +24,10 @@ Contributor biographies, public authority files, and contributor catalog adminis
 ## Open questions
 
 1. May the same person hold multiple roles on one book?
+- This feels like an edge case, but technically it is possible. So yes. 
+
 2. Is inline contributor creation approved for every role, matching the current author flow?
+- yes. exactly like the current author flow. 
+
 3. Should legacy flat editor/illustrator strings be migrated or displayed read-only until normalized?
+- read-only until normalized. 

@@ -322,6 +322,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/bulk/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Bulk Book Availability */
+        post: operations["set_bulk_book_availability_books_bulk_availability_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/bulk/import": {
         parameters: {
             query?: never;
@@ -1939,6 +1956,20 @@ export interface components {
             /** Tracks */
             tracks?: components["schemas"]["AlbumLookupTrack"][];
         };
+        /** BulkBookAvailabilityRequest */
+        BulkBookAvailabilityRequest: {
+            /** Book Ids */
+            book_ids: string[];
+            reservation?: components["schemas"]["ReservationWrite"] | null;
+            status: components["schemas"]["Status"];
+        };
+        /** BulkBookAvailabilityResponse */
+        BulkBookAvailabilityResponse: {
+            /** Items */
+            items: components["schemas"]["BookRead"][];
+            /** Updated Count */
+            updated_count: number;
+        };
         /**
          * BulkBookCatalogState
          * @enum {string}
@@ -1952,6 +1983,12 @@ export interface components {
         /** BulkBookImportItemRequest */
         BulkBookImportItemRequest: {
             action: components["schemas"]["BulkBookImportAction"];
+            /**
+             * Allow Duplicate
+             * @description For create only, explicitly allow another physical copy with an ISBN already present in the catalog.
+             * @default false
+             */
+            allow_duplicate: boolean;
             /** Book */
             book?: {
                 [key: string]: unknown;
@@ -4674,6 +4711,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_bulk_book_availability_books_bulk_availability_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkBookAvailabilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkBookAvailabilityResponse"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Precondition failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
         };

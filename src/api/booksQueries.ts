@@ -28,6 +28,7 @@ import type {
     BookRead,
     BookUpdate,
     BulkBookImportRequest,
+    BulkBookAvailabilityRequest,
     BulkBookLookupRequest,
     BulkBookStashRequest,
     BulkShelfMoveRequest,
@@ -36,6 +37,8 @@ import type {
     CheckoutRequest,
     MarkReadRequest,
     PlacementState,
+    SetBookAvailabilityRequest,
+    Status,
 } from './apiTypes'
 
 function getNextListPageParam(
@@ -187,6 +190,9 @@ export function useBooks(
         shelfName?: string
         placementState?: PlacementState
         isRead?: boolean
+        status?: Status
+        publicationYearMin?: number
+        publicationYearMax?: number
         skip?: number
         take?: number
         sortBy?: string
@@ -209,6 +215,9 @@ export function useBooks(
     const shelfName = options.shelfName
     const placementState = options.placementState
     const isRead = options.isRead
+    const status = options.status
+    const publicationYearMin = options.publicationYearMin
+    const publicationYearMax = options.publicationYearMax
     const skip = options.skip
     const take = options.take
     const sortBy = options.sortBy
@@ -225,6 +234,9 @@ export function useBooks(
             shelfName,
             placementState,
             isRead,
+            status,
+            publicationYearMin,
+            publicationYearMax,
             skip,
             take,
             sortBy,
@@ -242,6 +254,9 @@ export function useBooks(
                 shelfName,
                 placementState,
                 isRead,
+                status,
+                publicationYearMin,
+                publicationYearMax,
                 skip,
                 take,
                 sortBy,
@@ -262,6 +277,9 @@ export function useInfiniteBooks(
         shelfName?: string
         placementState?: PlacementState
         isRead?: boolean
+        status?: Status
+        publicationYearMin?: number
+        publicationYearMax?: number
         sortBy?: string
         sortOrder?: string
         enabled?: boolean
@@ -282,6 +300,9 @@ export function useInfiniteBooks(
     const shelfName = options.shelfName
     const placementState = options.placementState
     const isRead = options.isRead
+    const status = options.status
+    const publicationYearMin = options.publicationYearMin
+    const publicationYearMax = options.publicationYearMax
     const sortBy = options.sortBy
     const sortOrder = options.sortOrder
     const enabled = options.enabled ?? true
@@ -296,6 +317,9 @@ export function useInfiniteBooks(
             shelfName,
             placementState,
             isRead,
+            status,
+            publicationYearMin,
+            publicationYearMax,
             sortBy,
             sortOrder,
             take: INFINITE_SCROLL_BATCH_SIZE,
@@ -313,7 +337,10 @@ export function useInfiniteBooks(
                 categoryIds,
                 shelfName,
                 placementState,
-                isRead,
+                    isRead,
+                    status,
+                    publicationYearMin,
+                    publicationYearMax,
                 skip: pageParam,
                 take: INFINITE_SCROLL_BATCH_SIZE,
                 sortBy,
@@ -397,6 +424,33 @@ export function useRecentBooks(
         take: 10,
         sortBy: 'creationDate',
         sortOrder: 'desc',
+        enabled: options.enabled,
+    })
+}
+
+export function useNewReleaseBooks(
+    options: { enabled?: boolean } = {},
+) {
+    const currentYear = new Date().getFullYear()
+    return useBooks({
+        placementState: 'shelved',
+        publicationYearMin: currentYear,
+        publicationYearMax: currentYear,
+        skip: 0,
+        take: 5,
+        sortBy: 'publicationDate',
+        sortOrder: 'desc',
+        enabled: options.enabled,
+    })
+}
+
+export function useCurrentReadingBooks(
+    options: { enabled?: boolean } = {},
+) {
+    return useBooks({
+        status: 'reading',
+        skip: 0,
+        take: 2,
         enabled: options.enabled,
     })
 }
@@ -734,6 +788,57 @@ export function useDeleteBook() {
                 queryKey:
                 queryKeys.collections.all,
             })
+        },
+    })
+}
+
+export function useSetBookAvailability() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const booksApi = createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({ id, request }: {
+            id: string
+            request: SetBookAvailabilityRequest
+        }) => booksApi.setAvailability(id, request),
+        onSuccess: async (book) => {
+            writeBookDetailCache(queryClient, book)
+            await invalidateBookCaches(queryClient, book.book_id)
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.shelves.all,
+            })
+        },
+        onError: async (_error, variables) => {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.books.detail(variables.id),
+            })
+        },
+    })
+}
+
+export function useSetBulkBookAvailability() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const booksApi = createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (request: BulkBookAvailabilityRequest) =>
+            booksApi.setBulkAvailability(request),
+        onSuccess: async (response) => {
+            for (const book of response.items) {
+                writeBookDetailCache(queryClient, book)
+            }
+            await invalidateBulkShelfMoveCaches(
+                queryClient,
+                response.items.map((book) => book.book_id),
+            )
+        },
+        onError: async (_error, request) => {
+            await invalidateBulkShelfMoveCaches(
+                queryClient,
+                request.book_ids,
+            )
         },
     })
 }

@@ -24,5 +24,10 @@ Album analytics, recommendations, external benchmarks, and shelf capacity.
 ## Open questions
 
 1. What default time range and bucket size should the two over-time charts use?
+- all time. whole catalog. 
+
 2. Does Pages Turned include rereads and partially read books, or only `pages` for completed reading events?
+- no to re-reads. 
+
 3. Should category/shelf charts show all buckets or a top-N plus accessible remainder?
+- mirror the way we did categories on the current dashboard.

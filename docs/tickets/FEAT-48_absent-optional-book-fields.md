@@ -24,3 +24,4 @@ New metadata fields, contributor backend design, and visual redesign.
 ## Open questions
 
 1. For which absent fields, if any, should Book Details show an explicit “Not provided” rather than omit the row?
+- isbn should show "not applicable" on books before isbns became normalized. But I think every other field should just not be visible if it's not filled. 

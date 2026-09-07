@@ -52,6 +52,7 @@ import {
 import {
     isPreIsbnPublicationDate,
 } from '../components/bookFormModel'
+import { ExistingBookCopyLink } from '../components/ExistingBookCopyLink'
 
 const BULK_LOOKUP_MAX_ITEMS = 50
 const BULK_IMPORT_MAX_ITEMS = 50
@@ -301,7 +302,7 @@ function isSaveEligible(
         savedIds.has(item.clientItemId) ||
         item.status === 'queued' ||
         item.status === 'looking_up' ||
-        isExistingCatalogItem(item)
+        (isExistingCatalogItem(item) && !draft?.allowDuplicate)
     ) {
         return false
     }
@@ -319,7 +320,7 @@ function isSaveEligible(
 
     if (
         item.lookupResult?.catalog_state ===
-        'ambiguous'
+        'ambiguous' && !draft.allowDuplicate
     ) {
         return false
     }
@@ -349,13 +350,13 @@ function reviewStatusLabel(
         return 'Looking Up'
     }
 
-    if (isExistingCatalogItem(item)) {
+    if (isExistingCatalogItem(item) && !draft?.allowDuplicate) {
         return 'Already Exists'
     }
 
     if (
         item.lookupResult?.catalog_state ===
-        'ambiguous'
+        'ambiguous' && !draft?.allowDuplicate
     ) {
         return 'Needs Review'
     }
@@ -1339,6 +1340,9 @@ export function BulkAddPage() {
                                     item.clientItemId,
                                     action:
                                         'create' as const,
+                                    ...(draft.allowDuplicate
+                                        ? { allow_duplicate: true }
+                                        : {}),
                                     book: {
                                         title:
                                             draft.title.trim(),
@@ -2083,7 +2087,7 @@ export function BulkAddPage() {
 
                                 const editable =
                                     !saved &&
-                                    !existing &&
+                                    (!existing || draft.allowDuplicate) &&
                                     item.status !==
                                     'queued' &&
                                     item.status !==
@@ -2162,14 +2166,22 @@ export function BulkAddPage() {
                                                 variant="warning"
                                                 title="Already in library"
                                             >
-                                                This
-                                                ISBN is
-                                                already
-                                                owned and
-                                                will not
-                                                be
-                                                imported
-                                                again.
+                                                <p>This ISBN matches an existing physical copy.</p>
+                                                <ul>
+                                                    {(item.lookupResult?.catalog_book_ids ?? []).map((bookId) => (
+                                                        <li key={bookId}>
+                                                            <ExistingBookCopyLink bookId={bookId} />
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                <label className="bulk-add-review__wishlist">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={draft.allowDuplicate}
+                                                        onChange={(event) => updateDraft(item, { allowDuplicate: event.target.checked })}
+                                                    />
+                                                    Add another physical copy with its own shelf, history, cover, and QR identity
+                                                </label>
                                             </Alert>
                                         ) : null}
 
@@ -2178,21 +2190,20 @@ export function BulkAddPage() {
                                                 variant="warning"
                                                 title="Existing match needs review"
                                             >
-                                                More than
-                                                one
-                                                existing
-                                                catalog
-                                                record
-                                                matches
-                                                this
-                                                scan. It
-                                                will not
-                                                be saved
-                                                until
-                                                that
-                                                conflict
-                                                is
-                                                resolved.
+                                              <p>More than one existing catalog record matches this scan.</p>
+                                              <ul>
+                                                  {(item.lookupResult?.catalog_book_ids ?? []).map((bookId) => (
+                                                      <li key={bookId}><ExistingBookCopyLink bookId={bookId} /></li>
+                                                  ))}
+                                              </ul>
+                                              <label className="bulk-add-review__wishlist">
+                                                  <input
+                                                      type="checkbox"
+                                                      checked={draft.allowDuplicate}
+                                                      onChange={(event) => updateDraft(item, { allowDuplicate: event.target.checked })}
+                                                  />
+                                                  Add another physical copy
+                                              </label>
                                             </Alert>
                                         ) : null}
 
@@ -2236,7 +2247,7 @@ export function BulkAddPage() {
                                         ) : null}
 
                                         {editable &&
-                                        !ambiguous ? (
+                                      (!ambiguous || draft.allowDuplicate) ? (
                                             <div className="bulk-add-review">
                                                 <Field
                                                     id={`${item.clientItemId}-title`}

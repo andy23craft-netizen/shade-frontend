@@ -46,6 +46,9 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                status?: string
+                publicationYearMin?: number
+                publicationYearMax?: number
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -76,6 +79,9 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                status?: string
+                publicationYearMin?: number
+                publicationYearMax?: number
                 sortBy?: string
                 sortOrder?: string
                 take: number
@@ -118,6 +124,13 @@ export const queryKeys = {
                 key.isRead = options.isRead
             }
 
+            if (options.status !== undefined) {
+                key.status = options.status
+            }
+
+            if (options.publicationYearMin !== undefined) key.publicationYearMin = options.publicationYearMin
+            if (options.publicationYearMax !== undefined) key.publicationYearMax = options.publicationYearMax
+
             if (options.sortBy !== undefined) {
                 key.sortBy = options.sortBy
             }
@@ -142,6 +155,9 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                status?: string
+                publicationYearMin?: number
+                publicationYearMax?: number
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -174,6 +190,9 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                status?: string
+                publicationYearMin?: number
+                publicationYearMax?: number
                 skip?: number
                 take?: number
                 sortBy?: string
@@ -213,6 +232,13 @@ export const queryKeys = {
             if (options.isRead !== undefined) {
                 key.isRead = options.isRead
             }
+
+            if (options.status !== undefined) {
+                key.status = options.status
+            }
+
+            if (options.publicationYearMin !== undefined) key.publicationYearMin = options.publicationYearMin
+            if (options.publicationYearMax !== undefined) key.publicationYearMax = options.publicationYearMax
 
             if (options.skip !== undefined) {
                 key.skip = options.skip

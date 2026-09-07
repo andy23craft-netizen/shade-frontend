@@ -10,6 +10,7 @@ export interface BulkAddDraft {
     pages: string
     categoryIds: string[]
     acquireWishlist: boolean
+    allowDuplicate: boolean
 }
 
 export interface PersistedBookBulkSession {
@@ -25,7 +26,7 @@ export interface PersistedBookBulkSession {
 }
 
 export function emptyBulkAddDraft(): BulkAddDraft {
-    return { title: '', authors: '', publisher: '', publicationDate: '', isbnNotApplicable: false, pages: '', categoryIds: [], acquireWishlist: false }
+    return { title: '', authors: '', publisher: '', publicationDate: '', isbnNotApplicable: false, pages: '', categoryIds: [], acquireWishlist: false, allowDuplicate: false }
 }
 
 export function bookBulkStorageKey(hostname: string): string {
@@ -59,6 +60,8 @@ export function loadBookBulkSession(
                         ...draft,
                         isbnNotApplicable:
                             draft.isbnNotApplicable === true,
+                        allowDuplicate:
+                            draft.allowDuplicate === true,
                     },
                 ]),
             ),

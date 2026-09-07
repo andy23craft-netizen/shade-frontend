@@ -24,5 +24,11 @@ Per-owner identity packages, selectable skins, navigation redesign, and new scan
 ## Open questions
 
 1. Which seasonal treatments are approved, and how are they activated and dated?
+- I think we should start with just four basic ones for each season. Leaves and pumpkins and pinecones for fall; snowflakes, snowmounds, icicles for winter; plants and greenery and rain clouds for spring; sunshine and the like for summer. 
+
 2. Which representative screens must receive visual sign-off before rollout?
+- we need to revisit each of the `listening room` and `reading room` pages. And the albums dashboard. 
+- also Jamie's about page needs a record specific pass, since she won't be using the books side much. 
+
 3. Is the wood-brown camera direction final, or should variants be reviewed first?
+- I want to play around with it when we get there. see what looks good. 

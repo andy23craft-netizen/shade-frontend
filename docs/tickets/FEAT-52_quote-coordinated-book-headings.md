@@ -23,4 +23,6 @@ Weather selection, remote content, layout changes, and tenant quote CRUD.
 ## Open questions
 
 1. Should New Releases participate at launch, making five mapped headings per quote?
+- Yes. 
 2. Who approves the final phrase set for every checked-in quote?
+- I will give you the definitive list. 

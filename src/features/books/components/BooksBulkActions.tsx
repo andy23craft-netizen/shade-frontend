@@ -6,6 +6,7 @@ import {
     BulkMoveToShelfControl,
 } from './BulkMoveToShelfControl'
 import { BulkStashControl } from './BulkStashControl'
+import { BulkAvailabilityControl } from './BulkAvailabilityControl'
 
 interface BooksBulkActionsProps {
     selectedBookIds: readonly string[]
@@ -59,6 +60,11 @@ export function BooksBulkActions({
                 />
 
                 <BulkStashControl
+                    selectedBookIds={selectedBookIds}
+                    onSuccess={onClear}
+                />
+
+                <BulkAvailabilityControl
                     selectedBookIds={selectedBookIds}
                     onSuccess={onClear}
                 />

@@ -140,6 +140,9 @@ export function CheckoutDialog({
 
     const [formError, setFormError] =
         useState<string | null>(null)
+    const needsAvailabilityOverride =
+        book.status === 'reserved' || book.status === 'reading'
+    const [overrideConfirmed, setOverrideConfirmed] = useState(false)
 
     useEffect(() => {
         onCloseRef.current = onClose
@@ -311,6 +314,7 @@ export function CheckoutDialog({
 
     function resetForm() {
         setValues(checkoutFormDefaults)
+        setOverrideConfirmed(false)
         setFieldErrors({})
         setFormError(null)
     }
@@ -464,7 +468,7 @@ export function CheckoutDialog({
             return
         }
 
-        if (!isCheckoutEligible(book)) {
+        if (!isCheckoutEligible(book) && !needsAvailabilityOverride) {
             setFormError(
                 'This book is no longer available for checkout.',
             )
@@ -476,6 +480,10 @@ export function CheckoutDialog({
                 values,
                 new Date(),
             )
+
+        if (needsAvailabilityOverride) {
+            request.availability_override = true
+        }
 
         setFieldErrors({})
         setFormError(null)
@@ -559,6 +567,17 @@ export function CheckoutDialog({
                 ) : null}
 
                 <form onSubmit={handleSubmit}>
+                    {needsAvailabilityOverride ? (
+                        <label className="checkbox-field" htmlFor="checkout-availability-override">
+                            <input
+                                id="checkout-availability-override"
+                                type="checkbox"
+                                checked={overrideConfirmed}
+                                onChange={(event) => setOverrideConfirmed(event.target.checked)}
+                            />
+                            Confirm checkout of this {book.status === 'reserved' ? 'reserved' : 'currently reading'} copy
+                        </label>
+                    ) : null}
                     <Field
                         label="Borrower"
                         id="checkout-borrower"
@@ -621,9 +640,8 @@ export function CheckoutDialog({
                             variant="primary"
                             disabled={
                                 checkoutBook.isPending ||
-                                !isCheckoutEligible(
-                                    book,
-                                )
+                                (!isCheckoutEligible(book) && !needsAvailabilityOverride) ||
+                                (needsAvailabilityOverride && !overrideConfirmed)
                             }
                         >
                             {checkoutBook.isPending

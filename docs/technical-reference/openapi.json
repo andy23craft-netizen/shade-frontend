@@ -2731,6 +2731,59 @@
         "title": "BulkAlbumManualDraft",
         "type": "object"
       },
+      "BulkBookAvailabilityRequest": {
+        "properties": {
+          "book_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReservationWrite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          }
+        },
+        "required": [
+          "book_ids",
+          "status"
+        ],
+        "title": "BulkBookAvailabilityRequest",
+        "type": "object"
+      },
+      "BulkBookAvailabilityResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BookRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "updated_count": {
+            "title": "Updated Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "updated_count",
+          "items"
+        ],
+        "title": "BulkBookAvailabilityResponse",
+        "type": "object"
+      },
       "BulkBookCatalogState": {
         "enum": [
           "new",
@@ -2754,6 +2807,12 @@
         "properties": {
           "action": {
             "$ref": "#/components/schemas/BulkBookImportAction"
+          },
+          "allow_duplicate": {
+            "default": false,
+            "description": "For create only, explicitly allow another physical copy with an ISBN already present in the catalog.",
+            "title": "Allow Duplicate",
+            "type": "boolean"
           },
           "book": {
             "additionalProperties": true,
@@ -5825,7 +5884,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.2.1"
+    "version": "1.2.3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -9234,6 +9293,120 @@
           }
         ],
         "summary": "Bulk Apply Stash",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/bulk/availability": {
+      "post": {
+        "operationId": "set_bulk_book_availability_books_bulk_availability_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkBookAvailabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkBookAvailabilityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "State conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Precondition failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Validation failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Bulk Book Availability",
         "tags": [
           "books"
         ]
