@@ -1,67 +1,39 @@
 # FEAT-11 -- Per-Library Identity Packages
 
-**Status:** Dalmo and Jamie implemented pending owner visual review.
+**Status:** Dalmo and Jamie packages are implemented; pending owner visual review and
+final sign-off.
 
 **Dependency group:** C -- tenant presentation.
 
-**Depends on:** `FEAT-10`. Each package independently depends on an approved owner brief and
-licensed/approved assets.
+**Depends on:** `FEAT-10` (shipped). Implementation briefs and asset-rights records live in
+[`library-identity-audit.md`](../technical-reference/library-identity-audit.md). Canonical
+packages are `src/config/libraryIdentity.ts` (Andy, Dalmo, Jamie) with host-scoped branding
+via `libraryContext` / `libraryBranding` and palette tokens under `data-library`.
 
-## Objective
+## Remaining work
 
-Interview each additional library owner, record a bounded identity brief, and implement one
-accessible personality package without changing the shared application structure.
+Owner visual review for each additional library (Dalmo, Jamie) before acceptance. No further
+code delivery is required unless review requests a bounded package change within FEAT-10
+rules.
 
-## Owner brief
+## Acceptance criteria (remaining)
 
-Ask and resolve the PLAN-02 identity questions: library name/tagline; three to five personality
-words; preferred and avoided colors; palette temperature/intensity; representative setting;
-motifs and objects; hero/header intent and approved source assets; typography mood; voice with
-liked/disliked example phrases; symbols or themes to include/avoid; seasonal preferences; and
-useful or unsuitable Andy/Jamie references.
+- [ ] Each owner confirms the brief and asset sources/permissions before final visual
+      sign-off.
+- [ ] Each owner reviews representative desktop and mobile Home, header, room entrances, an
+      empty state, and an error/loading state.
+- [ ] Each owner approves forced-colors and reduced-motion presentation where decorative
+      identity is intentionally absent.
 
-Record only the resulting name/tagline, palette tokens, contrast pairs, typography accents,
-approved assets and usage rights, bounded motifs/copy, accessibility notes, seasonal choices,
-and explicit avoid list. Owner ideas that imply routes, permissions, workflows, layouts, or
-data-model changes return to product planning rather than entering the identity package.
+## Already delivered (do not re-implement)
 
-## Acceptance criteria for each library
-
-- [ ] The owner brief is approved before final visual sign-off and identifies all asset sources
-      and permissions.
-- [ ] Header/Home art, palette, typography accents, motifs, and personality copy are implemented
-      through `FEAT-10`'s typed package and neutral fallbacks.
-- [ ] The identity uses the same components, hierarchy, navigation, breakpoints, controls,
-      focus order, and semantic labels as every other tenant.
-- [ ] Text/background and non-text contrast, forced colors, reduced motion, 200% text zoom,
-      keyboard behavior, and supported mobile widths pass.
-- [ ] Decorative raster budgets follow project performance guidance; noncritical imagery is
-      lazy-loaded and failure leaves a coherent page.
-- [ ] Automated snapshots/assertions prove that the package appears only on its approved hosts
-      and cannot leak into another or unknown host.
-- [ ] The owner reviews representative desktop/mobile Home, header, room entrances, an empty
-      state, and an error/loading state before acceptance.
-
-## UI questions requiring a product decision per owner
-
-1. Which supplied or newly commissioned image is the canonical Home hero, and what crop/focal
-   point works at desktop and mobile sizes?
-2. What concise alt text communicates the hero's purpose without narrating decoration?
-3. Which typography role may use the accent face—library name, expressive headings, or small
-   labels—and where must the shared legible face remain?
-4. Which one or two personality phrases are approved, and what neutral fallback replaces each?
-5. Which seasonal treatments are approved, on what dates or deployment choice do they activate,
-   and which symbols are prohibited?
-6. Does the owner approve the package in forced-colors/reduced-motion modes where some
-   decorative identity is intentionally absent?
-
-## Delivery note
-
-Use a separate implementation PR or clearly separable commit for each owner so approval,
-assets, rollback, and deployment can proceed independently.
-
-Dalmo's and Jamie's bounded implementation briefs and asset-rights records are captured in
-[`library-identity-audit.md`](../technical-reference/library-identity-audit.md).
+- Owner briefs recorded; packages use the shared layout, navigation, controls, focus order,
+  and semantic labels.
+- Header/Home art, palette, typography accents, motifs, and bounded copy ship through the
+  typed identity package with asset-free neutral fallbacks for unknown hosts.
+- Automated assertions cover approved-host artwork and prevent cross-host / unknown-host
+  leakage (`libraryIdentity` / `libraryBranding` tests).
+- Seasonal variants remain typed but empty and inactive.
 
 ## Out of scope
 
