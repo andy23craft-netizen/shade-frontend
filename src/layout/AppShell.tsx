@@ -10,7 +10,7 @@ import { useDashboard } from '../api/dashboardQueries'
 import { LoadingState } from '../components/LoadingState'
 import { APP_VERSION } from '../config/appVersion'
 import {
-    formatLibraryDocumentTitle,
+    applyLibraryDocumentMetadata,
     getLibraryDisplayName,
     resolveLibraryContext,
 } from '../config/libraryContext'
@@ -62,10 +62,7 @@ export function AppShell() {
             : `Release ${APP_VERSION}`
 
     useEffect(() => {
-        document.title = formatLibraryDocumentTitle(
-            routeTitle,
-            libraryContext,
-        )
+        applyLibraryDocumentMetadata(libraryContext, routeTitle)
     }, [libraryContext, routeTitle])
 
     useEffect(() => {

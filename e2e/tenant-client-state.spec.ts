@@ -1,5 +1,24 @@
 import { expect, test } from '@playwright/test'
 
+test('uses the hosted library identity in home metadata', async ({ page }) => {
+    for (const [hostname, libraryName] of [
+        ['dalmo.localhost', "Dalmo's Library"],
+        ['jamie.localhost', "Jamie's Library"],
+    ] as const) {
+        await page.goto(`http://${hostname}:4173/`)
+
+        await expect(page).toHaveTitle(`${libraryName} - Home`)
+        await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+            'content',
+            libraryName,
+        )
+        await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
+            'content',
+            libraryName,
+        )
+    }
+})
+
 test('known hosts and unknown hosts cannot reuse private browser persistence', async ({ page }) => {
     await page.goto('http://andy.localhost:4173/')
     await page.evaluate(() => localStorage.setItem('shade:andy:album:bulk-add:v1', JSON.stringify({ title: 'Andy private draft' })))

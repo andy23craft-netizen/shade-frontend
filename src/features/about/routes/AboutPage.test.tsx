@@ -42,7 +42,7 @@ describe('AboutPage', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                'About — Shade Library',
+                "Andy's Library - About",
             )
         })
     })
@@ -97,7 +97,7 @@ describe('AboutPage', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                'Dashboard — Shade Library',
+                "Andy's Library - Dashboard",
             )
         })
     })

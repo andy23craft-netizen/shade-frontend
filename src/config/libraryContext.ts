@@ -72,9 +72,36 @@ export function formatLibraryDocumentTitle(
     pageTitle: string,
     context: LibraryContext | null,
 ): string {
-    const libraryName = getLibraryDisplayName(context)
+    const libraryName = context?.name ?? 'Library'
 
-    return `${pageTitle} — ${libraryName}`
+    return `${libraryName} - ${pageTitle}`
+}
+
+export function applyLibraryDocumentMetadata(
+    context: LibraryContext | null,
+    pageTitle: string,
+    target: Document = document,
+): void {
+    const libraryName = context?.name ?? 'Library'
+
+    target.title = formatLibraryDocumentTitle(pageTitle, context)
+
+    for (const [attribute, name] of [
+        ['property', 'og:title'],
+        ['name', 'twitter:title'],
+    ] as const) {
+        let element = target.head.querySelector<HTMLMetaElement>(
+            `meta[${attribute}="${name}"]`,
+        )
+
+        if (!element) {
+            element = target.createElement('meta')
+            element.setAttribute(attribute, name)
+            target.head.append(element)
+        }
+
+        element.content = libraryName
+    }
 }
 
 export function getLibraryDisplayName(

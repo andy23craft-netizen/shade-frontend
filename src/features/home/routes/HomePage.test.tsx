@@ -399,7 +399,7 @@ describe('HomePage', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                'Shade Library — Shade Library',
+                "Andy's Library - Home",
             )
         })
     })

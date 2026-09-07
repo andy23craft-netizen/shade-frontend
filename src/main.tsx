@@ -9,6 +9,7 @@ import { APP_VERSION } from './config/appVersion'
 import { readRuntimeConfig } from './config/runtimeConfigState'
 import { UnknownLibraryScreen } from './config/UnknownLibraryScreen'
 import {
+    applyLibraryDocumentMetadata,
     applyLibraryTheme,
     resolveLibraryContext,
 } from './config/libraryContext'
@@ -28,6 +29,7 @@ const root = createRoot(rootElement)
 const libraryContext = resolveLibraryContext(window.location.hostname)
 
 applyLibraryTheme(libraryContext)
+applyLibraryDocumentMetadata(libraryContext, 'Home')
 
 function renderApplication() {
     if (!libraryContext) {

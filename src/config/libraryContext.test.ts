@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+    applyLibraryDocumentMetadata,
     applyLibraryTheme,
     formatLibraryDocumentTitle,
     resolveLibraryContext,
@@ -56,9 +57,10 @@ describe('applyLibraryTheme', () => {
 
 describe('formatLibraryDocumentTitle', () => {
     it.each([
-        ['shade.library.spir.es', 'Home — Shade Library'],
-        ['jamie.library.spir.es', "Home — Jamie's Library"],
-        ['dalmo.library.spir.es', "Home — Dalmo's Library"],
+        ['shade.library.spir.es', "Andy's Library - Home"],
+        ['jamie.library.spir.es', "Jamie's Library - Home"],
+        ['dalmo.library.spir.es', "Dalmo's Library - Home"],
+        ['unknown.library.spir.es', 'Library - Home'],
     ])('formats the title for %s', (hostname, expectedTitle) => {
         expect(
             formatLibraryDocumentTitle(
@@ -66,5 +68,27 @@ describe('formatLibraryDocumentTitle', () => {
                 resolveLibraryContext(hostname),
             ),
         ).toBe(expectedTitle)
+    })
+
+    it('applies tenant-specific preview metadata without markup injection', () => {
+        const target = document.implementation.createHTMLDocument()
+
+        applyLibraryDocumentMetadata(
+            resolveLibraryContext('dalmo.library.spir.es'),
+            'Home',
+            target,
+        )
+
+        expect(target.title).toBe("Dalmo's Library - Home")
+        expect(
+            target.head
+                .querySelector('meta[property="og:title"]')
+                ?.getAttribute('content'),
+        ).toBe("Dalmo's Library")
+        expect(
+            target.head
+                .querySelector('meta[name="twitter:title"]')
+                ?.getAttribute('content'),
+        ).toBe("Dalmo's Library")
     })
 })
