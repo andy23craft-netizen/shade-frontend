@@ -79,9 +79,10 @@ Implementation brief recorded September 7, 2026:
 - **Name and tagline:** "Jamie's Library" with "What's the vibe?" The tagline is already part
   of the canonical Home artwork and remains visible on the neutral About surface; it is not
   repeated next to the hero.
-- **Palette:** saturated current orange and forest green, with warm paper cards retained for
-  legible content. Pale orange is the focus color against dark green; dark forest green is used
-  for links and controls on paper surfaces.
+- **Palette:** saturated orange is the primary page color and retains the shared warm drawer
+  hardware. Forest green is reserved for links, decorative glints, and Jamie's album/listening
+  headers in place of the shared indigo. Warm paper cards are retained for legible content;
+  pale cream provides a conspicuous focus color against orange.
 - **Typography:** a friendly handwritten system-font stack is limited to expressive headings
   and library wordmark accents. Body copy, forms, navigation, small labels, and status text keep
   the shared legible faces. No font download or third-party request is introduced.

@@ -77,6 +77,9 @@
 .app-shell--listening { --color-focus: #d6a84f; }
 .app-shell--listening .app-header { background: linear-gradient(90deg, #271b22, #29294f); }
 .app-shell--listening .drawer-nav-menu__panel { border-color: #d6a84f; background: #4a2d25; }
+:root[data-library="jamie"] .app-shell--listening .app-header { background: linear-gradient(90deg, #082f22, #145b3c); }
+:root[data-library="jamie"] .page--albums .album-room__header { border-bottom-color: #145b3c; }
+:root[data-library="jamie"] .page--albums .album-room__header h1 { color: #145b3c; }
 .app-shell--neutral .app-header { background: transparent; box-shadow: none; }
 .app-shell--neutral .app-header__inner { justify-content: center; }
 
@@ -3592,10 +3595,10 @@
 
 /* Jamie: saturated roller-rink color and disco glints stay decorative. */
 :root[data-library="jamie"] .home-page {
-  --home-rule-brass: #ff9a4f;
-  --home-accent-recent: #e85d18;
-  --home-accent-categories: #178252;
-  --home-accent-staff: #ff7a2f;
+  --home-rule-brass: #73bd8a;
+  --home-accent-recent: #14613f;
+  --home-accent-categories: #a94312;
+  --home-accent-staff: #277b52;
 }
 
 :root[data-library="jamie"] .home-page__intro {
@@ -3604,9 +3607,9 @@
   border-radius: var(--radius-large);
   background:
           radial-gradient(circle at 8% 18%, rgb(255 255 255 / 82%) 0 0.12rem, transparent 0.17rem),
-          radial-gradient(circle at 91% 30%, rgb(255 179 111 / 88%) 0 0.16rem, transparent 0.21rem),
-          radial-gradient(circle at 15% 82%, rgb(255 154 79 / 60%) 0 0.1rem, transparent 0.16rem),
-          linear-gradient(135deg, rgb(232 93 24 / 10%), transparent 38% 62%, rgb(255 154 79 / 10%));
+          radial-gradient(circle at 91% 30%, rgb(115 189 138 / 88%) 0 0.16rem, transparent 0.21rem),
+          radial-gradient(circle at 15% 82%, rgb(79 143 106 / 70%) 0 0.1rem, transparent 0.16rem),
+          linear-gradient(135deg, rgb(20 97 63 / 14%), transparent 38% 62%, rgb(115 189 138 / 12%));
 }
 
 :root[data-library="jamie"] .home-page__intro::before,
@@ -3621,7 +3624,7 @@
           linear-gradient(90deg, transparent 47%, rgb(255 255 255 / 35%) 48% 52%, transparent 53%),
           linear-gradient(transparent 47%, rgb(255 255 255 / 35%) 48% 52%, transparent 53%),
           radial-gradient(circle, #7c8a89, #263433 68%);
-  box-shadow: 0 0 1.5rem rgb(255 122 47 / 45%);
+  box-shadow: 0 0 1.5rem rgb(20 97 63 / 55%);
   content: "";
   opacity: 0.55;
 }
@@ -3648,11 +3651,11 @@
 }
 
 :root[data-library="jamie"] .home-room-links .app-link:first-child {
-  border-top-color: #e85d18;
+  border-top-color: #14613f;
 }
 
 :root[data-library="jamie"] .home-room-links .app-link:last-child {
-  border-top-color: #178252;
+  border-top-color: #4f8f6a;
 }
 
 @media (forced-colors: active) {

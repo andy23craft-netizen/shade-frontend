@@ -114,21 +114,21 @@
 :root[data-library="jamie"] {
   --font-family-accent:
           "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
-  --color-page: #0b402d;
-  --color-text: #fff4dd;
-  --color-text-muted: #d9e8d7;
+  --color-page: #8f2f06;
+  --color-text: #fff6df;
+  --color-text-muted: #f4d1b2;
   --color-border: #e85d18;
-  --color-link: #16613f;
-  --color-link-hover: #0b402d;
-  --color-primary: #145b3c;
-  --color-primary-hover: #0b402d;
+  --color-link: #0d5a38;
+  --color-link-hover: #083d27;
+  --color-primary: #9b360c;
+  --color-primary-hover: #702400;
   --color-card-border: #e85d18;
   --color-card-rule: #ed8b4b;
-  --color-wood: #155c3e;
-  --color-wood-dark: #082f22;
+  --color-wood: #a94312;
+  --color-wood-dark: #672006;
   --color-brass: #e85d18;
   --color-brass-light: #ff9a4f;
-  --color-focus: #ffb36f;
+  --color-focus: #fff0b8;
 }
 
 :root[data-library="dalmo"] {
