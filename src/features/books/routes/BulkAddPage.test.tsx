@@ -654,6 +654,58 @@ describe('BulkAddPage', () => {
         ).toBeInTheDocument()
     })
 
+    it('saves a manual pre-ISBN edition with explicit applicability', async () => {
+        mockImportMutateAsync.mockResolvedValue({
+            items: [
+                {
+                    client_item_id: 'bulk-add-1',
+                    status: 'created',
+                    book_id: 'pre-isbn-book-1',
+                },
+            ],
+        })
+
+        renderPage()
+        startShelf()
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Add manually',
+            }),
+        )
+
+        fireEvent.change(screen.getByLabelText('Title'), {
+            target: { value: 'The Old Book' },
+        })
+        fireEvent.change(screen.getByLabelText('Authors'), {
+            target: { value: 'Ada Reader' },
+        })
+        fireEvent.click(
+            screen.getByLabelText(
+                'ISBN not applicable (pre-ISBN edition)',
+            ),
+        )
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Save Shelf (1)',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(mockImportMutateAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    items: [
+                        expect.objectContaining({
+                            book: expect.objectContaining({
+                                isbn13: null,
+                                isbn_not_applicable: true,
+                            }),
+                        }),
+                    ],
+                }),
+            )
+        })
+    })
+
     it('edits lookup metadata and saves a create item with categories', async () => {
         mockLookupMutateAsync.mockResolvedValue({
             items: [

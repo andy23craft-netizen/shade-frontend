@@ -24,4 +24,7 @@ Public sharing, unauthenticated routes, vanity domains, and frontend-owned slug 
 ## Open questions
 
 1. Which exact V2 URLs must become readable: category and shelf filters only, or Book Details too?
+- Category and shelf at a minimum. If book details isn't prohibitive, that would be nice, too. 
+
 2. How long must renamed-key aliases and existing UUID links remain valid?
+- I'm not sure i know what you mean. If you mean links that may have already been sent, they can be dead as soon as this launches. 

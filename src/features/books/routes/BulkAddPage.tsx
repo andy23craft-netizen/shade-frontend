@@ -49,6 +49,9 @@ import {
     normalizeBulkAddIsbn,
     type BulkAddQueueItem,
 } from '../bulkAddModel'
+import {
+    isPreIsbnPublicationDate,
+} from '../components/bookFormModel'
 
 const BULK_LOOKUP_MAX_ITEMS = 50
 const BULK_IMPORT_MAX_ITEMS = 50
@@ -138,6 +141,8 @@ function draftFromQueueItem(
         publisher: lookupDraft?.publisher?.trim() ?? '',
         publicationDate:
             lookupDraft?.publication_date?.trim() ?? '',
+        isbnNotApplicable:
+            lookupDraft?.isbn_not_applicable ?? false,
         pages:
             lookupDraft?.pages === null ||
             lookupDraft?.pages === undefined
@@ -1307,7 +1312,12 @@ export function BulkAddPage() {
                                             title:
                                                 draft.title.trim(),
                                             isbn13:
-                                            item.isbn,
+                                            draft.isbnNotApplicable
+                                                ? null
+                                                : item.isbn,
+                                            ...(draft.isbnNotApplicable
+                                                ? { isbn_not_applicable: true }
+                                                : {}),
                                             publisher:
                                                 draft.publisher.trim() ||
                                                 null,
@@ -1333,7 +1343,12 @@ export function BulkAddPage() {
                                         title:
                                             draft.title.trim(),
                                         isbn13:
-                                        item.isbn,
+                                        draft.isbnNotApplicable
+                                            ? null
+                                            : item.isbn,
+                                        ...(draft.isbnNotApplicable
+                                            ? { isbn_not_applicable: true }
+                                            : {}),
                                         authors:
                                             parseAuthors(
                                                 draft.authors,
@@ -2090,7 +2105,9 @@ export function BulkAddPage() {
                                             </p>
 
                                             <p className="bulk-add-queue-item__isbn">
-                                                {item.isbn || 'No ISBN · Manual entry'}
+                                                {draft.isbnNotApplicable
+                                                    ? 'ISBN not applicable'
+                                                    : item.isbn || 'No ISBN · Manual entry'}
                                             </p>
                                         </div>
 
@@ -2254,6 +2271,33 @@ export function BulkAddPage() {
                                                     />
                                                 </Field>
 
+                                                <label className="bulk-add-review__wishlist">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={draft.isbnNotApplicable}
+                                                        onChange={(event) => {
+                                                            if (
+                                                                event.target.checked &&
+                                                                item.isbn !== '' &&
+                                                                !window.confirm(
+                                                                    'Mark ISBN as not applicable and clear this ISBN when the book is saved?',
+                                                                )
+                                                            ) {
+                                                                return
+                                                            }
+
+                                                            updateDraft(
+                                                                item,
+                                                                {
+                                                                    isbnNotApplicable:
+                                                                        event.target.checked,
+                                                                },
+                                                            )
+                                                        }}
+                                                    />
+                                                    ISBN not applicable (pre-ISBN edition)
+                                                </label>
+
                                                 <Field
                                                     id={`${item.clientItemId}-authors`}
                                                     label="Authors"
@@ -2327,13 +2371,16 @@ export function BulkAddPage() {
                                                         onChange={(
                                                             event,
                                                         ) => {
+                                                            const publicationDate =
+                                                                event.target.value
                                                             updateDraft(
                                                                 item,
                                                                 {
                                                                     publicationDate:
-                                                                    event
-                                                                        .target
-                                                                        .value,
+                                                                        publicationDate,
+                                                                    ...(isPreIsbnPublicationDate(publicationDate)
+                                                                        ? { isbnNotApplicable: true }
+                                                                        : {}),
                                                                 },
                                                             )
                                                         }}

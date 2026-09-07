@@ -396,6 +396,25 @@ describe('BookDetailsPage', () => {
         ).toBeInTheDocument()
     })
 
+    it('renders ISBN not applicable instead of missing ISBN', () => {
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: {
+                ...completeBook,
+                isbn13: null,
+                isbn_not_applicable: true,
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(
+            screen.getByText('ISBN not applicable'),
+        ).toBeInTheDocument()
+        expect(screen.queryByText('Not provided')).not.toBeInTheDocument()
+    })
+
     it('renders multiple authors in book order', () => {
         mockedUseBook.mockReturnValue({
             isPending: false,

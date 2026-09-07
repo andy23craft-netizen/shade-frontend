@@ -24,6 +24,7 @@ import {
 } from '../categoryDisplay'
 
 import {
+    isPreIsbnPublicationDate,
     parseTagsInput,
     validateBookFormValues,
     type BookFormField,
@@ -34,6 +35,7 @@ export interface BookFormValues {
     title: string
     authorIds: string[]
     isbn13: string
+    isbnNotApplicable: boolean
     publisher: string
     illustrator: string
     editor: string
@@ -55,6 +57,7 @@ const FIELD_LABELS: Record<
     title: 'Title',
     authorIds: 'Authors',
     isbn13: 'ISBN',
+    isbnNotApplicable: 'ISBN not applicable',
     publisher: 'Publisher',
     illustrator: 'Illustrator',
     editor: 'Editor',
@@ -608,10 +611,55 @@ export function BookForm({
             HTMLInputElement | HTMLTextAreaElement
         >,
     ) {
-        updateField(
-            field,
-            event.target.value,
-        )
+        const value = event.target.value
+
+        if (
+            field === 'publication_date' &&
+            isPreIsbnPublicationDate(value) &&
+            !values.isbnNotApplicable
+        ) {
+            if (
+                values.isbn13.trim() !== '' &&
+                !window.confirm(
+                    'Mark this pre-ISBN edition as ISBN not applicable and clear its ISBN?',
+                )
+            ) {
+                updateField(field, value)
+                return
+            }
+
+            onChange({
+                ...values,
+                publication_date: value,
+                isbn13: '',
+                isbnNotApplicable: true,
+            })
+            return
+        }
+
+        updateField(field, value)
+    }
+
+    function handleIsbnApplicabilityChange(
+        event: ChangeEvent<HTMLInputElement>,
+    ) {
+        const checked = event.target.checked
+
+        if (
+            checked &&
+            values.isbn13.trim() !== '' &&
+            !window.confirm(
+                'Mark ISBN as not applicable and clear the current ISBN?',
+            )
+        ) {
+            return
+        }
+
+        onChange({
+            ...values,
+            isbn13: checked ? '' : values.isbn13,
+            isbnNotApplicable: checked,
+        })
     }
 
     function normalizeTagsField() {
@@ -1022,6 +1070,7 @@ export function BookForm({
                     <input
                         type="text"
                         value={values.isbn13}
+                        disabled={values.isbnNotApplicable}
                         onChange={(event) =>
                             handleTextChange(
                                 'isbn13',
@@ -1032,6 +1081,30 @@ export function BookForm({
                         autoComplete="off"
                     />
                 </Field>
+
+                <label
+                    className="book-form__checkbox"
+                    htmlFor={fieldId('isbnNotApplicable')}
+                >
+                    <input
+                        id={fieldId('isbnNotApplicable')}
+                        type="checkbox"
+                        checked={values.isbnNotApplicable}
+                        onChange={handleIsbnApplicabilityChange}
+                        aria-describedby={fieldErrors.isbnNotApplicable
+                            ? `${fieldId('isbnNotApplicable')}-error`
+                            : undefined}
+                    />
+                    ISBN not applicable (pre-ISBN edition)
+                </label>
+                {fieldErrors.isbnNotApplicable ? (
+                    <p
+                        id={`${fieldId('isbnNotApplicable')}-error`}
+                        className="field__error"
+                    >
+                        {fieldErrors.isbnNotApplicable}
+                    </p>
+                ) : null}
 
                 <Field
                     label="Publisher"

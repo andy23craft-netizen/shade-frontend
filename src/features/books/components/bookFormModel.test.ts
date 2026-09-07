@@ -11,6 +11,7 @@ import { bookFormDefaults } from './bookFormDefaults'
 import type { BookFormValues } from './BookForm'
 import {
     formValuesToBookCreate,
+    isPreIsbnPublicationDate,
     normalizeTags,
     parseTagsInput,
     validateBookFormValues,
@@ -103,6 +104,19 @@ describe('parseTagsInput', () => {
 })
 
 describe('validateBookFormValues', () => {
+    it('rejects an ISBN when ISBN is marked not applicable', () => {
+        expect(
+            validateBookFormValues(
+                makeValues({
+                    isbn13: '9780441172719',
+                    isbnNotApplicable: true,
+                }),
+            ).isbn13,
+        ).toBe(
+            'Clear the ISBN or turn off ISBN not applicable.',
+        )
+    })
+
     it('requires title, at least one author, and shelf', () => {
         expect(
             validateBookFormValues(
@@ -180,6 +194,15 @@ describe('validateBookFormValues', () => {
     })
 })
 
+describe('isPreIsbnPublicationDate', () => {
+    it('recognizes year-only and full dates before 1970', () => {
+        expect(isPreIsbnPublicationDate('1969')).toBe(true)
+        expect(isPreIsbnPublicationDate('1969-12-31')).toBe(true)
+        expect(isPreIsbnPublicationDate('1970')).toBe(false)
+        expect(isPreIsbnPublicationDate('unknown')).toBe(false)
+    })
+})
+
 describe('formValuesToBookCreate', () => {
     it('converts blank optional fields to null and resolves shelf_name', () => {
         expect(
@@ -207,6 +230,7 @@ describe('formValuesToBookCreate', () => {
             is_read: false,
             status: 'available',
             isbn13: null,
+            isbn_not_applicable: false,
             publisher: null,
             publication_date: null,
             pages: null,
@@ -235,6 +259,23 @@ describe('formValuesToBookCreate', () => {
             'author-second',
             'author-third',
         ])
+    })
+
+    it('creates a pre-ISBN edition without an ISBN', () => {
+        expect(
+            formValuesToBookCreate(
+                makeValues({
+                    isbn13: '',
+                    isbnNotApplicable: true,
+                    publication_date: '1965',
+                }),
+                SHELVES,
+            ),
+        ).toMatchObject({
+            isbn13: null,
+            isbn_not_applicable: true,
+            publication_date: '1965',
+        })
     })
 
     it('trims populated contributors and omits blank contributors', () => {

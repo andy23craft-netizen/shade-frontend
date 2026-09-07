@@ -24,4 +24,7 @@ Unauthenticated scanning, album scanning, and QR generation.
 ## Open questions
 
 1. Which page owns the primary circulation scanner entry point: Reading Loans, Manage Collection, or both?
+- We have a feature that allows for a scanned isbn to take you, either to that book in the catalog, or to add it if it doesn't exist. I would like to maintain that. Loans are initiated from the book details page. 
+
 2. After successful checkout/check-in, should scanning immediately re-arm or wait for explicit confirmation?
+- immediately rearm 

@@ -384,3 +384,37 @@ test('keeps album loans out of book circulation after a reload', async ({ page }
     )
     expect(api.state.requests.some((request) => /undefined|null/.test(request.pathname))).toBe(false)
 })
+
+test('keeps long borrower names readable on a narrow loan card', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 })
+
+    const book = makeBook({
+        book_id: 'borrower-presentation-book',
+        status: 'on_loan',
+    })
+    const borrower =
+        'Alexandria-Cassandra Verylongborrowernamewithoutspaces'
+
+    await installMockApi(page, {
+        books: [book],
+        loans: [makeLoan({ book_id: book.book_id, borrower })],
+    })
+
+    await page.goto('/loans')
+
+    const name = page.getByText(borrower, { exact: true })
+    await expect(name).toBeVisible()
+    await expect(name).toHaveCSS('overflow-wrap', 'anywhere')
+
+    const [nameBox, cardBox] = await Promise.all([
+        name.boundingBox(),
+        name.locator('xpath=ancestor::article').boundingBox(),
+    ])
+
+    expect(nameBox).not.toBeNull()
+    expect(cardBox).not.toBeNull()
+    expect(nameBox!.x).toBeGreaterThanOrEqual(cardBox!.x)
+    expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(
+        cardBox!.x + cardBox!.width + 1,
+    )
+})

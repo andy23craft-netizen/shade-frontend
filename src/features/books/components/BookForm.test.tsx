@@ -177,6 +177,12 @@ describe('BookForm', () => {
         ).toBeInTheDocument()
 
         expect(
+            screen.getByLabelText(
+                'ISBN not applicable (pre-ISBN edition)',
+            ),
+        ).toBeInTheDocument()
+
+        expect(
             screen.getByLabelText('Publisher'),
         ).toBeInTheDocument()
 
@@ -230,6 +236,50 @@ describe('BookForm', () => {
                 name: 'Save Book',
             }),
         ).toBeInTheDocument()
+    })
+
+    it('confirms before clearing an entered ISBN', () => {
+        vi.spyOn(window, 'confirm')
+            .mockReturnValueOnce(false)
+            .mockReturnValueOnce(true)
+
+        render(
+            <ControlledBookForm
+                initialValues={makeBook({
+                    isbn13: '9780441172719',
+                })}
+            />,
+        )
+
+        const applicability = screen.getByLabelText(
+            'ISBN not applicable (pre-ISBN edition)',
+        )
+        const isbn = screen.getByLabelText('ISBN')
+
+        fireEvent.click(applicability)
+        expect(isbn).toHaveValue('9780441172719')
+        expect(applicability).not.toBeChecked()
+
+        fireEvent.click(applicability)
+        expect(isbn).toHaveValue('')
+        expect(isbn).toBeDisabled()
+        expect(applicability).toBeChecked()
+    })
+
+    it('marks a pre-1970 publication date as ISBN not applicable', () => {
+        render(<ControlledBookForm />)
+
+        fireEvent.change(
+            screen.getByLabelText('Publication date'),
+            { target: { value: '1969' } },
+        )
+
+        expect(
+            screen.getByLabelText(
+                'ISBN not applicable (pre-ISBN edition)',
+            ),
+        ).toBeChecked()
+        expect(screen.getByLabelText('ISBN')).toBeDisabled()
     })
 
     it('shows Title Case shelf labels and excludes removed from create options', () => {

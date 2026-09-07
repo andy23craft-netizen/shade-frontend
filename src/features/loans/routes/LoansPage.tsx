@@ -37,6 +37,9 @@ import {
     EditLoanBorrower,
 } from '../components/EditLoanBorrower'
 import {
+    BorrowerName,
+} from '../components/BorrowerName'
+import {
     flattenInfiniteListPages,
 } from '../loansListModel'
 import {
@@ -475,9 +478,9 @@ export function LoansPage() {
                                                 Borrower
                                             </dt>
                                             <dd>
-                                                {
-                                                    loan.borrower
-                                                }
+                                                <BorrowerName>
+                                                    {loan.borrower}
+                                                </BorrowerName>
                                             </dd>
                                         </div>
 
@@ -580,9 +583,9 @@ export function LoansPage() {
                                                 Borrower
                                             </dt>
                                             <dd>
-                                                {
-                                                    loan.borrower
-                                                }
+                                                <BorrowerName>
+                                                    {loan.borrower}
+                                                </BorrowerName>
                                             </dd>
                                         </div>
 

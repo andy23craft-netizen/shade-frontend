@@ -6,6 +6,7 @@ export interface BulkAddDraft {
     authors: string
     publisher: string
     publicationDate: string
+    isbnNotApplicable: boolean
     pages: string
     categoryIds: string[]
     acquireWishlist: boolean
@@ -24,7 +25,7 @@ export interface PersistedBookBulkSession {
 }
 
 export function emptyBulkAddDraft(): BulkAddDraft {
-    return { title: '', authors: '', publisher: '', publicationDate: '', pages: '', categoryIds: [], acquireWishlist: false }
+    return { title: '', authors: '', publisher: '', publicationDate: '', isbnNotApplicable: false, pages: '', categoryIds: [], acquireWishlist: false }
 }
 
 export function bookBulkStorageKey(hostname: string): string {
@@ -50,6 +51,17 @@ export function loadBookBulkSession(
         const restored = session as unknown as PersistedBookBulkSession
         return {
             ...restored,
+            drafts: Object.fromEntries(
+                Object.entries(restored.drafts).map(([id, draft]) => [
+                    id,
+                    {
+                        ...emptyBulkAddDraft(),
+                        ...draft,
+                        isbnNotApplicable:
+                            draft.isbnNotApplicable === true,
+                    },
+                ]),
+            ),
             queue: restored.queue.map((item) => item.status === 'looking_up'
                 ? { ...item, status: 'queued' }
                 : item),

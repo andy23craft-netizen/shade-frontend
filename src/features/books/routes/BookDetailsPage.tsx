@@ -355,7 +355,9 @@ export function BookDetailsPage() {
                     <div className="book-details-card__field">
                         <dt>ISBN-13</dt>
                         <dd>
-                            {displayValue(book.isbn13)}
+                            {book.isbn_not_applicable
+                                ? 'ISBN not applicable'
+                                : displayValue(book.isbn13)}
                         </dd>
                     </div>
 

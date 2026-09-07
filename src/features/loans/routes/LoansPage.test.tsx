@@ -861,11 +861,15 @@ describe('LoansPage', () => {
 
         expect(
             screen.getByText('Active Reader'),
-        ).toBeInTheDocument()
+        ).toHaveClass(
+            'circulation-record-card__borrower-name',
+        )
 
         expect(
             screen.getByText('Past Reader'),
-        ).toBeInTheDocument()
+        ).toHaveClass(
+            'circulation-record-card__borrower-name',
+        )
 
         expect(
             screen.getAllByRole('button', {

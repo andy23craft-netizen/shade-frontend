@@ -92,6 +92,7 @@ describe('bookFormValuesFromBook', () => {
                 'author-frank-herbert',
             ],
             isbn13: '9780441172719',
+            isbnNotApplicable: false,
             publisher: 'Ace',
             illustrator: 'Sam Weber',
             editor: 'John W. Campbell',
@@ -175,6 +176,39 @@ describe('bookFormValuesToUpdate', () => {
         ).toEqual({
             title: 'Dune Messiah',
             shelf_name: 'a2',
+        })
+    })
+
+    it('clears ISBN and marks applicability in one minimal update', () => {
+        const values = {
+            ...bookFormValuesFromBook(BOOK, SHELVES),
+            isbn13: '',
+            isbnNotApplicable: true,
+        }
+
+        expect(
+            bookFormValuesToUpdate(BOOK, values, SHELVES),
+        ).toEqual({
+            isbn13: null,
+            isbn_not_applicable: true,
+        })
+    })
+
+    it('restores ISBN applicability without fabricating an ISBN', () => {
+        const preIsbnBook: BookRead = {
+            ...BOOK,
+            isbn13: null,
+            isbn_not_applicable: true,
+        }
+        const values = {
+            ...bookFormValuesFromBook(preIsbnBook, SHELVES),
+            isbnNotApplicable: false,
+        }
+
+        expect(
+            bookFormValuesToUpdate(preIsbnBook, values, SHELVES),
+        ).toEqual({
+            isbn_not_applicable: false,
         })
     })
 

@@ -57,6 +57,7 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'title',
     'authorIds',
     'isbn13',
+    'isbnNotApplicable',
     'publisher',
     'illustrator',
     'editor',
@@ -98,6 +99,9 @@ function mapCreateFieldErrors(
 
         if (field === 'author_ids') {
             field = 'authorIds'
+        }
+        if (field === 'isbn_not_applicable') {
+            field = 'isbnNotApplicable'
         }
 
         if (
@@ -315,6 +319,7 @@ export function NewBookPage() {
         setValues((current) => ({
             ...current,
             isbn13: isbn,
+            isbnNotApplicable: false,
         }))
 
         if (activeLookupIsbn === isbn) {
@@ -405,6 +410,13 @@ export function NewBookPage() {
         setFormError(null)
         setValues((current) => ({
             ...current,
+            isbn13:
+                draft.isbn_not_applicable
+                    ? ''
+                    : current.isbn13,
+            isbnNotApplicable:
+                draft.isbn_not_applicable ??
+                current.isbnNotApplicable,
             title:
                 draft.title ?? current.title,
             authorIds:

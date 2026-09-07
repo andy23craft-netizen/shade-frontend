@@ -24,4 +24,7 @@ Server-generated PDFs, public label landing pages, and album labels.
 ## Open questions
 
 1. Is the optional portrait/cameo decoration approved for the first release, or should it remain deferred?
+- I would like to try it. If it is prohibitive, we can revisit. 
+
 2. Which supported phones, printers, paper stock, and print-scale settings define sign-off?
+- i'm not sure what this means. I will be using a lexmark printer at work for now with maybe some nice paper for it that i haven't found yet. 

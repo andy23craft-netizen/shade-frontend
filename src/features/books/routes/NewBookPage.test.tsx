@@ -105,6 +105,7 @@ const lookupState = {
         found: boolean
         draft: null | {
             isbn13: string
+            isbn_not_applicable?: boolean
             title: string | null
             authors: string | null
             publisher: string | null
@@ -822,6 +823,42 @@ describe('NewBookPage', () => {
                     'Remove Ursula K. Le Guin author',
             }),
         ).toBeInTheDocument()
+    })
+
+    it('applies an ISBN-not-applicable lookup draft without retaining an ISBN', async () => {
+        lookupState.data = {
+            found: true,
+            draft: {
+                isbn13: '9780441172719',
+                isbn_not_applicable: true,
+                title: 'A Pre-ISBN Edition',
+                authors: 'Test Author',
+                publisher: null,
+                publication_date: '1948',
+                pages: null,
+            },
+        }
+
+        renderNewBookPage()
+        fireEvent.change(screen.getByLabelText('Lookup ISBN'), {
+            target: { value: '9780441172719' },
+        })
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Look Up ISBN' }),
+        )
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Apply Lookup' }),
+        )
+
+        await waitFor(() => {
+            expect(
+                screen.getByLabelText(
+                    'ISBN not applicable (pre-ISBN edition)',
+                ),
+            ).toBeChecked()
+        })
+        expect(screen.getByLabelText('ISBN')).toBeDisabled()
+        expect(screen.getByLabelText('ISBN')).toHaveValue('')
     })
 
     it('keeps the ISBN editable when lookup returns found: false', () => {

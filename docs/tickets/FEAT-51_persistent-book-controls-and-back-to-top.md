@@ -24,4 +24,6 @@ New filters, album list adoption, and replacing infinite loading with pagination
 ## Open questions
 
 1. Should URL filter changes replace history while typing and push history on committed picker changes?
+- yes
 2. What scroll distance or sentinel should make Back to Top appear consistently?
+- when the second set of books loads, feels like a reasonable cutoff. So after 30 books. 

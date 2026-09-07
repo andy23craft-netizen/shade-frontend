@@ -21,6 +21,13 @@ export type BookFormFieldErrors =
 const TITLE_AUTHORS_MAX_LENGTH = 255
 const PUBLISHER_MAX_LENGTH = 255
 const CONTRIBUTOR_MAX_LENGTH = 255
+const ISBN_INTRODUCTION_YEAR = 1970
+
+export function isPreIsbnPublicationDate(value: string): boolean {
+    const match = /^(\d{4})(?:-|$)/.exec(value.trim())
+
+    return match !== null && Number(match[1]) < ISBN_INTRODUCTION_YEAR
+}
 
 /**
  * Trim tags, drop empties, and remove duplicates while preserving first-seen order.
@@ -83,7 +90,13 @@ export function validateBookFormValues(
 
     const isbn = values.isbn13.trim()
 
+    if (isbn !== '' && values.isbnNotApplicable) {
+        errors.isbn13 =
+            'Clear the ISBN or turn off ISBN not applicable.'
+    }
+
     if (
+        !errors.isbn13 &&
         isbn !== '' &&
         !isValidIsbn(isbn)
     ) {
@@ -164,6 +177,8 @@ export function formValuesToBookCreate(
             values.isbn13.trim() === ''
                 ? null
                 : values.isbn13.trim(),
+        isbn_not_applicable:
+            values.isbnNotApplicable,
 
         publisher:
             values.publisher.trim() === ''

@@ -27,6 +27,8 @@ export function bookFormValuesFromBook(
             (author) => author.author_id,
         ),
         isbn13: book.isbn13 ?? '',
+        isbnNotApplicable:
+            book.isbn_not_applicable ?? false,
         publisher: book.publisher ?? '',
         illustrator: book.illustrator ?? '',
         editor: book.editor ?? '',
@@ -147,6 +149,14 @@ export function bookFormValuesToUpdate(
 
     if (isbn13 !== (original.isbn13 ?? null)) {
         update.isbn13 = isbn13
+    }
+
+    if (
+        values.isbnNotApplicable !==
+        (original.isbn_not_applicable ?? false)
+    ) {
+        update.isbn_not_applicable =
+            values.isbnNotApplicable
     }
 
     const publisher =

@@ -23,4 +23,7 @@ Work grouping, QR printing, and changing backend duplicate policy.
 ## Open questions
 
 1. Should ordinary single-book create warn before adding another owned copy, or only explain the result after save?
+- before
+
 2. Which existing-copy facts are needed in the duplicate chooser beyond title, authors, shelf, status, and creation date?
+- that's enough. 
