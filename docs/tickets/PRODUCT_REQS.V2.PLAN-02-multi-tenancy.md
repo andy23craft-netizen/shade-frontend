@@ -271,9 +271,10 @@ do not add backup download, restore inventory, path entry, or threshold UI.
 3. [`FEAT-09 -- Guided Multi-Media Library Setup`](FEAT-09_guided-multi-media-library-setup.md):
    TSV validation, first location, book/album Build Mode composition, completion, and resume.
    This depends on both Group A tickets and the applicable media intake engines.
-4. [`FEAT-10 -- Library Identity Cleanup and Centralization`](FEAT-10_library-identity-cleanup.md):
-   remove unintended Shade/Andy/Jamie references and centralize explicit per-library names,
-   copy, tokens, and assets. This may proceed alongside `FEAT-09`.
+4. **FEAT-10 -- Library Identity Cleanup and Centralization (shipped):** unintended
+   owner-specific references were removed and explicit names, copy, tokens, and assets were
+   centralized. The retained-reference record and product decisions live in the
+   [library identity audit](../technical-reference/library-identity-audit.md).
 
 ### Group C -- tenant presentation and content
 

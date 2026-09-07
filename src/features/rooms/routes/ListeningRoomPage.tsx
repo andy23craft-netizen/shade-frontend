@@ -1,10 +1,11 @@
 import { AppLink } from '../../../components'
+import { LibraryWordmark } from '../../../components/LibraryWordmark'
 
 export function ListeningRoomPage() {
     return (
         <section className="route-page room-landing room-landing--listening" aria-labelledby="listening-room-heading">
             <div className="room-landing__heading">
-                <p className="room-landing__eyebrow">Shade Records · est. 2026</p>
+                <LibraryWordmark className="room-landing__eyebrow" />
                 <h1 id="listening-room-heading" tabIndex={-1}>Listening Room</h1>
                 <p>Flip through the bins, see what is in rotation, and keep the collection spinning.</p>
             </div>

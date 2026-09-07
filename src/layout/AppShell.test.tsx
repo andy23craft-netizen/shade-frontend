@@ -336,7 +336,7 @@ describe('AppShell layout and navigation', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                "Andy's Library - Loans",
+                "Loans — Andy's Library — Shade",
             )
         })
     })

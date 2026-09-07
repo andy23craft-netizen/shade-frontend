@@ -9,6 +9,7 @@ import { formatBookAuthors } from '../../books/authorDisplay'
 import { ConfirmationDialog } from '../../../components'
 import { Button } from '../../../components/Button'
 import { Field } from '../../../components/Field'
+import { LibraryWordmark } from '../../../components/LibraryWordmark'
 import {
     isApiError,
     type ApiFieldError,
@@ -384,9 +385,7 @@ export function CheckinForm({
             >
                 <header className="circulation-card__heading">
                     <div>
-                        <p className="circulation-card__eyebrow">
-                            Shade Library
-                        </p>
+                        <LibraryWordmark className="circulation-card__eyebrow" />
 
                         <h2>Return Card</h2>
                     </div>

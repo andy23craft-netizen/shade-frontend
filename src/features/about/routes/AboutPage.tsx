@@ -1,18 +1,23 @@
 import { CatalogGuide } from '../components/CatalogGuide'
+import { resolveLibraryContext } from '../../../config/libraryContext'
+import { getLibraryIdentity } from '../../../config/libraryIdentity'
 
 export function AboutPage() {
+    const context = resolveLibraryContext(window.location.hostname)
+    const identity = getLibraryIdentity(context?.id)
+
     return (
         <section className="route-page about-page">
             <div className="about-page__intro">
                 <h1 tabIndex={-1}>
-                    Shade Library
+                    {identity.wordmark}
                 </h1>
 
                 <p className="about-page__lede">
-                    My home library, made easier to explore.
+                    {identity.tagline ?? 'A home collection, made easier to explore.'}
                 </p>
 
-                <p>
+                {identity.id === 'andy' ? <><p>
                     I love books. Big books, little books, old books, new books—the point
                     of having them, to me, is that they should be read.
                 </p>
@@ -42,10 +47,13 @@ export function AboutPage() {
                 <p>
                     The shelves are still there. This just makes them a little easier to
                     wander through.
-                </p>
+                </p></> : <p>
+                    Browse books and albums, find where they live, and keep track of
+                    reading, listening, and loans in one shared catalog.
+                </p>}
             </div>
 
-            <section
+            {identity.id === 'andy' ? <section
                 className="about-page__section"
                 aria-labelledby="about-charles-leewright"
             >
@@ -63,7 +71,7 @@ export function AboutPage() {
                     collection exists because of him. Shade Library is dedicated to his
                     memory.
                 </p>
-            </section>
+            </section> : null}
 
             <section
                 className="about-page__section"

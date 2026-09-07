@@ -7,7 +7,7 @@ test('uses the hosted library identity in home metadata', async ({ page }) => {
     ] as const) {
         await page.goto(`http://${hostname}:4173/`)
 
-        await expect(page).toHaveTitle(`${libraryName} - Home`)
+        await expect(page).toHaveTitle(`Home — ${libraryName} — Shade`)
         await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
             'content',
             libraryName,

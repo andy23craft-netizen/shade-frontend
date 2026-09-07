@@ -2,12 +2,12 @@ export const routeMetadata = {
   home: {
     path: '/',
     title: 'Home',
-    heading: 'Shade Library',
+    heading: 'Library Home',
   },
   about: {
     path: '/about',
     title: 'About',
-    heading: 'Shade Library',
+    heading: 'About the Library',
   },
   dashboard: {
     path: '/reading-room/dashboard',

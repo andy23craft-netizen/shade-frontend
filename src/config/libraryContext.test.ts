@@ -51,16 +51,17 @@ describe('applyLibraryTheme', () => {
 
         applyLibraryTheme(null, root)
 
-        expect(root.dataset.library).toBe('unknown')
+        expect(root.dataset.library).toBe('neutral')
+        expect(root.dataset.typographyAccent).toBe('neutral')
     })
 })
 
 describe('formatLibraryDocumentTitle', () => {
     it.each([
-        ['shade.library.spir.es', "Andy's Library - Home"],
-        ['jamie.library.spir.es', "Jamie's Library - Home"],
-        ['dalmo.library.spir.es', "Dalmo's Library - Home"],
-        ['unknown.library.spir.es', 'Library - Home'],
+        ['shade.library.spir.es', "Home — Andy's Library — Shade"],
+        ['jamie.library.spir.es', "Home — Jamie's Library — Shade"],
+        ['dalmo.library.spir.es', "Home — Dalmo's Library — Shade"],
+        ['unknown.library.spir.es', 'Home — Library — Shade'],
     ])('formats the title for %s', (hostname, expectedTitle) => {
         expect(
             formatLibraryDocumentTitle(
@@ -79,7 +80,7 @@ describe('formatLibraryDocumentTitle', () => {
             target,
         )
 
-        expect(target.title).toBe("Dalmo's Library - Home")
+        expect(target.title).toBe("Home — Dalmo's Library — Shade")
         expect(
             target.head
                 .querySelector('meta[property="og:title"]')

@@ -1,6 +1,12 @@
 export const DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'
 
-export type LibraryId = 'andy' | 'dalmo' | 'jamie'
+import {
+    getKnownLibraryIdentity,
+    getLibraryIdentity,
+    type LibraryId,
+} from './libraryIdentity'
+
+export type { LibraryId } from './libraryIdentity'
 
 export interface LibraryContext {
     id: LibraryId
@@ -11,18 +17,18 @@ export interface LibraryContext {
 const LIBRARIES: Readonly<Record<LibraryId, LibraryContext>> = {
     andy: {
         id: 'andy',
-        name: "Andy's Library",
-        wordmark: 'Shade Library',
+        name: getKnownLibraryIdentity('andy').libraryName,
+        wordmark: getKnownLibraryIdentity('andy').wordmark,
     },
     dalmo: {
         id: 'dalmo',
-        name: "Dalmo's Library",
-        wordmark: "Dalmo's Shade Library",
+        name: getKnownLibraryIdentity('dalmo').libraryName,
+        wordmark: getKnownLibraryIdentity('dalmo').wordmark,
     },
     jamie: {
         id: 'jamie',
-        name: "Jamie's Library",
-        wordmark: "Jamie's Shade Library",
+        name: getKnownLibraryIdentity('jamie').libraryName,
+        wordmark: getKnownLibraryIdentity('jamie').wordmark,
     },
 }
 
@@ -65,16 +71,18 @@ export function applyLibraryTheme(
     context: LibraryContext | null,
     root: HTMLElement = document.documentElement,
 ): void {
-    root.dataset.library = context?.id ?? 'unknown'
+    const identity = getLibraryIdentity(context?.id)
+    root.dataset.library = identity.palette
+    root.dataset.typographyAccent = identity.typographyAccent
 }
 
 export function formatLibraryDocumentTitle(
     pageTitle: string,
     context: LibraryContext | null,
 ): string {
-    const libraryName = context?.name ?? 'Library'
+    const libraryName = getLibraryIdentity(context?.id).libraryName
 
-    return `${libraryName} - ${pageTitle}`
+    return `${pageTitle} — ${libraryName} — Shade`
 }
 
 export function applyLibraryDocumentMetadata(
@@ -82,7 +90,7 @@ export function applyLibraryDocumentMetadata(
     pageTitle: string,
     target: Document = document,
 ): void {
-    const libraryName = context?.name ?? 'Library'
+    const libraryName = getLibraryIdentity(context?.id).libraryName
 
     target.title = formatLibraryDocumentTitle(pageTitle, context)
 
@@ -107,7 +115,5 @@ export function applyLibraryDocumentMetadata(
 export function getLibraryDisplayName(
     context: LibraryContext | null,
 ): string {
-    return context?.id === 'andy'
-        ? 'Shade Library'
-        : context?.name ?? 'Shade Library'
+    return getLibraryIdentity(context?.id).wordmark
 }

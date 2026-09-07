@@ -32,4 +32,14 @@ describe('getLibraryBranding', () => {
         expect(branding.hero).toContain('Shade_Library_Hero.webp')
         expect(branding.showHomeQuote).toBe(true)
     })
+
+    it('does not borrow a known library identity for an unknown host', () => {
+        const branding = getLibraryBranding(null)
+
+        expect(branding).toEqual({
+            header: null,
+            hero: null,
+            showHomeQuote: false,
+        })
+    })
 })

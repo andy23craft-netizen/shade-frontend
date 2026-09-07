@@ -19,6 +19,7 @@ import {
     useCollectionIsbnJump,
 } from '../../scanning/useCollectionIsbnJump'
 import dashboardBackground from '../../../assets/Dashboard_Background.webp'
+import { LibraryWordmark } from '../../../components/LibraryWordmark'
 
 
 function displayAverage(
@@ -213,9 +214,7 @@ export function DashboardPage() {
         >
             <header className="dashboard-page__heading">
                 <div>
-                    <p className="dashboard-page__eyebrow">
-                        Shade Library
-                    </p>
+                    <LibraryWordmark className="dashboard-page__eyebrow" />
 
                     <h1 tabIndex={-1}>
                         Dashboard

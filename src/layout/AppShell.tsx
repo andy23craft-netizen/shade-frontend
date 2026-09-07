@@ -87,11 +87,11 @@ export function AppShell() {
                         end
                         aria-label={libraryName}
                     >
-                        <img
+                        {libraryBranding.header ? <img
                             src={libraryBranding.header}
                             alt=""
                             className="app-brand__image"
-                        />
+                        /> : <span>{libraryName}</span>}
                     </NavLink>
 
                     {room !== 'neutral' ? <nav

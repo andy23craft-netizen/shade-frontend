@@ -136,11 +136,13 @@ export function HomePage() {
                     className="home-page__hero-link"
                     aria-label={`About ${libraryName}`}
                 >
-                    <img
+                    {libraryBranding.hero ? <img
                         src={libraryBranding.hero}
                         alt=""
                         className="home-page__hero-image"
-                    />
+                    /> : <span className="home-page__hero-fallback">
+                        {libraryName}
+                    </span>}
                 </AppLink>
 
                 <h1
