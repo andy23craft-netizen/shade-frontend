@@ -28,6 +28,15 @@ const mockCreateCategoryMutateAsync = vi.fn()
 const mockLookupMutateAsync = vi.fn()
 const mockImportMutateAsync = vi.fn()
 const mockUseInfiniteBooks = vi.fn()
+const bulkStorageValues = new Map<string, string>()
+Object.defineProperty(window, 'localStorage', { configurable: true, value: {
+    getItem: (key: string) => bulkStorageValues.get(key) ?? null,
+    setItem: (key: string, value: string) => bulkStorageValues.set(key, value),
+    removeItem: (key: string) => bulkStorageValues.delete(key),
+    clear: () => bulkStorageValues.clear(),
+    key: (index: number) => [...bulkStorageValues.keys()][index] ?? null,
+    get length() { return bulkStorageValues.size },
+} })
 
 let shelvesData: ShelfRead[] | undefined
 let shelvesPending = false
@@ -109,6 +118,10 @@ vi.mock('../../scanning/IsbnCameraScanner', () => ({
     ),
 }))
 
+vi.mock('../../library/components/GuidedSetupActions', () => ({
+    GuidedSetupActions: () => null,
+}))
+
 const shelves: ShelfRead[] = [
     {
         shelf_id: 'shelf-a3',
@@ -144,9 +157,9 @@ const shelves: ShelfRead[] = [
     },
 ]
 
-function renderPage() {
+function renderPage(initialEntry = '/') {
     return render(
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[initialEntry]}>
             <BulkAddPage />
         </MemoryRouter>,
     )
@@ -224,6 +237,7 @@ describe('BulkAddPage', () => {
         })
 
         vi.restoreAllMocks()
+        bulkStorageValues.clear()
     })
 
     it('loads the shelf-first setup and excludes removed', () => {
@@ -253,6 +267,14 @@ describe('BulkAddPage', () => {
                 name: 'Removed',
             }),
         ).not.toBeInTheDocument()
+    })
+
+    it('enters the existing capture engine with a setup-selected shelf', () => {
+        renderPage('/books/bulk-add?setup=1&shelf_name=a3')
+
+        expect(screen.getByText('A3', { exact: true })).toBeInTheDocument()
+        expect(screen.getByLabelText('ISBN')).toBeInTheDocument()
+        expect(screen.queryByLabelText('Destination shelf')).not.toBeInTheDocument()
     })
 
     it('shows loading and retryable shelf errors', () => {

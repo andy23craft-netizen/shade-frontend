@@ -61,7 +61,7 @@ export function useCollectionAlbums(collectionId: string, options: { enabled?: b
 
 export function useAddCollectionAlbum() {
     const { apiClient } = useConnection(); const api = createCollectionsApi(apiClient); const qc = useQueryClient()
-    return useMutation({ mutationFn: ({ collectionId, album }: { collectionId: string; album: CollectionAlbumCreate }) => api.addAlbum(collectionId, album), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.collections.albums(variables.collectionId) }) } })
+    return useMutation({ mutationFn: ({ collectionId, album }: { collectionId: string; album: CollectionAlbumCreate }) => api.addAlbum(collectionId, album), onSuccess: async (_data, variables) => { await Promise.all([qc.invalidateQueries({ queryKey: queryKeys.collections.albums(variables.collectionId) }), qc.invalidateQueries({ queryKey: queryKeys.collections.list() })]) } })
 }
 
 export function useUpdateCollectionAlbum() {
@@ -71,7 +71,7 @@ export function useUpdateCollectionAlbum() {
 
 export function useRemoveCollectionAlbum() {
     const { apiClient } = useConnection(); const api = createCollectionsApi(apiClient); const qc = useQueryClient()
-    return useMutation({ mutationFn: ({ collectionId, collectionAlbumId }: { collectionId: string; collectionAlbumId: string }) => api.removeAlbum(collectionId, collectionAlbumId), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.collections.albums(variables.collectionId) }) } })
+    return useMutation({ mutationFn: ({ collectionId, collectionAlbumId }: { collectionId: string; collectionAlbumId: string }) => api.removeAlbum(collectionId, collectionAlbumId), onSuccess: async (_data, variables) => { await Promise.all([qc.invalidateQueries({ queryKey: queryKeys.collections.albums(variables.collectionId) }), qc.invalidateQueries({ queryKey: queryKeys.collections.list() })]) } })
 }
 
 function getNextCollectionBooksPageParam(
@@ -292,6 +292,9 @@ export function useAddCollectionBook() {
                         variables.collectionId,
                     ),
             })
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.collections.list(),
+            })
         },
     })
 }
@@ -391,6 +394,9 @@ export function useRemoveCollectionBook() {
                     queryKeys.collections.books(
                         variables.collectionId,
                     ),
+            })
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.collections.list(),
             })
         },
     })

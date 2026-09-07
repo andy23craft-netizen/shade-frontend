@@ -32,6 +32,9 @@ import {
     type CollectionCreateFieldErrors,
     type CollectionCreateFormValues,
 } from '../collectionFormModel'
+import {
+    collectionsForMedia,
+} from '../collectionMedia'
 
 export interface AddBookToCollectionDialogProps {
     book: BookRead
@@ -500,8 +503,10 @@ export function AddBookToCollectionDialog({
         )
     }
 
-    const collections =
-        collectionsQuery.data?.items ?? []
+    const collections = collectionsForMedia(
+        collectionsQuery.data?.items ?? [],
+        'book',
+    )
 
     return (
         <dialog

@@ -60,7 +60,9 @@ export function discardLegacyUnscopedAlbumBulkSession(
 export function loadAlbumBulkSession(storage: Pick<Storage, 'getItem'>, key: string): AlbumBulkSession | null {
     try {
         const parsed = JSON.parse(storage.getItem(key) ?? 'null') as AlbumBulkSession | null
-        return parsed && Array.isArray(parsed.queue) && typeof parsed.nextSequence === 'number' ? parsed : null
+        return parsed && Array.isArray(parsed.queue) && typeof parsed.nextSequence === 'number'
+            ? { ...parsed, queue: parsed.queue.map(item => item.status === 'looking_up' ? { ...item, status: 'queued' } : item) }
+            : null
     } catch { return null }
 }
 

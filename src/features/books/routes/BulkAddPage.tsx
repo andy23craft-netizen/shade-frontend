@@ -7,7 +7,7 @@ import {
     useState,
     type FormEvent,
 } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
@@ -34,6 +34,14 @@ import {
 import {
     formatShelfCommonNameForDisplay,
 } from '../../shelves/shelfDisplay'
+import { GuidedSetupActions } from '../../library/components/GuidedSetupActions'
+import {
+    bookBulkStorageKey,
+    emptyBulkAddDraft,
+    loadBookBulkSession,
+    saveBookBulkSession,
+    type BulkAddDraft,
+} from '../bookBulkSession'
 import {
     bulkAddLookupDetail,
     bulkAddStatusLabel,
@@ -62,26 +70,8 @@ const IsbnCameraScanner = lazy(
         ),
 )
 
-type BulkAddDraft = {
-    title: string
-    authors: string
-    publisher: string
-    publicationDate: string
-    pages: string
-    categoryIds: string[]
-    acquireWishlist: boolean
-}
-
 function emptyDraft(): BulkAddDraft {
-    return {
-        title: '',
-        authors: '',
-        publisher: '',
-        publicationDate: '',
-        pages: '',
-        categoryIds: [],
-        acquireWishlist: false,
-    }
+    return emptyBulkAddDraft()
 }
 
 function lookupAuthorsText(
@@ -383,6 +373,15 @@ function reviewStatusLabel(
 }
 
 export function BulkAddPage() {
+    const [searchParams] = useSearchParams()
+    const setupShelfName = searchParams.get('setup') === '1'
+        ? searchParams.get('shelf_name')?.trim() ?? ''
+        : ''
+    const setupMode = searchParams.get('setup') === '1'
+    const bookStorageKey = bookBulkStorageKey(window.location.hostname)
+    const [restoredSession] = useState(() => setupMode
+        ? loadBookBulkSession(window.localStorage, bookStorageKey)
+        : null)
     const navigate = useNavigate()
     const shelvesQuery = useShelves()
     const categoriesQuery = useCategories()
@@ -407,21 +406,21 @@ export function BulkAddPage() {
     const pendingManualFocusIdRef =
         useRef<string | null>(null)
 
-    const nextClientIdRef = useRef(1)
+    const nextClientIdRef = useRef(restoredSession?.nextClientSequence ?? 1)
     const lookupInFlightRef = useRef(false)
 
     const [shelfName, setShelfName] =
-        useState('')
+        useState(setupShelfName || restoredSession?.shelfName || '')
 
     const [
         acquisitionSource,
         setAcquisitionSource,
-    ] = useState('')
+    ] = useState(restoredSession?.acquisitionSource ?? '')
 
     const [
         sessionStarted,
         setSessionStarted,
-    ] = useState(false)
+    ] = useState(Boolean(setupShelfName) || restoredSession?.sessionStarted || false)
 
     const [
         cancelShelfOpen,
@@ -436,27 +435,27 @@ export function BulkAddPage() {
     const [
         queue,
         setQueue,
-    ] = useState<BulkAddQueueItem[]>([])
+    ] = useState<BulkAddQueueItem[]>(restoredSession?.queue ?? [])
 
     const [
         drafts,
         setDrafts,
     ] = useState<
         Record<string, BulkAddDraft>
-    >({})
+    >(restoredSession?.drafts ?? {})
 
     const [
         savedIds,
         setSavedIds,
     ] = useState<Set<string>>(
-        () => new Set(),
+        () => new Set(restoredSession?.savedIds ?? []),
     )
 
     const [
         importErrors,
         setImportErrors,
     ] = useState<Map<string, string>>(
-        () => new Map(),
+        () => new Map(restoredSession?.importErrors ?? []),
     )
 
     const [
@@ -571,6 +570,31 @@ export function BulkAddPage() {
             (shelf) =>
                 shelf.common_name === shelfName,
         )
+
+    useEffect(() => {
+        if (!setupMode) return
+        saveBookBulkSession(window.localStorage, bookStorageKey, {
+            version: 1,
+            shelfName,
+            acquisitionSource,
+            sessionStarted,
+            queue,
+            drafts,
+            savedIds: [...savedIds],
+            importErrors: [...importErrors],
+            nextClientSequence: nextClientIdRef.current,
+        })
+    }, [
+        acquisitionSource,
+        bookStorageKey,
+        drafts,
+        importErrors,
+        queue,
+        savedIds,
+        sessionStarted,
+        setupMode,
+        shelfName,
+    ])
 
     const categories = useMemo(() => {
         const queryCategories =
@@ -2629,6 +2653,11 @@ export function BulkAddPage() {
                         </Button>
                     </div>
                 ) : null}
+
+                <GuidedSetupActions
+                    media="book"
+                    hasUnresolved={queue.some((item) => !savedIds.has(item.clientItemId))}
+                />
             </section>
 
             <ConfirmationDialog

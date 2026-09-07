@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useBulkAlbumImport, useBulkAlbumLookup } from '../../../api/albumsQueries'
 import { useArtists, useCreateArtist } from '../../../api/artistsQueries'
 import { useGenres, useCreateGenre } from '../../../api/genresQueries'
@@ -7,6 +7,7 @@ import { useShelves } from '../../../api/shelvesQueries'
 import { Alert, AppLink, Button, Field, LoadingState, QueryErrorState } from '../../../components'
 import { resolveLibraryContext } from '../../../config/libraryContext'
 import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
+import { GuidedSetupActions } from '../../library/components/GuidedSetupActions'
 import { albumBulkStorageKey, albumCatalogStateLabel, albumLookupStatusLabel, canImportAlbum, discardLegacyUnscopedAlbumBulkSession, draftFromAlbumLookup, emptyAlbumDraft, loadAlbumBulkSession, type AlbumBulkQueueItem, type AlbumCaptureKind } from '../albumBulkAddModel'
 
 const MAX_ITEMS = 50
@@ -18,11 +19,15 @@ const statusDetail = (item: AlbumBulkQueueItem) => item.saveDetail ?? (item.resu
 
 export function AlbumBulkAddPage() {
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const setupShelfName = searchParams.get('setup') === '1'
+        ? searchParams.get('shelf_name')?.trim() ?? ''
+        : ''
     const storageKey = albumBulkStorageKey(window.location.hostname)
     const [discardedLegacySession] = useState(() => discardLegacyUnscopedAlbumBulkSession(window.localStorage))
     const [initialSession] = useState(() => loadAlbumBulkSession(window.localStorage, storageKey))
-    const [shelfName, setShelfName] = useState(initialSession?.shelfName ?? '')
-    const [started, setStarted] = useState(initialSession?.started ?? false)
+    const [shelfName, setShelfName] = useState(setupShelfName || initialSession?.shelfName || '')
+    const [started, setStarted] = useState(Boolean(setupShelfName) || initialSession?.started || false)
     const [queue, setQueue] = useState<AlbumBulkQueueItem[]>(initialSession?.queue ?? [])
     const sequence = useRef(initialSession?.nextSequence ?? 1)
     const [kind, setKind] = useState<AlbumCaptureKind>('barcode')
@@ -127,6 +132,7 @@ export function AlbumBulkAddPage() {
                     {item.saveDetail ? <Alert variant="error">{item.saveDetail}</Alert> : null}<Button type="button" variant="secondary" onClick={() => retry(item.clientItemId)}>Retry lookup</Button></div>}</li>)}</ol>}</section>
             <div className="bulk-add-save"><Button type="button" disabled={!importable.length || importer.isPending} onClick={() => void save()}>{importer.isPending ? 'Saving…' : `Save Crate (${importable.length})`}</Button></div>
             {queue.some(item => item.saveStatus === 'created' || item.saveStatus === 'wishlist_acquired') ? <div className="bulk-add-complete-actions"><Button type="button" variant="secondary" onClick={nextCrate}>Start Next Crate</Button><Button type="button" onClick={finish}>Finish Bulk Add</Button></div> : null}
+            <GuidedSetupActions media="album" hasUnresolved={hasUnresolved} />
         </>}
     </section>
 }

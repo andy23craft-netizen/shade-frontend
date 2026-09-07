@@ -218,21 +218,6 @@ export function useUpdateWishlistAlbum() {
     return useMutation({ mutationFn: ({ wishlistId, wishlistItemId, notes }: { wishlistId: string; wishlistItemId: string; notes: string | null }) => api.updateAlbum(wishlistId, wishlistItemId, { notes }), onSuccess: async (_data, variables) => { await qc.invalidateQueries({ queryKey: queryKeys.wishlists.items(variables.wishlistId) }) } })
 }
 
-export class MoveWishlistAlbumToShelfError extends Error {
-    readonly membershipRemoved: boolean
-
-    constructor(options: { cause: unknown; membershipRemoved: boolean }) {
-        super(
-            options.cause instanceof Error
-                ? options.cause.message
-                : 'Unable to move the album to a shelf.',
-            { cause: options.cause },
-        )
-        this.name = 'MoveWishlistAlbumToShelfError'
-        this.membershipRemoved = options.membershipRemoved
-    }
-}
-
 export function useMoveWishlistAlbumToShelf() {
     const { apiClient } = useConnection()
     const queryClient = useQueryClient()
@@ -259,6 +244,7 @@ export function useMoveWishlistAlbumToShelf() {
                 queryClient.invalidateQueries({ queryKey: queryKeys.wishlists.items(variables.wishlistId) }),
                 queryClient.invalidateQueries({ queryKey: queryKeys.albums.all }),
                 queryClient.invalidateQueries({ queryKey: queryKeys.shelves.all }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.collections.all }),
                 queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
             ])
         },

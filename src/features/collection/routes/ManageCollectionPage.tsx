@@ -26,6 +26,23 @@ export function ManageCollectionPage() {
                         aria-label="Collection maintenance"
                     >
                         <AppLink
+                            to="/library/setup"
+                            className="manage-collection-action"
+                        >
+                            <span className="manage-collection-action__title">
+                                Build the Collection
+                            </span>
+
+                            <span className="manage-collection-action__description">
+                                Resume guided shelf-by-shelf or crate-by-crate intake.
+                            </span>
+
+                            <span className="manage-collection-action__arrow" aria-hidden="true">
+                                →
+                            </span>
+                        </AppLink>
+
+                        <AppLink
                             to="/books/new"
                             className="manage-collection-action"
                         >

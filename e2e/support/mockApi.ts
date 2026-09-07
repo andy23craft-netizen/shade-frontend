@@ -6,6 +6,7 @@ import type {
     CategoryRead,
     DashboardSummary,
     LoanRead,
+    LibrarySetupRead,
     ShelfRead,
 } from '../../src/api/apiTypes'
 
@@ -30,6 +31,7 @@ export interface MockApiState {
     shelves: ShelfRead[]
     categories: CategoryRead[]
     authors: AuthorRead[]
+    setup: LibrarySetupRead
     requests: MockApiRequest[]
 }
 
@@ -79,6 +81,7 @@ interface InstallMockApiOptions {
     shelves?: ShelfRead[]
     categories?: CategoryRead[]
     authors?: AuthorRead[]
+    setup?: LibrarySetupRead
 }
 
 interface CheckoutBody {
@@ -851,6 +854,13 @@ export async function installMockApi(
         shelves = [lifecycleShelf],
         categories = lifecycleCategories,
         authors = lifecycleAuthors,
+        setup = {
+            state: 'required',
+            has_catalog_items: false,
+            system_shelves_ready: true,
+            supported_media: ['book', 'album'],
+            failure_code: null,
+        },
     }: InstallMockApiOptions = {},
 ): Promise<MockApiController> {
     const state: MockApiState = {
@@ -865,11 +875,12 @@ export async function installMockApi(
         authors: authors.map((author) => ({
             ...author,
         })),
+        setup: { ...setup, supported_media: [...setup.supported_media] },
         requests: [],
     }
 
     const apiPathPattern =
-        /^\/(?:api\/)?(?:health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
+        /^\/(?:api\/)?(?:health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|library|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
 
     await page.route(
         (url) => apiPathPattern.test(url.pathname),
@@ -919,11 +930,52 @@ export async function installMockApi(
 
             if (
                 method === 'GET' &&
+                url.pathname === '/library/setup'
+            ) {
+                await fulfillJson(route, { body: state.setup })
+                return
+            }
+
+            if (
+                method === 'POST' &&
+                url.pathname === '/library/setup/complete'
+            ) {
+                state.setup = {
+                    ...state.setup,
+                    state: 'complete',
+                    system_shelves_ready: true,
+                    failure_code: null,
+                }
+                await fulfillJson(route, { body: state.setup })
+                return
+            }
+
+            if (
+                method === 'GET' &&
                 url.pathname === '/shelves'
             ) {
                 await fulfillJson(route, {
                     body: state.shelves,
                 })
+                return
+            }
+
+            if (
+                method === 'POST' &&
+                url.pathname === '/shelves'
+            ) {
+                const body = readRequestBody(route)
+                const commonName = typeof body.common_name === 'string' ? body.common_name.trim() : ''
+                const shelf: ShelfRead = {
+                    shelf_id: `shelf-${state.shelves.length + 1}`,
+                    common_name: commonName,
+                    location: typeof body.location === 'string' ? body.location : null,
+                    description: typeof body.description === 'string' ? body.description : null,
+                    created_date: NOW,
+                    updated_date: NOW,
+                }
+                state.shelves.push(shelf)
+                await fulfillJson(route, { status: 201, body: shelf })
                 return
             }
 

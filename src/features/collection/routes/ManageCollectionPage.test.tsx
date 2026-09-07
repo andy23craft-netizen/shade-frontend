@@ -32,6 +32,15 @@ describe('ManageCollectionPage', () => {
 
         expect(
             within(main).getByRole('link', {
+                name: /^Build the Collection/i,
+            }),
+        ).toHaveAttribute(
+            'href',
+            '/library/setup',
+        )
+
+        expect(
+            within(main).getByRole('link', {
                 name: /^Add Book/i,
             }),
         ).toHaveAttribute(

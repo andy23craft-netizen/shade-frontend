@@ -38,6 +38,9 @@ import {
     type AddCollectionBookFieldErrors,
     type AddCollectionBookFormValues,
 } from '../collectionFormModel'
+import {
+    collectionsForMedia,
+} from '../collectionMedia'
 
 const ADD_BOOK_FIELDS = new Set<string>([
     'collectionId',
@@ -147,8 +150,10 @@ export function AddCollectionBookControl() {
         setNotice,
     ] = useState<string | null>(null)
 
-    const collections =
-        collectionsQuery.data?.items ?? []
+    const collections = collectionsForMedia(
+        collectionsQuery.data?.items ?? [],
+        'book',
+    )
 
     const selectedCollectionId =
         values.collectionId !== ''

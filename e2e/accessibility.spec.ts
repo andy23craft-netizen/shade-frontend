@@ -24,6 +24,11 @@ const criticalRoutes = [
         heading: 'Pale Fire',
     },
     {
+        name: 'guided library setup',
+        path: '/library/setup',
+        heading: 'Set up your library',
+    },
+    {
         name: 'loans',
         path: '/loans',
         heading: 'Loans',
@@ -65,4 +70,3 @@ for (const route of criticalRoutes) {
         )
     })
 }
-

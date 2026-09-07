@@ -20,6 +20,13 @@ describe('albumBulkAddModel', () => {
     })
     it('ignores corrupt persisted state', () => expect(loadAlbumBulkSession({ getItem: () => '{' }, 'key')).toBeNull())
 
+    it('requeues lookup work interrupted by browser closure', () => {
+        const queued = item('new')
+        queued.status = 'looking_up'
+        const raw = JSON.stringify({ shelfName: 'blue', started: true, queue: [queued], nextSequence: 2 })
+        expect(loadAlbumBulkSession({ getItem: () => raw }, 'key')?.queue[0]?.status).toBe('queued')
+    })
+
     it('discards legacy unscoped data once instead of restoring it', () => {
         const values = new Map([['shade:bulk-add:album:v1', '{"private":"draft"}']])
         const storage = { getItem: (key: string) => values.get(key) ?? null, removeItem: (key: string) => values.delete(key) }

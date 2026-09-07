@@ -40,6 +40,7 @@ import {
     CollectionMembershipRow,
 } from '../components/CollectionMembershipRow'
 import { CollectionAlbums } from '../components/CollectionAlbums'
+import { collectionAcceptsMedia } from '../collectionMedia'
 import {
     collectionEditFormValuesFromCollection,
     emptyCollectionCreateFormValues,
@@ -587,11 +588,18 @@ function CollectionSection({
         setEditOpen,
     ] = useState(false)
 
+    const acceptsBooks =
+        collectionAcceptsMedia(collection, 'book')
+    const acceptsAlbums =
+        collectionAcceptsMedia(collection, 'album')
+
     const membershipsQuery =
         useInfiniteCollectionBooks(
             collection.collection_id,
             {
-                enabled: expanded,
+                enabled:
+                    expanded &&
+                    acceptsBooks,
             },
         )
 
@@ -706,7 +714,14 @@ function CollectionSection({
 
             {!expanded ? null : (
                 <>
-                    <CollectionAlbums collectionId={collection.collection_id} enabled={expanded} />
+                    <CollectionAlbums
+                        collectionId={collection.collection_id}
+                        enabled={
+                            expanded &&
+                            acceptsAlbums
+                        }
+                    />
+                    {!acceptsBooks ? null : <>
                     {membershipsQuery.isPending ? (
                         <LoadingState
                             label={`Loading ${collection.name}…`}
@@ -794,6 +809,7 @@ function CollectionSection({
                             </Button>
                         </div>
                     ) : null}
+                    </>}
                 </>
             )}
         </article>

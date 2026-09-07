@@ -240,7 +240,7 @@ describe('AppShell layout and navigation', () => {
         const footer = screen.getByRole('contentinfo')
 
         expect(footer).toHaveTextContent(
-            'Last updated September 01, 2026',
+            'Last updated September 06, 2026',
         )
 
         expect(
