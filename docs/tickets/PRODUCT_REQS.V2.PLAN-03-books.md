@@ -1,16 +1,17 @@
 # PLAN-03 -- Remaining Book Features
 
-**Status:** Planning decomposition of remaining book-side V2 scope. Book Build Mode and the
-current book catalog, circulation, discovery, and dashboard surfaces are shipped baseline.
+**Status:** Decomposed into implementation tickets. Book Build Mode and the current book
+catalog, circulation, discovery, and dashboard surfaces are shipped baseline.
 
-**Backend alignment:** Unshipped book surfaces in the backend remaining-features plan and
-`V2-proposed-contract.md` until they ship into OpenAPI.
+**Backend alignment:** Reconciled with checked-in OpenAPI 1.1.3 on September 7, 2026. Most
+formerly proposed contracts are shipped. Remaining gaps are consolidated in
+`BACKEND-HANDOFF-PLAN-03_remaining-book-contracts.md`.
 
 **Authority:** `docs/product-docs/PRODUCT_REQS.V2.definitive.md` remains the product source of
 truth. Current tickets own their feature details; OpenAPI and `API-for-FE.md` own shipped
 transport behavior.
 
-**Last updated:** September 5, 2026
+**Last updated:** September 7, 2026
 
 ## Goal
 
@@ -197,25 +198,28 @@ reduced motion, and stay within the definitive visual performance guardrails.
 
 ## Ticket decomposition
 
-1. Multiple-owned-copy creation/import and duplicate resolution.
-2. Book QR generation and six-up print layout.
-3. Book code resolution, copy disambiguation, and scan-to-circulation.
-4. Manual availability and checkout override behavior.
-5. TBR automation and Reserved/will-call book behavior using PLAN-02 settings.
-6. ISBN-not-applicable create/edit/Build/detail/cleanup behavior.
-7. Human-readable book catalog URLs and backend-owned slugs.
-8. Needs Reshelving mark/clear and Dashboard queue.
-9. Optional book contributor roles.
-10. Omit absent optional fields from book forms, payloads, and rendered metadata.
-11. `FEAT-30` borrower-name presentation on book loan cards.
-12. Required book borrower rating and optional review.
-13. Book Work grouping and correction.
-14. Persistent book controls and shared Back to Top behavior.
-15. Quote-coordinated book Home headings.
-16. Book Dashboard analytics.
-17. New Releases and Current Reading on Home.
-18. Book visual identity, seasonal treatment, and camera polish.
-19. Book observation, accessibility, responsive, performance, and release closeout.
+1. `FEAT-39_multiple-owned-book-copies.md` -- creation/import duplicate resolution.
+2. `FEAT-40_book-qr-label-generation.md` -- deterministic QR and six-up print layout.
+3. `FEAT-41_book-code-resolution-and-circulation-scan.md` -- copy disambiguation and scan-to-circulation.
+4. `FEAT-42_manual-book-availability.md` -- manual state and checkout overrides.
+5. `FEAT-43_book-tbr-and-reserved-shelf-automation.md` -- PLAN-02 settings consumption.
+6. `FEAT-44_isbn-not-applicable.md` -- create/edit/Build/detail/cleanup behavior.
+7. `FEAT-45_human-readable-book-links.md` -- backend-owned readable keys.
+8. `FEAT-46_needs-reshelving.md` -- mark/clear and Dashboard queue.
+9. `FEAT-47_optional-book-contributors.md` -- ordered contributor roles.
+10. `FEAT-48_absent-optional-book-fields.md` -- form, payload, and rendering audit.
+11. Existing `FEAT-30_borrower-name-presentation.md` -- shared loan-card treatment.
+12. `FEAT-49_book-borrower-feedback.md` -- required rating and optional review.
+13. `FEAT-50_book-work-correction.md` -- Group as Same Work / Separate from Work.
+14. `FEAT-51_persistent-book-controls-and-back-to-top.md` -- responsive list controls.
+15. `FEAT-52_quote-coordinated-book-headings.md` -- inert curated Home headings.
+16. `FEAT-53_book-dashboard-analytics.md` -- deeper book metrics and charts.
+17. `FEAT-54_book-home-discovery.md` -- New Releases and Current Reading.
+18. `FEAT-55_book-visual-identity-and-camera-polish.md` -- visual and capture refinement.
+19. `FEAT-56_book-v2-release-closeout.md` -- observation and release evidence.
+
+Backend gaps shared across this decomposition are intentionally kept in one handoff:
+`BACKEND-HANDOFF-PLAN-03_remaining-book-contracts.md`.
 
 ## Completion criteria
 

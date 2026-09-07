@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { useInfiniteAlbums } from '../../../api/albumsQueries'
 import { Alert, AppLink, Button, EmptyState, Field, LoadingState, ModalDialog, QueryErrorState } from '../../../components'
@@ -8,11 +8,14 @@ import { displayMediaFormat, formatAlbumArtists } from '../albumDisplay'
 import { flattenAlbumPages, parseAlbumListParams, updateAlbumListParams, type AlbumListFilters } from '../albumsListModel'
 import { AddAlbumToWishlistControl } from '../../wishlists/components/AddAlbumToWishlistControl'
 
-function AlbumControls({ filters, onChange, onClear }: { filters: AlbumListFilters; onChange: (updates: Partial<AlbumListFilters>) => void; onClear: () => void }) {
+const AlbumBarcodeCameraScanner = lazy(() => import('../../scanning/IsbnCameraScanner').then(module => ({ default: module.AlbumBarcodeCameraScanner })))
+
+function AlbumControls({ filters, onChange, onClear, onScanBarcode }: { filters: AlbumListFilters; onChange: (updates: Partial<AlbumListFilters>) => void; onClear: () => void; onScanBarcode: () => void }) {
     return <form className="album-filters" onSubmit={event => event.preventDefault()}>
         <Field label="Artist"><input type="search" value={filters.artist ?? ''} onChange={event => onChange({ artist: event.target.value })} /></Field>
         <Field label="Title"><input type="search" value={filters.title ?? ''} onChange={event => onChange({ title: event.target.value })} /></Field>
         <Field label="Barcode"><input inputMode="numeric" value={filters.barcode ?? ''} onChange={event => onChange({ barcode: event.target.value })} /></Field>
+        <Button type="button" variant="secondary" onClick={onScanBarcode}>Scan barcode</Button>
         <Field label="Format"><select value={filters.mediaFormat ?? ''} onChange={event => onChange({ mediaFormat: event.target.value as AlbumListFilters['mediaFormat'] })}><option value="">All formats</option><option value="vinyl">Vinyl</option><option value="cd">CD</option><option value="cassette">Cassette</option><option value="other">Other</option><option value="unknown">Unknown</option></select></Field>
         <Field label="Placement"><select value={filters.placementState ?? 'shelved'} onChange={event => onChange({ placementState: event.target.value === 'unshelved' ? 'unshelved' : undefined })}><option value="shelved">In crates</option><option value="unshelved">Unshelved / wishlist candidates</option></select></Field>
         <Field label="Sort"><select value={filters.sortBy} onChange={event => onChange({ sortBy: event.target.value as AlbumListFilters['sortBy'] })}><option value="artist">Artist</option><option value="title">Title</option><option value="release_date">Release date</option><option value="creation_date">Date added</option></select></Field>
@@ -38,6 +41,7 @@ export function AlbumsPage() {
     const fetchNext = useCallback(() => { void fetchNextPage() }, [fetchNextPage])
     const { getRowRef } = useInfiniteScrollTrigger({ enabled: query.isSuccess, hasNextPage: query.hasNextPage, isFetchingNextPage: query.isFetchingNextPage, fetchNextPage: fetchNext, itemCount: albums.length })
     const [showBackToTop, setShowBackToTop] = useState(false)
+    const [scannerOpen, setScannerOpen] = useState(false)
 
     useEffect(() => {
         const update = () => setShowBackToTop(window.scrollY > 640)
@@ -46,10 +50,11 @@ export function AlbumsPage() {
     }, [])
     const change = (updates: Partial<AlbumListFilters>) => setParams(updateAlbumListParams(params, updates), { replace: true })
     const clear = () => setParams(new URLSearchParams(), { replace: true })
-    const controls = <AlbumControls filters={filters} onChange={change} onClear={clear} />
+    const controls = <AlbumControls filters={filters} onChange={change} onClear={clear} onScanBarcode={() => setScannerOpen(true)} />
 
     return <section className="page page--albums"><header className="page-header album-room__header"><div className="albums-page__heading"><h1 tabIndex={-1}>Albums</h1><p>{total} albums in the library.</p></div><div className="form-actions"><AppLink className="button button--secondary" to="/albums/bulk-add">Bulk add</AppLink><AppLink className="button button--primary" to="/albums/new">Add album</AppLink></div></header>
         <AlbumBrowseLayout controls={controls}>{query.isPending ? <LoadingState label="Loading albums…" /> : query.isError ? <QueryErrorState title="Unable to load albums" error={query.error} onRetry={() => void query.refetch()} /> : total === 0 ? <EmptyState title="No albums found"><p>Add a release or change the filters.</p><Button type="button" variant="secondary" onClick={clear}>Clear filters</Button></EmptyState> : <><div className="album-grid" aria-label="Library albums">{albums.map((album, index) => <article ref={getRowRef(index)} className="album-card" key={album.album_id}><AppLink to={`/albums/${album.album_id}`} state={{ albumsReturnTo: `${location.pathname}${location.search}`, albumScrollY: window.scrollY, albumPlacementState: filters.placementState ?? 'shelved' }}><AlbumArtwork albumId={album.album_id} title={album.title} present={album.artwork_present} /><div className="album-card__copy"><div className="album-card__heading"><h2>{album.title}</h2><p className="album-card__artist">{formatAlbumArtists(album)}</p></div><dl className="album-card__metadata"><div><dt>Format</dt><dd>{displayMediaFormat(album.media_format)}</dd></div>{album.release_date ? <div><dt>Year</dt><dd>{album.release_date.slice(0, 4)}</dd></div> : null}{album.shelf_name ? <div><dt>Crate</dt><dd>{album.shelf_name}</dd></div> : null}</dl>{album.status === 'on_loan' ? <span className="album-card__stamp">On loan</span> : null}{album.deletion_date ? <span className="album-card__stamp">Deleted</span> : null}</div></AppLink>{filters.placementState === 'unshelved' && !album.deletion_date ? <AddAlbumToWishlistControl compact albumId={album.album_id} albumTitle={album.title} /> : null}</article>)}</div>{query.isFetchingNextPage ? <div className="infinite-scroll__footer"><LoadingState label="Loading more albums…" /></div> : null}{query.isFetchNextPageError ? <div className="infinite-scroll__footer"><Alert variant="error">Unable to load more albums.</Alert><Button variant="secondary" onClick={fetchNext}>Retry</Button></div> : null}</>}</AlbumBrowseLayout>
+        {scannerOpen ? <Suspense fallback={<LoadingState label="Loading camera scanner…" />}><AlbumBarcodeCameraScanner onDetected={value => { change({ barcode: value }); setScannerOpen(false) }} onCancel={() => setScannerOpen(false)} /></Suspense> : null}
         {showBackToTop ? <Button type="button" className="back-to-top" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); document.querySelector<HTMLElement>('.albums-page__heading h1')?.focus() }}>Back to top</Button> : null}
     </section>
 }

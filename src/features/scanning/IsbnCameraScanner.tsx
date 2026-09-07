@@ -17,8 +17,10 @@ import { Field } from '../../components/Field'
 import {
     buildCameraVideoConstraints,
     CAMERA_SCAN_TIMEOUT_MS,
+    createAlbumBarcodeDecodeHints,
     createIsbnDecodeHints,
     getCameraCapabilityError,
+    isAcceptableCameraAlbumBarcode,
     isAcceptableCameraIsbn,
 } from './isbnCameraCapture'
 
@@ -31,8 +33,25 @@ export function IsbnCameraScanner({
     onDetected,
     onCancel,
 }: IsbnScannerProps) {
+    return <CameraBarcodeScanner mode="isbn" onDetected={onDetected} onCancel={onCancel} />
+}
+
+export function AlbumBarcodeCameraScanner({
+    onDetected,
+    onCancel,
+}: IsbnScannerProps) {
+    return <CameraBarcodeScanner mode="album" onDetected={onDetected} onCancel={onCancel} />
+}
+
+function CameraBarcodeScanner({
+    mode,
+    onDetected,
+    onCancel,
+}: IsbnScannerProps & { mode: 'isbn' | 'album' }) {
+    const isAlbum = mode === 'album'
+    const identifier = isAlbum ? 'barcode' : 'ISBN'
     const capabilityError =
-        getCameraCapabilityError()
+        getCameraCapabilityError(identifier)
 
     const videoRef =
         useRef<HTMLVideoElement>(null)
@@ -103,7 +122,7 @@ export function IsbnCameraScanner({
 
         const reader =
             new BrowserMultiFormatReader(
-                createIsbnDecodeHints(),
+                isAlbum ? createAlbumBarcodeDecodeHints() : createIsbnDecodeHints(),
             )
 
         let cancelled = false
@@ -199,15 +218,14 @@ export function IsbnCameraScanner({
                                 return
                             }
 
-                            const isbn = result
+                            const value = result
                                 .getText()
                                 .trim()
 
                             if (
-                                !isAcceptableCameraIsbn(
-                                    isbn,
-                                    result.getBarcodeFormat(),
-                                )
+                                !(isAlbum
+                                    ? isAcceptableCameraAlbumBarcode(value, result.getBarcodeFormat())
+                                    : isAcceptableCameraIsbn(value, result.getBarcodeFormat()))
                             ) {
                                 return
                             }
@@ -218,7 +236,7 @@ export function IsbnCameraScanner({
                             controlsRef.current?.stop()
                             controlsRef.current =
                                 null
-                            onDetected(isbn)
+                            onDetected(value)
                         },
                     )
 
@@ -272,7 +290,7 @@ export function IsbnCameraScanner({
                         'NotAllowedError'
                     ) {
                         setRuntimeError(
-                            'Camera access was denied. Allow camera access and try again, or enter the ISBN manually.',
+                            `Camera access was denied. Allow camera access and try again, or enter the ${identifier} manually.`,
                         )
                         return
                     }
@@ -282,14 +300,14 @@ export function IsbnCameraScanner({
                         'NotFoundError'
                     ) {
                         setRuntimeError(
-                            'No camera was found on this device. You can enter the ISBN manually instead.',
+                            `No camera was found on this device. You can enter the ${identifier} manually instead.`,
                         )
                         return
                     }
                 }
 
                 setRuntimeError(
-                    'The camera could not be started. You can enter the ISBN manually instead.',
+                    `The camera could not be started. You can enter the ${identifier} manually instead.`,
                 )
             }
         }
@@ -300,7 +318,7 @@ export function IsbnCameraScanner({
             cancelled = true
             stopScanner()
         }
-    }, [capabilityError, onDetected, selectedDeviceId])
+    }, [capabilityError, identifier, isAlbum, onDetected, selectedDeviceId])
 
     function handleContinueScanning(): void {
         setScanTimedOut(false)
@@ -323,12 +341,12 @@ export function IsbnCameraScanner({
 
     return (
         <section
-            aria-labelledby="isbn-scanner-heading"
+            aria-labelledby={`${mode}-scanner-heading`}
             className="isbn-camera-scanner"
         >
             <header>
-                <h2 id="isbn-scanner-heading">
-                    Scan ISBN
+                <h2 id={`${mode}-scanner-heading`}>
+                    {isAlbum ? 'Scan barcode' : 'Scan ISBN'}
                 </h2>
             </header>
 
@@ -345,7 +363,7 @@ export function IsbnCameraScanner({
                             ref={videoRef}
                             muted
                             playsInline
-                            aria-label="ISBN camera"
+                            aria-label={isAlbum ? 'Album barcode camera' : 'ISBN camera'}
                         />
                     </div>
 
@@ -355,21 +373,21 @@ export function IsbnCameraScanner({
                         </p>
                     ) : (
                         <p>
-                            Point the camera at the
-                            ISBN barcode on the back
-                            of the book.
+                            {isAlbum
+                                ? 'Point the camera at the barcode on the album.'
+                                : 'Point the camera at the ISBN barcode on the back of the book.'}
                         </p>
                     )}
 
                     {scanTimedOut ? (
                         <Alert
                             variant="warning"
-                            title="No ISBN barcode found"
+                            title={isAlbum ? 'No album barcode found' : 'No ISBN barcode found'}
                         >
-                            No readable ISBN barcode
+                            No readable {isAlbum ? 'album' : 'ISBN'} barcode
                             was detected. Improve
                             lighting, move closer, or
-                            enter the ISBN manually.
+                            enter the {identifier} manually.
                             <div>
                                 <Button
                                     type="button"
@@ -387,7 +405,7 @@ export function IsbnCameraScanner({
                     {videoDevices.length > 1 ? (
                         <Field
                             label="Camera"
-                            helpText="Switch cameras if the ISBN is hard to read"
+                            helpText={`Switch cameras if the ${identifier} is hard to read`}
                         >
                             <select
                                 name="isbnCameraDevice"

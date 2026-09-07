@@ -34,6 +34,22 @@ export function createIsbnDecodeHints(): Map<
     return hints
 }
 
+const ALBUM_BARCODE_FORMATS = [
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.UPC_A,
+    BarcodeFormat.UPC_E,
+] as const
+
+export function createAlbumBarcodeDecodeHints(): Map<
+    DecodeHintType,
+    BarcodeFormat[]
+> {
+    const hints = new Map<DecodeHintType, BarcodeFormat[]>()
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [...ALBUM_BARCODE_FORMATS])
+    return hints
+}
+
 export function isSecureCameraContext(): boolean {
     return (
         typeof window !== 'undefined' &&
@@ -50,16 +66,42 @@ export function isCameraCaptureSupported(): boolean {
     )
 }
 
-export function getCameraCapabilityError(): string | null {
+export function getCameraCapabilityError(identifier = 'ISBN'): string | null {
     if (!isSecureCameraContext()) {
-        return 'Camera scanning needs a secure connection (HTTPS or localhost). You can enter the ISBN manually instead.'
+        return `Camera scanning needs a secure connection (HTTPS or localhost). You can enter the ${identifier} manually instead.`
     }
 
     if (!isCameraCaptureSupported()) {
-        return 'This browser does not support camera scanning. You can enter the ISBN manually instead.'
+        return `This browser does not support camera scanning. You can enter the ${identifier} manually instead.`
     }
 
     return null
+}
+
+export function isAcceptableCameraAlbumBarcode(
+    text: string,
+    barcodeFormat?: BarcodeFormat,
+): boolean {
+    const normalized = text.trim().replace(/[\s-]/g, '')
+
+    if (!/^\d+$/.test(normalized)) return false
+
+    if (barcodeFormat === undefined) {
+        return normalized.length >= 6 && normalized.length <= 13
+    }
+
+    if (!ALBUM_BARCODE_FORMATS.includes(barcodeFormat as typeof ALBUM_BARCODE_FORMATS[number])) {
+        return false
+    }
+
+    const expectedLengths: Partial<Record<BarcodeFormat, number[]>> = {
+        [BarcodeFormat.EAN_13]: [13],
+        [BarcodeFormat.EAN_8]: [8],
+        [BarcodeFormat.UPC_A]: [12],
+        [BarcodeFormat.UPC_E]: [6, 7, 8],
+    }
+
+    return expectedLengths[barcodeFormat]?.includes(normalized.length) ?? false
 }
 
 /**

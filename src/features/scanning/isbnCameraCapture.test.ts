@@ -12,7 +12,9 @@ import {
 
 import {
     buildCameraVideoConstraints,
+    createAlbumBarcodeDecodeHints,
     createIsbnDecodeHints,
+    isAcceptableCameraAlbumBarcode,
     isAcceptableCameraIsbn,
 } from './isbnCameraCapture'
 
@@ -25,6 +27,31 @@ describe('createIsbnDecodeHints', () => {
                 DecodeHintType.POSSIBLE_FORMATS,
             ),
         ).toEqual([BarcodeFormat.EAN_13])
+    })
+})
+
+describe('album barcode camera capture', () => {
+    it('enables the retail barcode formats used by albums', () => {
+        expect(createAlbumBarcodeDecodeHints().get(DecodeHintType.POSSIBLE_FORMATS)).toEqual([
+            BarcodeFormat.EAN_13,
+            BarcodeFormat.EAN_8,
+            BarcodeFormat.UPC_A,
+            BarcodeFormat.UPC_E,
+        ])
+    })
+
+    it.each([
+        ['602547888330', BarcodeFormat.UPC_A],
+        ['4006381333931', BarcodeFormat.EAN_13],
+        ['96385074', BarcodeFormat.EAN_8],
+        ['123456', BarcodeFormat.UPC_E],
+    ])('accepts %s from its matching symbology', (value, format) => {
+        expect(isAcceptableCameraAlbumBarcode(value, format)).toBe(true)
+    })
+
+    it('rejects unsupported formats and non-numeric payloads', () => {
+        expect(isAcceptableCameraAlbumBarcode('602547888330', BarcodeFormat.QR_CODE)).toBe(false)
+        expect(isAcceptableCameraAlbumBarcode('not-a-barcode', BarcodeFormat.UPC_A)).toBe(false)
     })
 })
 

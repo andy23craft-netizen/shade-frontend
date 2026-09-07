@@ -1309,6 +1309,36 @@
   align-self: start;
 }
 
+.bulk-add-queue-item__actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.bulk-add-queue-item__remove {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--color-card-rule);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-danger);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bulk-add-queue-item__remove:hover,
+.bulk-add-queue-item__remove:focus-visible {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: white;
+}
+
 .bulk-add-queue-item__status span {
   display: inline-flex;
   align-items: center;
@@ -1709,6 +1739,10 @@
     justify-self: start;
   }
 
+  .bulk-add-queue-item__actions {
+    justify-content: space-between;
+  }
+
   .bulk-add-queue-item__detail,
   .bulk-add-queue-item__error,
   .bulk-add-review,
@@ -1786,6 +1820,14 @@
     var(--space-3)
     0
     0;
+}
+
+.bulk-add-review__resolution-link {
+  color: var(--color-link);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.15em;
 }
 
 .books-page__controls {

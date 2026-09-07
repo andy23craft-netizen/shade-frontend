@@ -524,6 +524,23 @@ export function BulkAddPage() {
         movedCount: number
     } | null>(null)
 
+    function removeFromQueue(clientItemId: string) {
+        setQueue((current) =>
+            current.filter((item) => item.clientItemId !== clientItemId),
+        )
+        setDrafts((current) =>
+            Object.fromEntries(
+                Object.entries(current).filter(([id]) => id !== clientItemId),
+            ),
+        )
+        setImportErrors((current) =>
+            new Map([...current].filter(([id]) => id !== clientItemId)),
+        )
+        if (activeCategoryPickerId === clientItemId) {
+            setActiveCategoryPickerId(null)
+        }
+    }
+
     const selectedShelfBooksQuery = useInfiniteBooks({
         shelfName: shelfName || undefined,
         enabled: sessionStarted && Boolean(shelfName),
@@ -2077,15 +2094,31 @@ export function BulkAddPage() {
                                             </p>
                                         </div>
 
-                                        <div className="bulk-add-queue-item__status">
-                                            <span>
-                                                {reviewStatusLabel(
-                                                    item,
-                                                    draft,
-                                                    savedIds,
-                                                    importErrors,
-                                                )}
-                                            </span>
+                                        <div className="bulk-add-queue-item__actions">
+                                            <div className="bulk-add-queue-item__status">
+                                                <span>
+                                                    {reviewStatusLabel(
+                                                        item,
+                                                        draft,
+                                                        savedIds,
+                                                        importErrors,
+                                                    )}
+                                                </span>
+                                            </div>
+                                            {!saved ? (
+                                                <button
+                                                    type="button"
+                                                    className="bulk-add-queue-item__remove"
+                                                    aria-label={`Remove ${queueItemTitle(item, draft)} from queue`}
+                                                    onClick={() =>
+                                                        removeFromQueue(
+                                                            item.clientItemId,
+                                                        )
+                                                    }
+                                                >
+                                                    ×
+                                                </button>
+                                            ) : null}
                                         </div>
 
                                         {detail ? (
