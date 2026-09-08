@@ -1,6 +1,7 @@
 import type {
     LoanList,
     LoanFeedbackRead,
+    LoanFeedbackList,
     LoanFeedbackWrite,
     LoanRead,
     LoanUpdate,
@@ -150,6 +151,21 @@ export function createLoansApi(
                 `/loans/${encodeURIComponent(id)}/feedback`,
                 { method: 'DELETE' },
             )
+        },
+
+        async listBookFeedback(
+            bookId: string,
+            options: ApiCallOptions & { skip?: number; take?: number } = {},
+        ): Promise<LoanFeedbackList> {
+            const params = new URLSearchParams()
+            if (options.skip !== undefined) params.set('skip', String(options.skip))
+            if (options.take !== undefined) params.set('take', String(options.take))
+            const query = params.toString()
+            const path = `/books/${encodeURIComponent(bookId)}/borrower-reviews${query ? `?${query}` : ''}`
+            const signalOptions = withSignal(options.signal)
+            return signalOptions === undefined
+                ? client.getJson(path)
+                : client.getJson(path, signalOptions)
         },
     }
 }

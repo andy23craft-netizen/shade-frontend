@@ -25,6 +25,9 @@ vi.mock('../../../api/booksQueries', () => ({
 vi.mock('../../../api/loansQueries', () => ({
     useLoans: vi.fn(),
 }))
+vi.mock('../../loans/components/BorrowerReviews', () => ({
+    BorrowerReviews: () => <div data-testid="borrower-reviews" />,
+}))
 vi.mock(
     '../../collections/components/AddBookToCollectionDialog',
     () => ({

@@ -7,6 +7,7 @@ import {
 } from 'vitest'
 
 import type {
+    LoanFeedbackList,
     LoanList,
     LoanRead,
 } from './apiTypes'
@@ -301,6 +302,21 @@ describe('createLoansApi', () => {
             },
         )
         expect(result).toBe(loan)
+    })
+
+    it('lists paginated borrower reviews for a book', async () => {
+        const feedback: LoanFeedbackList = { items: [], total: 0 }
+        const client = createMockClient()
+        vi.mocked(client.getJson).mockResolvedValue(feedback)
+
+        await createLoansApi(client).listBookFeedback('book/123', {
+            skip: 20,
+            take: 10,
+        })
+
+        expect(client.getJson).toHaveBeenCalledWith(
+            '/books/book%2F123/borrower-reviews?skip=20&take=10',
+        )
     })
 
     async function expectGetStatus(

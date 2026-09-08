@@ -24,15 +24,20 @@ import type {
 import {
     useCheckinBook,
 } from '../../../api/booksQueries'
+import { usePutLoanFeedback } from '../../../api/loansQueries'
 import { CheckinForm } from './CheckinForm'
 
 vi.mock('../../../api/booksQueries', () => ({
     useCheckinBook: vi.fn(),
 }))
+vi.mock('../../../api/loansQueries', () => ({
+    usePutLoanFeedback: vi.fn(),
+}))
 
 const mockUseCheckinBook = vi.mocked(
     useCheckinBook,
 )
+const mockUsePutLoanFeedback = vi.mocked(usePutLoanFeedback)
 
 const book = {
     book_id: 'test-book-id',
@@ -144,6 +149,10 @@ describe('CheckinForm', () => {
         } as unknown as ReturnType<
             typeof useCheckinBook
         >)
+        mockUsePutLoanFeedback.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+        } as unknown as ReturnType<typeof usePutLoanFeedback>)
     })
 
     it('renders the return card for the selected book and active loan', () => {
@@ -210,6 +219,43 @@ describe('CheckinForm', () => {
             }),
         )
     })
+
+    it('keeps a blank review optional and completes check-in without a feedback write', () => {
+        const checkin = vi.fn((_variables, options: { onSuccess?: () => void }) => options.onSuccess?.())
+        const feedback = vi.fn()
+        mockUseCheckinBook.mockReturnValue({ mutate: checkin, isPending: false } as unknown as ReturnType<typeof useCheckinBook>)
+        mockUsePutLoanFeedback.mockReturnValue({ mutate: feedback, isPending: false } as unknown as ReturnType<typeof usePutLoanFeedback>)
+
+        const { onSuccess } = renderForm()
+        expect(screen.getByLabelText('Borrower review')).toHaveValue('')
+        submitForm()
+        confirmCheckin()
+
+        expect(onSuccess).toHaveBeenCalledOnce()
+        expect(feedback).not.toHaveBeenCalled()
+    })
+
+    it('saves a supplied optional review against the returned loan', () => {
+        const checkin = vi.fn((_variables, options: { onSuccess?: () => void }) => options.onSuccess?.())
+        const feedback = vi.fn()
+        mockUseCheckinBook.mockReturnValue({ mutate: checkin, isPending: false } as unknown as ReturnType<typeof useCheckinBook>)
+        mockUsePutLoanFeedback.mockReturnValue({ mutate: feedback, isPending: false } as unknown as ReturnType<typeof usePutLoanFeedback>)
+
+        renderForm()
+        fireEvent.change(screen.getByLabelText('Borrower review'), { target: { value: 'Excellent.' } })
+        submitForm()
+        confirmCheckin()
+
+        expect(checkin).toHaveBeenCalledWith({
+            id: 'test-book-id',
+            request: { rating: 5 },
+            feedback: {
+                loanId: 'test-loan-id', rating: 5, review: 'Excellent.',
+            },
+        }, expect.any(Object))
+        expect(feedback).not.toHaveBeenCalled()
+    })
+
 
     it('submits a check-in with an explicit return date', () => {
         const mutate = vi.fn()

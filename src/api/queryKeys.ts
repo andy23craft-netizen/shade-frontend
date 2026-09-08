@@ -357,6 +357,11 @@ export const queryKeys = {
 
         detail: (id: string) =>
             ['loans', id] as const,
+
+        borrowerReviews: (
+            bookId: string,
+            options: { take: number } = { take: 20 },
+        ) => ['loans', 'borrower-reviews', 'book', bookId, options] as const,
     },
 
     dashboard: {

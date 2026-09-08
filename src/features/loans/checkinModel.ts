@@ -57,6 +57,7 @@ function normalizeCheckinDateTime(
 
 export interface CheckinFormValues {
     rating?: string
+    review: string
     returned_at: string
 }
 
@@ -67,6 +68,7 @@ export interface CheckinFormFieldErrors {
 
 export const checkinFormDefaults: CheckinFormValues = {
     rating: '',
+    review: '',
     returned_at: '',
 }
 

@@ -22,6 +22,8 @@ import {
 
 import type {
     LoanList,
+    LoanFeedbackList,
+    LoanFeedbackWrite,
     LoanUpdate,
 } from './apiTypes'
 
@@ -38,6 +40,17 @@ function getNextListPageParam(
     return loaded < lastPage.total
         ? loaded
         : undefined
+}
+
+function getNextFeedbackPageParam(
+    lastPage: LoanFeedbackList,
+    allPages: LoanFeedbackList[],
+): number | undefined {
+    const loaded = allPages.reduce(
+        (count, page) => count + page.items.length,
+        0,
+    )
+    return loaded < lastPage.total ? loaded : undefined
 }
 
 export function useLoans(
@@ -139,6 +152,40 @@ export function useLoan(
                 signal,
             }),
         enabled: Boolean(id),
+    })
+}
+
+export function useInfiniteBookBorrowerReviews(bookId: string) {
+    const { apiClient } = useConnection()
+    const loansApi = createLoansApi(apiClient)
+
+    return useInfiniteQuery({
+        queryKey: queryKeys.loans.borrowerReviews(bookId, { take: INFINITE_SCROLL_BATCH_SIZE }),
+        initialPageParam: 0,
+        queryFn: ({ pageParam, signal }) => loansApi.listBookFeedback(bookId, {
+            skip: pageParam,
+            take: INFINITE_SCROLL_BATCH_SIZE,
+            signal,
+        }),
+        getNextPageParam: getNextFeedbackPageParam,
+        enabled: Boolean(bookId),
+    })
+}
+
+export function usePutLoanFeedback() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const loansApi = createLoansApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({ id, feedback }: { id: string; feedback: LoanFeedbackWrite }) =>
+            loansApi.putFeedback(id, feedback),
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: queryKeys.loans.all }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.books.all }),
+            ])
+        },
     })
 }
 

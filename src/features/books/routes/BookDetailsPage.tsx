@@ -40,6 +40,7 @@ import { Button } from '../../../components/Button'
 import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
 import { isCheckoutEligible } from '../../loans/checkoutEligibility'
 import { BookAvailabilityControl } from '../components/BookAvailabilityControl'
+import { BorrowerReviews } from '../../loans/components/BorrowerReviews'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -528,6 +529,8 @@ export function BookDetailsPage() {
                     </div>
                 </dl>
             </section>
+
+            <BorrowerReviews bookId={book.book_id} />
 
             {canShowActiveActions ? (
                 <nav

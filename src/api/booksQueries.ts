@@ -10,6 +10,7 @@ import { isBookIdentityError } from './bookIdentity'
 import {
     createBooksApi,
 } from './booksApi'
+import { createLoansApi } from './loansApi'
 import {
     queryKeys,
 } from './queryKeys'
@@ -513,13 +514,13 @@ export function useCreateBook() {
         ) =>
             booksApi.create(book),
 
-        onSuccess: async (book) => {
+        onSuccess: (book) => {
             writeBookDetailCache(
                 queryClient,
                 book,
             )
 
-            await invalidateBookCaches(
+            void invalidateBookCaches(
                 queryClient,
                 book.book_id,
             )
@@ -919,19 +920,36 @@ export function useCheckinBook() {
 
     const booksApi =
         createBooksApi(apiClient)
+    const loansApi = createLoansApi(apiClient)
 
     return useMutation({
-        mutationFn: ({
+        mutationFn: async ({
             id,
             request,
+            feedback,
         }: {
             id: string
             request: CheckinRequest
-        }) =>
-            booksApi.checkin(
+            feedback?: {
+                loanId: string
+                rating: number
+                review: string
+            }
+        }) => {
+            const book = await booksApi.checkin(
                 id,
                 request,
-            ),
+            )
+
+            if (feedback !== undefined) {
+                await loansApi.putFeedback(feedback.loanId, {
+                    rating: feedback.rating,
+                    review: feedback.review,
+                })
+            }
+
+            return book
+        },
 
         onSuccess: async (book) => {
             writeBookDetailCache(

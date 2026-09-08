@@ -24,6 +24,7 @@ import type {
 import {
     useCheckinBook,
 } from '../../../api/booksQueries'
+import { usePutLoanFeedback } from '../../../api/loansQueries'
 import { queryKeys } from '../../../api/queryKeys'
 import {
     isCheckinEligible,
@@ -89,6 +90,7 @@ export function CheckinForm({
                             }: CheckinFormProps) {
     const queryClient = useQueryClient()
     const checkinBook = useCheckinBook()
+    const putFeedback = usePutLoanFeedback()
 
     const summaryRef =
         useRef<HTMLDivElement>(null)
@@ -109,6 +111,9 @@ export function CheckinForm({
         formError,
         setFormError,
     ] = useState<string | null>(null)
+
+    const [feedbackError, setFeedbackError] = useState<string | null>(null)
+    const [checkinComplete, setCheckinComplete] = useState(false)
 
     const [
         pendingCheckinRequest,
@@ -146,7 +151,8 @@ export function CheckinForm({
 
     const hasSummary =
         errorEntries.length > 0 ||
-        Boolean(formError)
+        Boolean(formError) ||
+        Boolean(feedbackError)
 
     useEffect(() => {
         if (!hasSummary) {
@@ -211,6 +217,34 @@ export function CheckinForm({
         setFormError(null)
     }
 
+    function updateReview(value: string) {
+        setValues({ ...values, review: value })
+        setFeedbackError(null)
+    }
+
+    function saveOptionalReview() {
+        if (!activeLoan) return
+        const review = values.review.trim()
+        if (!review) {
+            onSuccess()
+            return
+        }
+
+        putFeedback.mutate({
+            id: activeLoan.id,
+            feedback: { rating: Number(values.rating), review },
+        }, {
+            onSuccess,
+            onError: (error) => {
+                setFeedbackError(
+                    error instanceof Error
+                        ? error.message
+                        : 'The book was checked in, but the optional review could not be saved.',
+                )
+            },
+        })
+    }
+
     function handleSubmit(
         event: React.FormEvent<HTMLFormElement>,
     ) {
@@ -221,6 +255,7 @@ export function CheckinForm({
 
         setFieldErrors(errors)
         setFormError(null)
+        setFeedbackError(null)
 
         if (Object.keys(errors).length > 0) {
             return
@@ -270,9 +305,21 @@ export function CheckinForm({
             {
                 id: book.book_id,
                 request: pendingCheckinRequest,
+                ...(values.review.trim() && activeLoan
+                    ? {
+                        feedback: {
+                            loanId: activeLoan.id,
+                            rating: Number(values.rating),
+                            review: values.review.trim(),
+                        },
+                    }
+                    : {}),
             },
             {
-                onSuccess,
+                onSuccess: () => {
+                    setCheckinComplete(true)
+                    onSuccess()
+                },
                 onError: (error) => {
                     void handleCheckinError(error)
                 },
@@ -352,12 +399,21 @@ export function CheckinForm({
                     <strong>
                         {formError
                             ? 'Check-in failed'
+                            : feedbackError
+                                ? 'Check-in complete; review not saved'
                             : 'Fix the following errors'}
                     </strong>
 
                     {formError ? (
                         <p>{formError}</p>
                     ) : null}
+
+                    {feedbackError ? <>
+                        <p>{feedbackError}</p>
+                        <Button onClick={saveOptionalReview} disabled={putFeedback.isPending}>
+                            {putFeedback.isPending ? 'Saving review…' : 'Retry review'}
+                        </Button>
+                    </> : null}
 
                     {errorEntries.length > 0 ? (
                         <ul>
@@ -445,6 +501,18 @@ export function CheckinForm({
                 </Field>
 
                 <Field
+                    label="Borrower review"
+                    id="checkin-review"
+                    helpText="Optional. This is separate from the owner catalog review."
+                >
+                    <textarea
+                        id="checkin-review"
+                        value={values.review}
+                        onChange={(event) => updateReview(event.target.value)}
+                    />
+                </Field>
+
+                <Field
                     label="Return date and time"
                     id="checkin-returned-at"
                     helpText="Leave blank to use the server's current UTC time."
@@ -472,10 +540,13 @@ export function CheckinForm({
                         variant="primary"
                         disabled={
                             checkinBook.isPending
+                            || checkinComplete
                         }
                     >
                         {checkinBook.isPending
                             ? 'Checking In...'
+                            : checkinComplete
+                                ? 'Checked In'
                             : 'Check In Book'}
                     </Button>
 
@@ -485,6 +556,7 @@ export function CheckinForm({
                         onClick={onCancel}
                         disabled={
                             checkinBook.isPending
+                            || putFeedback.isPending
                         }
                     >
                         Cancel
