@@ -1,14 +1,39 @@
 # API for Frontend (supplementary)
 
-Backend **1.2.4** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Shipped surfaces include album
-catalog CRUD, soft-delete/restore, artist/genre catalogs, circulation (checkout / check-in / mark-played),
-Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch, album bulk lookup/import, album collection
-membership, hostname-scoped multi-tenant routing (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`),
-`/library` setup and settings, `/works` identity corrections, `/catalog` resolve and recent-additions, book bulk and
-single-item availability, loan borrower PATCH, and returned-loan feedback. Existing book, wishlist, and loan response
+Backend **1.2.8** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Shipped surfaces include album
+catalog CRUD, soft-delete/restore, people/genre catalogs (shared `people` for book contributors and album credits),
+circulation (checkout / check-in / mark-played), Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch,
+album bulk lookup/import, album collection membership, hostname-scoped multi-tenant routing (`X-Forwarded-Host`, with
+`shade` remapped to tenant `andy`), `/library` setup and settings, `/quotes` tenant Home quote library, `/works`
+identity corrections, `/catalog` resolve and recent-additions, book bulk and single-item availability, mark-unread,
+dashboard book analytics, loan borrower PATCH, and returned-loan feedback. Existing book, wishlist, and loan response
 shapes remain stable aside from additive fields noted below (`work_id`, `borrower_rating`, `feedback_present`,
-`isbn_not_applicable`, and album dashboard/loan fields). Full schemas and authenticated paths live in the regenerated
-`openapi.json`.
+`isbn_not_applicable`, dashboard analytics keys, and album dashboard/loan fields) and the people/contributor reshape
+(`/people`, per-role book contributor lists, album `person_ids`). Full schemas and authenticated paths live in the
+regenerated `openapi.json`.
+
+Home quotes and discovery (shipped)
+
+- Authenticated `/quotes` is the tenant-owned Home quote library. `GET /quotes` returns the full ordered list as
+  `{items, total}` (no pagination). Each row has per-quote `enabled` (default true on create; PATCH may flip it, but
+  JSON null `enabled` is **422**). Empty lists and all-disabled lists still return **200**; the frontend should treat
+  those successful empty/disabled outcomes as "use checked-in built-in Home quotes," and treat transport or non-2xx
+  failures as the same safe fallback. There is no `library_settings` flag to disable the Home quote area.
+- Quote fields are `text`, `author`, nullable `context`, and `enabled` (presentation casing after trim on text fields).
+  Markup-looking content is inert plain text. Duplicate `lower(trim(text))` within a tenant is **409**
+  `"Quote text already exists"`. Blank or whitespace-only `context` when supplied is **422** (do not coerce blank to
+  null). Create always appends; reorder only via `PUT /quotes/order` with every current ID exactly once (duplicates or
+  incomplete ID sets are **422**). `POST /quotes/restore-defaults` replaces the library with the seed rows from
+  `sql/<tenant>/0197-quotes.sql` (same content ported from the former frontend `HOME_QUOTES` pool). Missing/invalid/
+  empty tenant seed files surface as **500** operator failures, not client validation errors.
+- After create/update/delete/reorder/restore, invalidate any client cache of the quote list for that host. Quote IDs
+  are stable until restore replaces the set.
+- Home discovery modules use ordinary catalog queries, not quote feed tables:
+  - New Additions: `GET /books?sortBy=creationDate&sortOrder=desc` (do not use `GET /catalog/recent-additions` here)
+  - New Releases: `GET /books?sortBy=publicationDate&sortOrder=desc`
+  - Current Reading: `GET /books?status=reading`
+  - Staff Picks: the dedicated Collection named `Staff Picks` (seeded for every allowlisted tenant), via existing
+    collection membership routes
 
 Album circulation (shipped)
 
@@ -48,27 +73,28 @@ Album behavior and frontend integration
   `/albums/{album_id}/restore`, plus lookup and artwork routes below. Create returns 201; delete returns 204;
   read/update/restore return `AlbumRead` (includes required boolean `artwork_present`, plus `work_id` and
   `borrower_rating`).
-- Create requires `title` and nonempty ordered `artist_ids`. Resolve/create artist and genre catalog records
+- Create requires `title` and nonempty ordered `person_ids`. Resolve/create people and genre catalog records
   first. `genre_ids` and `tracks` default to empty arrays; `media_format` defaults to `unknown`
   (other values: `vinyl`, `cd`, `cassette`, `other`). Identifiers are optional; barcode has no checksum validation.
 - Omit or send null `shelf_name` on create for an unshelved album. List inner-joins shelf membership and omits
   unshelved albums. Detail represents their shelf as `unknown`; that string alone cannot distinguish an
   unshelved album from actual membership on the system `unknown` shelf. Book placement fields are unchanged.
-- PATCH omission preserves fields and child lists. Sending `artist_ids` replaces album credits and requires
+- PATCH omission preserves fields and child lists. Sending `person_ids` replaces album credits and requires
   at least one ID. Sending `genre_ids` or `tracks` replaces the whole list; `[]` clears it. Null child lists,
   null title/media_format, and null shelf_name are 422. Optional scalar fields can be cleared with null.
-  Duplicate or unresolved artist/genre IDs are 422, with field-linked details.
+  Duplicate or unresolved person/genre IDs are 422, with field-linked details.
 - Tracks require `track_number` and `title`; `disc_number` defaults to 1. Numbers must be positive and each
-  disc/track pair unique. Optional `artist_ids` defaults to `[]`; duration is a string of at most 31 characters.
+  disc/track pair unique. Optional `person_ids` defaults to `[]`; duration is a string of at most 31 characters.
   Submit the entire edited track list. Replacement creates new `album_track_id` values, so clients must use
   the returned IDs. Responses order tracks by disc/track number and artists/genres by persisted position.
+  Album and track credit reads keep the product field name `artists` but each credit uses `person_id`.
 - GET `/albums` returns `{items, total}`. `artist`, `title`, `barcode` are substring filters; blank values
   return 400. `media_format` matches the enum exactly. Artist search matches first name/surname on either
   album or track credits, without duplicate albums; album-level matches always precede track-only matches.
   Sorts are `artist` (default, first album credit surname then first name), `title`, `releaseDate`,
   `creationDate`; `sortOrder=asc|desc` defaults to asc, with stable ascending album_id ties. Null sort values
   sort last. No shelf sort. Supply both `skip` and `take`, or neither; skip >= 0, take >= 1.
-- DELETE is soft: retain the album, tracks, artists, genres, and loan history; set deletion_date, move to
+- DELETE is soft: retain the album, tracks, people credits, genres, and loan history; set deletion_date, move to
   `removed`, and remove wishlist/collection memberships (compacting collection order). Default lists exclude
   deleted albums; `include_deleted=true` includes them. Detail GET includes deleted albums. PATCH or repeat
   DELETE returns 404 until restored. Restore clears deletion_date and moves to `unknown`; it does not restore
@@ -93,34 +119,38 @@ Album behavior and frontend integration
   membership routes are shipped. Albums never appear in GET `/books`. Album UI is needed to use the album
   resource; the existing book UI needs the shelf/error handling adjustments above plus additive `work_id` /
   borrower-feedback fields when those screens are shown. Regenerating client types alone does not implement those
-  behaviors. Clients generated from this 1.2.4 contract remain compatible with the existing book UI if they ignore
+  behaviors. Clients generated from this 1.2.8 contract remain compatible with the existing book UI if they ignore
   album routes and album-only fields until album UI is enabled. There is no separate handoff document.
 
-Artist/genre catalog behavior
+People/genre catalog behavior
 
-- `/artists`: GET returns unpaginated `{items, total}`, ordered by surname, first name, then artist_id (name
-  ordering is case-insensitive; null first names sort first). POST creates with 201; GET/PATCH/DELETE
-  `/artists/{artist_id}` read, update, or delete. `in_use=true` restricts the list to album or track references.
-  Artist records have `artist_id`, `first_name`, `surname`, `created_date`, and `updated_date`.
-- Artist create requires surname, optional first_name. Both trim and allow at most 255 characters; blank
-  first_name becomes null. PATCH preserves omitted fields and permits clearing first_name with null. Null/blank
-  surname is 422. Duplicate artist names are allowed: identify rows by UUID, not their display name.
+- `/people`: GET returns unpaginated `{items, total}`, ordered by surname, first name, then `person_id` (name
+  ordering is case-insensitive). POST creates with 201; GET/PATCH/DELETE `/people/{person_id}` read, update, or
+  delete. `in_use=true` restricts the list to people referenced by any book contributor role or by album/track
+  credits. Person records have `person_id`, `first_name`, `surname`, nullable unique `open_library_key`,
+  `created_date`, and `updated_date`.
+- People create requires surname, optional first_name, and optional `open_library_key`. Names trim and allow at most
+  255 characters; blank first_name becomes null. PATCH preserves omitted fields and permits clearing first_name or
+  `open_library_key` with null. Null/blank surname is 422. Duplicate display names are allowed: identify rows by
+  UUID, not their display name. Non-null `open_library_key` values are unique.
 - `/genres`: GET returns a plain unpaginated array ordered by name, then genre_id. POST creates with 201;
   GET/PATCH/DELETE `/genres/{genre_id}` read, update, or delete. `in_use=true` lists only assigned genres.
   Records have `genre_id`, `name`, `slug`, `created_date`, and `updated_date`. POST requires name and slug;
   PATCH preserves omitted fields. Null/blank values are 422. Names trim/collapse whitespace; slugs trim/lowercase;
   both allow at most 255 characters. Slugs must be supplied; the backend does not generate them from names.
 - Genre duplicate name/slug returns 409 (`Genre name already exists` / `Genre slug already exists`). Referenced
-  deletion returns 409 (`Artist is referenced by one or more albums or tracks` / `Genre is assigned to one or more
+  deletion returns 409 (`Person is referenced by one or more books or albums` / `Genre is assigned to one or more
   albums`). Remove memberships before deleting a referenced catalog row. Successful deletion is 204.
-- Artist unresolved IDs return 404, matching authors. Genre malformed GUIDs return 400; unknown GUIDs return 404,
+- Unresolved `/people/{person_id}` returns 404. Genre malformed GUIDs return 400; unknown GUIDs return 404,
   matching categories. These catalogs use the existing Bearer authentication and database scope.
-- Artists and genres remain distinct from authors and categories. Album forms resolve/create these rows
-  and send ordered `artist_ids` / `genre_ids` to album create/update.
+- There is no separate `/authors` or `/artists` catalog. Book forms resolve/create people and send ordered
+  `author_ids` / `illustrator_ids` / `editor_ids` / `translator_ids`. Album forms resolve/create the same people
+  rows and send ordered `person_ids` / `genre_ids` to album create/update.
 
 Regenerate clients from `openapi.json`. Album and work/feedback contract additions do not require activating every
 corresponding UI surface at once; runtime changes are needed only for the screens that consume those fields.
-Coordinate deployment with the matching frontend and any required retained-data migration.
+Coordinate deployment with the matching frontend. Schema or seed changes follow `docs/DB-updates.md` (sync DEV into
+committed seeds, then recreate DEV databases from those seeds); there is no application migration runner.
 
 Paths, methods, status codes, request/response schemas, and enums live in `openapi.json`. Live `/openapi.json` and
 `/docs` match the running app; a drift test keeps the checked-in file equal to what the app generates.
@@ -147,8 +177,10 @@ loans; album loans are reported separately by `album_borrowing`.
 Wishlist membership supports both typed catalog kinds. Duplicate book or album add returns **409**; refresh membership
 instead of retrying as a new add. Different wishlists may contain the same catalog item.
 
-Fresh disposable development databases use the current schema. Existing V1 production data still requires the
-separate rehearsed, data-preserving migration before deployment.
+Fresh disposable development databases use the current schema via shared DDL plus tenant seeds. Schema-bearing
+releases follow `docs/DB-updates.md`: sync live DEV content into committed `sql/` seeds before breaking changes, then
+delete and recreate DEV databases from those seeds on deploy. Operator export/reconcile is not an application restore
+API, and bootstrap does not upgrade an existing database file in place.
 
 Default local base: `http://127.0.0.1:8000` (server root; no `/api` prefix)
 
@@ -201,13 +233,13 @@ context returns **400** `Invalid or unknown library host`; an explicitly empty h
 
 | Status | Meaning beyond the OpenAPI label |
 | --- | --- |
-| **400** | Malformed or empty GUID on book path `{book_id}` (GET / PATCH / DELETE / checkout / check-in / mark-read / availability / cover get/upload/delete / borrower-reviews); malformed or empty GUID on album path `{album_id}` (catalog / artwork / circulation / restore / borrower-reviews); malformed or empty GUID on loan reads (`GET /loans/{id}` path, feedback PUT/DELETE, or `book_id` / `album_id` query); malformed or empty GUID on work routes (`/works/{work_id}` and correction paths); invalid `media_type`; malformed or empty `wishlist_id` / membership `wishlist_item_id` / membership `book_id` or `album_id` on wishlist routes; malformed or empty `collection_id` / `collection_book_id` / `collection_album_id` / membership `book_id` or `album_id` on collection routes; malformed or empty `shelf_id` on shelf update/delete or library settings/setup shelf UUID lists; empty/whitespace `isbn`, `author`, `title`, `publisher`, `acquisition_source`, or `shelf_name` on `GET /books`; blank album list filters (`artist`, `title`, `barcode`); malformed `book_id`; inverted numeric/date ranges; partial or invalid `skip`/`take` on list endpoints; invalid `sortBy` or `sortOrder` on `GET /books` or `GET /albums`; invalid or blank `field` on `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book/album create/update; placement onto system shelf `removed`; malformed or empty book GUID in a bulk shelf-move or bulk-availability request; unknown destination `shelf_name` on bulk shelf move or bulk import; malformed or duplicate `category_id` on `GET /books`; malformed category or genre GUID on catalog CRUD (author and artist path IDs, including malformed, return **404**); create/rename/delete of system shelves `unknown` or `removed`, or rename to those names; combining `shelf_name` with a non-`shelved` `placement_state` on `GET /books` (`shelf_name requires shelved placement_state`) |
+| **400** | Malformed or empty GUID on book path `{book_id}` (GET / PATCH / DELETE / checkout / check-in / mark-read / mark-unread / availability / cover get/upload/delete / borrower-reviews); malformed or empty GUID on album path `{album_id}` (catalog / artwork / circulation / restore / borrower-reviews); malformed or empty GUID on quote path `{quote_id}` (GET / PATCH / DELETE `/quotes/{quote_id}`); malformed or empty GUID on loan reads (`GET /loans/{id}` path, feedback PUT/DELETE, or `book_id` / `album_id` query); malformed or empty GUID on work routes (`/works/{work_id}` and correction paths); invalid `media_type`; malformed or empty `wishlist_id` / membership `wishlist_item_id` / membership `book_id` or `album_id` on wishlist routes; malformed or empty `collection_id` / `collection_book_id` / `collection_album_id` / membership `book_id` or `album_id` on collection routes; malformed or empty `shelf_id` on shelf update/delete or library settings/setup shelf UUID lists; empty/whitespace `isbn`, `author`, `title`, `publisher`, `acquisition_source`, or `shelf_name` on `GET /books`; blank album list filters (`artist`, `title`, `barcode`); malformed `book_id`; inverted numeric/date ranges; partial or invalid `skip`/`take` on list endpoints; invalid `sortBy` or `sortOrder` on `GET /books` or `GET /albums`; invalid or blank `field` on `GET /dashboard/incomplete-metadata/books`; unknown `shelf_name` on book/album create/update; placement onto system shelf `removed`; malformed or empty book GUID in a bulk shelf-move or bulk-availability request; unknown destination `shelf_name` on bulk shelf move or bulk import; malformed or duplicate `category_id` on `GET /books`; malformed category or genre GUID on catalog CRUD (person path IDs, including malformed, return **404**); create/rename/delete of system shelves `unknown` or `removed`, or rename to those names; combining `shelf_name` with a non-`shelved` `placement_state` on `GET /books` (`shelf_name requires shelved placement_state`) |
 | **403** | Missing or invalid Bearer token |
-| **404** | Book missing or already deleted on checkout / check-in / mark-read / availability / PATCH / bulk shelf move / cover get/upload/delete / borrower-reviews / second delete / `GET /books/{book_id}`; no local cover and no usable ISBN cover fallback on `GET /books/{book_id}/cover` (`"Book cover not found"`); album missing or soft-deleted on PATCH / delete / restore / artwork / circulation / borrower-reviews (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork` (`"Album artwork not found"`); Cover Art Archive refetch finds no usable front image (`"Album artwork not found"`); unknown book for `GET /loans?book_id=...`; unknown album for `GET /loans?album_id=...`; unknown loan for `GET /loans/{id}` or loan feedback PUT/DELETE; unknown work for `GET /works/{work_id}` and work correction routes; unknown or soft-deleted Shade item on `POST /catalog/resolve-code` (`"Physical item not found"`); unknown wishlist; unknown book or album when adding a typed wishlist membership; unknown or wrong-media membership on wishlist remove; unknown collection, unknown book/album when adding a collection membership, or unknown collection membership on reorder/remove; unknown shelf for PATCH / DELETE `/shelves/{shelf_id}`; unknown category, author, artist, or genre on catalog CRUD; unknown `category_id` on book create/update (`Category not found`) |
-| **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); loan feedback PUT when the loan is still active (`"Feedback requires a returned loan"`); restore when the album is not soft-deleted; artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`, or when the album's MusicBrainz Release ID changes during refetch; duplicate shelf `common_name` on create/rename; delete shelf while books or albums remain; duplicate category/genre name/slug; delete category while book memberships remain; delete author while book memberships remain (`Author is referenced by one or more books`); delete artist while album/track credits remain; delete genre while album memberships remain; duplicate book or `order_num` in the same collection; duplicate book or album in the same wishlist; ordinary PATCH or bulk shelf move on a stashed book (`Book is stashed; use the stash apply operation`); bulk stash when a book is already stashed |
-| **412** | Checkout when loans are disabled (`"Loans are disabled for this library"`); checkout when the book or album has `status=display_only` (`"Book is display only"` / `"Album is display only"`); checkout of `reserved` or `reading` without `availability_override=true`; manual reserved availability when no Reserved shelf is configured (`"A reserved shelf must be configured"`); add a book with any shelf membership, including `unknown`, to a wishlist (`"Existing books cannot be added to a wishlist"`); assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist (`"The book must be removed from the wishlist before it can be placed on a shelf"`); assign `shelf_name` on album create/update when the album is on a wishlist (`"The album must be removed from the wishlist before it can be placed on a shelf"`); mixed media on a shelf or collection (`"A book cannot be placed on an album shelf"`, `"An album cannot be placed on a book shelf"`, `"Books cannot be added to an album collection"`, `"Albums cannot be added to a book collection"`); album soft-delete/restore when the destination system shelf is occupied by the other media type; add a stashed book to a wishlist (`"Stashed books cannot be added to a wishlist"`); add a shelved album to a wishlist (`"Existing albums cannot be added to a wishlist"`); add a soft-deleted album to a wishlist (`"Soft-deleted albums cannot be added to a wishlist"`); bulk apply-stash to system shelf `unknown` |
-| **422** | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read or mark-played body; unsupported wishlist membership status; blank `shelf_name` on book create; JSON null `shelf_name` or `category_ids` on book update (omit those fields instead); null or blank shelf `common_name` on shelf create/update; empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; blank collection name on create/update; non-positive `order_num` on collection add/reorder; invalid/blank category/genre name or slug; invalid/blank author or artist surname or overlong name fields; empty/duplicate `author_ids` on book create/update, or null `author_ids` on update; empty/duplicate `artist_ids` on album create/update when supplied; empty items, duplicate `client_item_id`, or more than 50 items on bulk lookup/import; album bulk lookup item without exactly one of `barcode`, `discogs_release_id`, or `manual`; per-item book payload supplying `author_ids`, `shelf_name`, or `acquisition_source` on bulk import (use request-level `shelf_name` / `acquisition_source` and per-item `authors` instead); per-item album payload supplying `shelf_name` on bulk import; unknown `author_ids` on book create/update (422 object detail with message `One or more authors do not exist` and `author_ids` listing missing GUIDs); cover or album-artwork upload rejected (unsupported type, empty file, over 10 MB, or bytes/type mismatch); album lookup without exactly one of `barcode` / `discogs_release_id`; album artwork refetch when the album has no usable MusicBrainz Release ID; wishlist membership PATCH with omitted `notes` or `{}` (send `notes` explicitly) |
-| **500** | Edge-case unhandled parse of bad stored loan timestamps when borrow statistics run |
+| **404** | Book missing or already deleted on checkout / check-in / mark-read / mark-unread / availability / PATCH / bulk shelf move / cover get/upload/delete / borrower-reviews / second delete / `GET /books/{book_id}`; no local cover and no usable ISBN cover fallback on `GET /books/{book_id}/cover` (`"Book cover not found"`); album missing or soft-deleted on PATCH / delete / restore / artwork / circulation / borrower-reviews (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork` (`"Album artwork not found"`); Cover Art Archive refetch finds no usable front image (`"Album artwork not found"`); unknown quote for GET / PATCH / DELETE `/quotes/{quote_id}` (`"Quote not found"`); unknown book for `GET /loans?book_id=...`; unknown album for `GET /loans?album_id=...`; unknown loan for `GET /loans/{id}` or loan feedback PUT/DELETE; unknown work for `GET /works/{work_id}` and work correction routes; unknown or soft-deleted Shade item on `POST /catalog/resolve-code` (`"Physical item not found"`); unknown wishlist; unknown book or album when adding a typed wishlist membership; unknown or wrong-media membership on wishlist remove; unknown collection, unknown book/album when adding a collection membership, or unknown collection membership on reorder/remove; unknown shelf for PATCH / DELETE `/shelves/{shelf_id}`; unknown category, person, or genre on catalog CRUD; unknown `category_id` on book create/update (`Category not found`) |
+| **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); loan feedback PUT when the loan is still active (`"Feedback requires a returned loan"`); restore when the album is not soft-deleted; artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`, or when the album's MusicBrainz Release ID changes during refetch; duplicate shelf `common_name` on create/rename; delete shelf while books or albums remain; duplicate category/genre name/slug; delete category while book memberships remain; delete person while book-contributor or album/track credits remain (`Person is referenced by one or more books or albums`); delete genre while album memberships remain; duplicate quote text on create/update (`"Quote text already exists"`); duplicate book or `order_num` in the same collection; duplicate book or album in the same wishlist; ordinary PATCH or bulk shelf move on a stashed book (`Book is stashed; use the stash apply operation`); bulk stash when a book is already stashed |
+| **412** | Checkout when loans are disabled (`"Loans are disabled for this library"`); checkout when the book or album has `status=display_only` (`"Book is display only"` / `"Album is display only"`); checkout of `reserved` or `reading` without `availability_override=true` (`"availability_override=true is required for reserved or reading books"`); manual reserved availability when no Reserved shelf is configured (`"A reserved shelf must be configured"`); add a book with any shelf membership, including `unknown`, to a wishlist (`"Existing books cannot be added to a wishlist"`); assign `shelf_name` on book create/update or bulk shelf move when the book is on any wishlist (`"The book must be removed from the wishlist before it can be placed on a shelf"`); assign `shelf_name` on album create/update when the album is on a wishlist (`"The album must be removed from the wishlist before it can be placed on a shelf"`); mixed media on a shelf or collection (`"A book cannot be placed on an album shelf"`, `"An album cannot be placed on a book shelf"`, `"Books cannot be added to an album collection"`, `"Albums cannot be added to a book collection"`); album soft-delete/restore when the destination system shelf is occupied by the other media type; add a stashed book to a wishlist (`"Stashed books cannot be added to a wishlist"`); add a shelved album to a wishlist (`"Existing albums cannot be added to a wishlist"`); add a soft-deleted album to a wishlist (`"Soft-deleted albums cannot be added to a wishlist"`); bulk apply-stash to system shelf `unknown` |
+| **422** | Body/query validation; invalid ISBN; invalid rating/pages; omitted mark-read or mark-played body; book `completion_date` date-only values or read-state sync conflicts (`is_read` / `completion_date`); unsupported wishlist membership status; blank `shelf_name` on book create; JSON null `shelf_name` or `category_ids` on book update (omit those fields instead); null or blank shelf `common_name` on shelf create/update; empty or duplicate `book_ids`, or null / blank / overlong `shelf_name`, on bulk shelf move; blank collection name on create/update; non-positive `order_num` on collection add/reorder; invalid/blank category/genre name or slug; invalid/blank person surname or overlong name fields; empty/duplicate `author_ids` on book create/update, or null `author_ids` on update; null or duplicate optional role ID lists (`illustrator_ids` / `editor_ids` / `translator_ids`); empty/duplicate `person_ids` on album create/update when supplied; empty items, duplicate `client_item_id`, or more than 50 items on bulk lookup/import; album bulk lookup item without exactly one of `barcode`, `discogs_release_id`, or `manual`; per-item book payload supplying `author_ids`, `illustrator_ids`, `editor_ids`, `translator_ids`, `shelf_name`, or `acquisition_source` on bulk import (use request-level `shelf_name` / `acquisition_source` and per-item role arrays such as `authors` instead); per-item album payload supplying `shelf_name` on bulk import; unknown person IDs on book create/update role lists (422 object detail with message such as `One or more people do not exist` and the role field listing missing GUIDs); cover or album-artwork upload rejected (unsupported type, empty file, over 10 MB, or bytes/type mismatch); album lookup without exactly one of `barcode` / `discogs_release_id`; album artwork refetch when the album has no usable MusicBrainz Release ID; wishlist membership PATCH with omitted `notes` or `{}` (send `notes` explicitly); blank supplied quote `context`; null quote `enabled` on PATCH; `PUT /quotes/order` with duplicate or incomplete `quote_ids` |
+| **500** | Edge-case unhandled parse of bad stored loan timestamps when borrow statistics run; `POST /quotes/restore-defaults` when the tenant seed file is missing, invalid, or empty (`"Default quote seed is unavailable"` / `"invalid"` / `"empty"`) |
 | **502** | Metadata provider transport/5xx failure on `GET /books/lookup`; final provider failure on `GET /albums/lookup` after Discogs barcode failover is exhausted or when an explicit Discogs release ID / MusicBrainz path fails (bulk book and album lookup use per-item `provider_failure` with HTTP 200 instead); album artwork refetch provider or storage failure |
 | **503** | `GET /ready` or SQLAlchemy connection-pool exhaustion (`{"detail": "Database is temporarily unavailable"}` with `Retry-After: 1`) |
 | **504** | Metadata provider timeout on `GET /books/lookup`; final provider timeout on `GET /albums/lookup` under the same Discogs/MusicBrainz rules as **502** (bulk book and album lookup use per-item `provider_timeout` with HTTP 200 instead); album artwork refetch timeout |
@@ -249,10 +281,10 @@ matching filters (not the page size). GET /books defaults to `placement_state=sh
 same placement predicate. Partial params (skip only or take only), negative
 skip, or non-positive take return 400.
 
-GET /authors and GET /artists also return an `{ "items", "total" }` envelope but do not accept `skip` or `take`;
-each returns the full catalog. Authors order by surname, first name, then `author_id`. Artists order
-case-insensitively by surname, first name (null first), then `artist_id`. Optional `in_use=true` limits each list
-to rows referenced by books (authors) or album/track credits (artists).
+GET /people and GET /quotes also return an `{ "items", "total" }` envelope but do not accept `skip` or `take`.
+`GET /people` returns the full catalog ordered by surname, first name, then `person_id`. Optional `in_use=true`
+limits the list to people referenced by any book contributor role or by album/track credits. `GET /quotes` returns
+the full ordered quote library (position ascending); see Home quotes above.
 
 GET /shelves, GET /categories, and GET /genres are not paginated list envelopes: each returns a plain JSON array.
 Book lifecycle (behavioral)
@@ -261,28 +293,31 @@ Loan status and reading status are independent of delete:
 
 available --checkout--> on_loan --check-in--> available
 unread --mark-read--> read
+read --mark-unread--> unread
 active --DELETE--> gone (hard delete; no restore)
 
 DELETE /books/{book_id} is permanent. It removes the book row, dependent wishlist/collection memberships, category
-links, shelf membership, book_authors rows, loan rows, and any on-disk cover file. A second delete or any read/write route for that id
-returns **404** `"Book not found"`. After delete, the same catalog fields may be used to create a new book (new
-`book_id`).
+links, shelf membership, book_contributors rows, loan rows, and any on-disk cover file. A second delete or any
+read/write route for that id returns **404** `"Book not found"`. After delete, the same catalog fields may be used to
+create a new book (new `book_id`).
 
 Delete is allowed while the book is checked out; associated loan rows are removed with the book.
 
 Prefer dedicated endpoints over reproducing their effects with PATCH:
 
-    checkout / check-in / mark-read / availability / lookup / bulk lookup / bulk import / bulk shelf move /
-    bulk stash or apply / cover upload or delete
+    checkout / check-in / mark-read / mark-unread / availability / lookup / bulk lookup / bulk import /
+    bulk shelf move / bulk stash or apply / cover upload or delete
 
 PATCH bumps updated_date via a SQLite trigger when the handler does not set it explicitly (the column still
 changes on successful update). Do not send null for DB-required fields such as title, is_read, or
-status. Books no longer store a free-form authors field: create/update use normalized author_ids, while reads
-return structured authors. Do not set covers through create/update JSON -- cover_image_path is read-only on BookRead; use
-PUT / DELETE /books/{book_id}/cover. Category membership is replaced only when category_ids is present: omit
-category_ids to preserve existing memberships, send [] to clear all memberships, or send a list of category
-GUIDs to replace them. JSON null category_ids on update is 422 (OpenAPI may still show null as a schema
-option). shelf_name must not be JSON null on update (422); omit the field to leave membership unchanged.
+status. Books no longer store free-form author/illustrator/editor text: create/update use per-role person ID lists
+(`author_ids`, `illustrator_ids`, `editor_ids`, `translator_ids`), while reads return structured
+`authors` / `illustrators` / `editors` / `translators`. Do not set covers through create/update JSON --
+cover_image_path is read-only on BookRead; use PUT / DELETE /books/{book_id}/cover. Category membership is replaced
+only when category_ids is present: omit category_ids to preserve existing memberships, send [] to clear all
+memberships, or send a list of category GUIDs to replace them. JSON null category_ids on update is 422 (OpenAPI may
+still show null as a schema option). shelf_name must not be JSON null on update (422); omit the field to leave
+membership unchanged.
 Assigning shelf_name on create or update returns 412
 {"detail": "The book must be removed from the wishlist before it can be placed on a shelf"} when the book is on
 any wishlist; remove the membership with DELETE /wishlists/{wishlist_id}/books/{wishlist_item_id} first (then
@@ -308,43 +343,49 @@ earliest date
 valid dates. Book book_id ascending is the final stable tie-breaker, keeping paginated pages consistent. The previous
 implicit title sort is no longer the default; pass sortBy=title when title order is required.
 
-Authors are normalized resources rather than book-level text. Each author row has stable author_id, nullable
-first_name, required surname, created_date, and updated_date. Book-author membership is stored separately and
-preserves author order. BookRead.authors is therefore a structured array of author objects rather than a string.
+People are normalized catalog rows shared by book contributors and album/track credits. Each person has stable
+`person_id`, nullable `first_name`, required `surname`, nullable unique `open_library_key`, `created_date`, and
+`updated_date`. Book contributor membership is stored in `book_contributors` with role Author / Illustrator /
+Editor / Translator and preserves order within each role. BookRead exposes four structured arrays of person
+objects: `authors`, `illustrators`, `editors`, and `translators`.
 
-Load/reuse authors through the authenticated author catalog:
+Load/reuse people through the authenticated people catalog:
 
-    GET /authors -- list all authors as `{ "items": [...], "total": <int> }` (no `skip`/`take`); ordered by
+    GET /people -- list all people as `{ "items": [...], "total": <int> }` (no `skip`/`take`); ordered by
 
-    surname, first name, then `author_id`. Optional `in_use=true` returns only authors referenced by at least one book.
+    surname, first name, then `person_id`. Optional `in_use=true` returns only people referenced by any book
 
-    POST /authors -- create an author; returns 201.
+    contributor role or by album/track credits.
 
-    GET /authors/{author_id} -- read one author.
+    POST /people -- create a person; returns 201.
 
-    PATCH /authors/{author_id} -- partially update the author's name.
+    GET /people/{person_id} -- read one person.
 
-    DELETE /authors/{author_id} -- delete an unreferenced author (204); referenced authors are rejected with
+    PATCH /people/{person_id} -- partially update name and/or `open_library_key`.
 
-    409 {"detail": "Author is referenced by one or more books"} rather than removing book-author memberships.
+    DELETE /people/{person_id} -- delete an unreferenced person (204); referenced people are rejected with
 
-Book create requires author_ids with at least one author GUID. Book update replaces author membership only when
-author_ids is present; omit it to preserve the current authors. author_ids may not be null, empty, or contain
-duplicates. Author order in the submitted ID list is preserved in book membership and returned book data.
+    409 {"detail": "Person is referenced by one or more books or albums"} rather than removing memberships.
 
-The author filter on GET /books remains a text search for frontend convenience, but it now searches normalized
-author names (case-insensitive substring over first_name + surname via book_authors). Author sorting uses the
-first-listed author's surname and then first name.
+Book create requires `author_ids` with at least one `person_id`, plus optional `illustrator_ids` / `editor_ids` /
+`translator_ids` (default `[]`). Book update replaces a role only when that role's `*_ids` list is present; omit a
+list to preserve that role. Role ID lists may not be null or contain duplicates; `author_ids` may not be empty;
+optional roles clear with `[]`. Order in each submitted ID list is preserved in membership and returned book data.
+The same person may occupy multiple different roles on one book, but not twice in the same role.
 
-ISBN metadata lookup remains deliberately non-mutating. GET /books/lookup may return a textual draft.authors
-value from the metadata provider, but that draft does not create author records. Before POST /books, the frontend
-must resolve/reuse matching author records or create them with POST /authors, then submit their GUIDs as
-author_ids.
+The author filter on GET /books remains a text search for frontend convenience, but it searches normalized Author-role
+names (case-insensitive substring over first_name + surname via `book_contributors`). Author sorting uses the
+first-listed Author-role person's surname and then first name.
+
+ISBN metadata lookup remains deliberately non-mutating. GET /books/lookup returns person-shaped draft lists per role
+(`authors`, `illustrators`, `editors`, `translators`) and does not create `people` rows. Before POST /books, the
+frontend must resolve/reuse matching people or create them with POST /people, then submit their GUIDs as the role
+`*_ids` lists.
 
 Path {book_id} must be a GUID: 400 when empty or malformed (including legacy spreadsheet codes
 like SL-0001); 404 when the GUID is well-formed but the book is missing or has been hard-deleted.
-Deleted books return 404 on checkout, check-in, mark-read, PATCH, bulk shelf move, and cover
-get/upload/delete as well as on GET /books/{book_id} and a second DELETE.
+Deleted books return 404 on checkout, check-in, mark-read, mark-unread, availability, PATCH, bulk shelf move,
+borrower-reviews, and cover get/upload/delete as well as on GET /books/{book_id} and a second DELETE.
 
 Optional filters on GET /books form one composable catalog-query surface. Different filter types use AND
 semantics: a book must satisfy every supplied predicate. Filters compose with all supported
@@ -657,14 +698,15 @@ POST /books/bulk/import:
 
     request-level shelf_name and acquisition_source control placement and shared acquisition metadata; per-item book
 
-    must not supply author_ids, shelf_name, or acquisition_source (validation_failed)
+    must not supply author_ids, illustrator_ids, editor_ids, translator_ids, shelf_name, or acquisition_source
+    (validation_failed)
 
     each item: client_item_id, action create or acquire_wishlist, optional existing_book_id, allow_duplicate
     (default false), partial book object
 
-    create: book uses an authors array (each entry may use author_id and/or first_name + surname; missing authors
-
-    are created), optional category_ids, and other BookCreate-compatible fields except the reserved ones above;
+    create: book uses an authors array (each entry may use person_id and/or first_name + surname, plus optional
+    open_library_key; missing people are created), optional illustrators / editors / translators arrays with the
+    same person shape, optional category_ids, and other BookCreate-compatible fields except the reserved ones above;
 
     rejects ISBN collisions with status already_exists and conflicting_book_ids unless create explicitly sends
     allow_duplicate=true; an allowed duplicate creates an independent physical copy and returns its new book_id
@@ -672,9 +714,10 @@ POST /books/bulk/import:
     allow_duplicate=true is valid only for create; acquire_wishlist returns per-item validation_failed with
     error_code unexpected_allow_duplicate
 
-    acquire_wishlist: existing_book_id required; book carries optional BookUpdate-compatible fields; omitted authors
+    acquire_wishlist: existing_book_id required; book carries optional BookUpdate-compatible fields; omitted authors /
 
-    and category_ids preserve existing memberships; removes wishlist membership and assigns the request shelf;
+    illustrators / editors / translators and category_ids preserve existing memberships; removes wishlist membership
+    and assigns the request shelf;
 
     stale_reference when the book is missing, already shelved, or no longer on a wishlist
 
@@ -689,7 +732,7 @@ POST /books/bulk/import:
 Recommended Build Mode flow: FE selects destination shelf (and optional acquisition source) → user scans ISBNs into
 a local session queue → POST /books/bulk/lookup with stable client_item_id per scan → present drafts, missing_fields,
 and catalog_state (owned / wishlist / ambiguous need explicit user decisions) → user edits drafts and resolves
-authors via GET /authors / POST /authors or inline author objects on import → submit only approved rows via
+people via GET /people / POST /people or inline person objects on import → submit only approved rows via
 POST /books/bulk/import with action create for new titles or acquire_wishlist plus existing_book_id for wishlist
 acquisition → refresh affected book/list/shelf queries from per-item results; leave unresolved scans in the session
 for later manual work or a later import batch.
@@ -711,7 +754,7 @@ Add. Manual drafts without a commercial identifier classify as `new`.
 `POST /albums/bulk/import` accepts one normalized request-level `shelf_name` and 1--50 ordered items. Each item has
 `action`, an editable `album` object, and its stable `client_item_id`. The `album` object uses `AlbumCreate` fields
 for `create` and `AlbumUpdate` fields for `acquire_wishlist`, except that `shelf_name` is request-owned. Resolve draft
-artist and genre names through `/artists` and `/genres`, then submit canonical `artist_ids` and `genre_ids`.
+people and genre names through `/people` and `/genres`, then submit canonical `person_ids` and `genre_ids`.
 
 `create` rejects a matching barcode, Discogs Release ID, or MusicBrainz Release ID as `already_exists` and returns
 `conflicting_album_ids`. To deliberately catalog another physical copy, resubmit that item with
@@ -749,15 +792,12 @@ Current limitations:
     Unexpected non-404 provider 4xx responses and malformed provider JSON are not normalized to 502 and can
     surface as unhandled 500.
 
-Recommended add-book flow: FE captures ISBN → GET /books/lookup → editable draft → resolve the draft's textual
-author names against GET /authors (create missing authors with POST /authors) → user confirms → POST /books
-with ordered author_ids. Include shelf_name when placing the book in the collection. Omit shelf_name (or send
-JSON null) when creating a wishlist-only catalog row, then POST /wishlists/{wishlist_id}/books. Lookup is
-optional; manual create without lookup is fine, but book creation still requires normalized author_ids.
-
-`BookCreate`, `BookUpdate`, and `BookRead` include nullable `illustrator` and `editor` text fields (maximum 255
-characters each). Omit them on create or send `null` on update to leave them empty. The API continues to serialize
-absent values as `null`; hiding empty saved fields is a frontend presentation decision.
+Recommended add-book flow: FE captures ISBN → GET /books/lookup → editable draft → resolve the draft's person-shaped
+contributor lists against GET /people (create missing people with POST /people) → user confirms → POST /books with
+ordered author_ids (required) and optional illustrator_ids / editor_ids / translator_ids. Include shelf_name when
+placing the book in the collection. Omit shelf_name (or send JSON null) when creating a wishlist-only catalog row,
+then POST /wishlists/{wishlist_id}/books. Lookup is optional; manual create without lookup is fine, but book creation
+still requires normalized author_ids. Flat illustrator / editor text fields are removed.
 
 Album metadata and artwork lookup
 
@@ -775,8 +815,8 @@ selected concrete release to obtain tracks and labels. Each outbound call uses `
 (default 10), not a whole-request budget. MusicBrainz requests are paced at most one per second per process, so a
 lookup that needs MusicBrainz search plus release fetch can take longer than a single timeout window.
 
-The add-album flow is: scan barcode → lookup → resolve each textual draft artist and genre through `/artists` and
-`/genres` → let the user edit the draft/tracks → submit normalized `artist_ids` and `genre_ids` to `POST /albums`.
+The add-album flow is: scan barcode → lookup → resolve each textual draft artist and genre through `/people` and
+`/genres` → let the user edit the draft/tracks → submit normalized `person_ids` and `genre_ids` to `POST /albums`.
 Lookup never assigns a shelf and never persists the draft.
 
 Album reads expose `artwork_present`. Authenticated `GET`, `PUT`, and `DELETE /albums/{album_id}/artwork` serve,
@@ -842,28 +882,61 @@ Prefer loan reads over catalog fields for borrower and checkout timing:
 
     GET /loans/{id} when a specific loan id is known
 
-Mark-read: body required but all fields optional -- send at least {} (omitted body → 422). Sets
-is_read=true; uses supplied completion_date or today's UTC date when unset; applies rating / review when
-supplied. Explicit null clears those fields; a cleared completion_date is not replaced with today in that
-request. Missing or deleted book → 404. Album mark-played mirrors this pattern for `is_played` (see Album
-circulation above).
+Mark-read / mark-unread: prefer these dedicated routes for finished-state toggles. Mark-read body is required but
+all fields optional -- send at least `{}` (omitted body → 422). Sets `is_read=true` and sets `completion_date` to the
+supplied full UTC timestamp when present, otherwise now UTC at the same millisecond `...Z` precision as
+`creation_date` / `updated_date`. Date-only `completion_date` values (e.g. `2026-01-15`) are **422**. Explicit null
+`completion_date` on mark-read is **422** (omit the field to use now). Optional `rating` / `review` apply when
+supplied; explicit null clears those fields only. Mark-unread accepts an empty body (`{}` or omitted) and sets
+`is_read=false` with `completion_date=null`; it never clears `rating` or `review`. Missing or deleted book → 404.
+
+Book `is_read` and `completion_date` must always stay in sync: `is_read == (completion_date IS NOT NULL)`. Create,
+PATCH, mark-read, and mark-unread enforce that invariant. A supplied non-null `completion_date` with `is_read`
+false, null, or omitted is **422**. Other conflicting pairs (e.g. `is_read: true` with explicit null
+`completion_date`) are **422**. Supplying only `is_read: true` defaults `completion_date` to now UTC. Supplying only
+`is_read: false` (or mark-unread) clears `completion_date`. Album mark-played stays date-oriented as shipped and is
+unchanged by this book contract.
+
+`publication_date` remains date-only (or existing partial ISO) with no time component. Book analytics timestamps use
+full UTC datetimes. `GET /books` `completion_date_min` / `completion_date_max` remain date-only query params and
+compare against stored datetimes (min includes from `00:00:00.000Z` that UTC day; max includes through end of that
+UTC day).
+
+Open Library ISBN lookup already maps edition `number_of_pages` into draft `pages` when present; many editions omit
+it, so `pages` may stay null until manual create/update or cleanup.
+
+Album mark-played mirrors the album finished-state pattern for `is_played` (see Album circulation above).
 
 BookRead borrow stats: times_borrowed counts loan rows; last_borrowed_at is the lexically greatest stored
 checked_out_at (chronologically latest only with consistent formatting); average_loan_days uses returned loans
 only (null when none).
 
-Dashboard: GET /dashboard remains the high-level summary used for collection, borrowing, reading, and listening
-widgets. Existing fields stay book-only: `total_books`, `stash_count`, `checked_out`, `read`, `unread`,
-`recently_added`, `borrowing`, and `reading`. Shelved plus stashed books are owned books and contribute to those book
-counts; unshelved wishlist-style rows remain excluded. `reading.books_read` / `books_unread` match top-level `read` /
-`unread`.
+Dashboard: GET /dashboard remains the high-level summary used for collection, borrowing, reading, listening, and
+book analytics widgets. Existing fields stay book-only: `total_books`, `stash_count`, `checked_out`, `read`,
+`unread`, `recently_added`, `borrowing`, and `reading`. Shelved plus stashed books are owned books and contribute to
+those book counts; unshelved wishlist-style rows remain excluded. `reading.books_read` / `books_unread` match
+top-level `read` / `unread` and use synced `is_read`.
+
+Extended book analytics on the same `GET /dashboard` response (no dedicated analytics routes; all request-time from
+the live tenant DB; no stored historicity):
+
+- `pages_owned` -- sum of known `pages` among owned books (`pages IS NOT NULL`); null pages contribute 0 to the sum.
+- `pages_turned` -- same sum restricted to currently read owned books (`is_read` true / non-null `completion_date`).
+  Editing `pages` after mark-read changes the next response; rereads are not stored.
+- `null_pages` -- count of owned books with null `pages` (same predicate as incomplete-metadata `missing_pages`).
+- `books_acquired_this_year` / `books_read_this_year` -- current UTC calendar year via `creation_date` /
+  `completion_date`.
+- `books_read_by_year` / `pages_read_by_year` -- all-time UTC calendar-year buckets (four-digit year keys); omit empty
+  years. Frontend displays chart labels as years only.
+- `books_read_by_shelf` / `books_read_by_category` -- currently read owned books attributed by **current** membership;
+  multi-category books count once per category; stash is omitted from shelf buckets (same style as breakdowns).
 
 Additive album fields are `total_albums`, `albums_checked_out`, `albums_recently_added`, `album_borrowing`, and
 `listening`. `album_borrowing` has the same shape as book-only `borrowing`; `listening` contains `albums_played`,
 `albums_unplayed`, and `average_rating`. Album counts include shelved, non-deleted albums only: unshelved albums and
 albums soft-deleted onto `removed` are excluded. There is no album Stash. `recently_added` remains book-only while
 `albums_recently_added` is album-only; both use `recent_window_days`, currently 30. Averages are null when there is
-insufficient data.
+insufficient data. Album analytics are not merged into the new book keys.
 
 GET /dashboard/breakdowns keeps `total_books`, `on_loan`, `by_category`, `by_shelf`, and `by_creation_year` book-only.
 `on_loan` uses owned books whose stored status is on_loan, matching the summary's `checked_out` definition. Category
@@ -905,7 +978,7 @@ GET /wishlists/{wishlist_id}/items is the mixed membership list. It returns `{ i
 typed ID through its catalog endpoint when mixed UI ships. Optional `skip` / `take` and ordering match the book-only
 list: priority ascending with nulls last, then creation date and membership ID ascending.
 
-GET /wishlists/{wishlist_id}/books returns membership rows enriched with `book_title`, `book_authors`, and
+GET /wishlists/{wishlist_id}/books returns membership rows enriched with `book_title`, `authors`, and
 `book_status`, not full `BookRead` objects. Memberships reference existing catalog books by `book_id`. The default
 order is priority ascending with null priorities last, then `created_date` ascending and `wishlist_item_id` ascending.
 
@@ -992,7 +1065,8 @@ POST accepts `album_id`, optional positive `order_num`, and optional notes. It r
 `collection_album_id` updates order and/or notes, supports JSON null note clearing, and atomically compacts ordering.
 DELETE removes the membership and compacts the remaining album order. None of these operations changes album shelf,
 wishlist, deletion, played, or circulation state.
-There is no browser backup endpoint. Database export and seed synchronization are operator-owned workflows.
+There is no browser backup endpoint. Schema updates and content backups are operator-owned and follow
+`docs/DB-updates.md` only.
 
 Frontend vs API ownership
 Responsibility	Owner
@@ -1000,9 +1074,9 @@ Barcode/camera/manual ISBN capture, editable drafts, forms, presentation	Fronten
 Display of API release/version from GET /version; database readiness from GET /ready	Frontend
 Shelf picker UI from GET /shelves; submit chosen common_name as shelf_name	Frontend
 Category picker/filter UI from GET /categories (optional in_use=true); submit category GUIDs as category_ids	Frontend
-Author picker/resolution UI from /authors (optional in_use=true); submit ordered author GUIDs as author_ids	Frontend
+People picker/resolution UI from /people (optional in_use=true); submit ordered person GUIDs as role *_ids	Frontend
 Category catalog management UI (create / rename / edit slug / delete unused categories)	Frontend
-Author catalog management UI (create / edit / delete unreferenced authors)	Frontend
+People catalog management UI (create / edit / delete unreferenced people)	Frontend
 Shelf catalog management UI (create / rename / edit metadata / delete empty shelves)	Frontend
 Bulk selection and Move to Shelf interaction; send explicit selected book IDs in one bulk request	Frontend
 Build Mode scan queue, review UI, Ready/Problem row state, and session persistence	Frontend
@@ -1010,8 +1084,11 @@ Cover display via authenticated GET /books/{book_id}/cover and blob object URL	F
 Cover upload/delete UI (PUT/DELETE multipart file; do not PATCH cover_image_path)	Frontend
 Album artwork display via authenticated GET /albums/{album_id}/artwork	Frontend
 Album artwork upload/delete/refetch UI	Frontend
-Artist/genre picker and resolution UI for album forms	Frontend
-Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist; mixed items via GET .../items	Frontend
+People/genre picker and resolution UI for album forms	Frontend
+Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist; mixed items via
+GET .../items; album move-to-shelf when placing from a wishlist	Frontend
+Home quote list/edit/reorder/restore UI from /quotes; fall back to built-in quotes on
+empty/all-disabled/error	Frontend
 Collection list/create/add/reorder UI (book and album membership routes)	Frontend
 Auth, ISBN normalize/validate (ISBN-13), metadata lookup, persistence	API
 Canonical project version (ci/VERSION via GET /version)	API
@@ -1020,8 +1097,8 @@ Shelf catalog CRUD (/shelves) and membership via shelf_name	API
 Atomic bulk shelf movement, including validation of every selected book and destination	API
 Build Mode bulk ISBN lookup/classification and per-item import onto a destination shelf	API
 Category catalog CRUD (/categories), normalized book memberships, and category intersection filtering	API
-Author catalog CRUD (/authors), ordered normalized book-author memberships, and author filtering/sorting	API
-Artist/genre catalog CRUD (/artists, /genres) and ordered album memberships	API
+People catalog CRUD (/people), ordered book_contributors roles, and author filtering/sorting	API
+People/genre catalog CRUD (/people, /genres) and ordered album memberships via person_ids	API
 Album metadata lookup (Discogs/MusicBrainz) and Cover Art Archive artwork refetch	API
 Cover storage under data/covers-for-books/<username>/, cover_image_path, and Open Library ISBN cover fallback	API
 Album artwork under data/covers-for-albums/<username>/<album_id>/ and artwork_present on AlbumRead	API
@@ -1029,8 +1106,9 @@ Hostname tenant routing via X-Forwarded-Host (shade→andy alias)	API
 Wishlist/shelf mutual exclusion (412 when both would apply)	API
 Collections CRUD and ordered book/album membership (/collections)	API
 Library setup/settings, works identity corrections, catalog resolve/recent-additions	API
+Home quote library CRUD, order, and restore-defaults (/quotes)	API
 Book availability (single and bulk), loan feedback, borrower-review lists	API
-Borrowing and dashboard statistics (explicit book and album fields)	API
+Borrowing and dashboard statistics (explicit book and album fields, including book analytics)	API
 
 Recommended borrowing/returning: FE collects borrower (or selects loan/catalog item) → POST .../checkout or
 POST .../checkin on the book or album route → refresh loan state via GET /loans?book_id=... or
@@ -1048,12 +1126,13 @@ POST /categories, edit with PATCH /categories/{category_id}, and delete with
 DELETE /categories/{category_id}. Refresh the category list after writes. A delete 409 means the category is
 still assigned to at least one book and should remain available until those memberships are changed.
 
-Recommended author handling: FE loads/searches GET /authors and reuses existing author IDs whenever possible.
-Create a missing author with POST /authors, then submit ordered author_ids on book create/update. Edit author
-identity with PATCH /authors/{author_id} so the normalized name change is reflected anywhere that author is
-referenced. A delete 409 means the author is still referenced by a book; do not silently detach the author.
-Unknown author_ids on book create/update return 422 with an object detail (message plus author_ids); surface
-that to the user and refresh GET /authors before retrying.
+Recommended people handling: FE loads/searches GET /people and reuses existing person IDs whenever possible.
+Create a missing person with POST /people, then submit ordered author_ids (and optional illustrator_ids /
+editor_ids / translator_ids) on book create/update, or person_ids on album create/update. Edit identity with
+PATCH /people/{person_id} so the normalized name change is reflected everywhere that person is referenced. A
+delete 409 means the person is still referenced by a book contributor role or album/track credit; do not silently
+detach memberships. Unknown person IDs on writes return 422 with an object detail (message plus the role/field
+name); surface that to the user and refresh GET /people before retrying.
 
 Recommended bulk shelf assignment: FE maintains the explicit selected book IDs → user chooses a destination from
 GET /shelves → send the entire selection in one bulk shelf-move request as defined by OpenAPI → on success,
@@ -1066,7 +1145,7 @@ validation follows ordinary shelf assignment: unknown is allowed, while an unkno
 
 Recommended Build Mode: FE selects destination shelf (and optional acquisition source) → maintain a local scan queue
 with stable client_item_id values → POST /books/bulk/lookup → review drafts, missing_fields, and catalog_state →
-resolve authors (GET/POST /authors or inline author objects on import) → POST /books/bulk/import with only approved
+resolve people (GET/POST /people or inline person objects on import) → POST /books/bulk/import with only approved
 items (action create or acquire_wishlist with existing_book_id) → refresh book/list/shelf state from the response;
 leave unresolved scans in the session. Do not loop GET /books/lookup or POST /books for the same batch.
 
@@ -1076,7 +1155,9 @@ Recommended wishlist add: POST /books without shelf_name → POST /wishlists/{wi
 (unshelved books are omitted from GET /books items and total). Remove one membership with
 DELETE /wishlists/{wishlist_id}/books/{wishlist_item_id}; delete the whole wishlist to clear all memberships at once.
 Album add is the same pattern with POST /albums (omit shelf_name) then POST /wishlists/{wishlist_id}/albums
-{ "album_id" }, and DELETE .../albums/{wishlist_item_id}. Mixed lists use GET .../items.
+{ "album_id" }, and DELETE .../albums/{wishlist_item_id}. To place a wishlisted album on a shelf in one step, use
+POST .../albums/{wishlist_item_id}/move-to-shelf with `{ "shelf_name": "..." }` rather than DELETE-then-PATCH.
+Mixed lists use GET .../items.
 
 Recommended collection add: POST /collections/{collection_id}/books with { "book_id" } (optional order_num and
 notes). Shelved and wishlisted books may be added without 412. List memberships for shelf_name and

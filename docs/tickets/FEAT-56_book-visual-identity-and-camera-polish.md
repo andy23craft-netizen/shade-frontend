@@ -1,4 +1,4 @@
-# FEAT-55 -- Book Visual Identity and Camera Polish
+# FEAT-56 -- Book Visual Identity and Camera Polish
 
 **Status:** Ready, pending visual approval.
 

@@ -1,4 +1,4 @@
-# FEAT-45 -- Human-Readable Book Catalog Links
+# FEAT-83 -- Human-Readable Book Catalog Links
 
 **Status:** Blocked on `BACKEND-HANDOFF-PLAN-03` readable-key and redirect contracts.
 

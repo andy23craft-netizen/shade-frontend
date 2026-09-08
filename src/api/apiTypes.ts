@@ -88,6 +88,9 @@ export type CheckinRequest =
 export type MarkReadRequest =
     Schemas['MarkReadRequest']
 
+export type MarkUnreadRequest =
+    Schemas['MarkUnreadRequest']
+
 type GeneratedLoanRead = Schemas['LoanRead']
 export type LoanRead = Omit<GeneratedLoanRead, 'feedback_present'> &
     Partial<Pick<GeneratedLoanRead, 'feedback_present'>>

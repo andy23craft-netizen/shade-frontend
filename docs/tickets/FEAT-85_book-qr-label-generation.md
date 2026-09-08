@@ -1,4 +1,4 @@
-# FEAT-40 -- Book QR Label Generation and Printing
+# FEAT-85 -- Book QR Label Generation and Printing
 
 **Status:** Ready; frontend-only against stable `book_id` identity.
 

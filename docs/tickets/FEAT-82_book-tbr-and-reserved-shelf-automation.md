@@ -1,4 +1,4 @@
-# FEAT-43 -- Book TBR and Reserved-Shelf Automation
+# FEAT-82 -- Book TBR and Reserved-Shelf Automation
 
 **Status:** Blocked on `BACKEND-HANDOFF-PLAN-03` atomic shelf/status/reservation semantics and pending tenant configuration decisions.
 

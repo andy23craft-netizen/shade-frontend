@@ -1,6 +1,6 @@
-# FEAT-52 -- Quote-Coordinated Book Home Headings
+# FEAT-55 -- Quote-Coordinated Book Home Headings
 
-**Status:** Ready for checked-in quotes; tenant-authored quote integration follows `FEAT-12`.
+**Status:** Ready 
 
 **Depends on:** Existing `homeQuotes`, Home discovery sections, and `FEAT-54` for Current Reading/New Releases.
 

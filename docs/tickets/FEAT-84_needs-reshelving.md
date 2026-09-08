@@ -1,4 +1,4 @@
-# FEAT-46 -- Needs Reshelving Queue
+# FEAT-84 -- Needs Reshelving Queue
 
 **Status:** Blocked on `BACKEND-HANDOFF-PLAN-03` reshelving contract.
 

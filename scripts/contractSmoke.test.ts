@@ -59,6 +59,7 @@ const expectedPaths = [
     '/books/{book_id}/checkout',
     '/books/{book_id}/cover',
     '/books/{book_id}/mark-read',
+    '/books/{book_id}/mark-unread',
     '/catalog/recent-additions',
     '/catalog/resolve-code',
     '/categories',

@@ -1,4 +1,4 @@
-# FEAT-09 -- Guided Multi-Media Library Setup
+# FEAT-87 -- Guided Multi-Media Library Setup
 
 **Status:** Frontend complete for the shipped backend contract. Canonical TSV import remains
 blocked on the separately delivered `BACKEND-HANDOFF-09_setup-tsv-contract` backend ticket.

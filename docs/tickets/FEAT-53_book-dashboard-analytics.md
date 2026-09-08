@@ -1,6 +1,6 @@
 # FEAT-53 -- Book Dashboard Analytics
 
-**Status:** Blocked on `BACKEND-HANDOFF-PLAN-03` analytics contract.
+**Status:** Ready
 
 **Depends on:** Dedicated backend aggregates/series with book-only semantics.
 

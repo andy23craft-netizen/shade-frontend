@@ -1,4 +1,4 @@
-# FEAT-11 -- Per-Library Identity Packages
+# FEAT-98 -- Per-Library Identity Packages
 
 **Status:** Dalmo and Jamie packages are implemented; pending owner visual review and
 final sign-off.

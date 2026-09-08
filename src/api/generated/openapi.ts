@@ -473,6 +473,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{book_id}/mark-unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Book Unread */
+        post: operations["mark_book_unread_books__book_id__mark_unread_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/catalog/recent-additions": {
         parameters: {
             query?: never;
@@ -1576,7 +1593,10 @@ export interface components {
             author_ids: string[];
             /** Category Ids */
             category_ids?: string[];
-            /** Completion Date */
+            /**
+             * Completion Date
+             * @description Full UTC timestamp after FEAT-18 cutover (e.g. 2026-01-15T12:00:00.000Z). Always in sync with is_read: non-null iff is_read is true.
+             */
             completion_date?: string | null;
             /** Editor Ids */
             editor_ids?: string[];
@@ -1698,7 +1718,10 @@ export interface components {
             borrower_rating: components["schemas"]["BorrowerRatingSummary"];
             /** Categories */
             categories?: components["schemas"]["BookCategoryRead"][];
-            /** Completion Date */
+            /**
+             * Completion Date
+             * @description Full UTC timestamp after FEAT-18 cutover (e.g. 2026-01-15T12:00:00.000Z). Always in sync with is_read: non-null iff is_read is true.
+             */
             completion_date?: string | null;
             /** Cover Image Path */
             cover_image_path?: string | null;
@@ -1767,7 +1790,10 @@ export interface components {
             author_ids?: string[] | null;
             /** Category Ids */
             category_ids?: string[] | null;
-            /** Completion Date */
+            /**
+             * Completion Date
+             * @description Full UTC timestamp (e.g. 2026-01-15T12:00:00.000Z). Date-only values are rejected. Non-null values require is_read true in the same request.
+             */
             completion_date?: string | null;
             /** Editor Ids */
             editor_ids?: string[] | null;
@@ -2398,10 +2424,28 @@ export interface components {
             albums_checked_out: number;
             /** Albums Recently Added */
             albums_recently_added: number;
+            /** Books Acquired This Year */
+            books_acquired_this_year: number;
+            /** Books Read By Category */
+            books_read_by_category: components["schemas"]["DashboardCountBucket"][];
+            /** Books Read By Shelf */
+            books_read_by_shelf: components["schemas"]["DashboardCountBucket"][];
+            /** Books Read By Year */
+            books_read_by_year: components["schemas"]["DashboardCountBucket"][];
+            /** Books Read This Year */
+            books_read_this_year: number;
             borrowing: components["schemas"]["DashboardBorrowing"];
             /** Checked Out */
             checked_out: number;
             listening: components["schemas"]["DashboardListening"];
+            /** Null Pages */
+            null_pages: number;
+            /** Pages Owned */
+            pages_owned: number;
+            /** Pages Read By Year */
+            pages_read_by_year: components["schemas"]["DashboardCountBucket"][];
+            /** Pages Turned */
+            pages_turned: number;
             /** Read */
             read: number;
             reading: components["schemas"]["DashboardReading"];
@@ -2576,7 +2620,7 @@ export interface components {
         };
         /**
          * MarkPlayedRequest
-         * @description Album listening completion, with the same fields and validation as mark-read.
+         * @description Album listening completion. Date-only completion_date remains allowed for albums.
          */
         MarkPlayedRequest: {
             /** Completion Date */
@@ -2588,13 +2632,21 @@ export interface components {
         };
         /** MarkReadRequest */
         MarkReadRequest: {
-            /** Completion Date */
+            /**
+             * Completion Date
+             * @description Full UTC timestamp. Date-only values are rejected. Omit to default to now UTC; explicit null is rejected because mark-read sets is_read true.
+             */
             completion_date?: string | null;
             /** Rating */
             rating?: number | null;
             /** Review */
             review?: string | null;
         };
+        /**
+         * MarkUnreadRequest
+         * @description Empty body for mark-unread; rating and review are left unchanged.
+         */
+        MarkUnreadRequest: Record<string, never>;
         /**
          * MediaFormat
          * @enum {string}
@@ -5435,6 +5487,70 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MarkReadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    mark_book_unread_books__book_id__mark_unread_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkUnreadRequest"] | null;
             };
         };
         responses: {

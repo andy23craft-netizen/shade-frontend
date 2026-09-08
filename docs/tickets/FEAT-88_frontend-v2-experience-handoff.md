@@ -1,4 +1,4 @@
-# FEAT-38 -- Remaining frontend V2 experience
+# FEAT-88 -- Remaining frontend V2 experience
 
 **Status:** Ready in slices as backend contracts stabilize
 

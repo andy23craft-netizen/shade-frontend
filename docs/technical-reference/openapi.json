@@ -1122,6 +1122,7 @@
                 "type": "null"
               }
             ],
+            "description": "Full UTC timestamp after FEAT-18 cutover (e.g. 2026-01-15T12:00:00.000Z). Always in sync with is_read: non-null iff is_read is true.",
             "title": "Completion Date"
           },
           "editor_ids": {
@@ -1582,6 +1583,7 @@
                 "type": "null"
               }
             ],
+            "description": "Full UTC timestamp after FEAT-18 cutover (e.g. 2026-01-15T12:00:00.000Z). Always in sync with is_read: non-null iff is_read is true.",
             "title": "Completion Date"
           },
           "cover_image_path": {
@@ -1881,6 +1883,7 @@
                 "type": "null"
               }
             ],
+            "description": "Full UTC timestamp (e.g. 2026-01-15T12:00:00.000Z). Date-only values are rejected. Non-null values require is_read true in the same request.",
             "title": "Completion Date"
           },
           "editor_ids": {
@@ -4049,6 +4052,35 @@
             "title": "Albums Recently Added",
             "type": "integer"
           },
+          "books_acquired_this_year": {
+            "title": "Books Acquired This Year",
+            "type": "integer"
+          },
+          "books_read_by_category": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "Books Read By Category",
+            "type": "array"
+          },
+          "books_read_by_shelf": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "Books Read By Shelf",
+            "type": "array"
+          },
+          "books_read_by_year": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "Books Read By Year",
+            "type": "array"
+          },
+          "books_read_this_year": {
+            "title": "Books Read This Year",
+            "type": "integer"
+          },
           "borrowing": {
             "$ref": "#/components/schemas/DashboardBorrowing"
           },
@@ -4058,6 +4090,25 @@
           },
           "listening": {
             "$ref": "#/components/schemas/DashboardListening"
+          },
+          "null_pages": {
+            "title": "Null Pages",
+            "type": "integer"
+          },
+          "pages_owned": {
+            "title": "Pages Owned",
+            "type": "integer"
+          },
+          "pages_read_by_year": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "Pages Read By Year",
+            "type": "array"
+          },
+          "pages_turned": {
+            "title": "Pages Turned",
+            "type": "integer"
           },
           "read": {
             "title": "Read",
@@ -4099,6 +4150,15 @@
           "unread",
           "recently_added",
           "recent_window_days",
+          "pages_owned",
+          "pages_turned",
+          "null_pages",
+          "books_acquired_this_year",
+          "books_read_this_year",
+          "books_read_by_year",
+          "pages_read_by_year",
+          "books_read_by_shelf",
+          "books_read_by_category",
           "borrowing",
           "reading",
           "total_albums",
@@ -4593,7 +4653,7 @@
         "type": "object"
       },
       "MarkPlayedRequest": {
-        "description": "Album listening completion, with the same fields and validation as mark-read.",
+        "description": "Album listening completion. Date-only completion_date remains allowed for albums.",
         "properties": {
           "completion_date": {
             "anyOf": [
@@ -4645,6 +4705,7 @@
                 "type": "null"
               }
             ],
+            "description": "Full UTC timestamp. Date-only values are rejected. Omit to default to now UTC; explicit null is rejected because mark-read sets is_read true.",
             "title": "Completion Date"
           },
           "rating": {
@@ -4673,6 +4734,13 @@
           }
         },
         "title": "MarkReadRequest",
+        "type": "object"
+      },
+      "MarkUnreadRequest": {
+        "additionalProperties": false,
+        "description": "Empty body for mark-unread; rating and review are left unchanged.",
+        "properties": {},
+        "title": "MarkUnreadRequest",
         "type": "object"
       },
       "MediaFormat": {
@@ -6076,7 +6144,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.2.6"
+    "version": "1.2.8"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -10459,6 +10527,116 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Validation failure"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mark Book Read",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/{book_id}/mark-unread": {
+      "post": {
+        "operationId": "mark_book_unread_books__book_id__mark_unread_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MarkUnreadRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
@@ -10471,7 +10649,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Mark Book Read",
+        "summary": "Mark Book Unread",
         "tags": [
           "books"
         ]

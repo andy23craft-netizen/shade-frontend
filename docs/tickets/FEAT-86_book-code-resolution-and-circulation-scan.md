@@ -1,8 +1,8 @@
-# FEAT-41 -- Book Code Resolution and Circulation Scanning
+# FEAT-86 -- Book Code Resolution and Circulation Scanning
 
 **Status:** Ready against OpenAPI 1.1.3.
 
-**Depends on:** `FEAT-40`, shipped `POST /catalog/resolve-code`, book lifecycle routes, and library `enable_loans`.
+**Depends on:** `FEAT-85`, shipped `POST /catalog/resolve-code`, book lifecycle routes, and library `enable_loans`.
 
 ## Objective
 

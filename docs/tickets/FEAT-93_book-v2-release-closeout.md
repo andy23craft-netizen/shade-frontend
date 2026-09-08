@@ -1,8 +1,8 @@
-# FEAT-56 -- Book V2 Observation and Release Closeout
+# FEAT-93 -- Book V2 Observation and Release Closeout
 
 **Status:** Scheduled last; blocked until preceding PLAN-03 tickets are complete or explicitly deferred.
 
-**Depends on:** `FEAT-39` through `FEAT-55`, including existing `FEAT-30`, except explicitly deferred stretch work.
+**Depends on:** All preceding PLAN-03 book tickets, including existing `FEAT-30`, except explicitly deferred stretch work.
 
 ## Objective
 

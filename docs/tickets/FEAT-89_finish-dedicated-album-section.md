@@ -1,4 +1,4 @@
-# FEAT-05 -- Dedicated Album Section
+# FEAT-89 -- Dedicated Album Section
 
 **Status:** In progress -- awaiting Listening Dashboard design feedback.
 

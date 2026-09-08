@@ -22,6 +22,7 @@ import type {
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
+    MarkUnreadRequest,
 } from './apiTypes'
 
 import type {
@@ -990,6 +991,37 @@ describe('createBooksApi', () => {
                 body: {},
             },
         )
+    })
+
+    it('marks a book as unread with an empty object body', async () => {
+        const request =
+            {} as MarkUnreadRequest
+        const response =
+            {} as BookRead
+
+        const client = createMockClient()
+
+        vi.mocked(client.requestJson)
+            .mockResolvedValue(response)
+
+        const api = createBooksApi(client)
+
+        const result = await api.markUnread(
+            'book/123',
+            request,
+        )
+
+        expect(
+            client.requestJson,
+        ).toHaveBeenCalledWith(
+            '/books/book%2F123/mark-unread',
+            {
+                method: 'POST',
+                body: {},
+            },
+        )
+
+        expect(result).toBe(response)
     })
 
     it('looks up multiple books with one bulk request', async () => {

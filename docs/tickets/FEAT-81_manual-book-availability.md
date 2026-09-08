@@ -1,4 +1,4 @@
-# FEAT-42 -- Manual Book Availability and Checkout Overrides
+# FEAT-81 -- Manual Book Availability and Checkout Overrides
 
 **Status:** Partially ready; single-book behavior is shipped, atomic bulk changes depend on `BACKEND-HANDOFF-PLAN-03`.
 

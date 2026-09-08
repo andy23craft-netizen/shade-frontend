@@ -36,6 +36,7 @@ import type {
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
+    MarkUnreadRequest,
     PlacementState,
     SetBookAvailabilityRequest,
     Status,
@@ -943,6 +944,43 @@ export function useMarkBookRead() {
             request?: MarkReadRequest
         }) =>
             booksApi.markRead(
+                id,
+                request,
+            ),
+
+        onSuccess: async (book) => {
+            writeBookDetailCache(
+                queryClient,
+                book,
+            )
+            await invalidateBookCaches(
+                queryClient,
+                book.book_id,
+            )
+        },
+    })
+}
+
+export function useMarkBookUnread() {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const queryClient =
+        useQueryClient()
+
+    const booksApi =
+        createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({
+            id,
+            request = {},
+        }: {
+            id: string
+            request?: MarkUnreadRequest
+        }) =>
+            booksApi.markUnread(
                 id,
                 request,
             ),

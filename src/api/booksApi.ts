@@ -19,6 +19,7 @@ import type {
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
+    MarkUnreadRequest,
     PlacementState,
     Status,
     SetBookAvailabilityRequest,
@@ -576,6 +577,21 @@ export function createBooksApi(
                     body: pickMarkReadRequest(
                         request,
                     ),
+                    ...withSignal(options.signal),
+                },
+            )
+        },
+
+        async markUnread(
+            id: string,
+            request: MarkUnreadRequest = {},
+            options: ApiCallOptions = {},
+        ): Promise<BookRead> {
+            return client.requestJson<BookRead>(
+                `/books/${encodeURIComponent(id)}/mark-unread`,
+                {
+                    method: 'POST',
+                    body: request,
                     ...withSignal(options.signal),
                 },
             )

@@ -29,6 +29,7 @@ import type {
     CheckinRequest,
     CheckoutRequest,
     MarkReadRequest,
+    MarkUnreadRequest,
 } from './apiTypes'
 
 import {
@@ -49,6 +50,7 @@ import {
     useCheckoutBook,
     useCheckinBook,
     useMarkBookRead,
+    useMarkBookUnread,
     useInfiniteBooks,
     useRecentBooks,
 } from './booksQueries'
@@ -65,6 +67,7 @@ const mockRemove = vi.fn()
 const mockCheckout = vi.fn()
 const mockCheckin = vi.fn()
 const mockMarkRead = vi.fn()
+const mockMarkUnread = vi.fn()
 const mockMoveToShelf = vi.fn()
 
 vi.mock('./booksApi', () => ({
@@ -82,6 +85,7 @@ vi.mock('./booksApi', () => ({
         checkout: mockCheckout,
         checkin: mockCheckin,
         markRead: mockMarkRead,
+        markUnread: mockMarkUnread,
     }),
 }))
 vi.mock(
@@ -1361,6 +1365,95 @@ it(
 
         expect(
             mockMarkRead,
+        ).toHaveBeenCalledWith(
+            'book-123',
+            request,
+        )
+
+        expect(
+            setQueryData,
+        ).toHaveBeenCalledWith(
+            ['books', 'book-123'],
+            book,
+        )
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['books'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: [
+                'books',
+                'book-123',
+            ],
+        })
+
+        expect(
+            invalidateQueries,
+        ).toHaveBeenCalledWith({
+            queryKey: ['dashboard'],
+        })
+
+        expect(
+            invalidateQueries,
+        ).not.toHaveBeenCalledWith({
+            queryKey: ['loans'],
+        })
+
+        queryClient.clear()
+    },
+)
+
+it(
+    'marks a book as unread, writes detail cache, and invalidates book and dashboard caches',
+    async () => {
+        const request =
+            {} as MarkUnreadRequest
+
+        const book = {
+            book_id: 'book-123',
+        } as BookRead
+
+        mockMarkUnread.mockResolvedValueOnce(
+            book,
+        )
+
+        const {
+            Wrapper,
+            queryClient,
+        } = createWrapper()
+
+        const setQueryData =
+            vi.spyOn(
+                queryClient,
+                'setQueryData',
+            )
+
+        const invalidateQueries =
+            vi.spyOn(
+                queryClient,
+                'invalidateQueries',
+            )
+
+        const { result } =
+            renderHook(
+                () => useMarkBookUnread(),
+                {
+                    wrapper: Wrapper,
+                },
+            )
+
+        await result.current.mutateAsync({
+            id: 'book-123',
+            request,
+        })
+
+        expect(
+            mockMarkUnread,
         ).toHaveBeenCalledWith(
             'book-123',
             request,
