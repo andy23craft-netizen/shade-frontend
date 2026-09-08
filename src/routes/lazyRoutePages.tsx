@@ -73,6 +73,8 @@ export const ManageCollectionPage = lazy(() =>
     })),
 )
 
+export const QuoteLibraryPage = lazy(() => import('../features/quotes/routes/QuoteLibraryPage').then((module) => ({ default: module.QuoteLibraryPage })))
+
 export const LibrarySettingsPage = lazy(() =>
     import('../features/library/routes/LibrarySettingsPage').then(
         (module) => ({ default: module.LibrarySettingsPage }),

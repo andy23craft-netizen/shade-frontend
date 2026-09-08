@@ -1,7 +1,7 @@
 export interface HomeQuote {
     text: string
     author: string
-    context: string
+    context: string | null
 }
 
 export const HOME_QUOTES: readonly HomeQuote[] = [

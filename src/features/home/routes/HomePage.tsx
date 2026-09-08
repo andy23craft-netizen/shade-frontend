@@ -42,6 +42,7 @@ import {
     resolveLibraryContext,
 } from '../../../config/libraryContext'
 import {
+    useMemo,
     useState,
 } from 'react'
 
@@ -50,6 +51,7 @@ import {
 } from '../homeQuotes'
 import listeningRoomImage from '../../../assets/Listening_Room.png'
 import readingRoomImage from '../../../assets/Reading_Room.png'
+import { useQuotes } from '../../../api/quotesQueries'
 
 const STAFF_PICKS_NAME = 'Staff Picks'
 
@@ -78,9 +80,15 @@ export function HomePage() {
     const currentReadingQuery =
         useCurrentReadingBooks()
 
-    const [quote] = useState(
-        randomHomeQuote,
-    )
+    const quotesQuery = useQuotes({ enabled: libraryBranding.showHomeQuote })
+    const [quoteChoice] = useState(() => Math.random())
+    const [fallbackQuote] = useState(randomHomeQuote)
+    const quote = useMemo(() => {
+        const enabledQuotes = quotesQuery.data?.items?.filter((item) => item.enabled) ?? []
+        return enabledQuotes.length > 0
+            ? enabledQuotes[Math.floor(quoteChoice * enabledQuotes.length)]
+            : fallbackQuote
+    }, [fallbackQuote, quoteChoice, quotesQuery.data])
 
     const [
         quoteContextOpen,
@@ -171,7 +179,7 @@ export function HomePage() {
 
                 {libraryBranding.showHomeQuote ? (
                     <div className="home-page__quote">
-                        <button
+                        {quote.context ? <button
                             type="button"
                             className="home-page__quote-trigger"
                             aria-expanded={quoteContextOpen}
@@ -189,9 +197,9 @@ export function HomePage() {
                         <cite className="home-page__quote-author">
                             — {quote.author}
                         </cite>
-                        </button>
+                        </button> : <blockquote className="home-page__quote-trigger"><span className="home-page__quote-text">{quote.text}</span><cite className="home-page__quote-author">— {quote.author}</cite></blockquote>}
 
-                        {quoteContextOpen ? (
+                        {quote.context && quoteContextOpen ? (
                             <p
                                 id="home-quote-context"
                                 className="home-page__quote-context"

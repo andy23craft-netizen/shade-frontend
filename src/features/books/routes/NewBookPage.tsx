@@ -59,6 +59,9 @@ import { useHardwareIsbnScanner } from '../../scanning/useHardwareIsbnScanner'
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
     'authorIds',
+    'editorIds',
+    'illustratorIds',
+    'translatorIds',
     'isbn13',
     'isbnNotApplicable',
     'publisher',
@@ -101,6 +104,9 @@ function mapCreateFieldErrors(
         if (field === 'author_ids') {
             field = 'authorIds'
         }
+        if (field === 'editor_ids') field = 'editorIds'
+        if (field === 'illustrator_ids') field = 'illustratorIds'
+        if (field === 'translator_ids') field = 'translatorIds'
         if (field === 'isbn_not_applicable') {
             field = 'isbnNotApplicable'
         }
@@ -306,6 +312,7 @@ export function NewBookPage() {
     const createCategory = useCreateCategory()
     const [duplicateCopies, setDuplicateCopies] = useState<BookRead[]>([])
     const [pendingDuplicateCreate, setPendingDuplicateCreate] = useState<BookCreate | null>(null)
+    const [pendingContributorNames, setPendingContributorNames] = useState({ editors: [] as string[], illustrators: [] as string[], translators: [] as string[] })
 
     function create(book: BookCreate) {
         createBook.mutate(
@@ -458,6 +465,20 @@ export function NewBookPage() {
         }
 
         setFormError(null)
+        const resolveRole = (value: unknown) => {
+            const ids: string[] = []
+            const missing: string[] = []
+            for (const name of lookupAuthorNames(value)) {
+                const existing = existingAuthors.find((person) => normalizedAuthorName(authorDisplayName(person)) === normalizedAuthorName(name))
+                if (existing) ids.push(existing.person_id)
+                else missing.push(name)
+            }
+            return { ids, missing }
+        }
+        const editors = resolveRole(draft.editors)
+        const illustrators = resolveRole(draft.illustrators)
+        const translators = resolveRole(draft.translators)
+        setPendingContributorNames({ editors: editors.missing, illustrators: illustrators.missing, translators: translators.missing })
         setValues((current) => ({
             ...current,
             isbn13:
@@ -473,6 +494,9 @@ export function NewBookPage() {
                 authorIds.length > 0
                     ? authorIds
                     : current.authorIds,
+            editorIds: editors.ids.length ? editors.ids : current.editorIds,
+            illustratorIds: illustrators.ids.length ? illustrators.ids : current.illustratorIds,
+            translatorIds: translators.ids.length ? translators.ids : current.translatorIds,
             pages:
                 draft.pages === null ||
                 draft.pages === undefined
@@ -503,6 +527,19 @@ export function NewBookPage() {
                 nextValues,
                 shelves,
             )
+            const roleEntries = [
+                ['editor_ids', pendingContributorNames.editors],
+                ['illustrator_ids', pendingContributorNames.illustrators],
+                ['translator_ids', pendingContributorNames.translators],
+            ] as const
+            for (const [field, names] of roleEntries) {
+                const ids = [...(book[field] ?? [])]
+                for (const name of names) {
+                    const created = await createAuthor.mutateAsync(authorCreateFromName(name))
+                    if (!ids.includes(created.person_id)) ids.push(created.person_id)
+                }
+                book[field] = ids
+            }
         } catch (error) {
             setFormError(
                 error instanceof Error
@@ -888,6 +925,10 @@ export function NewBookPage() {
                     </Alert>
                 ) : null}
             </section>
+
+            {Object.values(pendingContributorNames).some((names) => names.length > 0) ? <Alert variant="info" title="Lookup contributors ready">
+                New people from the lookup will be created only when you save this book: {Object.values(pendingContributorNames).flat().join(', ')}.
+            </Alert> : null}
 
             <BookForm
                 values={values}

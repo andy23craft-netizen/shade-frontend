@@ -108,6 +108,12 @@ export function ManageCollectionPage() {
                             <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
                         </AppLink>
 
+                        <AppLink to="/quotes" className="manage-collection-action">
+                            <span className="manage-collection-action__title">Quote Library</span>
+                            <span className="manage-collection-action__description">Curate the quotations shown on Home.</span>
+                            <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
+                        </AppLink>
+
                         <AppLink to="/albums/new" className="manage-collection-action">
                             <span className="manage-collection-action__title">Add Album</span>
                             <span className="manage-collection-action__description">File a new release in the album catalog.</span>

@@ -160,6 +160,9 @@ export function formValuesToBookCreate(
     return {
         title: values.title.trim(),
         author_ids: [...values.authorIds],
+        ...(values.editorIds.length ? { editor_ids: [...values.editorIds] } : {}),
+        ...(values.illustratorIds.length ? { illustrator_ids: [...values.illustratorIds] } : {}),
+        ...(values.translatorIds.length ? { translator_ids: [...values.translatorIds] } : {}),
         category_ids: [...values.categoryIds],
         shelf_name: shelfName,
         is_read: false,

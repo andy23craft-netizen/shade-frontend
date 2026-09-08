@@ -91,6 +91,9 @@ describe('bookFormValuesFromBook', () => {
             authorIds: [
                 'author-frank-herbert',
             ],
+            editorIds: ['person-john-campbell'],
+            illustratorIds: ['person-sam-weber'],
+            translatorIds: [],
             isbn13: '9780441172719',
             isbnNotApplicable: false,
             publisher: 'Ace',

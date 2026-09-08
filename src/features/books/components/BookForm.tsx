@@ -34,6 +34,9 @@ import {
 export interface BookFormValues {
     title: string
     authorIds: string[]
+    editorIds: string[]
+    illustratorIds: string[]
+    translatorIds: string[]
     isbn13: string
     isbnNotApplicable: boolean
     publisher: string
@@ -48,12 +51,35 @@ export interface BookFormValues {
     notes: string
 }
 
+const personDisplayName = (person: AuthorRead) => [person.first_name, person.surname].filter(Boolean).join(' ')
+
+function ContributorPicker({ label, people, selectedIds, onChange, onCreate }: { label: string; people: AuthorRead[]; selectedIds: string[]; onChange: (ids: string[]) => void; onCreate?: (name: string) => Promise<AuthorRead> }) {
+    const [search, setSearch] = useState('')
+    const [error, setError] = useState<string | null>(null)
+    const [creating, setCreating] = useState(false)
+    const normalized = search.trim().toLowerCase()
+    const matches = normalized ? people.filter((person) => personDisplayName(person).toLowerCase().includes(normalized)) : []
+    const selected = selectedIds.map((id) => people.find((person) => person.person_id === id)).filter((person): person is AuthorRead => person !== undefined)
+    const canCreate = onCreate && normalized && !people.some((person) => personDisplayName(person).toLowerCase() === normalized)
+    const move = (index: number, delta: number) => { const next = [...selectedIds]; const [id] = next.splice(index, 1); next.splice(index + delta, 0, id); onChange(next) }
+    return <fieldset className="book-form__categories"><legend>{label}</legend>
+        {selected.length ? <ol>{selected.map((person, index) => <li key={person.person_id}>{personDisplayName(person)} <Button type="button" variant="secondary" disabled={index === 0} onClick={() => move(index, -1)}>Move Up</Button> <Button type="button" variant="secondary" disabled={index === selected.length - 1} onClick={() => move(index, 1)}>Move Down</Button> <Button type="button" variant="secondary" onClick={() => onChange(selectedIds.filter((id) => id !== person.person_id))}>Remove</Button></li>)}</ol> : <p>No {label.toLowerCase()} selected.</p>}
+        <Field label={`Search ${label.toLowerCase()}`}><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setError(null) }} /></Field>
+        <div className="book-form__category-dropdown-list">{matches.map((person) => <label key={person.person_id} className="book-form__category-option"><input type="checkbox" checked={selectedIds.includes(person.person_id)} onChange={() => onChange(selectedIds.includes(person.person_id) ? selectedIds.filter((id) => id !== person.person_id) : [...selectedIds, person.person_id])} /> {personDisplayName(person)}</label>)}</div>
+        {canCreate ? <Button type="button" variant="secondary" disabled={creating} onClick={() => { setCreating(true); void onCreate(search.trim()).then((person) => { onChange([...selectedIds, person.person_id]); setSearch('') }).catch(() => setError(`The ${label.toLowerCase().replace(/s$/, '')} could not be created.`)).finally(() => setCreating(false)) }}>Create “{search.trim()}”</Button> : null}
+        {error ? <p role="alert" className="field__error">{error}</p> : null}
+    </fieldset>
+}
+
 const FIELD_LABELS: Record<
     BookFormField,
     string
 > = {
     title: 'Title',
     authorIds: 'Authors',
+    editorIds: 'Editors',
+    illustratorIds: 'Illustrators',
+    translatorIds: 'Translators',
     isbn13: 'ISBN',
     isbnNotApplicable: 'ISBN not applicable',
     publisher: 'Publisher',
@@ -1054,6 +1080,10 @@ export function BookForm({
                         </div>
                     ) : null}
                 </fieldset>
+
+                <ContributorPicker label="Editors" people={authors} selectedIds={values.editorIds} onChange={(editorIds) => updateField('editorIds', editorIds)} onCreate={onCreateAuthor} />
+                <ContributorPicker label="Illustrators" people={authors} selectedIds={values.illustratorIds} onChange={(illustratorIds) => updateField('illustratorIds', illustratorIds)} onCreate={onCreateAuthor} />
+                <ContributorPicker label="Translators" people={authors} selectedIds={values.translatorIds} onChange={(translatorIds) => updateField('translatorIds', translatorIds)} onCreate={onCreateAuthor} />
 
                 <Field
                     label="ISBN"

@@ -434,6 +434,11 @@ export const queryKeys = {
         settings: (host: string) => ['library', host, 'settings'] as const,
     },
 
+    quotes: {
+        all: ['quotes'] as const,
+        list: () => ['quotes', { list: true }] as const,
+    },
+
     categories: {
         all: ['categories'] as const,
 

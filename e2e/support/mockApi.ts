@@ -1002,6 +1002,11 @@ export async function installMockApi(
                 return
             }
 
+            if (method === 'GET' && url.pathname === '/quotes') {
+                await fulfillJson(route, { body: { items: [], total: 0 } })
+                return
+            }
+
             if (
                 method === 'GET' &&
                 url.pathname === '/version'

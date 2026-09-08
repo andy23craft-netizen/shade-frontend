@@ -44,6 +44,7 @@ export const routeMetadata = {
     title: 'Manage Collection',
     heading: 'Manage Collection',
   },
+  quoteLibrary: { path: '/quotes', title: 'Quote Library', heading: 'Quote Library' },
   librarySettings: {
     path: '/library/settings',
     title: 'Library Settings',

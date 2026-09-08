@@ -26,6 +26,9 @@ export function bookFormValuesFromBook(
         authorIds: (book.authors ?? []).map(
             (author) => author.person_id,
         ),
+        editorIds: (book.editors ?? []).map((person) => person.person_id),
+        illustratorIds: (book.illustrators ?? []).map((person) => person.person_id),
+        translatorIds: (book.translators ?? []).map((person) => person.person_id),
         isbn13: book.isbn13 ?? '',
         isbnNotApplicable:
             book.isbn_not_applicable ?? false,
@@ -140,6 +143,17 @@ export function bookFormValuesToUpdate(
         update.author_ids = [
             ...values.authorIds,
         ]
+    }
+
+    for (const [field, originalPeople, ids] of [
+        ['editor_ids', original.editors, values.editorIds],
+        ['illustrator_ids', original.illustrators, values.illustratorIds],
+        ['translator_ids', original.translators, values.translatorIds],
+    ] as const) {
+        const originalIds = (originalPeople ?? []).map((person) => person.person_id)
+        if (ids.length !== originalIds.length || ids.some((id, index) => id !== originalIds[index])) {
+            update[field] = [...ids]
+        }
     }
 
     const isbn13 =

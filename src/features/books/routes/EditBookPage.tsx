@@ -60,6 +60,9 @@ import type {
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
     'authorIds',
+    'editorIds',
+    'illustratorIds',
+    'translatorIds',
     'isbn13',
     'isbnNotApplicable',
     'publisher',
@@ -94,6 +97,9 @@ function mapEditFieldErrors(
         if (field === 'author_ids') {
             field = 'authorIds'
         }
+        if (field === 'editor_ids') field = 'editorIds'
+        if (field === 'illustrator_ids') field = 'illustratorIds'
+        if (field === 'translator_ids') field = 'translatorIds'
         if (field === 'isbn_not_applicable') {
             field = 'isbnNotApplicable'
         }

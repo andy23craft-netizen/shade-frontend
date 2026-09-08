@@ -325,14 +325,14 @@ export function BookDetailsPage() {
                     </header>
 
                     <dl className="book-details-card__metadata">
-                    <div className="book-details-card__field">
+                    {(book.categories?.length ?? 0) > 0 ? <div className="book-details-card__field">
                         <dt>Category</dt>
                         <dd>
                             {formatBookCategories(
                                 book.categories,
                             )}
                         </dd>
-                    </div>
+                    </div> : null}
 
                     <div className="book-details-card__field">
                         <dt>Shelf</dt>
@@ -355,21 +355,21 @@ export function BookDetailsPage() {
                         </dd>
                     </div>
 
-                    <div className="book-details-card__field">
+                    {book.isbn_not_applicable || Boolean(book.isbn13?.trim()) ? <div className="book-details-card__field">
                         <dt>ISBN-13</dt>
                         <dd>
                             {book.isbn_not_applicable
                                 ? 'ISBN not applicable'
                                 : displayValue(book.isbn13)}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field">
+                    {book.publisher?.trim() ? <div className="book-details-card__field">
                         <dt>Publisher</dt>
                         <dd>
                             {displayValue(book.publisher)}
                         </dd>
-                    </div>
+                    </div> : null}
 
                     {(book.illustrators?.length ?? 0) > 0 ? (
                         <div className="book-details-card__field">
@@ -392,39 +392,39 @@ export function BookDetailsPage() {
                         </div>
                     ) : null}
 
-                    <div className="book-details-card__field">
+                    {book.publication_date?.trim() ? <div className="book-details-card__field">
                         <dt>Publication Date</dt>
                         <dd>
                             {displayDate(
                                 book.publication_date,
                             )}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field">
+                    {book.pages !== null && book.pages !== undefined ? <div className="book-details-card__field">
                         <dt>Pages</dt>
                         <dd>
                             {displayValue(book.pages)}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field">
+                    {book.acquisition_source?.trim() ? <div className="book-details-card__field">
                         <dt>Acquisition Source</dt>
                         <dd>
                             {displayValue(
                                 book.acquisition_source,
                             )}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field">
+                    {book.purchase_date?.trim() ? <div className="book-details-card__field">
                         <dt>Purchase Date</dt>
                         <dd>
                             {displayDate(book.purchase_date)}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field">
+                    {book.purchase_price !== null && book.purchase_price !== undefined ? <div className="book-details-card__field">
                         <dt>Purchase Price</dt>
                         <dd>
                             {book.purchase_price === null ||
@@ -432,7 +432,7 @@ export function BookDetailsPage() {
                                 ? 'Not provided'
                                 : `$${book.purchase_price.toFixed(2)}`}
                         </dd>
-                    </div>
+                    </div> : null}
 
                     <div className="book-details-card__field">
                         <dt>Read</dt>
@@ -441,44 +441,42 @@ export function BookDetailsPage() {
                         </dd>
                     </div>
 
-                    <div className="book-details-card__field">
+                    {book.completion_date?.trim() ? <div className="book-details-card__field">
                         <dt>Completion Date</dt>
                         <dd>
                             {displayDate(
                                 book.completion_date,
                             )}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field">
+                    {book.rating !== null && book.rating !== undefined ? <div className="book-details-card__field">
                         <dt>Owner rating</dt>
                         <dd>
                             {displayValue(book.rating)}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field">
+                    {book.borrower_rating?.count ? <div className="book-details-card__field">
                         <dt>Borrower rating</dt>
                         <dd>
-                            {book.borrower_rating?.count
-                                ? `${book.borrower_rating.average ?? 'Not provided'} / 5 (${book.borrower_rating.count})`
-                                : 'No borrower ratings'}
+                            {`${book.borrower_rating.average ?? 'Not provided'} / 5 (${book.borrower_rating.count})`}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                    <div className="book-details-card__field book-details-card__field--wide">
+                    {book.review?.trim() ? <div className="book-details-card__field book-details-card__field--wide">
                         <dt>Owner review</dt>
                         <dd>
                             {displayValue(book.review)}
                         </dd>
-                    </div>
+                    </div> : null}
 
-                        <div className="book-details-card__field book-details-card__field--wide">
+                        {book.notes?.trim() ? <div className="book-details-card__field book-details-card__field--wide">
                             <dt>Notes</dt>
                             <dd>
                                 {displayValue(book.notes)}
                             </dd>
-                        </div>
+                        </div> : null}
                     </dl>
                 </div>
             </article>

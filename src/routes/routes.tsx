@@ -32,6 +32,7 @@ import {
     ListeningRoomPage,
     ListeningDashboardPage,
     AlbumLoansPage,
+    QuoteLibraryPage,
 } from './lazyRoutePages'
 import { routeMetadata } from './routeMetadata'
 
@@ -102,6 +103,7 @@ export const routeConfig = [
                 },
                 element: <ManageCollectionPage />,
             },
+            { path: routeMetadata.quoteLibrary.path, handle: { title: routeMetadata.quoteLibrary.title }, element: <QuoteLibraryPage /> },
             {
                 path: routeMetadata.librarySetup.path,
                 handle: { title: routeMetadata.librarySetup.title },
