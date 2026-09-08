@@ -1,4 +1,4 @@
-# FEAT-84 -- Needs Reshelving Queue
+# FEAT-52 -- Needs Reshelving Queue
 
 **Status:** Blocked on backend FEAT-16 (`is_flagged` mark + flagged-list endpoints).
 

@@ -1,4 +1,4 @@
-# FEAT-51 -- Persistent Book Controls and Back to Top
+# FEAT-53 -- Persistent Book Controls and Back to Top
 
 **Status:** Ready; frontend-only.
 
