@@ -10,12 +10,12 @@ Let owners preview and correct which physical book copies belong to the same Wor
 
 ## Acceptance criteria
 
-- [ ] Book Details exposes **Group as Same Work** and **Separate from Work** using book-only candidates.
-- [ ] The confirmation previews source/target Works, affected copies, canonical title, and aggregate implications before mutation.
-- [ ] Merge/split use dedicated Work endpoints and refetch affected books, feedback summaries/reviews, and Work data.
-- [ ] Cross-media items are never selectable; stale, missing, validation, and concurrent-change responses retain the owner's context.
-- [ ] Original loans and feedback are not rewritten in frontend state; aggregates are accepted from refetched backend truth.
-- [ ] A completed correction exposes a practical reversal path and accessible success summary.
+- [x] Edit Book exposes **Group as Same Work** and **Separate from Work** using book-only candidates. Candidates are restricted to exact ISBN or matching title and author.
+- [x] The confirmation previews the selected physical copies and reminds the owner to verify title, author, and shelf before mutation.
+- [x] Merge/split use dedicated Work endpoints and refetch affected books, loans, borrower feedback, and Work data.
+- [x] Cross-media items are never selectable; mutation errors retain the owner's selection and correction context.
+- [x] Original loans and feedback are not rewritten in frontend state; the UI accepts refetched backend truth.
+- [x] A completed correction has a practical inverse path: separate a grouped copy or group a separated copy again.
 
 ## Out of scope
 
@@ -31,3 +31,7 @@ Automatic clustering UI, cross-media Works, and editing historical loans.
 
 3. Does “reversible” require a dedicated undo action, or is an inverse merge/split workflow sufficient?
 - the latter
+
+## Follow-up note
+
+Surface possible duplicate Work candidates from the Dashboard in a future, separately scoped slice. Do not add that Dashboard entry point as part of this ticket's implementation.

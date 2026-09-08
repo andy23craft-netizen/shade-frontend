@@ -38,7 +38,7 @@ describe('tenant-aware proxy configuration', () => {
 
             const proxy = createDevServerProxy()
             const proxyOptions = proxy?.[
-            '^/(api/)?(health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|library|works|docs|redoc|openapi\\.json|wishlists|collections)'
+            '^/(api/)?(health|ready|version|books|albums|artists|authors|people|genres|loans|dashboard|shelves|categories|library|works|quotes|docs|redoc|openapi\\.json|wishlists|collections)'
             ]
             let listener: ((
                 proxyRequest: {

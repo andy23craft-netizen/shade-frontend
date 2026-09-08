@@ -69,8 +69,6 @@ export function BorrowerReviews({ bookId, loans }: { bookId: string; loans: read
         () => query.data?.pages.flatMap((page) => page.items) ?? [],
         [query.data],
     )
-    const total = query.data?.pages[0]?.total ?? 0
-
     return (
         <section className="book-details-panel">
             <h2>Borrowing history</h2>

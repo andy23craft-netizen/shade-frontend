@@ -10306,11 +10306,11 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
-              }
+              "image/jpeg": {},
+              "image/png": {},
+              "image/webp": {}
             },
-            "description": "Successful Response"
+            "description": "The book cover image."
           },
           "400": {
             "content": {

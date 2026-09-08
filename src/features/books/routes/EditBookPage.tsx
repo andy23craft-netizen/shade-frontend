@@ -45,6 +45,7 @@ import {
     BookForm,
     type BookFormValues,
 } from '../components/BookForm'
+import { WorkCorrection } from '../components/WorkCorrection'
 import type {
     BookFormField,
     BookFormFieldErrors,
@@ -632,6 +633,8 @@ export function EditBookPage() {
                 }
                 formError={formError}
             />
+
+            <WorkCorrection book={book} />
 
             {availability !== null && book.status !== 'on_loan' ? (
                 <section>

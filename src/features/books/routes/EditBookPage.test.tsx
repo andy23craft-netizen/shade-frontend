@@ -35,6 +35,7 @@ import {
 } from '../../../api/authorsQueries'
 import {
     useBook,
+    useSetBookAvailability,
     useUpdateBook,
 } from '../../../api/booksQueries'
 import {
@@ -49,6 +50,7 @@ import { EditBookPage } from './EditBookPage'
 
 vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
+    useSetBookAvailability: vi.fn(),
     useUpdateBook: vi.fn(),
 }))
 
@@ -66,6 +68,9 @@ vi.mock('../../../api/authorsQueries', () => ({
     useAuthors: vi.fn(),
     useCreateAuthor: vi.fn(),
     useUpdateAuthor: vi.fn(),
+}))
+vi.mock('../components/WorkCorrection', () => ({
+    WorkCorrection: () => <div data-testid="work-correction" />,
 }))
 
 const mockNavigate = vi.fn()
@@ -88,6 +93,8 @@ vi.mock(
 const mockUseBook = vi.mocked(useBook)
 const mockUseUpdateBook =
     vi.mocked(useUpdateBook)
+const mockUseSetBookAvailability =
+    vi.mocked(useSetBookAvailability)
 const mockUseShelves = vi.mocked(useShelves)
 const mockUseCategories =
     vi.mocked(useCategories)
@@ -303,6 +310,10 @@ describe('EditBookPage', () => {
         setupSuccessfulShelves()
         setupSuccessfulCategories()
         setupSuccessfulAuthors()
+        mockUseSetBookAvailability.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+        } as unknown as ReturnType<typeof useSetBookAvailability>)
 
         const idleMetadataMutation = {
             mutateAsync: vi.fn(),
