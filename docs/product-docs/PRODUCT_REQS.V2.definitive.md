@@ -552,11 +552,11 @@ contract rather than guessing UUIDs from labels.
 
 ### Reshelving queue
 
-**V2 commitment:** An owner can mark a book as needing attention when it is filed under the
-wrong shelf, category, or other placement metadata. The action is available from Book Details
-and records a small reason/note without immediately changing catalog data. Dashboard provides
-a pinned **Needs Reshelving** queue. This is an owner workflow, not another circulation
-status.
+**V2 commitment:** An owner can mark a book as needing placement attention when it is filed under the wrong shelf,
+category, or other placement metadata. The action is available from Book Details and sets a durable boolean flag
+(`is_flagged`) without changing catalog, shelf, or circulation data. There is no reason/note or marked-at field.
+Dashboard provides a pinned **Needs Reshelving** list of every flagged book via a dedicated flagged-list endpoint
+(not a `GET /books` filter). This is an owner workflow, not another circulation status.
 
 ### Optional book contributors
 
@@ -712,7 +712,8 @@ Committed remaining release outcomes:
 - Persistent side filter/sort controls for Books on wide layouts, with equivalent compact
   mobile treatment, and shared Back to Top on progressive lists.
 - Human-readable, canonical share URLs for named resources.
-- Dashboard-backed Needs Reshelving queue with book-level mark and clear actions.
+- Dashboard-backed Needs Reshelving list with book-level mark and clear actions (boolean `is_flagged`; no
+  reason/note).
 - Optional editor, illustrator, and translator roles that render only when populated.
 - Camera ISBN capture styled as a native part of Shade without reducing accessibility or
   scan usability.
