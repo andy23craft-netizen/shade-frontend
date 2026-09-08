@@ -67,9 +67,9 @@ const membership: CollectionBookRead = {
     collection_id: 'collection-1',
     book_id: 'book-1',
     book_title: 'The Dispossessed',
-    book_authors: [
+    authors: [
         {
-            author_id: 'author-ursula-le-guin',
+            person_id: 'author-ursula-le-guin',
             first_name: 'Ursula K.',
             surname: 'Le Guin',
         },

@@ -187,7 +187,7 @@ export function CollectionMembershipRow({
                     </strong>
 
                     <p>
-                        {formatBookAuthors(membership.book_authors ?? [])}
+                        {formatBookAuthors(membership.authors ?? [])}
                     </p>
                 </div>
             </div>

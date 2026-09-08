@@ -326,7 +326,7 @@ describe('BulkAddPage', () => {
                     isbn13: '9780140449266',
                     draft: {
                         title: 'The Odyssey',
-                        authors: 'Homer',
+                        authors: [{ first_name: null, surname: 'Homer' }],
                         isbn13: '9780140449266',
                     },
                     missing_fields: [],

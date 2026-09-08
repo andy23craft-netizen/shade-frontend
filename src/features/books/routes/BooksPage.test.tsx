@@ -103,7 +103,7 @@ function makeBook(
         title: 'The Left Hand of Darkness',
         authors: [
             {
-                author_id: 'author-ursula-le-guin',
+                person_id: 'author-ursula-le-guin',
                 first_name: 'Ursula K.',
                 surname: 'Le Guin',
             },
@@ -1004,7 +1004,7 @@ describe('BooksPage', () => {
                                             title: 'Dune',
                                             authors: [
                                                 {
-                                                    author_id: 'author-frank-herbert',
+                                                    person_id: 'author-frank-herbert',
                                                     first_name: 'Frank',
                                                     surname: 'Herbert',
                                                 },
@@ -1435,7 +1435,7 @@ describe('BooksPage', () => {
                             title: 'Pale Fire',
                             authors: [
                                 {
-                                    author_id: 'author-vladimir-nabokov',
+                                    person_id: 'author-vladimir-nabokov',
                                     first_name: 'Vladimir',
                                     surname: 'Nabokov',
                                 },

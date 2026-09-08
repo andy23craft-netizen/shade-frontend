@@ -6,7 +6,7 @@ export function buildAlbumFormPayload(values: AlbumFormValues, existing?: AlbumR
     const optional = (value: string, previous?: string | null) => value.trim() ? value.trim() : existing && previous ? null : undefined
     return {
         title: values.title.trim(),
-        artist_ids: values.artistIds,
+        person_ids: values.artistIds,
         is_played: existing?.is_played ?? false,
         status: existing?.status ?? 'available',
         ...(values.genreIds.length || existing?.genres.length ? { genre_ids: values.genreIds } : {}),

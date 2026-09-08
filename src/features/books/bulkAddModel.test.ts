@@ -23,7 +23,7 @@ function result(
         catalog_state: 'new',
         draft: {
             title: 'Test Book',
-            authors: 'Test Author',
+            authors: [{ first_name: 'Test', surname: 'Author' }],
             isbn13: '9780140449266',
         },
         missing_fields: [],

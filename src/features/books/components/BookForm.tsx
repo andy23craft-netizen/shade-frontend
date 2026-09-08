@@ -37,8 +37,6 @@ export interface BookFormValues {
     isbn13: string
     isbnNotApplicable: boolean
     publisher: string
-    illustrator: string
-    editor: string
     publication_date: string
     pages: string
     categoryIds: string[]
@@ -59,8 +57,6 @@ const FIELD_LABELS: Record<
     isbn13: 'ISBN',
     isbnNotApplicable: 'ISBN not applicable',
     publisher: 'Publisher',
-    illustrator: 'Illustrator',
-    editor: 'Editor',
     publication_date: 'Publication date',
     pages: 'Pages',
     categoryIds: 'Categories',
@@ -321,7 +317,7 @@ export function BookForm({
         .map((authorId) =>
             authors.find(
                 (author) =>
-                    author.author_id === authorId,
+                    author.person_id === authorId,
             ),
         )
         .filter(
@@ -372,11 +368,11 @@ export function BookForm({
             const created = await onCreateAuthor(name)
 
             if (!values.authorIds.includes(
-                created.author_id,
+                created.person_id,
             )) {
                 updateField('authorIds', [
                     ...values.authorIds,
-                    created.author_id,
+                    created.person_id,
                 ])
             }
 
@@ -393,7 +389,7 @@ export function BookForm({
     }
 
     function startAuthorEdit(author: AuthorRead) {
-        setEditingAuthorId(author.author_id)
+        setEditingAuthorId(author.person_id)
         setAuthorEditFirstName(author.first_name ?? '')
         setAuthorEditSurname(author.surname)
         setAuthorEditError(null)
@@ -600,8 +596,6 @@ export function BookForm({
             | 'title'
             | 'isbn13'
             | 'publisher'
-            | 'illustrator'
-            | 'editor'
             | 'publication_date'
             | 'acquisition_source'
             | 'purchase_date'
@@ -801,13 +795,13 @@ export function BookForm({
 
                                 return (
                                     <button
-                                        key={author.author_id}
+                                        key={author.person_id}
                                         type="button"
                                         className="button button--secondary"
                                         aria-label={`Remove ${name} author`}
                                         onClick={() =>
                                             toggleAuthor(
-                                                author.author_id,
+                                                author.person_id,
                                             )
                                         }
                                     >
@@ -874,11 +868,11 @@ export function BookForm({
                                             const inputId =
                                                 `${fieldId(
                                                     'authorIds',
-                                                )}-${author.author_id}`
+                                                )}-${author.person_id}`
 
                                             return (
                                                 <div
-                                                    key={author.author_id}
+                                                    key={author.person_id}
                                                     className="book-form__metadata-option"
                                                 >
                                                     <div className="book-form__metadata-option-row">
@@ -890,11 +884,11 @@ export function BookForm({
                                                                 id={inputId}
                                                                 type="checkbox"
                                                                 checked={values.authorIds.includes(
-                                                                    author.author_id,
+                                                                    author.person_id,
                                                                 )}
                                                                 onChange={() =>
                                                                     toggleAuthor(
-                                                                        author.author_id,
+                                                                        author.person_id,
                                                                     )
                                                                 }
                                                             />
@@ -920,7 +914,7 @@ export function BookForm({
                                                     </div>
 
                                                     {editingAuthorId ===
-                                                    author.author_id ? (
+                                                    author.person_id ? (
                                                         <div className="book-form__metadata-editor">
                                                             <Field label="First name">
                                                                 <input
@@ -1121,32 +1115,6 @@ export function BookForm({
                                 event,
                             )
                         }
-                    />
-                </Field>
-
-                <Field
-                    label="Illustrator"
-                    id={fieldId('illustrator')}
-                    error={fieldErrors.illustrator}
-                >
-                    <input
-                        type="text"
-                        value={values.illustrator}
-                        maxLength={255}
-                        onChange={(event) => handleTextChange('illustrator', event)}
-                    />
-                </Field>
-
-                <Field
-                    label="Editor"
-                    id={fieldId('editor')}
-                    error={fieldErrors.editor}
-                >
-                    <input
-                        type="text"
-                        value={values.editor}
-                        maxLength={255}
-                        onChange={(event) => handleTextChange('editor', event)}
                     />
                 </Field>
 

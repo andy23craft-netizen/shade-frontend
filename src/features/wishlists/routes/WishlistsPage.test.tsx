@@ -197,9 +197,9 @@ const memberships: WishlistBookList = {
             wishlist_id: 'wishlist-1',
             book_id: 'book-1',
             book_title: 'The Dispossessed',
-            book_authors: [
+            authors: [
                 {
-                    author_id: 'author-ursula-le-guin',
+                    person_id: 'author-ursula-le-guin',
                     first_name: 'Ursula K.',
                     surname: 'Le Guin',
                 },
@@ -330,7 +330,7 @@ describe('WishlistsPage', () => {
             data: {
                 items: [
                     {
-                        author_id: 'author-an-author',
+                        person_id: 'author-an-author',
                         first_name: 'An',
                         surname: 'Author',
                         created_date: '2026-08-01T00:00:00Z',

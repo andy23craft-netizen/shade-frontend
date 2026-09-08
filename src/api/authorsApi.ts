@@ -41,8 +41,8 @@ export function createAuthorsApi(
             )
 
             const path = options.inUse === true
-                ? '/authors?in_use=true'
-                : '/authors'
+                ? '/people?in_use=true'
+                : '/people'
 
             return signalOptions === undefined
                 ? client.getJson<AuthorList>(
@@ -59,7 +59,7 @@ export function createAuthorsApi(
             options: ApiCallOptions = {},
         ): Promise<AuthorRead> {
             return client.getJson<AuthorRead>(
-                `/authors/${encodeURIComponent(authorId)}`,
+                `/people/${encodeURIComponent(authorId)}`,
                 withSignal(options.signal),
             )
         },
@@ -69,7 +69,7 @@ export function createAuthorsApi(
             options: ApiCallOptions = {},
         ): Promise<AuthorRead> {
             return client.requestJson<AuthorRead>(
-                '/authors',
+                '/people',
                 {
                     method: 'POST',
                     body: pickAuthorCreate(author),
@@ -84,7 +84,7 @@ export function createAuthorsApi(
             options: ApiCallOptions = {},
         ): Promise<AuthorRead> {
             return client.requestJson<AuthorRead>(
-                `/authors/${encodeURIComponent(authorId)}`,
+                `/people/${encodeURIComponent(authorId)}`,
                 {
                     method: 'PATCH',
                     body: pickAuthorUpdate(author),
@@ -98,7 +98,7 @@ export function createAuthorsApi(
             options: ApiCallOptions = {},
         ): Promise<void> {
             await client.request(
-                `/authors/${encodeURIComponent(authorId)}`,
+                `/people/${encodeURIComponent(authorId)}`,
                 {
                     method: 'DELETE',
                     ...withSignal(options.signal),

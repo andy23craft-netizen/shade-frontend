@@ -135,6 +135,35 @@ function authorNames(value: string): string[] {
         .filter(Boolean)
 }
 
+function lookupAuthorsText(value: unknown): string {
+    if (typeof value === 'string') {
+        return value.trim()
+    }
+
+    if (!Array.isArray(value)) {
+        return ''
+    }
+
+    return value
+        .map((person) => {
+            if (typeof person !== 'object' || person === null) {
+                return ''
+            }
+
+            const { first_name, surname } = person as {
+                first_name?: string | null
+                surname?: string | null
+            }
+
+            return [first_name, surname]
+                .filter(Boolean)
+                .join(' ')
+                .trim()
+        })
+        .filter(Boolean)
+        .join('; ')
+}
+
 function authorCreateFromName(name: string): {
     first_name: string | null
     surname: string
@@ -296,7 +325,7 @@ export function AddWishlistBookControl() {
                         result.draft?.title ??
                         current.title,
                     authors:
-                        result.draft?.authors ??
+                        lookupAuthorsText(result.draft?.authors) ||
                         current.authors,
                     isbn13: isbn,
                 }))
@@ -374,7 +403,7 @@ export function AddWishlistBookControl() {
                     )
 
                 if (existing) {
-                    authorIds.push(existing.author_id)
+                    authorIds.push(existing.person_id)
                     continue
                 }
 
@@ -383,13 +412,13 @@ export function AddWishlistBookControl() {
                         authorCreateFromName(name),
                     )
 
-                authorIds.push(created.author_id)
+                authorIds.push(created.person_id)
                 existingAuthors.push(created)
                 setCreatedAuthors((current) =>
                     current.some(
                         (author) =>
-                            author.author_id ===
-                            created.author_id,
+                            author.person_id ===
+                            created.person_id,
                     )
                         ? current
                         : [...current, created],

@@ -55,7 +55,7 @@ const book: BookRead = {
     title: 'The Left Hand of Darkness',
     authors: [
         {
-            author_id: 'author-ursula-le-guin',
+            person_id: 'author-ursula-le-guin',
             first_name: 'Ursula K.',
             surname: 'Le Guin',
         },

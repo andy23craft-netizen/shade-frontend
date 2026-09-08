@@ -24,14 +24,12 @@ export function bookFormValuesFromBook(
     return {
         title: book.title,
         authorIds: (book.authors ?? []).map(
-            (author) => author.author_id,
+            (author) => author.person_id,
         ),
         isbn13: book.isbn13 ?? '',
         isbnNotApplicable:
             book.isbn_not_applicable ?? false,
         publisher: book.publisher ?? '',
-        illustrator: book.illustrator ?? '',
-        editor: book.editor ?? '',
         publication_date:
             book.publication_date ?? '',
         pages:
@@ -127,7 +125,7 @@ export function bookFormValuesToUpdate(
     const originalAuthorIds = (
         original.authors ?? []
     ).map(
-        (author) => author.author_id,
+        (author) => author.person_id,
     )
 
     const authorIdsChanged =
@@ -167,16 +165,6 @@ export function bookFormValuesToUpdate(
         (original.publisher ?? null)
     ) {
         update.publisher = publisher
-    }
-
-    const illustrator = nullableString(values.illustrator)
-    if (illustrator !== (original.illustrator ?? null)) {
-        update.illustrator = illustrator
-    }
-
-    const editor = nullableString(values.editor)
-    if (editor !== (original.editor ?? null)) {
-        update.editor = editor
     }
 
     const publicationDate =

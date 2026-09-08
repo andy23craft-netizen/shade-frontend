@@ -80,21 +80,21 @@ const TEST_CATEGORIES: CategoryRead[] = [
 
 const TEST_AUTHORS: AuthorRead[] = [
     {
-        author_id: 'author-fitzgerald',
+        person_id: 'author-fitzgerald',
         first_name: 'F. Scott',
         surname: 'Fitzgerald',
         created_date: '2026-01-01T00:00:00Z',
         updated_date: '2026-01-01T00:00:00Z',
     },
     {
-        author_id: 'author-herbert',
+        person_id: 'author-herbert',
         first_name: 'Frank',
         surname: 'Herbert',
         created_date: '2026-01-01T00:00:00Z',
         updated_date: '2026-01-01T00:00:00Z',
     },
     {
-        author_id: 'author-le-guin',
+        person_id: 'author-le-guin',
         first_name: 'Ursula K.',
         surname: 'Le Guin',
         created_date: '2026-01-01T00:00:00Z',
@@ -689,7 +689,7 @@ describe('BookForm', () => {
     it('offers to create a new author from an unmatched search', async () => {
         const onSubmit = vi.fn()
         const onCreateAuthor = vi.fn().mockResolvedValue({
-            author_id: 'author-oconnor',
+            person_id: 'author-oconnor',
             first_name: 'Flannery',
             surname: "O'Connor",
             created_date: '2026-01-01T00:00:00Z',

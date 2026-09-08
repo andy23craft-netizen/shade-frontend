@@ -30,7 +30,7 @@ describe('API transport types', () => {
             title: 'A Book',
             authors: [
                 {
-                    author_id: 'author-1',
+                    person_id: 'author-1',
                     first_name: 'An',
                     surname: 'Author',
                 },

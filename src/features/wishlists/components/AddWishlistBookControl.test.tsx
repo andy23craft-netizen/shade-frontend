@@ -112,7 +112,7 @@ const wishlists: WishlistList = {
 
 const authors: AuthorRead[] = [
     {
-        author_id: 'author-an-author',
+        person_id: 'author-an-author',
         first_name: 'An',
         surname: 'Author',
         created_date: '2026-08-01T00:00:00Z',
@@ -125,7 +125,7 @@ const createdBook: BookRead = {
     title: 'A Book',
     authors: [
         {
-            author_id: 'author-an-author',
+            person_id: 'author-an-author',
             first_name: 'An',
             surname: 'Author',
         },

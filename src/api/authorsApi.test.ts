@@ -34,7 +34,7 @@ describe('createAuthorsApi', () => {
         mockGetJson.mockResolvedValue({
             items: [
                 {
-                    author_id: 'author-1',
+                    person_id: 'author-1',
                     first_name: 'Ursula',
                     surname: 'Le Guin',
                     created_date:
@@ -52,13 +52,13 @@ describe('createAuthorsApi', () => {
         const result = await authorsApi.list()
 
         expect(mockGetJson).toHaveBeenCalledWith(
-            '/authors',
+            '/people',
         )
 
         expect(result).toEqual({
             items: [
                 {
-                    author_id: 'author-1',
+                    person_id: 'author-1',
                     first_name: 'Ursula',
                     surname: 'Le Guin',
                     created_date:
@@ -88,7 +88,7 @@ describe('createAuthorsApi', () => {
         })
 
         expect(mockGetJson).toHaveBeenCalledWith(
-            '/authors',
+            '/people',
             {
                 signal: controller.signal,
             },
@@ -97,7 +97,7 @@ describe('createAuthorsApi', () => {
 
     it('gets an author by id', async () => {
         mockGetJson.mockResolvedValue({
-            author_id: 'author-1',
+            person_id: 'author-1',
             first_name: 'Ursula',
             surname: 'Le Guin',
             created_date:
@@ -112,14 +112,14 @@ describe('createAuthorsApi', () => {
         await authorsApi.get('author/1')
 
         expect(mockGetJson).toHaveBeenCalledWith(
-            '/authors/author%2F1',
+            '/people/author%2F1',
             undefined,
         )
     })
 
     it('creates an author', async () => {
         mockRequestJson.mockResolvedValue({
-            author_id: 'author-1',
+            person_id: 'author-1',
             first_name: 'Ursula',
             surname: 'Le Guin',
             created_date:
@@ -139,7 +139,7 @@ describe('createAuthorsApi', () => {
         expect(
             mockRequestJson,
         ).toHaveBeenCalledWith(
-            '/authors',
+            '/people',
             {
                 method: 'POST',
                 body: {
@@ -152,7 +152,7 @@ describe('createAuthorsApi', () => {
 
     it('creates an author with a null first name', async () => {
         mockRequestJson.mockResolvedValue({
-            author_id: 'author-1',
+            person_id: 'author-1',
             first_name: null,
             surname: 'Homer',
             created_date:
@@ -172,7 +172,7 @@ describe('createAuthorsApi', () => {
         expect(
             mockRequestJson,
         ).toHaveBeenCalledWith(
-            '/authors',
+            '/people',
             {
                 method: 'POST',
                 body: {
@@ -185,7 +185,7 @@ describe('createAuthorsApi', () => {
 
     it('updates an author with a partial patch', async () => {
         mockRequestJson.mockResolvedValue({
-            author_id: 'author-1',
+            person_id: 'author-1',
             first_name: 'Ursula K.',
             surname: 'Le Guin',
             created_date:
@@ -207,7 +207,7 @@ describe('createAuthorsApi', () => {
         expect(
             mockRequestJson,
         ).toHaveBeenCalledWith(
-            '/authors/author%2F1',
+            '/people/author%2F1',
             {
                 method: 'PATCH',
                 body: {
@@ -230,7 +230,7 @@ describe('createAuthorsApi', () => {
         await authorsApi.remove('author/1')
 
         expect(mockRequest).toHaveBeenCalledWith(
-            '/authors/author%2F1',
+            '/people/author%2F1',
             {
                 method: 'DELETE',
             },
@@ -239,7 +239,7 @@ describe('createAuthorsApi', () => {
 
     it('passes an abort signal to author writes', async () => {
         mockRequestJson.mockResolvedValue({
-            author_id: 'author-1',
+            person_id: 'author-1',
             first_name: 'Ursula',
             surname: 'Le Guin',
             created_date:
@@ -267,7 +267,7 @@ describe('createAuthorsApi', () => {
         expect(
             mockRequestJson,
         ).toHaveBeenCalledWith(
-            '/authors/author-1',
+            '/people/author-1',
             {
                 method: 'PATCH',
                 body: {

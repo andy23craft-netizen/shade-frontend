@@ -62,8 +62,6 @@ const BOOK_FORM_FIELDS = new Set<string>([
     'isbn13',
     'isbnNotApplicable',
     'publisher',
-    'illustrator',
-    'editor',
     'publication_date',
     'pages',
     'categoryIds',
@@ -170,17 +168,39 @@ function authorDisplayName(author: {
 }
 
 function lookupAuthorNames(
-    value: string | null,
+    value: unknown,
 ): string[] {
     if (!value) {
         return []
     }
 
+    if (typeof value === 'string') {
+        return value
+            .split(/\s*(?:,|;|\band\b|&)\s*/i)
+            .map((name) => name.trim().replace(/\s+/g, ' '))
+            .filter(Boolean)
+    }
+
+    if (!Array.isArray(value)) {
+        return []
+    }
+
     return value
-        .split(/\s*(?:,|;|\band\b|&)\s*/i)
-        .map((name) =>
-            name.trim().replace(/\s+/g, ' '),
-        )
+        .map((person) => {
+            if (typeof person !== 'object' || person === null) {
+                return ''
+            }
+
+            const { first_name, surname } = person as {
+                first_name?: string | null
+                surname?: string | null
+            }
+
+            return [first_name, surname]
+                .filter(Boolean)
+                .join(' ')
+                .trim()
+        })
         .filter(Boolean)
 }
 
@@ -400,7 +420,7 @@ export function NewBookPage() {
 
                 if (existing) {
                     authorIds.push(
-                        existing.author_id,
+                        existing.person_id,
                     )
                     continue
                 }
@@ -410,14 +430,14 @@ export function NewBookPage() {
                         authorCreateFromName(name),
                     )
 
-                authorIds.push(created.author_id)
+                authorIds.push(created.person_id)
                 existingAuthors.push(created)
                 setCreatedLookupAuthors(
                     (current) =>
                         current.some(
                             (author) =>
-                                author.author_id ===
-                                created.author_id,
+                                author.person_id ===
+                                created.person_id,
                         )
                             ? current
                             : [
@@ -656,8 +676,8 @@ export function NewBookPage() {
             (created) =>
                 !queryAuthors.some(
                     (author) =>
-                        author.author_id ===
-                        created.author_id,
+                        author.person_id ===
+                        created.person_id,
                 ),
         ),
     ]
@@ -673,8 +693,8 @@ export function NewBookPage() {
         setCreatedLookupAuthors((current) =>
             current.some(
                 (author) =>
-                    author.author_id ===
-                    created.author_id,
+                    author.person_id ===
+                    created.person_id,
             )
                 ? current
                 : [...current, created],

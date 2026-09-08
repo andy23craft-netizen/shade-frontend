@@ -20,7 +20,6 @@ export type BookFormFieldErrors =
 
 const TITLE_AUTHORS_MAX_LENGTH = 255
 const PUBLISHER_MAX_LENGTH = 255
-const CONTRIBUTOR_MAX_LENGTH = 255
 const ISBN_INTRODUCTION_YEAR = 1970
 
 export function isPreIsbnPublicationDate(value: string): boolean {
@@ -115,13 +114,6 @@ export function validateBookFormValues(
             `Publisher must be at most ${PUBLISHER_MAX_LENGTH} characters.`
     }
 
-    for (const field of ['illustrator', 'editor'] as const) {
-        if (values[field].trim().length > CONTRIBUTOR_MAX_LENGTH) {
-            const label = field === 'illustrator' ? 'Illustrator' : 'Editor'
-            errors[field] = `${label} must be at most ${CONTRIBUTOR_MAX_LENGTH} characters.`
-        }
-    }
-
     const pages = values.pages.trim()
 
     if (pages !== '') {
@@ -184,14 +176,6 @@ export function formValuesToBookCreate(
             values.publisher.trim() === ''
                 ? null
                 : values.publisher.trim(),
-
-        ...(values.illustrator.trim() === ''
-            ? {}
-            : { illustrator: values.illustrator.trim() }),
-
-        ...(values.editor.trim() === ''
-            ? {}
-            : { editor: values.editor.trim() }),
 
         publication_date:
             values.publication_date.trim() === ''

@@ -244,7 +244,7 @@ export function EditBookPage() {
         surname: string,
     ): Promise<AuthorRead> {
         return updateAuthor.mutateAsync({
-            authorId: author.author_id,
+            authorId: author.person_id,
             author: {
                 first_name:
                     firstName.trim() === ''

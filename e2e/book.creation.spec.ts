@@ -67,7 +67,7 @@ test('adds a book manually and opens the created book', async ({
         title: 'The Left Hand of Darkness',
         authors: [
             {
-                author_id: 'author-le-guin',
+                person_id: 'author-le-guin',
                 first_name: 'Ursula K.',
                 surname: 'Le Guin',
             },

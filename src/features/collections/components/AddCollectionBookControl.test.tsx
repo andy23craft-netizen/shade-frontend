@@ -73,7 +73,7 @@ const catalogBook: BookRead = {
     title: 'The Dispossessed',
     authors: [
         {
-            author_id: 'author-ursula-le-guin',
+            person_id: 'author-ursula-le-guin',
             first_name: 'Ursula K.',
             surname: 'Le Guin',
         },

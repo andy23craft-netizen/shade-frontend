@@ -24,7 +24,7 @@ function createBook(
         title: `Title ${index}`,
         authors: [
             {
-                author_id: `author-${index}`,
+                person_id: `author-${index}`,
                 first_name: 'Author',
                 surname: `${index}`,
             },

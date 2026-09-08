@@ -163,16 +163,16 @@ export type ShelfRead =
     Schemas['ShelfRead']
 
 export type AuthorCreate =
-    Schemas['AuthorCreate']
+    Schemas['PersonCreate']
 
 export type AuthorList =
-    Schemas['AuthorList']
+    Schemas['PersonList']
 
 export type AuthorRead =
-    Schemas['AuthorRead']
+    Schemas['PersonRead']
 
 export type AuthorUpdate =
-    Schemas['AuthorUpdate']
+    Schemas['PersonUpdate']
 
 export type WishlistCreate =
     Schemas['WishlistCreate']
@@ -247,10 +247,10 @@ export type AlbumArtworkRefetchRequest = Schemas['AlbumArtworkRefetchRequest']
 export type AlbumStatus = Schemas['AlbumStatus']
 export type MediaFormat = Schemas['MediaFormat']
 export type MarkPlayedRequest = Schemas['MarkPlayedRequest']
-export type ArtistCreate = Schemas['ArtistCreate']
-export type ArtistUpdate = Schemas['ArtistUpdate']
-export type ArtistRead = Schemas['ArtistRead']
-export type ArtistList = Schemas['ArtistList']
+export type ArtistCreate = Schemas['PersonCreate']
+export type ArtistUpdate = Schemas['PersonUpdate']
+export type ArtistRead = Schemas['PersonRead']
+export type ArtistList = Schemas['PersonList']
 export type GenreCreate = Schemas['GenreCreate']
 export type GenreUpdate = Schemas['GenreUpdate']
 export type GenreRead = Schemas['GenreRead']

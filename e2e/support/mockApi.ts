@@ -180,7 +180,7 @@ export function makeBook(
         title: 'Pale Fire',
         authors: [
             {
-                author_id: 'author-nabokov',
+                person_id: 'author-nabokov',
                 first_name: 'Vladimir',
                 surname: 'Nabokov',
             },
@@ -264,14 +264,14 @@ export const lifecycleCategories: CategoryRead[] = [
 
 export const lifecycleAuthors: AuthorRead[] = [
     {
-        author_id: 'author-nabokov',
+        person_id: 'author-nabokov',
         first_name: 'Vladimir',
         surname: 'Nabokov',
         created_date: '2026-01-01T00:00:00Z',
         updated_date: '2026-01-01T00:00:00Z',
     },
     {
-        author_id: 'author-le-guin',
+        person_id: 'author-le-guin',
         first_name: 'Ursula K.',
         surname: 'Le Guin',
         created_date: '2026-01-01T00:00:00Z',
@@ -682,7 +682,7 @@ function resolveAuthorsFromIds(
 
         const author = state.authors.find(
             (entry) =>
-                entry.author_id === value,
+                entry.person_id === value,
         )
 
         if (author === undefined) {
@@ -691,7 +691,7 @@ function resolveAuthorsFromIds(
 
         return [
             {
-                author_id: author.author_id,
+                person_id: author.person_id,
                 first_name: author.first_name,
                 surname: author.surname,
             },
@@ -880,7 +880,7 @@ export async function installMockApi(
     }
 
     const apiPathPattern =
-        /^\/(?:api\/)?(?:health|ready|version|books|albums|artists|authors|genres|loans|dashboard|shelves|categories|library|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
+        /^\/(?:api\/)?(?:health|ready|version|books|albums|people|genres|loans|dashboard|shelves|categories|library|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
 
     await page.route(
         (url) => apiPathPattern.test(url.pathname),
@@ -991,7 +991,7 @@ export async function installMockApi(
 
             if (
                 method === 'GET' &&
-                url.pathname === '/authors'
+                url.pathname === '/people'
             ) {
                 await fulfillJson(route, {
                     body: {

@@ -94,7 +94,7 @@ const completeBook: BookRead = {
     title: 'The Pale Fire',
     authors: [
         {
-            author_id: 'author-vladimir-nabokov',
+            person_id: 'author-vladimir-nabokov',
             first_name: 'Vladimir',
             surname: 'Nabokov',
         },
@@ -433,7 +433,7 @@ describe('BookDetailsPage', () => {
                 authors: [
                     ...(completeBook.authors ?? []),
                     {
-                        author_id: 'author-mary-mccarthy',
+                        person_id: 'author-mary-mccarthy',
                         first_name: 'Mary',
                         surname: 'McCarthy',
                     },

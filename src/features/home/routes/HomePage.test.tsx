@@ -260,7 +260,7 @@ const recentBooksFixture = {
             title: 'Newest Book',
             authors: [
                 {
-                    author_id: 'newest-author',
+                    person_id: 'newest-author',
                     first_name: 'Newest',
                     surname: 'Author',
                 },
@@ -272,7 +272,7 @@ const recentBooksFixture = {
             title: 'Second Newest Book',
             aauthors: [
                 {
-                    author_id: 'second-author',
+                    person_id: 'second-author',
                     first_name: 'Second',
                     surname: 'Author',
                 },

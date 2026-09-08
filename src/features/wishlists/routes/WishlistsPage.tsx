@@ -117,7 +117,7 @@ function WishlistMembershipRow({
         wishlist_id: wishlistId,
         book_id: bookId,
         book_title: title,
-        book_authors: authors = [],
+        authors: authors = [],
         status,
         priority,
         notes,

@@ -371,17 +371,24 @@ export function BookDetailsPage() {
                         </dd>
                     </div>
 
-                    {book.illustrator?.trim() ? (
+                    {(book.illustrators?.length ?? 0) > 0 ? (
                         <div className="book-details-card__field">
-                            <dt>Illustrator</dt>
-                            <dd>{book.illustrator}</dd>
+                            <dt>Illustrators</dt>
+                            <dd>{formatBookAuthors(book.illustrators)}</dd>
                         </div>
                     ) : null}
 
-                    {book.editor?.trim() ? (
+                    {(book.editors?.length ?? 0) > 0 ? (
                         <div className="book-details-card__field">
-                            <dt>Editor</dt>
-                            <dd>{book.editor}</dd>
+                            <dt>Editors</dt>
+                            <dd>{formatBookAuthors(book.editors)}</dd>
+                        </div>
+                    ) : null}
+
+                    {(book.translators?.length ?? 0) > 0 ? (
+                        <div className="book-details-card__field">
+                            <dt>Translators</dt>
+                            <dd>{formatBookAuthors(book.translators)}</dd>
                         </div>
                     ) : null}
 

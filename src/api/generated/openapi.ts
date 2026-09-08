@@ -213,80 +213,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/artists": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Artists */
-        get: operations["list_artists_artists_get"];
-        put?: never;
-        /** Create Artist */
-        post: operations["create_artist_artists_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/artists/{artist_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Artist */
-        get: operations["get_artist_artists__artist_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Artist */
-        delete: operations["delete_artist_artists__artist_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Artist */
-        patch: operations["update_artist_artists__artist_id__patch"];
-        trace?: never;
-    };
-    "/authors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Authors */
-        get: operations["list_authors_authors_get"];
-        put?: never;
-        /** Create Author */
-        post: operations["create_author_authors_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/authors/{author_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Author */
-        get: operations["get_author_authors__author_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Author */
-        delete: operations["delete_author_authors__author_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Author */
-        patch: operations["update_author_authors__author_id__patch"];
-        trace?: never;
-    };
     "/books": {
         parameters: {
             query?: never;
@@ -956,6 +882,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List People */
+        get: operations["list_people_people_get"];
+        put?: never;
+        /** Create Person */
+        post: operations["create_person_people_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/people/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Person */
+        get: operations["get_person_people__person_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Person */
+        delete: operations["delete_person_people__person_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Person */
+        patch: operations["update_person_people__person_id__patch"];
+        trace?: never;
+    };
+    "/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quotes */
+        get: operations["get_quotes_quotes_get"];
+        put?: never;
+        /** Create Quote */
+        post: operations["create_quote_quotes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Quote Order */
+        put: operations["put_quote_order_quotes_order_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/restore-defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Restore Default Quotes */
+        post: operations["post_restore_default_quotes_quotes_restore_defaults_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{quote_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quote */
+        get: operations["get_quote_quotes__quote_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Quote */
+        delete: operations["delete_quote_quotes__quote_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Quote */
+        patch: operations["update_quote_quotes__quote_id__patch"];
+        trace?: never;
+    };
     "/ready": {
         parameters: {
             query?: never;
@@ -1247,10 +1281,10 @@ export interface components {
     schemas: {
         /** AlbumArtistRead */
         AlbumArtistRead: {
-            /** Artist Id */
-            artist_id: string;
             /** First Name */
             first_name: string | null;
+            /** Person Id */
+            person_id: string;
             /** Position */
             position: number;
             /** Surname */
@@ -1266,8 +1300,6 @@ export interface components {
         };
         /** AlbumCreate */
         AlbumCreate: {
-            /** Artist Ids */
-            artist_ids: string[];
             /** Barcode */
             barcode?: string | null;
             /** Completion Date */
@@ -1289,6 +1321,8 @@ export interface components {
             musicbrainz_release_id?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Person Ids */
+            person_ids: string[];
             /** Rating */
             rating?: number | null;
             /** Release Date */
@@ -1464,8 +1498,6 @@ export interface components {
         };
         /** AlbumTrackWrite */
         AlbumTrackWrite: {
-            /** Artist Ids */
-            artist_ids?: string[];
             /**
              * Disc Number
              * @default 1
@@ -1475,6 +1507,8 @@ export interface components {
             duration?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Person Ids */
+            person_ids?: string[];
             /** Title */
             title: string;
             /** Track Number */
@@ -1482,8 +1516,6 @@ export interface components {
         };
         /** AlbumUpdate */
         AlbumUpdate: {
-            /** Artist Ids */
-            artist_ids?: string[] | null;
             /** Barcode */
             barcode?: string | null;
             /** Completion Date */
@@ -1501,6 +1533,8 @@ export interface components {
             musicbrainz_release_id?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Person Ids */
+            person_ids?: string[] | null;
             /** Rating */
             rating?: number | null;
             /** Release Date */
@@ -1515,77 +1549,6 @@ export interface components {
             /** Tracks */
             tracks?: components["schemas"]["AlbumTrackWrite"][] | null;
         };
-        /**
-         * ArtistCreate
-         * @description Artist names follow the same validation rules as author names.
-         */
-        ArtistCreate: {
-            /** First Name */
-            first_name?: string | null;
-            /** Surname */
-            surname: string;
-        };
-        /** ArtistList */
-        ArtistList: {
-            /** Items */
-            items: components["schemas"]["ArtistRead"][];
-            /** Total */
-            total: number;
-        };
-        /** ArtistRead */
-        ArtistRead: {
-            /** Artist Id */
-            artist_id: string;
-            /** Created Date */
-            created_date: string;
-            /** First Name */
-            first_name: string | null;
-            /** Surname */
-            surname: string;
-            /** Updated Date */
-            updated_date: string;
-        };
-        /** ArtistUpdate */
-        ArtistUpdate: {
-            /** First Name */
-            first_name?: string | null;
-            /** Surname */
-            surname?: string | null;
-        };
-        /** AuthorCreate */
-        AuthorCreate: {
-            /** First Name */
-            first_name?: string | null;
-            /** Surname */
-            surname: string;
-        };
-        /** AuthorList */
-        AuthorList: {
-            /** Items */
-            items: components["schemas"]["AuthorRead"][];
-            /** Total */
-            total: number;
-        };
-        /** AuthorRead */
-        AuthorRead: {
-            /** Author Id */
-            author_id: string;
-            /** Created Date */
-            created_date: string;
-            /** First Name */
-            first_name: string | null;
-            /** Surname */
-            surname: string;
-            /** Updated Date */
-            updated_date: string;
-        };
-        /** AuthorUpdate */
-        AuthorUpdate: {
-            /** First Name */
-            first_name?: string | null;
-            /** Surname */
-            surname?: string | null;
-        };
         /** Body_upload_album_artwork_albums__album_id__artwork_put */
         Body_upload_album_artwork_albums__album_id__artwork_put: {
             /** File */
@@ -1595,15 +1558,6 @@ export interface components {
         Body_upload_book_cover_books__book_id__cover_put: {
             /** File */
             file: string;
-        };
-        /** BookAuthorRead */
-        BookAuthorRead: {
-            /** Author Id */
-            author_id: string;
-            /** First Name */
-            first_name: string | null;
-            /** Surname */
-            surname: string;
         };
         /** BookCategoryRead */
         BookCategoryRead: {
@@ -1624,10 +1578,10 @@ export interface components {
             category_ids?: string[];
             /** Completion Date */
             completion_date?: string | null;
-            /** Editor */
-            editor?: string | null;
-            /** Illustrator */
-            illustrator?: string | null;
+            /** Editor Ids */
+            editor_ids?: string[];
+            /** Illustrator Ids */
+            illustrator_ids?: string[];
             /**
              * Is Read
              * @default false
@@ -1667,6 +1621,8 @@ export interface components {
             tags?: string[] | null;
             /** Title */
             title: string;
+            /** Translator Ids */
+            translator_ids?: string[];
         };
         /** BookList */
         BookList: {
@@ -1678,7 +1634,11 @@ export interface components {
         /** BookLookupDraft */
         BookLookupDraft: {
             /** Authors */
-            authors?: string | null;
+            authors?: components["schemas"]["BookLookupPersonDraft"][];
+            /** Editors */
+            editors?: components["schemas"]["BookLookupPersonDraft"][];
+            /** Illustrators */
+            illustrators?: components["schemas"]["BookLookupPersonDraft"][];
             /** Isbn13 */
             isbn13: string;
             /**
@@ -1694,6 +1654,19 @@ export interface components {
             publisher?: string | null;
             /** Title */
             title?: string | null;
+            /** Translators */
+            translators?: components["schemas"]["BookLookupPersonDraft"][];
+        };
+        /** BookLookupPersonDraft */
+        BookLookupPersonDraft: {
+            /** First Name */
+            first_name?: string | null;
+            /** Open Library Key */
+            open_library_key?: string | null;
+            /** Person Id */
+            person_id?: string | null;
+            /** Surname */
+            surname?: string | null;
         };
         /** BookLookupResponse */
         BookLookupResponse: {
@@ -1701,12 +1674,23 @@ export interface components {
             /** Found */
             found: boolean;
         };
+        /** BookPersonRead */
+        BookPersonRead: {
+            /** First Name */
+            first_name: string | null;
+            /** Open Library Key */
+            open_library_key?: string | null;
+            /** Person Id */
+            person_id: string;
+            /** Surname */
+            surname: string;
+        };
         /** BookRead */
         BookRead: {
             /** Acquisition Source */
             acquisition_source?: string | null;
             /** Authors */
-            authors?: components["schemas"]["BookAuthorRead"][];
+            authors?: components["schemas"]["BookPersonRead"][];
             /** Average Loan Days */
             average_loan_days: number | null;
             /** Book Id */
@@ -1720,10 +1704,10 @@ export interface components {
             cover_image_path?: string | null;
             /** Creation Date */
             creation_date: string;
-            /** Editor */
-            editor?: string | null;
-            /** Illustrator */
-            illustrator?: string | null;
+            /** Editors */
+            editors?: components["schemas"]["BookPersonRead"][];
+            /** Illustrators */
+            illustrators?: components["schemas"]["BookPersonRead"][];
             /**
              * Is Read
              * @default false
@@ -1768,6 +1752,8 @@ export interface components {
             times_borrowed: number;
             /** Title */
             title: string;
+            /** Translators */
+            translators?: components["schemas"]["BookPersonRead"][];
             /** Updated Date */
             updated_date: string;
             /** Work Id */
@@ -1783,10 +1769,10 @@ export interface components {
             category_ids?: string[] | null;
             /** Completion Date */
             completion_date?: string | null;
-            /** Editor */
-            editor?: string | null;
-            /** Illustrator */
-            illustrator?: string | null;
+            /** Editor Ids */
+            editor_ids?: string[] | null;
+            /** Illustrator Ids */
+            illustrator_ids?: string[] | null;
             /** Is Read */
             is_read?: boolean | null;
             /** Isbn13 */
@@ -1816,6 +1802,8 @@ export interface components {
             tags?: string[] | null;
             /** Title */
             title?: string | null;
+            /** Translator Ids */
+            translator_ids?: string[] | null;
         };
         /** BorrowerRatingSummary */
         BorrowerRatingSummary: {
@@ -2186,10 +2174,10 @@ export interface components {
         };
         /** CollectionAlbumArtistRead */
         CollectionAlbumArtistRead: {
-            /** Artist Id */
-            artist_id: string;
             /** First Name */
             first_name: string | null;
+            /** Person Id */
+            person_id: string;
             /** Surname */
             surname: string;
         };
@@ -2259,8 +2247,8 @@ export interface components {
         };
         /** CollectionBookRead */
         CollectionBookRead: {
-            /** Book Authors */
-            book_authors?: components["schemas"]["BookAuthorRead"][];
+            /** Authors */
+            authors?: components["schemas"]["BookPersonRead"][];
             /** Book Id */
             book_id: string;
             book_status: components["schemas"]["Status"];
@@ -2622,6 +2610,46 @@ export interface components {
             /** Source Work Ids */
             source_work_ids: string[];
         };
+        /** PersonCreate */
+        PersonCreate: {
+            /** First Name */
+            first_name?: string | null;
+            /** Open Library Key */
+            open_library_key?: string | null;
+            /** Surname */
+            surname: string;
+        };
+        /** PersonList */
+        PersonList: {
+            /** Items */
+            items: components["schemas"]["PersonRead"][];
+            /** Total */
+            total: number;
+        };
+        /** PersonRead */
+        PersonRead: {
+            /** Created Date */
+            created_date: string;
+            /** First Name */
+            first_name: string | null;
+            /** Open Library Key */
+            open_library_key?: string | null;
+            /** Person Id */
+            person_id: string;
+            /** Surname */
+            surname: string;
+            /** Updated Date */
+            updated_date: string;
+        };
+        /** PersonUpdate */
+        PersonUpdate: {
+            /** First Name */
+            first_name?: string | null;
+            /** Open Library Key */
+            open_library_key?: string | null;
+            /** Surname */
+            surname?: string | null;
+        };
         /** PhysicalItemSummary */
         PhysicalItemSummary: {
             /** Active Loan Id */
@@ -2647,6 +2675,62 @@ export interface components {
          * @enum {string}
          */
         PlacementState: "shelved" | "stashed" | "unshelved";
+        /** QuoteCreate */
+        QuoteCreate: {
+            /** Author */
+            author: string;
+            /** Context */
+            context?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Text */
+            text: string;
+        };
+        /** QuoteList */
+        QuoteList: {
+            /** Items */
+            items: components["schemas"]["QuoteRead"][];
+            /** Total */
+            total: number;
+        };
+        /** QuoteOrderRequest */
+        QuoteOrderRequest: {
+            /** Quote Ids */
+            quote_ids: string[];
+        };
+        /** QuoteRead */
+        QuoteRead: {
+            /** Author */
+            author: string;
+            /** Context */
+            context: string | null;
+            /** Created Date */
+            created_date: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Position */
+            position: number;
+            /** Quote Id */
+            quote_id: string;
+            /** Text */
+            text: string;
+            /** Updated Date */
+            updated_date: string;
+        };
+        /** QuoteUpdate */
+        QuoteUpdate: {
+            /** Author */
+            author?: string | null;
+            /** Context */
+            context?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Text */
+            text?: string | null;
+        };
         /** ReservationWrite */
         ReservationWrite: {
             /** Note */
@@ -2798,8 +2882,8 @@ export interface components {
         WishlistBookRead: {
             /** Album Id */
             album_id: string | null;
-            /** Book Authors */
-            book_authors?: components["schemas"]["BookAuthorRead"][];
+            /** Authors */
+            authors?: components["schemas"]["BookPersonRead"][];
             /** Book Id */
             book_id: string | null;
             book_status: components["schemas"]["Status"];
@@ -4019,461 +4103,6 @@ export interface operations {
             };
             /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
             412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_artists_artists_get: {
-        parameters: {
-            query?: {
-                in_use?: boolean;
-            };
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtistList"];
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_artist_artists_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtistCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtistRead"];
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_artist_artists__artist_id__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path: {
-                artist_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtistRead"];
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Resource not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_artist_artists__artist_id__delete: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path: {
-                artist_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Resource not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description State conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_artist_artists__artist_id__patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path: {
-                artist_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtistUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtistRead"];
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Resource not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_authors_authors_get: {
-        parameters: {
-            query?: {
-                in_use?: boolean;
-            };
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthorList"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_author_authors_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuthorCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthorRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_author_authors__author_id__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path: {
-                author_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthorRead"];
-                };
-            };
-            /** @description Resource not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_author_authors__author_id__delete: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path: {
-                author_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Resource not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description State conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_author_authors__author_id__patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path: {
-                author_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuthorUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthorRead"];
-                };
-            };
-            /** @description Resource not found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7956,6 +7585,579 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_people_people_get: {
+        parameters: {
+            query?: {
+                in_use?: boolean;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_person_people_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_people__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonRead"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_person_people__person_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_person_people__person_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonRead"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quotes_quotes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteList"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_quote_quotes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    put_quote_order_quotes_order_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteList"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    post_restore_default_quotes_quotes_restore_defaults_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteList"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quote_quotes__quote_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                quote_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_quote_quotes__quote_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                quote_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_quote_quotes__quote_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                quote_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description State conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
         };

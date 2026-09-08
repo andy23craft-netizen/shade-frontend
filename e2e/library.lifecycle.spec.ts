@@ -15,7 +15,7 @@ test('checks out and checks in a book through the browser', async ({
         title: 'Pale Fire',
         authors: [
             {
-                author_id: 'author-nabokov',
+                person_id: 'author-nabokov',
                 first_name: 'Vladimir',
                 surname: 'Nabokov',
             },

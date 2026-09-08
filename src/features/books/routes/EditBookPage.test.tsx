@@ -131,14 +131,14 @@ const TEST_SHELVES: ShelfRead[] = [
 
 const TEST_AUTHORS: AuthorRead[] = [
     {
-        author_id: 'author-vladimir-nabokov',
+        person_id: 'author-vladimir-nabokov',
         first_name: 'Vladimir',
         surname: 'Nabokov',
         created_date: '2026-01-01T00:00:00Z',
         updated_date: '2026-01-01T00:00:00Z',
     },
     {
-        author_id: 'author-ursula-le-guin',
+        person_id: 'author-ursula-le-guin',
         first_name: 'Ursula K.',
         surname: 'Le Guin',
         created_date: '2026-01-01T00:00:00Z',

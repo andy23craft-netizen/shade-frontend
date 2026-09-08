@@ -29,7 +29,7 @@ const stashedBook = {
     book_id: 'book-1',
     title: 'Displaced Book',
     authors: [{
-        author_id: 'author-1',
+        person_id: 'author-1',
         first_name: 'Test',
         surname: 'Author',
     }],

@@ -48,15 +48,15 @@ const BOOK: BookRead = {
     title: 'Dune',
     authors: [
         {
-            author_id: 'author-frank-herbert',
+            person_id: 'author-frank-herbert',
             first_name: 'Frank',
             surname: 'Herbert',
         },
     ],
     isbn13: '9780441172719',
     publisher: 'Ace',
-    illustrator: 'Sam Weber',
-    editor: 'John W. Campbell',
+    illustrators: [{ person_id: 'person-sam-weber', first_name: 'Sam', surname: 'Weber' }],
+    editors: [{ person_id: 'person-john-campbell', first_name: 'John W.', surname: 'Campbell' }],
     publication_date: '1965',
     pages: 412,
     categories: [{ category_id: 'cat-fiction', name: 'Fiction', slug: 'fiction' }],
@@ -94,8 +94,6 @@ describe('bookFormValuesFromBook', () => {
             isbn13: '9780441172719',
             isbnNotApplicable: false,
             publisher: 'Ace',
-            illustrator: 'Sam Weber',
-            editor: 'John W. Campbell',
             publication_date: '1965',
             pages: '412',
             categoryIds: ['cat-fiction'],
@@ -114,8 +112,8 @@ describe('bookFormValuesFromBook', () => {
                 ...BOOK,
                 isbn13: null,
                 publisher: null,
-                illustrator: null,
-                editor: null,
+                illustrators: [],
+                editors: [],
                 publication_date: null,
                 pages: null,
                 tags: null,
@@ -129,8 +127,6 @@ describe('bookFormValuesFromBook', () => {
 
         expect(values.isbn13).toBe('')
         expect(values.publisher).toBe('')
-        expect(values.illustrator).toBe('')
-        expect(values.editor).toBe('')
         expect(values.publication_date).toBe('')
         expect(values.pages).toBe('')
         expect(values.tags).toBe('')
@@ -237,8 +233,6 @@ describe('bookFormValuesToUpdate', () => {
         ).toEqual({
             isbn13: null,
             publisher: null,
-            illustrator: null,
-            editor: null,
             pages: null,
             tags: null,
             purchase_price: null,
@@ -342,12 +336,12 @@ describe('bookFormValuesToUpdate', () => {
             ...BOOK,
             authors: [
                 {
-                    author_id: 'author-first',
+                    person_id: 'author-first',
                     first_name: 'First',
                     surname: 'Author',
                 },
                 {
-                    author_id: 'author-second',
+                    person_id: 'author-second',
                     first_name: 'Second',
                     surname: 'Author',
                 },

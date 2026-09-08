@@ -83,7 +83,7 @@ const bookFixture = {
     title: 'Pale Fire',
     authors: [
         {
-            author_id: 'author-vladimir-nabokov',
+            person_id: 'author-vladimir-nabokov',
             first_name: 'Vladimir',
             surname: 'Nabokov',
         },

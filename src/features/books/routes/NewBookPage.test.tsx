@@ -53,7 +53,7 @@ const TEST_SHELVES: ShelfRead[] = [
 
 const TEST_AUTHORS: AuthorRead[] = [
     {
-        author_id: 'author-frank-herbert',
+        person_id: 'author-frank-herbert',
         first_name: 'Frank',
         surname: 'Herbert',
         created_date: '2026-01-01T00:00:00Z',
@@ -263,7 +263,7 @@ describe('NewBookPage', () => {
         authorsState.isSuccess = true
         mockCreateAuthor.mockImplementation(
             async ({ first_name, surname }) => ({
-                author_id: `author-${surname
+                person_id: `author-${surname
                     .toLowerCase()
                     .replace(/\s+/g, '-')}`,
                 first_name,
@@ -785,7 +785,7 @@ describe('NewBookPage', () => {
         }
 
         mockCreateAuthor.mockResolvedValueOnce({
-            author_id: 'author-le-guin',
+            person_id: 'author-le-guin',
             first_name: 'Ursula K. Le',
             surname: 'Guin',
             created_date:
