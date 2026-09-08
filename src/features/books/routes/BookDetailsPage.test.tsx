@@ -395,17 +395,6 @@ describe('BookDetailsPage', () => {
             ),
         ).toBeInTheDocument()
 
-        expect(
-            screen.getByText(
-                '3',
-            ),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByText(
-                '14.5 days',
-            ),
-        ).toBeInTheDocument()
     })
 
     it('renders ISBN not applicable instead of missing ISBN', () => {
@@ -675,7 +664,7 @@ describe('BookDetailsPage', () => {
         ).toBeInTheDocument()
     })
 
-    it('explains when there are no returned loans', () => {
+    it('renders the borrowing record instead of aggregate loan statistics', () => {
         mockedUseBook.mockReturnValue({
             isPending: false,
             isError: false,
@@ -687,11 +676,7 @@ describe('BookDetailsPage', () => {
 
         renderBookDetails()
 
-        expect(
-            screen.getByText(
-                'No returned loans yet',
-            ),
-        ).toBeInTheDocument()
+        expect(screen.getByTestId('borrower-reviews')).toBeInTheDocument()
     })
     it('does not offer checkout or delete for an on-loan book', () => {
         mockedUseLoans.mockReturnValue({

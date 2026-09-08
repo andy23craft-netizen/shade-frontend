@@ -26,7 +26,7 @@ describe('BorrowerReviews', () => {
         })
         mockPutFeedback.mockReturnValue({ mutate, isPending: false })
 
-        render(<BorrowerReviews bookId="book-1" />)
+        render(<BorrowerReviews bookId="book-1" loans={[{ id: 'loan-1', borrower: 'Ada Lovelace', checked_out_at: '2026-01-01T00:00:00Z', returned_at: '2026-01-02T00:00:00Z' } as never]} />)
 
         expect(screen.getByText('A. L.')).toBeInTheDocument()
         expect(screen.getByText('A wonderful read.')).toBeVisible()
@@ -43,7 +43,7 @@ describe('BorrowerReviews', () => {
         mockReviews.mockReturnValue({ isPending: false, isError: true, refetch })
         mockPutFeedback.mockReturnValue({ mutate: vi.fn(), isPending: false })
 
-        render(<BorrowerReviews bookId="book-1" />)
+        render(<BorrowerReviews bookId="book-1" loans={[]} />)
         fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
         expect(refetch).toHaveBeenCalledOnce()
     })

@@ -5,6 +5,8 @@ import { Button } from '../../../components/Button'
 import { LoadingState } from '../../../components/LoadingState'
 import { useInfiniteBookBorrowerReviews, usePutLoanFeedback } from '../../../api/loansQueries'
 import type { LoanFeedbackRead } from '../../../api/apiTypes'
+import type { LoanRead } from '../../../api/apiTypes'
+import { BorrowerName } from './BorrowerName'
 
 function initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -55,7 +57,13 @@ function Review({ feedback }: { feedback: LoanFeedbackRead }) {
     )
 }
 
-export function BorrowerReviews({ bookId }: { bookId: string }) {
+function formatLoanDate(value: string | null | undefined): string {
+    if (!value) return 'Not returned'
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
+}
+
+export function BorrowerReviews({ bookId, loans }: { bookId: string; loans: readonly LoanRead[] }) {
     const query = useInfiniteBookBorrowerReviews(bookId)
     const feedback = useMemo(
         () => query.data?.pages.flatMap((page) => page.items) ?? [],
@@ -65,11 +73,13 @@ export function BorrowerReviews({ bookId }: { bookId: string }) {
 
     return (
         <section className="book-details-panel">
-            <h2>Borrower reviews</h2>
-            {query.isPending ? <LoadingState label="Loading borrower reviews…" /> : null}
-            {query.isError ? <Alert variant="error">Unable to load borrower reviews. <Button onClick={() => void query.refetch()}>Retry</Button></Alert> : null}
-            {!query.isPending && !query.isError && total === 0 ? <p>No borrower reviews yet.</p> : null}
-            {feedback.length > 0 ? <ol className="borrower-review-list">{feedback.map((item) => <li key={item.feedback_id}><Review feedback={item} /></li>)}</ol> : null}
+            <h2>Borrowing history</h2>
+            {query.isPending ? <LoadingState label="Loading borrowing record…" /> : null}
+            {query.isError ? <Alert variant="error">Unable to load borrower feedback. <Button onClick={() => void query.refetch()}>Retry</Button></Alert> : null}
+            {loans.length === 0 ? <p>This book has not been borrowed yet.</p> : <ol className="borrower-review-list">{loans.map((loan) => {
+                const item = feedback.find((candidate) => candidate.loan_id === loan.id)
+                return <li key={loan.id}><article><header><BorrowerName>{loan.borrower}</BorrowerName></header><p>Checked out {formatLoanDate(loan.checked_out_at)}</p><p>Returned {formatLoanDate(loan.returned_at)}</p>{item ? <Review feedback={item} /> : loan.returned_at ? <p>Rating not recorded.</p> : null}</article></li>
+            })}</ol>}
             {query.hasNextPage ? <Button variant="secondary" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? 'Loading reviews…' : 'Load more reviews'}</Button> : null}
         </section>
     )

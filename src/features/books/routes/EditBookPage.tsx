@@ -29,6 +29,7 @@ import {
 } from '../../../api/bookIdentity'
 import {
     useBook,
+    useSetBookAvailability,
     useUpdateBook,
 } from '../../../api/booksQueries'
 import {
@@ -56,6 +57,8 @@ import type {
     AuthorRead,
     CategoryRead,
 } from '../../../api/apiTypes'
+import type { Status } from '../../../api/apiTypes'
+import { Field } from '../../../components/Field'
 
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
@@ -160,6 +163,7 @@ export function EditBookPage() {
     const createCategory = useCreateCategory()
     const updateCategory = useUpdateCategory()
     const updateBook = useUpdateBook()
+    const availabilityMutation = useSetBookAvailability()
 
     const initializedBookIdRef =
         useRef<string | null>(null)
@@ -180,6 +184,7 @@ export function EditBookPage() {
         formError,
         setFormError,
     ] = useState<string | null>(null)
+    const [availability, setAvailability] = useState<Status | null>(null)
 
     useEffect(() => {
         const book = bookQuery.data
@@ -205,6 +210,7 @@ export function EditBookPage() {
                 shelves,
             ),
         )
+        setAvailability(book.status)
 
         initializedBookIdRef.current =
             book.book_id
@@ -626,6 +632,24 @@ export function EditBookPage() {
                 }
                 formError={formError}
             />
+
+            {availability !== null && book.status !== 'on_loan' ? (
+                <section>
+                    <h2>Availability</h2>
+                    <Field label="Availability">
+                        <select value={availability} onChange={(event) => setAvailability(event.target.value as Status)}>
+                            <option value="available">Available</option>
+                            <option value="reserved">Reserved</option>
+                            <option value="reading">Reading</option>
+                            <option value="missing">Missing</option>
+                            <option value="display_only">Display only</option>
+                        </select>
+                    </Field>
+                    <button type="button" disabled={availabilityMutation.isPending || availability === book.status} onClick={() => availabilityMutation.mutate({ id: book.book_id, request: { status: availability } })}>
+                        {availabilityMutation.isPending ? 'Saving availability…' : 'Save availability'}
+                    </button>
+                </section>
+            ) : null}
         </section>
     )
 }

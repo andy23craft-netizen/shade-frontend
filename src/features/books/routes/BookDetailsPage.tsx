@@ -39,7 +39,6 @@ import { formatBookAuthors } from '../authorDisplay'
 import { Button } from '../../../components/Button'
 import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
 import { isCheckoutEligible } from '../../loans/checkoutEligibility'
-import { BookAvailabilityControl } from '../components/BookAvailabilityControl'
 import { BorrowerReviews } from '../../loans/components/BorrowerReviews'
 
 const STATUS_VALUES: readonly Status[] = [
@@ -494,43 +493,7 @@ export function BookDetailsPage() {
                 </section>
             ) : null}
 
-            <BookAvailabilityControl
-                book={book}
-                hasActiveLoan={hasActiveLoan}
-            />
-
-            <section className="book-details-panel">
-                <h2>Borrowing History</h2>
-
-                <dl className="book-details-panel__metadata">
-                    <div>
-                        <dt>Times Borrowed</dt>
-                        <dd>
-                            {book.times_borrowed}
-                        </dd>
-                    </div>
-
-                    <div>
-                        <dt>Last Borrowed</dt>
-                        <dd>
-                            {displayDate(
-                                book.last_borrowed_at,
-                            )}
-                        </dd>
-                    </div>
-
-                    <div>
-                        <dt>Average Loan</dt>
-                        <dd>
-                            {book.average_loan_days === null
-                                ? 'No returned loans yet'
-                                : `${book.average_loan_days} days`}
-                        </dd>
-                    </div>
-                </dl>
-            </section>
-
-            <BorrowerReviews bookId={book.book_id} />
+            <BorrowerReviews bookId={book.book_id} loans={loansQuery.data?.items ?? []} />
 
             {canShowActiveActions ? (
                 <nav
