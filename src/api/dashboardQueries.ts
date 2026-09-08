@@ -77,6 +77,29 @@ export function useDashboardIncompleteMetadata() {
     })
 }
 
+export function useFlaggedBooks(
+    options: { skip?: number; take?: number; enabled?: boolean } = {},
+) {
+    const { apiClient } = useConnection()
+    const dashboardApi = createDashboardApi(apiClient)
+
+    return useQuery({
+        queryKey: queryKeys.dashboard.flaggedBooks({
+            skip: options.skip,
+            take: options.take,
+        }),
+        queryFn: ({ signal }) =>
+            dashboardApi.listFlaggedBooks(
+                {
+                    skip: options.skip,
+                    take: options.take,
+                },
+                { signal },
+            ),
+        enabled: options.enabled ?? true,
+    })
+}
+
 export function useInfiniteIncompleteMetadataBooks(
     options: {
         field?: string

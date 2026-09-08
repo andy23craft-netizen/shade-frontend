@@ -456,6 +456,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{book_id}/flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Book Flag */
+        post: operations["set_book_flag_books__book_id__flag_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/{book_id}/mark-read": {
         parameters: {
             query?: never;
@@ -695,6 +712,23 @@ export interface paths {
         };
         /** Get Dashboard Breakdowns */
         get: operations["get_dashboard_breakdowns_dashboard_breakdowns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/flagged-books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Flagged Books */
+        get: operations["list_flagged_books_dashboard_flagged_books_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1603,6 +1637,11 @@ export interface components {
             /** Illustrator Ids */
             illustrator_ids?: string[];
             /**
+             * Is Flagged
+             * @default false
+             */
+            is_flagged: boolean;
+            /**
              * Is Read
              * @default false
              */
@@ -1731,6 +1770,11 @@ export interface components {
             editors?: components["schemas"]["BookPersonRead"][];
             /** Illustrators */
             illustrators?: components["schemas"]["BookPersonRead"][];
+            /**
+             * Is Flagged
+             * @default false
+             */
+            is_flagged: boolean;
             /**
              * Is Read
              * @default false
@@ -2811,6 +2855,11 @@ export interface components {
         SetBookAvailabilityRequest: {
             reservation?: components["schemas"]["ReservationWrite"] | null;
             status: components["schemas"]["Status"];
+        };
+        /** SetBookFlagRequest */
+        SetBookFlagRequest: {
+            /** Is Flagged */
+            is_flagged: boolean;
         };
         /** ShelfCreate */
         ShelfCreate: {
@@ -5473,6 +5522,70 @@ export interface operations {
             };
         };
     };
+    set_book_flag_books__book_id__flag_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBookFlagRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     mark_book_read_books__book_id__mark_read_post: {
         parameters: {
             query?: never;
@@ -6823,6 +6936,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardBreakdowns"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_flagged_books_dashboard_flagged_books_get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                take?: number | null;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookList"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
             /** @description Authentication failure */

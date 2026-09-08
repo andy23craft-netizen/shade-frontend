@@ -101,6 +101,33 @@ describe('createDashboardApi', () => {
         expect(result).toBe(incompleteMetadata)
     })
 
+    it('lists flagged books with paired pagination', async () => {
+        const books: BookList = { items: [], total: 0 }
+        const client = createClient()
+        vi.mocked(client.getJson).mockResolvedValue(books)
+
+        const result = await createDashboardApi(client).listFlaggedBooks({
+            skip: 30,
+            take: 30,
+        })
+
+        expect(client.getJson).toHaveBeenCalledWith(
+            '/dashboard/flagged-books?skip=30&take=30',
+        )
+        expect(result).toBe(books)
+    })
+
+    it('omits incomplete flagged-book pagination pairs', async () => {
+        const client = createClient()
+        vi.mocked(client.getJson).mockResolvedValue({} as BookList)
+
+        await createDashboardApi(client).listFlaggedBooks({ take: 30 })
+
+        expect(client.getJson).toHaveBeenCalledWith(
+            '/dashboard/flagged-books',
+        )
+    })
+
     it('lists all books with incomplete metadata without a field filter', async () => {
         const books =
             {} as BookList

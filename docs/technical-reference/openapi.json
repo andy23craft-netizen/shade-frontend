@@ -1139,6 +1139,11 @@
             "title": "Illustrator Ids",
             "type": "array"
           },
+          "is_flagged": {
+            "default": false,
+            "title": "Is Flagged",
+            "type": "boolean"
+          },
           "is_read": {
             "default": false,
             "title": "Is Read",
@@ -1614,6 +1619,11 @@
             },
             "title": "Illustrators",
             "type": "array"
+          },
+          "is_flagged": {
+            "default": false,
+            "title": "Is Flagged",
+            "type": "boolean"
           },
           "is_read": {
             "default": false,
@@ -5299,6 +5309,19 @@
         "title": "SetBookAvailabilityRequest",
         "type": "object"
       },
+      "SetBookFlagRequest": {
+        "properties": {
+          "is_flagged": {
+            "title": "Is Flagged",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_flagged"
+        ],
+        "title": "SetBookFlagRequest",
+        "type": "object"
+      },
       "ShelfCreate": {
         "properties": {
           "common_name": {
@@ -6144,7 +6167,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.2.8"
+    "version": "1.2.9"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -10442,6 +10465,109 @@
         ]
       }
     },
+    "/books/{book_id}/flag": {
+      "post": {
+        "operationId": "set_book_flag_books__book_id__flag_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBookFlagRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Book Flag",
+        "tags": [
+          "books"
+        ]
+      }
+    },
     "/books/{book_id}/mark-read": {
       "post": {
         "operationId": "mark_book_read_books__book_id__mark_read_post",
@@ -12687,6 +12813,112 @@
           }
         ],
         "summary": "Get Dashboard Breakdowns",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/dashboard/flagged-books": {
+      "get": {
+        "operationId": "list_flagged_books_dashboard_flagged_books_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "take",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Take"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Flagged Books",
         "tags": [
           "dashboard"
         ]

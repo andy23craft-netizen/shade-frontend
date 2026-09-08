@@ -35,6 +35,7 @@ import type {
 import {
     ApiError,
 } from './apiErrors'
+import { queryKeys } from './queryKeys'
 
 import {
     useBook,
@@ -53,6 +54,7 @@ import {
     useMarkBookUnread,
     useInfiniteBooks,
     useRecentBooks,
+    useSetBookFlag,
 } from './booksQueries'
 
 const mockList = vi.fn()
@@ -69,6 +71,7 @@ const mockCheckin = vi.fn()
 const mockMarkRead = vi.fn()
 const mockMarkUnread = vi.fn()
 const mockMoveToShelf = vi.fn()
+const mockSetFlag = vi.fn()
 
 vi.mock('./booksApi', () => ({
     createBooksApi: () => ({
@@ -81,6 +84,7 @@ vi.mock('./booksApi', () => ({
         create: mockCreate,
         update: mockUpdate,
         moveToShelf: mockMoveToShelf,
+        setFlag: mockSetFlag,
         remove: mockRemove,
         checkout: mockCheckout,
         checkin: mockCheckin,
@@ -1781,6 +1785,39 @@ it(
             mockGetCover,
         ).not.toHaveBeenCalled()
 
+        queryClient.clear()
+    })
+
+    it('writes the flagged book and invalidates book and dashboard caches', async () => {
+        const book = {
+            book_id: 'book-123',
+            is_flagged: true,
+        } as BookRead
+        mockSetFlag.mockResolvedValueOnce(book)
+        const { Wrapper, queryClient } = createWrapper()
+        const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
+        const { result } = renderHook(() => useSetBookFlag(), {
+            wrapper: Wrapper,
+        })
+
+        await result.current.mutateAsync({
+            id: 'book-123',
+            request: { is_flagged: true },
+        })
+
+        expect(mockSetFlag).toHaveBeenCalledWith(
+            'book-123',
+            { is_flagged: true },
+        )
+        expect(queryClient.getQueryData(
+            queryKeys.books.detail('book-123'),
+        )).toBe(book)
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey: queryKeys.books.all,
+        })
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey: queryKeys.dashboard.all,
+        })
         queryClient.clear()
     })
 

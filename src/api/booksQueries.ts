@@ -39,6 +39,7 @@ import type {
     MarkUnreadRequest,
     PlacementState,
     SetBookAvailabilityRequest,
+    SetBookFlagRequest,
     Status,
 } from './apiTypes'
 
@@ -813,6 +814,31 @@ export function useSetBookAvailability() {
         onError: async (_error, variables) => {
             await queryClient.invalidateQueries({
                 queryKey: queryKeys.books.detail(variables.id),
+            })
+        },
+    })
+}
+
+export function useSetBookFlag() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const booksApi = createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: ({ id, request }: {
+            id: string
+            request: SetBookFlagRequest
+        }) => booksApi.setFlag(id, request),
+        onSuccess: async (book) => {
+            writeBookDetailCache(queryClient, book)
+            await invalidateBookCaches(queryClient, book.book_id)
+        },
+        onError: async (_error, variables) => {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.books.detail(variables.id),
+            })
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.dashboard.flaggedBooks(),
             })
         },
     })

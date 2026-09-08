@@ -374,6 +374,22 @@ export const queryKeys = {
                 'incomplete-metadata',
             ] as const,
 
+        flaggedBooks: (
+            options: { skip?: number; take?: number } = {},
+        ) => {
+            const key: { skip?: number; take?: number } = {}
+
+            if (
+                options.skip !== undefined &&
+                options.take !== undefined
+            ) {
+                key.skip = options.skip
+                key.take = options.take
+            }
+
+            return ['dashboard', 'flagged-books', key] as const
+        },
+
         incompleteMetadataBooks: (
             options: {
                 field?: string

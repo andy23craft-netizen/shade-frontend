@@ -17,6 +17,11 @@ export interface ListIncompleteMetadataBooksOptions {
     take?: number
 }
 
+export interface ListFlaggedBooksOptions {
+    skip?: number
+    take?: number
+}
+
 function nonEmptyField(
     field: string | undefined,
 ): string | undefined {
@@ -84,6 +89,30 @@ export function createDashboardApi(
                     signal: options.signal,
                 },
             )
+        },
+
+        async listFlaggedBooks(
+            listOptions: ListFlaggedBooksOptions = {},
+            options: ApiCallOptions = {},
+        ): Promise<BookList> {
+            const params = new URLSearchParams()
+
+            if (
+                listOptions.skip !== undefined &&
+                listOptions.take !== undefined
+            ) {
+                params.set('skip', String(listOptions.skip))
+                params.set('take', String(listOptions.take))
+            }
+
+            const query = params.toString()
+            const path = query === ''
+                ? '/dashboard/flagged-books'
+                : `/dashboard/flagged-books?${query}`
+
+            return options.signal === undefined
+                ? client.getJson<BookList>(path)
+                : client.getJson<BookList>(path, { signal: options.signal })
         },
 
         async listIncompleteMetadataBooks(

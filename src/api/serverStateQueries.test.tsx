@@ -28,6 +28,7 @@ import {
     useDashboard,
     useDashboardBreakdowns,
     useDashboardIncompleteMetadata,
+    useFlaggedBooks,
     useInfiniteIncompleteMetadataBooks,
 } from './dashboardQueries'
 import {
@@ -47,6 +48,7 @@ const mockGetDashboard = vi.fn()
 const mockGetDashboardBreakdowns = vi.fn()
 const mockGetIncompleteMetadata = vi.fn()
 const mockListIncompleteMetadataBooks = vi.fn()
+const mockListFlaggedBooks = vi.fn()
 
 vi.mock('./loansApi', () => ({
     createLoansApi: () => ({
@@ -64,6 +66,7 @@ vi.mock('./dashboardApi', () => ({
         mockGetIncompleteMetadata,
         listIncompleteMetadataBooks:
         mockListIncompleteMetadataBooks,
+        listFlaggedBooks: mockListFlaggedBooks,
     }),
 }))
 
@@ -649,6 +652,27 @@ describe('loans and dashboard queries', () => {
             ),
         ).toEqual(incomplete)
 
+        queryClient.clear()
+    })
+
+    it('loads flagged books with the dedicated dashboard query key', async () => {
+        const books: BookList = { items: [], total: 0 }
+        mockListFlaggedBooks.mockResolvedValueOnce(books)
+        const { Wrapper, queryClient } = createWrapper()
+
+        const { result } = renderHook(
+            () => useFlaggedBooks({ skip: 0, take: 30 }),
+            { wrapper: Wrapper },
+        )
+
+        await waitFor(() => expect(result.current.isSuccess).toBe(true))
+        expect(mockListFlaggedBooks).toHaveBeenCalledWith(
+            { skip: 0, take: 30 },
+            expect.objectContaining({ signal: expect.any(AbortSignal) }),
+        )
+        expect(queryClient.getQueryData(
+            queryKeys.dashboard.flaggedBooks({ skip: 0, take: 30 }),
+        )).toEqual(books)
         queryClient.clear()
     })
 

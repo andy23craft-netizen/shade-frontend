@@ -23,6 +23,7 @@ import type {
     PlacementState,
     Status,
     SetBookAvailabilityRequest,
+    SetBookFlagRequest,
 } from './apiTypes'
 import type {
     createApiClient,
@@ -544,6 +545,23 @@ export function createBooksApi(
             return client.requestJson<BookRead>(
                 `/books/${encodeURIComponent(id)}/availability`,
                 { method: 'POST', body: request },
+            )
+        },
+
+        setFlag(
+            id: string,
+            request: SetBookFlagRequest,
+            options: ApiCallOptions = {},
+        ): Promise<BookRead> {
+            return client.requestJson<BookRead>(
+                `/books/${encodeURIComponent(id)}/flag`,
+                {
+                    method: 'POST',
+                    body: {
+                        is_flagged: request.is_flagged,
+                    },
+                    ...withSignal(options.signal),
+                },
             )
         },
 

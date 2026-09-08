@@ -2,12 +2,12 @@ import type { components } from './generated/openapi'
 
 type Schemas = components['schemas']
 
-export type BookCreate = Omit<Schemas['BookCreate'], 'isbn_not_applicable'> &
-    Partial<Pick<Schemas['BookCreate'], 'isbn_not_applicable'>>
+export type BookCreate = Omit<Schemas['BookCreate'], 'isbn_not_applicable' | 'is_flagged'> &
+    Partial<Pick<Schemas['BookCreate'], 'isbn_not_applicable' | 'is_flagged'>>
 export type BookUpdate = Schemas['BookUpdate']
 type GeneratedBookRead = Schemas['BookRead']
-export type BookRead = Omit<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'work_id'> &
-    Partial<Pick<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'work_id'>>
+export type BookRead = Omit<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id'> &
+    Partial<Pick<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id'>>
 export type BookList = Omit<Schemas['BookList'], 'items'> & { items: BookRead[] }
 
 export type BulkBookCatalogState =
@@ -106,6 +106,7 @@ export type CompleteLibrarySetupRequest = Schemas['CompleteLibrarySetupRequest']
 export type LibrarySettingsRead = Schemas['LibrarySettingsRead']
 export type LibrarySettingsUpdate = Schemas['LibrarySettingsUpdate']
 export type SetBookAvailabilityRequest = Schemas['SetBookAvailabilityRequest']
+export type SetBookFlagRequest = Schemas['SetBookFlagRequest']
 export type BulkBookAvailabilityRequest = Schemas['BulkBookAvailabilityRequest']
 export type BulkBookAvailabilityResponse = Omit<Schemas['BulkBookAvailabilityResponse'], 'items'> & { items: BookRead[] }
 export type ReservationWrite = Schemas['ReservationWrite']

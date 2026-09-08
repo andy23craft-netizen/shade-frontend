@@ -1408,6 +1408,26 @@ describe('createBooksApi', () => {
             },
         )
     })
+
+    it('sets the book reshelving flag through its dedicated endpoint', async () => {
+        const client = createMockClient()
+        const response = { book_id: 'book-1', is_flagged: true } as BookRead
+        vi.mocked(client.requestJson).mockResolvedValue(response)
+
+        const result = await createBooksApi(client).setFlag(
+            'book/1',
+            { is_flagged: true },
+        )
+
+        expect(client.requestJson).toHaveBeenCalledWith(
+            '/books/book%2F1/flag',
+            {
+                method: 'POST',
+                body: { is_flagged: true },
+            },
+        )
+        expect(result).toBe(response)
+    })
 })
 
 
