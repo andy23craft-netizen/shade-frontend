@@ -1,7 +1,7 @@
-# FEAT-91 -- Album QR labels and scanning
+# FEAT-92 -- Album QR Labels and Scanning Research
 
-**Status:** Blocked on the shared catalog code-resolution contract and label/scanner
-infrastructure derived from PLAN-03.
+**Status:** Research needed: select and validate the shared label stock/template and complete
+      the scanner test matrix before album implementation.
 
 **Dependency group:** Exact-copy QR labels and circulation scanning.
 

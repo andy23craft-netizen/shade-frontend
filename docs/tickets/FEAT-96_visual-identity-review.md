@@ -1,6 +1,6 @@
-# FEAT-56 -- Book Visual Identity and Camera Polish
+# FEAT-96 -- Book Visual Identity and Camera Polish Review
 
-**Status:** Ready, pending visual approval.
+**Status:** Review ticket -- pending visual approval.
 
 **Depends on:** Existing Reading Room identity, camera ISBN capture, shared controls, and tenant identity boundaries.
 

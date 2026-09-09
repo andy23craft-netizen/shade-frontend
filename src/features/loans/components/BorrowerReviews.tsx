@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { Alert } from '../../../components/Alert'
 import { Button } from '../../../components/Button'
 import { LoadingState } from '../../../components/LoadingState'
-import { useInfiniteBookBorrowerReviews, usePutLoanFeedback } from '../../../api/loansQueries'
+import { useInfiniteAlbumBorrowerReviews, useInfiniteBookBorrowerReviews, usePutLoanFeedback } from '../../../api/loansQueries'
 import type { LoanFeedbackRead } from '../../../api/apiTypes'
 import type { LoanRead } from '../../../api/apiTypes'
 import { BorrowerName } from './BorrowerName'
@@ -63,8 +63,10 @@ function formatLoanDate(value: string | null | undefined): string {
     return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
-export function BorrowerReviews({ bookId, loans }: { bookId: string; loans: readonly LoanRead[] }) {
-    const query = useInfiniteBookBorrowerReviews(bookId)
+export function BorrowerReviews({ bookId, albumId, loans }: { bookId?: string; albumId?: string; loans: readonly LoanRead[] }) {
+    const bookQuery = useInfiniteBookBorrowerReviews(bookId ?? '')
+    const albumQuery = useInfiniteAlbumBorrowerReviews(albumId ?? '')
+    const query = albumId ? albumQuery : bookQuery
     const feedback = useMemo(
         () => query.data?.pages.flatMap((page) => page.items) ?? [],
         [query.data],
@@ -74,7 +76,7 @@ export function BorrowerReviews({ bookId, loans }: { bookId: string; loans: read
             <h2>Borrowing history</h2>
             {query.isPending ? <LoadingState label="Loading borrowing record…" /> : null}
             {query.isError ? <Alert variant="error">Unable to load borrower feedback. <Button onClick={() => void query.refetch()}>Retry</Button></Alert> : null}
-            {loans.length === 0 ? <p>This book has not been borrowed yet.</p> : <ol className="borrower-review-list">{loans.map((loan) => {
+            {loans.length === 0 ? <p>This {albumId ? 'album' : 'book'} has not been borrowed yet.</p> : <ol className="borrower-review-list">{loans.map((loan) => {
                 const item = feedback.find((candidate) => candidate.loan_id === loan.id)
                 return <li key={loan.id}><article><header><BorrowerName>{loan.borrower}</BorrowerName></header><p>Checked out {formatLoanDate(loan.checked_out_at)}</p><p>Returned {formatLoanDate(loan.returned_at)}</p>{item ? <Review feedback={item} /> : loan.returned_at ? <p>Rating not recorded.</p> : null}</article></li>
             })}</ol>}

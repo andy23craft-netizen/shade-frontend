@@ -19,10 +19,12 @@ import type {
     DashboardBreakdowns,
 } from '../../../api/apiTypes'
 import {
-    useRecentBooks,
     useNewReleaseBooks,
     useCurrentReadingBooks,
 } from '../../../api/booksQueries'
+import {
+    useRecentAdditions,
+} from '../../../api/catalogQueries'
 import {
     useCategories,
 } from '../../../api/categoriesQueries'
@@ -48,11 +50,14 @@ vi.mock('../../../api/booksQueries', async (importOriginal) => {
 
     return {
         ...actual,
-        useRecentBooks: vi.fn(),
         useNewReleaseBooks: vi.fn(),
         useCurrentReadingBooks: vi.fn(),
     }
 })
+
+vi.mock('../../../api/catalogQueries', () => ({
+    useRecentAdditions: vi.fn(),
+}))
 
 vi.mock('../../../api/categoriesQueries', () => ({
     useCategories: vi.fn(),
@@ -94,8 +99,8 @@ vi.mock(
     }),
 )
 
-const mockUseRecentBooks =
-    vi.mocked(useRecentBooks)
+const mockUseRecentAdditions =
+    vi.mocked(useRecentAdditions)
 const mockUseNewReleaseBooks =
     vi.mocked(useNewReleaseBooks)
 const mockUseCurrentReadingBooks =
@@ -289,8 +294,8 @@ const recentBooksFixture = {
     total: 2,
 } as unknown as BookList
 
-type RecentBooksQuery =
-    ReturnType<typeof useRecentBooks>
+type RecentAdditionsQuery =
+    ReturnType<typeof useRecentAdditions>
 
 type CategoriesQuery =
     ReturnType<typeof useCategories>
@@ -304,16 +309,28 @@ type CollectionBooksQuery =
 type BreakdownsQuery =
     ReturnType<typeof useDashboardBreakdowns>
 
-function mockRecentBooksQuery(
-    overrides: Partial<RecentBooksQuery> = {},
+function mockRecentAdditionsQuery(
+    overrides: Partial<RecentAdditionsQuery> = {},
 ) {
-    mockUseRecentBooks.mockReturnValue({
-        data: recentBooksFixture,
+    mockUseRecentAdditions.mockReturnValue({
+        data: recentBooksFixture.items.map((book) => ({
+            item_id: book.book_id,
+            media_type: 'book' as const,
+            title: book.title,
+            primary_creator: book.book_id === 'recent-1'
+                ? 'Newest Author'
+                : 'Second Author',
+            shelf_name: 'unknown',
+            status: book.status,
+            format: null,
+            active_loan_id: null,
+            checkout_eligible: true,
+        })),
         error: null,
         isPending: false,
         isError: false,
         ...overrides,
-    } as unknown as RecentBooksQuery)
+    } as unknown as RecentAdditionsQuery)
 }
 
 function mockCategoriesQuery(
@@ -365,7 +382,7 @@ function mockBreakdownsQuery(
 }
 
 function mockSuccessState() {
-    mockRecentBooksQuery()
+    mockRecentAdditionsQuery()
     const emptyBookQuery = {
         data: { items: [], total: 0 },
         error: null,
@@ -527,7 +544,7 @@ describe('HomePage', () => {
         )
     })
 
-    it('renders the recent additions returned by the newest-books query', async () => {
+    it('renders the recent additions returned by the mixed-media feed', async () => {
         await renderAppTree(['/'])
 
         const section = screen

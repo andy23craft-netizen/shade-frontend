@@ -1,6 +1,7 @@
-# FEAT-95 -- Specific Review: Book QR Label Printing
+# FEAT-93 -- Book QR Label Print Research
 
-**Status:** Specific print-review ticket. The browser generator and selection flows are delivered; final label dimensions depend on the chosen paper stock and work-printer validation.
+**Status:** Research needed. The browser generator and selection flows are delivered; final
+      label dimensions depend on the chosen paper stock and work-printer validation.
 
 **Depends on:** `FEAT-39` for copy-explicit intake.
 

@@ -1,6 +1,6 @@
-# FEAT-89 -- Dedicated Album Section
+# FEAT-94 -- Listening Dashboard Review
 
-**Status:** In progress -- awaiting Listening Dashboard design feedback.
+**Status:** Review ticket -- awaiting Listening Dashboard design feedback.
 
 **Dependency group:** Room-level navigation and album section composition.
 

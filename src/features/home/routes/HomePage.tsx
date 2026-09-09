@@ -16,13 +16,16 @@ import {
     useDashboardBreakdowns,
 } from '../../../api/dashboardQueries'
 import {
-    useRecentBooks,
     useNewReleaseBooks,
     useCurrentReadingBooks,
 } from '../../../api/booksQueries'
+import { useRecentAdditions } from '../../../api/catalogQueries'
 import {
     HomeStaffPick,
 } from '../components/HomeStaffPick'
+import {
+    HomeRecentBook,
+} from '../components/HomeRecentBook'
 import {
     homeCategoryHref,
     topHomeCategories,
@@ -33,9 +36,7 @@ import {
 import {
     HomeBookCarousel,
 } from '../components/HomeBookCarousel'
-import {
-    HomeRecentBook,
-} from '../components/HomeRecentBook'
+import { HomeRecentAddition } from '../components/HomeRecentAddition'
 import { getLibraryBranding } from '../../../config/libraryBranding'
 import {
     getLibraryDisplayName,
@@ -72,8 +73,7 @@ export function HomePage() {
     const collectionsQuery =
         useCollections()
 
-    const recentBooksQuery =
-        useRecentBooks()
+    const recentBooksQuery = useRecentAdditions()
 
     const newReleasesQuery =
         useNewReleaseBooks()
@@ -134,8 +134,7 @@ export function HomePage() {
                 !membership.on_wishlist,
         ) ?? []
 
-    const recentBooks =
-        recentBooksQuery.data?.items ?? []
+    const recentBooks = recentBooksQuery.data ?? []
 
     const newReleases =
         (newReleasesQuery.data?.items ?? []).filter(
@@ -253,14 +252,7 @@ export function HomePage() {
 
                 {recentBooks.length > 0 ? (
                     <HomeBookCarousel ariaLabel="New additions books">
-                        {recentBooks.map(
-                            (book) => (
-                                <HomeRecentBook
-                                    key={book.book_id}
-                                    book={book}
-                                />
-                            ),
-                        )}
+                        {recentBooks.map((item) => <HomeRecentAddition key={`${item.media_type}:${item.item_id}`} item={item} />)}
                     </HomeBookCarousel>
                 ) : null}
             </section>

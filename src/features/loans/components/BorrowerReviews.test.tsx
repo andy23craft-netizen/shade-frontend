@@ -2,10 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 const mockReviews = vi.fn()
+const mockAlbumReviews = vi.fn()
 const mockPutFeedback = vi.fn()
 
 vi.mock('../../../api/loansQueries', () => ({
     useInfiniteBookBorrowerReviews: () => mockReviews(),
+    useInfiniteAlbumBorrowerReviews: () => mockAlbumReviews(),
     usePutLoanFeedback: () => mockPutFeedback(),
 }))
 
@@ -46,5 +48,18 @@ describe('BorrowerReviews', () => {
         render(<BorrowerReviews bookId="book-1" loans={[]} />)
         fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
         expect(refetch).toHaveBeenCalledOnce()
+    })
+
+    it('uses the album feedback feed for an album loan', () => {
+        mockReviews.mockReturnValue({ isPending: false, isError: false, data: { pages: [] } })
+        mockAlbumReviews.mockReturnValue({
+            isPending: false, isError: false, hasNextPage: false,
+            data: { pages: [{ items: [feedback], total: 1 }] },
+        })
+        mockPutFeedback.mockReturnValue({ mutate: vi.fn(), isPending: false })
+
+        render(<BorrowerReviews albumId="album-1" loans={[{ id: 'loan-1', borrower: 'Ada Lovelace', checked_out_at: '2026-01-01T00:00:00Z', returned_at: '2026-01-02T00:00:00Z' } as never]} />)
+
+        expect(screen.getByText('A wonderful read.')).toBeVisible()
     })
 })

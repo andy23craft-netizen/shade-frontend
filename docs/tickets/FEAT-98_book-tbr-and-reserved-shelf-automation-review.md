@@ -1,4 +1,4 @@
-# FEAT-99 -- Review: Book TBR and Reserved-Shelf Automation
+# FEAT-98 -- Review: Book TBR and Reserved-Shelf Automation
 
 **Status:** Review ticket. Implementation is complete against the checked-in 1.2.4 contract; live-backend verification and reporting remain.
 

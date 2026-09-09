@@ -359,9 +359,10 @@ export const queryKeys = {
             ['loans', id] as const,
 
         borrowerReviews: (
-            bookId: string,
+            itemId: string,
+            mediaType: 'book' | 'album' = 'book',
             options: { take: number } = { take: 20 },
-        ) => ['loans', 'borrower-reviews', 'book', bookId, options] as const,
+        ) => ['loans', 'borrower-reviews', mediaType, itemId, options] as const,
     },
 
     dashboard: {

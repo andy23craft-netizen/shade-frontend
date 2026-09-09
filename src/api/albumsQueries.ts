@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useConnection } from '../features/connection/useConnection'
 import { createAlbumsApi, type ListAlbumsOptions } from './albumsApi'
+import { createLoansApi } from './loansApi'
 import type { AlbumCreate, AlbumUpdate, BulkAlbumImportRequest, BulkAlbumLookupRequest, CheckinRequest, CheckoutRequest, MarkPlayedRequest } from './apiTypes'
 import { queryKeys } from './queryKeys'
 
@@ -61,7 +62,32 @@ export function useUpdateAlbum() { const { apiClient } = useConnection(); const 
 export function useDeleteAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation((id: string) => api.remove(id)) }
 export function useRestoreAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation((id: string) => api.restore(id)) }
 export function useCheckoutAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation(({ id, request }: { id: string; request: CheckoutRequest }) => api.checkout(id, request)) }
-export function useCheckinAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation(({ id, request }: { id: string; request: CheckinRequest }) => api.checkin(id, request)) }
+export function useCheckinAlbum() {
+    const { apiClient } = useConnection()
+    const albumsApi = createAlbumsApi(apiClient)
+    const loansApi = createLoansApi(apiClient)
+
+    return useAlbumMutation(async ({
+        id,
+        request,
+        feedback,
+    }: {
+        id: string
+        request: CheckinRequest
+        feedback?: { loanId: string; rating: number; review: string }
+    }) => {
+        const album = await albumsApi.checkin(id, request)
+
+        if (feedback !== undefined) {
+            await loansApi.putFeedback(feedback.loanId, {
+                rating: feedback.rating,
+                review: feedback.review,
+            })
+        }
+
+        return album
+    })
+}
 export function useMarkAlbumPlayed() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation(({ id, request }: { id: string; request?: MarkPlayedRequest }) => api.markPlayed(id, request)) }
 export function useAlbumArtwork(id: string, enabled = true) { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useQuery({ queryKey: queryKeys.albumArtwork.detail(id), queryFn: ({ signal }) => api.getArtwork(id, { signal }), enabled: enabled && id !== '', retry: false }) }
 export function useUploadAlbumArtwork() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); const qc = useQueryClient(); return useMutation({ mutationFn: ({ id, file }: { id: string; file: File }) => api.uploadArtwork(id, file), onSuccess: async (_, { id }) => { await Promise.all([qc.invalidateQueries({ queryKey: queryKeys.albumArtwork.detail(id) }), qc.invalidateQueries({ queryKey: queryKeys.albums.detail(id) })]) } }) }

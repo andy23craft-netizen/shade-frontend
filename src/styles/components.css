@@ -7545,6 +7545,18 @@
           rgb(113 84 52 / 25%);
 }
 
+.album-loans-page .circulation-record-card__actions .app-link {
+  color: var(--album-indigo);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: .12em;
+  text-underline-offset: .16em;
+}
+
+.album-loans-page .circulation-record-card__actions .app-link:hover {
+  color: var(--album-walnut);
+}
+
 /*
  * Printed inset for the contents of compact circulation cards.
  * Keeps the card itself broad while pulling the printed record

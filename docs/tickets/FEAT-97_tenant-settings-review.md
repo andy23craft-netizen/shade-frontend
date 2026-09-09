@@ -1,6 +1,6 @@
-# FEAT-98 -- Per-Library Identity Packages
+# FEAT-97 -- Per-Library Identity Packages Review
 
-**Status:** Dalmo and Jamie packages are implemented; pending owner visual review and
+**Status:** Review ticket. Dalmo and Jamie packages are implemented; pending owner visual review and
 final sign-off.
 
 **Dependency group:** C -- tenant presentation.

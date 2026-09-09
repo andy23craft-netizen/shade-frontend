@@ -1,6 +1,6 @@
-# FEAT-88 -- Remaining frontend V2 experience
+# FEAT-90 -- Remaining frontend V2 experience
 
-**Status:** Ready in slices as backend contracts stabilize
+**Status:** Ready for implementation in independently scoped slices.
 
 **Move target:** Split/copy the applicable slices into `shade-frontend/docs/` when frontend implementation starts.
 

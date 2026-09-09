@@ -1,8 +1,8 @@
-# FEAT-96 -- Specific Review: Book Code Resolution and Circulation
+# FEAT-95 -- Specific Review: Book Code Resolution and Circulation
 
 **Status:** Specific integration-review ticket. The Loans resolver is delivered alongside the existing ISBN catalog-jump flow; live scanner and circulation review remain.
 
-**Depends on:** `FEAT-85`, shipped `POST /catalog/resolve-code`, book lifecycle routes, and library `enable_loans`.
+**Depends on:** Shipped `POST /catalog/resolve-code`, book lifecycle routes, and library `enable_loans`.
 
 ## Review objective
 

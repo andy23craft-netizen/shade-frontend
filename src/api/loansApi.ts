@@ -167,5 +167,17 @@ export function createLoansApi(
                 ? client.getJson(path)
                 : client.getJson(path, signalOptions)
         },
+        async listAlbumFeedback(
+            albumId: string,
+            options: ApiCallOptions & { skip?: number; take?: number } = {},
+        ): Promise<LoanFeedbackList> {
+            const params = new URLSearchParams()
+            if (options.skip !== undefined) params.set('skip', String(options.skip))
+            if (options.take !== undefined) params.set('take', String(options.take))
+            const query = params.toString()
+            const path = `/albums/${encodeURIComponent(albumId)}/borrower-reviews${query ? `?${query}` : ''}`
+            const signalOptions = withSignal(options.signal)
+            return signalOptions === undefined ? client.getJson(path) : client.getJson(path, signalOptions)
+        },
     }
 }
