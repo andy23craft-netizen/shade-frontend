@@ -24,6 +24,7 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
     const save = useUpdateLibrarySettings()
     const [draft, setDraft] = useState(confirmed)
     const [clientError, setClientError] = useState<string | null>(null)
+    const [tbrPickerOpen, setTbrPickerOpen] = useState(false)
     const eligibleShelves = shelves.filter(canDeleteShelf)
     const fieldError = (field: string) => isApiError(save.error) ? save.error.fieldErrors.find((error) => error.field === field)?.message : undefined
 
@@ -47,15 +48,38 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
         <section className="route-page library-settings-page">
             <header><p className="page-eyebrow">Manage Collection</p><h1 tabIndex={-1}>Library Settings</h1><p>Choose how this library handles circulation and special-purpose shelves.</p></header>
             <form className="library-settings-form" onSubmit={submit}>
-                <Field label="Circulation" helpText="This is one library-wide setting for books and albums. Turning it off prevents new loan actions; it does not delete loan history." error={fieldError('enable_loans')}>
-                    <select value={draft.enable_loans ? 'enabled' : 'disabled'} onChange={(event) => setDraft({ ...draft, enable_loans: event.target.value === 'enabled' })}>
-                        <option value="enabled">Enable loans</option><option value="disabled">Disable new loans</option>
-                    </select>
-                </Field>
+                <fieldset className="library-settings-form__circulation" aria-describedby="circulation-help">
+                    <legend>Circulation</legend>
+                    <p id="circulation-help" className="field__help">This is one library-wide setting for books and albums. Turning it off prevents new loan actions; it does not delete loan history.</p>
+                    <label className="library-settings-form__switch-label">
+                        <input
+                            type="checkbox"
+                            role="switch"
+                            checked={draft.enable_loans}
+                            onChange={(event) => setDraft({ ...draft, enable_loans: event.target.checked })}
+                        />
+                        <span className="library-settings-form__switch" aria-hidden="true"><span /></span>
+                        <span>{draft.enable_loans ? 'Loans on' : 'Loans off'}</span>
+                    </label>
+                    {fieldError('enable_loans') ? <p className="field__error">{fieldError('enable_loans')}</p> : null}
+                </fieldset>
                 <fieldset className="library-settings-form__shelves" aria-describedby="tbr-help">
                     <legend>To Be Read shelves</legend>
                     <p id="tbr-help" className="field__help">Select any number of book shelves. Shelf identity is preserved if a shelf is renamed.</p>
-                    {eligibleShelves.map((shelf) => <label key={shelf.shelf_id}><input type="checkbox" checked={draft.book_tbr_shelf_ids.includes(shelf.shelf_id)} disabled={draft.reserved_shelf_id === shelf.shelf_id} onChange={(event) => setDraft({ ...draft, book_tbr_shelf_ids: event.target.checked ? [...draft.book_tbr_shelf_ids, shelf.shelf_id] : draft.book_tbr_shelf_ids.filter((id) => id !== shelf.shelf_id) })} /> {formatShelfCommonNameForDisplay(shelf.common_name)}</label>)}
+                    <div className="library-settings-form__shelf-picker">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            aria-expanded={tbrPickerOpen}
+                            aria-controls="tbr-shelf-picker"
+                            onClick={() => setTbrPickerOpen((open) => !open)}
+                        >
+                            {tbrPickerOpen ? 'Close shelves' : draft.book_tbr_shelf_ids.length ? `Select shelves (${draft.book_tbr_shelf_ids.length})` : 'Select shelves'}
+                        </Button>
+                        {tbrPickerOpen ? <div id="tbr-shelf-picker" className="library-settings-form__shelf-dropdown">
+                            {eligibleShelves.map((shelf) => <label key={shelf.shelf_id}><input type="checkbox" checked={draft.book_tbr_shelf_ids.includes(shelf.shelf_id)} disabled={draft.reserved_shelf_id === shelf.shelf_id} onChange={(event) => setDraft({ ...draft, book_tbr_shelf_ids: event.target.checked ? [...draft.book_tbr_shelf_ids, shelf.shelf_id] : draft.book_tbr_shelf_ids.filter((id) => id !== shelf.shelf_id) })} /> {formatShelfCommonNameForDisplay(shelf.common_name)}</label>)}
+                        </div> : null}
+                    </div>
                     {fieldError('book_tbr_shelf_ids') ? <p className="field__error">{fieldError('book_tbr_shelf_ids')}</p> : null}
                 </fieldset>
                 <Field label="Reserved / will-call shelf" helpText="Optional. This shelf cannot also be a To Be Read shelf." error={fieldError('reserved_shelf_id') ?? clientError}>

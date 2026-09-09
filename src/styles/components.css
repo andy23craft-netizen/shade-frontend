@@ -93,12 +93,12 @@
     align-items: start;
   }
 
-  .books-page__heading { grid-column: 1 / -1; }
+  .books-page__heading { grid-column: 2; grid-row: 1; }
   .books-page__control-rail {
     position: sticky;
     top: calc(var(--header-height, 5rem) + 1rem);
     grid-column: 1;
-    grid-row: 2 / span 20;
+    grid-row: 1 / span 20;
   }
   .books-page__control-rail ~ * { grid-column: 2; }
   .books-page__control-rail .books-toolbar { margin-top: 0; }
@@ -115,6 +115,7 @@
   .books-page__control-rail .books-toolbar__shelf select { width: 100%; }
   .books-page__control-rail .books-toolbar__category-picker { position: static; width: 100%; margin-top: var(--space-2); box-shadow: none; }
   .books-page__control-rail .books-bulk-actions__controls { display: grid; }
+  .books-page__control-rail .books-bulk-actions { gap: var(--space-2); margin-block: 0 var(--space-3); padding: var(--space-3); }
 }
 
 /* Room-level navigation and landing surfaces. */
@@ -1050,6 +1051,21 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+.books-bulk-actions__more {
+  flex-basis: 100%;
+}
+
+.books-bulk-actions__more summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.books-bulk-actions__more-controls {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
 }
 
 .books-bulk-move {
@@ -10711,9 +10727,20 @@
 .library-settings-form { display: grid; gap: var(--space-6); margin-top: var(--space-6); padding: var(--space-6); border: 1px solid var(--color-card-border); border-radius: var(--radius-medium); background: var(--color-surface); color: var(--color-surface-text); }
 .library-settings-form select { width: 100%; padding: var(--space-3); }
 .library-settings-form .field__help { color: var(--color-surface-text); }
+.library-settings-form__circulation,
 .library-settings-form__shelves { display: grid; gap: var(--space-2); padding: 0; border: 0; }
+.library-settings-form__circulation legend,
 .library-settings-form__shelves legend { margin-bottom: var(--space-2); font-weight: 700; }
-.library-settings-form__shelves label { display: flex; gap: var(--space-2); align-items: center; }
+.library-settings-form__switch-label { display: inline-flex; align-items: center; gap: var(--space-3); width: fit-content; cursor: pointer; font-weight: 700; }
+.library-settings-form__switch-label > input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
+.library-settings-form__switch { display: inline-flex; align-items: center; inline-size: 3.25rem; block-size: 1.75rem; padding: 0.1875rem; border-radius: 999px; background: #6d6255; transition: background-color 150ms ease; }
+.library-settings-form__switch > span { inline-size: 1.375rem; block-size: 1.375rem; border-radius: 50%; background: #fffdf5; box-shadow: 0 1px 2px rgb(0 0 0 / 35%); transition: transform 150ms ease; }
+.library-settings-form__switch-label > input:checked + .library-settings-form__switch { background: #2d6a45; }
+.library-settings-form__switch-label > input:checked + .library-settings-form__switch > span { transform: translateX(1.5rem); }
+.library-settings-form__switch-label > input:focus-visible + .library-settings-form__switch { outline: 3px solid var(--color-focus-ring); outline-offset: 3px; }
+.library-settings-form__shelf-picker { position: relative; width: fit-content; }
+.library-settings-form__shelf-dropdown { position: absolute; z-index: 2; display: grid; gap: var(--space-2); min-inline-size: 18rem; max-block-size: 17rem; margin-top: var(--space-2); padding: var(--space-3); overflow-y: auto; border: 1px solid var(--color-card-border); border-radius: var(--radius-small); background: var(--color-surface); box-shadow: var(--shadow-medium); }
+.library-settings-form__shelf-dropdown label { display: flex; gap: var(--space-2); align-items: center; }
 .library-settings-form__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 
 .book-availability-control,

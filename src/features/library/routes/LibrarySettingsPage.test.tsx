@@ -21,11 +21,12 @@ describe('LibrarySettingsPage', () => {
 
     it('uses stable shelf IDs, reflects renamed labels, and excludes system shelves', () => {
         render(<LibrarySettingsPage />)
+        fireEvent.click(screen.getByRole('button', { name: 'Select shelves (1)' }))
         expect(screen.getByRole('checkbox', { name: 'New Name After Rename' })).toBeChecked()
         expect(screen.queryByText('Unknown')).not.toBeInTheDocument()
         expect(screen.queryByText('Removed')).not.toBeInTheDocument()
         fireEvent.change(screen.getByLabelText('Reserved / will-call shelf'), { target: { value: 'shelf-reserved' } })
-        fireEvent.change(screen.getByLabelText('Circulation'), { target: { value: 'disabled' } })
+        fireEvent.click(screen.getByRole('switch', { name: 'Loans on' }))
         fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
         expect(mutate).toHaveBeenCalledWith({ enable_loans: false, reserved_shelf_id: 'shelf-reserved' })
         expect(screen.getByText(/does not delete loan history/i)).toBeInTheDocument()

@@ -53,24 +53,6 @@ export function BooksBulkActions({
                     Select all loaded books
                 </Button>
 
-                <BulkMoveToShelfControl
-                    selectedBookIds={selectedBookIds}
-                    onSuccess={(response) => {
-                        onClear()
-                        onMoveSuccess?.(response)
-                    }}
-                />
-
-                <BulkStashControl
-                    selectedBookIds={selectedBookIds}
-                    onSuccess={onClear}
-                />
-
-                <BulkAvailabilityControl
-                    selectedBookIds={selectedBookIds}
-                    onSuccess={onClear}
-                />
-
                 <Button
                     type="button"
                     variant="secondary"
@@ -98,6 +80,29 @@ export function BooksBulkActions({
                         ? 'Finish Review'
                         : 'Exit selection'}
                 </Button>
+
+                <details className="books-bulk-actions__more">
+                    <summary>More collection actions</summary>
+                    <div className="books-bulk-actions__more-controls">
+                        <BulkMoveToShelfControl
+                            selectedBookIds={selectedBookIds}
+                            onSuccess={(response) => {
+                                onClear()
+                                onMoveSuccess?.(response)
+                            }}
+                        />
+
+                        <BulkStashControl
+                            selectedBookIds={selectedBookIds}
+                            onSuccess={onClear}
+                        />
+
+                        <BulkAvailabilityControl
+                            selectedBookIds={selectedBookIds}
+                            onSuccess={onClear}
+                        />
+                    </div>
+                </details>
             </div>
         </section>
     )
