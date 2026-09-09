@@ -10,13 +10,22 @@ needed to continue development safely. Start from this file alone for that basel
 A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
 ticket or the checked-in API contract. Informal UI feedback notes under `docs/tickets/` are not sequenced build
 tickets -- treat them as notes unless the user asks to implement items from them. When no ticket is supplied, check
-`docs/tickets/` for open sequenced work (currently centered on `FEAT-89_finish-dedicated-album-section.md` plus
-remaining V2 book/album slices such as `FEAT-88` and FEAT-39--55 / FEAT-90--93) or ask which work to take next rather
-than inventing a follow-on feature.
+`docs/tickets/` for the current review/research queue: FEAT-92 album QR labels/scanning, FEAT-93 book label-stock and
+printer validation, FEAT-95 book code-resolution/circulation review, FEAT-96--98 design/settings reviews, and
+FEAT-99 V2 handoff. Ask which work to take next rather than inventing a follow-on feature.
 
-**Context pack version:** 2026-09-07
+**Context pack version:** 2026-09-09
 **Backend contract:** OpenAPI / API-for-FE **1.2.4**
-**Frontend package:** currently **1.2.6**
+**Frontend package:** currently **1.3.2**
+
+**Current QR project:** Book QR generation and browser print flow are shipped. Labels encode only the deterministic,
+tenant-free payload `shade:v1:book:<book_id>` and are generated locally with `qrcode`; `/books/labels` prints the
+conventional 3 x 3 inch, two-by-three US Letter template, with selected/all-catalog batches and a starting sheet
+position. Reading Room Loans has `CatalogCodeResolver`, which sends a Shade code or ISBN to authenticated
+`POST /catalog/resolve-code` with `active_media_type: 'book'`; unique Shade copies open their existing book flow and
+commercial multi-copy results require an explicit choice. It does not locally infer tenant identity or decode UUIDs.
+Physical printer stock, Lexmark alignment, supported-phone scans, camera/hardware behavior, and re-arm review remain
+open under FEAT-93 and FEAT-95. Album QR labels/scanning are not implemented; FEAT-92 is research-only.
 
 ---
 
@@ -886,7 +895,9 @@ Reading and Listening dashboards are separate routes:
 
 Legacy `/dashboard` redirects into the Reading Dashboard. The Reading Dashboard remains a desk layout with indexed
 paper panels (`.dashboard-desk` / `.dashboard-paper*`). The desk background uses `Dashboard_Background.webp` via CSS
-variable `--dashboard-desk-image`. Listening Dashboard composition is still being refined under `FEAT-89`.
+variable `--dashboard-desk-image`. The dedicated Listening Dashboard is shipped as a record-counter composition with
+album format/crate breakdowns, listening/borrowing metrics, and a local random shelved-album dashboard selection;
+that selection never changes playback or listening history.
 
 Queries:
 
@@ -1212,7 +1223,7 @@ Checked-in OpenAPI (`info.version` `1.2.4`) and generated types should match (`y
 related routes are live in the SPA where tickets have shipped; extend existing feature modules rather than inventing
 parallel ones.
 
-Treat an open sequenced ticket under `docs/tickets/` (for example `FEAT-89_finish-dedicated-album-section.md`),
+Treat an open sequenced ticket under `docs/tickets/` (for example `FEAT-95_book-code-resolution-review.md`),
 explicit user direction, or a green `make check` as the current open-work signal. Re-run `make check` before claiming a
 new change is release-ready.
 
@@ -1349,14 +1360,13 @@ Sequenced feature tickets live under `docs/tickets/` while open and are removed 
 notes may also live there; they are not sequenced build tickets unless the user asks to implement items from them.
 Prefer the supplied ticket, an explicit user request, or product docs when choosing further work.
 
-Current open sequenced work centers on:
+Current review/research work is:
 
-* `FEAT-89_finish-dedicated-album-section.md` -- Listening Dashboard finish (body title is FEAT-05; awaiting design
-  feedback);
-* `FEAT-88_frontend-v2-experience-handoff.md` -- remaining frontend V2 experience slices;
-* book V2 backlog FEAT-39--55 and FEAT-93;
-* album follow-ons FEAT-90--92;
-* PLAN docs under `docs/tickets/` for multi-tenancy and books.
+* FEAT-92 -- album QR labels and scanning research;
+* FEAT-93 -- book QR label stock/printer validation;
+* FEAT-95 -- book code-resolution and circulation review;
+* FEAT-96--98 -- visual identity and settings reviews;
+* FEAT-99 -- remaining frontend V2 handoff.
 
 Album catalog UI is largely shipped under `src/features/albums/`. Extend those surfaces; do not re-implement Browse /
 Add / Details from the contract alone.
@@ -1368,7 +1378,7 @@ Current product capabilities are described in the sections above, including:
 * album Browse / Add / Details / Bulk Add / artwork / circulation;
 * Shelves / Dashboard deep links;
 * bulk selection and atomic bulk move-to-shelf;
-* Home room chooser plus remaining book discovery, with About at `/about`;
+* Home room chooser, including mixed-media recent additions, with About at `/about`;
 * desk/paper Reading Dashboard with healing deep links into Books cleanup mode;
 * library setup and settings;
 * mixed wishlists and typed Collections membership;
@@ -1383,11 +1393,10 @@ authenticated binary routes.
 ## Remaining planned work
 
 ```text
-docs/tickets/FEAT-89_finish-dedicated-album-section.md -- Listening Dashboard finish
-docs/tickets/FEAT-88_frontend-v2-experience-handoff.md -- remaining V2 experience slices
-docs/tickets/FEAT-39_*.md through FEAT-55_*.md / FEAT-93_*.md -- book V2 backlog
-docs/tickets/FEAT-90_*.md through FEAT-92_*.md -- album follow-ons
-docs/tickets/PRODUCT_REQS.V2.PLAN-*.md -- planning docs
+docs/tickets/FEAT-92_album-qr-and-scanning-research.md -- album QR research
+docs/tickets/FEAT-93_book-qr-label-print-research.md -- book label print validation
+docs/tickets/FEAT-95_book-code-resolution-review.md -- code resolution/circulation review
+docs/tickets/FEAT-96_*.md through FEAT-99_*.md -- visual/settings reviews and V2 handoff
 ```
 
 ---

@@ -57,7 +57,6 @@ export function QuoteLibraryPage() {
             <label>Quote text<textarea required maxLength={1000} value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} /></label>
             <label>Author<input required maxLength={255} value={draft.author} onChange={(e) => setDraft({ ...draft, author: e.target.value })} /></label>
             <label>Context (optional)<textarea maxLength={1000} value={draft.context} onChange={(e) => setDraft({ ...draft, context: e.target.value })} /></label>
-            <label><input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} /> Enabled on Home</label>
             <div className="button-row"><Button type="submit" disabled={pending || !draft.text.trim() || !draft.author.trim()}>{editing ? 'Save Quote' : 'Add Quote'}</Button>{editing ? <Button type="button" variant="secondary" onClick={() => { setEditing(null); setDraft(emptyDraft) }}>Cancel</Button> : null}</div>
         </form>
         <section aria-labelledby="saved-quotes"><h2 id="saved-quotes">Saved quotes</h2>

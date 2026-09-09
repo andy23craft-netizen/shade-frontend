@@ -1,7 +1,7 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-07 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-09 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
 other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
@@ -11,7 +11,7 @@ request takes precedence over general guidance here.
 ## Project Summary
 
 Shade is a browser UI for a personal home-library FastAPI backend. Backend contract is OpenAPI/API-for-FE
-**1.2.4**; frontend package version is currently **1.2.6**. The live product shell is room-based: Home (`/`) chooses
+**1.2.4**; frontend package version is currently **1.3.2**. The live product shell is room-based: Home (`/`) chooses
 Reading Room or Listening Room; shared Manage / Collections / Wishlists act as hallway spaces; Reading and Listening
 each have their own dashboard and loans routes (legacy `/dashboard` and `/loans` redirect into the Reading Room).
 Album catalog UI lives under `src/features/albums/` and `/albums*`; library setup/settings live under
@@ -71,6 +71,15 @@ Current functionality includes:
   for create lookup on `/books/new` and collection jump on `/dashboard`, `/books`, and `/loans`
   (`useCollectionIsbnJump`). Collection jump opens a unique match or filters `/books?isbn=`; it never creates or
   checks out from scan success alone. There is no checkout capture surface.
+- Book QR labels and safe code resolution are delivered. `bookLabelValue` emits deterministic,
+  tenant-free `shade:v1:book:<book_id>` payloads; `BookLabelsPage` (`/books/labels`) renders high-contrast QR labels
+  with `qrcode`, supports selected-book or whole-catalog batches, and prints a US Letter two-by-three sheet with a
+  configurable starting position. Book Details, successful book intake, explicit Books selection, and Manage
+  Collection feed the same label flow. `CatalogCodeResolver` on Reading Room Loans submits Shade labels or ISBNs to
+  `POST /catalog/resolve-code` with `active_media_type: 'book'`: a unique Shade copy opens its existing detail or
+  check-in flow, while commercial multi-copy results require explicit selection. It never decodes tenant identity or
+  UUIDs locally. Physical phone/camera/hardware scans, focus/re-arm behavior, and printer/label-stock validation are
+  still review work. Album QR labels/scanning are not implemented; FEAT-92 remains research only.
 - Checkout on book details via `CheckoutDialog` (`POST /books/{book_id}/checkout`); eligibility via `isCheckoutEligible`
   (`status === 'available'`); borrower and notes only (timestamps computed client-side);
   Field-linked **422**; `404`/`409`/`412` stale-state refetch with preserved borrower/notes. Display-only **412** does
@@ -151,15 +160,18 @@ Current functionality includes:
 Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, mark-played, cover
 upload/delete, availability, stash/apply-stash, or album artwork upload/delete/refetch with generic `PATCH`. Sequenced
 feature tickets live under `docs/tickets/` while open and are removed after completion. Open sequenced work currently
-centers on finishing the Listening Dashboard design (`docs/tickets/FEAT-89_finish-dedicated-album-section.md`, titled
-FEAT-05 inside the file) plus remaining V2 book/album slices (`FEAT-88`, FEAT-39--55, FEAT-90--93, and related PLAN
-docs). Informal UI feedback notes are not sequenced build tickets -- treat them as notes unless the user asks to
-implement items from them. When the directory holds only `.gitkeep` and/or informal notes, wait for an explicit
-request rather than inventing the next feature. Do not invent undocumented routes, realtime channels, or lifecycle
-shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
+is the review/research queue: FEAT-92 (album QR labels/scanning), FEAT-93 (book label stock/printer validation),
+FEAT-95 (book code-resolution/circulation review), FEAT-96--98 (visual identity and settings reviews), and FEAT-99
+(remaining V2 handoff). Informal UI feedback notes are not sequenced build tickets -- treat them as notes unless the
+user asks to implement items from them. When the directory holds only `.gitkeep` and/or informal notes, wait for an
+explicit request rather than inventing the next feature. Do not invent undocumented routes, realtime channels, or
+lifecycle shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current sequenced ticket (when one
-exists), then the product requirements docs when deciding what to build next. Album catalog UI is largely shipped;
+exists), then the product requirements docs when deciding what to build next. The currently checked-in review and
+research tickets are FEAT-92 (album QR labels/scanning), FEAT-93 (book label stock/printer validation), FEAT-95
+(book code-resolution/circulation review), FEAT-96--98 (visual identity and settings reviews), and FEAT-99 (remaining
+V2 handoff). Album catalog UI is largely shipped;
 do not re-implement album Browse/Add/Details from the OpenAPI contract alone -- extend the existing
 `src/features/albums/` surfaces and follow the active ticket.
 
@@ -209,7 +221,7 @@ inventing frontend semantics. Do not invent backend behavior from product docs a
 handoff: OpenAPI plus `API-for-FE.md` are the contract. Frontend album and V2 book work is ticket-driven under
 `docs/tickets/` (see Useful documents); regenerating client types alone does not implement UI.
 
-### Backend 1.2.4 contract (2026-09-07)
+### Backend 1.2.4 contract (2026-09-09)
 
 The checked-in contract matches backend **1.2.4** (`ci/VERSION` / OpenAPI `info.version`). Existing book, wishlist, and
 loan response shapes remain stable aside from additive fields noted below. Shipped surfaces include:
@@ -589,9 +601,11 @@ adjacent surfaces.
 (hostname tenant routing is proxy/API-owned), overdue notifications, Goodreads/StoryGraph, user accounts/roles,
 realtime sync, mark-unread, frontend author/category/artist/genre catalog admin pages (beyond inline create used by
 forms), remote Ansible/systemd/TLS/rollback orchestration, and features still blocked or deferred in `docs/tickets/`
-(for example work-correction UI, QR generation, borrower-feedback presentation, and mixed-media Home recent additions
-until their tickets are active). Categories are many-to-many via `GET /categories` and `category_ids`; authors are
-many-to-many via `GET /authors` and `author_ids` -- do not hard-code taxonomy or invent a second filter stack. Broader
+(for example album QR labels/scanning, physical label/printer validation, and unreviewed scanner re-arm behavior).
+Book and album work-correction UI, borrower-feedback presentation, and mixed-media Home recent additions are shipped;
+extend those existing surfaces rather than treating them as deferred. Categories are many-to-many via
+`GET /categories` and `category_ids`; authors are many-to-many via `GET /authors` and `author_ids` -- do not
+hard-code taxonomy or invent a second filter stack. Broader
 catalog filters beyond current Books/Albums controls stay out unless a product need explicitly requires them.
 
 Do not expand a ticket into out-of-scope features. Do not invent the next product feature merely because the API
@@ -1067,7 +1081,17 @@ Implemented:
 - `src/features/books/components/BookSelectionControl.tsx` / `BooksBulkActions.tsx` /
   `BulkMoveToShelfControl.tsx`: selection UI and atomic move-to-shelf control (live shelves; `unknown` allowed;
   `removed` excluded; confirmation; pending guard; preserve selection on failure). Colocated
-  `BulkMoveToShelfControl.test.tsx`.
+  `BulkMoveToShelfControl.test.tsx`. `BooksBulkActions` also routes the explicit selected IDs to `/books/labels` for
+  QR printing.
+- `src/features/books/labelCode.ts` / `routes/BookLabelsPage.tsx` (`/books/labels`): deterministic
+  `shade:v1:book:<book_id>` labels, generated in-browser with `qrcode` at high contrast and no tenant/public URL.
+  The print template is conventional 3 x 3 inch labels, two across by three down on US Letter; `all=1` loads the
+  whole catalog and repeated `book_id` parameters target selections. `start=1..6` leaves leading blank positions for
+  a partially used sheet. Do not rotate a copy identity on reprint or introduce server-side PDFs without a ticket.
+- `src/features/scanning/CatalogCodeResolver.tsx`: Reading Room Loans entry for manual or wedge-scanner code input.
+  It calls the authenticated catalog resolver, routes a unique Shade book copy to the existing item/circulation UI,
+  requires selection for multiple commercial ISBN matches, and distinguishes safe 404 and 422 recovery messages.
+  It is not an album resolver and does not itself open a camera scanner.
 - `src/features/books/utils/isbn.ts`: ISBN-10 / ISBN-13 checksum helpers plus `compactIsbnForListFilter` (punctuation
   strip only for `GET /books?isbn=`); used by lookup, create, scanner capture, collection jump, and `/books` ISBN list
   filtering. Not used by checkout. Colocated unit tests
@@ -1607,16 +1631,15 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
-  sequenced work includes `FEAT-89_finish-dedicated-album-section.md` (Listening Dashboard finish; body title FEAT-05),
-  `FEAT-88_frontend-v2-experience-handoff.md`, remaining book V2 tickets (FEAT-39--55, FEAT-93), album follow-ons
-  (FEAT-90--92), and PLAN docs. Informal UI feedback notes may also live here; they are not sequenced build tickets
-  unless the user asks to implement items from them. When the directory holds only `.gitkeep` and/or informal notes,
-  ask which work to take next rather than inventing a follow-on feature.
+- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. The current
+  queue is FEAT-92, FEAT-93, FEAT-95--99; see the Project Summary for each ticket's focus. Informal UI feedback notes
+  may also live here; they are not sequenced build tickets unless the user asks to implement items from them. When the
+  directory holds only `.gitkeep` and/or informal notes, ask which work to take next rather than inventing a follow-on
+  feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with Listening Room / album
-  tickets (for example `FEAT-89`).
+  tickets (for example `FEAT-92`).
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
   `info.version` `1.2.4` -- see Backend Contract), including book `book_id` / covers / filters / bulk / stash /
   availability routes, loans with nullable `book_id`/`album_id`, `media_type`, and `feedback_present`, wishlist
