@@ -49,6 +49,7 @@ import {
 import {
     randomHomeQuote,
 } from '../homeQuotes'
+import { homeHeadingsForQuote } from '../homeQuoteHeadings'
 import listeningRoomImage from '../../../assets/Listening_Room.png'
 import readingRoomImage from '../../../assets/Reading_Room.png'
 import { useQuotes } from '../../../api/quotesQueries'
@@ -152,6 +153,7 @@ export function HomePage() {
     const categoriesError =
         breakdownsQuery.isError ||
         categoriesQuery.isError
+    const homeHeadings = homeHeadingsForQuote(quote)
 
     return (
         <section className="route-page home-page">
@@ -226,9 +228,8 @@ export function HomePage() {
                 className="home-section home-section--recent"
                 aria-labelledby="home-recent-heading"
             >
-                <h2 id="home-recent-heading">
-                    New Additions
-                </h2>
+                <h2 id="home-recent-heading" className="home-section__expressive-heading">{homeHeadings.newAdditions}</h2>
+                <p className="home-section__functional-heading">New Additions</p>
 
                 {recentBooksQuery.isPending ? (
                     <LoadingState label="Loading new additions…" />
@@ -268,7 +269,8 @@ export function HomePage() {
                 className="home-section home-section--new-releases"
                 aria-labelledby="home-new-releases-heading"
             >
-                <h2 id="home-new-releases-heading">New Releases</h2>
+                <h2 id="home-new-releases-heading" className="home-section__expressive-heading">{homeHeadings.newReleases}</h2>
+                <p className="home-section__functional-heading">New Releases</p>
                 {newReleasesQuery.isPending ? <LoadingState label="Loading new releases…" /> : null}
                 {newReleasesQuery.isError ? <p role="alert">New releases could not be loaded.</p> : null}
                 {!newReleasesQuery.isPending && !newReleasesQuery.isError && newReleases.length === 0 ? (
@@ -285,7 +287,8 @@ export function HomePage() {
                 className="home-section home-section--current-reading"
                 aria-labelledby="home-current-reading-heading"
             >
-                <h2 id="home-current-reading-heading">Current Reading</h2>
+                <h2 id="home-current-reading-heading" className="home-section__expressive-heading">{homeHeadings.currentReading}</h2>
+                <p className="home-section__functional-heading">Current Reading</p>
                 {currentReadingQuery.isPending ? <LoadingState label="Loading current reading…" /> : null}
                 {currentReadingQuery.isError ? <p role="alert">Current reading could not be loaded.</p> : null}
                 {!currentReadingQuery.isPending && !currentReadingQuery.isError && currentReading.length === 0 ? (
@@ -302,9 +305,8 @@ export function HomePage() {
                 className="home-section home-section--categories"
                 aria-labelledby="home-categories-heading"
             >
-                <h2 id="home-categories-heading">
-                    Browse the Stacks
-                </h2>
+                <h2 id="home-categories-heading" className="home-section__expressive-heading">{homeHeadings.browse}</h2>
+                <p className="home-section__functional-heading">Browse the Stacks</p>
 
                 {categoriesPending ? (
                     <LoadingState label="Loading categories…" />
@@ -356,9 +358,8 @@ export function HomePage() {
                 className="home-section home-section--staff"
                 aria-labelledby="home-staff-picks-heading"
             >
-                <h2 id="home-staff-picks-heading">
-                    Staff Picks
-                </h2>
+                <h2 id="home-staff-picks-heading" className="home-section__expressive-heading">{homeHeadings.staffPicks}</h2>
+                <p className="home-section__functional-heading">Staff Picks</p>
 
                 {collectionsQuery.isPending ||
                 (staffPicksCollection !==

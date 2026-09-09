@@ -432,10 +432,7 @@ describe('HomePage', () => {
         await renderAppTree(['/'])
 
         const section = screen
-            .getByRole('heading', {
-                level: 2,
-                name: 'Browse the Stacks',
-            })
+            .getByText('Browse the Stacks')
             .closest('section')
 
         expect(section).not.toBeNull()
@@ -534,10 +531,7 @@ describe('HomePage', () => {
         await renderAppTree(['/'])
 
         const section = screen
-            .getByRole('heading', {
-                level: 2,
-                name: 'New Additions',
-            })
+            .getByText('New Additions')
             .closest('section')
 
         expect(section).not.toBeNull()
