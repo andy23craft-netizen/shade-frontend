@@ -49,6 +49,7 @@ import {
 import {
     useCollectionIsbnJump,
 } from '../../scanning/useCollectionIsbnJump'
+import { CatalogCodeResolver } from '../../scanning/CatalogCodeResolver'
 
 interface SelectedCheckinProps {
     bookId: string
@@ -431,6 +432,8 @@ export function LoansPage() {
                         : 's'} in the history.
                 </p>
             </header>
+
+            <CatalogCodeResolver />
 
             {selectedBookId ? (
                 <SelectedCheckin

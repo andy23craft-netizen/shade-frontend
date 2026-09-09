@@ -7,6 +7,7 @@ import {
     BookDetailsPage,
     BooksPage,
     BulkAddPage,
+    BookLabelsPage,
     CollectionsPage,
     DashboardPage,
     DeleteBookPage,
@@ -130,6 +131,7 @@ export const routeConfig = [
                 },
                 element: <BulkAddPage />,
             },
+            { path: routeMetadata.bookLabels.path, handle: { title: routeMetadata.bookLabels.title }, element: <BookLabelsPage /> },
             {
                 path: routeMetadata.bookDetails.path,
                 handle: {

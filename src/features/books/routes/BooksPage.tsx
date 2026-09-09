@@ -582,6 +582,12 @@ export function BooksPage() {
                         bulkSelection.selectVisible
                     }
                     onClear={bulkSelection.clear}
+                    onGenerateLabels={() => {
+                        const query = bulkSelection.selectedBooks
+                            .map((book) => `book_id=${encodeURIComponent(book.book_id)}`)
+                            .join('&')
+                        navigate(`/books/labels?${query}`)
+                    }}
                     onExit={() => {
                         bulkSelection.clear()
                         setIsBulkSelectionMode(false)

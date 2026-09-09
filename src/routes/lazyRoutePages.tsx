@@ -103,6 +103,8 @@ export const BulkAddPage = lazy(() =>
     ),
 )
 
+export const BookLabelsPage = lazy(() => import('../features/books/routes/BookLabelsPage').then((module) => ({ default: module.BookLabelsPage })))
+
 export const BookDetailsPage = lazy(() =>
     import(
         '../features/books/routes/BookDetailsPage'

@@ -540,6 +540,8 @@ export function BookDetailsPage() {
                         Edit Book
                     </AppLink>
 
+                    <AppLink to={`/books/labels?book_id=${encodeURIComponent(book.book_id)}`} variant="secondary">Print Label</AppLink>
+
                     <Button
                         type="button"
                         variant="secondary"

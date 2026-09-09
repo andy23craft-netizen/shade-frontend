@@ -10669,6 +10669,23 @@
   max-inline-size: 34rem;
 }
 
+.book-label-sheet { display: grid; grid-template-columns: repeat(2, 3in); grid-auto-rows: 3in; gap: 0; width: 6in; }
+.book-label { box-sizing: border-box; border: 1px solid #111; display: grid; place-items: center; align-content: center; gap: .08in; padding: .16in; color: #111; background: #fff; text-align: center; overflow: hidden; }
+.book-label img { width: 2.15in; height: 2.15in; image-rendering: pixelated; }
+.book-label strong { max-width: 2.6in; font-size: 10pt; line-height: 1.15; }
+.book-label span { font-size: 8pt; }
+.book-label--blank { border-color: transparent; }
+.book-labels-page__controls { display: flex; gap: var(--space-3); align-items: end; margin: var(--space-4) 0; }
+.catalog-code-resolver { margin: var(--space-5) 0; padding: var(--space-4); background: var(--color-card); color: var(--color-surface-text); }
+.catalog-code-resolver form { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; }
+.catalog-code-resolver label { display: grid; gap: var(--space-1); }
+@media print {
+  @page { size: letter portrait; margin: .5in 1.25in; }
+  .app-shell > :not(.app-main), .app-main > :not(.book-labels-page), .no-print { display: none !important; }
+  .app-main, .book-labels-page { margin: 0; padding: 0; background: #fff; }
+  .book-label-sheet { display: grid !important; }
+}
+
 .book-availability-control__reservation textarea {
   min-block-size: 6rem;
   resize: vertical;

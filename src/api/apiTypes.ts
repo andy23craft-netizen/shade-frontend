@@ -111,6 +111,9 @@ export type BulkBookAvailabilityRequest = Schemas['BulkBookAvailabilityRequest']
 export type BulkBookAvailabilityResponse = Omit<Schemas['BulkBookAvailabilityResponse'], 'items'> & { items: BookRead[] }
 export type ReservationWrite = Schemas['ReservationWrite']
 export type WorkRead = Schemas['WorkRead']
+export type ResolveCodeRequest = Schemas['ResolveCodeRequest']
+export type ResolveCodeResponse = Schemas['ResolveCodeResponse']
+export type PhysicalItemSummary = Schemas['PhysicalItemSummary']
 
 export type DashboardBorrowing =
     Schemas['DashboardBorrowing']

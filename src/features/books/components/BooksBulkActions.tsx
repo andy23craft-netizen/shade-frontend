@@ -15,6 +15,7 @@ interface BooksBulkActionsProps {
     onClear: () => void
     onExit: () => void
     onMoveSuccess?: (response: BulkShelfMoveResponse) => void
+    onGenerateLabels: () => void
     reviewMode?: boolean
 }
 
@@ -25,6 +26,7 @@ export function BooksBulkActions({
                                      onClear,
                                      onExit,
     onMoveSuccess,
+    onGenerateLabels,
     reviewMode = false,
 }: BooksBulkActionsProps) {
     return (
@@ -68,6 +70,15 @@ export function BooksBulkActions({
                     selectedBookIds={selectedBookIds}
                     onSuccess={onClear}
                 />
+
+                <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={selectedCount === 0}
+                    onClick={onGenerateLabels}
+                >
+                    Print labels for selected books
+                </Button>
 
                 <Button
                     type="button"

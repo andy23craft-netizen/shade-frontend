@@ -25,6 +25,12 @@ export function ManageCollectionPage() {
                         className="manage-collection-page__actions"
                         aria-label="Collection maintenance"
                     >
+                        <AppLink to="/books/labels?all=1" className="manage-collection-action">
+                            <span className="manage-collection-action__title">Print Every Book Label</span>
+                            <span className="manage-collection-action__description">Prepare printable labels for every book in the catalog.</span>
+                            <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
+                        </AppLink>
+
                         <AppLink
                             to="/library/setup"
                             className="manage-collection-action"
