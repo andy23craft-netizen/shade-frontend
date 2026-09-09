@@ -27,6 +27,7 @@ export function useNewReleaseAlbums(
 ) {
     return useAlbums({
         placementState: 'shelved',
+        skip: 0,
         take: 100,
         sortBy: 'releaseDate',
         sortOrder: 'desc',
