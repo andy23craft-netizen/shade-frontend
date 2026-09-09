@@ -16,13 +16,13 @@ export function WorkCorrection({ book }: { book: BookRead }) {
     const workQuery = useWork(book.work_id ?? '', open)
     const merge = useMergeWorks(); const split = useSplitWork()
     if (!book.work_id) return null
-    if (!open) return <section className="book-details-panel"><h2>Possible duplicate copies</h2><p>Check only when you need to correct a duplicate grouping.</p><Button variant="secondary" onClick={() => setOpen(true)}>Check possible duplicates</Button></section>
+    if (!open) return <section className="book-details-panel book-work-correction"><h2>Possible duplicate copies</h2><p>Check only when you need to correct a duplicate grouping.</p><Button variant="secondary" onClick={() => setOpen(true)}>Check possible duplicates</Button></section>
     const matches = matchesQuery.data?.items.filter((item) => item.book_id !== book.book_id && item.work_id !== book.work_id && ((Boolean(book.isbn13?.trim()) && item.isbn13 === book.isbn13) || (normalize(item.title) === normalize(book.title) && authors(item) === authors(book)))) ?? []
     const candidate = matches.find((item) => item.book_id === candidateId)
     const copies = workQuery.data?.item_ids ?? []
     const error = merge.error ?? split.error
     const busy = merge.isPending || split.isPending
-    return <section className="book-details-panel"><h2>Possible duplicate copies</h2><p>Only ISBN or title-and-author matches are offered. Check title, author, and shelf against the physical copy.</p>
+    return <section className="book-details-panel book-work-correction"><h2>Possible duplicate copies</h2><p>Only ISBN or title-and-author matches are offered. Check title, author, and shelf against the physical copy.</p>
         {matchesQuery.isPending ? <p>Checking for matches…</p> : matches.length ? <label>Matching copy <select value={candidateId} onChange={(event) => setCandidateId(event.target.value)}><option value="">Choose a matching copy</option>{matches.map((item) => <option key={item.book_id} value={item.book_id}>{item.title} — {formatBookAuthors(item.authors)} — {item.shelf_name ?? 'Unshelved'}</option>)}</select></label> : <p>No matching copies found.</p>}
         <Button variant="secondary" disabled={!candidate || busy} onClick={() => setAction('merge')}>Group as Same Work</Button>
         {copies.length > 1 ? <Button variant="secondary" disabled={busy} onClick={() => setAction('split')}>Separate from Work</Button> : null}

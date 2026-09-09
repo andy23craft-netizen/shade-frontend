@@ -1,6 +1,6 @@
 # FEAT-82 -- Book TBR and Reserved-Shelf Automation
 
-**Status:** Blocked on `BACKEND-HANDOFF-PLAN-03` atomic shelf/status/reservation semantics and pending tenant configuration decisions.
+**Status:** In progress. The checked-in 1.2.4 contract supplies atomic availability/reservation semantics; remaining behavior needs live-backend verification.
 
 **Depends on:** Library settings, shelf IDs, bulk shelf move, book availability, checkout, and the remaining automation contract.
 
@@ -10,12 +10,12 @@ Consume tenant-configured TBR and Reserved shelf IDs while keeping shelf, status
 
 ## Acceptance criteria
 
-- [ ] Moving to any configured TBR shelf reflects backend-applied Reserved state; leaving all TBR shelves reflects Available when eligible.
-- [ ] Reading and Display Only precedence is rendered without frontend attempts to repair state.
-- [ ] Moving to the configured Reserved shelf collects required pickup name and optional note and submits structured reservation data.
-- [ ] Reservation details clear according to the backend contract after checkout or leaving the Reserved shelf.
-- [ ] Bulk move to a TBR shelf relies on the atomic bulk response and invalidates books, shelves, dashboard, and settings-dependent views.
-- [ ] Missing settings, deleted shelf references, disabled loans, `409`, and validation failures have explicit recovery states.
+- [x] Moving to a configured TBR shelf relies on backend-applied status; the frontend does not calculate or repair Reserved/Available state.
+- [x] Reading and Display Only precedence is rendered from the backend response without frontend repair.
+- [x] Reserve via the configured Reserved shelf: the UI collects required pickup name and optional note through the atomic `POST /books/{id}/availability` Reserved transition, which the contract says moves the book to the configured Reserved shelf. The dedicated availability flow is the approved entry point; no shelf-picker reservation dialog is needed.
+- [ ] Verify live-backend clearing of reservation details after checkout and after moving away from TBR/Reserved shelves. No frontend clearing behavior should be added.
+- [x] Bulk shelf moves invalidate books, individual details, shelves, dashboard, collections, and library settings-dependent views.
+- [ ] Finish explicit recovery coverage: test deleted configured-shelf references, disabled-loans behavior, `409`, and server validation errors against a running backend.
 
 ## Out of scope
 

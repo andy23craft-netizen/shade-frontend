@@ -758,8 +758,10 @@ describe('BooksPage', () => {
         )
 
         expect(
-            screen.getByLabelText('Fiction'),
-        ).toBeChecked()
+            screen.getByRole('button', {
+                name: 'Categories (1)',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             mockUseInfiniteBooks,
@@ -798,8 +800,10 @@ describe('BooksPage', () => {
         )
 
         expect(
-            screen.getByLabelText('Fiction'),
-        ).not.toBeChecked()
+            screen.getByRole('button', {
+                name: 'Categories',
+            }),
+        ).toBeInTheDocument()
 
         expect(
             mockUseInfiniteBooks,

@@ -592,6 +592,15 @@
   font-weight: 700;
 }
 
+.alert a {
+  color: var(--color-link);
+  font-weight: 700;
+}
+
+.alert a:hover {
+  color: var(--color-link-hover);
+}
+
 .loading-state {
   display: grid;
   gap: var(--space-2);
@@ -5040,6 +5049,42 @@
   min-width: 0;
 }
 
+.book-details-card__reshelve {
+  position: absolute;
+  z-index: 1;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+  color: var(--color-surface-text);
+}
+
+.book-details-card__reshelve label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.book-details-card__reshelve input {
+  min-block-size: auto;
+  accent-color: var(--color-primary);
+}
+
+.book-details-card__reshelve-error {
+  max-inline-size: 16rem;
+  color: var(--color-danger);
+  font-size: var(--font-size-small);
+  text-align: end;
+}
+
 .book-details-card__content {
   display: grid;
   min-width: 0;
@@ -5126,6 +5171,11 @@
     width: min(11rem, 62vw);
     justify-self: center;
   }
+
+  .book-details-card__reshelve {
+    top: var(--space-3);
+    right: var(--space-3);
+  }
 }
 
 @media (max-width: 34rem) {
@@ -5153,6 +5203,28 @@
 
 .book-details-panel p {
   color: var(--color-surface-text-muted);
+}
+
+.book-edit__side-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.book-edit__side-panels .book-work-correction {
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.book-edit__side-panels .book-work-correction h2 {
+  font-size: 1.125rem;
+}
+
+@media (max-width: 48rem) {
+  .book-edit__side-panels {
+    grid-template-columns: 1fr;
+  }
 }
 
 .book-details-panel__metadata {
@@ -10556,8 +10628,9 @@
 }
 
 .library-settings-page { max-width: 52rem; margin-inline: auto; }
-.library-settings-form { display: grid; gap: var(--space-6); margin-top: var(--space-6); padding: var(--space-6); border: 1px solid var(--color-card-border); border-radius: var(--radius-medium); background: var(--color-surface); }
+.library-settings-form { display: grid; gap: var(--space-6); margin-top: var(--space-6); padding: var(--space-6); border: 1px solid var(--color-card-border); border-radius: var(--radius-medium); background: var(--color-surface); color: var(--color-surface-text); }
 .library-settings-form select { width: 100%; padding: var(--space-3); }
+.library-settings-form .field__help { color: var(--color-surface-text); }
 .library-settings-form__shelves { display: grid; gap: var(--space-2); padding: 0; border: 0; }
 .library-settings-form__shelves legend { margin-bottom: var(--space-2); font-weight: 700; }
 .library-settings-form__shelves label { display: flex; gap: var(--space-2); align-items: center; }
@@ -10575,6 +10648,30 @@
 .books-bulk-availability select {
   min-block-size: 2.75rem;
   max-inline-size: 18rem;
+}
+
+.book-availability-control__reservation {
+  display: grid;
+  flex-basis: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-card-rule);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-muted);
+  color: var(--color-surface-text);
+}
+
+.book-availability-control__reservation input,
+.book-availability-control__reservation textarea {
+  inline-size: 100%;
+  max-inline-size: 34rem;
+}
+
+.book-availability-control__reservation textarea {
+  min-block-size: 6rem;
+  resize: vertical;
 }
 
 .books-bulk-availability .alert {

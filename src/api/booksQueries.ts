@@ -116,6 +116,12 @@ async function invalidateBulkShelfMoveCaches(
     await queryClient.invalidateQueries({
         queryKey: queryKeys.collections.all,
     })
+
+    // Shelf automation is configured per library. Re-read settings after any
+    // placement change so controls do not rely on a stale TBR/Reserved mapping.
+    await queryClient.invalidateQueries({
+        queryKey: ['library'],
+    })
 }
 
 async function invalidateBulkBookImportCaches(

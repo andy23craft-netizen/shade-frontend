@@ -243,7 +243,7 @@ describe('BookDetailsPage', () => {
         } as ReturnType<typeof useBook>)
 
         renderBookDetails()
-        fireEvent.click(screen.getByRole('button', { name: 'Mark Needs Reshelving' }))
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Reshelve' }))
 
         expect(mutate).toHaveBeenCalledWith({
             id: completeBook.book_id,

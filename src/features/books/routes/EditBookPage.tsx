@@ -29,7 +29,6 @@ import {
 } from '../../../api/bookIdentity'
 import {
     useBook,
-    useSetBookAvailability,
     useUpdateBook,
 } from '../../../api/booksQueries'
 import {
@@ -58,8 +57,7 @@ import type {
     AuthorRead,
     CategoryRead,
 } from '../../../api/apiTypes'
-import type { Status } from '../../../api/apiTypes'
-import { Field } from '../../../components/Field'
+import { BookAvailabilityControl } from '../components/BookAvailabilityControl'
 
 const BOOK_FORM_FIELDS = new Set<string>([
     'title',
@@ -164,7 +162,6 @@ export function EditBookPage() {
     const createCategory = useCreateCategory()
     const updateCategory = useUpdateCategory()
     const updateBook = useUpdateBook()
-    const availabilityMutation = useSetBookAvailability()
 
     const initializedBookIdRef =
         useRef<string | null>(null)
@@ -185,7 +182,7 @@ export function EditBookPage() {
         formError,
         setFormError,
     ] = useState<string | null>(null)
-    const [availability, setAvailability] = useState<Status | null>(null)
+    const [hasSavedRelatedChange, setHasSavedRelatedChange] = useState(false)
 
     useEffect(() => {
         const book = bookQuery.data
@@ -211,7 +208,7 @@ export function EditBookPage() {
                 shelves,
             ),
         )
-        setAvailability(book.status)
+        setHasSavedRelatedChange(false)
 
         initializedBookIdRef.current =
             book.book_id
@@ -256,7 +253,7 @@ export function EditBookPage() {
         firstName: string,
         surname: string,
     ): Promise<AuthorRead> {
-        return updateAuthor.mutateAsync({
+        const updated = await updateAuthor.mutateAsync({
             authorId: author.person_id,
             author: {
                 first_name:
@@ -266,6 +263,8 @@ export function EditBookPage() {
                 surname: surname.trim(),
             },
         })
+        setHasSavedRelatedChange(true)
+        return updated
     }
 
     async function handleUpdateCategory(
@@ -276,13 +275,15 @@ export function EditBookPage() {
             .trim()
             .replace(/\s+/g, ' ')
 
-        return updateCategory.mutateAsync({
+        const updated = await updateCategory.mutateAsync({
             categoryId: category.category_id,
             category: {
                 name: normalizedName,
                 slug: categorySlug(normalizedName),
             },
         })
+        setHasSavedRelatedChange(true)
+        return updated
     }
 
     function handleSubmit(
@@ -313,6 +314,10 @@ export function EditBookPage() {
             )
 
         if (Object.keys(request).length === 0) {
+            if (hasSavedRelatedChange) {
+                navigate(`/books/${book.book_id}`)
+                return
+            }
             setFormError(
                 'No changes have been made.',
             )
@@ -634,25 +639,15 @@ export function EditBookPage() {
                 formError={formError}
             />
 
-            <WorkCorrection book={book} />
+            <div className="book-edit__side-panels">
+                <WorkCorrection book={book} />
 
-            {availability !== null && book.status !== 'on_loan' ? (
-                <section>
-                    <h2>Availability</h2>
-                    <Field label="Availability">
-                        <select value={availability} onChange={(event) => setAvailability(event.target.value as Status)}>
-                            <option value="available">Available</option>
-                            <option value="reserved">Reserved</option>
-                            <option value="reading">Reading</option>
-                            <option value="missing">Missing</option>
-                            <option value="display_only">Display only</option>
-                        </select>
-                    </Field>
-                    <button type="button" disabled={availabilityMutation.isPending || availability === book.status} onClick={() => availabilityMutation.mutate({ id: book.book_id, request: { status: availability } })}>
-                        {availabilityMutation.isPending ? 'Saving availability…' : 'Save availability'}
-                    </button>
-                </section>
-            ) : null}
+                <BookAvailabilityControl
+                    book={book}
+                    hasActiveLoan={book.status === 'on_loan'}
+                    onSuccess={() => setHasSavedRelatedChange(true)}
+                />
+            </div>
         </section>
     )
 }

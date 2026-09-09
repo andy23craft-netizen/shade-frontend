@@ -46,6 +46,9 @@ import {
 import {
     useShelves,
 } from '../../../api/shelvesQueries'
+import {
+    useLibrarySettings,
+} from '../../../api/libraryQueries'
 import { EditBookPage } from './EditBookPage'
 
 vi.mock('../../../api/booksQueries', () => ({
@@ -56,6 +59,10 @@ vi.mock('../../../api/booksQueries', () => ({
 
 vi.mock('../../../api/shelvesQueries', () => ({
     useShelves: vi.fn(),
+}))
+
+vi.mock('../../../api/libraryQueries', () => ({
+    useLibrarySettings: vi.fn(),
 }))
 
 vi.mock('../../../api/categoriesQueries', () => ({
@@ -96,6 +103,7 @@ const mockUseUpdateBook =
 const mockUseSetBookAvailability =
     vi.mocked(useSetBookAvailability)
 const mockUseShelves = vi.mocked(useShelves)
+const mockUseLibrarySettings = vi.mocked(useLibrarySettings)
 const mockUseCategories =
     vi.mocked(useCategories)
 const mockUseAuthors =
@@ -310,6 +318,16 @@ describe('EditBookPage', () => {
         setupSuccessfulShelves()
         setupSuccessfulCategories()
         setupSuccessfulAuthors()
+        mockUseLibrarySettings.mockReturnValue({
+            data: {
+                enable_loans: true,
+                book_tbr_shelf_ids: [],
+                reserved_shelf_id: 'reserved-shelf',
+            },
+            isSuccess: true,
+            isError: false,
+            refetch: vi.fn(),
+        } as unknown as ReturnType<typeof useLibrarySettings>)
         mockUseSetBookAvailability.mockReturnValue({
             mutate: vi.fn(),
             isPending: false,

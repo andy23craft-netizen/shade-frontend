@@ -299,6 +299,36 @@ export function BookDetailsPage() {
             </div>
 
             <article className="book-details-card">
+                {canShowActiveActions ? (
+                    <div className="book-details-card__reshelve">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={book.is_flagged ?? false}
+                                disabled={setBookFlag.isPending}
+                                onChange={(event) => {
+                                    if (event.target.checked) {
+                                        setBookFlag.mutate({
+                                            id: book.book_id,
+                                            request: { is_flagged: true },
+                                        })
+                                        return
+                                    }
+
+                                    setConfirmClearFlag(true)
+                                }}
+                            />
+                            Reshelve
+                        </label>
+                        {setBookFlag.error ? (
+                            <span className="book-details-card__reshelve-error" role="alert">
+                                {setBookFlag.error instanceof Error
+                                    ? setBookFlag.error.message
+                                    : 'The reshelving mark could not be saved.'}
+                            </span>
+                        ) : null}
+                    </div>
+                ) : null}
                 <div className="book-details-card__cover">
                     <BookCover
                         bookId={book.book_id}
@@ -497,42 +527,6 @@ export function BookDetailsPage() {
             ) : null}
 
             <BorrowerReviews bookId={book.book_id} loans={loansQuery.data?.items ?? []} />
-
-            {canShowActiveActions ? (
-                <section className="book-details-panel">
-                    <h2>Needs Reshelving</h2>
-                    <p>
-                        {book.is_flagged
-                            ? 'This book is in the library maintenance queue.'
-                            : 'Mark this book when its physical placement needs attention.'}
-                    </p>
-                    {setBookFlag.error ? (
-                        <Alert variant="error">
-                            {setBookFlag.error instanceof Error
-                                ? setBookFlag.error.message
-                                : 'The reshelving mark could not be saved.'}
-                        </Alert>
-                    ) : null}
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        disabled={setBookFlag.isPending}
-                        onClick={() => {
-                            if (book.is_flagged) {
-                                setConfirmClearFlag(true)
-                            } else {
-                                setBookFlag.mutate({ id: book.book_id, request: { is_flagged: true } })
-                            }
-                        }}
-                    >
-                        {setBookFlag.isPending
-                            ? 'Saving…'
-                            : book.is_flagged
-                                ? 'Clear Needs Reshelving'
-                                : 'Mark Needs Reshelving'}
-                    </Button>
-                </section>
-            ) : null}
 
             {canShowActiveActions ? (
                 <nav
