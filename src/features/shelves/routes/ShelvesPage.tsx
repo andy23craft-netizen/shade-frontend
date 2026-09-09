@@ -15,6 +15,7 @@ import {
 } from '../components/ShelfShowcase'
 import {
     Alert,
+    BackToTop,
     Button,
     ConfirmationDialog,
     EmptyState,
@@ -1107,6 +1108,7 @@ export function ShelvesPage() {
                     </p>
                 )}
             </ConfirmationDialog>
+            <BackToTop enabled={visibleShelves.length > SHELF_RENDER_BATCH_SIZE} />
         </section>
     )
 }

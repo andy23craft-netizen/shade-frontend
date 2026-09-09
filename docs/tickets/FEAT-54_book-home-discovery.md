@@ -1,6 +1,6 @@
 # FEAT-54 -- New Releases and Current Reading on Home
 
-**Status:** Contract ready
+**Status:** Partially implemented. 
 
 **Depends on:** Book list `status`, an authoritative New Releases query/order, authenticated covers, and leads into `FEAT-55` heading composition.
 
@@ -10,10 +10,10 @@ Add owned-book New Releases and Current Reading modules using existing catalog d
 
 ## Acceptance criteria
 
-- [ ] New Releases uses owned, shelved books ordered by stored publication date descending; null/unparseable dates do not masquerade as recent.
-- [ ] Current Reading uses `status=reading` and links each physical copy to Book Details.
+- [x] New Releases uses owned, shelved books ordered by stored publication date descending; null/unparseable dates do not masquerade as recent.
+- [x] Current Reading uses `status=reading` and links each physical copy to Book Details.
 - [ ] Both modules reuse authenticated covers, author formatting, stable keys, cancellation, and bounded queries.
-- [ ] Empty/error states are independent and do not blank existing Home discovery.
+- [ ] Empty/error states are independent and do not blank existing Home discovery. 
 - [ ] Home composition remains deliberate at 320px and 200% zoom with keyboard-accessible carousels/lists and no marquee or per-title font scaling.
 - [ ] Quote headings integrate only through `FEAT-55`; functional labels remain stable.
 

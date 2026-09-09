@@ -111,6 +111,10 @@ export default defineConfig({
     test: {
         environment: 'jsdom',
         setupFiles: './src/test/setup.ts',
+        // A full coverage run creates a jsdom instance per worker. Leaving the
+        // worker count tied to host CPU capacity can exhaust WSL memory and
+        // make otherwise fast tests fail at the timeout boundary.
+        maxWorkers: 4,
         include: [
             'src/**/*.{test,spec}.{ts,tsx}',
             'scripts/**/*.{test,spec}.ts',

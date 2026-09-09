@@ -8,6 +8,7 @@ import {
 
 import {
     ModalDialog,
+    BackToTop,
     Alert,
     Button,
     ConfirmationDialog,
@@ -1071,6 +1072,7 @@ export function CollectionsPage() {
                     </p>
                 )}
             </ConfirmationDialog>
+            <BackToTop />
         </section>
     )
 }

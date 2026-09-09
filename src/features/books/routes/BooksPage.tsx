@@ -13,6 +13,7 @@ import { BookCover } from '../components/BookCover'
 import { Alert } from '../../../components/Alert'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
+import { BackToTop } from '../../../components/BackToTop'
 import { EmptyState } from '../../../components/EmptyState'
 import { formatBookAuthors } from '../authorDisplay'
 import { LoadingState } from '../../../components/LoadingState'
@@ -503,6 +504,8 @@ export function BooksPage() {
                 </p>
             </div>
 
+            <div className="books-page__control-rail">
+
             {isBulkSelectionMode ? (
                 <BooksBulkActions
                     selectedBookIds={
@@ -710,6 +713,7 @@ export function BooksPage() {
                     </Button>
                 </div>
             ) : null}
+            </div>
 
             {cleanupField === undefined &&
             isbn !== undefined ? (
@@ -971,6 +975,8 @@ export function BooksPage() {
                     </Button>
                 </div>
             ) : null}
+
+            <BackToTop enabled={books.length > 30} />
         </section>
     )
 }

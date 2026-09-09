@@ -4,6 +4,7 @@ import {
 } from 'react-router-dom'
 
 import { Alert } from '../../../components/Alert'
+import { BackToTop } from '../../../components/BackToTop'
 import { AppLink } from '../../../components/AppLink'
 import { Button } from '../../../components/Button'
 import { EmptyState } from '../../../components/EmptyState'
@@ -657,6 +658,7 @@ export function LoansPage() {
                     </Button>
                 </div>
             ) : null}
+            <BackToTop enabled={loans.length > 30} />
         </section>
     )
 }

@@ -9,6 +9,7 @@ import {
 import {
     Alert,
     AppLink,
+    BackToTop,
     Button,
     ConfirmationDialog,
     EmptyState,
@@ -910,6 +911,7 @@ export function WishlistsPage() {
                     </p>
                 )}
             </ConfirmationDialog>
+            <BackToTop />
         </section>
     )
 }

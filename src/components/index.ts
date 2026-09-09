@@ -1,6 +1,7 @@
 export { Alert } from './Alert'
 export { AppLink } from './AppLink'
 export { Button } from './Button'
+export { BackToTop } from './BackToTop'
 export { ConfirmationDialog } from './ConfirmationDialog'
 export { EmptyState } from './EmptyState'
 export { Field } from './Field'
