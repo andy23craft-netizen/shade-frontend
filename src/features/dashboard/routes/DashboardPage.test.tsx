@@ -21,6 +21,7 @@ import {
     useDashboardBreakdowns,
     useDashboardIncompleteMetadata,
     useInfiniteIncompleteMetadataBooks,
+    useFlaggedBooks,
 } from '../../../api/dashboardQueries'
 
 import type {
@@ -39,6 +40,7 @@ vi.mock('../../../api/dashboardQueries', () => ({
     useDashboardBreakdowns: vi.fn(),
     useDashboardIncompleteMetadata: vi.fn(),
     useInfiniteIncompleteMetadataBooks: vi.fn(),
+    useFlaggedBooks: vi.fn(),
 }))
 
 const dashboardFixture: DashboardSummary = {
@@ -237,6 +239,16 @@ function mockDashboardIncompleteMetadataQuery(
     } as unknown as DashboardIncompleteMetadataQuery)
 }
 
+function mockFlaggedBooksQuery() {
+    vi.mocked(useFlaggedBooks).mockReturnValue({
+        data: { items: [], total: 0 },
+        error: null,
+        isPending: false,
+        isLoadingError: false,
+        refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useFlaggedBooks>)
+}
+
 function renderDashboard() {
     return renderWithProviders(
         <MemoryRouter>
@@ -252,6 +264,7 @@ describe('DashboardPage', () => {
         mockDashboardBreakdownsQuery()
         mockDashboardIncompleteMetadataQuery()
         mockIncompleteBooksQuery()
+        mockFlaggedBooksQuery()
         mockUseCollectionIsbnJump.mockReset()
     })
 
@@ -386,6 +399,40 @@ describe('DashboardPage', () => {
                 'Added in the last 30 days',
             ),
         ).not.toBeInTheDocument()
+    })
+
+    it('renders contract-defined reading analytics with accessible values', () => {
+        mockDashboardQuery({
+            data: {
+                ...dashboardFixture,
+                pages_owned: 125000,
+                pages_turned: 68400,
+                null_pages: 3,
+                books_acquired_this_year: 14,
+                books_read_this_year: 9,
+                books_read_by_year: [{ key: '2026', count: 9 }],
+                pages_read_by_year: [{ key: '2026', count: 2800 }],
+                books_read_by_shelf: [{ key: 'Study', count: 11 }],
+                books_read_by_category: [{ key: 'History', count: 7 }],
+            },
+        })
+
+        renderDashboard()
+
+        const analytics = screen.getByRole('heading', { name: 'Reading Analytics' }).closest('section')
+        expect(analytics).not.toBeNull()
+        expect(within(analytics!).getByText('125,000')).toBeInTheDocument()
+        expect(within(analytics!).getByText('68,400')).toBeInTheDocument()
+        expect(within(analytics!).getByText('History')).toBeInTheDocument()
+        expect(within(analytics!).getByText(/3 owned books have no page count/i)).toHaveTextContent(
+            'Pages Turned counts each book marked read once, including books without a completion date.',
+        )
+        expect(within(analytics!).getByText(/3 owned books have no page count/i)).toHaveTextContent(
+            'Acquired This Year uses purchase dates and omits books whose purchase date is unknown.',
+        )
+        expect(within(analytics!).getByText(/top categories for all books marked read/i)).toHaveTextContent(
+            'completion dates are not required',
+        )
     })
 
     it('treats an all-zero dashboard as valid data', () => {

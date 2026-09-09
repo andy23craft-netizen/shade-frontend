@@ -6,6 +6,7 @@ import {
     useDashboard,
     useDashboardBreakdowns,
     useDashboardIncompleteMetadata,
+    useFlaggedBooks,
 } from '../../../api/dashboardQueries'
 
 import {
@@ -20,6 +21,7 @@ import {
 } from '../../scanning/useCollectionIsbnJump'
 import dashboardBackground from '../../../assets/Dashboard_Background.webp'
 import { LibraryWordmark } from '../../../components/LibraryWordmark'
+import { formatBookAuthors } from '../../books/authorDisplay'
 
 
 function displayAverage(
@@ -116,6 +118,49 @@ function categoryChartGradient(
     return `conic-gradient(${stops.join(', ')})`
 }
 
+function formatCount(value: number): string {
+    return new Intl.NumberFormat().format(value)
+}
+
+function AnalyticsBars({
+    title,
+    buckets,
+    note,
+}: {
+    title: string
+    buckets: { key: string; count: number }[]
+    note: string
+}) {
+    const maximum = Math.max(...buckets.map((bucket) => bucket.count), 0)
+
+    return (
+        <section className="dashboard-analytics__chart">
+            <h3>{title}</h3>
+            <p>{note}</p>
+            {buckets.length === 0 ? (
+                <p className="dashboard-breakdown__empty">No reading data recorded.</p>
+            ) : (
+                <dl>
+                    {buckets.map((bucket) => (
+                        <div key={bucket.key}>
+                            <dt>{bucket.key}</dt>
+                            <dd>
+                                <span
+                                    aria-hidden="true"
+                                    style={{
+                                        '--dashboard-bar-size': `${maximum === 0 ? 0 : (bucket.count / maximum) * 100}%`,
+                                    } as CSSProperties}
+                                />
+                                <strong>{formatCount(bucket.count)}</strong>
+                            </dd>
+                        </div>
+                    ))}
+                </dl>
+            )}
+        </section>
+    )
+}
+
 export function DashboardPage() {
     useCollectionIsbnJump()
 
@@ -124,6 +169,7 @@ export function DashboardPage() {
         useDashboardBreakdowns()
     const incompleteMetadataQuery =
         useDashboardIncompleteMetadata()
+    const flaggedBooksQuery = useFlaggedBooks()
 
 
     if (
@@ -203,6 +249,20 @@ export function DashboardPage() {
                 total + bucket.count,
             0,
         )
+    const readCategoryBuckets = categoryChartBuckets(
+        dashboard.books_read_by_category ?? [],
+    )
+    const nullPages = dashboard.null_pages ?? 0
+    const flaggedBooks = flaggedBooksQuery.data?.items ?? []
+
+    const refreshDashboard = () => {
+        void Promise.all([
+            dashboardQuery.refetch(),
+            breakdownsQuery.refetch(),
+            incompleteMetadataQuery.refetch(),
+            flaggedBooksQuery.refetch(),
+        ])
+    }
 
     return (
         <section
@@ -224,6 +284,10 @@ export function DashboardPage() {
                         The library at a glance.
                     </p>
                 </div>
+
+                <Button type="button" onClick={refreshDashboard}>
+                    Refresh
+                </Button>
 
             </header>
 
@@ -411,7 +475,7 @@ export function DashboardPage() {
             className="dashboard-paper__index"
             aria-hidden="true"
         >
-            III
+            IV
         </span>
 
                         <h2 id="dashboard-reading-heading">
@@ -515,7 +579,7 @@ export function DashboardPage() {
             className="dashboard-paper__index"
             aria-hidden="true"
         >
-            IV
+            III
         </span>
 
                         <h2 id="dashboard-basic-stats-heading">
@@ -636,11 +700,11 @@ export function DashboardPage() {
         </span>
 
                         <h2 id="dashboard-healing-heading">
-                            Healing Metadata
+                            Library Maintenance
                         </h2>
 
                         <p>
-                            Books with catalog information that still needs attention.
+                            Placement and catalog tasks that need attention.
                         </p>
                     </header>
 
@@ -651,6 +715,34 @@ export function DashboardPage() {
                         ATTN: LIBRARIAN
                     </div>
 
+                    <section className="dashboard-maintenance__section" aria-labelledby="dashboard-reshelving-heading">
+                        <h3 id="dashboard-reshelving-heading">Needs Reshelving</h3>
+                        {flaggedBooksQuery.isPending ? (
+                            <LoadingState label="Loading reshelving queue…" />
+                        ) : flaggedBooksQuery.isLoadingError ? (
+                            <QueryErrorState
+                                title="Unable to load reshelving queue"
+                                error={flaggedBooksQuery.error}
+                                onRetry={() => { void flaggedBooksQuery.refetch() }}
+                            />
+                        ) : flaggedBooks.length === 0 ? (
+                            <p className="dashboard-healing__books-empty">No books need reshelving.</p>
+                        ) : (
+                            <ul className="dashboard-healing__book-list">
+                                {flaggedBooks.map((book) => (
+                                    <li className="dashboard-healing__book" key={book.book_id}>
+                                        <div>
+                                            <AppLink to={`/books/${book.book_id}`}>{book.title}</AppLink>
+                                            <p>{formatBookAuthors(book.authors)} · {book.shelf_name ?? (book.placement_state === 'stashed' ? 'Stash' : 'Unshelved')}</p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+
+                    <section className="dashboard-maintenance__section" aria-labelledby="dashboard-metadata-heading">
+                        <h3 id="dashboard-metadata-heading">Healing Metadata</h3>
                     {incompleteMetadataQuery.isPending ? (
                         <LoadingState label="Loading metadata cleanup counts…" />
                     ) : incompleteMetadataQuery.isLoadingError ? (
@@ -762,6 +854,34 @@ export function DashboardPage() {
                             </p>
                         </div>
                     )}
+                    </section>
+                </section>
+
+                <section
+                    className="dashboard-paper dashboard-paper--analytics"
+                    aria-labelledby="dashboard-analytics-heading"
+                >
+                    <header className="dashboard-paper__heading">
+                        <span className="dashboard-paper__index" aria-hidden="true">VI</span>
+                        <h2 id="dashboard-analytics-heading">Reading Analytics</h2>
+                        <p>All-time collection and reading measures.</p>
+                    </header>
+
+                    <dl className="dashboard-analytics__summary">
+                        <div><dt>Pages Owned</dt><dd>{formatCount(dashboard.pages_owned ?? 0)}</dd></div>
+                        <div><dt>Pages Turned</dt><dd>{formatCount(dashboard.pages_turned ?? 0)}</dd></div>
+                        <div><dt>Books Acquired This Year</dt><dd>{formatCount(dashboard.books_acquired_this_year ?? 0)}</dd></div>
+                        <div><dt>Books Read This Year</dt><dd>{formatCount(dashboard.books_read_this_year ?? 0)}</dd></div>
+                    </dl>
+                    <p className="dashboard-analytics__note">
+                        Page totals use known page counts only; {formatCount(nullPages)} owned {nullPages === 1 ? 'book has' : 'books have'} no page count. Pages Turned counts each book marked read once, including books without a completion date. Acquired This Year uses purchase dates and omits books whose purchase date is unknown. Reading years use UTC.
+                    </p>
+
+                    <div className="dashboard-analytics__charts">
+                        <AnalyticsBars title="Books Read Over Time" buckets={dashboard.books_read_by_year ?? []} note="Completed books by UTC year; years without reads are omitted." />
+                        <AnalyticsBars title="Pages Read Over Time" buckets={dashboard.pages_read_by_year ?? []} note="Known pages from completed books by UTC year." />
+                        <AnalyticsBars title="Books Read by Category" buckets={readCategoryBuckets} note="Top categories for all books marked read; completion dates are not required and a book may appear in more than one category." />
+                    </div>
                 </section>
 
             </div>

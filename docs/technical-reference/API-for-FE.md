@@ -1,6 +1,6 @@
 # API for Frontend (supplementary)
 
-Backend **1.2.9** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Shipped surfaces include album
+Backend **1.2.8** is the current contract (`ci/VERSION` / OpenAPI `info.version`). Shipped surfaces include album
 catalog CRUD, soft-delete/restore, people/genre catalogs (shared `people` for book contributors and album credits),
 circulation (checkout / check-in / mark-played), Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch,
 album bulk lookup/import, album collection membership, hostname-scoped multi-tenant routing (`X-Forwarded-Host`, with
@@ -8,7 +8,7 @@ album bulk lookup/import, album collection membership, hostname-scoped multi-ten
 identity corrections, `/catalog` resolve and recent-additions, book bulk and single-item availability, mark-unread,
 dashboard book analytics, loan borrower PATCH, and returned-loan feedback. Existing book, wishlist, and loan response
 shapes remain stable aside from additive fields noted below (`work_id`, `borrower_rating`, `feedback_present`,
-`isbn_not_applicable`, `is_flagged`, dashboard analytics keys, and album dashboard/loan fields) and the people/contributor reshape
+`isbn_not_applicable`, dashboard analytics keys, and album dashboard/loan fields) and the people/contributor reshape
 (`/people`, per-role book contributor lists, album `person_ids`). Full schemas and authenticated paths live in the
 regenerated `openapi.json`.
 
@@ -119,7 +119,7 @@ Album behavior and frontend integration
   membership routes are shipped. Albums never appear in GET `/books`. Album UI is needed to use the album
   resource; the existing book UI needs the shelf/error handling adjustments above plus additive `work_id` /
   borrower-feedback fields when those screens are shown. Regenerating client types alone does not implement those
-  behaviors. Clients generated from this 1.2.9 contract remain compatible with the existing book UI if they ignore
+  behaviors. Clients generated from this 1.2.8 contract remain compatible with the existing book UI if they ignore
   album routes and album-only fields until album UI is enabled. There is no separate handoff document.
 
 People/genre catalog behavior
@@ -921,15 +921,18 @@ Extended book analytics on the same `GET /dashboard` response (no dedicated anal
 the live tenant DB; no stored historicity):
 
 - `pages_owned` -- sum of known `pages` among owned books (`pages IS NOT NULL`); null pages contribute 0 to the sum.
-- `pages_turned` -- same sum restricted to currently read owned books (`is_read` true / non-null `completion_date`).
-  Editing `pages` after mark-read changes the next response; rereads are not stored.
+- `pages_turned` -- same sum restricted to currently read owned books (`is_read` true). A missing
+  `completion_date` does not exclude a book. Editing `pages` after mark-read changes the next response; rereads are
+  not stored.
 - `null_pages` -- count of owned books with null `pages` (same predicate as incomplete-metadata `missing_pages`).
-- `books_acquired_this_year` / `books_read_this_year` -- current UTC calendar year via `creation_date` /
-  `completion_date`.
+- `books_acquired_this_year` -- current calendar year via `purchase_date`; books without a usable purchase date are
+  omitted because their acquisition year is unknown.
+- `books_read_this_year` -- current UTC calendar year via `completion_date`.
 - `books_read_by_year` / `pages_read_by_year` -- all-time UTC calendar-year buckets (four-digit year keys); omit empty
   years. Frontend displays chart labels as years only.
-- `books_read_by_shelf` / `books_read_by_category` -- currently read owned books attributed by **current** membership;
-  multi-category books count once per category; stash is omitted from shelf buckets (same style as breakdowns).
+- `books_read_by_shelf` / `books_read_by_category` -- currently read owned books (`is_read` true) attributed by
+  **current** membership; `completion_date` is not required, multi-category books count once per category, and Stash
+  is omitted from shelf buckets (same style as breakdowns).
 
 Additive album fields are `total_albums`, `albums_checked_out`, `albums_recently_added`, `album_borrowing`, and
 `listening`. `album_borrowing` has the same shape as book-only `borrowing`; `listening` contains `albums_played`,

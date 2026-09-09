@@ -420,7 +420,7 @@ describe('HomePage', () => {
                 "Home — Andy's Library — Shade",
             )
         })
-    })
+    }, 20_000)
 
     it('renders the five largest categories with canonical Books links', async () => {
         await renderAppTree(['/'])

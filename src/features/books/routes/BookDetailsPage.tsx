@@ -23,7 +23,7 @@ import { AppLink } from '../../../components/AppLink'
 import { LoadingState } from '../../../components/LoadingState'
 import { QueryErrorState } from '../../../components/QueryErrorState'
 import { isBookIdentityError } from '../../../api/bookIdentity'
-import { useBook } from '../../../api/booksQueries'
+import { useBook, useSetBookFlag } from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
 import {
     findActiveLoan,
@@ -40,6 +40,7 @@ import { Button } from '../../../components/Button'
 import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
 import { isCheckoutEligible } from '../../loans/checkoutEligibility'
 import { BorrowerReviews } from '../../loans/components/BorrowerReviews'
+import { ConfirmationDialog } from '../../../components/ConfirmationDialog'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -133,7 +134,9 @@ export function BookDetailsPage() {
         addToCollectionOpen,
         setAddToCollectionOpen,
     ] = useState(false)
+    const [confirmClearFlag, setConfirmClearFlag] = useState(false)
     const queryClient = useQueryClient()
+    const setBookFlag = useSetBookFlag()
 
     const booksReturnTo =
         typeof location.state === 'object' &&
@@ -496,6 +499,42 @@ export function BookDetailsPage() {
             <BorrowerReviews bookId={book.book_id} loans={loansQuery.data?.items ?? []} />
 
             {canShowActiveActions ? (
+                <section className="book-details-panel">
+                    <h2>Needs Reshelving</h2>
+                    <p>
+                        {book.is_flagged
+                            ? 'This book is in the library maintenance queue.'
+                            : 'Mark this book when its physical placement needs attention.'}
+                    </p>
+                    {setBookFlag.error ? (
+                        <Alert variant="error">
+                            {setBookFlag.error instanceof Error
+                                ? setBookFlag.error.message
+                                : 'The reshelving mark could not be saved.'}
+                        </Alert>
+                    ) : null}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={setBookFlag.isPending}
+                        onClick={() => {
+                            if (book.is_flagged) {
+                                setConfirmClearFlag(true)
+                            } else {
+                                setBookFlag.mutate({ id: book.book_id, request: { is_flagged: true } })
+                            }
+                        }}
+                    >
+                        {setBookFlag.isPending
+                            ? 'Saving…'
+                            : book.is_flagged
+                                ? 'Clear Needs Reshelving'
+                                : 'Mark Needs Reshelving'}
+                    </Button>
+                </section>
+            ) : null}
+
+            {canShowActiveActions ? (
                 <nav
                     className="book-details-actions"
                     aria-label="Book actions"
@@ -588,6 +627,21 @@ export function BookDetailsPage() {
                     setCheckoutOpen(false)
                 }}
             />
+
+            <ConfirmationDialog
+                open={confirmClearFlag}
+                title="Clear Needs Reshelving?"
+                confirmLabel="Clear mark"
+                onCancel={() => { setConfirmClearFlag(false) }}
+                onConfirm={() => {
+                    setBookFlag.mutate(
+                        { id: book.book_id, request: { is_flagged: false } },
+                        { onSuccess: () => { setConfirmClearFlag(false) } },
+                    )
+                }}
+            >
+                Remove this book from the library maintenance queue? Its shelf and catalog information will not change.
+            </ConfirmationDialog>
         </section>
     )
 }

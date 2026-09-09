@@ -11,6 +11,7 @@ import {
     useBook,
     useCheckoutBook,
     useSetBookAvailability,
+    useSetBookFlag,
 } from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
 import type { BookRead } from '../../../api/apiTypes'
@@ -20,6 +21,7 @@ vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
     useCheckoutBook: vi.fn(),
     useSetBookAvailability: vi.fn(),
+    useSetBookFlag: vi.fn(),
 }))
 
 vi.mock('../../../api/loansQueries', () => ({
@@ -91,6 +93,7 @@ const mockedUseCheckoutBook =
     vi.mocked(useCheckoutBook)
 const mockedUseSetBookAvailability =
     vi.mocked(useSetBookAvailability)
+const mockedUseSetBookFlag = vi.mocked(useSetBookFlag)
 
 const completeBook: BookRead = {
     book_id: 'test-book-id',
@@ -183,6 +186,11 @@ describe('BookDetailsPage', () => {
             isPending: false,
             isError: false,
         } as unknown as ReturnType<typeof useSetBookAvailability>)
+        mockedUseSetBookFlag.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+            error: null,
+        } as unknown as ReturnType<typeof useSetBookFlag>)
         mockedUseLoans.mockReturnValue({
             data: {
                 items: [],
@@ -219,6 +227,28 @@ describe('BookDetailsPage', () => {
             'href',
             '/books/test-book-id/mark-read',
         )
+    })
+
+    it('marks a book as needing reshelving through the dedicated mutation', () => {
+        const mutate = vi.fn()
+        mockedUseSetBookFlag.mockReturnValue({
+            mutate,
+            isPending: false,
+            error: null,
+        } as unknown as ReturnType<typeof useSetBookFlag>)
+        mockedUseBook.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: { ...completeBook, is_flagged: false },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+        fireEvent.click(screen.getByRole('button', { name: 'Mark Needs Reshelving' }))
+
+        expect(mutate).toHaveBeenCalledWith({
+            id: completeBook.book_id,
+            request: { is_flagged: true },
+        })
     })
 
     it('does not offer Mark Read for an already-read book', () => {
