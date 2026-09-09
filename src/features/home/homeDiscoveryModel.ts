@@ -6,12 +6,14 @@ export interface HomeCategoryBucket {
 export interface HomeCategory {
     categoryId: string
     name: string
+    slug: string
     count: number
 }
 
 export interface HomeCategoryDefinition {
     category_id: string
     name: string
+    slug: string
 }
 
 export function topHomeCategories(
@@ -46,6 +48,7 @@ export function topHomeCategories(
                     categoryId:
                     category.category_id,
                     name: category.name,
+                    slug: category.slug,
                     count: bucket.count,
                 },
             ]
@@ -54,14 +57,7 @@ export function topHomeCategories(
 }
 
 export function homeCategoryHref(
-    categoryId: string,
+    slug: string,
 ): string {
-    const params = new URLSearchParams()
-
-    params.append(
-        'category_id',
-        categoryId,
-    )
-
-    return `/books?${params.toString()}`
+    return `/books/category/${encodeURIComponent(slug)}`
 }

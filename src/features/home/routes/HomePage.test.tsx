@@ -155,26 +155,32 @@ const categoriesFixture = [
     {
         category_id: 'cat-fantasy',
         name: 'Fantasy',
+        slug: 'fantasy',
     },
     {
         category_id: 'cat-religion',
         name: 'Religion',
+        slug: 'religion',
     },
     {
         category_id: 'cat-history',
         name: 'History',
+        slug: 'history',
     },
     {
         category_id: 'cat-philosophy',
         name: 'Philosophy',
+        slug: 'philosophy',
     },
     {
         category_id: 'cat-science',
         name: 'Science',
+        slug: 'science',
     },
     {
         category_id: 'cat-poetry',
         name: 'Poetry',
+        slug: 'poetry',
     },
 ] as ReturnType<typeof useCategories>['data']
 
@@ -440,23 +446,23 @@ describe('HomePage', () => {
         const expected = [
             [
                 'Fantasy',
-                '/books?category_id=cat-fantasy',
+                '/books/category/fantasy',
             ],
             [
                 'Religion',
-                '/books?category_id=cat-religion',
+                '/books/category/religion',
             ],
             [
                 'History',
-                '/books?category_id=cat-history',
+                '/books/category/history',
             ],
             [
                 'Philosophy',
-                '/books?category_id=cat-philosophy',
+                '/books/category/philosophy',
             ],
             [
                 'Science',
-                '/books?category_id=cat-science',
+                '/books/category/science',
             ],
         ] as const
 

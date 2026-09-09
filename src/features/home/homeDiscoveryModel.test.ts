@@ -14,26 +14,32 @@ describe('homeDiscoveryModel', () => {
         {
             category_id: 'cat-philosophy',
             name: 'Philosophy',
+            slug: 'philosophy',
         },
         {
             category_id: 'cat-fantasy',
             name: 'Fantasy',
+            slug: 'fantasy',
         },
         {
             category_id: 'cat-poetry',
             name: 'Poetry',
+            slug: 'poetry',
         },
         {
             category_id: 'cat-history',
             name: 'History',
+            slug: 'history',
         },
         {
             category_id: 'cat-religion',
             name: 'Religion',
+            slug: 'religion',
         },
         {
             category_id: 'cat-science',
             name: 'Science',
+            slug: 'science',
         },
     ]
 
@@ -76,26 +82,31 @@ describe('homeDiscoveryModel', () => {
             {
                 categoryId: 'cat-fantasy',
                 name: 'Fantasy',
+                slug: 'fantasy',
                 count: 42,
             },
             {
                 categoryId: 'cat-religion',
                 name: 'Religion',
+                slug: 'religion',
                 count: 31,
             },
             {
                 categoryId: 'cat-history',
                 name: 'History',
+                slug: 'history',
                 count: 27,
             },
             {
                 categoryId: 'cat-philosophy',
                 name: 'Philosophy',
+                slug: 'philosophy',
                 count: 18,
             },
             {
                 categoryId: 'cat-science',
                 name: 'Science',
+                slug: 'science',
                 count: 14,
             },
         ])
@@ -157,9 +168,9 @@ describe('homeDiscoveryModel', () => {
 
     it('builds the canonical Books category URL', () => {
         expect(
-            homeCategoryHref('cat-fiction'),
+            homeCategoryHref('sci fi'),
         ).toBe(
-            '/books?category_id=cat-fiction',
+            '/books/category/sci%20fi',
         )
     })
 })

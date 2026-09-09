@@ -72,6 +72,8 @@ export const routeConfig = [
                 },
                 element: <BooksPage />,
             },
+            { path: '/books/category/:categorySlug', handle: { title: routeMetadata.books.title }, element: <BooksPage /> },
+            { path: '/books/shelf/:shelfToken', handle: { title: routeMetadata.books.title }, element: <BooksPage /> },
             { path: routeMetadata.albums.path, handle: { title: routeMetadata.albums.title }, element: <AlbumsPage /> },
             { path: routeMetadata.newAlbum.path, handle: { title: routeMetadata.newAlbum.title }, element: <NewAlbumPage /> },
             { path: routeMetadata.bulkAddAlbums.path, handle: { title: routeMetadata.bulkAddAlbums.title }, element: <AlbumBulkAddPage /> },

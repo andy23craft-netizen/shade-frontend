@@ -22,6 +22,7 @@ import {
 import {
     formatShelfCommonNameForDisplay,
 } from '../shelfDisplay'
+import { shelfBrowsePath } from '../../books/bookBrowseUrl'
 
 const SHELF_PREVIEW_SIZE = 12
 const SCROLL_AMOUNT = 420
@@ -233,10 +234,7 @@ export function ShelfShowcase({
         })
     }
 
-    const shelfUrl =
-        `/books?shelf_name=${encodeURIComponent(
-            shelf.common_name,
-        )}`
+    const shelfUrl = shelfBrowsePath(shelf.common_name)
 
     return (
         <article

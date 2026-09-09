@@ -327,7 +327,7 @@ describe('ShelvesPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            '/books?shelf_name=unknown',
+            '/books/shelf/unknown',
         )
 
         const lizRow = screen
@@ -346,7 +346,7 @@ describe('ShelvesPage', () => {
             }),
         ).toHaveAttribute(
             'href',
-            '/books?shelf_name=liz_tbr',
+            '/books/shelf/liz_tbr',
         )
 
         expect(

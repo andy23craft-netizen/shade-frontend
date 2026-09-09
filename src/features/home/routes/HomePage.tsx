@@ -340,9 +340,7 @@ export function HomePage() {
                                     count={
                                         category.count
                                     }
-                                    href={homeCategoryHref(
-                                        category.categoryId,
-                                    )}
+                                    href={homeCategoryHref(category.slug)}
                                 />
                             ),
                         )}

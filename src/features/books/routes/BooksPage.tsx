@@ -54,6 +54,12 @@ import { isValidIsbn } from '../utils/isbn'
 import { useCollectionIsbnJump } from '../../scanning/useCollectionIsbnJump'
 import { BookSelectionControl } from '../components/BookSelectionControl'
 import { isBookBulkSelectable } from '../utils/bulkSelectionModel'
+import {
+    categoryBrowsePath,
+    resolveCategoryBrowseToken,
+    resolveShelfBrowseToken,
+    shelfBrowsePath,
+} from '../bookBrowseUrl'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -233,11 +239,40 @@ function updateListParams(
     return next
 }
 
+function vanityPathToken(
+    pathname: string,
+    prefix: string,
+): string | null | undefined {
+    if (!pathname.startsWith(prefix)) {
+        return undefined
+    }
+
+    const encodedToken = pathname.slice(prefix.length)
+
+    if (!encodedToken || encodedToken.includes('/')) {
+        return null
+    }
+
+    try {
+        return decodeURIComponent(encodedToken)
+    } catch {
+        return null
+    }
+}
+
 export function BooksPage() {
     useCollectionIsbnJump()
 
     const location = useLocation()
     const navigate = useNavigate()
+    const categorySlug = vanityPathToken(
+        location.pathname,
+        '/books/category/',
+    )
+    const shelfToken = vanityPathToken(
+        location.pathname,
+        '/books/shelf/',
+    )
     const uniqueOpenedIsbnRef =
         useRef<string | null>(null)
 
@@ -252,24 +287,43 @@ export function BooksPage() {
 
     const shelvesQuery = useShelves()
 
+    const categoryPathMatch = categorySlug && categoriesQuery.data
+        ? resolveCategoryBrowseToken(categorySlug, categoriesQuery.data)
+        : undefined
+    const shelfPathMatch = shelfToken && shelvesQuery.data
+        ? resolveShelfBrowseToken(shelfToken, shelvesQuery.data)
+        : undefined
+    const hasUnresolvedVanityPath =
+        (categorySlug !== undefined && categoriesQuery.isSuccess && !categoryPathMatch) ||
+        (shelfToken !== undefined && shelvesQuery.isSuccess && !shelfPathMatch)
+
+    useEffect(() => {
+        if (categoryPathMatch && categorySlug !== categoryPathMatch.slug) {
+            navigate(`${categoryBrowsePath(categoryPathMatch.slug)}${location.search}`, { replace: true })
+        }
+        if (shelfPathMatch && shelfToken !== shelfPathMatch.common_name) {
+            navigate(`${shelfBrowsePath(shelfPathMatch.common_name)}${location.search}`, { replace: true })
+        }
+    }, [categoryPathMatch, categorySlug, location.search, navigate, shelfPathMatch, shelfToken])
+
     const sortBy = parseSortByParam(
         searchParams.get('sortBy'),
     )
     const sortOrder = parseSortOrderParam(
         searchParams.get('sortOrder'),
     )
-    const categoryIds = parseCategoryIdParams(
-        searchParams.getAll('category_id'),
-    )
+    const categoryIds = categoryPathMatch
+        ? [categoryPathMatch.category_id]
+        : parseCategoryIdParams(searchParams.getAll('category_id'))
     const author = parseTextFilterParam(
         searchParams.get('author'),
     )
     const title = parseTextFilterParam(
         searchParams.get('title'),
     )
-    const shelfName = parseTextFilterParam(
-        searchParams.get('shelf_name'),
-    )
+    const shelfName = shelfPathMatch
+        ? shelfPathMatch.common_name
+        : parseTextFilterParam(searchParams.get('shelf_name'))
     const placementState = parsePlacementStateParam(
         searchParams.get('placement_state'),
     )
@@ -314,7 +368,7 @@ export function BooksPage() {
         isRead,
         sortBy,
         sortOrder,
-        enabled: cleanupField === undefined,
+        enabled: cleanupField === undefined && !hasUnresolvedVanityPath,
     })
 
     const authorSearchTotal =
@@ -346,7 +400,7 @@ export function BooksPage() {
             isRead,
             sortBy,
             sortOrder,
-            enabled: shouldTryTitleSearch,
+            enabled: shouldTryTitleSearch && !hasUnresolvedVanityPath,
         })
 
     const catalogBooksQuery =
@@ -448,6 +502,14 @@ export function BooksPage() {
         },
         itemCount: books.length,
     })
+
+    if ((categorySlug !== undefined && categoriesQuery.isPending) || (shelfToken !== undefined && shelvesQuery.isPending)) {
+        return <section className="route-page"><h1 tabIndex={-1}>Books</h1><LoadingState label="Resolving catalog link…" /></section>
+    }
+
+    if (hasUnresolvedVanityPath) {
+        return <section className="route-page"><h1 tabIndex={-1}>Books</h1><EmptyState title="Catalog link not found."><p>This category or shelf is not available in this library.</p><AppLink to="/books" variant="secondary">Browse books</AppLink></EmptyState></section>
+    }
 
     if (booksQuery.isPending) {
         return (
@@ -551,7 +613,7 @@ export function BooksPage() {
 
             {cleanupField === undefined ? (
             <BooksListControls
-                key={`${author ?? ''}:${title ?? ''}:${isRead === undefined ? '' : String(isRead)}`}
+                key={`${categoryIds.join(',')}:${shelfName ?? ''}:${author ?? ''}:${title ?? ''}:${isRead === undefined ? '' : String(isRead)}`}
                 categories={
                     categoriesQuery.data ?? []
                 }
@@ -594,6 +656,19 @@ export function BooksPage() {
                 onCategoryIdsChange={(
                     nextCategoryIds,
                 ) => {
+                    const category =
+                        nextCategoryIds.length === 1
+                            ? categoriesQuery.data?.find(
+                                (entry) => entry.category_id === nextCategoryIds[0],
+                            )
+                            : undefined
+
+                    if (category) {
+                        const next = updateListParams(searchParams, { categoryIds: [] })
+                        navigate(`${categoryBrowsePath(category.slug)}${next.size ? `?${next.toString()}` : ''}`, { replace: true })
+                        return
+                    }
+
                     setSearchParams(
                         updateListParams(
                             searchParams,
@@ -623,6 +698,16 @@ export function BooksPage() {
                 }}
 
                 onShelfNameChange={(nextShelfName) => {
+                    const shelf = nextShelfName
+                        ? shelvesQuery.data?.find((entry) => entry.common_name === nextShelfName)
+                        : undefined
+
+                    if (shelf) {
+                        const next = updateListParams(searchParams, { shelfName: undefined })
+                        navigate(`${shelfBrowsePath(shelf.common_name)}${next.size ? `?${next.toString()}` : ''}`, { replace: true })
+                        return
+                    }
+
                     setSearchParams(
                         updateListParams(
                             searchParams,
@@ -657,6 +742,11 @@ export function BooksPage() {
                 }}
 
                 onClear={() => {
+                    if (categorySlug !== undefined || shelfToken !== undefined) {
+                        navigate('/books', { replace: true })
+                        return
+                    }
+
                     setSearchParams(
                         updateListParams(
                             searchParams,

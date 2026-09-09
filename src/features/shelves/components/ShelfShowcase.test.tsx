@@ -147,7 +147,7 @@ describe('ShelfShowcase', () => {
             }),
         ).toHaveAttribute(
             'href',
-            '/books?shelf_name=a1',
+            '/books/shelf/a1',
         )
 
         expect(
@@ -299,7 +299,7 @@ describe('ShelfShowcase', () => {
             }),
         ).toHaveAttribute(
             'href',
-            '/books?shelf_name=a1',
+            '/books/shelf/a1',
         )
     })
 

@@ -1087,7 +1087,7 @@ describe('BooksPage', () => {
 
         expect(
             screen.getByTestId('location'),
-        ).toHaveTextContent('/books?shelf_name=a3')
+        ).toHaveTextContent('/books/shelf/a3')
         expect(
             mockUseInfiniteBooks,
         ).toHaveBeenLastCalledWith(
