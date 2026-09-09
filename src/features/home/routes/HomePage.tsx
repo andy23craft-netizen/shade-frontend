@@ -20,6 +20,7 @@ import {
     useCurrentReadingBooks,
 } from '../../../api/booksQueries'
 import { useRecentAdditions } from '../../../api/catalogQueries'
+import { useNewReleaseAlbums } from '../../../api/albumsQueries'
 import {
     HomeStaffPick,
 } from '../components/HomeStaffPick'
@@ -37,6 +38,7 @@ import {
     HomeBookCarousel,
 } from '../components/HomeBookCarousel'
 import { HomeRecentAddition } from '../components/HomeRecentAddition'
+import { formatAlbumArtists } from '../../albums/albumDisplay'
 import { getLibraryBranding } from '../../../config/libraryBranding'
 import {
     getLibraryDisplayName,
@@ -75,8 +77,11 @@ export function HomePage() {
 
     const recentBooksQuery = useRecentAdditions()
 
-    const newReleasesQuery =
+    const newReleaseBooksQuery =
         useNewReleaseBooks()
+
+    const newReleaseAlbumsQuery =
+        useNewReleaseAlbums()
 
     const currentReadingQuery =
         useCurrentReadingBooks()
@@ -136,11 +141,51 @@ export function HomePage() {
 
     const recentBooks = recentBooksQuery.data ?? []
 
-    const newReleases =
-        (newReleasesQuery.data?.items ?? []).filter(
-            (book) => book.publication_date &&
-                !Number.isNaN(Date.parse(book.publication_date)),
-        )
+    const releaseYear = new Date().getFullYear()
+    const isCurrentYearRelease = (date: string | null | undefined) => {
+        if (!date || Number.isNaN(Date.parse(date))) {
+            return false
+        }
+
+        return new Date(date).getFullYear() === releaseYear
+    }
+
+    const newReleases = [
+        ...(newReleaseBooksQuery.data?.items ?? [])
+            .filter((book) => isCurrentYearRelease(book.publication_date))
+            .map((book) => ({
+                mediaType: 'book' as const,
+                releaseDate: book.publication_date!,
+                book,
+            })),
+        ...(newReleaseAlbumsQuery.data?.items ?? [])
+            .filter((album) => isCurrentYearRelease(album.release_date))
+            .map((album) => ({
+                mediaType: 'album' as const,
+                releaseDate: album.release_date!,
+                item: {
+                    media_type: 'album' as const,
+                    item_id: album.album_id,
+                    title: album.title,
+                    primary_creator: formatAlbumArtists(album),
+                    format: album.media_format,
+                    status: album.status,
+                    shelf_name: album.shelf_name,
+                    checkout_eligible: album.status === 'available',
+                    active_loan_id: null,
+                },
+            })),
+    ].sort((left, right) =>
+        Date.parse(right.releaseDate) - Date.parse(left.releaseDate),
+    ).slice(0, 5)
+
+    const newReleasesPending =
+        newReleaseBooksQuery.isPending ||
+        newReleaseAlbumsQuery.isPending
+
+    const newReleasesError =
+        newReleaseBooksQuery.isError &&
+        newReleaseAlbumsQuery.isError
 
     const currentReading =
         currentReadingQuery.data?.items ?? []
@@ -263,14 +308,16 @@ export function HomePage() {
             >
                 <h2 id="home-new-releases-heading" className="home-section__expressive-heading">{homeHeadings.newReleases}</h2>
                 <p className="home-section__functional-heading">New Releases</p>
-                {newReleasesQuery.isPending ? <LoadingState label="Loading new releases…" /> : null}
-                {newReleasesQuery.isError ? <p role="alert">New releases could not be loaded.</p> : null}
-                {!newReleasesQuery.isPending && !newReleasesQuery.isError && newReleases.length === 0 ? (
-                    <p>No owned books with publication dates are available yet.</p>
+                {newReleasesPending ? <LoadingState label="Loading new releases…" /> : null}
+                {newReleasesError ? <p role="alert">New releases could not be loaded.</p> : null}
+                {!newReleasesPending && !newReleasesError && newReleases.length === 0 ? (
+                    <p>No owned books or albums with release dates this year are available yet.</p>
                 ) : null}
                 {newReleases.length > 0 ? (
-                    <HomeBookCarousel ariaLabel="New releases books">
-                        {newReleases.map((book) => <HomeRecentBook key={book.book_id} book={book} />)}
+                    <HomeBookCarousel ariaLabel="New releases">
+                        {newReleases.map((release) => release.mediaType === 'book'
+                            ? <HomeRecentBook key={`book:${release.book.book_id}`} book={release.book} />
+                            : <HomeRecentAddition key={`album:${release.item.item_id}`} item={release.item} />)}
                     </HomeBookCarousel>
                 ) : null}
             </section>

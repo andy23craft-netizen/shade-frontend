@@ -22,6 +22,16 @@ export function useAlbums(options: ListAlbumsOptions = {}, queryOptions: { enabl
     const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); const key = cleanOptions(options)
     return useQuery({ queryKey: queryKeys.albums.list(key), queryFn: ({ signal }) => api.list({ ...options, signal }), enabled: queryOptions.enabled ?? true })
 }
+export function useNewReleaseAlbums(
+    options: { enabled?: boolean } = {},
+) {
+    return useAlbums({
+        placementState: 'shelved',
+        take: 100,
+        sortBy: 'releaseDate',
+        sortOrder: 'desc',
+    }, options)
+}
 const ALBUM_PAGE_SIZE = 24
 export function useInfiniteAlbums(options: Omit<ListAlbumsOptions, 'skip' | 'take'> = {}) {
     const { apiClient } = useConnection()

@@ -17,6 +17,7 @@ import type {
     CollectionBookList,
     CollectionList,
     DashboardBreakdowns,
+    AlbumList,
 } from '../../../api/apiTypes'
 import {
     useNewReleaseBooks,
@@ -25,6 +26,9 @@ import {
 import {
     useRecentAdditions,
 } from '../../../api/catalogQueries'
+import {
+    useNewReleaseAlbums,
+} from '../../../api/albumsQueries'
 import {
     useCategories,
 } from '../../../api/categoriesQueries'
@@ -57,6 +61,10 @@ vi.mock('../../../api/booksQueries', async (importOriginal) => {
 
 vi.mock('../../../api/catalogQueries', () => ({
     useRecentAdditions: vi.fn(),
+}))
+
+vi.mock('../../../api/albumsQueries', () => ({
+    useNewReleaseAlbums: vi.fn(),
 }))
 
 vi.mock('../../../api/categoriesQueries', () => ({
@@ -105,6 +113,8 @@ const mockUseNewReleaseBooks =
     vi.mocked(useNewReleaseBooks)
 const mockUseCurrentReadingBooks =
     vi.mocked(useCurrentReadingBooks)
+const mockUseNewReleaseAlbums =
+    vi.mocked(useNewReleaseAlbums)
 
 const mockUseCategories =
     vi.mocked(useCategories)
@@ -309,6 +319,9 @@ type CollectionBooksQuery =
 type BreakdownsQuery =
     ReturnType<typeof useDashboardBreakdowns>
 
+type NewReleaseAlbumsQuery =
+    ReturnType<typeof useNewReleaseAlbums>
+
 function mockRecentAdditionsQuery(
     overrides: Partial<RecentAdditionsQuery> = {},
 ) {
@@ -381,6 +394,18 @@ function mockBreakdownsQuery(
     } as unknown as BreakdownsQuery)
 }
 
+function mockNewReleaseAlbumsQuery(
+    overrides: Partial<NewReleaseAlbumsQuery> = {},
+) {
+    mockUseNewReleaseAlbums.mockReturnValue({
+        data: { items: [], total: 0 } as AlbumList,
+        error: null,
+        isPending: false,
+        isError: false,
+        ...overrides,
+    } as unknown as NewReleaseAlbumsQuery)
+}
+
 function mockSuccessState() {
     mockRecentAdditionsQuery()
     const emptyBookQuery = {
@@ -393,6 +418,7 @@ function mockSuccessState() {
     mockUseCurrentReadingBooks.mockReturnValue(
         emptyBookQuery as ReturnType<typeof useCurrentReadingBooks>,
     )
+    mockNewReleaseAlbumsQuery()
     mockCategoriesQuery()
     mockCollectionsQuery()
     mockCollectionBooksQuery()

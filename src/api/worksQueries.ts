@@ -4,7 +4,12 @@ import { useConnection } from '../features/connection/useConnection'
 import { queryKeys } from './queryKeys'
 
 function invalidateWorkCorrection(client: ReturnType<typeof useQueryClient>) {
-    return Promise.all([client.invalidateQueries({ queryKey: queryKeys.books.all }), client.invalidateQueries({ queryKey: queryKeys.loans.all }), client.invalidateQueries({ queryKey: ['works'] })])
+    return Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.books.all }),
+        client.invalidateQueries({ queryKey: queryKeys.albums.all }),
+        client.invalidateQueries({ queryKey: queryKeys.loans.all }),
+        client.invalidateQueries({ queryKey: ['works'] }),
+    ])
 }
 export function useWork(id: string, enabled: boolean) {
     const { apiClient } = useConnection(); const api = createWorksApi(apiClient)

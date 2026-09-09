@@ -7557,6 +7557,35 @@
   color: var(--album-walnut);
 }
 
+.album-work-correction {
+  max-width: 42rem;
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  border: 1px solid rgb(41 41 79 / 35%);
+  border-top: .28rem solid var(--album-coral);
+  background: var(--album-paper);
+  color: var(--album-walnut);
+  box-shadow: .18rem .22rem 0 rgb(74 45 37 / 12%);
+}
+
+.album-work-correction h2 {
+  margin-top: 0;
+  color: var(--album-indigo);
+}
+
+.album-work-correction label {
+  display: grid;
+  gap: var(--space-1);
+  margin-block: var(--space-3);
+  color: var(--album-walnut);
+  font-weight: 700;
+}
+
+.album-work-correction .button {
+  margin-right: var(--space-2);
+  margin-top: var(--space-3);
+}
+
 /*
  * Printed inset for the contents of compact circulation cards.
  * Keeps the card itself broad while pulling the printed record
