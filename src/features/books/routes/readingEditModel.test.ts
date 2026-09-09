@@ -184,7 +184,7 @@ describe('readingEditModel', () => {
                 ),
             ).toEqual({
                 completion_date:
-                    '2026-08-14',
+                    '2026-08-14T00:00:00.000Z',
             })
         })
 
@@ -302,7 +302,7 @@ describe('readingEditModel', () => {
                 ),
             ).toEqual({
                 completion_date:
-                    '2026-08-12',
+                    '2026-08-12T00:00:00.000Z',
                 rating: null,
                 review:
                     'Still excellent.',
@@ -323,7 +323,7 @@ describe('readingEditModel', () => {
 
             expect(request).toEqual({
                 completion_date:
-                    '2026-08-12',
+                    '2026-08-12T00:00:00.000Z',
                 rating: 3,
                 review: 'Updated.',
             })

@@ -15,6 +15,31 @@ export type ReadingEditFormFieldErrors = Partial<
     Record<keyof ReadingEditFormValues, string>
 >
 
+/** Converts only at save time: the draft text is never rewritten while typing. */
+export function normalizeCompletionDate(
+    value: string,
+): string | null {
+    const trimmed = value.trim()
+
+    if (trimmed === '') return ''
+    if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01-01T00:00:00.000Z`
+    if (/^\d{4}-\d{2}$/.test(trimmed)) {
+        const [, month] = trimmed.split('-').map(Number)
+        if (month < 1 || month > 12) return null
+        return `${trimmed}-01T00:00:00.000Z`
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        if (!isDateOnlyString(trimmed)) return null
+        const parsedDate = new Date(`${trimmed}T00:00:00.000Z`)
+        return parsedDate.toISOString().slice(0, 10) === trimmed
+            ? `${trimmed}T00:00:00.000Z`
+            : null
+    }
+
+    const parsed = new Date(trimmed)
+    return Number.isNaN(parsed.valueOf()) ? null : parsed.toISOString()
+}
+
 export function readingEditFormValuesFromBook(
     book: BookRead,
 ): ReadingEditFormValues {
@@ -39,10 +64,7 @@ export function validateReadingEditFormValues(
     const completionDate =
         values.completion_date.trim()
 
-    if (
-        completionDate &&
-        !isDateOnlyString(completionDate)
-    ) {
+    if (completionDate && normalizeCompletionDate(completionDate) === null) {
         errors.completion_date =
             'Enter a valid completion date.'
     }
@@ -75,18 +97,17 @@ export function readingEditFormValuesToRequest(
 ): BookUpdate {
     const request: BookUpdate = {}
 
-    const originalCompletionDate =
-        originalBook.completion_date?.trim() ?? ''
+    const originalCompletionDate = normalizeCompletionDate(
+        originalBook.completion_date?.trim() ?? '',
+    )
 
     const completionDate =
         values.completion_date.trim()
 
-    if (
-        completionDate !==
-        originalCompletionDate
-    ) {
+    const normalizedCompletionDate = normalizeCompletionDate(completionDate)
+    if (normalizedCompletionDate !== originalCompletionDate) {
         request.completion_date =
-            completionDate || null
+            normalizedCompletionDate || null
     }
 
     const originalRating =

@@ -502,24 +502,33 @@ export function ReadingEditPage() {
             ) : null}
 
             <form onSubmit={handleSubmit}>
-                <Field
-                    id={FIELD_IDS.completion_date}
-                    label="Completion date"
-                    helpText="Clear this field to remove the saved completion date."
-                    error={fieldErrors.completion_date}
-                >
-                    <input
-                        type="date"
-                        value={values.completion_date}
-                        disabled={updateBook.isPending}
-                        onChange={(event) => {
-                            updateField(
-                                'completion_date',
-                                event.target.value,
-                            )
-                        }}
-                    />
-                </Field>
+                <div className="field">
+                    <label className="field__label" htmlFor={FIELD_IDS.completion_date}>Completion date</label>
+                    <div className="reading-edit-completion-date">
+                        <input
+                            id={FIELD_IDS.completion_date}
+                            type="text"
+                            value={values.completion_date}
+                            disabled={updateBook.isPending}
+                            placeholder="e.g. 2020, 2020-07-01, or July 1, 2020"
+                            aria-describedby="reading-edit-completion-date-help"
+                            aria-invalid={fieldErrors.completion_date ? true : undefined}
+                            onChange={(event) => updateField('completion_date', event.target.value)}
+                        />
+                        <label>
+                            <span className="visually-hidden">Choose completion date</span>
+                            <input
+                                aria-label="Choose completion date"
+                                type="date"
+                                value={/^\d{4}-\d{2}-\d{2}/.test(values.completion_date) ? values.completion_date.slice(0, 10) : ''}
+                                disabled={updateBook.isPending}
+                                onChange={(event) => updateField('completion_date', event.target.value)}
+                            />
+                        </label>
+                    </div>
+                    <div id="reading-edit-completion-date-help" className="field__help">Type a year, a date, or a date and time. Your text stays as typed; it is normalized only when you save.</div>
+                    {fieldErrors.completion_date ? <div className="field__error">{fieldErrors.completion_date}</div> : null}
+                </div>
 
                 <Field
                     id={FIELD_IDS.rating}
