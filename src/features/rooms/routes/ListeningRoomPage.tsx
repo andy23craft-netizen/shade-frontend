@@ -1,13 +1,21 @@
 import { AppLink } from '../../../components'
 import { LibraryWordmark } from '../../../components/LibraryWordmark'
+import headphones from '../../../assets/headphones.png'
 
 export function ListeningRoomPage() {
     return (
         <section className="route-page room-landing room-landing--listening" aria-labelledby="listening-room-heading">
             <div className="room-landing__heading">
-                <LibraryWordmark className="room-landing__eyebrow" />
-                <h1 id="listening-room-heading" tabIndex={-1}>Listening Room</h1>
-                <p>Flip through the bins, see what is in rotation, and keep the collection spinning.</p>
+                <img
+                    className="room-landing__header-art"
+                    src={headphones}
+                    alt=""
+                />
+                <div className="room-landing__heading-copy">
+                    <LibraryWordmark className="room-landing__eyebrow" />
+                    <h1 id="listening-room-heading" tabIndex={-1}>Listening<br />Room</h1>
+                    <p>Flip through the bins, see what is in rotation, and keep the collection spinning.</p>
+                </div>
             </div>
             <nav className="room-landing__destinations" aria-label="Listening Room destinations">
                 <AppLink to="/albums"><strong>Browse the Bins</strong><span>Dig through releases by artist, title, and format.</span></AppLink>

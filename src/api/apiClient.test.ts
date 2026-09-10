@@ -55,6 +55,7 @@ describe('createApiClient', () => {
                         expect.any(
                             Headers,
                         ),
+                    credentials: 'omit',
                 }),
             )
 

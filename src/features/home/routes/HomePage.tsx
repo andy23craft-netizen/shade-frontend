@@ -143,11 +143,10 @@ export function HomePage() {
 
     const releaseYear = new Date().getFullYear()
     const isCurrentYearRelease = (date: string | null | undefined) => {
-        if (!date || Number.isNaN(Date.parse(date))) {
-            return false
-        }
-
-        return new Date(date).getFullYear() === releaseYear
+        // Release dates without a time are calendar dates. Parsing
+        // `2026-01-01` as a timestamp shifts it to the prior local day west
+        // of UTC, which incorrectly hides January 1 releases.
+        return date?.slice(0, 4) === String(releaseYear)
     }
 
     const newReleases = [

@@ -143,6 +143,10 @@ export function createApiClient({
                 `${apiBaseUrl}${path}`,
                 {
                     ...fetchOptions,
+                    // The API uses Bearer authentication and explicitly does
+                    // not allow credentialed CORS requests. Authorization is
+                    // sent above; browser cookies must not accompany it.
+                    credentials: 'omit',
                     headers,
                     signal: combinedSignal,
                 },

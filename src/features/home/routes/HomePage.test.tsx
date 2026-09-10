@@ -607,6 +607,37 @@ describe('HomePage', () => {
         )
     })
 
+    it('includes a January 1 book released in the current calendar year', async () => {
+        mockUseNewReleaseBooks.mockReturnValue({
+            data: {
+                items: [{
+                    book_id: 'new-year-release',
+                    title: 'New Year Release',
+                    publication_date: `${new Date().getFullYear()}-01-01`,
+                    authors: [],
+                    status: 'available',
+                }],
+                total: 1,
+            } as unknown as BookList,
+            error: null,
+            isPending: false,
+            isError: false,
+        } as ReturnType<typeof useNewReleaseBooks>)
+
+        await renderAppTree(['/'])
+
+        const section = screen
+            .getByText('New Releases')
+            .closest('section')
+
+        expect(section).not.toBeNull()
+        expect(
+            within(section!).getByRole('link', {
+                name: 'New Year Release',
+            }),
+        ).toHaveAttribute('href', '/books/new-year-release')
+    })
+
     it('keeps core Home navigation available when category metadata fails', async () => {
         mockBreakdownsQuery({
             data: undefined,

@@ -26,7 +26,17 @@
 .album-browser { display: grid; grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2.5rem); align-items: start; }
 .album-browser__rail { position: sticky; top: calc(var(--header-height, 5rem) + 1rem); max-height: calc(100dvh - var(--header-height, 5rem) - 2rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: var(--space-5); border: 1px solid var(--color-card-border); border-radius: var(--radius-card); background: var(--color-card-muted); color: var(--color-surface-text); }
 .album-browser__rail h2 { margin-top: 0; }
-.album-browser__rail .album-filters { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; box-shadow: none; }
+.album-browser__rail .album-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; box-shadow: none; }
+.album-browser__rail .album-filters__field,
+.album-browser__rail .album-filters__barcode .field { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); align-items: center; gap: .5rem; }
+.album-browser__rail .album-filters__field .field__label,
+.album-browser__rail .album-filters__barcode .field__label { margin: 0; font-size: var(--font-size-small); }
+.album-filters__barcode { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: .5rem; align-items: stretch; }
+.album-browser__rail .album-filters__barcode .button { min-height: 0; padding-inline: .35rem; font-size: var(--font-size-small); white-space: nowrap; }
+.album-filters__sorts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.album-browser__rail .album-filters__sort { width: 100%; }
+.album-browser__rail .album-filters__deleted { align-items: center; gap: .4rem; padding: .3rem .1rem; font-size: var(--font-size-small); line-height: 1.2; }
+.page--albums .album-browser__rail .album-filters__deleted input { flex: 0 0 auto; width: .9rem; height: .9rem; margin: 0; }
 .album-browser__mobile { display: none; }
 .album-filters__deleted { display: flex; gap: .625rem; align-items: start; }
 .album-browser__results { min-width: 0; }
@@ -119,6 +129,7 @@
 }
 
 /* Room-level navigation and landing surfaces. */
+.app-shell--listening, .app-shell--reading { overflow-x: clip; }
 .app-shell--listening { --color-focus: #d6a84f; }
 .app-shell--listening .app-header { background: linear-gradient(90deg, #271b22, #29294f); }
 .app-shell--listening .drawer-nav-menu__panel { border-color: #d6a84f; background: #4a2d25; }
@@ -146,16 +157,54 @@
 .room-landing__heading h1 { position: relative; padding-block-end: var(--space-5); color: var(--color-brass); font-family: var(--font-family-heading); font-size: clamp(2.75rem, 8vw, 5.75rem); font-weight: 800; line-height: .95; letter-spacing: .055em; text-transform: uppercase; text-shadow: .025em .035em 0 rgb(0 0 0 / 28%); }
 .room-landing__heading h1::after { position: absolute; bottom: 0; left: 50%; width: min(80%, 28rem); height: .25rem; background: currentColor; content: ''; clip-path: polygon(.5% 8%, 99.5% 0, 100% 88%, 1% 100%); transform: translateX(-50%); opacity: .75; }
 .room-landing__eyebrow, .album-loans-page__eyebrow { font-family: var(--font-family-heading); font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-.room-landing--reading { background: radial-gradient(circle at 85% 10%, rgb(169 134 72 / 12%), transparent 28rem); }
+.room-landing--reading, .room-landing--listening { overflow-x: clip; }
+.room-landing--reading { overflow-x: visible; background: radial-gradient(ellipse 52rem 19rem at 90.2% 40%, rgb(255 220 137 / 25%), rgb(243 189 77 / 10%) 35%, transparent 70%), linear-gradient(160deg, transparent 35%, rgb(246 202 105 / 8%) 54%, transparent 72%); }
+.room-landing--reading .room-landing__heading { position: relative; max-width: 56rem; }
+.room-landing--reading .room-landing__heading-copy { display: grid; gap: var(--space-3); min-width: 0; text-align: center; }
+.room-landing--reading .room-landing__header-art--reading { right: calc(clamp(-19rem, -19vw, -13rem) + 10px); left: auto; clip-path: inset(0 22% 0 0); transform: translateY(-50%); }
+@media (max-width: 42rem) { .room-landing--reading .room-landing__header-art--reading { margin: 0 var(--space-4) calc(-1 * var(--space-4)) 0; transform: none; } }
+/*
+ * Catalog folders use the same cardstock edge and small raised label seen on
+ * book cards, with the destination name written directly on the tab.
+ */
+.room-landing--reading .room-landing__destinations { row-gap: clamp(2.1rem, 4vw, 2.75rem); }
+.room-landing--reading .room-landing__destinations .app-link { --reading-lamp-spill: 10%; position: relative; isolation: isolate; align-content: start; gap: var(--space-3); min-height: 7.25rem; margin-top: 1rem; padding: calc(var(--space-6) + .2rem) var(--space-6) var(--space-6); border-top: 0; border-radius: 0 .15rem .15rem .15rem; background: radial-gradient(ellipse 22rem 9rem at 112% -35%, rgb(255 230 160 / var(--reading-lamp-spill)), transparent 68%), repeating-linear-gradient(0deg, rgb(76 26 23 / 3%) 0, rgb(76 26 23 / 3%) 1px, transparent 1px, transparent 4px), linear-gradient(rgb(255 255 255 / 15%), rgb(0 0 0 / 2%)), var(--color-card); box-shadow: 0 1px 0 rgb(255 255 255 / 18%) inset, .35rem .45rem 0 rgb(52 17 15 / 16%); overflow: visible; }
+.room-landing--reading .room-landing__destinations .app-link::before { position: absolute; z-index: 0; top: -1.05rem; left: -1px; width: min(78%, 15.5rem); height: 1.15rem; border: 1px solid var(--color-card-border); border-bottom: 0; border-radius: .15rem .45rem 0 0; background: var(--reading-tab-color); content: ''; clip-path: polygon(0 0, 78% 0, 88% 30%, 100% 100%, 0 100%); }
+.room-landing--reading .room-landing__destinations .app-link::after { position: absolute; z-index: 0; inset: 0; background: linear-gradient(135deg, rgb(255 255 255 / 24%), transparent 42%); content: ''; pointer-events: none; }
+.room-landing--reading .room-landing__destinations .app-link strong { position: absolute; z-index: 1; top: -1rem; left: var(--space-4); max-width: calc(100% - 3rem); padding: .13rem var(--space-3) .18rem; overflow: hidden; color: var(--color-card); font-size: clamp(.82rem, 2.4vw, 1rem); line-height: 1; text-overflow: ellipsis; text-shadow: 0 1px 0 rgb(0 0 0 / 25%); white-space: nowrap; }
+.room-landing--reading .room-landing__destinations .app-link span { position: relative; z-index: 1; }
+.room-landing--reading .room-landing__destinations .app-link:hover { transform: translateY(-.14rem); box-shadow: 0 1px 0 rgb(255 255 255 / 18%) inset, .48rem .6rem 0 rgb(52 17 15 / 20%); }
+.room-landing--reading .room-landing__destinations .app-link:focus-visible { outline: .2rem solid var(--color-brass); outline-offset: .28rem; }
+.room-landing--reading .room-landing__destinations .app-link:nth-child(3n + 1) { --reading-tab-color: var(--color-wood); }
+.room-landing--reading .room-landing__destinations .app-link:nth-child(3n + 2) { --reading-tab-color: var(--color-brass); }
+.room-landing--reading .room-landing__destinations .app-link:nth-child(3n) { --reading-tab-color: var(--color-primary); }
+.room-landing--reading .room-landing__destinations .app-link:nth-child(2) { --reading-lamp-spill: 35%; }
+.room-landing--reading .room-landing__destinations .app-link:nth-child(1) { --reading-lamp-spill: 18%; }
+.room-landing--reading .room-landing__destinations .app-link:nth-child(3), .room-landing--reading .room-landing__destinations .app-link:nth-child(4) { --reading-lamp-spill: 14%; }
 .room-landing--listening, .listening-dashboard, .album-loans-page { --album-ivory: #f2e7ce; --album-paper: #fff8e8; --album-walnut: #4a2d25; --album-indigo: #29294f; --album-coral: #c95f54; --album-honey: #d6a84f; --album-teal: #397a78; }
 .room-landing--listening { margin: -2rem max(-4vw, -3rem); padding-inline: clamp(1rem, 5vw, 4rem); background: radial-gradient(circle at 82% 4%, rgb(214 168 79 / 28%), transparent 30rem), linear-gradient(135deg, rgb(41 41 79 / 12%), transparent 48%), var(--album-ivory); color: #271b22; }
 .room-landing--listening .room-landing__eyebrow { color: var(--album-indigo); }
 .room-landing--listening .room-landing__heading h1 { color: var(--album-indigo); text-shadow: .025em .035em 0 rgb(74 45 37 / 28%); }
-.room-landing--listening .room-landing__destinations .app-link { border-color: #b59669; background: var(--album-paper); box-shadow: .45rem .55rem 0 rgb(74 45 37 / 20%); }
-.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 1) { border-top: .35rem solid var(--album-indigo); }
-.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 2) { border-top: .35rem solid var(--album-coral); }
-.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 3) { border-top: .35rem solid var(--album-teal); }
-.room-landing--listening .room-landing__destinations .app-link:nth-child(4n) { border-top: .35rem solid var(--album-honey); }
+.room-landing--listening .room-landing__heading { position: relative; max-width: 56rem; }
+.room-landing--listening .room-landing__heading-copy { display: grid; gap: var(--space-3); min-width: 0; text-align: center; }
+.room-landing__header-art { position: absolute; top: 50%; left: calc(clamp(-12rem, -11vw, -7rem) - 125px); width: clamp(13.5rem, 24vw, 20rem); filter: drop-shadow(.25rem .35rem .2rem rgb(38 24 23 / 28%)); pointer-events: none; transform: translateY(-50%) rotate(-7deg); }
+@media (max-width: 42rem) { .room-landing__header-art { position: static; width: 11rem; margin: 0 0 calc(-1 * var(--space-4)) var(--space-4); transform: rotate(-7deg); } }
+/*
+ * The Listening Room destinations are record-file folders: the module name
+ * lives on a raised tab, while the card below has a faint paper-fibre grain.
+ */
+.room-landing--listening .room-landing__destinations { row-gap: clamp(2.1rem, 4vw, 2.75rem); }
+.room-landing--listening .room-landing__destinations .app-link { position: relative; isolation: isolate; align-content: start; gap: var(--space-3); min-height: 7.25rem; margin-top: 1rem; padding: calc(var(--space-6) + .2rem) var(--space-6) var(--space-6); border-color: #b59669; border-top: 0; border-radius: 0 .15rem .15rem .15rem; background: repeating-linear-gradient(0deg, rgb(74 45 37 / 3%) 0, rgb(74 45 37 / 3%) 1px, transparent 1px, transparent 4px), repeating-linear-gradient(90deg, rgb(255 255 255 / 26%) 0, rgb(255 255 255 / 26%) 1px, transparent 1px, transparent 7px), var(--album-paper); box-shadow: .45rem .55rem 0 rgb(74 45 37 / 20%); overflow: visible; }
+.room-landing--listening .room-landing__destinations .app-link::before { position: absolute; z-index: 0; top: -1.05rem; left: -1px; width: min(78%, 15.5rem); height: 1.15rem; border: 1px solid #b59669; border-bottom: 0; border-radius: .15rem .45rem 0 0; background: var(--album-tab-color); content: ''; clip-path: polygon(0 0, 78% 0, 88% 30%, 100% 100%, 0 100%); }
+.room-landing--listening .room-landing__destinations .app-link::after { position: absolute; z-index: 0; inset: 0; background: linear-gradient(135deg, rgb(255 255 255 / 32%), transparent 40%); content: ''; pointer-events: none; }
+.room-landing--listening .room-landing__destinations .app-link strong { position: absolute; z-index: 1; top: -1rem; left: var(--space-4); max-width: calc(100% - 3rem); padding: .13rem var(--space-3) .18rem; overflow: hidden; color: #fff8e8; font-size: clamp(.82rem, 2.4vw, 1rem); line-height: 1; text-overflow: ellipsis; text-shadow: 0 1px 0 rgb(0 0 0 / 22%); white-space: nowrap; }
+.room-landing--listening .room-landing__destinations .app-link span { position: relative; z-index: 1; }
+.room-landing--listening .room-landing__destinations .app-link:hover { transform: translateY(-.14rem); box-shadow: .55rem .68rem 0 rgb(74 45 37 / 24%); }
+.room-landing--listening .room-landing__destinations .app-link:focus-visible { outline: .2rem solid var(--album-indigo); outline-offset: .28rem; }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 1) { --album-tab-color: var(--album-indigo); }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 2) { --album-tab-color: var(--album-coral); }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n + 3) { --album-tab-color: var(--album-teal); }
+.room-landing--listening .room-landing__destinations .app-link:nth-child(4n) { --album-tab-color: var(--album-honey); }
 
 .listening-dashboard, .album-loans-page { position: relative; isolation: isolate; color: #271b22; }
 .listening-dashboard::before, .album-loans-page::before { position: absolute; inset: -2rem max(-4vw, -3rem); z-index: -1; background: radial-gradient(circle at 85% 5%, rgb(214 168 79 / 24%), transparent 28rem), var(--album-ivory); content: ''; }

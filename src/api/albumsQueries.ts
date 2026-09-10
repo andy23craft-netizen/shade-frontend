@@ -9,7 +9,6 @@ const cleanOptions = (options: ListAlbumsOptions) => ({
     ...(options.artist?.trim() ? { artist: options.artist.trim() } : {}),
     ...(options.title?.trim() ? { title: options.title.trim() } : {}),
     ...(options.barcode?.trim() ? { barcode: options.barcode.trim() } : {}),
-    ...(options.mediaFormat ? { mediaFormat: options.mediaFormat } : {}),
     ...(options.includeDeleted ? { includeDeleted: true } : {}),
     ...(options.placementState ? { placementState: options.placementState } : {}),
     ...(options.skip !== undefined ? { skip: options.skip } : {}),

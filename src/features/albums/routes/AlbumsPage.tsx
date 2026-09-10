@@ -5,21 +5,29 @@ import { Alert, AppLink, BackToTop, Button, EmptyState, Field, LoadingState, Que
 import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
 import { AlbumArtwork } from '../components/AlbumArtwork'
 import { displayMediaFormat, formatAlbumArtists } from '../albumDisplay'
-import { flattenAlbumPages, parseAlbumListParams, updateAlbumListParams, type AlbumListFilters } from '../albumsListModel'
+import { flattenAlbumPages, parseAlbumListParams, updateAlbumListParams, type AlbumListFilters, type AlbumSortBy } from '../albumsListModel'
 import { AddAlbumToWishlistControl } from '../../wishlists/components/AddAlbumToWishlistControl'
 
 const AlbumBarcodeCameraScanner = lazy(() => import('../../scanning/IsbnCameraScanner').then(module => ({ default: module.AlbumBarcodeCameraScanner })))
 
 function AlbumControls({ filters, onChange, onClear, onScanBarcode }: { filters: AlbumListFilters; onChange: (updates: Partial<AlbumListFilters>) => void; onClear: () => void; onScanBarcode: () => void }) {
+    const sortState = (field: AlbumSortBy) => filters.sortBy === field ? filters.sortOrder : 'none'
+    const cycleSort = (field: AlbumSortBy) => {
+        const current = sortState(field)
+        const next = current === 'none' ? 'asc' : current === 'asc' ? 'desc' : 'none'
+        onChange(next === 'none' ? { sortBy: 'artist', sortOrder: 'asc' } : { sortBy: field, sortOrder: next })
+    }
     return <form className="album-filters" onSubmit={event => event.preventDefault()}>
-        <Field label="Artist"><input type="search" value={filters.artist ?? ''} onChange={event => onChange({ artist: event.target.value })} /></Field>
-        <Field label="Title"><input type="search" value={filters.title ?? ''} onChange={event => onChange({ title: event.target.value })} /></Field>
-        <Field label="Barcode"><input inputMode="numeric" value={filters.barcode ?? ''} onChange={event => onChange({ barcode: event.target.value })} /></Field>
-        <Button type="button" variant="secondary" onClick={onScanBarcode}>Scan barcode</Button>
-        <Field label="Format"><select value={filters.mediaFormat ?? ''} onChange={event => onChange({ mediaFormat: event.target.value as AlbumListFilters['mediaFormat'] })}><option value="">All formats</option><option value="vinyl">Vinyl</option><option value="cd">CD</option><option value="cassette">Cassette</option><option value="other">Other</option><option value="unknown">Unknown</option></select></Field>
-        <Field label="Placement"><select value={filters.placementState ?? 'shelved'} onChange={event => onChange({ placementState: event.target.value === 'unshelved' ? 'unshelved' : undefined })}><option value="shelved">In crates</option><option value="unshelved">Unshelved / wishlist candidates</option></select></Field>
-        <Field label="Sort"><select value={filters.sortBy} onChange={event => onChange({ sortBy: event.target.value as AlbumListFilters['sortBy'] })}><option value="artist">Artist</option><option value="title">Title</option><option value="release_date">Release date</option><option value="creation_date">Date added</option></select></Field>
-        <Field label="Direction"><select value={filters.sortOrder} onChange={event => onChange({ sortOrder: event.target.value as AlbumListFilters['sortOrder'] })}><option value="asc">Ascending</option><option value="desc">Descending</option></select></Field>
+        <Field className="album-filters__field" label="Artist"><input type="search" value={filters.artist ?? ''} onChange={event => onChange({ artist: event.target.value })} /></Field>
+        <Field className="album-filters__field" label="Title"><input type="search" value={filters.title ?? ''} onChange={event => onChange({ title: event.target.value })} /></Field>
+        <div className="album-filters__barcode">
+            <Button type="button" variant="secondary" onClick={onScanBarcode}>Scan barcode</Button>
+            <input aria-label="Barcode" inputMode="numeric" value={filters.barcode ?? ''} onChange={event => onChange({ barcode: event.target.value })} />
+        </div>
+        <Field className="album-filters__field" label="Placement"><select value={filters.placementState ?? 'shelved'} onChange={event => onChange({ placementState: event.target.value === 'unshelved' ? 'unshelved' : undefined })}><option value="shelved">In crates</option><option value="unshelved">Unshelved / wishlist candidates</option></select></Field>
+        <div className="album-filters__sorts" aria-label="Album sorting">
+            {([['artist', 'Artist', 'Sort by artist'], ['title', 'Title', 'Sort by title'], ['release_date', 'Release', 'Sort by release date'], ['creation_date', 'Added', 'Sort by date added']] as const).map(([field, label, ariaLabel]) => <button key={field} type="button" aria-label={ariaLabel} className="books-toolbar__button books-toolbar__sort album-filters__sort" onClick={() => cycleSort(field)}>{label}<strong>{sortState(field) === 'none' ? 'None' : sortState(field) === 'asc' ? 'Asc' : 'Desc'}</strong></button>)}
+        </div>
         <label className="album-filters__deleted"><input type="checkbox" checked={filters.includeDeleted} onChange={event => onChange({ includeDeleted: event.target.checked })} /> Include deleted albums</label>
         <Button type="button" variant="secondary" onClick={onClear}>Clear filters</Button>
     </form>

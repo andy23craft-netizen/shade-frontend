@@ -1,13 +1,21 @@
 import { AppLink } from '../../../components'
 import { LibraryWordmark } from '../../../components/LibraryWordmark'
+import readingLamp from '../../../assets/Reading_lamp.png'
 
 export function ReadingRoomPage() {
     return (
         <section className="route-page room-landing room-landing--reading" aria-labelledby="reading-room-heading">
             <div className="room-landing__heading">
-                <LibraryWordmark className="room-landing__eyebrow" />
-                <h1 id="reading-room-heading" tabIndex={-1}>Reading Room</h1>
-                <p>Browse the shelves, tend the catalog, and revisit the reading record.</p>
+                <img
+                    className="room-landing__header-art room-landing__header-art--reading"
+                    src={readingLamp}
+                    alt=""
+                />
+                <div className="room-landing__heading-copy">
+                    <LibraryWordmark className="room-landing__eyebrow" />
+                    <h1 id="reading-room-heading" tabIndex={-1}>Reading Room</h1>
+                    <p>Browse the shelves, tend the catalog, and revisit the reading record.</p>
+                </div>
             </div>
             <nav className="room-landing__destinations" aria-label="Reading Room destinations">
                 <AppLink to="/books"><strong>Browse the Stacks</strong><span>Find a book by title, author, or category.</span></AppLink>
