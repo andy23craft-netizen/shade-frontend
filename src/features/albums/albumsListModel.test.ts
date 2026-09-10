@@ -3,9 +3,9 @@ import { parseAlbumListParams, updateAlbumListParams } from './albumsListModel'
 
 describe('albumsListModel', () => {
     it('round trips album-only filters and sort state', () => {
-        const params = updateAlbumListParams(new URLSearchParams(), { artist: '  Miles Davis ', title: 'Kind', barcode: '123', placementState: 'unshelved', includeDeleted: true, sortBy: 'release_date', sortOrder: 'desc' })
-        expect(params.toString()).toBe('artist=Miles+Davis&title=Kind&barcode=123&placement_state=unshelved&include_deleted=true&sortBy=release_date&sortOrder=desc')
-        expect(parseAlbumListParams(params)).toEqual({ artist: 'Miles Davis', title: 'Kind', barcode: '123', placementState: 'unshelved', includeDeleted: true, sortBy: 'release_date', sortOrder: 'desc' })
+        const params = updateAlbumListParams(new URLSearchParams(), { search: '  Miles Davis ', barcode: '123', genreIds: ['jazz', 'fusion', 'jazz'], placementState: 'unshelved', sortBy: 'release_date', sortOrder: 'desc' })
+        expect(params.toString()).toBe('search=Miles+Davis&barcode=123&placement_state=unshelved&genre_id=jazz&genre_id=fusion&sortBy=release_date&sortOrder=desc')
+        expect(parseAlbumListParams(params)).toEqual({ search: 'Miles Davis', barcode: '123', genreIds: ['jazz', 'fusion'], placementState: 'unshelved', sortBy: 'release_date', sortOrder: 'desc' })
     })
-    it('rejects invalid values and ignores obsolete or book-only fields', () => expect(parseAlbumListParams(new URLSearchParams('media_format=vinyl&placement_state=lost&sortBy=pages&is_read=true'))).toEqual({ artist: undefined, title: undefined, barcode: undefined, placementState: undefined, includeDeleted: false, sortBy: 'artist', sortOrder: 'asc' }))
+    it('rejects invalid values and ignores obsolete or book-only fields', () => expect(parseAlbumListParams(new URLSearchParams('artist=Miles&title=Kind&include_deleted=true&placement_state=lost&sortBy=pages&is_read=true'))).toEqual({ search: undefined, barcode: undefined, genreIds: [], placementState: undefined, sortBy: 'artist', sortOrder: 'asc' }))
 })

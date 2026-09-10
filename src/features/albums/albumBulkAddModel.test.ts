@@ -9,8 +9,7 @@ describe('albumBulkAddModel', () => {
         expect(albumBulkStorageKey('jamie.library.spir.es')).toBe('shade:jamie:album:bulk-add:v1')
         expect(albumBulkStorageKey('andy.localhost')).not.toBe(albumBulkStorageKey('jamie.localhost'))
     })
-    it('blocks deleted and ambiguous matches and requires explicit duplicate/acquisition choices', () => {
-        expect(canImportAlbum(item('soft_deleted'))).toBe(false)
+    it('blocks ambiguous matches and requires explicit duplicate/acquisition choices', () => {
         expect(canImportAlbum(item('ambiguous'))).toBe(false)
         expect(canImportAlbum(item('owned'))).toBe(false)
         const duplicate = item('owned'); duplicate.draft.allowDuplicate = true

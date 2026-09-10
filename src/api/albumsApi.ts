@@ -3,8 +3,8 @@ import type { ApiCallOptions } from './apiCallOptions'
 import type { AlbumArtworkRefetchRequest, AlbumCreate, AlbumList, AlbumLookupResponse, AlbumRead, AlbumUpdate, BulkAlbumImportRequest, BulkAlbumImportResponse, BulkAlbumLookupRequest, BulkAlbumLookupResponse, CheckinRequest, CheckoutRequest, MarkPlayedRequest } from './apiTypes'
 
 export interface ListAlbumsOptions extends ApiCallOptions {
-    artist?: string; title?: string; barcode?: string
-    includeDeleted?: boolean; placementState?: 'shelved' | 'unshelved'; skip?: number; take?: number; sortBy?: string; sortOrder?: string
+    search?: string; barcode?: string; genreIds?: readonly string[]
+    placementState?: 'shelved' | 'unshelved'; skip?: number; take?: number; sortBy?: string; sortOrder?: string
 }
 
 const signalOptions = (signal?: AbortSignal) => signal ? { signal } : undefined
@@ -14,9 +14,9 @@ export function createAlbumsApi(client: ReturnType<typeof createApiClient>) {
         async list(options: ListAlbumsOptions = {}): Promise<AlbumList> {
             const params = new URLSearchParams()
             const apiSortBy = options.sortBy === 'release_date' ? 'releaseDate' : options.sortBy === 'creation_date' ? 'creationDate' : options.sortBy
-            const strings = { artist: options.artist, title: options.title, barcode: options.barcode, placement_state: options.placementState, sortBy: apiSortBy, sortOrder: options.sortOrder }
+            const strings = { search: options.search, barcode: options.barcode, placement_state: options.placementState, sortBy: apiSortBy, sortOrder: options.sortOrder }
             for (const [name, value] of Object.entries(strings)) if (value?.trim()) params.set(name, value.trim())
-            if (options.includeDeleted) params.set('include_deleted', 'true')
+            for (const genreId of options.genreIds ?? []) if (genreId.trim()) params.append('genre_id', genreId.trim())
             if (options.skip !== undefined) params.set('skip', String(options.skip))
             if (options.take !== undefined) params.set('take', String(options.take))
             const query = params.toString()
@@ -26,7 +26,6 @@ export function createAlbumsApi(client: ReturnType<typeof createApiClient>) {
         create: (album: AlbumCreate) => client.requestJson<AlbumRead>('/albums', { method: 'POST', body: album }),
         update: (id: string, album: AlbumUpdate) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}`, { method: 'PATCH', body: album }),
         remove: async (id: string) => { await client.request(`/albums/${encodeURIComponent(id)}`, { method: 'DELETE' }) },
-        restore: (id: string) => client.requestJson<AlbumRead>(`/albums/${encodeURIComponent(id)}/restore`, { method: 'POST' }),
         lookup: (value: string, kind: 'barcode' | 'discogs', options: ApiCallOptions = {}) => {
             const params = new URLSearchParams(kind === 'barcode' ? { barcode: value } : { discogs_release_id: value })
             return client.getJson<AlbumLookupResponse>(`/albums/lookup?${params}`, signalOptions(options.signal))

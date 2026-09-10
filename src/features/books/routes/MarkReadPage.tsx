@@ -476,7 +476,7 @@ export function MarkReadPage() {
                 <Field
                     id={FIELD_IDS.completion_date}
                     label="Completion date"
-                    helpText="Leave blank to use the server's current UTC date."
+                    helpText="A selected date is recorded at noon UTC. Leave blank to use the server's current UTC time."
                     error={fieldErrors.completion_date}
                 >
                     <input

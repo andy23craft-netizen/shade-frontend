@@ -107,7 +107,7 @@ export function CollectionAlbums({ collectionId, enabled }: { collectionId: stri
     const [search, setSearch] = useState('')
     const [addError, setAddError] = useState<string | null>(null)
     const albums = useAlbums(
-        search.trim() ? { title: search } : {},
+        search.trim() ? { search } : {},
         { enabled: enabled && search.trim().length > 0 },
     )
 

@@ -10,7 +10,7 @@ import { flattenInfiniteListPages } from '../loansListModel'
 
 export function AlbumLoansPage() {
     const loansQuery = useInfiniteLoans({ mediaType: 'album' })
-    const albumsQuery = useAlbums({ includeDeleted: true })
+    const albumsQuery = useAlbums()
     const loans = flattenInfiniteListPages<{ items: LoanRead[] }, LoanRead>(loansQuery.data?.pages).filter((loan): loan is LoanRead & { album_id: string } => typeof loan.album_id === 'string' && loan.book_id === null)
     const fetchNextPage = loansQuery.fetchNextPage
     const { getRowRef } = useInfiniteScrollTrigger({ enabled: loansQuery.isSuccess, hasNextPage: loansQuery.hasNextPage, isFetchingNextPage: loansQuery.isFetchingNextPage, fetchNextPage: () => { void fetchNextPage() }, itemCount: loans.length })

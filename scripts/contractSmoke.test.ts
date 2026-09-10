@@ -43,7 +43,6 @@ const expectedPaths = [
     '/albums/{album_id}/checkin',
     '/albums/{album_id}/checkout',
     '/albums/{album_id}/mark-played',
-    '/albums/{album_id}/restore',
     '/books',
     '/books/bulk/apply-stash',
     '/books/bulk/availability',

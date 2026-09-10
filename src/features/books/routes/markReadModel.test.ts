@@ -127,7 +127,7 @@ describe('markReadModel', () => {
                     review: 'Excellent book.',
                 }),
             ).toEqual({
-                completion_date: '2026-08-14',
+                completion_date: '2026-08-14T12:00:00.000Z',
                 rating: 5,
                 review: 'Excellent book.',
             })
@@ -154,7 +154,7 @@ describe('markReadModel', () => {
                     review: ' A good read. ',
                 }),
             ).toEqual({
-                completion_date: '2026-08-14',
+                completion_date: '2026-08-14T12:00:00.000Z',
                 rating: 3,
                 review: 'A good read.',
             })

@@ -532,17 +532,6 @@
             "title": "Creation Date",
             "type": "string"
           },
-          "deletion_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Deletion Date"
-          },
           "discogs_release_id": {
             "anyOf": [
               {
@@ -689,7 +678,6 @@
           "borrower_rating",
           "creation_date",
           "updated_date",
-          "deletion_date",
           "shelf_name",
           "artists",
           "genres",
@@ -2147,8 +2135,7 @@
           "owned",
           "wishlist",
           "unshelved",
-          "ambiguous",
-          "soft_deleted"
+          "ambiguous"
         ],
         "title": "BulkAlbumCatalogState",
         "type": "string"
@@ -6177,6 +6164,22 @@
         "parameters": [
           {
             "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "in": "query",
             "name": "artist",
             "required": false,
             "schema": {
@@ -6225,6 +6228,25 @@
           },
           {
             "in": "query",
+            "name": "genre_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Genre Id"
+            }
+          },
+          {
+            "in": "query",
             "name": "media_format",
             "required": false,
             "schema": {
@@ -6246,16 +6268,6 @@
             "schema": {
               "$ref": "#/components/schemas/AlbumPlacementState",
               "default": "shelved"
-            }
-          },
-          {
-            "in": "query",
-            "name": "include_deleted",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Include Deleted",
-              "type": "boolean"
             }
           },
           {
@@ -6803,26 +6815,6 @@
               }
             },
             "description": "Resource not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "State conflict"
-          },
-          "412": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf"
           },
           "422": {
             "content": {
@@ -7910,119 +7902,6 @@
           }
         ],
         "summary": "Mark Album Played",
-        "tags": [
-          "albums"
-        ]
-      }
-    },
-    "/albums/{album_id}/restore": {
-      "post": {
-        "operationId": "restore_album_albums__album_id__restore_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "album_id",
-            "required": true,
-            "schema": {
-              "title": "Album Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Forwarded-Host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Forwarded-Host"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AlbumRead"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Malformed or missing identifier"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Authentication failure"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "Resource not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "State conflict"
-          },
-          "412": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorDetail"
-                }
-              }
-            },
-            "description": "An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Restore Album",
         "tags": [
           "albums"
         ]
@@ -16201,7 +16080,7 @@
                 }
               }
             },
-            "description": "Existing albums cannot be added to a wishlist; Soft-deleted albums cannot be added to a wishlist"
+            "description": "Existing albums cannot be added to a wishlist"
           },
           "422": {
             "content": {
@@ -16528,7 +16407,7 @@
                 }
               }
             },
-            "description": "Existing albums cannot be added to a wishlist; Soft-deleted albums cannot be added to a wishlist"
+            "description": "Existing albums cannot be added to a wishlist"
           },
           "422": {
             "content": {

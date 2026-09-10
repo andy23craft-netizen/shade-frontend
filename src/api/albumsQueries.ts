@@ -6,10 +6,9 @@ import type { AlbumCreate, AlbumUpdate, BulkAlbumImportRequest, BulkAlbumLookupR
 import { queryKeys } from './queryKeys'
 
 const cleanOptions = (options: ListAlbumsOptions) => ({
-    ...(options.artist?.trim() ? { artist: options.artist.trim() } : {}),
-    ...(options.title?.trim() ? { title: options.title.trim() } : {}),
+    ...(options.search?.trim() ? { search: options.search.trim() } : {}),
     ...(options.barcode?.trim() ? { barcode: options.barcode.trim() } : {}),
-    ...(options.includeDeleted ? { includeDeleted: true } : {}),
+    ...(options.genreIds?.length ? { genreIds: [...new Set(options.genreIds)].sort() } : {}),
     ...(options.placementState ? { placementState: options.placementState } : {}),
     ...(options.skip !== undefined ? { skip: options.skip } : {}),
     ...(options.take !== undefined ? { take: options.take } : {}),
@@ -70,7 +69,6 @@ function useAlbumMutation<T>(mutationFn: (value: T) => Promise<unknown>) { const
 export function useCreateAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation((album: AlbumCreate) => api.create(album)) }
 export function useUpdateAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation(({ id, album }: { id: string; album: AlbumUpdate }) => api.update(id, album)) }
 export function useDeleteAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation((id: string) => api.remove(id)) }
-export function useRestoreAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation((id: string) => api.restore(id)) }
 export function useCheckoutAlbum() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useAlbumMutation(({ id, request }: { id: string; request: CheckoutRequest }) => api.checkout(id, request)) }
 export function useCheckinAlbum() {
     const { apiClient } = useConnection()

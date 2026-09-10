@@ -72,7 +72,7 @@ export function markReadFormValuesToRequest(
 
     if (completionDate) {
         request.completion_date =
-            completionDate
+            `${completionDate}T12:00:00.000Z`
     }
 
     if (rating) {

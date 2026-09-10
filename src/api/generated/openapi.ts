@@ -196,23 +196,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/albums/{album_id}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Restore Album */
-        post: operations["restore_album_albums__album_id__restore_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/books": {
         parameters: {
             query?: never;
@@ -1483,8 +1466,6 @@ export interface components {
             completion_date?: string | null;
             /** Creation Date */
             creation_date: string;
-            /** Deletion Date */
-            deletion_date: string | null;
             /** Discogs Release Id */
             discogs_release_id?: string | null;
             /** Genres */
@@ -1886,7 +1867,7 @@ export interface components {
          * BulkAlbumCatalogState
          * @enum {string}
          */
-        BulkAlbumCatalogState: "new" | "owned" | "wishlist" | "unshelved" | "ambiguous" | "soft_deleted";
+        BulkAlbumCatalogState: "new" | "owned" | "wishlist" | "unshelved" | "ambiguous";
         /**
          * BulkAlbumImportAction
          * @enum {string}
@@ -3114,12 +3095,13 @@ export interface operations {
     list_albums_albums_get: {
         parameters: {
             query?: {
+                search?: string | null;
                 artist?: string | null;
                 title?: string | null;
                 barcode?: string | null;
+                genre_id?: string[] | null;
                 media_format?: components["schemas"]["MediaFormat"] | null;
                 placement_state?: components["schemas"]["AlbumPlacementState"];
-                include_deleted?: boolean;
                 sortBy?: string;
                 sortOrder?: string;
                 skip?: number | null;
@@ -3498,24 +3480,6 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description State conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
-            412: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4126,84 +4090,6 @@ export interface operations {
             };
             /** @description Resource not found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    restore_album_albums__album_id__restore_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Forwarded-Host"?: string | null;
-            };
-            path: {
-                album_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlbumRead"];
-                };
-            };
-            /** @description Malformed or missing identifier */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Authentication failure */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Resource not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description State conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description An album cannot be placed on a book shelf; The album must be removed from the wishlist before it can be placed on a shelf */
-            412: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9018,7 +8904,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
-            /** @description Existing albums cannot be added to a wishlist; Soft-deleted albums cannot be added to a wishlist */
+            /** @description Existing albums cannot be added to a wishlist */
             412: {
                 headers: {
                     [name: string]: unknown;
@@ -9216,7 +9102,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
-            /** @description Existing albums cannot be added to a wishlist; Soft-deleted albums cannot be added to a wishlist */
+            /** @description Existing albums cannot be added to a wishlist */
             412: {
                 headers: {
                     [name: string]: unknown;

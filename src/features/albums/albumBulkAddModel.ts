@@ -82,14 +82,14 @@ export function draftFromAlbumLookup(result: BulkAlbumLookupItemResult): AlbumBu
     }
 }
 
-export const albumCatalogStateLabel = (state?: string | null): string => ({ new: 'New', owned: 'Already owned', wishlist: 'Wishlisted', unshelved: 'Unshelved', ambiguous: 'Ambiguous match', soft_deleted: 'Soft-deleted match' }[state ?? ''] ?? 'Needs review')
+export const albumCatalogStateLabel = (state?: string | null): string => ({ new: 'New', owned: 'Already owned', wishlist: 'Wishlisted', unshelved: 'Unshelved', ambiguous: 'Ambiguous match' }[state ?? ''] ?? 'Needs review')
 export const albumLookupStatusLabel = (status: AlbumBulkQueueItem['status']): string => ({ queued: 'Queued', looking_up: 'Looking up', found: 'Found', not_found: 'Not found', invalid_identifier: 'Invalid identifier', provider_timeout: 'Provider timeout', provider_failure: 'Provider failure', lookup_failed: 'Lookup failed' }[status])
 
 export function canImportAlbum(item: AlbumBulkQueueItem): boolean {
     if (item.saveStatus === 'created' || item.saveStatus === 'wishlist_acquired') return false
     if (!item.draft.title.trim() || item.draft.artistIds.length === 0) return false
     const state = item.result?.catalog_state
-    if (state === 'owned' || state === 'unshelved' || state === 'ambiguous' || state === 'soft_deleted') return state === 'owned' && item.draft.allowDuplicate
+    if (state === 'owned' || state === 'unshelved' || state === 'ambiguous') return state === 'owned' && item.draft.allowDuplicate
     if (state === 'wishlist') return item.draft.acquireWishlist && item.result?.catalog_album_ids?.length === 1
     return true
 }

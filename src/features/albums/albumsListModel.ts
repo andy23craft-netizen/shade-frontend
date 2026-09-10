@@ -1,6 +1,6 @@
 export type AlbumSortBy = 'artist' | 'title' | 'release_date' | 'creation_date'
 export type AlbumSortOrder = 'asc' | 'desc'
-export interface AlbumListFilters { artist?: string; title?: string; barcode?: string; placementState?: 'shelved' | 'unshelved'; includeDeleted: boolean; sortBy: AlbumSortBy; sortOrder: AlbumSortOrder }
+export interface AlbumListFilters { search?: string; barcode?: string; genreIds: string[]; placementState?: 'shelved' | 'unshelved'; sortBy: AlbumSortBy; sortOrder: AlbumSortOrder }
 
 const SORTS: readonly AlbumSortBy[] = ['artist', 'title', 'release_date', 'creation_date']
 const text = (value: string | null) => value?.trim() || undefined
@@ -8,11 +8,10 @@ const text = (value: string | null) => value?.trim() || undefined
 export function parseAlbumListParams(params: URLSearchParams): AlbumListFilters {
     const sort = params.get('sortBy')
     return {
-        artist: text(params.get('artist')),
-        title: text(params.get('title')),
+        search: text(params.get('search')),
         barcode: text(params.get('barcode')),
+        genreIds: [...new Set(params.getAll('genre_id').filter((value) => value.trim() !== ''))],
         placementState: params.get('placement_state') === 'unshelved' ? 'unshelved' : undefined,
-        includeDeleted: params.get('include_deleted') === 'true',
         sortBy: SORTS.includes(sort as AlbumSortBy) ? sort as AlbumSortBy : 'artist',
         sortOrder: params.get('sortOrder') === 'desc' ? 'desc' : 'asc',
     }
@@ -20,12 +19,9 @@ export function parseAlbumListParams(params: URLSearchParams): AlbumListFilters 
 
 export function updateAlbumListParams(current: URLSearchParams, updates: Partial<AlbumListFilters>): URLSearchParams {
     const next = new URLSearchParams(current)
-    const names: Array<[keyof AlbumListFilters, string]> = [['artist', 'artist'], ['title', 'title'], ['barcode', 'barcode'], ['placementState', 'placement_state']]
+    const names: Array<[keyof AlbumListFilters, string]> = [['search', 'search'], ['barcode', 'barcode'], ['placementState', 'placement_state']]
     for (const [property, parameter] of names) if (property in updates) { const value = updates[property]; if (typeof value === 'string' && value.trim()) next.set(parameter, value.trim()); else next.delete(parameter) }
-    if ('includeDeleted' in updates) {
-        if (updates.includeDeleted) next.set('include_deleted', 'true')
-        else next.delete('include_deleted')
-    }
+    if ('genreIds' in updates) { next.delete('genre_id'); for (const genreId of [...new Set(updates.genreIds ?? [])]) if (genreId.trim()) next.append('genre_id', genreId) }
     if ('sortBy' in updates) {
         if (updates.sortBy === 'artist') next.delete('sortBy')
         else next.set('sortBy', updates.sortBy!)

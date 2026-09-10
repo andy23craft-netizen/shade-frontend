@@ -35,10 +35,7 @@
 .album-browser__rail .album-filters__barcode .button { min-height: 0; padding-inline: .35rem; font-size: var(--font-size-small); white-space: nowrap; }
 .album-filters__sorts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .album-browser__rail .album-filters__sort { width: 100%; }
-.album-browser__rail .album-filters__deleted { align-items: center; gap: .4rem; padding: .3rem .1rem; font-size: var(--font-size-small); line-height: 1.2; }
-.page--albums .album-browser__rail .album-filters__deleted input { flex: 0 0 auto; width: .9rem; height: .9rem; margin: 0; }
 .album-browser__mobile { display: none; }
-.album-filters__deleted { display: flex; gap: .625rem; align-items: start; }
 .album-browser__results { min-width: 0; }
 .back-to-top { position: fixed; right: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-right)); bottom: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-bottom)); z-index: 50; box-shadow: var(--shadow-medium); }
 .album-card { position: relative; margin-block-start: .65rem; border: 1px solid var(--color-card-border); border-radius: .15rem; background: linear-gradient(rgb(255 255 255 / 10%), rgb(0 0 0 / 2%)), var(--color-card); box-shadow: 0 1px 0 rgb(255 255 255 / 18%) inset, 0 .2rem .45rem rgb(0 0 0 / 16%); color: var(--color-surface-text); }
@@ -353,7 +350,7 @@
   transform: rotate(-1deg);
 }
 
-.page--albums .album-browser__rail :where(.field__label, .album-filters__deleted) {
+.page--albums .album-browser__rail .field__label {
   color: var(--album-walnut-dark);
 }
 
@@ -362,11 +359,6 @@
   min-width: 0;
   padding: .65rem .7rem;
   border-left: 0;
-  background: #efe3ca;
-}
-
-.page--albums .album-browser__rail .album-filters__deleted {
-  padding: .65rem .7rem;
   background: #efe3ca;
 }
 
@@ -3268,6 +3260,7 @@
 .home-book-deck .book-card--compact {
   width: calc(100% - 1.5rem);
   min-height: 13rem;
+  grid-template-columns: minmax(6rem, 6.5rem) minmax(0, 1fr);
 }
 
 .home-book-deck__controls {
@@ -3384,6 +3377,19 @@
 .home-book-carousel__item .book-card--compact {
   width: 17rem;
   height: 100%;
+  grid-template-columns: minmax(6rem, 6.5rem) minmax(0, 1fr);
+}
+
+.home-book-carousel__item .book-card--compact .book-card__field,
+.home-book-deck .book-card--compact .book-card__field {
+  grid-template-columns: 3rem minmax(0, 1fr);
+}
+
+.home-book-carousel__item .book-card--compact .book-card__field dd,
+.home-book-deck .book-card--compact .book-card__field dd {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 36rem) {

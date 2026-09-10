@@ -386,7 +386,7 @@ describe('MarkReadPage', () => {
                 id: 'test-book-id',
                 request: {
                     completion_date:
-                        '2026-08-14',
+                        '2026-08-14T12:00:00.000Z',
                     rating: 5,
                     review:
                         'A marvelous book.',
