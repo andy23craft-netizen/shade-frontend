@@ -13,8 +13,10 @@ import {
 import {
     buildCameraVideoConstraints,
     createAlbumBarcodeDecodeHints,
+    createAlbumCatalogCodeDecodeHints,
     createIsbnDecodeHints,
     isAcceptableCameraAlbumBarcode,
+    isAcceptableCameraAlbumCode,
     isAcceptableCameraIsbn,
 } from './isbnCameraCapture'
 
@@ -52,6 +54,19 @@ describe('album barcode camera capture', () => {
     it('rejects unsupported formats and non-numeric payloads', () => {
         expect(isAcceptableCameraAlbumBarcode('602547888330', BarcodeFormat.QR_CODE)).toBe(false)
         expect(isAcceptableCameraAlbumBarcode('not-a-barcode', BarcodeFormat.UPC_A)).toBe(false)
+    })
+})
+
+describe('album catalog-code camera capture', () => {
+    it('accepts both retail album barcodes and opaque QR payloads', () => {
+        expect(createAlbumCatalogCodeDecodeHints().get(DecodeHintType.POSSIBLE_FORMATS)).toContain(BarcodeFormat.QR_CODE)
+        expect(isAcceptableCameraAlbumCode('602547888330', BarcodeFormat.UPC_A)).toBe(true)
+        expect(isAcceptableCameraAlbumCode('shade:v1:album:opaque-id', BarcodeFormat.QR_CODE)).toBe(true)
+    })
+
+    it('does not interpret QR contents locally', () => {
+        expect(isAcceptableCameraAlbumCode('not a Shade label', BarcodeFormat.QR_CODE)).toBe(true)
+        expect(isAcceptableCameraAlbumCode('   ', BarcodeFormat.QR_CODE)).toBe(false)
     })
 })
 

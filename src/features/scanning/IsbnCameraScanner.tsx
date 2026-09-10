@@ -18,9 +18,11 @@ import {
     buildCameraVideoConstraints,
     CAMERA_SCAN_TIMEOUT_MS,
     createAlbumBarcodeDecodeHints,
+    createAlbumCatalogCodeDecodeHints,
     createIsbnDecodeHints,
     getCameraCapabilityError,
     isAcceptableCameraAlbumBarcode,
+    isAcceptableCameraAlbumCode,
     isAcceptableCameraIsbn,
 } from './isbnCameraCapture'
 
@@ -43,13 +45,21 @@ export function AlbumBarcodeCameraScanner({
     return <CameraBarcodeScanner mode="album" onDetected={onDetected} onCancel={onCancel} />
 }
 
+export function AlbumCatalogCodeCameraScanner({
+    onDetected,
+    onCancel,
+}: IsbnScannerProps) {
+    return <CameraBarcodeScanner mode="album-code" onDetected={onDetected} onCancel={onCancel} />
+}
+
 function CameraBarcodeScanner({
     mode,
     onDetected,
     onCancel,
-}: IsbnScannerProps & { mode: 'isbn' | 'album' }) {
-    const isAlbum = mode === 'album'
-    const identifier = isAlbum ? 'barcode' : 'ISBN'
+}: IsbnScannerProps & { mode: 'isbn' | 'album' | 'album-code' }) {
+    const isAlbum = mode === 'album' || mode === 'album-code'
+    const isAlbumCode = mode === 'album-code'
+    const identifier = isAlbumCode ? 'album code or barcode' : isAlbum ? 'barcode' : 'ISBN'
     const capabilityError =
         getCameraCapabilityError(identifier)
 
@@ -122,7 +132,7 @@ function CameraBarcodeScanner({
 
         const reader =
             new BrowserMultiFormatReader(
-                isAlbum ? createAlbumBarcodeDecodeHints() : createIsbnDecodeHints(),
+                isAlbumCode ? createAlbumCatalogCodeDecodeHints() : isAlbum ? createAlbumBarcodeDecodeHints() : createIsbnDecodeHints(),
             )
 
         let cancelled = false
@@ -223,7 +233,9 @@ function CameraBarcodeScanner({
                                 .trim()
 
                             if (
-                                !(isAlbum
+                                !(isAlbumCode
+                                    ? isAcceptableCameraAlbumCode(value, result.getBarcodeFormat())
+                                    : isAlbum
                                     ? isAcceptableCameraAlbumBarcode(value, result.getBarcodeFormat())
                                     : isAcceptableCameraIsbn(value, result.getBarcodeFormat()))
                             ) {
@@ -318,7 +330,14 @@ function CameraBarcodeScanner({
             cancelled = true
             stopScanner()
         }
-    }, [capabilityError, identifier, isAlbum, onDetected, selectedDeviceId])
+    }, [
+        capabilityError,
+        identifier,
+        isAlbum,
+        isAlbumCode,
+        onDetected,
+        selectedDeviceId,
+    ])
 
     function handleContinueScanning(): void {
         setScanTimedOut(false)
@@ -373,7 +392,9 @@ function CameraBarcodeScanner({
                         </p>
                     ) : (
                         <p>
-                            {isAlbum
+                            {isAlbumCode
+                                ? 'Point the camera at a Shade label or the barcode on the album.'
+                                : isAlbum
                                 ? 'Point the camera at the barcode on the album.'
                                 : 'Point the camera at the ISBN barcode on the back of the book.'}
                         </p>
@@ -382,9 +403,9 @@ function CameraBarcodeScanner({
                     {scanTimedOut ? (
                         <Alert
                             variant="warning"
-                            title={isAlbum ? 'No album barcode found' : 'No ISBN barcode found'}
+                            title={isAlbumCode ? 'No album code found' : isAlbum ? 'No album barcode found' : 'No ISBN barcode found'}
                         >
-                            No readable {isAlbum ? 'album' : 'ISBN'} barcode
+                            No readable {isAlbumCode ? 'album code or barcode' : isAlbum ? 'album' : 'ISBN'} barcode
                             was detected. Improve
                             lighting, move closer, or
                             enter the {identifier} manually.

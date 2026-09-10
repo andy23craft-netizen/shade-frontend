@@ -41,6 +41,11 @@ const ALBUM_BARCODE_FORMATS = [
     BarcodeFormat.UPC_E,
 ] as const
 
+const ALBUM_CATALOG_CODE_FORMATS = [
+    ...ALBUM_BARCODE_FORMATS,
+    BarcodeFormat.QR_CODE,
+] as const
+
 export function createAlbumBarcodeDecodeHints(): Map<
     DecodeHintType,
     BarcodeFormat[]
@@ -48,6 +53,27 @@ export function createAlbumBarcodeDecodeHints(): Map<
     const hints = new Map<DecodeHintType, BarcodeFormat[]>()
     hints.set(DecodeHintType.POSSIBLE_FORMATS, [...ALBUM_BARCODE_FORMATS])
     return hints
+}
+
+export function createAlbumCatalogCodeDecodeHints(): Map<
+    DecodeHintType,
+    BarcodeFormat[]
+> {
+    const hints = new Map<DecodeHintType, BarcodeFormat[]>()
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [...ALBUM_CATALOG_CODE_FORMATS])
+    return hints
+}
+
+/**
+ * QR contents are deliberately not parsed locally. The catalog resolver owns
+ * validation and tenant-safe lookup of Shade labels.
+ */
+export function isAcceptableCameraAlbumCode(
+    text: string,
+    barcodeFormat?: BarcodeFormat,
+): boolean {
+    if (barcodeFormat === BarcodeFormat.QR_CODE) return text.trim() !== ''
+    return isAcceptableCameraAlbumBarcode(text, barcodeFormat)
 }
 
 export function isSecureCameraContext(): boolean {

@@ -10,7 +10,7 @@ import { readRuntimeConfig } from './config/runtimeConfigState'
 import { UnknownLibraryScreen } from './config/UnknownLibraryScreen'
 import {
     applyLibraryDocumentMetadata,
-    applyShadeFavicon,
+    applyLibraryFavicon,
     applyLibraryTheme,
     resolveLibraryContext,
 } from './config/libraryContext'
@@ -31,7 +31,7 @@ const libraryContext = resolveLibraryContext(window.location.hostname)
 
 applyLibraryTheme(libraryContext)
 applyLibraryDocumentMetadata(libraryContext, 'Home')
-applyShadeFavicon(window.location.hostname)
+applyLibraryFavicon(window.location.hostname)
 
 function renderApplication() {
     if (!libraryContext) {

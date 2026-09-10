@@ -36,12 +36,11 @@ const PUBLIC_HOST_ALIASES: Readonly<Record<string, LibraryId>> = {
     'shade.library.spir.es': 'andy',
 }
 
-const SHADE_FAVICON_HOSTS = new Set([
-    'shade.library.spir.es',
-    DEFAULT_LOCAL_LIBRARY_HOST,
-    'localhost',
-    '127.0.0.1',
-])
+const LIBRARY_FAVICONS: Readonly<Record<LibraryId, string>> = {
+    andy: '/favicon-shade.png',
+    dalmo: '/favicon-dalmo.png',
+    jamie: '/favicon-jamie.png',
+}
 
 const LIBRARY_COVER_MARKS: Readonly<Record<LibraryId, string>> = {
     andy: 'SL',
@@ -125,23 +124,16 @@ export function applyLibraryDocumentMetadata(
     }
 }
 
-/**
- * The default favicon remains shared by every tenant. Shade's mark is applied
- * only on its public host and its local development aliases.
- */
-export function applyShadeFavicon(
+/** Applies a tenant's matching mark without replacing the unknown-host fallback. */
+export function applyLibraryFavicon(
     hostname: string,
     target: Document = document,
 ): void {
-    const normalizedHostname = hostname
-        .trim()
-        .toLowerCase()
-        .replace(/\.$/u, '')
-
-    if (!SHADE_FAVICON_HOSTS.has(normalizedHostname)) return
+    const context = resolveLibraryContext(hostname)
+    if (!context) return
 
     const icon = target.head.querySelector<HTMLLinkElement>('link[rel~="icon"]')
-    if (icon) icon.href = '/favicon-shade.png'
+    if (icon) icon.href = LIBRARY_FAVICONS[context.id]
 }
 
 export function getLibraryDisplayName(

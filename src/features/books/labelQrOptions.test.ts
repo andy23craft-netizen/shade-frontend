@@ -13,12 +13,12 @@ describe('book label QR options', () => {
         ).toBe('/favicon-shade.png')
     })
 
-    it.each(['dalmo', 'jamie'] as const)(
-        'uses the tenant favicon for %s labels',
-        (libraryId) => {
-            expect(getBookLabelQrCenterImage(libraryId)).toBe('/favicon.png')
-        },
-    )
+    it.each([
+        ['dalmo', '/favicon-dalmo.png'],
+        ['jamie', '/favicon-jamie.png'],
+    ] as const)('uses the tenant favicon for %s labels', (libraryId, image) => {
+        expect(getBookLabelQrCenterImage(libraryId)).toBe(image)
+    })
 
     it('uses each tenant palette while retaining a high-contrast finder', () => {
         const dalmo = createBookLabelQrOptions('shade:v1:book:book-1', 'dalmo')
@@ -26,9 +26,9 @@ describe('book label QR options', () => {
 
         expect(dalmo.dotsOptions?.gradient?.colorStops).toEqual([
             { offset: 0, color: '#65164e' },
-            { offset: 1, color: '#075857' },
+            { offset: 1, color: '#003642' },
         ])
-        expect(dalmo.cornersSquareOptions?.color).toBe('#430d34')
+        expect(dalmo.cornersSquareOptions?.color).toBe('#002f39')
         expect(jamie.dotsOptions?.gradient?.colorStops).toEqual([
             { offset: 0, color: '#672006' },
             { offset: 1, color: '#e85d18' },

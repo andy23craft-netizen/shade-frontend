@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
     applyLibraryDocumentMetadata,
-    applyShadeFavicon,
+    applyLibraryFavicon,
     applyLibraryTheme,
     formatLibraryDocumentTitle,
     getLibraryCoverMark,
@@ -49,33 +49,34 @@ describe('getLibraryCoverMark', () => {
     })
 })
 
-describe('applyShadeFavicon', () => {
-    it('uses the Shade mark only for the Shade host and its local aliases', () => {
-        const target = document.implementation.createHTMLDocument()
-        const icon = target.createElement('link')
-        icon.rel = 'icon'
-        icon.href = '/favicon.png'
-        target.head.append(icon)
-
-        applyShadeFavicon('shade.library.spir.es', target)
-
-        expect(icon.getAttribute('href')).toBe('/favicon-shade.png')
-    })
-
-    it.each(['dalmo.library.spir.es', 'jamie.localhost', 'andy.example.test'])(
-        'keeps the shared favicon for %s',
-        (hostname) => {
+describe('applyLibraryFavicon', () => {
+    it.each([
+        ['shade.library.spir.es', '/favicon-shade.png'],
+        ['dalmo.library.spir.es', '/favicon-dalmo.png'],
+        ['jamie.localhost', '/favicon-jamie.png'],
+    ])('uses the tenant favicon for %s', (hostname, expectedFavicon) => {
             const target = document.implementation.createHTMLDocument()
             const icon = target.createElement('link')
             icon.rel = 'icon'
             icon.href = '/favicon.png'
             target.head.append(icon)
 
-            applyShadeFavicon(hostname, target)
+            applyLibraryFavicon(hostname, target)
 
-            expect(icon.getAttribute('href')).toBe('/favicon.png')
-        },
-    )
+            expect(icon.getAttribute('href')).toBe(expectedFavicon)
+        })
+
+    it('keeps the default favicon for an unknown host', () => {
+        const target = document.implementation.createHTMLDocument()
+        const icon = target.createElement('link')
+        icon.rel = 'icon'
+        icon.href = '/favicon.png'
+        target.head.append(icon)
+
+        applyLibraryFavicon('unknown.library.spir.es', target)
+
+        expect(icon.getAttribute('href')).toBe('/favicon.png')
+    })
 })
 
 describe('applyLibraryTheme', () => {

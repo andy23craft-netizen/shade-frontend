@@ -14,15 +14,18 @@ import { flattenAlbumPages } from '../albumsListModel'
 import { albumLabelValue } from '../labelCode'
 
 const LABELS_PER_BATCH = 48
+const LABELS_PER_SHEET = 8
 
 function Label({
     albumId,
     title,
     libraryId,
+    libraryName,
 }: {
     albumId: string
     title: string
     libraryId: LibraryId | null
+    libraryName: string
 }) {
     const [image, setImage] = useState<string | null>(null)
 
@@ -57,7 +60,7 @@ function Label({
             : <span className="book-label__generating">Generating code…</span>}
         <div className="book-label__text">
             <strong>{title}</strong>
-            <span>Shade Library</span>
+            <span>{libraryName}</span>
         </div>
     </article>
 }
@@ -67,7 +70,11 @@ export function AlbumLabelsPage() {
     const requestedIds = params.getAll('album_id')
     const all = params.get('all') === '1'
     const start = Number(params.get('start') ?? '1')
-    const libraryId = resolveLibraryContext(window.location.hostname)?.id ?? null
+    const library = resolveLibraryContext(window.location.hostname)
+    const libraryId = library?.id ?? null
+    const libraryName = library?.id === 'andy'
+        ? 'Shade Library'
+        : library?.name ?? 'Shade Library'
     const albumsQuery = useInfiniteAlbums({}, { enabled: all })
     const selectedAlbumQueries = useAlbumsByIds(requestedIds)
     const { fetchNextPage, hasNextPage, isFetchingNextPage } = albumsQuery
@@ -100,9 +107,22 @@ export function AlbumLabelsPage() {
         (batchIndex + 1) * LABELS_PER_BATCH,
     )
     const batchStart = batchIndex === 0 ? position : 1
-    const blanks = Array.from({ length: batchStart - 1 }, (_, index) => (
-        <div className="book-label book-label--blank" key={`blank-${index}`} />
-    ))
+    const labelSheets = Array.from(
+        {
+            length: Math.ceil(
+                (batchStart - 1 + batchAlbums.length) / LABELS_PER_SHEET,
+            ),
+        },
+        (_, sheetIndex) => Array.from(
+            { length: LABELS_PER_SHEET },
+            (_, slotIndex) => {
+                const albumIndex = sheetIndex * LABELS_PER_SHEET
+                    + slotIndex - (batchStart - 1)
+
+                return batchAlbums[albumIndex] ?? null
+            },
+        ),
+    )
 
     function changeBatch(nextBatchIndex: number): void {
         params.set('batch', String(nextBatchIndex + 1))
@@ -137,7 +157,17 @@ export function AlbumLabelsPage() {
                 <a href="https://www.amazon.com/dp/B0FWGXGBSP" target="_blank" rel="noreferrer">Buy compatible label sheets</a>
             </div>
             <p className="no-print" role="status">{all && albumsQuery.hasNextPage ? `Loading more catalog albums; ${albums.length} ready so far.` : `${albums.length} ${all ? 'catalog' : 'selected'} ${albums.length === 1 ? 'album' : 'albums'} ready.`} Each print batch holds up to {LABELS_PER_BATCH} labels to keep QR generation responsive. Labels print two across by four down on R027 US Letter stock. Print at 100% / Actual Size.</p>
-            <div className="book-label-sheet">{blanks}{batchAlbums.map((album) => <Label key={album.album_id} albumId={album.album_id} title={album.title} libraryId={libraryId} />)}</div>
+            <div className="book-label-pages">
+                {labelSheets.map((sheet, sheetIndex) => (
+                    <div className="book-label-sheet" key={`sheet-${sheetIndex}`}>
+                        {sheet.map((album, slotIndex) => album ? (
+                            <Label key={album.album_id} albumId={album.album_id} title={album.title} libraryId={libraryId} libraryName={libraryName} />
+                        ) : (
+                            <div className="book-label book-label--blank" key={`blank-${slotIndex}`} />
+                        ))}
+                    </div>
+                ))}
+            </div>
         </>}
     </section>
 }

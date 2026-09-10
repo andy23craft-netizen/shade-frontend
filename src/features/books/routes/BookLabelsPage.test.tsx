@@ -77,6 +77,7 @@ describe('BookLabelsPage', () => {
             'cleanup-book-id',
         ])
         expect(screen.getByText('Missing ISBN Book')).toBeInTheDocument()
+        expect(screen.getByText('Shade Library')).toBeInTheDocument()
         expect(
             screen.queryByText(/Select one or more books from Browse/i),
         ).not.toBeInTheDocument()
@@ -130,6 +131,10 @@ describe('BookLabelsPage', () => {
         expect(screen.getByText('Batch 1 of 2')).toBeInTheDocument()
         expect(screen.getByText('Book 48')).toBeInTheDocument()
         expect(screen.queryByText('Book 49')).not.toBeInTheDocument()
+        expect(document.querySelectorAll('.book-label-sheet')).toHaveLength(6)
+        expect(
+            document.querySelector('.book-label-sheet')?.querySelectorAll('.book-label'),
+        ).toHaveLength(8)
 
         fireEvent.click(screen.getByRole('button', { name: 'Next batch' }))
 
