@@ -1,5 +1,5 @@
-import { lazy, Suspense, useCallback, useState, type ReactNode } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useInfiniteAlbums } from '../../../api/albumsQueries'
 import { useGenres } from '../../../api/genresQueries'
 import { Alert, AppLink, BackToTop, Button, EmptyState, Field, LoadingState, QueryErrorState } from '../../../components'
@@ -40,6 +40,7 @@ function AlbumBrowseLayout({ controls, children }: { controls: ReactNode; childr
 
 export function AlbumsPage() {
     const location = useLocation()
+    const navigate = useNavigate()
     const [params, setParams] = useSearchParams()
     const filters = parseAlbumListParams(params)
     const query = useInfiniteAlbums(filters)
@@ -50,12 +51,33 @@ export function AlbumsPage() {
     const fetchNext = useCallback(() => { void fetchNextPage() }, [fetchNextPage])
     const { getRowRef } = useInfiniteScrollTrigger({ enabled: query.isSuccess, hasNextPage: query.hasNextPage, isFetchingNextPage: query.isFetchingNextPage, fetchNextPage: fetchNext, itemCount: albums.length })
     const [scannerOpen, setScannerOpen] = useState(false)
+    const [selectionMode, setSelectionMode] = useState(false)
+    const [selectedAlbumIds, setSelectedAlbumIds] = useState<Set<string>>(new Set())
+    const previousFilterIdentity = useRef(params.toString())
     const change = (updates: Partial<AlbumListFilters>) => setParams(updateAlbumListParams(params, updates), { replace: true })
     const clear = () => setParams(new URLSearchParams(), { replace: true })
     const controls = <AlbumControls filters={filters} genres={genresQuery.data ?? []} onChange={change} onClear={clear} onScanBarcode={() => setScannerOpen(true)} />
 
-    return <section className="page page--albums"><header className="page-header album-room__header"><div className="albums-page__heading"><h1 tabIndex={-1}>Albums</h1><p>{total} albums in the library.</p></div><div className="form-actions"><AppLink className="button button--secondary" to="/albums/bulk-add">Bulk add</AppLink><AppLink className="button button--primary" to="/albums/new">Add album</AppLink></div></header>
-        <AlbumBrowseLayout controls={controls}>{query.isPending ? <LoadingState label="Loading albums…" /> : query.isError ? <QueryErrorState title="Unable to load albums" error={query.error} onRetry={() => void query.refetch()} /> : total === 0 ? <EmptyState title="No albums found"><p>Add a release or change the filters.</p><Button type="button" variant="secondary" onClick={clear}>Clear filters</Button></EmptyState> : <><div className="album-grid" aria-label="Library albums">{albums.map((album, index) => <article ref={getRowRef(index)} className="album-card" key={album.album_id}><AppLink to={`/albums/${album.album_id}`} state={{ albumsReturnTo: `${location.pathname}${location.search}`, albumScrollY: window.scrollY, albumPlacementState: filters.placementState ?? 'shelved' }}><AlbumArtwork albumId={album.album_id} title={album.title} present={album.artwork_present} /><div className="album-card__copy"><div className="album-card__heading"><h2>{album.title}</h2><p className="album-card__artist">{formatAlbumArtists(album)}</p></div><dl className="album-card__metadata"><div><dt>Format</dt><dd>{displayMediaFormat(album.media_format)}</dd></div>{album.release_date ? <div><dt>Year</dt><dd>{album.release_date.slice(0, 4)}</dd></div> : null}{album.shelf_name ? <div><dt>Crate</dt><dd>{album.shelf_name}</dd></div> : null}</dl>{album.status === 'on_loan' ? <span className="album-card__stamp">On loan</span> : null}</div></AppLink>{filters.placementState === 'unshelved' ? <AddAlbumToWishlistControl compact albumId={album.album_id} albumTitle={album.title} /> : null}</article>)}</div>{query.isFetchingNextPage ? <div className="infinite-scroll__footer"><LoadingState label="Loading more albums…" /></div> : null}{query.isFetchNextPageError ? <div className="infinite-scroll__footer"><Alert variant="error">Unable to load more albums.</Alert><Button variant="secondary" onClick={fetchNext}>Retry</Button></div> : null}</>}</AlbumBrowseLayout>
+    useEffect(() => {
+        if (previousFilterIdentity.current !== params.toString()) {
+            setSelectedAlbumIds(new Set())
+            previousFilterIdentity.current = params.toString()
+        }
+    }, [params])
+
+    const selectedCount = selectedAlbumIds.size
+    const toggleSelection = (albumId: string) => setSelectedAlbumIds((current) => {
+        const next = new Set(current)
+        if (next.has(albumId)) next.delete(albumId)
+        else next.add(albumId)
+        return next
+    })
+    const selectVisible = () => setSelectedAlbumIds(new Set(albums.map((album) => album.album_id)))
+    const printSelected = () => navigate(`/albums/labels?${[...selectedAlbumIds].map((albumId) => `album_id=${encodeURIComponent(albumId)}`).join('&')}`)
+
+    return <section className="page page--albums"><header className="page-header album-room__header"><div className="albums-page__heading"><h1 tabIndex={-1}>Albums</h1><p>{total} albums in the library.</p></div><div className="form-actions">{selectionMode ? null : <Button type="button" variant="secondary" onClick={() => setSelectionMode(true)}>Select albums</Button>}<AppLink className="button button--secondary" to="/albums/bulk-add">Bulk add</AppLink><AppLink className="button button--primary" to="/albums/new">Add album</AppLink></div></header>
+        {selectionMode ? <section className="books-bulk-actions" aria-label="Album bulk selection"><p className="books-bulk-actions__count" aria-live="polite">{selectedCount} {selectedCount === 1 ? 'album selected' : 'albums selected'}</p><div className="books-bulk-actions__controls"><Button type="button" variant="secondary" onClick={selectVisible}>Select all loaded albums</Button><Button type="button" variant="secondary" disabled={selectedCount === 0} onClick={printSelected}>Print labels for selected albums</Button><Button type="button" variant="secondary" disabled={selectedCount === 0} onClick={() => setSelectedAlbumIds(new Set())}>Clear selection</Button><Button type="button" variant="secondary" onClick={() => { setSelectedAlbumIds(new Set()); setSelectionMode(false) }}>Exit selection</Button></div></section> : null}
+        <AlbumBrowseLayout controls={controls}>{query.isPending ? <LoadingState label="Loading albums…" /> : query.isError ? <QueryErrorState title="Unable to load albums" error={query.error} onRetry={() => void query.refetch()} /> : total === 0 ? <EmptyState title="No albums found"><p>Add a release or change the filters.</p><Button type="button" variant="secondary" onClick={clear}>Clear filters</Button></EmptyState> : <><div className="album-grid" aria-label="Library albums">{albums.map((album, index) => <article ref={getRowRef(index)} className={selectedAlbumIds.has(album.album_id) ? 'album-card album-card--selected' : 'album-card'} key={album.album_id}>{selectionMode ? <label className="album-card__selection"><input type="checkbox" checked={selectedAlbumIds.has(album.album_id)} onChange={() => toggleSelection(album.album_id)} aria-label={`Select ${album.title}`} /><span aria-hidden="true">Select</span></label> : null}<AppLink to={`/albums/${album.album_id}`} state={{ albumsReturnTo: `${location.pathname}${location.search}`, albumScrollY: window.scrollY, albumPlacementState: filters.placementState ?? 'shelved' }}><AlbumArtwork albumId={album.album_id} title={album.title} present={album.artwork_present} /><div className="album-card__copy"><div className="album-card__heading"><h2>{album.title}</h2><p className="album-card__artist">{formatAlbumArtists(album)}</p></div><dl className="album-card__metadata"><div><dt>Format</dt><dd>{displayMediaFormat(album.media_format)}</dd></div>{album.release_date ? <div><dt>Year</dt><dd>{album.release_date.slice(0, 4)}</dd></div> : null}{album.shelf_name ? <div><dt>Crate</dt><dd>{album.shelf_name}</dd></div> : null}</dl>{album.status === 'on_loan' ? <span className="album-card__stamp">On loan</span> : null}</div></AppLink>{filters.placementState === 'unshelved' ? <AddAlbumToWishlistControl compact albumId={album.album_id} albumTitle={album.title} /> : null}</article>)}</div>{query.isFetchingNextPage ? <div className="infinite-scroll__footer"><LoadingState label="Loading more albums…" /></div> : null}{query.isFetchNextPageError ? <div className="infinite-scroll__footer"><Alert variant="error">Unable to load more albums.</Alert><Button variant="secondary" onClick={fetchNext}>Retry</Button></div> : null}</>}</AlbumBrowseLayout>
         {scannerOpen ? <Suspense fallback={<LoadingState label="Loading camera scanner…" />}><AlbumBarcodeCameraScanner onDetected={value => { change({ barcode: value }); setScannerOpen(false) }} onCancel={() => setScannerOpen(false)} /></Suspense> : null}
         <BackToTop enabled={albums.length > 30} focusSelector=".albums-page__heading h1" />
     </section>

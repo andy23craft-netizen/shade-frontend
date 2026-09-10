@@ -31,6 +31,12 @@ export function ManageCollectionPage() {
                             <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
                         </AppLink>
 
+                        <AppLink to="/albums/labels?all=1" className="manage-collection-action">
+                            <span className="manage-collection-action__title">Print Every Album Label</span>
+                            <span className="manage-collection-action__description">Prepare printable labels for every album in the catalog.</span>
+                            <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
+                        </AppLink>
+
                         <AppLink
                             to="/library/setup"
                             className="manage-collection-action"

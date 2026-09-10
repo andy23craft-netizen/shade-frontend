@@ -38,6 +38,7 @@ export const BooksPage = lazy(() =>
 )
 
 export const AlbumsPage = lazy(() => import('../features/albums/routes/AlbumsPage').then(module => ({ default: module.AlbumsPage })))
+export const AlbumLabelsPage = lazy(() => import('../features/albums/routes/AlbumLabelsPage').then(module => ({ default: module.AlbumLabelsPage })))
 export const NewAlbumPage = lazy(() => import('../features/albums/routes/NewAlbumPage').then(module => ({ default: module.NewAlbumPage })))
 export const AlbumBulkAddPage = lazy(() => import('../features/albums/routes/AlbumBulkAddPage').then(module => ({ default: module.AlbumBulkAddPage })))
 export const AlbumDetailsPage = lazy(() => import('../features/albums/routes/AlbumDetailsPage').then(module => ({ default: module.AlbumDetailsPage })))

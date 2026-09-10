@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useConnection } from '../features/connection/useConnection'
 import { createAlbumsApi, type ListAlbumsOptions } from './albumsApi'
 import { createLoansApi } from './loansApi'
@@ -32,7 +32,10 @@ export function useNewReleaseAlbums(
     }, options)
 }
 const ALBUM_PAGE_SIZE = 24
-export function useInfiniteAlbums(options: Omit<ListAlbumsOptions, 'skip' | 'take'> = {}) {
+export function useInfiniteAlbums(
+    options: Omit<ListAlbumsOptions, 'skip' | 'take'> = {},
+    queryOptions: { enabled?: boolean } = {},
+) {
     const { apiClient } = useConnection()
     const api = createAlbumsApi(apiClient)
     const key = cleanOptions({ ...options, take: ALBUM_PAGE_SIZE })
@@ -44,9 +47,23 @@ export function useInfiniteAlbums(options: Omit<ListAlbumsOptions, 'skip' | 'tak
             const loaded = pages.reduce((count, page) => count + page.items.length, 0)
             return loaded < lastPage.total ? loaded : undefined
         },
+        enabled: queryOptions.enabled ?? true,
     })
 }
 export function useAlbum(id: string) { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useQuery({ queryKey: queryKeys.albums.detail(id), queryFn: ({ signal }) => api.get(id, { signal }), enabled: id !== '' }) }
+/** Fetches an explicit set of albums without depending on catalog placement or pagination. */
+export function useAlbumsByIds(ids: readonly string[]) {
+    const { apiClient } = useConnection()
+    const api = createAlbumsApi(apiClient)
+    const uniqueIds = [...new Set(ids.filter((id) => id.trim() !== ''))]
+
+    return useQueries({
+        queries: uniqueIds.map((id) => ({
+            queryKey: queryKeys.albums.detail(id),
+            queryFn: ({ signal }: { signal: AbortSignal }) => api.get(id, { signal }),
+        })),
+    })
+}
 export function useAlbumLookup(value: string, kind: 'barcode' | 'discogs', enabled = false) { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useQuery({ queryKey: queryKeys.albums.lookup(value.trim(), kind), queryFn: ({ signal }) => api.lookup(value.trim(), kind, { signal }), enabled: enabled && value.trim() !== '', retry: false }) }
 export function useBulkAlbumLookup() { const { apiClient } = useConnection(); const api = createAlbumsApi(apiClient); return useMutation({ mutationFn: (request: BulkAlbumLookupRequest) => api.bulkLookup(request) }) }
 export function useBulkAlbumImport() {
