@@ -58,7 +58,9 @@ describe('ListeningDashboardPage', () => {
 
         expect(screen.getAllByRole('button', { name: /Album \d/ })).toHaveLength(5)
         fireEvent.click(screen.getByRole('button', { name: /Album 2/ }))
-        expect(screen.getByText('Album 2', { selector: 'p' })).toBeVisible()
+        expect(screen.getByRole('heading', { name: 'Album 2' })).toBeVisible()
+        expect(document.querySelector('.listening-dashboard__now-playing-card')).toBeInTheDocument()
+        expect(screen.getByText('Now Playing')).toBeVisible()
         expect(screen.getByText('A dashboard selection only; it does not start playback or change listening history.')).toBeVisible()
     })
 })

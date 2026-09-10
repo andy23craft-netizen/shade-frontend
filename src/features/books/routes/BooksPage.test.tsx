@@ -654,6 +654,30 @@ describe('BooksPage', () => {
             'href',
             '/books/book-1',
         )
+
+        expect(
+            screen.getByRole('link', {
+                name: 'The Left Hand of Darkness',
+            }),
+        ).toHaveAttribute('target', '_blank')
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Select',
+            }),
+        )
+
+        expect(
+            screen.getByRole('region', {
+                name: 'Bulk selection',
+            }),
+        ).toBeInTheDocument()
+
+        expect(
+            screen.getByRole('checkbox', {
+                name: 'Select The Left Hand of Darkness',
+            }),
+        ).toBeInTheDocument()
     })
 
     it('clears a cleanup-field URL filter', () => {

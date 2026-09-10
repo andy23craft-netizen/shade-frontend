@@ -66,6 +66,17 @@ describe('readingEditModel', () => {
             })
         })
 
+        it('shows a stored completion timestamp as a calendar date', () => {
+            expect(
+                readingEditFormValuesFromBook({
+                    ...readBook,
+                    completion_date: '2026-08-10T16:42:13.123Z',
+                }),
+            ).toMatchObject({
+                completion_date: '2026-08-10',
+            })
+        })
+
         it('uses blank form values for null reading fields', () => {
             expect(
                 readingEditFormValuesFromBook({
@@ -170,7 +181,7 @@ describe('readingEditModel', () => {
             ).toEqual({})
         })
 
-        it('sends only the changed completion date', () => {
+        it('normalizes a year and sends the required read-state pair', () => {
             expect(
                 readingEditFormValuesToRequest(
                     readBook,
@@ -178,13 +189,13 @@ describe('readingEditModel', () => {
                         ...readingEditFormValuesFromBook(
                             readBook,
                         ),
-                        completion_date:
-                            '2026-08-14',
+                        completion_date: '2020',
                     },
                 ),
             ).toEqual({
                 completion_date:
-                    '2026-08-14T00:00:00.000Z',
+                    '2020-01-01T00:00:00.000Z',
+                is_read: true,
             })
         })
 
@@ -235,6 +246,7 @@ describe('readingEditModel', () => {
                 ),
             ).toEqual({
                 completion_date: null,
+                is_read: false,
             })
         })
 
@@ -303,6 +315,7 @@ describe('readingEditModel', () => {
             ).toEqual({
                 completion_date:
                     '2026-08-12T00:00:00.000Z',
+                is_read: true,
                 rating: null,
                 review:
                     'Still excellent.',
@@ -324,13 +337,11 @@ describe('readingEditModel', () => {
             expect(request).toEqual({
                 completion_date:
                     '2026-08-12T00:00:00.000Z',
+                is_read: true,
                 rating: 3,
                 review: 'Updated.',
             })
 
-            expect(request).not.toHaveProperty(
-                'is_read',
-            )
             expect(request).not.toHaveProperty(
                 'status',
             )

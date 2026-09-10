@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import type { IncomingMessage } from 'node:http'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+    bypassApiProxyForHtmlNavigation,
     createDevServerProxy,
     resolveForwardedLibraryHost,
 } from '../vite.config'
@@ -13,6 +14,22 @@ afterEach(() => {
 })
 
 describe('tenant-aware proxy configuration', () => {
+    it('leaves direct SPA navigations with Vite instead of proxying them to the API', () => {
+        expect(
+            bypassApiProxyForHtmlNavigation({
+                url: '/books/book-id',
+                headers: { accept: 'text/html,application/xhtml+xml' },
+            } as IncomingMessage),
+        ).toBe('/books/book-id')
+
+        expect(
+            bypassApiProxyForHtmlNavigation({
+                url: '/books/book-id',
+                headers: { accept: 'application/json' },
+            } as IncomingMessage),
+        ).toBeUndefined()
+    })
+
     it.each([
         ['andy.localhost:5173', 'andy.localhost'],
         ['jamie.localhost:5173', 'jamie.localhost'],

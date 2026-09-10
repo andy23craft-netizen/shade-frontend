@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
     applyLibraryDocumentMetadata,
+    applyShadeFavicon,
     applyLibraryTheme,
     formatLibraryDocumentTitle,
+    getLibraryCoverMark,
     resolveLibraryContext,
 } from './libraryContext'
 
@@ -33,6 +35,45 @@ describe('resolveLibraryContext', () => {
         'rejects the unknown host %s',
         (hostname) => {
             expect(resolveLibraryContext(hostname)).toBeNull()
+        },
+    )
+})
+
+describe('getLibraryCoverMark', () => {
+    it.each([
+        ['shade.library.spir.es', 'SL'],
+        ['dalmo.library.spir.es', 'DL'],
+        ['jamie.library.spir.es', 'JL'],
+    ])('uses the matching cover initials for %s', (hostname, mark) => {
+        expect(getLibraryCoverMark(resolveLibraryContext(hostname))).toBe(mark)
+    })
+})
+
+describe('applyShadeFavicon', () => {
+    it('uses the Shade mark only for the Shade host and its local aliases', () => {
+        const target = document.implementation.createHTMLDocument()
+        const icon = target.createElement('link')
+        icon.rel = 'icon'
+        icon.href = '/favicon.png'
+        target.head.append(icon)
+
+        applyShadeFavicon('shade.library.spir.es', target)
+
+        expect(icon.getAttribute('href')).toBe('/favicon-shade.png')
+    })
+
+    it.each(['dalmo.library.spir.es', 'jamie.localhost', 'andy.example.test'])(
+        'keeps the shared favicon for %s',
+        (hostname) => {
+            const target = document.implementation.createHTMLDocument()
+            const icon = target.createElement('link')
+            icon.rel = 'icon'
+            icon.href = '/favicon.png'
+            target.head.append(icon)
+
+            applyShadeFavicon(hostname, target)
+
+            expect(icon.getAttribute('href')).toBe('/favicon.png')
         },
     )
 })

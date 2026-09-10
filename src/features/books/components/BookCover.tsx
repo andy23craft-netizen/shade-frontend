@@ -8,6 +8,10 @@ import {
 import {
     useBookCover,
 } from '../../../api/booksQueries'
+import {
+    getLibraryCoverMark,
+    resolveLibraryContext,
+} from '../../../config/libraryContext'
 
 import type {
     Status,
@@ -173,6 +177,9 @@ export function BookCover({
 
     const stampLabel =
         statusStampLabel(status)
+    const coverMark = getLibraryCoverMark(
+        resolveLibraryContext(window.location.hostname),
+    )
 
     const classes = [
         'book-cover',
@@ -219,7 +226,7 @@ export function BookCover({
                             className="book-cover__placeholder-mark"
                             aria-hidden="true"
                         >
-                            SL
+                            {coverMark}
                         </span>
                     </div>
                 )}

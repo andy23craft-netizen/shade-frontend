@@ -807,6 +807,18 @@ export function BooksPage() {
                     >
                         Clear cleanup filter
                     </Button>
+
+                    {!isBulkSelectionMode ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                                setIsBulkSelectionMode(true)
+                            }}
+                        >
+                            Select
+                        </Button>
+                    ) : null}
                 </div>
             ) : null}
             </div>
@@ -991,6 +1003,16 @@ export function BooksPage() {
                                             <h2 className="book-card__title">
                                                 <AppLink
                                                     to={`/books/${book.book_id}`}
+                                                    target={
+                                                        cleanupField !== undefined
+                                                            ? '_blank'
+                                                            : undefined
+                                                    }
+                                                    rel={
+                                                        cleanupField !== undefined
+                                                            ? 'noopener noreferrer'
+                                                            : undefined
+                                                    }
                                                     state={{
                                                         booksReturnTo:
                                                             `${location.pathname}${location.search}`,

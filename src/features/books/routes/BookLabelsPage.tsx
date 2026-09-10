@@ -1,23 +1,59 @@
 import { useEffect, useState } from 'react'
-import QRCode from 'qrcode'
+import QRCodeStyling from 'qr-code-styling'
 import { useSearchParams } from 'react-router-dom'
 
 import { Alert, AppLink, Button, LoadingState } from '../../../components'
-import { useInfiniteBooks } from '../../../api/booksQueries'
+import {
+    resolveLibraryContext,
+    type LibraryId,
+} from '../../../config/libraryContext'
+import {
+    useBooksByIds,
+    useInfiniteBooks,
+} from '../../../api/booksQueries'
 import { flattenInfiniteBookPages } from '../booksListModel'
 import { bookLabelValue } from '../labelCode'
+import { createBookLabelQrOptions } from '../labelQrOptions'
+import { bookLabelGenerationQueue } from '../qrGenerationQueue'
 
-function Label({ bookId, title }: { bookId: string; title: string }) {
+const LABELS_PER_BATCH = 48
+
+function Label({
+    bookId,
+    title,
+    libraryId,
+}: {
+    bookId: string
+    title: string
+    libraryId: LibraryId | null
+}) {
     const [image, setImage] = useState<string | null>(null)
 
     useEffect(() => {
         let active = true
-        void QRCode.toDataURL(bookLabelValue(bookId), {
-            errorCorrectionLevel: 'M', margin: 1, width: 360,
-            color: { dark: '#000000', light: '#ffffff' },
-        }).then((value) => { if (active) setImage(value) })
-        return () => { active = false }
-    }, [bookId])
+        let objectUrl: string | null = null
+        const qrCode = new QRCodeStyling(
+            createBookLabelQrOptions(bookLabelValue(bookId), libraryId),
+        )
+
+        const generation = bookLabelGenerationQueue.enqueue(
+            () => qrCode.getRawData('png') as Promise<Blob | null>,
+        )
+
+        void generation.result.then((imageData) => {
+            if (!imageData || !(imageData instanceof Blob)) return
+
+            objectUrl = URL.createObjectURL(imageData)
+            if (active) setImage(objectUrl)
+            else URL.revokeObjectURL(objectUrl)
+        })
+
+        return () => {
+            active = false
+            generation.cancel()
+            if (objectUrl) URL.revokeObjectURL(objectUrl)
+        }
+    }, [bookId, libraryId])
 
     return <article className="book-label">
         {image
@@ -32,10 +68,12 @@ function Label({ bookId, title }: { bookId: string; title: string }) {
 
 export function BookLabelsPage() {
     const [params, setParams] = useSearchParams()
-    const requested = new Set(params.getAll('book_id'))
+    const requestedIds = params.getAll('book_id')
     const all = params.get('all') === '1'
     const start = Number(params.get('start') ?? '1')
-    const booksQuery = useInfiniteBooks()
+    const libraryId = resolveLibraryContext(window.location.hostname)?.id ?? null
+    const booksQuery = useInfiniteBooks({ enabled: all })
+    const selectedBookQueries = useBooksByIds(requestedIds)
     const {
         fetchNextPage,
         hasNextPage,
@@ -47,12 +85,36 @@ export function BookLabelsPage() {
             void fetchNextPage()
         }
     }, [all, fetchNextPage, hasNextPage, isFetchingNextPage])
-    const books = loadedBooks.filter((book) => all || requested.has(book.book_id))
+    const selectedBooks = selectedBookQueries.flatMap((query) =>
+        query.data === undefined ? [] : [query.data],
+    )
+    const books = all ? loadedBooks : selectedBooks
+    const isPending = all
+        ? booksQuery.isPending
+        : selectedBookQueries.some((query) => query.isPending)
+    const isError = all
+        ? booksQuery.isError
+        : selectedBookQueries.some((query) => query.isError)
     const position = Number.isInteger(start) && start >= 1 && start <= 8 ? start : 1
-    const blanks = Array.from({ length: position - 1 }, (_, index) => <div className="book-label book-label--blank" key={`blank-${index}`} />)
+    const requestedBatch = Number(params.get('batch') ?? '1')
+    const batchCount = Math.max(1, Math.ceil(books.length / LABELS_PER_BATCH))
+    const batchIndex = Number.isInteger(requestedBatch) && requestedBatch >= 1
+        ? Math.min(requestedBatch - 1, batchCount - 1)
+        : 0
+    const batchBooks = books.slice(
+        batchIndex * LABELS_PER_BATCH,
+        (batchIndex + 1) * LABELS_PER_BATCH,
+    )
+    const batchStart = batchIndex === 0 ? position : 1
+    const blanks = Array.from({ length: batchStart - 1 }, (_, index) => <div className="book-label book-label--blank" key={`blank-${index}`} />)
 
-    if (booksQuery.isPending) return <section className="route-page"><h1>Print Book Labels</h1><LoadingState label={all ? "Loading catalog books…" : "Loading selected books…"} /></section>
-    if (booksQuery.isError) return <section className="route-page"><h1>Print Book Labels</h1><Alert variant="error">{all ? 'The catalog books could not be loaded.' : 'The selected books could not be loaded.'}</Alert></section>
+    function changeBatch(nextBatchIndex: number): void {
+        params.set('batch', String(nextBatchIndex + 1))
+        setParams(params)
+    }
+
+    if (isPending) return <section className="route-page"><h1>Print Book Labels</h1><LoadingState label={all ? "Loading catalog books…" : "Loading selected books…"} /></section>
+    if (isError) return <section className="route-page"><h1>Print Book Labels</h1><Alert variant="error">{all ? 'The catalog books could not be loaded.' : 'The selected books could not be loaded.'}</Alert></section>
 
     return <section className="route-page book-labels-page">
         <header><h1 tabIndex={-1}>Print Book Labels</h1><p>{all ? 'Preparing a label for every catalog book.' : 'Preparing labels for the books you selected.'} Each code contains only a copy-specific Shade identifier.</p></header>
@@ -74,8 +136,30 @@ export function BookLabelsPage() {
                 </label>
 
                 <Button type="button" onClick={() => window.print()}>
-                    Print labels
+                    Print this batch
                 </Button>
+
+                {batchCount > 1 && <>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={batchIndex === 0}
+                        onClick={() => changeBatch(batchIndex - 1)}
+                    >
+                        Previous batch
+                    </Button>
+                    <span aria-live="polite">
+                        Batch {batchIndex + 1} of {batchCount}
+                    </span>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={batchIndex === batchCount - 1}
+                        onClick={() => changeBatch(batchIndex + 1)}
+                    >
+                        Next batch
+                    </Button>
+                </>}
 
                 <AppLink to="/books" variant="secondary">
                     Back to Books
@@ -91,8 +175,8 @@ export function BookLabelsPage() {
 
 
             </div>
-            <p className="no-print" role="status">{all && booksQuery.hasNextPage ? `Loading more catalog books; ${books.length} ready so far.` : `${books.length} ${all ? 'catalog' : 'selected'} ${books.length === 1 ? 'book' : 'books'} ready. Labels print two across by four down on R027 US Letter stock. Print at 100% / Actual Size.`}</p>
-            <div className="book-label-sheet">{blanks}{books.map((book) => <Label key={book.book_id} bookId={book.book_id} title={book.title} />)}</div>
+            <p className="no-print" role="status">{all && booksQuery.hasNextPage ? `Loading more catalog books; ${books.length} ready so far.` : `${books.length} ${all ? 'catalog' : 'selected'} ${books.length === 1 ? 'book' : 'books'} ready.`} Each print batch holds up to {LABELS_PER_BATCH} labels to keep QR generation responsive. Labels print two across by four down on R027 US Letter stock. Print at 100% / Actual Size.</p>
+            <div className="book-label-sheet">{blanks}{batchBooks.map((book) => <Label key={book.book_id} bookId={book.book_id} title={book.title} libraryId={libraryId} />)}</div>
         </>}
     </section>
 }

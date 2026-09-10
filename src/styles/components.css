@@ -233,11 +233,9 @@
 .listening-dashboard__workbench { position: relative; display: grid; grid-template-columns: minmax(15rem, 1.2fr) minmax(12rem, .55fr) minmax(5rem, .25fr); align-items: end; min-height: 21rem; padding: clamp(1rem, 3vw, 2rem); overflow: hidden; border-top: .45rem solid #6f442b; border-bottom: 1.15rem solid #452b20; background: linear-gradient(180deg, #36332e 0 48%, #8a542e 49%, #b8743d 100%); box-shadow: inset 0 0 0 .2rem rgb(255 231 180 / 12%); }
 .listening-dashboard__turntable { align-self: end; max-width: 34rem; }
 .listening-dashboard__turntable img { display: block; width: 100%; filter: none; }
-.listening-dashboard__now-playing { z-index: 1; align-self: center; padding: var(--space-3); border: .35rem solid #513d32; background: #f6ecd5; box-shadow: none; text-align: center; }
-.listening-dashboard__now-playing h2 { margin: 0 0 var(--space-2); color: var(--album-walnut); font-family: var(--font-family-heading); font-size: var(--font-size-small); letter-spacing: .08em; text-transform: uppercase; }
-.listening-dashboard__now-playing .album-artwork { width: min(100%, 10rem); aspect-ratio: 1; margin-inline: auto; object-fit: cover; }
-.listening-dashboard__now-playing p { margin: var(--space-2) 0; }
-.listening-dashboard__now-playing-title { color: var(--album-indigo); font-family: var(--font-family-heading); font-weight: 800; }
+.listening-dashboard__now-playing { z-index: 1; align-self: center; min-width: 0; transform: translateX(-50px); }
+.listening-dashboard__now-playing-card { margin: 0; }
+.listening-dashboard__now-playing-placard { width: fit-content; margin: -.1rem auto 0; padding: .32rem .7rem; border: 1px solid #513d32; background: #f6ecd5; color: var(--album-walnut); box-shadow: .12rem .16rem 0 rgb(0 0 0 / 20%); font-family: var(--font-family-heading); font-size: var(--font-size-small); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .listening-dashboard__session-note { color: #66594e; font-size: var(--font-size-small); line-height: 1.3; }
 .listening-dashboard .app-link { color: var(--album-indigo); font-weight: 800; text-decoration: underline; text-decoration-thickness: .1em; text-underline-offset: .14em; }
 .listening-dashboard .app-link:hover { color: var(--album-walnut); }
@@ -256,7 +254,7 @@
 .listening-dashboard__crate-album .album-artwork { transform: translateY(-1.2rem); }
 .listening-dashboard__crate-album[aria-pressed='true'] .album-artwork, .listening-dashboard__crate-album:focus-visible .album-artwork { outline: .22rem solid #f4cb62; outline-offset: .14rem; transform: translateY(-1.75rem); }
 
-@media (max-width: 42rem) { .home-room-links, .room-landing__destinations, .listening-dashboard__console, .listening-dashboard__pinboard { grid-template-columns: 1fr; } .listening-dashboard__tickets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .listening-dashboard__workbench { grid-template-columns: minmax(0, 1fr) minmax(9rem, .65fr); min-height: 17rem; } .listening-dashboard__crate-heading { align-items: start; flex-direction: column; } .listening-dashboard__crate-section { margin-inline: calc(-1 * var(--space-3)); border-inline: 0; } .listening-dashboard__crate { overflow-x: auto; min-width: 35rem; } .listening-dashboard__crate-section { overflow-x: auto; } }
+@media (max-width: 42rem) { .home-room-links, .room-landing__destinations, .listening-dashboard__console, .listening-dashboard__pinboard { grid-template-columns: 1fr; } .listening-dashboard__tickets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .listening-dashboard__workbench { grid-template-columns: minmax(0, 1fr) minmax(9rem, .65fr); min-height: 17rem; } .listening-dashboard__now-playing { transform: none; } .listening-dashboard__crate-heading { align-items: start; flex-direction: column; } .listening-dashboard__crate-section { margin-inline: calc(-1 * var(--space-3)); border-inline: 0; } .listening-dashboard__crate { overflow-x: auto; min-width: 35rem; } .listening-dashboard__crate-section { overflow-x: auto; } }
 
 /* Listening Room: warm record-shop materials shared by album-only surfaces. */
 :where(.page--albums, .page--album-detail, .page--album-form, .album-bulk-add-page) {
@@ -10918,6 +10916,7 @@
 
   .app-shell > :not(.app-main),
   .app-main > :not(.book-labels-page),
+  .book-labels-page > header,
   .no-print {
     display: none !important;
   }

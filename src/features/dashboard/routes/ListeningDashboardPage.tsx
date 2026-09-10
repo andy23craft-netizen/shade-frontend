@@ -3,7 +3,10 @@ import { useAlbums } from '../../../api/albumsQueries'
 import { useDashboard, useDashboardBreakdowns } from '../../../api/dashboardQueries'
 import { AppLink, Button, LoadingState, QueryErrorState } from '../../../components'
 import { AlbumArtwork } from '../../albums/components/AlbumArtwork'
-import { formatAlbumArtists } from '../../albums/albumDisplay'
+import {
+    displayMediaFormat,
+    formatAlbumArtists,
+} from '../../albums/albumDisplay'
 import recordPlayer from '../../../assets/Record_player.png'
 import vinylCrate from '../../../assets/Vinyl_Crate.png'
 import coffeeMug from '../../../assets/Coffe_mug.png'
@@ -62,8 +65,8 @@ export function ListeningDashboardPage() {
         </section>
         <section className="listening-dashboard__workbench" aria-label="Listening room workbench">
             <div className="listening-dashboard__turntable"><img src={recordPlayer} alt="" /></div>
-            <section className="listening-dashboard__now-playing" aria-labelledby="now-playing-heading"><h2 id="now-playing-heading">Currently playing</h2>
-                {albumsQuery.isPending ? <LoadingState label="Loading records for the shelf…" /> : deckAlbum ? <><AlbumArtwork albumId={deckAlbum.album_id} title={deckAlbum.title} present={deckAlbum.artwork_present} /><p className="listening-dashboard__now-playing-title">{deckAlbum.title}</p><p>{formatAlbumArtists(deckAlbum)}</p><AppLink to={`/albums/${deckAlbum.album_id}`}>Open album</AppLink></> : <p>File albums in a crate to choose a record for this session.</p>}
+            <section className="listening-dashboard__now-playing" aria-label="Now playing">
+                {albumsQuery.isPending ? <LoadingState label="Loading records for the shelf…" /> : deckAlbum ? <><article className="album-card listening-dashboard__now-playing-card"><AppLink to={`/albums/${deckAlbum.album_id}`}><AlbumArtwork albumId={deckAlbum.album_id} title={deckAlbum.title} present={deckAlbum.artwork_present} /><div className="album-card__copy"><div className="album-card__heading"><h2>{deckAlbum.title}</h2><p className="album-card__artist">{formatAlbumArtists(deckAlbum)}</p></div><dl className="album-card__metadata"><div><dt>Format</dt><dd>{displayMediaFormat(deckAlbum.media_format)}</dd></div>{deckAlbum.release_date ? <div><dt>Year</dt><dd>{deckAlbum.release_date.slice(0, 4)}</dd></div> : null}{deckAlbum.shelf_name ? <div><dt>Crate</dt><dd>{deckAlbum.shelf_name}</dd></div> : null}</dl>{deckAlbum.status === 'on_loan' ? <span className="album-card__stamp">On loan</span> : null}</div></AppLink></article><p className="listening-dashboard__now-playing-placard">Now Playing</p></> : <p>File albums in a crate to choose a record for this session.</p>}
                 <p className="listening-dashboard__session-note">A dashboard selection only; it does not start playback or change listening history.</p>
             </section>
             <img className="listening-dashboard__mug" src={coffeeMug} alt="" />

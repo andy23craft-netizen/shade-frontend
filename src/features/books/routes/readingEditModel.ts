@@ -40,12 +40,28 @@ export function normalizeCompletionDate(
     return Number.isNaN(parsed.valueOf()) ? null : parsed.toISOString()
 }
 
+/**
+ * Stored completion timestamps are an API implementation detail. Keep the
+ * edit field calendar-oriented, while preserving legacy partial dates.
+ */
+function completionDateFormValue(
+    value: string | null | undefined,
+): string {
+    const trimmed = value?.trim() ?? ''
+
+    if (/^\d{4}(-\d{2})?$/u.test(trimmed)) return trimmed
+    if (/^\d{4}-\d{2}-\d{2}/u.test(trimmed)) return trimmed.slice(0, 10)
+
+    return trimmed
+}
+
 export function readingEditFormValuesFromBook(
     book: BookRead,
 ): ReadingEditFormValues {
     return {
-        completion_date:
-            book.completion_date ?? '',
+        completion_date: completionDateFormValue(
+            book.completion_date,
+        ),
         rating:
             book.rating === null ||
             book.rating === undefined
@@ -108,6 +124,9 @@ export function readingEditFormValuesToRequest(
     if (normalizedCompletionDate !== originalCompletionDate) {
         request.completion_date =
             normalizedCompletionDate || null
+        // The API requires completion_date and is_read to stay in sync in
+        // the same PATCH. Reading edits only run for an already-read book.
+        request.is_read = normalizedCompletionDate !== ''
     }
 
     const originalRating =

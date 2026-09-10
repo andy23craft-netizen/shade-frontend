@@ -326,6 +326,35 @@ describe('ReadingEditPage', () => {
         )
     })
 
+    it('normalizes a year-only completion date before PATCH', () => {
+        const mutate = vi.fn()
+
+        mockUseUpdateBook.mockReturnValue({
+            mutate,
+            isPending: false,
+        } as unknown as ReturnType<typeof useUpdateBook>)
+
+        renderPage()
+
+        fireEvent.change(
+            screen.getByLabelText('Completion date'),
+            { target: { value: '2020' } },
+        )
+        fireEvent.click(screen.getByRole('button', { name: 'Save Reading' }))
+        confirmSave()
+
+        expect(mutate).toHaveBeenCalledWith(
+            {
+                id: 'test-book-id',
+                book: {
+                    completion_date: '2020-01-01T00:00:00.000Z',
+                    is_read: true,
+                },
+            },
+            expect.any(Object),
+        )
+    })
+
     it('sends null for intentionally cleared reading fields', () => {
         const mutate = vi.fn()
 
@@ -380,6 +409,7 @@ describe('ReadingEditPage', () => {
                 id: 'test-book-id',
                 book: {
                     completion_date: null,
+                    is_read: false,
                     rating: null,
                     review: null,
                 },

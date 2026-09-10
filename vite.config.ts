@@ -22,6 +22,21 @@ export function resolveForwardedLibraryHost(
     return browserHost
 }
 
+/**
+ * API item paths and SPA routes intentionally share names (for example,
+ * `/books/:id`). Direct document navigations must reach Vite's history
+ * fallback; only fetch/XHR requests belong on the API proxy.
+ */
+export function bypassApiProxyForHtmlNavigation(
+    request: IncomingMessage,
+): string | undefined {
+    const accept = request.headers.accept ?? ''
+
+    return accept.includes('text/html')
+        ? request.url
+        : undefined
+}
+
 const repositoryRoot = join(
     dirname(fileURLToPath(import.meta.url)),
 )
@@ -70,6 +85,7 @@ export function createDevServerProxy() {
             {
                 target,
                 changeOrigin: true,
+                bypass: bypassApiProxyForHtmlNavigation,
                 rewrite: (path: string) => path.replace(/^\/api/u, ''),
                 configure: (proxy: {
                     on: (

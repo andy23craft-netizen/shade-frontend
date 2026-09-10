@@ -3,6 +3,7 @@ import {
     useInfiniteQuery,
     useMutation,
     useQuery,
+    useQueries,
     useQueryClient,
 } from '@tanstack/react-query'
 
@@ -391,6 +392,34 @@ export function useBook(
 
             return failureCount < 3
         },
+    })
+}
+
+/** Fetches an explicit set of copies without depending on catalog placement or pagination. */
+export function useBooksByIds(
+    ids: readonly string[],
+) {
+    const {
+        apiClient,
+    } = useConnection()
+
+    const booksApi = createBooksApi(apiClient)
+    const uniqueIds = [
+        ...new Set(
+            ids.filter((id) => id.trim() !== ''),
+        ),
+    ]
+
+    return useQueries({
+        queries: uniqueIds.map((id) => ({
+            queryKey: queryKeys.books.detail(id),
+            queryFn: ({ signal }: { signal: AbortSignal }) =>
+                booksApi.get(id, { signal }),
+            retry: (
+                failureCount: number,
+                error: unknown,
+            ) => !isBookIdentityError(error) && failureCount < 3,
+        })),
     })
 }
 

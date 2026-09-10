@@ -996,6 +996,17 @@ describe('BookDetailsPage', () => {
         ).not.toBeInTheDocument()
     })
 
+    it('offers a label-printing action for this book only', () => {
+        renderBookDetails()
+
+        expect(
+            screen.getByRole('link', { name: 'Print Label' }),
+        ).toHaveAttribute(
+            'href',
+            `/books/labels?book_id=${encodeURIComponent(completeBook.book_id)}`,
+        )
+    })
+
     it('does not offer Edit Reading for an unread book', () => {
         mockedUseBook.mockReturnValue({
             isPending: false,
