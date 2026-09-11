@@ -1,4 +1,4 @@
-# FEAT-100 -- Image-assisted catalog search
+# FEAT-01 -- OCR catalog search
 
 **Status:** Implemented; awaiting opt-in live API validation.
 
