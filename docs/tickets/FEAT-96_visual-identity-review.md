@@ -24,7 +24,7 @@ Per-owner identity packages, selectable skins, navigation redesign, and new scan
 ## Open questions
 
 1. Which seasonal treatments are approved, and how are they activated and dated?
-- I think we should start with just four basic ones for each season. Leaves and pumpkins and pinecones for fall; snowflakes, snowmounds, icicles for winter; plants and greenery and rain clouds for spring; sunshine and the like for summer. 
+- Resolved by `FEAT-100_seasonal-site-atmosphere.md`: four neutral seasonal motif sets switch at the Northern Hemisphere astronomical equinoxes and solstices. The implementation scope and accessibility/performance constraints are owned by FEAT-100.
 
 2. Which representative screens must receive visual sign-off before rollout?
 - we need to revisit each of the `listening room` and `reading room` pages. And the albums dashboard. 

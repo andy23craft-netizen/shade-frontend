@@ -148,6 +148,33 @@
 .home-room-links .app-link:hover img { transform: scale(1.015); filter: brightness(1.06); }
 .home-room-links .app-link:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
+/* --------------------------------------------------------------------------
+ * Seasonal atmosphere
+ *
+ * Decorative only. The timestamp-driven `data-season` comes from the shared
+ * resolver; no image request or user preference is needed to render it.
+ * -------------------------------------------------------------------------- */
+.seasonal-surface { position: relative; isolation: isolate; }
+.seasonal-surface > :not(.seasonal-atmosphere) { position: relative; z-index: 1; }
+.seasonal-atmosphere { position: absolute; z-index: 0; inset: -1.25rem max(-3vw, -2rem); overflow: hidden; pointer-events: none; }
+.seasonal-atmosphere__wash { position: absolute; inset: 0; opacity: .72; }
+.seasonal-atmosphere__motif { position: absolute; opacity: .74; }
+.seasonal-surface[data-season='spring'] .seasonal-atmosphere__wash { background: radial-gradient(ellipse at 8% 12%, rgb(111 154 101 / 20%), transparent 32rem), linear-gradient(135deg, rgb(131 166 191 / 11%), transparent 44%); }
+.seasonal-surface[data-season='summer'] .seasonal-atmosphere__wash { background: radial-gradient(circle at 84% 8%, rgb(244 191 74 / 22%), transparent 23rem), linear-gradient(135deg, rgb(255 224 139 / 12%), transparent 52%); }
+.seasonal-surface[data-season='autumn'] .seasonal-atmosphere__wash { background: radial-gradient(ellipse at 5% 10%, rgb(163 83 37 / 17%), transparent 30rem), linear-gradient(145deg, rgb(191 133 46 / 10%), transparent 48%); }
+.seasonal-surface[data-season='winter'] .seasonal-atmosphere__wash { background: radial-gradient(ellipse at 90% 2%, rgb(183 218 232 / 28%), transparent 27rem), linear-gradient(145deg, rgb(205 228 239 / 16%), transparent 48%); }
+.seasonal-surface[data-season='spring'] .seasonal-atmosphere__motif { bottom: -2.2rem; left: clamp(-2rem, 2vw, 1.5rem); width: clamp(11rem, 24vw, 19rem); height: clamp(5rem, 10vw, 8rem); border-radius: 90% 90% 0 0; background: radial-gradient(ellipse at 20% 92%, #527c4f 0 18%, transparent 19%), radial-gradient(ellipse at 38% 70%, #74a665 0 20%, transparent 21%), radial-gradient(ellipse at 57% 92%, #426e4b 0 22%, transparent 23%), radial-gradient(ellipse at 75% 66%, #8eb77b 0 18%, transparent 19%); }
+.seasonal-surface[data-season='summer'] .seasonal-atmosphere__motif { top: clamp(.25rem, 2vw, 1.25rem); right: clamp(.4rem, 4vw, 3.5rem); width: clamp(5rem, 11vw, 8.5rem); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #fff7c5 0 27%, #f4c44d 28% 43%, transparent 44%), repeating-conic-gradient(from 0deg, rgb(236 174 47 / 88%) 0deg 8deg, transparent 9deg 25deg); filter: drop-shadow(0 0 .75rem rgb(244 190 67 / 42%)); }
+.seasonal-surface[data-season='autumn'] .seasonal-atmosphere__motif { right: clamp(-1.5rem, 2vw, 1.5rem); bottom: -1rem; width: clamp(5rem, 12vw, 9rem); height: clamp(4rem, 8vw, 6.5rem); border-radius: 45% 45% 36% 36%; background: radial-gradient(ellipse at 50% 94%, #774429 0 10%, transparent 11%), repeating-linear-gradient(90deg, transparent 0 15%, rgb(111 56 30 / 62%) 16% 19%, transparent 20% 26%), #d57832; box-shadow: inset 0 .45rem 0 rgb(255 191 80 / 42%); }
+.seasonal-surface[data-season='winter'] .seasonal-atmosphere__motif { right: clamp(-2rem, 2vw, 1.5rem); bottom: -1.6rem; width: clamp(12rem, 28vw, 22rem); height: clamp(5rem, 11vw, 8.5rem); border-radius: 70% 80% 0 0; background: linear-gradient(145deg, transparent 0 36%, rgb(235 248 255 / 82%) 37% 100%), repeating-linear-gradient(105deg, transparent 0 1.25rem, rgb(190 222 239 / 72%) 1.3rem 1.55rem, transparent 1.6rem 2.1rem); }
+
+.seasonal-atmosphere__home-accent { display: none; position: absolute; opacity: .76; }
+.home-page[data-season='spring'] .seasonal-atmosphere__home-accent { display: block; top: 18%; left: max(-2rem, -2vw); width: clamp(5rem, 12vw, 9rem); height: clamp(19rem, 47vw, 31rem); background: radial-gradient(circle at 33% 7%, #fff4bc 0 6%, #d6809d 7% 13%, transparent 14%), radial-gradient(circle at 69% 21%, #fff8ce 0 5%, #b974a4 6% 12%, transparent 13%), radial-gradient(circle at 28% 39%, #fff4bc 0 6%, #d6809d 7% 13%, transparent 14%), radial-gradient(circle at 75% 56%, #fff8ce 0 5%, #b974a4 6% 12%, transparent 13%), radial-gradient(circle at 34% 75%, #fff4bc 0 6%, #d6809d 7% 13%, transparent 14%), linear-gradient(78deg, transparent 45%, #668e55 46% 49%, transparent 50%); }
+.home-page[data-season='summer'] .seasonal-atmosphere__home-accent { display: none; }
+.home-page[data-season='autumn'] .seasonal-atmosphere__home-accent { display: block; right: -2rem; bottom: -1.25rem; left: -2rem; height: clamp(5.25rem, 11vw, 8rem); background: radial-gradient(ellipse at 7% 82%, #ae512d 0 11%, transparent 12%), radial-gradient(ellipse at 17% 55%, #cf8137 0 10%, transparent 11%), radial-gradient(ellipse at 28% 78%, #8e4932 0 12%, transparent 13%), radial-gradient(ellipse at 42% 52%, #b66231 0 11%, transparent 12%), radial-gradient(ellipse at 57% 82%, #d1953c 0 13%, transparent 14%), radial-gradient(ellipse at 70% 53%, #9f4b2d 0 11%, transparent 12%), radial-gradient(ellipse at 82% 78%, #c87835 0 12%, transparent 13%), radial-gradient(ellipse at 95% 56%, #915036 0 11%, transparent 12%); }
+.home-page[data-season='winter'] .seasonal-atmosphere__home-accent { display: block; top: -1.25rem; right: 3%; left: 3%; height: clamp(4rem, 9vw, 7rem); background: repeating-linear-gradient(90deg, rgb(222 243 250 / 88%) 0 .7rem, transparent .72rem 1.35rem), linear-gradient(180deg, #effbff 0 24%, rgb(184 220 234 / 86%) 25% 29%, transparent 30%); clip-path: polygon(0 0, 100% 0, 100% 29%, 94% 29%, 92% 80%, 89% 29%, 79% 29%, 76% 56%, 73% 29%, 62% 29%, 60% 94%, 57% 29%, 46% 29%, 43% 66%, 40% 29%, 29% 29%, 27% 83%, 24% 29%, 13% 29%, 10% 57%, 8% 29%, 0 29%); }
+@media (forced-colors: active) { .seasonal-atmosphere { display: none; } }
+
 .room-landing { display: grid; gap: clamp(2.5rem, 6vw, 5rem); padding-block: clamp(2rem, 5vw, 5rem); }
 .room-landing__heading { display: grid; gap: var(--space-3); max-width: 48rem; margin-inline: auto; text-align: center; }
 .room-landing__heading h1, .room-landing__heading p { margin: 0; }

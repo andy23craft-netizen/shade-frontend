@@ -1,10 +1,17 @@
 import { AppLink } from '../../../components'
 import { LibraryWordmark } from '../../../components/LibraryWordmark'
 import headphones from '../../../assets/headphones.png'
+import {
+    SeasonalAtmosphere,
+    useCurrentSeason,
+} from '../../seasonal/SeasonalAtmosphere'
 
 export function ListeningRoomPage() {
+    const season = useCurrentSeason()
+
     return (
-        <section className="route-page room-landing room-landing--listening" aria-labelledby="listening-room-heading">
+        <section className="route-page room-landing room-landing--listening seasonal-surface" data-season={season} aria-labelledby="listening-room-heading">
+            <SeasonalAtmosphere />
             <div className="room-landing__heading">
                 <img
                     className="room-landing__header-art"
