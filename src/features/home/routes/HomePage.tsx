@@ -56,6 +56,9 @@ import { homeHeadingsForQuote } from '../homeQuoteHeadings'
 import listeningRoomImage from '../../../assets/Listening_Room.png'
 import readingRoomImage from '../../../assets/Reading_Room.png'
 import { useQuotes } from '../../../api/quotesQueries'
+import {
+    SeasonalHeroVines,
+} from '../../seasonal/SeasonalAtmosphere'
 
 const STAFF_PICKS_NAME = 'Staff Picks'
 
@@ -213,6 +216,7 @@ export function HomePage() {
                     /> : <span className="home-page__hero-fallback">
                         {libraryName}
                     </span>}
+                    <SeasonalHeroVines />
                 </AppLink>
 
                 <h1
