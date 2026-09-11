@@ -46,6 +46,33 @@ The architectural principle is:
 
 These are the things that can begin as soon as the Pi arrives.
 
+## Decided Raspberry Pi BOM
+
+The first Shade/Home Assistant host is a Compute Module 5 build:
+
+| Part | Spec |
+| ---- | ---- |
+| Carrier | Raspberry Pi Compute Module 5 IO Board REV 2 |
+| Module | Raspberry Pi Compute Module 5, Wireless, 8GB RAM, Lite -- CM5108000 |
+| Cooling | Raspberry Pi Compute Module 5 Active Cooler |
+| Case | Raspberry Pi Compute Module 5 IO Case REV 2 |
+| Power | Raspberry Pi 27W USB-C Power Supply, Black, US |
+| Antenna | Raspberry Pi WiFi Antenna kit |
+| Primary SSD | AData Legend 860 PCIe Gen4 x4 M.2 2280, 500GB (SLEG-860-500GCS; up to 6,000 MB/s) |
+
+Notes:
+
+-   The Lite CM5 has no eMMC; boot and root live on the M.2 SSD (or a
+    temporary microSD only for initial bring-up if needed).
+-   The 500GB SSD is for OS, Shade, Home Assistant, and ordinary app
+    data -- not continuous camera NVR retention.
+-   Wireless + antenna kit covers Wi-Fi/Bluetooth when Ethernet is not
+    yet available; prefer wired Ethernet once the network backbone
+    exists.
+-   This host is **not** assumed sufficient for a full NVR workload or
+    heavy Edge AI inference. Those need separate hardware planning
+    (see Sections 7 and 14).
+
 ## Phase 1 --- Establish the Pi as a Server
 
 ### Base system
@@ -60,18 +87,19 @@ These are the things that can begin as soon as the Pi arrives.
 -   Confirm remote administration from the main Windows development
     machine.
 -   Set up Git credentials/access for the Shade repositories.
--   Decide where persistent application data will live.
+-   Decide where persistent application data will live (default:
+    the Legend 860 M.2 SSD).
 
 ### Storage
 
-Do not treat the Pi's microSD card as long-term high-write storage.
+Do not treat a microSD card as long-term high-write storage. The CM5
+Lite + Legend 860 SSD is the primary durable disk for this host.
 
-Research/use:
+Also plan:
 
--   SSD for application data, databases, backups, and eventually other
-    services.
--   Separate or larger SSD/HDD storage for security-camera recordings
-    when cameras arrive.
+-   Separate or larger SSD/HDD (or a dedicated NAS/NVR appliance) for
+    security-camera recordings when cameras arrive -- not the 500GB
+    application SSD alone.
 -   Backup strategy for Shade and Home Assistant configuration.
 
 ### Deploy Shade
@@ -189,6 +217,13 @@ Long-term possibilities:
 -   Siri/HomeKit exposed Home Assistant entities/actions.
 -   Multiple voice interfaces controlling the same underlying Home
     Assistant automations.
+
+If Siri (or another phone assistant) can turn speech into structured
+commands that Home Assistant or Shade already understand, prefer that
+path for some voice use cases before buying dedicated speech-to-text /
+text-to-speech Edge AI hardware. Dedicated Edge AI gear remains on the
+research list for offline STT/TTS, image recognition, and workloads the
+phone cloud path cannot own locally.
 
 ------------------------------------------------------------------------
 
@@ -475,11 +510,31 @@ subscription/service
 home
 ```
 
+## Site plan before camera purchase
+
+Do **not** firm camera SKUs, count, or power/network type until a
+walkthrough answers:
+
+-   How many cameras are desired (minimum useful set vs. later expand)?
+-   Exact mount locations (front door, driveway, backyard, side yard,
+    garage, interior choke points, etc.)?
+-   Field of view and height for each location?
+-   Day/night requirements and whether interior cameras are in scope?
+-   For each location: can Ethernet be run reasonably, or is wireless
+    the only practical path?
+
+**PoE is preferred** wherever a cable run is feasible. This is an older
+house, so fishing Ethernet can be difficult; wireless (or hybrid)
+cameras may be required for some placements. That trade-off must be
+documented per location before buying a uniform camera family.
+
+Cable/site survey should happen alongside Section 6 network archaeology.
+
 ## Camera Requirements to Research
 
-Favor cameras that:
+Once locations and count are known, favor cameras that:
 
--   Support PoE.
+-   Prefer PoE when cabling is practical; document wireless exceptions.
 -   Support RTSP and/or ONVIF.
 -   Can operate without mandatory cloud storage.
 -   Do not require an active vendor subscription for basic recording.
@@ -490,7 +545,7 @@ Favor cameras that:
 -   Have useful person/object detection options without requiring cloud
     processing.
 
-## NVR vs. Home Assistant
+## NVR vs. Home Assistant
 
 Keep these jobs separate.
 
@@ -503,6 +558,13 @@ Responsible for:
 -   Retention.
 -   Playback.
 -   Camera-specific detection/inference if used.
+
+The CM5 + 500GB application SSD is **not** the NVR platform. Expect
+**additional hardware** for recording and retention.
+
+A **NAS** may be a useful intermediate project: shared backups and
+media storage first, then grow into (or host) NVR duties. That eases
+into camera recording without jumping straight to a full NVR appliance.
 
 ### Home Assistant
 
@@ -532,18 +594,19 @@ person detected
 
 ## Storage
 
-Do not continuously record security video to the Pi's microSD card.
+Do not continuously record security video to the CM5 application SSD
+(or any microSD).
 
 Research:
 
--   Dedicated SSD/HDD.
+-   Dedicated SSD/HDD, NAS, or NVR appliance (separate from the CM5
+    500GB disk).
 -   Retention requirements.
--   Number of cameras.
+-   Number of cameras (from the site plan above).
 -   Resolution/frame rate.
--   Continuous vs. event-only recording.
--   NVR software.
--   Whether the Pi is sufficient for video inference or whether a
-    separate accelerator/server is eventually appropriate.
+-   Continuous vs. event-only recording.
+-   NVR software (Frigate, Blue Iris, vendor NVR, NAS package, etc.).
+-   Whether video inference needs a separate accelerator or mini PC.
 
 ------------------------------------------------------------------------
 
@@ -1056,16 +1119,20 @@ algorithm requirements.
 
 ## Raspberry Pi / Server
 
-Research or decide:
+**Decided (see Section 2 BOM):**
 
--   Pi model/RAM.
--   Cooling.
--   Case.
--   SSD interface/enclosure.
--   Primary SSD.
--   Backup storage.
--   UPS eventually.
+-   CM5 IO Board REV 2 + CM5108000 (Wireless, 8GB, Lite).
+-   Active Cooler + IO Case REV 2.
+-   Official 27W USB-C PSU (US) + WiFi Antenna kit.
+-   AData Legend 860 500GB M.2 (application disk).
+
+Still to decide:
+
 -   Physical server location.
+-   Backup storage (beyond the primary SSD).
+-   UPS eventually.
+-   Whether this host stays Shade/HA-only as NVR and Edge AI move
+    elsewhere.
 
 ## Network
 
@@ -1074,25 +1141,27 @@ Research:
 -   Existing Ethernet topology.
 -   Cable termination point.
 -   Patch panel if applicable.
--   8 vs. 16-port switch.
+-   8 vs. 16-port switch.
 -   Gigabit.
 -   PoE+.
 -   PoE power budget.
--   Managed vs. unmanaged.
+-   Managed vs. unmanaged.
 -   VLAN support.
--   Fanless vs. fan.
+-   Fanless vs. fan.
 -   Router location.
 -   Whether current Wi-Fi remains adequate.
+-   Per-camera cable feasibility in an older house (feeds camera
+    PoE vs. wireless decisions).
 
 ## Zigbee
 
 Research:
 
 -   SONOFF Dongle Max/Dongle-M.
--   Zigbee2MQTT vs. ZHA.
+-   Zigbee2MQTT vs. ZHA.
 -   Coordinator placement.
 -   Initial Zigbee router devices.
--   Zigbee channel vs. 2.4 GHz Wi-Fi channel planning.
+-   Zigbee channel vs. 2.4 GHz Wi-Fi channel planning.
 -   Dedicated Thread radio later.
 
 ## Thermostats
@@ -1116,11 +1185,13 @@ Research:
 
 ## Security Cameras
 
-Research:
+**Prerequisite:** finish the site plan (count + install locations +
+cable feasibility) before locking SKUs or a single camera family.
 
--   PoE.
--   ONVIF.
--   RTSP.
+Then research:
+
+-   PoE preferred; wireless where cable runs are impractical.
+-   ONVIF / RTSP.
 -   Local-only operation.
 -   Night vision.
 -   Resolution.
@@ -1130,19 +1201,36 @@ Research:
 -   NVR compatibility.
 -   Vendor-cloud independence.
 
-## NVR
+## NVR / NAS
+
+Additional hardware is required; do not overload the CM5 application
+host.
 
 Research:
 
--   NVR software.
--   SSD/HDD requirements.
+-   NAS as an easing step (backups/shares first, then camera retention).
+-   Dedicated NVR appliance or mini PC vs. NAS-hosted NVR software.
+-   NVR software (Frigate, Blue Iris, vendor, NAS package).
+-   SSD/HDD requirements separate from the CM5 500GB disk.
 -   Retention period.
--   Event vs. continuous recording.
--   Number of streams.
+-   Event vs. continuous recording.
+-   Number of streams (from camera site plan).
 -   Hardware decoding.
--   Local AI inference.
--   Whether Pi is sufficient.
--   Potential future accelerator or separate mini PC.
+-   Local AI inference placement (NVR box vs. separate Edge AI host).
+
+## Edge AI
+
+Expect **additional hardware** beyond the CM5 for serious local
+inference. Research only after use cases are clearer:
+
+-   Speech-to-text / text-to-speech (local Assist satellites, USB mics,
+    accelerators).
+-   Image recognition (shelf mapping, person detection assist).
+-   Whether phone Siri/HomeKit can supply structured commands for some
+    voice flows and reduce early STT hardware needs.
+-   Accelerator options (Coral, Hailo, NPU mini PC, etc.) vs. staying
+    phone/cloud-assisted for selected tasks.
+-   Power, noise, and placement relative to the CM5 Shade/HA host.
 
 ## Shade Shelf Lighting
 
@@ -1188,9 +1276,9 @@ software milestones with the [software roadmap](smart-home-software-roadmap.md).
 
 **Goal:** Reliable local server.
 
--   Set up Pi.
--   SSD.
--   Networking.
+-   Assemble CM5 IO Board REV 2 + CM5108000 + cooler + case + PSU +
+    antenna + Legend 860 500GB SSD.
+-   Networking (Ethernet preferred when available).
 -   SSH.
 -   Updates.
 -   Git.
@@ -1291,16 +1379,18 @@ infrastructure.
 
 ------------------------------------------------------------------------
 
-## Stage 8 --- Local Outdoor Cameras
+## Stage 8 --- Local Cameras + NVR/NAS
 
 **Goal:** Local security without mandatory cloud storage.
 
--   Select PoE/ONVIF/RTSP cameras.
--   Run Ethernet.
--   Install cameras.
--   Add local NVR/storage.
+-   Walk the house: decide camera count and install locations.
+-   Per location, note PoE cable feasibility vs. wireless necessity.
+-   Select ONVIF/RTSP cameras accordingly (PoE preferred).
+-   Run Ethernet where practical.
+-   Stand up separate NVR storage (NAS first is an acceptable path).
 -   Integrate events with Home Assistant.
--   Add local person detection if appropriate.
+-   Add local person detection if appropriate (may need Edge AI
+    hardware beyond the CM5).
 
 **Milestone:** Security video remains usable locally even if the
 internet/vendor cloud disappears.
