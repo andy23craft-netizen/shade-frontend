@@ -9,6 +9,7 @@ type GeneratedBookRead = Schemas['BookRead']
 export type BookRead = Omit<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id'> &
     Partial<Pick<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id'>>
 export type BookList = Omit<Schemas['BookList'], 'items'> & { items: BookRead[] }
+export type BookSummaryRefreshResponse = Schemas['BookSummaryRefreshResponse']
 
 export type BulkBookCatalogState =
     Schemas['BulkBookCatalogState']
@@ -237,6 +238,15 @@ export type CollectionBookReorder =
 
 export type Status =
     Schemas['Status']
+
+export type ImageSearchCandidate =
+    Schemas['ImageSearchCandidate']
+
+export type ImageSearchRecognizedText =
+    Schemas['ImageSearchRecognizedText']
+
+export type ImageSearchResponse =
+    Schemas['ImageSearchResponse']
 
 export type AlbumCreate = Schemas['AlbumCreate']
 export type AlbumUpdate = Schemas['AlbumUpdate']

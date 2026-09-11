@@ -490,6 +490,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{book_id}/summary/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Book Summary */
+        post: operations["refresh_book_summary_books__book_id__summary_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/catalog/recent-additions": {
         parameters: {
             query?: never;
@@ -518,6 +535,23 @@ export interface paths {
         put?: never;
         /** Resolve Code */
         post: operations["resolve_code_catalog_resolve_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/catalog/search-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Image */
+        post: operations["search_image_catalog_search_image_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1491,6 +1525,7 @@ export interface components {
             release_date?: string | null;
             /** Review */
             review?: string | null;
+            shelf?: components["schemas"]["ShelfReferenceRead"] | null;
             /** Shelf Name */
             shelf_name: string;
             /** @default available */
@@ -1580,6 +1615,11 @@ export interface components {
             title?: string | null;
             /** Tracks */
             tracks?: components["schemas"]["AlbumTrackWrite"][] | null;
+        };
+        /** Body_search_image_catalog_search_image_post */
+        Body_search_image_catalog_search_image_post: {
+            /** Image */
+            image: string;
         };
         /** Body_upload_album_artwork_albums__album_id__artwork_put */
         Body_upload_album_artwork_albums__album_id__artwork_put: {
@@ -1775,6 +1815,7 @@ export interface components {
             /** Pages */
             pages?: number | null;
             placement_state: components["schemas"]["PlacementState"];
+            previous_shelf?: components["schemas"]["ShelfReferenceRead"] | null;
             /** Previous Shelf Name */
             previous_shelf_name?: string | null;
             /** Publication Date */
@@ -1790,10 +1831,13 @@ export interface components {
             reservation?: components["schemas"]["ReservationWrite"] | null;
             /** Review */
             review?: string | null;
+            shelf?: components["schemas"]["ShelfReferenceRead"] | null;
             /** Shelf Name */
             shelf_name?: string | null;
             /** @default available */
             status: components["schemas"]["Status"];
+            /** Summary */
+            summary?: string | null;
             /** Tags */
             tags?: string[] | null;
             /** Times Borrowed */
@@ -1806,6 +1850,13 @@ export interface components {
             updated_date: string;
             /** Work Id */
             work_id: string;
+        };
+        /** BookSummaryRefreshResponse */
+        BookSummaryRefreshResponse: {
+            /** Availability State */
+            availability_state: string;
+            /** Summary */
+            summary?: string | null;
         };
         /** BookUpdate */
         BookUpdate: {
@@ -2535,6 +2586,40 @@ export interface components {
              */
             status: string;
         };
+        /** ImageSearchCandidate */
+        ImageSearchCandidate: {
+            /** Item Id */
+            item_id: string;
+            /** Matched Fields */
+            matched_fields: string[];
+            media_type: components["schemas"]["MediaType"];
+            /** Score */
+            score: number;
+            /** Title */
+            title: string;
+        };
+        /** ImageSearchRecognizedText */
+        ImageSearchRecognizedText: {
+            /** Confidence */
+            confidence?: number | null;
+            /** Text */
+            text: string;
+        };
+        /** ImageSearchResponse */
+        ImageSearchResponse: {
+            /** Candidates */
+            candidates: components["schemas"]["ImageSearchCandidate"][];
+            /** External Album Candidates */
+            external_album_candidates?: {
+                [key: string]: unknown;
+            }[];
+            /** External Book Candidates */
+            external_book_candidates?: {
+                [key: string]: unknown;
+            }[];
+            /** Recognized Text */
+            recognized_text: components["schemas"]["ImageSearchRecognizedText"][];
+        };
         /** LibrarySettingsRead */
         LibrarySettingsRead: {
             /** Book Tbr Shelf Ids */
@@ -2865,6 +2950,16 @@ export interface components {
             shelf_id: string;
             /** Updated Date */
             updated_date: string;
+        };
+        /**
+         * ShelfReferenceRead
+         * @description Stable Shelf identity with its current display-facing name.
+         */
+        ShelfReferenceRead: {
+            /** Common Name */
+            common_name: string;
+            /** Shelf Id */
+            shelf_id: string;
         };
         /** ShelfUpdate */
         ShelfUpdate: {
@@ -5602,6 +5697,84 @@ export interface operations {
             };
         };
     };
+    refresh_book_summary_books__book_id__summary_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookSummaryRefreshResponse"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Metadata provider failure */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Metadata provider timeout */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
     recent_additions_catalog_recent_additions_get: {
         parameters: {
             query?: {
@@ -5688,6 +5861,68 @@ export interface operations {
             };
             /** @description Validation failure */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    search_image_catalog_search_image_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_search_image_catalog_search_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageSearchResponse"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Metadata provider failure */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Metadata provider timeout */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };

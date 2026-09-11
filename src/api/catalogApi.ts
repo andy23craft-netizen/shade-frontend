@@ -1,4 +1,4 @@
-import type { PhysicalItemSummary, ResolveCodeRequest, ResolveCodeResponse } from './apiTypes'
+import type { ImageSearchResponse, PhysicalItemSummary, ResolveCodeRequest, ResolveCodeResponse } from './apiTypes'
 import type { createApiClient } from './apiClient'
 
 export function createCatalogApi(client: ReturnType<typeof createApiClient>) {
@@ -10,6 +10,15 @@ export function createCatalogApi(client: ReturnType<typeof createApiClient>) {
         },
         recentAdditions(take = 10): Promise<PhysicalItemSummary[]> {
             return client.getJson(`/catalog/recent-additions?take=${encodeURIComponent(String(take))}`)
+        },
+        async searchImage(image: File): Promise<ImageSearchResponse> {
+            const body = new FormData()
+            body.append('image', image)
+            const response = await client.request('/catalog/search-image', {
+                method: 'POST',
+                body,
+            })
+            return response.json() as Promise<ImageSearchResponse>
         },
     }
 }

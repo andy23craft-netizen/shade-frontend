@@ -1,6 +1,6 @@
 # FEAT-101 -- Provider-sourced book summaries
 
-**Status:** Blocked on backend FEAT-2 / `summary` on `BookRead` and `POST /books/{book_id}/summary/refresh`.
+**Status:** Implemented; awaiting backend deployment and opt-in live validation.
 
 **Dependency group:** Book work metadata.
 

@@ -836,6 +836,13 @@ export function NewBookPage() {
                         Scan ISBN
                     </Button>
 
+                    <AppLink
+                        to="/catalog/image-search"
+                        variant="secondary"
+                    >
+                        Search by image
+                    </AppLink>
+
                     {lookup.isFetching ? (
                         <Button
                             type="button"

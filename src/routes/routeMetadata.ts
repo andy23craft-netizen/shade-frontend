@@ -20,6 +20,7 @@ export const routeMetadata = {
     heading: 'Books',
   },
   albums: { path: '/albums', title: 'Albums', heading: 'Albums' },
+  imageSearch: { path: '/catalog/image-search', title: 'Search by Image', heading: 'Search by Image' },
   newAlbum: { path: '/albums/new', title: 'Add Album', heading: 'Add Album' },
   bulkAddAlbums: { path: '/albums/bulk-add', title: 'Album Bulk Add', heading: 'Album Bulk Add' },
   albumLabels: { path: '/albums/labels', title: 'Print Album Labels', heading: 'Print Album Labels' },

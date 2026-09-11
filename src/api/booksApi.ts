@@ -3,6 +3,7 @@ import type {
     BookList,
     BookLookupResponse,
     BookRead,
+    BookSummaryRefreshResponse,
     BookUpdate,
     BulkBookImportRequest,
     BulkBookImportResponse,
@@ -391,7 +392,20 @@ export function createBooksApi(
                 : client.getJson<BookLookupResponse>(
                     path,
                     signalOptions,
-                )
+            )
+        },
+
+        refreshSummary(
+            id: string,
+            options: ApiCallOptions = {},
+        ): Promise<BookSummaryRefreshResponse> {
+            return client.requestJson<BookSummaryRefreshResponse>(
+                `/books/${encodeURIComponent(id)}/summary/refresh`,
+                {
+                    method: 'POST',
+                    ...withSignal(options.signal),
+                },
+            )
         },
 
         async get(

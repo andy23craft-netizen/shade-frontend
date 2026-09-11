@@ -33,6 +33,7 @@ import {
     ReadingRoomPage,
     ListeningRoomPage,
     ListeningDashboardPage,
+    CatalogImageSearchPage,
     AlbumLoansPage,
     QuoteLibraryPage,
 } from './lazyRoutePages'
@@ -77,6 +78,7 @@ export const routeConfig = [
             { path: '/books/category/:categorySlug', handle: { title: routeMetadata.books.title }, element: <BooksPage /> },
             { path: '/books/shelf/:shelfToken', handle: { title: routeMetadata.books.title }, element: <BooksPage /> },
             { path: routeMetadata.albums.path, handle: { title: routeMetadata.albums.title }, element: <AlbumsPage /> },
+            { path: routeMetadata.imageSearch.path, handle: { title: routeMetadata.imageSearch.title }, element: <CatalogImageSearchPage /> },
             { path: routeMetadata.albumLabels.path, handle: { title: routeMetadata.albumLabels.title }, element: <AlbumLabelsPage /> },
             { path: routeMetadata.newAlbum.path, handle: { title: routeMetadata.newAlbum.title }, element: <NewAlbumPage /> },
             { path: routeMetadata.bulkAddAlbums.path, handle: { title: routeMetadata.bulkAddAlbums.title }, element: <AlbumBulkAddPage /> },

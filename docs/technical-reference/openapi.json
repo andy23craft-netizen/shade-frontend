@@ -637,6 +637,16 @@
             ],
             "title": "Review"
           },
+          "shelf": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShelfReferenceRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "shelf_name": {
             "title": "Shelf Name",
             "type": "string"
@@ -1020,6 +1030,20 @@
           }
         },
         "title": "AlbumUpdate",
+        "type": "object"
+      },
+      "Body_search_image_catalog_search_image_post": {
+        "properties": {
+          "image": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Image",
+            "type": "string"
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "title": "Body_search_image_catalog_search_image_post",
         "type": "object"
       },
       "Body_upload_album_artwork_albums__album_id__artwork_put": {
@@ -1672,6 +1696,16 @@
           "placement_state": {
             "$ref": "#/components/schemas/PlacementState"
           },
+          "previous_shelf": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShelfReferenceRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "previous_shelf_name": {
             "anyOf": [
               {
@@ -1762,6 +1796,16 @@
             ],
             "title": "Review"
           },
+          "shelf": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShelfReferenceRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "shelf_name": {
             "anyOf": [
               {
@@ -1776,6 +1820,17 @@
           "status": {
             "$ref": "#/components/schemas/Status",
             "default": "available"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
           },
           "tags": {
             "anyOf": [
@@ -1829,6 +1884,30 @@
           "average_loan_days"
         ],
         "title": "BookRead",
+        "type": "object"
+      },
+      "BookSummaryRefreshResponse": {
+        "properties": {
+          "availability_state": {
+            "title": "Availability State",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          }
+        },
+        "required": [
+          "availability_state"
+        ],
+        "title": "BookSummaryRefreshResponse",
         "type": "object"
       },
       "BookUpdate": {
@@ -4288,6 +4367,108 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "ImageSearchCandidate": {
+        "properties": {
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "matched_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Fields",
+            "type": "array"
+          },
+          "media_type": {
+            "$ref": "#/components/schemas/MediaType"
+          },
+          "score": {
+            "minimum": 1.0,
+            "title": "Score",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "media_type",
+          "item_id",
+          "title",
+          "matched_fields",
+          "score"
+        ],
+        "title": "ImageSearchCandidate",
+        "type": "object"
+      },
+      "ImageSearchRecognizedText": {
+        "properties": {
+          "confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ImageSearchRecognizedText",
+        "type": "object"
+      },
+      "ImageSearchResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/ImageSearchCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "external_album_candidates": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "External Album Candidates",
+            "type": "array"
+          },
+          "external_book_candidates": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "External Book Candidates",
+            "type": "array"
+          },
+          "recognized_text": {
+            "items": {
+              "$ref": "#/components/schemas/ImageSearchRecognizedText"
+            },
+            "title": "Recognized Text",
+            "type": "array"
+          }
+        },
+        "required": [
+          "recognized_text",
+          "candidates"
+        ],
+        "title": "ImageSearchResponse",
+        "type": "object"
+      },
       "LibrarySettingsRead": {
         "properties": {
           "book_tbr_shelf_ids": {
@@ -5393,6 +5574,25 @@
           "updated_date"
         ],
         "title": "ShelfRead",
+        "type": "object"
+      },
+      "ShelfReferenceRead": {
+        "description": "Stable Shelf identity with its current display-facing name.",
+        "properties": {
+          "common_name": {
+            "title": "Common Name",
+            "type": "string"
+          },
+          "shelf_id": {
+            "title": "Shelf Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shelf_id",
+          "common_name"
+        ],
+        "title": "ShelfReferenceRead",
         "type": "object"
       },
       "ShelfUpdate": {
@@ -10660,6 +10860,119 @@
         ]
       }
     },
+    "/books/{book_id}/summary/refresh": {
+      "post": {
+        "operationId": "refresh_book_summary_books__book_id__summary_refresh_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookSummaryRefreshResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Metadata provider failure"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Metadata provider timeout"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Refresh Book Summary",
+        "tags": [
+          "books"
+        ]
+      }
+    },
     "/catalog/recent-additions": {
       "get": {
         "operationId": "recent_additions_catalog_recent_additions_get",
@@ -10819,6 +11132,100 @@
           }
         ],
         "summary": "Resolve Code",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/catalog/search-image": {
+      "post": {
+        "operationId": "search_image_catalog_search_image_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_search_image_catalog_search_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Validation failure"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Metadata provider failure"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Metadata provider timeout"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search Image",
         "tags": [
           "catalog"
         ]

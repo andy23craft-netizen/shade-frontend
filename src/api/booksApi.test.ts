@@ -45,6 +45,15 @@ function createMockClient() {
 }
 
 describe('createBooksApi', () => {
+    it('refreshes a book summary through the dedicated lifecycle endpoint', async () => {
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue({ availability_state: 'available', summary: 'A summary.' })
+
+        await createBooksApi(client).refreshSummary('book/123')
+
+        expect(client.requestJson).toHaveBeenCalledWith('/books/book%2F123/summary/refresh', { method: 'POST' })
+    })
+
     it('lists books', async () => {
         const books: BookList = {
             items: [],

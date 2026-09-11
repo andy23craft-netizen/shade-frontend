@@ -12,6 +12,7 @@ import {
     useCheckoutBook,
     useSetBookAvailability,
     useSetBookFlag,
+    useRefreshBookSummary,
 } from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
 import type { BookRead } from '../../../api/apiTypes'
@@ -21,7 +22,8 @@ vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
     useCheckoutBook: vi.fn(),
     useSetBookAvailability: vi.fn(),
-    useSetBookFlag: vi.fn(),
+        useSetBookFlag: vi.fn(),
+        useRefreshBookSummary: vi.fn(),
 }))
 
 vi.mock('../../../api/loansQueries', () => ({
@@ -94,6 +96,7 @@ const mockedUseCheckoutBook =
 const mockedUseSetBookAvailability =
     vi.mocked(useSetBookAvailability)
 const mockedUseSetBookFlag = vi.mocked(useSetBookFlag)
+const mockedUseRefreshBookSummary = vi.mocked(useRefreshBookSummary)
 
 const completeBook: BookRead = {
     book_id: 'test-book-id',
@@ -191,6 +194,7 @@ describe('BookDetailsPage', () => {
             isPending: false,
             error: null,
         } as unknown as ReturnType<typeof useSetBookFlag>)
+        mockedUseRefreshBookSummary.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof useRefreshBookSummary>)
         mockedUseLoans.mockReturnValue({
             data: {
                 items: [],

@@ -28,6 +28,7 @@ import type {
     BookCreate,
     BookList,
     BookRead,
+    BookSummaryRefreshResponse,
     BookUpdate,
     BulkBookImportRequest,
     BulkBookAvailabilityRequest,
@@ -391,6 +392,22 @@ export function useBook(
             }
 
             return failureCount < 3
+        },
+    })
+}
+
+export function useRefreshBookSummary() {
+    const { apiClient } = useConnection()
+    const queryClient = useQueryClient()
+    const booksApi = createBooksApi(apiClient)
+
+    return useMutation({
+        mutationFn: (id: string) => booksApi.refreshSummary(id),
+        onSuccess: async (response: BookSummaryRefreshResponse, id: string) => {
+            if (response.summary !== undefined) {
+                queryClient.setQueryData<BookRead>(queryKeys.books.detail(id), (book) => book === undefined ? book : { ...book, summary: response.summary })
+            }
+            await queryClient.invalidateQueries({ queryKey: queryKeys.books.all })
         },
     })
 }

@@ -128,6 +128,10 @@ export function AppShell() {
                                     label: 'Browse',
                                     to: browseHref,
                                 },
+                                {
+                                    label: 'Search by image',
+                                    to: '/catalog/image-search',
+                                },
                                 ...(room === 'reading' ? [{
                                     label: `Stash (${dashboardData?.stash_count ?? 0})`,
                                     to: '/stash',

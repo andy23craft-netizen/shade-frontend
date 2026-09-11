@@ -12,6 +12,14 @@ shapes remain stable aside from additive fields noted below (`work_id`, `borrowe
 (`/people`, per-role book contributor lists, album `person_ids`). Full schemas and authenticated paths live in the
 regenerated `openapi.json`.
 
+Catalog image search (shipped)
+
+- `POST /catalog/search-image` accepts one JPEG, PNG, or WebP multipart field named `image` (maximum 5 MB). It does
+  not retain the image or query history. The result supplies normalized OCR `recognized_text` and ordered typed
+  catalog `candidates` (`media_type`, `item_id`, `title`, `matched_fields`, and `score`). Treat candidates as
+  suggestions rather than an automatic physical-copy match. Empty OCR and no-match results are successful responses
+  with an empty list. Invalid images return 422; OCR provider failures and timeouts return 502 and 504 respectively.
+
 Home quotes and discovery (shipped)
 
 - Authenticated `/quotes` is the tenant-owned Home quote library. `GET /quotes` returns the full ordered list as
@@ -148,7 +156,7 @@ People/genre catalog behavior
 
 Regenerate clients from `openapi.json`. Album and work/feedback contract additions do not require activating every
 corresponding UI surface at once; runtime changes are needed only for the screens that consume those fields.
-Coordinate deployment with the matching frontend. Schema or seed changes follow `docs/DB-updates.md` (sync DEV into
+Coordinate deployment with the matching frontend. Schema or seed changes follow `docs/technical-reference/DB-updates.md` (sync DEV into
 committed seeds, then recreate DEV databases from those seeds); there is no application migration runner.
 
 Paths, methods, status codes, request/response schemas, and enums live in `openapi.json`. Live `/openapi.json` and
@@ -177,7 +185,7 @@ Wishlist membership supports both typed catalog kinds. Duplicate book or album a
 instead of retrying as a new add. Different wishlists may contain the same catalog item.
 
 Fresh disposable development databases use the current schema via shared DDL plus tenant seeds. Schema-bearing
-releases follow `docs/DB-updates.md`: sync live DEV content into committed `sql/` seeds before breaking changes, then
+releases follow `docs/technical-reference/DB-updates.md`: sync live DEV content into committed `sql/` seeds before breaking changes, then
 delete and recreate DEV databases from those seeds on deploy. Operator export/reconcile is not an application restore
 API, and bootstrap does not upgrade an existing database file in place.
 
@@ -330,6 +338,12 @@ its source shelf still exists. Create may omit shelf_name to leave the book with
 add). Incoming names are trimmed then lowercased (max length 32 after trim). Unknown names return 400 on
 create/update / bulk shelf move. JSON null shelf_name on create is treated as omitted. shelf_name must not be JSON null on update
 (422); omit the field to leave membership unchanged. See Shelves for list and catalog CRUD behavior.
+
+Book and album reads also expose an additive nullable `shelf` object with `shelf_id` (the stable UUID) and
+`common_name` (the current display label). Stashed book reads expose the source as `previous_shelf` with the same
+shape. Retain `shelf_name` and `previous_shelf_name` during the frontend transition. Use `shelf_id` for selected
+values, React keys, and durable navigation; display `common_name`. The current write and filter contract remains
+name-based, so continue submitting `shelf_name` until a later additive ID-write contract is published.
 
 Books default to author ascending (sortBy=author, sortOrder=asc when omitted). Allowed sortBy values:
 author, title, creationDate, publicationDate, shelf. Shelf sorting is lexical on shelves.common_name. The
@@ -554,6 +568,9 @@ Shelves
 
 Shelves are a separate catalog resource. Book placement is membership (books_shelves), exposed to clients as
 shelf_name on book create/update/read -- not as a free-form book column.
+
+`shelf_id` is permanent across a rename. The API does not derive or regenerate it from `common_name`, and clients
+must not use the visible name as an external or durable identifier.
 
 GET /shelves:
 
@@ -1067,7 +1084,7 @@ POST accepts `album_id`, optional positive `order_num`, and optional notes. It r
 DELETE removes the membership and compacts the remaining album order. None of these operations changes album shelf,
 wishlist, deletion, played, or circulation state.
 There is no browser backup endpoint. Schema updates and content backups are operator-owned and follow
-`docs/DB-updates.md` only.
+`docs/technical-reference/DB-updates.md` only.
 
 Frontend vs API ownership
 Responsibility	Owner

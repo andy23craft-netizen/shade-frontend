@@ -41,6 +41,7 @@ import { CheckoutDialog } from '../../loans/components/CheckoutDialog'
 import { isCheckoutEligible } from '../../loans/checkoutEligibility'
 import { BorrowerReviews } from '../../loans/components/BorrowerReviews'
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog'
+import { BookProviderSummary } from '../components/BookProviderSummary'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -513,6 +514,8 @@ export function BookDetailsPage() {
                     </dl>
                 </div>
             </article>
+
+            <BookProviderSummary book={book} />
 
             {isOnLoan ? (
                 <section className="book-details-panel">

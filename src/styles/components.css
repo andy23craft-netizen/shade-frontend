@@ -10942,6 +10942,15 @@
 .catalog-code-resolver { margin: var(--space-5) 0; padding: var(--space-4); background: var(--color-card); color: var(--color-surface-text); }
 .catalog-code-resolver form { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; }
 .catalog-code-resolver label { display: grid; gap: var(--space-1); }
+
+.catalog-image-search { max-width: 54rem; }
+.catalog-image-search__form, .catalog-image-search__recognized, .catalog-image-search__results > li { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--color-card); color: var(--color-surface-text); }
+.catalog-image-search__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.catalog-image-search__preview { max-width: 18rem; margin: var(--space-4) 0; }
+.catalog-image-search__preview img { display: block; width: 100%; max-height: 20rem; object-fit: contain; background: var(--color-surface); }
+.catalog-image-search__results { display: grid; gap: var(--space-3); padding: 0; list-style: none; }
+.catalog-image-search__results dl { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0; }
+.catalog-image-search__results dl div { display: grid; gap: var(--space-1); }
 .reading-edit-completion-date { display: flex; gap: var(--space-2); align-items: center; }
 .reading-edit-completion-date > input { flex: 1; }
 .home-section__functional-heading { margin: calc(var(--space-1) * -1) 0 var(--space-4); font-size: var(--font-size-sm); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }

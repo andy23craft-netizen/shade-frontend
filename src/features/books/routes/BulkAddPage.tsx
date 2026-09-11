@@ -1916,6 +1916,13 @@ export function BulkAddPage() {
                         >
                             Use Camera
                         </Button>
+
+                        <AppLink
+                            to="/catalog/image-search"
+                            variant="secondary"
+                        >
+                            Search by image
+                        </AppLink>
                     </div>
                 </form>
 

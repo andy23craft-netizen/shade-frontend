@@ -1,6 +1,6 @@
 # FEAT-100 -- Image-assisted catalog search
 
-**Status:** Blocked on backend FEAT-1 / `POST /catalog/search-image`.
+**Status:** Implemented; awaiting opt-in live API validation.
 
 **Dependency group:** Mixed-media catalog discovery.
 
@@ -10,7 +10,7 @@ client; book and album detail routes.
 ## Objective
 
 Let a signed-in library user choose or capture a book-cover or album-artwork image, submit it once to the catalog
-image-search endpoint, and use the returned OCR-based candidates as explicit navigation suggestions.
+image-search endpoint, and use the returned OCR-based local and external-provider candidates as explicit suggestions.
 
 ## Product decisions
 
@@ -21,8 +21,9 @@ image-search endpoint, and use the returned OCR-based candidates as explicit nav
 - Do not send the image to any other service, retain it in browser storage, create a query history, or attempt to
   derive an identifier or candidate locally.
 - Show recognized text only as explanatory context. Candidates remain suggestions: users choose a result themselves.
-- Each candidate links with its typed identifier to the correct existing route: books to `/books/:bookId`, albums to
-  `/albums/:albumId`. Do not coerce one media type's identifier into the other's route.
+- Existing catalog candidates link with their typed identifier to the correct existing route: books to `/books/:bookId`,
+  albums to `/albums/:albumId`. External Open Library and Discogs/MusicBrainz candidates hand a supplied ISBN,
+  barcode, or Discogs release ID into the existing explicit add-and-lookup flow; they never create an item directly.
 
 ## Acceptance criteria
 
