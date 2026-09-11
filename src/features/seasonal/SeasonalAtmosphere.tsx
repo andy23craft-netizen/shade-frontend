@@ -1,80 +1,44 @@
-import { useEffect, useState } from 'react'
+import { type Season } from './season'
+import { useCurrentSeason } from './useCurrentSeason'
+import springVines from '../../assets/seasonal/hero-vines-spring.png'
+import summerVines from '../../assets/seasonal/hero-vines-summer.png'
+import autumnVines from '../../assets/seasonal/hero_vines_autumn.png'
+import winterVines from '../../assets/seasonal/hero_vines_winter.png'
 
-import {
-    nextSeasonBoundaryAfter,
-    seasonAt,
-    type Season,
-} from './season'
-
-function previewSeasonFromUrl(): Season | null {
-    if (!import.meta.env.DEV) {
-        return null
-    }
-
-    const value = new URLSearchParams(window.location.search)
-        .get('season_preview')
-
-    return value === 'spring' ||
-        value === 'summer' ||
-        value === 'autumn' ||
-        value === 'winter'
-        ? value
-        : null
+type HeroVineAsset = {
+    source: string
+    width: number
+    height: number
 }
 
-export function useCurrentSeason(): Season {
-    const previewSeason = previewSeasonFromUrl()
-    const [season, setSeason] = useState(
-        () => previewSeason ?? seasonAt(new Date()),
-    )
-
-    useEffect(() => {
-        if (previewSeason !== null) {
-            setSeason(previewSeason)
-            return undefined
-        }
-
-        let timeout: number | undefined
-
-        const scheduleUpdate = () => {
-            const now = new Date()
-            setSeason(seasonAt(now))
-            const nextBoundary = nextSeasonBoundaryAfter(now)
-
-            if (nextBoundary === null) {
-                return
-            }
-
-            timeout = window.setTimeout(
-                scheduleUpdate,
-                Math.max(0, nextBoundary.getTime() - now.getTime()) + 1,
-            )
-        }
-
-        scheduleUpdate()
-        return () => {
-            if (timeout !== undefined) {
-                window.clearTimeout(timeout)
-            }
-        }
-    }, [previewSeason])
-
-    return season
+const heroVinesBySeason: Record<Season, HeroVineAsset> = {
+    spring: { source: springVines, width: 1672, height: 940 },
+    summer: { source: summerVines, width: 2035, height: 773 },
+    autumn: { source: autumnVines, width: 2035, height: 773 },
+    winter: { source: winterVines, width: 2035, height: 773 },
 }
 
-export function SeasonalAtmosphere({
-    home = false,
-}: {
-    home?: boolean
-}) {
+export function SeasonalHeroVines() {
+    const season = useCurrentSeason()
+    const asset = heroVinesBySeason[season]
+    const sideBleed = Math.round(asset.width * 0.04)
+
     return (
-        <div
-            className="seasonal-atmosphere"
+        <svg
+            className="seasonal-hero-vines"
+            data-season={season}
             aria-hidden="true"
+            focusable="false"
+            preserveAspectRatio="none"
+            viewBox={`0 0 ${asset.width + (sideBleed * 2)} ${asset.height}`}
         >
-            <span className="seasonal-atmosphere__wash" />
-            <span className="seasonal-atmosphere__motif" />
-            {home ? <span className="seasonal-atmosphere__home-accent" /> : null}
-        </div>
+            <image
+                href={asset.source}
+                x={sideBleed}
+                y="0"
+                width={asset.width}
+                height={asset.height}
+            />
+        </svg>
     )
 }

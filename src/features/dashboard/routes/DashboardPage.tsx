@@ -22,10 +22,6 @@ import {
 import dashboardBackground from '../../../assets/Dashboard_Background.webp'
 import { LibraryWordmark } from '../../../components/LibraryWordmark'
 import { formatBookAuthors } from '../../books/authorDisplay'
-import {
-    SeasonalAtmosphere,
-    useCurrentSeason,
-} from '../../seasonal/SeasonalAtmosphere'
 
 
 function displayAverage(
@@ -166,7 +162,6 @@ function AnalyticsBars({
 }
 
 export function DashboardPage() {
-    const season = useCurrentSeason()
     useCollectionIsbnJump()
 
     const dashboardQuery = useDashboard()
@@ -271,14 +266,12 @@ export function DashboardPage() {
 
     return (
         <section
-            className="route-page dashboard-page seasonal-surface"
-            data-season={season}
+            className="route-page dashboard-page"
             style={{
                 '--dashboard-desk-image':
                     `url(${dashboardBackground})`,
             } as CSSProperties}
         >
-            <SeasonalAtmosphere />
             <header className="dashboard-page__heading">
                 <div>
                     <LibraryWordmark className="dashboard-page__eyebrow" />

@@ -10,10 +10,6 @@ import {
 import recordPlayer from '../../../assets/Record_player.png'
 import vinylCrate from '../../../assets/Vinyl_Crate.png'
 import coffeeMug from '../../../assets/Coffe_mug.png'
-import {
-    SeasonalAtmosphere,
-    useCurrentSeason,
-} from '../../seasonal/SeasonalAtmosphere'
 
 function average(value: number | null, suffix: string) {
     return value === null ? 'Not enough data' : `${value.toFixed(1)}${suffix}`
@@ -31,7 +27,6 @@ function shuffledAlbumIds(ids: string[], seed: number) {
 }
 
 export function ListeningDashboardPage() {
-    const season = useCurrentSeason()
     const dashboardQuery = useDashboard()
     const breakdownsQuery = useDashboardBreakdowns()
     const albumsQuery = useAlbums({ placementState: 'shelved', skip: 0, take: 100 })
@@ -47,15 +42,14 @@ export function ListeningDashboardPage() {
     }, [albumsQuery.data?.items, shelfSeed])
     const deckAlbum = shelfAlbums.find((album) => album.album_id === deckAlbumId) ?? shelfAlbums[0] ?? null
 
-    if (dashboardQuery.isPending) return <section className="route-page listening-dashboard seasonal-surface" data-season={season}><SeasonalAtmosphere /><h1 tabIndex={-1}>Listening Dashboard</h1><LoadingState label="Loading listening statistics…" /></section>
-    if (dashboardQuery.isError) return <section className="route-page listening-dashboard seasonal-surface" data-season={season}><SeasonalAtmosphere /><h1 tabIndex={-1}>Listening Dashboard</h1><QueryErrorState title="Unable to load listening statistics" error={dashboardQuery.error} onRetry={() => { void dashboardQuery.refetch() }} /></section>
+    if (dashboardQuery.isPending) return <section className="route-page listening-dashboard"><h1 tabIndex={-1}>Listening Dashboard</h1><LoadingState label="Loading listening statistics…" /></section>
+    if (dashboardQuery.isError) return <section className="route-page listening-dashboard"><h1 tabIndex={-1}>Listening Dashboard</h1><QueryErrorState title="Unable to load listening statistics" error={dashboardQuery.error} onRetry={() => { void dashboardQuery.refetch() }} /></section>
 
     const dashboard = dashboardQuery.data
     const listening = dashboard.listening ?? { albums_played: 0, albums_unplayed: 0, average_rating: null }
     const borrowing = dashboard.album_borrowing ?? { active_loans: 0, lifetime_loans: 0, average_loan_days: null }
 
-    return <section className="route-page listening-dashboard seasonal-surface" data-season={season}>
-        <SeasonalAtmosphere />
+    return <section className="route-page listening-dashboard">
         <header className="listening-dashboard__heading"><p>Back Counter · Inventory & play log</p><h1 tabIndex={-1}>Listening Dashboard</h1><span>The record collection at a glance.</span></header>
         <section className="listening-dashboard__pinboard" aria-label="Collection overview">
             <dl className="listening-dashboard__tickets">

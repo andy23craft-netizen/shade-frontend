@@ -57,14 +57,12 @@ import listeningRoomImage from '../../../assets/Listening_Room.png'
 import readingRoomImage from '../../../assets/Reading_Room.png'
 import { useQuotes } from '../../../api/quotesQueries'
 import {
-    SeasonalAtmosphere,
-    useCurrentSeason,
+    SeasonalHeroVines,
 } from '../../seasonal/SeasonalAtmosphere'
 
 const STAFF_PICKS_NAME = 'Staff Picks'
 
 export function HomePage() {
-    const season = useCurrentSeason()
     const libraryContext = resolveLibraryContext(
         window.location.hostname,
     )
@@ -204,8 +202,7 @@ export function HomePage() {
     const homeHeadings = homeHeadingsForQuote(quote)
 
     return (
-        <section className="route-page home-page seasonal-surface" data-season={season}>
-            <SeasonalAtmosphere home />
+        <section className="route-page home-page">
             <div className="home-page__intro">
                 <AppLink
                     to="/about"
@@ -219,6 +216,7 @@ export function HomePage() {
                     /> : <span className="home-page__hero-fallback">
                         {libraryName}
                     </span>}
+                    <SeasonalHeroVines />
                 </AppLink>
 
                 <h1
