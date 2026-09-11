@@ -1,10 +1,12 @@
-# Shade Physical & Local Smart Home Roadmap
+# Smart Home Hardware Roadmap
 
 **Status:** Planning notes --- September 2026\
-**Purpose:** Consolidate the current plan for deploying Shade on a
-Raspberry Pi, building a local-first Home Assistant system, and
-eventually connecting Shade's digital catalog to the physical library
-through NFC, computer vision, and shelf lighting.
+**Purpose:** Consolidate the hardware, local-network, deployment, and
+Home Assistant plan for Shade and the wider local-first home. This
+document owns physical installation and equipment decisions. The
+corresponding application architecture, API contracts, mapping model,
+and frontend/service delivery plan live in
+[`smart-home-software-roadmap.md`](smart-home-software-roadmap.md).
 
 ------------------------------------------------------------------------
 
@@ -622,9 +624,12 @@ than only the temperature measured in a hallway.
 
 ------------------------------------------------------------------------
 
-# 9. Shade Physical Layer
+# 9. Library Hardware Layer
 
-This is the long-term library-specific physical-computing system.
+This is the long-term library-specific physical-computing system. This
+document covers the equipment and installation side; see the
+[software roadmap](smart-home-software-roadmap.md) for system ownership,
+physical-map records, Smart Shade, and application stages.
 
 The useful mental model is:
 
@@ -678,7 +683,8 @@ This requires substantially more than attaching LED strips.
 
 ## Dependency 1 --- Stable Book Identity
 
-Already largely present.
+Already present in Shade. Its software contract and lifecycle are owned
+by the [software roadmap](smart-home-software-roadmap.md).
 
 Each physical copy needs a stable Shade book UUID.
 
@@ -792,7 +798,9 @@ shelf pixel range
 actual LED pixels
 ```
 
-This separation is important.
+This separation is important. The installed hardware calibration is
+documented here; its durable service/API model is defined in the
+[software roadmap](smart-home-software-roadmap.md).
 
 **Shade knows spatial meaning.\
 The lighting layer knows electrical addressing.**
@@ -836,7 +844,10 @@ Use strong red/green only where the workflow meaning benefits from it.
 
 ## Dependency 7 --- Physical Control Service
 
-Create a small **Shade Physical** service, likely running locally.
+The separate **Smart Shade** / **Shade Physical** service is required
+to operate the installed hardware. Its implementation boundary,
+authentication, data ownership, and deployment plan are defined in the
+[software roadmap](smart-home-software-roadmap.md).
 
 Responsibilities:
 
@@ -876,7 +887,9 @@ Shade Physical
 
 ## Dependency 8 --- Filter API / Frontend Action
 
-Shade's frontend needs an explicit physical-display action.
+Shade's frontend needs an explicit physical-display action. The feature
+roadmap is owned by the [software roadmap](smart-home-software-roadmap.md);
+this document records the hardware capabilities it will command.
 
 Possible controls:
 
@@ -944,7 +957,9 @@ Tap shelf NFC → photograph → reconcile.
 
 # 11. NFC Shelf Workflows
 
-NFC should not merely open a URL.
+NFC should not merely open a URL. Tag format, mounting, and read
+reliability belong here; context resolution and Shade UI behavior are
+specified in the [software roadmap](smart-home-software-roadmap.md).
 
 The same shelf tag should mean different things depending on what the
 user is currently doing.
@@ -1030,8 +1045,10 @@ Shade effectively says:
 
 > **"Put it right here."**
 
-This requires the complete Shade Physical dependency chain, so it
-belongs late in the roadmap.
+This requires the complete hardware and software dependency chain, so it
+belongs late in both roadmaps. See the
+[software roadmap](smart-home-software-roadmap.md) for the data and
+algorithm requirements.
 
 ------------------------------------------------------------------------
 
@@ -1164,7 +1181,8 @@ Research:
 # 15. Ordered Roadmap to the Final Shade Physical System
 
 This order intentionally alternates useful household improvements with
-infrastructure that Shade Physical will eventually reuse.
+infrastructure Smart Shade will eventually reuse. Coordinate its
+software milestones with the [software roadmap](smart-home-software-roadmap.md).
 
 ## Stage 1 --- Pi Foundation
 
@@ -1293,7 +1311,7 @@ internet/vendor cloud disappears.
 
 **Goal:** Give every physical shelf a digital identity.
 
--   Add stable shelf UUIDs.
+-   Provision tags against the stable shelf UUIDs supplied by Shade.
 -   Write NFC tags.
 -   Implement contextual shelf deep links.
 -   Bulk Add destination by tap.
@@ -1400,9 +1418,11 @@ Potential final capabilities:
 
 ------------------------------------------------------------------------
 
-# 16. Architectural Boundaries
+# 16. Hardware Responsibilities and Integration Boundaries
 
-As this grows, keep responsibilities clear.
+As this grows, keep responsibilities clear. The full service/API
+ownership matrix and side-by-side software deployment arrangement live
+in the [software roadmap](smart-home-software-roadmap.md).
 
 ## Shade owns
 
