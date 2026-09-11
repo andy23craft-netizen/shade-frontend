@@ -10,9 +10,8 @@ needed to continue development safely. Start from this file alone for that basel
 A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
 ticket or the checked-in API contract. Informal UI feedback notes under `docs/tickets/` are not sequenced build
 tickets -- treat them as notes unless the user asks to implement items from them. When no ticket is supplied, check
-`docs/tickets/` for the current review/research queue: FEAT-92 album QR labels/scanning, FEAT-93 book label-stock and
-printer validation, FEAT-95 book code-resolution/circulation review, FEAT-96--98 design/settings reviews, and
-FEAT-99 V2 handoff. Ask which work to take next rather than inventing a follow-on feature.
+`docs/tickets/` for open sequenced work (currently FEAT-01, OCR catalog search). Ask which work to take next rather
+than inventing a follow-on feature.
 
 **Context pack version:** 2026-09-09
 **Backend contract:** OpenAPI / API-for-FE **1.2.4**
@@ -25,7 +24,7 @@ position. Reading Room Loans has `CatalogCodeResolver`, which sends a Shade code
 `POST /catalog/resolve-code` with `active_media_type: 'book'`; unique Shade copies open their existing book flow and
 commercial multi-copy results require an explicit choice. It does not locally infer tenant identity or decode UUIDs.
 Physical printer stock, Lexmark alignment, supported-phone scans, camera/hardware behavior, and re-arm review remain
-open under FEAT-93 and FEAT-95. Album QR labels/scanning are not implemented; FEAT-92 is research-only.
+open review work. Album QR labels/scanning are not implemented.
 
 ---
 
@@ -1223,7 +1222,7 @@ Checked-in OpenAPI (`info.version` `1.2.4`) and generated types should match (`y
 related routes are live in the SPA where tickets have shipped; extend existing feature modules rather than inventing
 parallel ones.
 
-Treat an open sequenced ticket under `docs/tickets/` (for example `FEAT-95_book-code-resolution-review.md`),
+Treat an open sequenced ticket under `docs/tickets/` (for example `FEAT-01_ocr-catalog-search.md`),
 explicit user direction, or a green `make check` as the current open-work signal. Re-run `make check` before claiming a
 new change is release-ready.
 
@@ -1360,13 +1359,9 @@ Sequenced feature tickets live under `docs/tickets/` while open and are removed 
 notes may also live there; they are not sequenced build tickets unless the user asks to implement items from them.
 Prefer the supplied ticket, an explicit user request, or product docs when choosing further work.
 
-Current review/research work is:
+Current open sequenced work:
 
-* FEAT-92 -- album QR labels and scanning research;
-* FEAT-93 -- book QR label stock/printer validation;
-* FEAT-95 -- book code-resolution and circulation review;
-* FEAT-96--98 -- visual identity and settings reviews;
-* FEAT-99 -- remaining frontend V2 handoff.
+* FEAT-01 -- OCR catalog search (implemented; awaiting opt-in live API validation).
 
 Album catalog UI is largely shipped under `src/features/albums/`. Extend those surfaces; do not re-implement Browse /
 Add / Details from the contract alone.
@@ -1393,12 +1388,14 @@ authenticated binary routes.
 ## Remaining planned work
 
 ```text
-docs/tickets/FEAT-92_album-qr-and-scanning-research.md -- album QR research
-docs/tickets/FEAT-93_book-qr-label-print-research.md -- book label print validation
-docs/tickets/FEAT-95_book-code-resolution-review.md -- code resolution/circulation review
-docs/tickets/FEAT-96_*.md through FEAT-99_*.md -- visual/settings reviews and V2 handoff
+docs/tickets/FEAT-01_ocr-catalog-search.md -- OCR catalog search (live API validation)
 ```
 
+Open review topics without sequenced ticket files (do not invent implementation from these alone):
+
+* book QR label stock / printer validation;
+* book code-resolution and circulation review;
+* album QR labels and scanning research.
 ---
 
 # 21. Condensed source inventory

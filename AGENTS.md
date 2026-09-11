@@ -78,8 +78,8 @@ Current functionality includes:
   Collection feed the same label flow. `CatalogCodeResolver` on Reading Room Loans submits Shade labels or ISBNs to
   `POST /catalog/resolve-code` with `active_media_type: 'book'`: a unique Shade copy opens its existing detail or
   check-in flow, while commercial multi-copy results require explicit selection. It never decodes tenant identity or
-  UUIDs locally. Physical phone/camera/hardware scans, focus/re-arm behavior, and printer/label-stock validation are
-  still review work. Album QR labels/scanning are not implemented; FEAT-92 remains research only.
+  UUIDs locally. Physical phone/camera/hardware scans, focus/re-arm behavior, and printer/label-stock validation remain
+  open review work. Album QR labels/scanning are not implemented.
 - Checkout on book details via `CheckoutDialog` (`POST /books/{book_id}/checkout`); eligibility via `isCheckoutEligible`
   (`status === 'available'`); borrower and notes only (timestamps computed client-side);
   Field-linked **422**; `404`/`409`/`412` stale-state refetch with preserved borrower/notes. Display-only **412** does
@@ -160,18 +160,14 @@ Current functionality includes:
 Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, mark-played, cover
 upload/delete, availability, stash/apply-stash, or album artwork upload/delete/refetch with generic `PATCH`. Sequenced
 feature tickets live under `docs/tickets/` while open and are removed after completion. Open sequenced work currently
-is the review/research queue: FEAT-92 (album QR labels/scanning), FEAT-93 (book label stock/printer validation),
-FEAT-95 (book code-resolution/circulation review), FEAT-96--98 (visual identity and settings reviews), and FEAT-99
-(remaining V2 handoff). Informal UI feedback notes are not sequenced build tickets -- treat them as notes unless the
-user asks to implement items from them. When the directory holds only `.gitkeep` and/or informal notes, wait for an
-explicit request rather than inventing the next feature. Do not invent undocumented routes, realtime channels, or
-lifecycle shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
+includes FEAT-01 (OCR catalog search; implemented, awaiting opt-in live API validation). Informal UI feedback notes
+are not sequenced build tickets -- treat them as notes unless the user asks to implement items from them. When the
+directory holds only `.gitkeep` and/or informal notes, wait for an explicit request rather than inventing the next
+feature. Do not invent undocumented routes, realtime channels, or lifecycle shortcuts. Never invent a second telemetry
+transport or fabricate correlation IDs.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current sequenced ticket (when one
-exists), then the product requirements docs when deciding what to build next. The currently checked-in review and
-research tickets are FEAT-92 (album QR labels/scanning), FEAT-93 (book label stock/printer validation), FEAT-95
-(book code-resolution/circulation review), FEAT-96--98 (visual identity and settings reviews), and FEAT-99 (remaining
-V2 handoff). Album catalog UI is largely shipped;
+exists), then the product requirements docs when deciding what to build next. Album catalog UI is largely shipped;
 do not re-implement album Browse/Add/Details from the OpenAPI contract alone -- extend the existing
 `src/features/albums/` surfaces and follow the active ticket.
 
@@ -600,13 +596,12 @@ adjacent surfaces.
 **Out of scope unless explicitly requested by a ticket or user:** inventing routes not in OpenAPI, library-switcher UI
 (hostname tenant routing is proxy/API-owned), overdue notifications, Goodreads/StoryGraph, user accounts/roles,
 realtime sync, mark-unread, frontend author/category/artist/genre catalog admin pages (beyond inline create used by
-forms), remote Ansible/systemd/TLS/rollback orchestration, and features still blocked or deferred in `docs/tickets/`
-(for example album QR labels/scanning, physical label/printer validation, and unreviewed scanner re-arm behavior).
-Book and album work-correction UI, borrower-feedback presentation, and mixed-media Home recent additions are shipped;
-extend those existing surfaces rather than treating them as deferred. Categories are many-to-many via
-`GET /categories` and `category_ids`; authors are many-to-many via `GET /authors` and `author_ids` -- do not
-hard-code taxonomy or invent a second filter stack. Broader
-catalog filters beyond current Books/Albums controls stay out unless a product need explicitly requires them.
+forms), remote Ansible/systemd/TLS/rollback orchestration, album QR labels/scanning, physical label/printer
+validation, and unreviewed scanner re-arm behavior. Book and album work-correction UI, borrower-feedback presentation,
+and mixed-media Home recent additions are shipped; extend those existing surfaces rather than treating them as
+deferred. Categories are many-to-many via `GET /categories` and `category_ids`; authors are many-to-many via
+`GET /authors` and `author_ids` -- do not hard-code taxonomy or invent a second filter stack. Broader catalog filters
+beyond current Books/Albums controls stay out unless a product need explicitly requires them.
 
 Do not expand a ticket into out-of-scope features. Do not invent the next product feature merely because the API
 supports it.
@@ -1632,14 +1627,13 @@ another project prompt as required reading before starting. Attach the items bel
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
 - `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. The current
-  queue is FEAT-92, FEAT-93, FEAT-95--99; see the Project Summary for each ticket's focus. Informal UI feedback notes
-  may also live here; they are not sequenced build tickets unless the user asks to implement items from them. When the
-  directory holds only `.gitkeep` and/or informal notes, ask which work to take next rather than inventing a follow-on
-  feature.
+  open ticket is FEAT-01 (OCR catalog search). Informal UI feedback notes may also live here; they are not sequenced
+  build tickets unless the user asks to implement items from them. When the directory holds only `.gitkeep` and/or
+  informal notes, ask which work to take next rather than inventing a follow-on feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
 - `docs/product-docs/UI_DESIGN_NOTES.MD`: UI and design decisions; consult when visual design is in question.
 - `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with Listening Room / album
-  tickets (for example `FEAT-92`).
+  work.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
   `info.version` `1.2.4` -- see Backend Contract), including book `book_id` / covers / filters / bulk / stash /
   availability routes, loans with nullable `book_id`/`album_id`, `media_type`, and `feedback_present`, wishlist

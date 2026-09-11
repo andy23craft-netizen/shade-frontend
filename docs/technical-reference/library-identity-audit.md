@@ -1,6 +1,6 @@
 # Library identity audit
 
-Baseline: FEAT-10, 2026-09-07.
+Baseline: 2026-09-07.
 
 Hosted-library presentation is defined in `src/config/libraryIdentity.ts`. Packages contain
 only typed, code-owned text, enum-like palette and typography keys, imported build assets,
@@ -39,7 +39,7 @@ All other occurrences of “Shade” in application code refer to the fixed prod
 than a hosted library. No tenant switcher, selectable skin, alternate route, or feature fork
 is introduced by identity selection.
 
-## Dalmo package (FEAT-11)
+## Dalmo package
 
 Implementation brief recorded September 7, 2026:
 
@@ -72,7 +72,7 @@ The repository records these checked-in logo derivatives as owner-supplied asset
 for this library deployment. Original-source provenance or broader reuse rights are not
 asserted by the frontend package.
 
-## Jamie package (FEAT-11)
+## Jamie package
 
 Implementation brief recorded September 7, 2026:
 
