@@ -305,6 +305,7 @@ export function NewBookPage() {
     const createBook = useCreateBook()
     const existingCopiesQuery = useBooks({
         isbn: values.isbn13 || undefined,
+        skip: 0,
         take: 20,
         enabled: false,
     })
