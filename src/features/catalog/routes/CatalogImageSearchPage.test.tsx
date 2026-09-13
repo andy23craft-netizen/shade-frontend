@@ -60,7 +60,7 @@ describe('CatalogImageSearchPage', () => {
         expect(albumLinks[1]).toHaveAttribute('href', '/albums/new?discogs_release_id=12345')
     })
 
-    it.each([[422, 'Choose a JPEG'], [502, 'provider is unavailable'], [504, 'took too long']])('shows retry-safe %s failures', async (status, message) => {
+    it.each([[413, 'too large for the server'], [422, 'Choose a JPEG'], [502, 'provider is unavailable'], [504, 'took too long']])('shows retry-safe %s failures', async (status, message) => {
         renderPage(); select(new File(['image'], 'cover.png', { type: 'image/png' })); fireEvent.click(screen.getByRole('button', { name: 'Search image' }))
         mutate.mock.calls.at(-1)?.[1].onError(new ApiError({ kind: status === 422 ? 'validation' : 'server', status, message: 'backend detail' }))
         await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(message))

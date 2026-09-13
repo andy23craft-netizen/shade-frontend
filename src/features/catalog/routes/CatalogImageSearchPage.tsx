@@ -9,6 +9,7 @@ const ACCEPTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 function errorMessage(error: unknown): string {
     if (isApiError(error)) {
+        if (error.status === 413) return 'This image is too large for the server to receive. Choose an image no larger than 5 MB and try again.'
         if (error.status === 422) return 'Shade could not use that image. Choose a JPEG, PNG, or WebP image up to 5 MB and try again.'
         if (error.status === 502) return 'The text-recognition provider is unavailable. Your image was not saved; try again shortly.'
         if (error.status === 504 || error.kind === 'timeout') return 'Text recognition took too long. Your image was not saved; try again.'
