@@ -10,6 +10,7 @@ import {
 } from '../../../config/libraryContext'
 import { createBookLabelQrOptions } from '../../books/labelQrOptions'
 import { bookLabelGenerationQueue } from '../../books/qrGenerationQueue'
+import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 import { flattenAlbumPages } from '../albumsListModel'
 import { albumLabelValue } from '../labelCode'
 
@@ -21,11 +22,13 @@ function Label({
     title,
     libraryId,
     libraryName,
+    shelfName,
 }: {
     albumId: string
     title: string
     libraryId: LibraryId | null
     libraryName: string
+    shelfName?: string | null
 }) {
     const [image, setImage] = useState<string | null>(null)
 
@@ -61,6 +64,7 @@ function Label({
         <div className="book-label__text">
             <strong>{title}</strong>
             <span>{libraryName}</span>
+            <span className="book-label__location">Shelf: {shelfName ? formatShelfCommonNameForDisplay(shelfName) : 'Unassigned'}</span>
         </div>
     </article>
 }
@@ -161,7 +165,7 @@ export function AlbumLabelsPage() {
                 {labelSheets.map((sheet, sheetIndex) => (
                     <div className="book-label-sheet" key={`sheet-${sheetIndex}`}>
                         {sheet.map((album, slotIndex) => album ? (
-                            <Label key={album.album_id} albumId={album.album_id} title={album.title} libraryId={libraryId} libraryName={libraryName} />
+                            <Label key={album.album_id} albumId={album.album_id} title={album.title} libraryId={libraryId} libraryName={libraryName} shelfName={album.shelf_name} />
                         ) : (
                             <div className="book-label book-label--blank" key={`blank-${slotIndex}`} />
                         ))}

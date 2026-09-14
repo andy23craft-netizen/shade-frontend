@@ -517,6 +517,12 @@ describe('WishlistsPage', () => {
             'href',
             'https://example.com/book',
         )
+        expect(screen.getAllByRole('link', {
+            name: 'Find at Better World Books ↗',
+        })[0]).toHaveAttribute(
+            'href',
+            'https://www.betterworldbooks.com/search/results?q=The%20Dispossessed%20Ursula%20K.%20Le%20Guin',
+        )
 
         expect(
             screen.getByRole('link', {

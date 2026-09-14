@@ -53,6 +53,7 @@ import {
 import {
     displayWishlistBookStatus,
     displayWishlistPriority,
+    betterWorldBooksSearchUrl,
     safeHttpUrl,
 } from '../wishlistDisplay'
 import {
@@ -129,6 +130,13 @@ function WishlistMembershipRow({
 
     const href = `/books/${encodeURIComponent(bookId)}`
     const safeUrl = safeHttpUrl(url)
+    const authorName = authors.length > 0
+        ? formatBookAuthors(authors)
+        : undefined
+    const betterWorldBooksHref = betterWorldBooksSearchUrl({
+        title,
+        author: authorName,
+    })
 
     return (
         <li
@@ -145,9 +153,18 @@ function WishlistMembershipRow({
 
                 {authors.length > 0 ? (
                     <p>
-                        {formatBookAuthors(authors)}
+                        {authorName}
                     </p>
                 ) : null}
+
+                <a
+                    className="wishlist-membership__better-world-books"
+                    href={betterWorldBooksHref}
+                    rel="noreferrer"
+                    target="_blank"
+                >
+                    Find at Better World Books ↗
+                </a>
             </div>
 
             <dl>

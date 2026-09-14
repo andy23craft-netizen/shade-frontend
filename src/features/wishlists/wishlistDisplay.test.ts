@@ -7,6 +7,7 @@ import {
 import {
     displayWishlistBookStatus,
     displayWishlistPriority,
+    betterWorldBooksSearchUrl,
     safeHttpUrl,
 } from './wishlistDisplay'
 
@@ -56,5 +57,22 @@ describe('safeHttpUrl', () => {
         expect(
             safeHttpUrl('javascript:alert(1)'),
         ).toBeNull()
+    })
+})
+
+describe('betterWorldBooksSearchUrl', () => {
+    it('searches by title and author when an ISBN is unavailable', () => {
+        expect(betterWorldBooksSearchUrl({
+            title: 'The Dispossessed',
+            author: 'Ursula K. Le Guin',
+        })).toBe('https://www.betterworldbooks.com/search/results?q=The%20Dispossessed%20Ursula%20K.%20Le%20Guin')
+    })
+
+    it('prefers an ISBN when one is provided', () => {
+        expect(betterWorldBooksSearchUrl({
+            title: 'The Dispossessed',
+            author: 'Ursula K. Le Guin',
+            isbn13: ' 9780061054884 ',
+        })).toBe('https://www.betterworldbooks.com/search/results?q=9780061054884')
     })
 })

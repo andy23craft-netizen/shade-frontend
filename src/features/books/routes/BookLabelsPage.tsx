@@ -15,6 +15,7 @@ import { flattenInfiniteBookPages } from '../booksListModel'
 import { bookLabelValue } from '../labelCode'
 import { createBookLabelQrOptions } from '../labelQrOptions'
 import { bookLabelGenerationQueue } from '../qrGenerationQueue'
+import { formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 
 const LABELS_PER_BATCH = 48
 const LABELS_PER_SHEET = 8
@@ -24,11 +25,13 @@ function Label({
     title,
     libraryId,
     libraryName,
+    shelfName,
 }: {
     bookId: string
     title: string
     libraryId: LibraryId | null
     libraryName: string
+    shelfName?: string | null
 }) {
     const [image, setImage] = useState<string | null>(null)
 
@@ -65,6 +68,7 @@ function Label({
         <div className="book-label__text">
             <strong>{title}</strong>
             <span>{libraryName}</span>
+            <span className="book-label__location">Shelf: {shelfName ? formatShelfCommonNameForDisplay(shelfName) : 'Unassigned'}</span>
         </div>
     </article>
 }
@@ -202,7 +206,7 @@ export function BookLabelsPage() {
                 {labelSheets.map((sheet, sheetIndex) => (
                     <div className="book-label-sheet" key={`sheet-${sheetIndex}`}>
                         {sheet.map((book, slotIndex) => book ? (
-                            <Label key={book.book_id} bookId={book.book_id} title={book.title} libraryId={libraryId} libraryName={libraryName} />
+                            <Label key={book.book_id} bookId={book.book_id} title={book.title} libraryId={libraryId} libraryName={libraryName} shelfName={book.shelf_name} />
                         ) : (
                             <div className="book-label book-label--blank" key={`blank-${slotIndex}`} />
                         ))}

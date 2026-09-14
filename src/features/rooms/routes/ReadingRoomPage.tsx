@@ -1,18 +1,25 @@
+import { useState } from 'react'
 import { AppLink } from '../../../components'
 import { LibraryWordmark } from '../../../components/LibraryWordmark'
 import readingLamp from '../../../assets/Reading_lamp.png'
+import readingLampOff from '../../../assets/reading_lamp_off.png'
 import { useAuth } from '../../auth/useAuth'
 
 export function ReadingRoomPage() {
     const { isAdmin } = useAuth()
+    const [isLampOn, setIsLampOn] = useState(true)
     return (
-        <section className="route-page room-landing room-landing--reading" aria-labelledby="reading-room-heading">
+        <section className={`route-page room-landing room-landing--reading${isLampOn ? '' : ' room-landing--lamp-off'}`} aria-labelledby="reading-room-heading">
             <div className="room-landing__heading">
-                <img
-                    className="room-landing__header-art room-landing__header-art--reading"
-                    src={readingLamp}
-                    alt=""
-                />
+                <button
+                    className="room-landing__header-art room-landing__header-art--reading room-landing__lamp-toggle"
+                    type="button"
+                    aria-pressed={isLampOn}
+                    aria-label={`Turn reading lamp ${isLampOn ? 'off' : 'on'}`}
+                    onClick={() => setIsLampOn((lampIsOn) => !lampIsOn)}
+                >
+                    <img className={isLampOn ? undefined : 'room-landing__lamp-image--off'} src={isLampOn ? readingLamp : readingLampOff} alt="" />
+                </button>
                 <div className="room-landing__heading-copy">
                     <LibraryWordmark className="room-landing__eyebrow" />
                     <h1 id="reading-room-heading" tabIndex={-1}>Reading Room</h1>

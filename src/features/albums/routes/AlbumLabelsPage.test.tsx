@@ -28,6 +28,7 @@ vi.mock('qr-code-styling', () => ({ default: QRCodeStyling }))
 const album = {
     album_id: 'album-label-id',
     title: 'Album for Labels',
+    shelf_name: 'jazz_a',
 } as AlbumRead
 
 const mockUseAlbumsByIds = vi.mocked(useAlbumsByIds)
@@ -76,5 +77,6 @@ describe('AlbumLabelsPage', () => {
         expect(await screen.findByAltText('Shade label for Album for Labels'))
             .toHaveAttribute('src', 'blob:album-label')
         expect(screen.getByText('Shade Library')).toBeInTheDocument()
+        expect(screen.getByText('Shelf: Jazz A')).toBeInTheDocument()
     })
 })

@@ -189,10 +189,31 @@
 .room-landing__eyebrow, .album-loans-page__eyebrow { font-family: var(--font-family-heading); font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .room-landing--reading, .room-landing--listening { overflow-x: clip; }
 .room-landing--reading { overflow-x: visible; background: radial-gradient(ellipse 52rem 19rem at 90.2% 40%, rgb(255 220 137 / 25%), rgb(243 189 77 / 10%) 35%, transparent 70%), linear-gradient(160deg, transparent 35%, rgb(246 202 105 / 8%) 54%, transparent 72%); }
+.room-landing--reading.room-landing--lamp-off { background: linear-gradient(160deg, transparent 35%, rgb(246 202 105 / 8%) 54%, transparent 72%); }
 .room-landing--reading .room-landing__heading { position: relative; max-width: 56rem; }
 .room-landing--reading .room-landing__heading-copy { display: grid; gap: var(--space-3); min-width: 0; text-align: center; }
 .room-landing--reading .room-landing__header-art--reading { right: calc(clamp(-19rem, -19vw, -13rem) + 10px); left: auto; clip-path: inset(0 22% 0 0); transform: translateY(-50%); }
-@media (max-width: 42rem) { .room-landing--reading .room-landing__header-art--reading { margin: 0 var(--space-4) calc(-1 * var(--space-4)) 0; transform: none; } }
+.room-landing--reading .room-landing__lamp-toggle { padding: 0; border: 0; background: transparent; cursor: pointer; line-height: 0; pointer-events: auto; }
+.room-landing--reading .room-landing__lamp-toggle img { display: block; width: 100%; height: auto; }
+.room-landing--reading .room-landing__lamp-image--off { transform: translate(20px, 8px) scale(1.125); transform-origin: right center; }
+.room-landing--reading .room-landing__lamp-toggle:focus-visible { outline: var(--focus-ring); outline-offset: .3rem; }
+@media (max-width: 42rem) {
+  .room-landing--reading {
+    background: radial-gradient(ellipse 30rem 16rem at 78% 14%, rgb(255 220 137 / 32%), rgb(243 189 77 / 13%) 35%, transparent 70%), linear-gradient(160deg, transparent 35%, rgb(246 202 105 / 8%) 54%, transparent 72%);
+  }
+  .room-landing--reading .room-landing__heading-copy { padding-block-start: clamp(8.5rem, 34vw, 10.5rem); }
+  .room-landing--reading .room-landing__header-art--reading {
+    position: absolute;
+    top: 0;
+    right: calc(-1 * var(--space-4));
+    left: auto;
+    width: clamp(10rem, 43vw, 13rem);
+    margin: 0;
+    clip-path: inset(0 18% 0 0);
+    transform: none;
+  }
+  .room-landing--reading .room-landing__lamp-image--off { transform: translate(10px, 13px) scale(1.125); }
+}
 /*
  * Catalog folders use the same cardstock edge and small raised label seen on
  * book cards, with the destination name written directly on the tab.
@@ -4855,6 +4876,13 @@
 
   color: var(--color-surface-text-muted);
   font-style: italic;
+}
+
+.wishlist-membership__better-world-books {
+  width: fit-content;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
 }
 
 .wishlist-membership dl {
@@ -10947,9 +10975,11 @@
 }
 
 .book-label__text {
+  position: relative;
   display: grid;
   align-content: center;
   gap: .08in;
+  padding-bottom: .18in;
   min-width: 0;
   text-align: left;
 }
@@ -10962,6 +10992,17 @@
 
 .book-label__text span {
   font-size: 8pt;
+}
+
+.book-label__location {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  font-size: 7pt !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .book-label__generating {
@@ -11030,7 +11071,11 @@
 
   .book-label-sheet {
     display: grid !important;
-    margin: .75in auto 0;
+    box-sizing: border-box;
+    width: 8.5in;
+    height: 11in;
+    margin: 0;
+    padding: .75in .5in;
     break-after: page;
     page-break-after: always;
   }

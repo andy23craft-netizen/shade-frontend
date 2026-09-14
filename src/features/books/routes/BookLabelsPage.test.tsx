@@ -31,6 +31,7 @@ vi.mock('qr-code-styling', () => ({ default: QRCodeStyling }))
 const book = {
     book_id: 'cleanup-book-id',
     title: 'Missing ISBN Book',
+    shelf_name: 'history_a',
 } as BookRead
 
 const mockUseBooksByIds = vi.mocked(useBooksByIds)
@@ -78,6 +79,7 @@ describe('BookLabelsPage', () => {
         ])
         expect(screen.getByText('Missing ISBN Book')).toBeInTheDocument()
         expect(screen.getByText('Shade Library')).toBeInTheDocument()
+        expect(screen.getByText('Shelf: History A')).toBeInTheDocument()
         expect(
             screen.queryByText(/Select one or more books from Browse/i),
         ).not.toBeInTheDocument()

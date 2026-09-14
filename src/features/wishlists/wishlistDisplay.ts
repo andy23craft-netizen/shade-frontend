@@ -76,3 +76,29 @@ export function safeHttpUrl(
         return null
     }
 }
+
+/**
+ * Better World Books accepts a single search query. ISBN is preferred when
+ * the wishlist response supplies it; otherwise title and author identify the
+ * edition as closely as the available wishlist data allows.
+ */
+export function betterWorldBooksSearchUrl({
+    title,
+    author,
+    isbn13,
+}: {
+    title: string
+    author?: string | null
+    isbn13?: string | null
+}): string {
+    const isbn = isbn13?.trim()
+    const query = isbn && isbn !== ''
+        ? isbn
+        : [title, author]
+            .filter((part): part is string =>
+                typeof part === 'string' && part.trim() !== '',
+            )
+            .join(' ')
+
+    return `https://www.betterworldbooks.com/search/results?q=${encodeURIComponent(query)}`
+}

@@ -14,9 +14,11 @@ describe('R027 book-label print styles', () => {
         expect(styles).toContain('height: 9.5in')
         expect(styles).toContain('break-after: page')
         expect(styles).toContain('margin: 0')
-        expect(styles).toContain('margin: .75in auto 0')
+        expect(styles).toContain('width: 8.5in')
+        expect(styles).toContain('height: 11in')
+        expect(styles).toContain('padding: .75in .5in')
         expect(styles).toMatch(
-            /\.book-labels-page > header,\s*\.no-print\s*\{\s*display: none !important;/u,
+            /\.book-labels-page > header,[\s\S]*?\.no-print\s*\{\s*display: none !important;/u,
         )
     })
 })
