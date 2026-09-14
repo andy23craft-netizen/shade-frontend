@@ -6,6 +6,7 @@ import {
 import {
     installMockApi,
     makeBook,
+    signInAsAdmin,
 } from './support/mockApi'
 
 const SCANNED_ISBN = '9780679723424'
@@ -55,6 +56,7 @@ test('opens a unique scanned book directly from the dashboard and Back returns t
     await installMockApi(page, {
         books: [book],
     })
+    await signInAsAdmin(page)
 
     await page.goto('/dashboard')
 
@@ -113,6 +115,7 @@ test('keeps multiple scanned ISBN matches on the books list', async ({
             secondCopy,
         ],
     })
+    await signInAsAdmin(page)
 
     await page.goto('/dashboard')
 

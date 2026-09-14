@@ -148,10 +148,10 @@
 }
 
 /* Shared lists remain readable to visitors; only their management affordances
-   are removed. The first card action is the read-only expand/collapse toggle. */
+   are removed. The second wishlist card action is the read-only expand/collapse toggle. */
 .app-shell[data-access-mode="viewer"] .wishlists-page .page-add-tab,
 .app-shell[data-access-mode="viewer"] .collections-page .page-add-tab,
-.app-shell[data-access-mode="viewer"] .wishlist-card__actions > button:not(:first-child),
+.app-shell[data-access-mode="viewer"] .wishlist-card__actions > button:not(:nth-child(2)),
 .app-shell[data-access-mode="viewer"] .collection-card__actions > button:not(:first-child),
 .app-shell[data-access-mode="viewer"] .wishlist-membership > form,
 .app-shell[data-access-mode="viewer"] .wishlist-membership > .wishlist-membership__move,

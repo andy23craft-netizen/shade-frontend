@@ -5,10 +5,12 @@ import {
 import {
     emptyDashboardFixture,
     installMockApi,
+    signInAsAdmin,
 } from './support/mockApi'
 
 test.beforeEach(async ({ page }) => {
     await installMockApi(page)
+    await signInAsAdmin(page)
 })
 
 test('loads the dashboard through the real browser application', async ({

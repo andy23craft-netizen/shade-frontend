@@ -101,7 +101,7 @@ export function AppShell() {
                         className="app-nav"
                         aria-label={`${room === 'listening' ? 'Listening' : 'Reading'} Room navigation`}
                     >
-                        <NavLink
+                        {isAdmin ? <NavLink
                             className="app-nav__link"
                             to={dashboardHref}
                             end
@@ -116,7 +116,7 @@ export function AppShell() {
                                 className="drawer-nav-menu__pull"
                                 aria-hidden="true"
                             />
-                        </NavLink>
+                        </NavLink> : null}
 
                         <DrawerNavMenu
                             label="Collection"
@@ -135,7 +135,7 @@ export function AppShell() {
                                     label: 'Search by image',
                                     to: '/catalog/image-search',
                                 }] : []),
-                                ...(room === 'reading' ? [{
+                                ...(isAdmin && room === 'reading' ? [{
                                     label: `Stash (${dashboardData?.stash_count ?? 0})`,
                                     to: '/stash',
                                 }] : []),

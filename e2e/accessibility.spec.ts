@@ -5,6 +5,7 @@ import {
 import {
     installMockApi,
     makeBook,
+    signInAsAdmin,
 } from './support/mockApi'
 
 const criticalRoutes = [
@@ -47,6 +48,10 @@ for (const route of criticalRoutes) {
         await installMockApi(page, {
             books: [book],
         })
+
+        if (route.path !== '/books' && route.path !== '/books/accessibility-book') {
+            await signInAsAdmin(page)
+        }
 
         await page.goto(route.path)
 

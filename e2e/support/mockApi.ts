@@ -12,6 +12,7 @@ import type {
 
 const NOW = '2026-08-16T12:00:00.000Z'
 const RECENT_WINDOW_DAYS = 30
+const E2E_ADMIN_PASSWORD = 'e2e-admin-password'
 
 interface JsonResponseOptions {
     status?: number
@@ -880,7 +881,7 @@ export async function installMockApi(
     }
 
     const apiPathPattern =
-        /^\/(?:api\/)?(?:health|ready|version|books|albums|people|genres|loans|dashboard|shelves|categories|library|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
+        /^\/(?:api\/)?(?:health|ready|version|auth|books|albums|people|genres|loans|dashboard|shelves|categories|library|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
 
     await page.route(
         (url) => apiPathPattern.test(url.pathname),
@@ -912,6 +913,25 @@ export async function installMockApi(
                 route,
                 url,
             )
+
+            if (method === 'POST' && url.pathname === '/auth/sign-in') {
+                const body = readRequestBody(route)
+                if (body.password !== E2E_ADMIN_PASSWORD) {
+                    await fulfillJson(route, {
+                        status: 401,
+                        body: { detail: 'Invalid administrator credentials' },
+                    })
+                    return
+                }
+                await fulfillJson(route, {
+                    body: {
+                        access_token: 'e2e-admin-token',
+                        expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
+                        token_type: 'bearer',
+                    },
+                })
+                return
+            }
 
             if (
                 method === 'GET' &&
@@ -1542,4 +1562,14 @@ export async function installMockApi(
     return {
         state,
     }
+}
+
+/** Authenticate operator-only browser journeys through the same UI as users. */
+export async function signInAsAdmin(page: Page): Promise<void> {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Log in' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Administrator sign in' })
+    await dialog.getByLabel('Administrator password').fill(E2E_ADMIN_PASSWORD)
+    await dialog.getByRole('button', { name: 'Log in' }).click()
+    await page.getByRole('button', { name: 'Sign out' }).waitFor()
 }

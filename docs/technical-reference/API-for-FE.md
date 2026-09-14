@@ -225,11 +225,12 @@ Each tenant has its own administrator credential. The administrator lifecycle is
 - `POST /auth/sign-out` returns **204**. Credentials are stateless, so clients sign out by discarding the token; there
   is no refresh route or cookie-based session.
 
-Frontend credential handling: never persist the raw password. Keep an issued administrator token only for the current
-browser-tab lifetime; discard it on sign-out, expiry, password rotation, tenant change, and authorization failure.
-Discard or invalidate protected query/blob state at the same time. The token must never appear in a URL, browser
-preference storage, diagnostic payload, analytics payload, or application log. Do not invent cross-tenant reuse,
-token refresh, or a second credential store.
+Frontend credential handling: never persist the raw password. Keep an issued administrator token in
+`sessionStorage` only, so it survives reloads in the current browser tab but is discarded when that tab's browsing
+session ends. Also discard it on sign-out, expiry, password rotation, tenant change, and authorization failure.
+Discard or invalidate protected query/blob state at the same time. The token must never appear in a URL, persistent
+browser preference storage, diagnostic payload, analytics payload, or application log. Do not invent cross-tenant
+reuse, token refresh, or a second credential store.
 
 Public infrastructure routes remain `GET /health`, `GET /ready`, `GET /version`, and FastAPI's generated docs/OpenAPI
 routes (`/docs`, `/redoc`, `/openapi.json`, `/docs/oauth2-redirect`). `GET /ready` is hostname-scoped; the others do

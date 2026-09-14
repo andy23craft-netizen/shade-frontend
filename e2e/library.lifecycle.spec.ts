@@ -3,6 +3,7 @@ import {
     installMockApi,
     makeBook,
     makeLoan,
+    signInAsAdmin,
 } from './support/mockApi'
 
 test('checks out and checks in a book through the browser', async ({
@@ -25,6 +26,7 @@ test('checks out and checks in a book through the browser', async ({
     const api = await installMockApi(page, {
         books: [book],
     })
+    await signInAsAdmin(page)
 
     await page.goto(`/books/${book.book_id}`)
 
@@ -370,6 +372,7 @@ test('keeps album loans out of book circulation after a reload', async ({ page }
             makeLoan({ id: 'album-loan', book_id: null, album_id: book.book_id, borrower: 'Album borrower' }),
         ],
     })
+    await signInAsAdmin(page)
 
     await page.goto('/loans')
     await expect(page.getByText('Book borrower', { exact: true })).toBeVisible()
@@ -399,6 +402,7 @@ test('keeps long borrower names readable on a narrow loan card', async ({ page }
         books: [book],
         loans: [makeLoan({ book_id: book.book_id, borrower })],
     })
+    await signInAsAdmin(page)
 
     await page.goto('/loans')
 

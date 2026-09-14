@@ -2,12 +2,14 @@ import { expect, test } from '@playwright/test'
 import {
     installMockApi,
     lifecycleShelf,
+    signInAsAdmin,
 } from './support/mockApi'
 
 test('adds a book manually and opens the created book', async ({
                                                                    page,
                                                                }) => {
     const api = await installMockApi(page)
+    await signInAsAdmin(page)
 
     await page.goto('/books/new')
 

@@ -10,6 +10,39 @@ interface Credential {
     expiresAt: number
 }
 
+const SESSION_CREDENTIAL_KEY = 'shade:administrator-credential:v1'
+
+function loadSessionCredential(): Credential | null {
+    try {
+        const stored = window.sessionStorage.getItem(SESSION_CREDENTIAL_KEY)
+        if (!stored) return null
+        const credential = JSON.parse(stored) as Credential
+        if (typeof credential.accessToken !== 'string' || typeof credential.expiresAt !== 'number' || credential.expiresAt * 1000 <= Date.now()) {
+            window.sessionStorage.removeItem(SESSION_CREDENTIAL_KEY)
+            return null
+        }
+        return credential
+    } catch {
+        return null
+    }
+}
+
+function saveSessionCredential(credential: Credential): void {
+    try {
+        window.sessionStorage.setItem(SESSION_CREDENTIAL_KEY, JSON.stringify(credential))
+    } catch {
+        // Sign-in remains usable when browser storage is unavailable.
+    }
+}
+
+function removeSessionCredential(): void {
+    try {
+        window.sessionStorage.removeItem(SESSION_CREDENTIAL_KEY)
+    } catch {
+        // Storage cleanup is best effort only.
+    }
+}
+
 interface AdminTokenResponse {
     access_token: string
     expires_at: number
@@ -29,12 +62,13 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
     const [credential, setCredential] = useState<Credential | null>(() => initialAccessToken ? {
         accessToken: initialAccessToken,
         expiresAt: Math.floor(Date.now() / 1000) + 60 * 60,
-    } : null)
-    const [mode, setMode] = useState<AccessMode>(initialMode)
+    } : loadSessionCredential())
+    const [mode, setMode] = useState<AccessMode>(() => initialAccessToken || loadSessionCredential() ? 'admin' : initialMode)
 
     const clearAdministratorAccess = useCallback(() => {
         setCredential(null)
         setMode('viewer')
+        removeSessionCredential()
         // Protected responses must not remain visible after a credential is
         // revoked, expires, or is explicitly discarded.
         queryClient.clear()
@@ -61,10 +95,12 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
             authenticated: false,
             body: { password },
         })
-        setCredential({
+        const nextCredential = {
             accessToken: response.access_token,
             expiresAt: response.expires_at,
-        })
+        }
+        setCredential(nextCredential)
+        saveSessionCredential(nextCredential)
         setMode('admin')
     }, [apiClient])
 

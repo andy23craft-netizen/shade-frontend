@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { installMockApi } from './support/mockApi'
+import { installMockApi, signInAsAdmin } from './support/mockApi'
 
 test('creates a first shelf, resumes intake, and completes setup with zero items', async ({ page }) => {
     const api = await installMockApi(page, { shelves: [] })
+    await signInAsAdmin(page)
 
     await page.goto('/library/setup')
     await expect(page.getByRole('heading', { level: 1, name: 'Set up your library' })).toBeVisible()
