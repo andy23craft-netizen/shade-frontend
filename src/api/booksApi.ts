@@ -54,6 +54,7 @@ export interface ListBooksOptions
     shelfName?: string
     placementState?: PlacementState
     isRead?: boolean
+    profileId?: string
     status?: Status
     publicationYearMin?: number
     publicationYearMax?: number
@@ -156,12 +157,13 @@ export function createBooksApi(
                 options.placementState,
             )
 
-            if (options.isRead !== undefined) {
-                params.set(
+        if (options.isRead !== undefined) {
+            params.set(
                     'is_read',
                     String(options.isRead),
                 )
-            }
+        }
+        setOptionalStringParam(params, 'profile_id', options.profileId)
 
             if (options.status !== undefined) {
                 params.set('status', options.status)

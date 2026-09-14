@@ -15,6 +15,10 @@ vi.mock('../../../api/albumsQueries', () => ({
     useAlbums: () => mockAlbums(),
 }))
 
+vi.mock('../../library/useActiveHouseholdProfile', () => ({
+    useActiveHouseholdProfile: () => ({ householdEnabled: false, activeProfile: null }),
+}))
+
 vi.mock('../../albums/components/AlbumArtwork', () => ({
     AlbumArtwork: ({ title }: { title: string }) => <div>Artwork for {title}</div>,
 }))

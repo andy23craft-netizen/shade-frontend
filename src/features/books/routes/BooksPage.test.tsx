@@ -59,6 +59,7 @@ vi.mock('../../../api/dashboardQueries', () => ({
 vi.mock('../../../api/shelvesQueries', () => ({
     useShelves: () => mockUseShelves(),
 }))
+vi.mock('../../../api/householdProfilesQueries', () => ({ useHouseholdProfiles: () => ({ data: { household_mode_enabled: false, items: [] } }) }))
 
 const mockUseCategories = vi.fn()
 

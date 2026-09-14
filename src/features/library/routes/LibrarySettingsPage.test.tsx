@@ -15,6 +15,12 @@ const mutationState = { mutate, reset, isPending: false, isError: false, isSucce
 
 vi.mock('../../../api/libraryQueries', () => ({ useLibrarySettings: () => settingsState, useUpdateLibrarySettings: () => mutationState }))
 vi.mock('../../../api/shelvesQueries', () => ({ useShelves: () => shelvesState }))
+vi.mock('../../../api/householdProfilesQueries', () => ({
+    useHouseholdProfiles: () => ({ data: { items: [{ profile_id: 'owner', display_name: 'Owner', is_owner: true, created_date: '', updated_date: '' }], household_mode_enabled: false }, isPending: false, isError: false, error: null, refetch: vi.fn() }),
+    useCreateHouseholdProfile: () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false }),
+    useUpdateHouseholdProfile: () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false }),
+    useRemoveHouseholdProfile: () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false }),
+}))
 
 describe('LibrarySettingsPage', () => {
     beforeEach(() => { vi.clearAllMocks(); mutationState.isError = false; mutationState.isSuccess = false; mutationState.error = null })

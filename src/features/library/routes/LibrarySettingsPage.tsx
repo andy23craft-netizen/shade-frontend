@@ -5,6 +5,7 @@ import type { LibrarySettingsRead, LibrarySettingsUpdate } from '../../../api/ap
 import { useLibrarySettings, useUpdateLibrarySettings } from '../../../api/libraryQueries'
 import { useShelves } from '../../../api/shelvesQueries'
 import { canDeleteShelf, formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
+import { HouseholdReadersSettings } from '../components/HouseholdReadersSettings'
 
 function equalIds(left: readonly string[], right: readonly string[]) {
     return left.length === right.length && [...left].sort().every((id, index) => id === [...right].sort()[index])
@@ -88,6 +89,7 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
                         {eligibleShelves.filter((shelf) => !draft.book_tbr_shelf_ids.includes(shelf.shelf_id)).map((shelf) => <option key={shelf.shelf_id} value={shelf.shelf_id}>{formatShelfCommonNameForDisplay(shelf.common_name)}</option>)}
                     </select>
                 </Field>
+                <HouseholdReadersSettings />
                 {save.isError && !isApiError(save.error) ? <Alert variant="error" title="Settings were not saved">An unexpected error occurred. Your last confirmed settings are unchanged.</Alert> : null}
                 {save.isError && isApiError(save.error) && save.error.fieldErrors.length === 0 ? <Alert variant="error" title="Settings were not saved">{save.error.message} Your last confirmed settings are unchanged.</Alert> : null}
                 {save.isSuccess ? <Alert variant="success">Library settings saved.</Alert> : null}

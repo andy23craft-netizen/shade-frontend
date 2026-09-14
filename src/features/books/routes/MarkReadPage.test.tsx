@@ -33,6 +33,7 @@ vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
     useMarkBookRead: vi.fn(),
 }))
+vi.mock('../../library/useActiveHouseholdProfile', () => ({ useActiveHouseholdProfile: () => ({ householdEnabled: false, activeProfile: null, profiles: [] }) }))
 
 const mockNavigate = vi.fn()
 

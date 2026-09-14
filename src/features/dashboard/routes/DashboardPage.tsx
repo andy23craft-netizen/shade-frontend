@@ -161,6 +161,10 @@ function AnalyticsBars({
     )
 }
 
+function ReadingHistoryCharts({ booksByYear, pagesByYear, categories }: { booksByYear: { key: string, count: number }[], pagesByYear: { key: string, count: number }[], categories: { key: string, count: number }[] }) {
+    return <details className="dashboard-analytics__disclosure"><summary>View reading history charts</summary><div className="dashboard-analytics__charts"><AnalyticsBars title="Books Read Over Time" buckets={booksByYear} note="Completed books by UTC year; years without reads are omitted." /><AnalyticsBars title="Pages Read Over Time" buckets={pagesByYear} note="Known pages from completed books by UTC year." /><AnalyticsBars title="Books Read by Category" buckets={categories} note="Top categories for all books marked read; completion dates are not required and a book may appear in more than one category." /></div></details>
+}
+
 export function DashboardPage() {
     useCollectionIsbnJump()
 
@@ -226,6 +230,8 @@ export function DashboardPage() {
     }
 
     const dashboard = dashboardQuery.data
+    const ownerAnalytics = dashboard.reader_analytics?.find((reader) => reader.profile.is_owner) ?? null
+    const additionalReaderAnalytics = dashboard.reader_analytics?.filter((reader) => !reader.profile.is_owner) ?? []
 
     const readingCountsMatch =
         dashboard.read === dashboard.reading.books_read &&
@@ -483,7 +489,7 @@ export function DashboardPage() {
                         </h2>
 
                         <p>
-                            Reading progress across the collection.
+                            Household reading progress across the collection.
                         </p>
                     </header>
 
@@ -536,7 +542,7 @@ export function DashboardPage() {
                             </dd>
 
                             <dd className="dashboard-metric__description">
-                                Books marked as read in the catalog.
+                                Books marked read by anyone in the household.
                             </dd>
                         </div>
 
@@ -549,7 +555,7 @@ export function DashboardPage() {
                             </dd>
 
                             <dd className="dashboard-metric__description">
-                                Books not yet marked as read.
+                                Books not yet marked read by anyone in the household.
                             </dd>
                         </div>
 
@@ -863,26 +869,23 @@ export function DashboardPage() {
                 >
                     <header className="dashboard-paper__heading">
                         <span className="dashboard-paper__index" aria-hidden="true">VI</span>
-                        <h2 id="dashboard-analytics-heading">Reading Analytics</h2>
-                        <p>All-time collection and reading measures.</p>
+                        <h2 id="dashboard-analytics-heading">{ownerAnalytics ? `${ownerAnalytics.profile.display_name} Reading Analytics` : 'Reading Analytics'}</h2>
+                        <p>{ownerAnalytics ? 'Personal reading measures for the household owner.' : 'All-time collection and reading measures.'}</p>
                     </header>
 
-                    <dl className="dashboard-analytics__summary">
-                        <div><dt>Pages Owned</dt><dd>{formatCount(dashboard.pages_owned ?? 0)}</dd></div>
-                        <div><dt>Pages Turned</dt><dd>{formatCount(dashboard.pages_turned ?? 0)}</dd></div>
-                        <div><dt>Books Acquired This Year</dt><dd>{formatCount(dashboard.books_acquired_this_year ?? 0)}</dd></div>
-                        <div><dt>Books Read This Year</dt><dd>{formatCount(dashboard.books_read_this_year ?? 0)}</dd></div>
+                    {ownerAnalytics ? <><dl className="dashboard-analytics__summary">
+                        <div><dt>Books Read</dt><dd>{formatCount(ownerAnalytics?.reading.books_read ?? dashboard.read)}</dd></div>
+                        <div><dt>Unread</dt><dd>{formatCount(ownerAnalytics?.reading.books_unread ?? dashboard.unread)}</dd></div>
+                        <div><dt>Pages Turned</dt><dd>{formatCount(ownerAnalytics?.pages_turned ?? dashboard.pages_turned)}</dd></div>
+                        <div><dt>Average Rating</dt><dd>{displayAverage(ownerAnalytics?.reading.average_rating ?? dashboard.reading.average_rating, ' / 5')}</dd></div>
                     </dl>
                     <p className="dashboard-analytics__note">
-                        Page totals use known page counts only; {formatCount(nullPages)} owned {nullPages === 1 ? 'book has' : 'books have'} no page count. Pages Turned counts each book marked read once, including books without a completion date. Acquired This Year uses purchase dates and omits books whose purchase date is unknown. Reading years use UTC.
-                    </p>
+                        These measures come from this reader’s personal reading record. Per-reader history charts will appear when the API supplies their breakdowns.
+                    </p><ReadingHistoryCharts booksByYear={ownerAnalytics.books_read_by_year ?? []} pagesByYear={ownerAnalytics.pages_read_by_year ?? []} categories={categoryChartBuckets(ownerAnalytics.books_read_by_category ?? [])} /></> : <><dl className="dashboard-analytics__summary"><div><dt>Pages Owned</dt><dd>{formatCount(dashboard.pages_owned ?? 0)}</dd></div><div><dt>Pages Turned</dt><dd>{formatCount(dashboard.pages_turned ?? 0)}</dd></div><div><dt>Books Acquired This Year</dt><dd>{formatCount(dashboard.books_acquired_this_year ?? 0)}</dd></div><div><dt>Books Read This Year</dt><dd>{formatCount(dashboard.books_read_this_year ?? 0)}</dd></div></dl><p className="dashboard-analytics__note">Page totals use known page counts only; {formatCount(nullPages)} owned {nullPages === 1 ? 'book has' : 'books have'} no page count. Pages Turned counts each book marked read once, including books without a completion date. Acquired This Year uses purchase dates and omits books whose purchase date is unknown.</p><ReadingHistoryCharts booksByYear={dashboard.books_read_by_year ?? []} pagesByYear={dashboard.pages_read_by_year ?? []} categories={readCategoryBuckets} /></>}
 
-                    <div className="dashboard-analytics__charts">
-                        <AnalyticsBars title="Books Read Over Time" buckets={dashboard.books_read_by_year ?? []} note="Completed books by UTC year; years without reads are omitted." />
-                        <AnalyticsBars title="Pages Read Over Time" buckets={dashboard.pages_read_by_year ?? []} note="Known pages from completed books by UTC year." />
-                        <AnalyticsBars title="Books Read by Category" buckets={readCategoryBuckets} note="Top categories for all books marked read; completion dates are not required and a book may appear in more than one category." />
-                    </div>
                 </section>
+
+                {additionalReaderAnalytics.map((reader, index) => <section key={reader.profile.profile_id} className="dashboard-paper dashboard-paper--analytics dashboard-paper--household" aria-labelledby={`reader-analytics-${reader.profile.profile_id}`}><header className="dashboard-paper__heading"><span className="dashboard-paper__index" aria-hidden="true">{index === 0 ? 'VII' : String(index + 7)}</span><h2 id={`reader-analytics-${reader.profile.profile_id}`}>{reader.profile.display_name} Reading Analytics</h2><p>Personal reading measures for {reader.profile.display_name}.</p></header><dl className="dashboard-analytics__summary"><div><dt>Books Read</dt><dd>{formatCount(reader.reading.books_read)}</dd></div><div><dt>Unread</dt><dd>{formatCount(reader.reading.books_unread)}</dd></div><div><dt>Pages Turned</dt><dd>{formatCount(reader.pages_turned)}</dd></div><div><dt>Average Rating</dt><dd>{displayAverage(reader.reading.average_rating, ' / 5')}</dd></div></dl><ReadingHistoryCharts booksByYear={reader.books_read_by_year ?? []} pagesByYear={reader.pages_read_by_year ?? []} categories={categoryChartBuckets(reader.books_read_by_category ?? [])} /></section>)}
 
             </div>
         </section>

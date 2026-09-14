@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import { formatBookAuthors } from '../authorDisplay'
+import { useActiveHouseholdProfile } from '../../library/useActiveHouseholdProfile'
 import {
     Alert,
     AppLink,
@@ -101,6 +102,8 @@ export function MarkReadPage() {
 
     const bookQuery = useBook(bookId)
     const markBookRead = useMarkBookRead()
+    const household = useActiveHouseholdProfile()
+    const [readerProfileId, setReaderProfileId] = useState('')
 
     const summaryRef =
         useRef<HTMLDivElement>(null)
@@ -239,8 +242,8 @@ export function MarkReadPage() {
             return
         }
 
-        const request =
-            markReadFormValuesToRequest(values)
+        const request = markReadFormValuesToRequest(values)
+        if (household.householdEnabled) request.profile_id = readerProfileId || household.activeProfile?.profile_id
 
         setPendingRequest(request)
         setIsConfirmationOpen(true)
@@ -473,6 +476,7 @@ export function MarkReadPage() {
             ) : null}
 
             <form onSubmit={handleSubmit}>
+                {household.householdEnabled ? <Field label="Household reader" helpText="Choose whose reading completion you are recording."><select value={readerProfileId || household.activeProfile?.profile_id || ''} disabled={markBookRead.isPending} onChange={(event) => setReaderProfileId(event.target.value)}>{household.profiles.map((profile) => <option key={profile.profile_id} value={profile.profile_id}>{profile.display_name}{profile.is_owner ? ' (Owner)' : ''}</option>)}</select></Field> : null}
                 <Field
                     id={FIELD_IDS.completion_date}
                     label="Completion date"

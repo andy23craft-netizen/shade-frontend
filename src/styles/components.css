@@ -6635,7 +6635,8 @@
     "collection circulation"
     "stats reading"
     "healing reading"
-    "analytics analytics";
+    "analytics analytics"
+    "household household";
 
   align-items: start;
 
@@ -6823,6 +6824,7 @@
           #ede7d3;
   transform: rotate(0.15deg);
 }
+.dashboard-paper--household { grid-area: auto; grid-column: 1 / -1; }
 
 .dashboard-paper--healing {
   overflow: hidden;
@@ -7108,6 +7110,9 @@
   gap: var(--space-7);
   margin-block-start: var(--space-7);
 }
+.dashboard-analytics__disclosure { margin-block-start: var(--space-5); }
+.dashboard-analytics__disclosure > summary { width: fit-content; cursor: pointer; color: var(--color-link); font-family: var(--font-family-heading); font-weight: 700; }
+.dashboard-analytics__disclosure > summary:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 3px; }
 
 .dashboard-analytics__chart { min-width: 0; }
 .dashboard-analytics__chart:first-child { padding-inline-end: var(--space-5); }
@@ -10823,6 +10828,20 @@
 .library-settings-form__shelf-dropdown { position: absolute; z-index: 2; display: grid; gap: var(--space-2); min-inline-size: 18rem; max-block-size: 17rem; margin-top: var(--space-2); padding: var(--space-3); overflow-y: auto; border: 1px solid var(--color-card-border); border-radius: var(--radius-small); background: var(--color-surface); box-shadow: var(--shadow-medium); }
 .library-settings-form__shelf-dropdown label { display: flex; gap: var(--space-2); align-items: center; }
 .library-settings-form__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.library-settings-form__household { display: grid; gap: var(--space-3); padding-top: var(--space-5); border-top: 1px solid var(--color-card-border); }
+.library-settings-form__household h2 { margin: 0; font-size: var(--font-size-lg); }
+.library-settings-form__empty { margin: 0; padding: var(--space-3); border-radius: var(--radius-small); background: var(--color-surface-muted); }
+.library-settings-form__profile-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.library-settings-form__profile-list > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-card-border); border-radius: var(--radius-small); }
+.library-settings-form__profile-edit, .library-settings-form__add-reader { display: grid; gap: var(--space-3); width: 100%; }
+.library-settings-form__add-reader { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.library-settings-form__remove-options { display: grid; gap: var(--space-3); margin: var(--space-3) 0 0; }
+.library-settings-form__remove-options label { display: grid; gap: var(--space-2); }
+.active-reader-selector { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 700; }
+.household-analytics__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: var(--space-7); margin-block-start: var(--space-7); }
+.household-analytics__grid > section { display: grid; gap: var(--space-3); }
+.household-analytics__grid h3 { margin: 0; color: var(--color-surface-text); }
+@media (max-width: 34rem) { .library-settings-form__add-reader { grid-template-columns: 1fr; } }
 
 .book-availability-control,
 .books-bulk-availability {

@@ -845,6 +845,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/household-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["list_profiles_household_profiles_get"];
+        put?: never;
+        /** Create Profile */
+        post: operations["create_profile_household_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/household-profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Profile */
+        delete: operations["delete_profile_household_profiles__profile_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Profile */
+        patch: operations["update_profile_household_profiles__profile_id__patch"];
+        trace?: never;
+    };
     "/library/settings": {
         parameters: {
             query?: never;
@@ -1521,6 +1557,8 @@ export interface components {
             notes?: string | null;
             /** Rating */
             rating?: number | null;
+            /** Reader States */
+            reader_states?: components["schemas"]["ReaderStateRead"][];
             /** Release Date */
             release_date?: string | null;
             /** Review */
@@ -1828,6 +1866,8 @@ export interface components {
             purchase_price?: number | null;
             /** Rating */
             rating?: number | null;
+            /** Reader States */
+            reader_states?: components["schemas"]["ReaderStateRead"][];
             reservation?: components["schemas"]["ReservationWrite"] | null;
             /** Review */
             review?: string | null;
@@ -2524,6 +2564,8 @@ export interface components {
             pages_turned: number;
             /** Read */
             read: number;
+            /** Reader Analytics */
+            reader_analytics?: components["schemas"]["ReaderAnalytics"][];
             reading: components["schemas"]["DashboardReading"];
             /** Recent Window Days */
             recent_window_days: number;
@@ -2585,6 +2627,46 @@ export interface components {
              * @default ok
              */
             status: string;
+        };
+        /** HouseholdProfileCreate */
+        HouseholdProfileCreate: {
+            /** Display Name */
+            display_name: string;
+        };
+        /** HouseholdProfileDelete */
+        HouseholdProfileDelete: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "reassign" | "delete";
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+        };
+        /** HouseholdProfileList */
+        HouseholdProfileList: {
+            /** Household Mode Enabled */
+            household_mode_enabled: boolean;
+            /** Items */
+            items: components["schemas"]["HouseholdProfileRead"][];
+        };
+        /** HouseholdProfileRead */
+        HouseholdProfileRead: {
+            /** Created Date */
+            created_date: string;
+            /** Display Name */
+            display_name: string;
+            /** Is Owner */
+            is_owner: boolean;
+            /** Profile Id */
+            profile_id: string;
+            /** Updated Date */
+            updated_date: string;
+        };
+        /** HouseholdProfileUpdate */
+        HouseholdProfileUpdate: {
+            /** Display Name */
+            display_name: string;
         };
         /** ImageSearchCandidate */
         ImageSearchCandidate: {
@@ -2735,6 +2817,8 @@ export interface components {
         MarkPlayedRequest: {
             /** Completion Date */
             completion_date?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
             /** Rating */
             rating?: number | null;
             /** Review */
@@ -2747,6 +2831,8 @@ export interface components {
              * @description Full UTC timestamp. Date-only values are rejected. Omit to default to now UTC; explicit null is rejected because mark-read sets is_read true.
              */
             completion_date?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
             /** Rating */
             rating?: number | null;
             /** Review */
@@ -2756,7 +2842,10 @@ export interface components {
          * MarkUnreadRequest
          * @description Empty body for mark-unread; rating and review are left unchanged.
          */
-        MarkUnreadRequest: Record<string, never>;
+        MarkUnreadRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+        };
         /**
          * MediaFormat
          * @enum {string}
@@ -2892,6 +2981,40 @@ export interface components {
             enabled?: boolean | null;
             /** Text */
             text?: string | null;
+        };
+        /** ReaderAnalytics */
+        ReaderAnalytics: {
+            /** Books Read By Category */
+            books_read_by_category?: components["schemas"]["DashboardCountBucket"][];
+            /** Books Read By Year */
+            books_read_by_year?: components["schemas"]["DashboardCountBucket"][];
+            listening: components["schemas"]["DashboardListening"];
+            /** Pages Read By Year */
+            pages_read_by_year?: components["schemas"]["DashboardCountBucket"][];
+            /** Pages Turned */
+            pages_turned: number;
+            profile: components["schemas"]["HouseholdProfileRead"];
+            reading: components["schemas"]["DashboardReading"];
+        };
+        /**
+         * ReaderStateRead
+         * @description One household reader's personal state for a catalog item.
+         */
+        ReaderStateRead: {
+            /** Completion Date */
+            completion_date?: string | null;
+            /** Display Name */
+            display_name: string;
+            /** Has Record */
+            has_record: boolean;
+            /** Is Complete */
+            is_complete?: boolean | null;
+            /** Profile Id */
+            profile_id: string;
+            /** Rating */
+            rating?: number | null;
+            /** Review */
+            review?: string | null;
         };
         /** ReservationWrite */
         ReservationWrite: {
@@ -3196,6 +3319,8 @@ export interface operations {
                 barcode?: string | null;
                 genre_id?: string[] | null;
                 media_format?: components["schemas"]["MediaFormat"] | null;
+                is_played?: boolean | null;
+                profile_id?: string | null;
                 placement_state?: components["schemas"]["AlbumPlacementState"];
                 sortBy?: string;
                 sortOrder?: string;
@@ -4232,6 +4357,7 @@ export interface operations {
                 shelf_name?: string | null;
                 placement_state?: components["schemas"]["PlacementState"] | null;
                 is_read?: boolean | null;
+                profile_id?: string | null;
                 status?: components["schemas"]["Status"] | null;
                 skip?: number | null;
                 take?: number | null;
@@ -7537,6 +7663,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    list_profiles_household_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdProfileList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_profile_household_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdProfileCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_profile_household_profiles__profile_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdProfileDelete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_profile_household_profiles__profile_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

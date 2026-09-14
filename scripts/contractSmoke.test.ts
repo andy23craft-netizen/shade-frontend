@@ -80,6 +80,8 @@ const expectedPaths = [
     '/genres',
     '/genres/{genre_id}',
     '/health',
+    '/household-profiles',
+    '/household-profiles/{profile_id}',
     '/library/settings',
     '/library/setup',
     '/library/setup/complete',

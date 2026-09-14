@@ -46,6 +46,7 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                profileId?: string
                 status?: string
                 publicationYearMin?: number
                 publicationYearMax?: number
@@ -79,6 +80,7 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                profileId?: string
                 status?: string
                 publicationYearMin?: number
                 publicationYearMax?: number
@@ -123,6 +125,7 @@ export const queryKeys = {
             if (options.isRead !== undefined) {
                 key.isRead = options.isRead
             }
+            if (options.profileId !== undefined) key.profileId = options.profileId
 
             if (options.status !== undefined) {
                 key.status = options.status
@@ -155,6 +158,7 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                profileId?: string
                 status?: string
                 publicationYearMin?: number
                 publicationYearMax?: number
@@ -190,6 +194,7 @@ export const queryKeys = {
                 shelfName?: string
                 placementState?: string
                 isRead?: boolean
+                profileId?: string
                 status?: string
                 publicationYearMin?: number
                 publicationYearMax?: number
@@ -232,6 +237,7 @@ export const queryKeys = {
             if (options.isRead !== undefined) {
                 key.isRead = options.isRead
             }
+            if (options.profileId !== undefined) key.profileId = options.profileId
 
             if (options.status !== undefined) {
                 key.status = options.status
@@ -454,6 +460,11 @@ export const queryKeys = {
         all: (host: string) => ['library', host] as const,
         setup: (host: string) => ['library', host, 'setup'] as const,
         settings: (host: string) => ['library', host, 'settings'] as const,
+    },
+
+    householdProfiles: {
+        all: (host: string) => ['household-profiles', host] as const,
+        list: (host: string) => ['household-profiles', host, 'list'] as const,
     },
 
     quotes: {

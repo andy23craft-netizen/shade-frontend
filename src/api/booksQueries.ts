@@ -288,6 +288,7 @@ export function useInfiniteBooks(
         shelfName?: string
         placementState?: PlacementState
         isRead?: boolean
+        profileId?: string
         status?: Status
         publicationYearMin?: number
         publicationYearMax?: number
@@ -311,6 +312,7 @@ export function useInfiniteBooks(
     const shelfName = options.shelfName
     const placementState = options.placementState
     const isRead = options.isRead
+    const profileId = options.profileId
     const status = options.status
     const publicationYearMin = options.publicationYearMin
     const publicationYearMax = options.publicationYearMax
@@ -328,6 +330,7 @@ export function useInfiniteBooks(
             shelfName,
             placementState,
             isRead,
+            profileId,
             status,
             publicationYearMin,
             publicationYearMax,
@@ -348,7 +351,8 @@ export function useInfiniteBooks(
                 categoryIds,
                 shelfName,
                 placementState,
-                    isRead,
+                isRead,
+                profileId,
                     status,
                     publicationYearMin,
                     publicationYearMax,

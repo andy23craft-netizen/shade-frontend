@@ -615,6 +615,13 @@
             ],
             "title": "Rating"
           },
+          "reader_states": {
+            "items": {
+              "$ref": "#/components/schemas/ReaderStateRead"
+            },
+            "title": "Reader States",
+            "type": "array"
+          },
           "release_date": {
             "anyOf": [
               {
@@ -1774,6 +1781,13 @@
               }
             ],
             "title": "Rating"
+          },
+          "reader_states": {
+            "items": {
+              "$ref": "#/components/schemas/ReaderStateRead"
+            },
+            "title": "Reader States",
+            "type": "array"
           },
           "reservation": {
             "anyOf": [
@@ -4190,6 +4204,13 @@
             "title": "Read",
             "type": "integer"
           },
+          "reader_analytics": {
+            "items": {
+              "$ref": "#/components/schemas/ReaderAnalytics"
+            },
+            "title": "Reader Analytics",
+            "type": "array"
+          },
           "reading": {
             "$ref": "#/components/schemas/DashboardReading"
           },
@@ -4365,6 +4386,118 @@
           }
         },
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "HouseholdProfileCreate": {
+        "properties": {
+          "display_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name"
+        ],
+        "title": "HouseholdProfileCreate",
+        "type": "object"
+      },
+      "HouseholdProfileDelete": {
+        "properties": {
+          "outcome": {
+            "enum": [
+              "reassign",
+              "delete"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "target_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Profile Id"
+          }
+        },
+        "required": [
+          "outcome"
+        ],
+        "title": "HouseholdProfileDelete",
+        "type": "object"
+      },
+      "HouseholdProfileList": {
+        "properties": {
+          "household_mode_enabled": {
+            "title": "Household Mode Enabled",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HouseholdProfileRead"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "household_mode_enabled"
+        ],
+        "title": "HouseholdProfileList",
+        "type": "object"
+      },
+      "HouseholdProfileRead": {
+        "properties": {
+          "created_date": {
+            "title": "Created Date",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "is_owner": {
+            "title": "Is Owner",
+            "type": "boolean"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "updated_date": {
+            "title": "Updated Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_id",
+          "display_name",
+          "is_owner",
+          "created_date",
+          "updated_date"
+        ],
+        "title": "HouseholdProfileRead",
+        "type": "object"
+      },
+      "HouseholdProfileUpdate": {
+        "properties": {
+          "display_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name"
+        ],
+        "title": "HouseholdProfileUpdate",
         "type": "object"
       },
       "ImageSearchCandidate": {
@@ -4844,6 +4977,17 @@
             ],
             "title": "Completion Date"
           },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
           "rating": {
             "anyOf": [
               {
@@ -4886,6 +5030,17 @@
             "description": "Full UTC timestamp. Date-only values are rejected. Omit to default to now UTC; explicit null is rejected because mark-read sets is_read true.",
             "title": "Completion Date"
           },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
           "rating": {
             "anyOf": [
               {
@@ -4917,7 +5072,19 @@
       "MarkUnreadRequest": {
         "additionalProperties": false,
         "description": "Empty body for mark-unread; rating and review are left unchanged.",
-        "properties": {},
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
         "title": "MarkUnreadRequest",
         "type": "object"
       },
@@ -5374,6 +5541,120 @@
           }
         },
         "title": "QuoteUpdate",
+        "type": "object"
+      },
+      "ReaderAnalytics": {
+        "properties": {
+          "books_read_by_category": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "Books Read By Category",
+            "type": "array"
+          },
+          "books_read_by_year": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "Books Read By Year",
+            "type": "array"
+          },
+          "listening": {
+            "$ref": "#/components/schemas/DashboardListening"
+          },
+          "pages_read_by_year": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCountBucket"
+            },
+            "title": "Pages Read By Year",
+            "type": "array"
+          },
+          "pages_turned": {
+            "title": "Pages Turned",
+            "type": "integer"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/HouseholdProfileRead"
+          },
+          "reading": {
+            "$ref": "#/components/schemas/DashboardReading"
+          }
+        },
+        "required": [
+          "profile",
+          "reading",
+          "listening",
+          "pages_turned"
+        ],
+        "title": "ReaderAnalytics",
+        "type": "object"
+      },
+      "ReaderStateRead": {
+        "description": "One household reader's personal state for a catalog item.",
+        "properties": {
+          "completion_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Date"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "has_record": {
+            "title": "Has Record",
+            "type": "boolean"
+          },
+          "is_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Complete"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review"
+          }
+        },
+        "required": [
+          "profile_id",
+          "display_name",
+          "has_record"
+        ],
+        "title": "ReaderStateRead",
         "type": "object"
       },
       "ReservationWrite": {
@@ -6459,6 +6740,38 @@
                 }
               ],
               "title": "Media Format"
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_played",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Played"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile Id"
             }
           },
           {
@@ -8544,6 +8857,22 @@
                 }
               ],
               "title": "Is Read"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile Id"
             }
           },
           {
@@ -13871,6 +14200,259 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/household-profiles": {
+      "get": {
+        "operationId": "list_profiles_household_profiles_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdProfileList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Profiles",
+        "tags": [
+          "household profiles"
+        ]
+      },
+      "post": {
+        "operationId": "create_profile_household_profiles_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HouseholdProfileCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdProfileRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Profile",
+        "tags": [
+          "household profiles"
+        ]
+      }
+    },
+    "/household-profiles/{profile_id}": {
+      "delete": {
+        "operationId": "delete_profile_household_profiles__profile_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HouseholdProfileDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Profile",
+        "tags": [
+          "household profiles"
+        ]
+      },
+      "patch": {
+        "operationId": "update_profile_household_profiles__profile_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HouseholdProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdProfileRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Profile",
+        "tags": [
+          "household profiles"
+        ]
       }
     },
     "/library/settings": {

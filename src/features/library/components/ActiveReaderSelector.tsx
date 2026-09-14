@@ -1,0 +1,2 @@
+import { useActiveHouseholdProfile } from '../useActiveHouseholdProfile'
+export function ActiveReaderSelector() { const reader = useActiveHouseholdProfile(); if (!reader.householdEnabled || !reader.activeProfile) return null; return <label className="active-reader-selector">Reader <select value={reader.activeProfile.profile_id} onChange={(event) => reader.select(event.target.value)} aria-label="Active reader">{reader.profiles.map((profile) => <option key={profile.profile_id} value={profile.profile_id}>{profile.display_name}</option>)}</select></label> }

@@ -24,6 +24,7 @@ import {
 } from '../../../api/dashboardQueries'
 import { useCategories } from '../../../api/categoriesQueries'
 import { useShelves } from '../../../api/shelvesQueries'
+import { useHouseholdProfiles } from '../../../api/householdProfilesQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
     Status,
@@ -125,6 +126,7 @@ function updateListParams(
         isbn?: string | undefined
         shelfName?: string | undefined
         isRead?: boolean | undefined
+        profileId?: string | undefined
         cleanupField?: BookCleanupField | undefined
         placementState?: import('../../../api/apiTypes').PlacementState
         sortBy?: BookSortBy
@@ -211,6 +213,7 @@ function updateListParams(
             )
         }
     }
+    if ('profileId' in updates) { if (updates.profileId) next.set('profile_id', updates.profileId); else next.delete('profile_id') }
 
     if (updates.sortBy !== undefined) {
         if (updates.sortBy === 'author') {
@@ -330,6 +333,8 @@ export function BooksPage() {
     const isRead = parseReadStatusParam(
         searchParams.get('is_read'),
     )
+    const profileId = parseTextFilterParam(searchParams.get('profile_id'))
+    const householdProfiles = useHouseholdProfiles()
 
     const cleanupField = parseCleanupFieldParam(
         searchParams.get('cleanup_field'),
@@ -366,6 +371,7 @@ export function BooksPage() {
         shelfName,
         placementState,
         isRead,
+        profileId,
         sortBy,
         sortOrder,
         enabled: cleanupField === undefined && !hasUnresolvedVanityPath,
@@ -398,6 +404,7 @@ export function BooksPage() {
             shelfName,
             placementState,
             isRead,
+            profileId,
             sortBy,
             sortOrder,
             enabled: shouldTryTitleSearch && !hasUnresolvedVanityPath,
@@ -617,6 +624,7 @@ export function BooksPage() {
                 />
             ) : null}
 
+            {cleanupField === undefined && householdProfiles.data?.household_mode_enabled ? <label className="books-toolbar__shelf"><span>Reader</span><select aria-label="Reader" value={profileId ?? ''} onChange={(event) => setSearchParams(updateListParams(searchParams, { profileId: event.target.value || undefined }), { replace: true })}><option value="">All household readers</option>{householdProfiles.data.items.map((profile) => <option key={profile.profile_id} value={profile.profile_id}>{profile.display_name}</option>)}</select></label> : null}
             {cleanupField === undefined ? (
             <BooksListControls
                 key={`${categoryIds.join(',')}:${shelfName ?? ''}:${author ?? ''}:${title ?? ''}:${isRead === undefined ? '' : String(isRead)}`}

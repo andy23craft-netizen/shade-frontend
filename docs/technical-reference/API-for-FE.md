@@ -159,6 +159,17 @@ corresponding UI surface at once; runtime changes are needed only for the screen
 Coordinate deployment with the matching frontend. Schema or seed changes follow `docs/technical-reference/DB-updates.md` (sync DEV into
 committed seeds, then recreate DEV databases from those seeds); there is no application migration runner.
 
+## Household reader analytics (shipped)
+
+- `GET /dashboard` returns `reader_analytics`, ordered owner first and then by household-profile creation order. The
+  endpoint does not take an active-reader or `profile_id` selector. Each module is personal to its `profile` and has
+  its own `reading`, `listening`, and `pages_turned` metrics.
+- Each `reader_analytics` item also provides `books_read_by_year`, `pages_read_by_year`, and
+  `books_read_by_category`, using the typed `{key, count}` `DashboardCountBucket` shape. Arrays are always present
+  and are `[]` when the reader has no matching history. Completion timelines omit a read record with no completion
+  date; page totals also omit completed books whose page count is unknown. Category totals count a completed book once
+  for each assigned category and omit uncategorized books.
+
 Paths, methods, status codes, request/response schemas, and enums live in `openapi.json`. Live `/openapi.json` and
 `/docs` match the running app; a drift test keeps the checked-in file equal to what the app generates.
 
