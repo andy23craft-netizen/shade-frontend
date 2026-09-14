@@ -42,6 +42,7 @@ import { isCheckoutEligible } from '../../loans/checkoutEligibility'
 import { BorrowerReviews } from '../../loans/components/BorrowerReviews'
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog'
 import { BookProviderSummary } from '../components/BookProviderSummary'
+import { useAuth } from '../../auth/useAuth'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -124,6 +125,7 @@ function displayDate(
 }
 
 export function BookDetailsPage() {
+    const { isAdmin } = useAuth()
     const { bookId } = useParams()
     const location = useLocation()
     const [searchParams, setSearchParams] =
@@ -152,6 +154,7 @@ export function BookDetailsPage() {
 
     const loansQuery = useLoans({
         bookId: bookId ?? '',
+        enabled: isAdmin,
     })
 
     const isNotFound =
@@ -253,7 +256,7 @@ export function BookDetailsPage() {
     const isOnLoan =
         book.status === 'on_loan'
 
-    const canShowActiveActions = true
+    const canShowActiveActions = isAdmin
 
     const canCheckout =
         isCheckoutEligible(book) ||
@@ -529,7 +532,7 @@ export function BookDetailsPage() {
                 </section>
             ) : null}
 
-            <BorrowerReviews bookId={book.book_id} loans={loansQuery.data?.items ?? []} />
+            {isAdmin ? <BorrowerReviews bookId={book.book_id} loans={loansQuery.data?.items ?? []} /> : null}
 
             {canShowActiveActions ? (
                 <nav

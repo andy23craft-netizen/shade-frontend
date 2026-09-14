@@ -284,6 +284,8 @@ export async function renderAppTree(
                 diagnosticReporter={
                     testDiagnosticReporter
                 }
+                initialAccessMode="admin"
+                initialAccessToken="test-api-token"
             >
                 <RouterProvider router={router} />
             </AppProviders>
@@ -317,6 +319,8 @@ export function renderWithProviders(
                 diagnosticReporter={
                     testDiagnosticReporter
                 }
+                initialAccessMode="admin"
+                initialAccessToken="test-api-token"
             >
                 {children}
             </AppProviders>

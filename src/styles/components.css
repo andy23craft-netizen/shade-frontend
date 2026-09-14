@@ -134,7 +134,34 @@
 :root[data-library="jamie"] .page--albums .album-room__header { border-bottom-color: #145b3c; }
 :root[data-library="jamie"] .page--albums .album-room__header h1 { color: #145b3c; }
 .app-shell--neutral .app-header { background: transparent; box-shadow: none; }
-.app-shell--neutral .app-header__inner { justify-content: center; }
+.app-shell--neutral .app-header__inner { justify-content: flex-start; }
+
+/* Details remain browseable to viewers, while every mutating or private
+   management surface is removed from their rendered layout. */
+.app-shell[data-access-mode="viewer"] .album-detail__actions,
+.app-shell[data-access-mode="viewer"] .album-counter,
+.app-shell[data-access-mode="viewer"] .album-artwork-manager,
+.app-shell[data-access-mode="viewer"] .album-detail__wishlist,
+.app-shell[data-access-mode="viewer"] .album-detail__collection,
+.app-shell[data-access-mode="viewer"] .page--album-detail > section:last-child {
+  display: none;
+}
+
+/* Shared lists remain readable to visitors; only their management affordances
+   are removed. The first card action is the read-only expand/collapse toggle. */
+.app-shell[data-access-mode="viewer"] .wishlists-page .page-add-tab,
+.app-shell[data-access-mode="viewer"] .collections-page .page-add-tab,
+.app-shell[data-access-mode="viewer"] .wishlist-card__actions > button:not(:first-child),
+.app-shell[data-access-mode="viewer"] .collection-card__actions > button:not(:first-child),
+.app-shell[data-access-mode="viewer"] .wishlist-membership > form,
+.app-shell[data-access-mode="viewer"] .wishlist-membership > .wishlist-membership__move,
+.app-shell[data-access-mode="viewer"] .wishlist-membership > button,
+.app-shell[data-access-mode="viewer"] .wishlist-membership .membership-notes-editor,
+.app-shell[data-access-mode="viewer"] .collection-membership__actions,
+.app-shell[data-access-mode="viewer"] .wishlists-page .modal-dialog,
+.app-shell[data-access-mode="viewer"] .collections-page .modal-dialog {
+  display: none;
+}
 
 .home-room-links, .room-landing__destinations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 2rem); width: min(100%, 58rem); margin-inline: auto; }
 .home-room-links .app-link, .room-landing__destinations .app-link { display: grid; align-content: center; gap: var(--space-2); min-height: 8rem; padding: var(--space-6); border: 1px solid var(--color-card-border); background: var(--color-card); color: var(--color-surface-text); box-shadow: var(--shadow-card); text-align: left; }

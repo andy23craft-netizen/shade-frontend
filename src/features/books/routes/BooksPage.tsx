@@ -61,6 +61,7 @@ import {
     resolveShelfBrowseToken,
     shelfBrowsePath,
 } from '../bookBrowseUrl'
+import { useAuth } from '../../auth/useAuth'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -264,6 +265,7 @@ function vanityPathToken(
 }
 
 export function BooksPage() {
+    const { isAdmin } = useAuth()
     useCollectionIsbnJump()
 
     const location = useLocation()
@@ -553,12 +555,12 @@ export function BooksPage() {
                         started.
                     </p>
 
-                    <AppLink
+                    {isAdmin ? <AppLink
                         to="/books/new"
                         variant="primary"
                     >
                         Add Book
-                    </AppLink>
+                    </AppLink> : null}
                 </EmptyState>
             </section>
         )
@@ -575,7 +577,7 @@ export function BooksPage() {
 
             <div className="books-page__control-rail">
 
-            {isBulkSelectionMode ? (
+            {isAdmin && isBulkSelectionMode ? (
                 <BooksBulkActions
                     selectedBookIds={
                         bulkSelection.selectedBooks.map(
@@ -643,6 +645,7 @@ export function BooksPage() {
                     isBulkSelectionMode
                 }
                 onEnterSelectionMode={() => {
+                    if (!isAdmin) return
                     setIsBulkSelectionMode(true)
                 }}
 
@@ -816,7 +819,7 @@ export function BooksPage() {
                         Clear cleanup filter
                     </Button>
 
-                    {!isBulkSelectionMode ? (
+                    {isAdmin && !isBulkSelectionMode ? (
                         <Button
                             type="button"
                             variant="secondary"
@@ -982,7 +985,7 @@ export function BooksPage() {
                                             : 'book-card'
                                     }
                                 >
-                                    {isBulkSelectionMode &&
+                                    {isAdmin && isBulkSelectionMode &&
                                     isSelectable ? (
                                         <div className="book-card__selection">
                                             <BookSelectionControl

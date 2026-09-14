@@ -204,25 +204,39 @@ Default local base: `http://127.0.0.1:8000` (server root; no `/api` prefix)
 
 ## Auth
 
-Protected routes use a shared secret:
+Opening a tenant library starts in **viewer mode**. Viewer mode needs no password or Bearer token for the
+backend-approved read-only catalog allowlist: normal catalog browse, search, filtering, sorting, approved item details,
+and cover/artwork display. It must never be treated as access to tenant management, private dashboard/loan/household
+state, or any mutation.
 
-Authorization: Bearer <API_SECRET_KEY>
+Each tenant has its own administrator credential. The administrator lifecycle is:
 
-There is no login, logout, or session system. Missing or invalid credentials return 403 with
-{"detail": "Invalid authentication credentials"}.
+- `POST /auth/bootstrap` is a one-time, operator-only setup route. It requires the existing deployment Bearer secret
+  and an `AdminSignIn` body (`{ "password": "…" }`), and returns **201** `AdminToken`. Do not expose this route or the
+  deployment secret in browser UI, URLs, diagnostics, analytics, or client logs.
+- `POST /auth/sign-in` is the browser sign-in route. It accepts `AdminSignIn` and returns **200** `AdminToken`:
+  `access_token`, integer Unix-seconds `expires_at`, and token type `bearer`.
+- Send an active administrator token only as `Authorization: Bearer <access_token>` for administrator-only routes.
+  Tokens are tenant-bound. Do not infer administrator access from a cached role, configured deployment secret, URL
+  value, or a credential obtained on another tenant host.
+- `POST /auth/change-password` requires the active administrator Bearer token and an `AdminPasswordChange` body with
+  `current_password` and `new_password`. It returns **204**. Frontends must not impose a password-length rule beyond
+  the backend response, so temporary operator-issued passwords remain usable during rollout.
+- `POST /auth/sign-out` returns **204**. Credentials are stateless, so clients sign out by discarding the token; there
+  is no refresh route or cookie-based session.
 
-Public routes: `GET /health`, `GET /ready`, `GET /version`, and FastAPI's generated docs/OpenAPI routes (`/docs`,
-`/redoc`, `/openapi.json`, `/docs/oauth2-redirect`). `GET /ready` is hostname-scoped; the others do not require tenant
-context. Every other business route requires the Bearer token and tenant resolution.
+Frontend credential handling: never persist the raw password. Keep an issued administrator token only for the current
+browser-tab lifetime; discard it on sign-out, expiry, password rotation, tenant change, and authorization failure.
+Discard or invalidate protected query/blob state at the same time. The token must never appear in a URL, browser
+preference storage, diagnostic payload, analytics payload, or application log. Do not invent cross-tenant reuse,
+token refresh, or a second credential store.
 
-There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated;
-does not touch the database). Use `GET /ready` when the UI needs to know the database connection is usable; failure
-returns **503** with `Retry-After: 1`. Missing/unknown/empty tenant host context returns **400** (same strings as
-protected routes). OpenAPI currently under-documents those `/ready` failure codes; prefer this section and the
-error table. Use `GET /version` when the UI needs the running API release string (same value
-as `ci/VERSION` and OpenAPI `info.version`); do not treat it as a health probe. Learn whether credentials are accepted
-from the first protected request you need (e.g., `GET /books` or `GET /dashboard`); a **403** means the token is
-missing or invalid.
+Public infrastructure routes remain `GET /health`, `GET /ready`, `GET /version`, and FastAPI's generated docs/OpenAPI
+routes (`/docs`, `/redoc`, `/openapi.json`, `/docs/oauth2-redirect`). `GET /ready` is hostname-scoped; the others do
+not require tenant context. Use `GET /health` for startup reachability only (it does not touch the database), and use
+`GET /version` for the running API release string, not as a health probe. `GET /ready` failure returns **503** with
+`Retry-After: 1`; missing/unknown/empty tenant host context returns **400**. Browser code must not send the
+proxy-owned `X-Forwarded-Host` header.
 
 ## CORS
 
@@ -252,7 +266,7 @@ context returns **400** `Invalid or unknown library host`; an explicitly empty h
 | Status | Meaning beyond the OpenAPI label |
 | --- | --- |
 | **400** | Malformed or empty GUID on book path `{book_id}` (GET / PATCH / DELETE / checkout / check-in / mark-read / mark-unread / availability / cover get/upload/delete / borrower-reviews); malformed or empty GUID on album path `{album_id}` (catalog / artwork / circulation / borrower-reviews); malformed or empty GUID on quote path `{quote_id}` (GET / PATCH / DELETE `/quotes/{quote_id}`); malformed or empty GUID on loan reads (`GET /loans/{id}` path, feedback PUT/DELETE, or `book_id` / `album_id` query); invalid `media_type`; blank album list filters (`search`, `artist`, `title`, `barcode`); invalid `sortBy` or `sortOrder` on `GET /books` or `GET /albums`; remaining path and query validation follows OpenAPI. |
-| **403** | Missing or invalid Bearer token |
+| **401** / **403** | Missing, expired, invalid, or no-longer-authorized administrator credential on an administrator-only route. Frontends must discard administrator state and return to viewer mode. |
 | **404** | Missing or deleted album on GET / PATCH / DELETE / artwork / circulation / borrower-reviews (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork` (`"Album artwork not found"`); unknown Shade item on `POST /catalog/resolve-code` (`"Physical item not found"`); remaining missing-resource behavior follows OpenAPI. |
 | **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); loan feedback PUT when the loan is still active (`"Feedback requires a returned loan"`); artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`, or when the album's MusicBrainz Release ID changes during refetch; duplicate catalog/membership cases follow OpenAPI. |
 | **412** | Checkout when loans are disabled or an item is display-only; shelf/wishlist placement guards; and media-type conflicts. Exact response details follow OpenAPI. |

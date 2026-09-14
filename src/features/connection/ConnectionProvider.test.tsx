@@ -1,4 +1,4 @@
-import { StrictMode, type ReactNode } from 'react'
+import { StrictMode, useState, type ReactNode } from 'react'
 import {
     render,
     screen,
@@ -18,6 +18,18 @@ import {
 } from 'vitest'
 import { ConnectionProvider } from './ConnectionProvider'
 import { useConnection } from './useConnection'
+import { AuthProvider } from '../auth/AuthProvider'
+import { useAuth } from '../auth/useAuth'
+
+const runtimeConfig = {
+    apiBaseUrl: 'https://library.example.com',
+    diagnostics: { enabled: false, endpoint: null },
+}
+
+function AuthenticatedProvider({ children }: { children: ReactNode }) {
+    const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))
+    return <QueryClientProvider client={queryClient}><AuthProvider runtimeConfig={runtimeConfig} initialMode="admin" initialAccessToken="test-api-token"><ConnectionProvider runtimeConfig={runtimeConfig}>{children}</ConnectionProvider></AuthProvider></QueryClientProvider>
+}
 
 function ConnectionProbe() {
     const {
@@ -25,6 +37,7 @@ function ConnectionProbe() {
         errorMessage,
         apiClient,
     } = useConnection()
+    const { mode } = useAuth()
 
     return (
         <div>
@@ -33,6 +46,7 @@ function ConnectionProbe() {
             <span data-testid="error-message">
                 {errorMessage}
             </span>
+            <span data-testid="access-mode">{mode}</span>
 
             <button
                 type="button"
@@ -50,6 +64,7 @@ function ConnectionProbe() {
 
 function BooksQueryProbe() {
     const { apiClient } = useConnection()
+    const { mode } = useAuth()
     const booksQuery = useQuery({
         queryKey: ['books', 'probe'],
         queryFn: () =>
@@ -74,6 +89,7 @@ function BooksQueryProbe() {
                     ? booksQuery.error.message
                     : ''}
             </span>
+            <span data-testid="access-mode">{mode}</span>
         </div>
     )
 }
@@ -85,47 +101,15 @@ function renderProvider(
 ) {
     return render(
         <StrictMode>
-            <ConnectionProvider
-                runtimeConfig={{
-                    apiBaseUrl:
-                        'https://library.example.com',
-                    diagnostics: {
-                        enabled: false,
-                        endpoint: null,
-                    },
-                }}
-            >
-                {children}
-            </ConnectionProvider>
+            <AuthenticatedProvider>{children}</AuthenticatedProvider>
         </StrictMode>,
     )
 }
 
 function renderProviderWithQuery() {
-    const queryClient = new QueryClient({
-        defaultOptions: {
-            queries: {
-                retry: false,
-            },
-        },
-    })
-
     return render(
         <StrictMode>
-            <QueryClientProvider client={queryClient}>
-                <ConnectionProvider
-                    runtimeConfig={{
-                        apiBaseUrl:
-                            'https://library.example.com',
-                        diagnostics: {
-                            enabled: false,
-                            endpoint: null,
-                        },
-                    }}
-                >
-                    <BooksQueryProbe />
-                </ConnectionProvider>
-            </QueryClientProvider>
+            <AuthenticatedProvider><BooksQueryProbe /></AuthenticatedProvider>
         </StrictMode>,
     )
 }
@@ -376,20 +360,9 @@ describe('ConnectionProvider', () => {
             renderProviderWithQuery()
 
             await waitFor(() => {
-                expect(
-                    screen.getByTestId('query-error'),
-                ).toHaveTextContent('true')
+                expect(screen.getByTestId('access-mode')).toHaveTextContent('viewer')
             })
 
-            expect(
-                screen.getByTestId('query-pending'),
-            ).toHaveTextContent('false')
-
-            expect(
-                screen.getByTestId('query-message'),
-            ).toHaveTextContent(
-                'API access was rejected.',
-            )
         },
     )
 
@@ -434,16 +407,9 @@ describe('ConnectionProvider', () => {
             }).click()
 
             await waitFor(() => {
-                expect(
-                    screen.getByTestId('status'),
-                ).toHaveTextContent('unauthorized')
+                expect(screen.getByTestId('access-mode')).toHaveTextContent('viewer')
             })
 
-            expect(
-                screen.getByTestId('error-message'),
-            ).toHaveTextContent(
-                'API access was rejected.',
-            )
         },
     )
 })

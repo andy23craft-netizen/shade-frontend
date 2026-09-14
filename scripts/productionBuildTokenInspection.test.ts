@@ -106,9 +106,10 @@ describe('production build env inspection', () => {
                 }
             }
 
-            expect(embeddedTokenHits.length).toBeGreaterThan(
-                0,
-            )
+            // Viewer bundles must not carry the legacy deployment-wide
+            // secret. Administrator tokens arrive only through sign-in and
+            // stay in memory.
+            expect(embeddedTokenHits).toEqual([])
 
             const artifactsDirectory = await mkdtemp(
                 path.join(
@@ -150,7 +151,7 @@ describe('production build env inspection', () => {
                         .includes(buildToken),
             )
 
-            expect(packedJsHits.length).toBeGreaterThan(0)
+            expect(packedJsHits).toEqual([])
 
             await rm(artifactsDirectory, {
                 recursive: true,

@@ -99,11 +99,17 @@ export function createApiClient({
         options: ApiRequestOptions = {},
     ): Promise<Response> {
         const {
-            authenticated = true,
+            authenticated: authenticatedOption,
             headers: requestHeaders,
             signal: callerSignal,
             ...fetchOptions
         } = options
+
+        // In viewer mode there is intentionally no credential. Treat those
+        // requests as public so a denied admin-only request cannot trigger the
+        // global sign-out/cache purge that would erase successful catalog data.
+        const authenticated = authenticatedOption ??
+            (getToken?.() ?? null) !== null
 
         const headers = new Headers(requestHeaders)
 
@@ -187,7 +193,7 @@ export function createApiClient({
         }
 
             if (
-                response.status === 403 &&
+                (response.status === 401 || response.status === 403) &&
                 authenticated
             ) {
                 onUnauthorized?.()

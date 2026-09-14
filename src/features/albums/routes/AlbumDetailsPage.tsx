@@ -8,8 +8,9 @@ import { displayMediaFormat, formatAlbumArtists } from '../albumDisplay'
 import { AddAlbumToWishlistControl } from '../../wishlists/components/AddAlbumToWishlistControl'
 import { AddAlbumToCollectionControl } from '../../collections/components/AddAlbumToCollectionControl'
 import { BorrowerReviews } from '../../loans/components/BorrowerReviews'
+import { useAuth } from '../../auth/useAuth'
 export function AlbumDetailsPage() {
- const id = useParams().albumId ?? ''; const navigate = useNavigate(); const location = useLocation(); const query = useAlbum(id); const loans = useLoans({ albumId: id, mediaType: 'album', enabled: Boolean(id) }); const checkout = useCheckoutAlbum(); const checkin = useCheckinAlbum(); const played = useMarkAlbumPlayed(); const del = useDeleteAlbum(); const upload = useUploadAlbumArtwork(); const removeArtwork = useRemoveAlbumArtwork(); const refetch = useRefetchAlbumArtwork(); const [borrower, setBorrower] = useState(''); const [message, setMessage] = useState<string | null>(null)
+ const { isAdmin } = useAuth(); const id = useParams().albumId ?? ''; const navigate = useNavigate(); const location = useLocation(); const query = useAlbum(id); const loans = useLoans({ albumId: id, mediaType: 'album', enabled: isAdmin && Boolean(id) }); const checkout = useCheckoutAlbum(); const checkin = useCheckinAlbum(); const played = useMarkAlbumPlayed(); const del = useDeleteAlbum(); const upload = useUploadAlbumArtwork(); const removeArtwork = useRemoveAlbumArtwork(); const refetch = useRefetchAlbumArtwork(); const [borrower, setBorrower] = useState(''); const [message, setMessage] = useState<string | null>(null)
  // Reset transient action feedback when navigating between album IDs.
     const [checkinRating, setCheckinRating] = useState('')
     const [checkinReview, setCheckinReview] = useState('')

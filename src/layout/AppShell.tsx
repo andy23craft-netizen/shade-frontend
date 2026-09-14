@@ -16,6 +16,8 @@ import {
 } from '../config/libraryContext'
 import { getLibraryBranding } from '../config/libraryBranding'
 import { DrawerNavMenu } from './DrawerNavMenu'
+import { AuthControl } from '../features/auth/AuthControl'
+import { useAuth } from '../features/auth/useAuth'
 
 interface RouteHandle {
     title?: string
@@ -24,6 +26,7 @@ interface RouteHandle {
 const LAST_UPDATED = 'September 09, 2026'
 
 export function AppShell() {
+    const { isAdmin } = useAuth()
     const { data: versionData } = useVersion()
     const location = useLocation()
     const matches = useMatches()
@@ -36,9 +39,8 @@ export function AppShell() {
     const libraryBranding = getLibraryBranding(libraryContext)
     const isListeningRoom = location.pathname === '/listening-room' || location.pathname.startsWith('/albums') || location.pathname.startsWith('/listening-room/')
     const isReadingRoom = location.pathname === '/reading-room' || location.pathname.startsWith('/books') || location.pathname.startsWith('/stash') || location.pathname.startsWith('/shelves') || location.pathname.startsWith('/reading-room/')
-    const { data: dashboardData } = useDashboard({ enabled: isReadingRoom })
+    const { data: dashboardData } = useDashboard({ enabled: isAdmin && isReadingRoom })
     const room = isListeningRoom ? 'listening' : isReadingRoom ? 'reading' : 'neutral'
-    const isHome = location.pathname === '/'
     const isHallway = ['/collection/manage', '/collections', '/wishlists'].includes(location.pathname)
     const dashboardHref = room === 'listening' ? '/listening-room/dashboard' : '/reading-room/dashboard'
     const loansHref = room === 'listening' ? '/listening-room/loans' : '/reading-room/loans'
@@ -74,13 +76,14 @@ export function AppShell() {
     }, [location.pathname])
 
     return (
-        <div className={`app-shell app-shell--${room}`} data-room={room}>
+        <div className={`app-shell app-shell--${room}`} data-room={room} data-access-mode={isAdmin ? 'admin' : 'viewer'}>
             <a className="skip-link" href="#main-content">
                 Skip to main content
             </a>
 
-            {!isHome ? <header className="app-header">
+            <header className="app-header">
                 <div className="app-header__inner">
+                    <AuthControl />
                     <NavLink
                         className="app-brand"
                         to="/"
@@ -128,18 +131,18 @@ export function AppShell() {
                                     label: 'Browse',
                                     to: browseHref,
                                 },
-                                {
+                                ...(isAdmin ? [{
                                     label: 'Search by image',
                                     to: '/catalog/image-search',
-                                },
+                                }] : []),
                                 ...(room === 'reading' ? [{
                                     label: `Stash (${dashboardData?.stash_count ?? 0})`,
                                     to: '/stash',
                                 }] : []),
-                                {
+                                ...(isAdmin ? [{
                                     label: 'Manage',
                                     to: '/collection/manage',
-                                },
+                                }] : []),
                                 {
                                     label:'Collections',
                                     to: '/collections',
@@ -151,7 +154,7 @@ export function AppShell() {
                             ]}
                         />
 
-                        <NavLink
+                        {isAdmin ? <NavLink
                             className="app-nav__link"
                             to={loansHref}
                         >
@@ -165,13 +168,13 @@ export function AppShell() {
                                 className="drawer-nav-menu__pull"
                                 aria-hidden="true"
                             />
-                        </NavLink>
-                    </nav> : isHallway ? <nav className="app-nav app-nav--hallway" aria-label="Shared spaces navigation">
+                        </NavLink> : null}
+                    </nav> : isAdmin && isHallway ? <nav className="app-nav app-nav--hallway" aria-label="Shared spaces navigation">
                         <NavLink className="app-nav__link" to="/reading-room"><span className="drawer-nav-menu__label-holder"><span className="drawer-nav-menu__label">Reading Room</span></span><span className="drawer-nav-menu__pull" aria-hidden="true" /></NavLink>
                         <NavLink className="app-nav__link" to="/listening-room"><span className="drawer-nav-menu__label-holder"><span className="drawer-nav-menu__label">Listening Room</span></span><span className="drawer-nav-menu__pull" aria-hidden="true" /></NavLink>
                     </nav> : null}
                 </div>
-            </header> : null}
+            </header>
 
             <main
                 ref={mainRef}

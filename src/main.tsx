@@ -4,7 +4,6 @@ import { RouterProvider } from 'react-router-dom'
 import { AppProviders } from './AppProviders'
 import { RootErrorBoundary } from './RootErrorBoundary'
 import { RuntimeConfigScreen } from './config/RuntimeConfigScreen'
-import { readApiToken } from './config/apiToken'
 import { APP_VERSION } from './config/appVersion'
 import { readRuntimeConfig } from './config/runtimeConfigState'
 import { UnknownLibraryScreen } from './config/UnknownLibraryScreen'
@@ -45,8 +44,6 @@ function renderApplication() {
 
         return
     }
-
-    readApiToken()
 
     const runtimeConfigState = readRuntimeConfig()
 

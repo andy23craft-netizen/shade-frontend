@@ -88,6 +88,17 @@
   padding-block: var(--space-3);
 }
 
+.app-auth-control {
+  flex: 0 0 auto;
+  transform: translateX(-50px);
+}
+
+.app-shell[data-access-mode="viewer"] .app-auth-control::after {
+  content: "Read-only";
+  margin-inline-start: .45rem;
+  font-size: .75em;
+}
+
 .app-brand {
     display: block;
     flex: 0 0 auto;

@@ -6,15 +6,11 @@ import {
     useState,
 } from 'react'
 import type { ReactNode } from 'react'
-import { createApiClient } from '../../api/apiClient'
 import { APP_VERSION } from '../../config/appVersion'
 import type { RuntimeConfig } from '../../config/runtimeConfig'
 import {
     checkConnection,
 } from './connectionApi'
-import {
-    getCurrentToken,
-} from './connectionToken'
 import type { ConnectionStatus } from './connectionTypes'
 import {
     ConnectionContext,
@@ -23,6 +19,7 @@ import {
 import type {
     DiagnosticReporter,
 } from '../../diagnostics/diagnosticReporter'
+import { useAuth } from '../auth/useAuth'
 
 interface ConnectionProviderProps {
     children: ReactNode
@@ -78,35 +75,15 @@ function mapReachabilityFailure(
 export function ConnectionProvider({
                                        children,
                                        runtimeConfig,
-                                       diagnosticReporter,
+    diagnosticReporter,
                                    }: ConnectionProviderProps) {
+    void diagnosticReporter
     const [status, setStatus] =
         useState<ConnectionStatus>('checking')
     const [errorMessage, setErrorMessage] =
         useState<string | null>(null)
 
-    const apiClient = useMemo(
-        () =>
-            createApiClient({
-                apiBaseUrl: runtimeConfig.apiBaseUrl,
-                getToken: getCurrentToken,
-                onRequestFailure: (error) => {
-                    diagnosticReporter?.reportApiFailure(
-                        error,
-                    )
-                },
-                onUnauthorized: () => {
-                    setStatus('unauthorized')
-                    setErrorMessage(
-                        'API access was rejected.',
-                    )
-                },
-            }),
-        [
-            runtimeConfig.apiBaseUrl,
-            diagnosticReporter,
-        ],
-    )
+    const { apiClient } = useAuth()
 
     useEffect(() => {
         let cancelled = false
