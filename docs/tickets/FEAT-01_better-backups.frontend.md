@@ -18,8 +18,9 @@ frontend piece is the **admin control surface for site-wide read-only mode**, wh
 | Concern | Frontend responsibility |
 |---------|-------------------------|
 | Shade-admin affordance to enter / exit site-wide read-only mode | Toggle on **Library Settings** (`/library/settings`); UI + API client for Shade (`andy`) only |
-| Clear UX while the site is read-only | Global warning banner for **all** admins; disable write controls from status on load/reload |
-| Handle **HTTP 530** on mutating requests | Treat 530 as "site is read-only" (not a generic server error) |
+| Clear UX while the site is read-only | Global warning banner for **all** admins; visibly disable controls that mutate DB or covers |
+| Handle **HTTP 530** on mutating requests | Treat 530 as "site is read-only"; re-skin the UI into read-only when status was stale |
+| Fail open on status fetch failure | If `GET /library/site-read-only` fails, leave write controls enabled |
 | Do **not** build backup download / in-app backup UI | Manual backup remains CLI / `make` on the host |
 
 Everything else (exporter shape, schedules, prune, covers packaging, `AGENTS.md` / `DB-updates.md`) is owned by the
@@ -35,9 +36,11 @@ Locked decisions from the shared design and FE UX clarifications:
   * `GET /library/site-read-only` → `{ "enabled": true|false }` (authenticated admin)
   * `PUT /library/site-read-only` with `{ "enabled": true|false }` -- Shade (`andy`) admin only; other tenants
     **403**
+* Goal of read-only: prevent **database changes** and changes to **book covers** and **album artwork**. The FE
+  must treat cover/artwork upload and delete as write controls, not as exempt media helpers.
 * While read-only is on:
   * **Reads remain allowed** (non-mutating GETs and equivalent read paths).
-  * **Mutating writes** (CRUD and other write methods) fail with **HTTP 530**
+  * **Mutating writes** (CRUD, cover/artwork mutations, and other write methods) fail with **HTTP 530**
     `{"detail": "Site is in read-only mode"}`.
 * If the site **restarts while read-only is on**, it **stays read-only** until the Shade admin explicitly returns
   it to normal. The durable flag lives in a file under backend `DB_DIR` (not a table); FE must re-fetch status
@@ -49,14 +52,26 @@ Locked decisions from the shared design and FE UX clarifications:
 1. **Placement:** Site-wide read-only toggle lives on **Library Settings** (`/library/settings`). Show the control
    only for the Shade (`andy`) tenant admin. Non-Shade Library Settings pages omit the control.
 2. **Status on load:** On page load and reload, send `GET /library/site-read-only` (when an admin session is
-   active) and enable or disable write controls from that status. Do not rely on client-only memory of the last
+   active) and drive write-control disablement from that status. Do not rely on client-only memory of the last
    toggle.
-3. **Banner:** While read-only is enabled, **all** admins (every tenant) see a warning banner at the **top of
+3. **Fail open on GET failure:** If `GET /library/site-read-only` fails (network, timeout, 5xx, etc.), treat
+   read-only as **off** for UI purposes: leave write controls enabled. Do not invent a blocked "status unknown"
+   freeze from a failed status fetch. Live **530** responses still correct the UI (see item 7).
+4. **Visibly disabled write controls:** While read-only is enabled, any button or interactive element that would
+   change the database or book/album covers must be **visibly disabled** (not merely fail after click). That
+   includes create/edit/delete, checkout/check-in, mark-read, shelf moves, stash, wishlist/collection writes,
+   cover/artwork upload and delete, and similar mutating affordances.
+5. **Toggle stays usable:** The Library Settings control that enables or disables read-only must **never** be
+   disabled by read-only mode (Shade admin must always be able to exit). Confirmation dialogs for that toggle
+   remain available.
+6. **Banner:** While read-only is enabled, **all** admins (every tenant) see a warning banner at the **top of
    every page**. Viewers do not need a banner from this ticket.
-4. **Confirmation:** Changing the read-only toggle in **either** direction (on → off or off → on) requires a
+7. **Confirmation:** Changing the read-only toggle in **either** direction (on → off or off → on) requires a
    confirmation dialog before calling `PUT`.
-5. **530 fallback:** If a mutation still returns **530** (e.g., status race), surface it as site read-only -- not
-   a generic server error -- even when the banner/disabled controls already explain the freeze.
+8. **530 mid-session re-skin:** If the UI currently believes read-only is **off**, and a mutating request returns
+   **HTTP 530**, the FE must update shared read-only status to enabled and **re-skin** immediately (banner on,
+   write controls visibly disabled) so an admin who was already on a page sees the freeze without a reload.
+   Surface the failure as site read-only -- not a generic server error.
 
 ## Why this matters for the UI
 
@@ -87,9 +102,14 @@ attempt writes during cutover without understanding why they fail.
 
 * Shade (`andy`) admin can enter and exit site-wide read-only from Library Settings, with confirmation both ways.
 * Non-Shade Library Settings does not expose a working read-only toggle.
-* Admin page load/reload fetches `GET /library/site-read-only` and disables write controls when `enabled` is true.
+* Admin page load/reload fetches `GET /library/site-read-only` and visibly disables write controls when
+  `enabled` is true (DB mutations and book cover / album artwork mutations).
+* If `GET /library/site-read-only` fails, the UI fails open: write controls stay enabled until a later successful
+  status fetch or a live **530** re-skin.
+* The Shade read-only toggle itself is never disabled by read-only mode.
 * While enabled, every admin session shows a top-of-page warning banner on all routes.
-* Catalog and other read paths remain usable; mutating failures with **530** are presented as site read-only.
+* Catalog and other read paths remain usable; mutating failures with **530** are presented as site read-only and,
+  when shared status still said "off", flip the UI into the enabled read-only skin without requiring a reload.
 * No backup download or run-backup controls are added.
 * Typed clients follow checked-in OpenAPI (`SiteReadOnlyRead` / `SiteReadOnlyUpdate`); extend `libraryApi` /
   `libraryQueries` rather than inventing a parallel client.
@@ -98,10 +118,13 @@ attempt writes during cutover without understanding why they fail.
 
 1. Wire `GET`/`PUT /library/site-read-only` through `libraryApi` / React Query (regenerate or refresh generated
    types from OpenAPI if needed).
-2. Add Shade-only toggle on Library Settings with confirmation for both enable and disable.
-3. On admin load/reload, fetch status and disable write controls when read-only is on.
+2. Add Shade-only toggle on Library Settings with confirmation for both enable and disable; keep that toggle
+   usable even while read-only is on.
+3. On admin load/reload, fetch status; when enabled, visibly disable DB-mutating and cover/artwork-mutating
+   controls. On GET failure, fail open (leave writes enabled).
 4. Show a site-wide warning banner for all admins while read-only is on.
-5. Map **HTTP 530** on writes to a consistent "site is read-only" experience.
+5. On **HTTP 530** from a write: present site read-only messaging and re-skin shared status to enabled when the
+   UI previously thought read-only was off.
 6. Do not add backup download or run-backup controls.
 
 ## Decision log (FE-relevant)
@@ -121,3 +144,7 @@ attempt writes during cutover without understanding why they fail.
 | 2026-09-15 | Warning banner for all admins | Top of every page while read-only is on |
 | 2026-09-15 | Confirm toggle both directions | Confirmation before `PUT` enable or disable |
 | 2026-09-15 | OpenAPI contract available | `GET`/`PUT /library/site-read-only`; follow generated types |
+| 2026-09-15 | Freeze DB + cover/artwork writes | Visibly disable controls that mutate DB or covers |
+| 2026-09-15 | Read-only toggle never disabled | Shade admin can always exit via Library Settings |
+| 2026-09-15 | Fail open on status GET failure | Do not freeze writes when status fetch fails |
+| 2026-09-15 | 530 re-skins mid-session | Stale "off" UI flips to enabled on first 530 |
