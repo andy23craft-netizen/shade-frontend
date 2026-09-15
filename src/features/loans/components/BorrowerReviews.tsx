@@ -49,10 +49,10 @@ function Review({ feedback }: { feedback: LoanFeedbackRead }) {
                     <label>Rating <select aria-label="Borrower rating" value={rating} onChange={(event) => setRating(event.target.value)}>{[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value} / 5</option>)}</select></label>
                     <label>Review <textarea value={review} onChange={(event) => setReview(event.target.value)} /></label>
                     {error ? <p role="alert">{error}</p> : null}
-                    <Button type="submit" disabled={feedbackMutation.isPending}>{feedbackMutation.isPending ? 'Saving…' : 'Save feedback'}</Button>
+                    <Button type="submit" mutating disabled={feedbackMutation.isPending}>{feedbackMutation.isPending ? 'Saving…' : 'Save feedback'}</Button>
                     <Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={feedbackMutation.isPending}>Cancel</Button>
                 </form>
-            ) : <Button variant="secondary" onClick={() => setEditing(true)}>Edit feedback</Button>}
+            ) : <Button variant="secondary" mutating onClick={() => setEditing(true)}>Edit feedback</Button>}
         </article>
     )
 }

@@ -145,6 +145,7 @@ export function StashPage() {
                         <Button
                             type="button"
                             variant="primary"
+                            mutating
                             disabled={
                                 selection.selectedCount === 0 ||
                                 !shelfName ||

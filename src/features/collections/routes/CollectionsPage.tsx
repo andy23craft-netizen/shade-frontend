@@ -297,6 +297,7 @@ function CreateCollectionForm() {
             <Button
                 type="submit"
                 variant="primary"
+                mutating
                 disabled={
                     createCollection.isPending
                 }
@@ -545,6 +546,7 @@ function EditCollectionForm({
                 <Button
                     type="submit"
                     variant="primary"
+                    mutating
                     disabled={
                         updateCollection.isPending
                     }
@@ -691,6 +693,7 @@ function CollectionSection({
                     <Button
                         type="button"
                         variant="danger"
+                        mutating
                         disabled={
                             deletePending ||
                             editOpen
@@ -1041,6 +1044,7 @@ export function CollectionsPage() {
                 }
                 cancelLabel="Cancel"
                 confirmVariant="danger"
+                mutating
                 onConfirm={
                     handleConfirmDelete
                 }

@@ -857,6 +857,7 @@ export function AddWishlistBookControl() {
             <Button
                 type="submit"
                 variant="primary"
+                mutating
                 disabled={disabled}
             >
                 {isSubmitting

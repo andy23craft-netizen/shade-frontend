@@ -100,6 +100,8 @@ describe('queryKeys.library', () => {
         expect(queryKeys.library.setup('andy.localhost')).not.toEqual(queryKeys.library.setup('jamie.localhost'))
         expect(queryKeys.library.settings('andy.localhost')).toEqual(['library', 'andy.localhost', 'settings'])
         expect(queryKeys.library.setup('andy.localhost')).not.toEqual(queryKeys.library.settings('andy.localhost'))
+        expect(queryKeys.library.siteReadOnly('andy')).toEqual(['library', 'andy', 'site-read-only'])
+        expect(queryKeys.library.siteReadOnly('andy')).not.toEqual(queryKeys.library.settings('andy'))
     })
 })
 

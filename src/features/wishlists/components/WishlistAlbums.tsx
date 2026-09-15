@@ -49,9 +49,9 @@ function WishlistAlbumRow({ membership }: { membership: WishlistItemRead }) {
             <MembershipNotesEditor label="Wishlist description" notes={membership.notes} onSave={(notes) => updateMembership.mutateAsync({ wishlistId: membership.wishlist_id, wishlistItemId: membership.wishlist_item_id, notes })} />
             <form className="wishlist-album__move" onSubmit={(event) => { event.preventDefault(); if (!shelfName) return; setRemoveError(null); moveMembership.mutate({ wishlistId: membership.wishlist_id, wishlistItemId: membership.wishlist_item_id, albumId, shelfName }, { onError: (error) => setRemoveError(error instanceof Error ? error.message : 'The album could not be moved to the crate.') }) }}>
                 <label>Move to crate<select value={shelfName} onChange={(event) => setShelfName(event.target.value)} disabled={shelves.isPending || moveMembership.isPending}><option value="">Choose a crate</option>{(shelves.data ?? []).filter((shelf) => shelf.common_name !== 'removed').map((shelf) => <option key={shelf.shelf_id} value={shelf.common_name}>{shelf.common_name}</option>)}</select></label>
-                <Button type="submit" disabled={!shelfName || shelves.isPending || moveMembership.isPending}>{moveMembership.isPending ? 'Moving…' : 'Move to Crate'}</Button>
+                <Button type="submit" mutating disabled={!shelfName || shelves.isPending || moveMembership.isPending}>{moveMembership.isPending ? 'Moving…' : 'Move to Crate'}</Button>
             </form>
-            <Button type="button" variant="danger" disabled={removeMembership.isPending} onClick={() => setConfirmRemove(true)}>
+            <Button type="button" variant="danger" mutating disabled={removeMembership.isPending} onClick={() => setConfirmRemove(true)}>
                 Remove from Wishlist
             </Button>
             <ConfirmationDialog
@@ -60,6 +60,7 @@ function WishlistAlbumRow({ membership }: { membership: WishlistItemRead }) {
                 confirmLabel={removeMembership.isPending ? 'Removing…' : 'Remove from Wishlist'}
                 cancelLabel="Cancel"
                 confirmVariant="danger"
+                mutating
                 onConfirm={() => {
                     if (removeMembership.isPending) return
                     setRemoveError(null)

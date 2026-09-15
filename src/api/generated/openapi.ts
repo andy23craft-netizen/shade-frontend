@@ -1004,6 +1004,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/library/site-read-only": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get site-wide read-only mode status */
+        get: operations["get_site_read_only_library_site_read_only_get"];
+        /** Set site-wide read-only mode (Shade admin only) */
+        put: operations["put_site_read_only_library_site_read_only_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/loans": {
         parameters: {
             query?: never;
@@ -3188,6 +3206,16 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
+        };
+        /** SiteReadOnlyRead */
+        SiteReadOnlyRead: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** SiteReadOnlyUpdate */
+        SiteReadOnlyUpdate: {
+            /** Enabled */
+            enabled: boolean;
         };
         /** SplitWorkRequest */
         SplitWorkRequest: {
@@ -8199,6 +8227,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_site_read_only_library_site_read_only_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteReadOnlyRead"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_site_read_only_library_site_read_only_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteReadOnlyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteReadOnlyRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

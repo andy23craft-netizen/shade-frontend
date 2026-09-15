@@ -33,6 +33,7 @@ export interface MockApiState {
     categories: CategoryRead[]
     authors: AuthorRead[]
     setup: LibrarySetupRead
+    siteReadOnlyEnabled: boolean
     requests: MockApiRequest[]
 }
 
@@ -877,6 +878,7 @@ export async function installMockApi(
             ...author,
         })),
         setup: { ...setup, supported_media: [...setup.supported_media] },
+        siteReadOnlyEnabled: false,
         requests: [],
     }
 
@@ -967,6 +969,28 @@ export async function installMockApi(
                     failure_code: null,
                 }
                 await fulfillJson(route, { body: state.setup })
+                return
+            }
+
+            if (
+                method === 'GET' &&
+                url.pathname === '/library/site-read-only'
+            ) {
+                await fulfillJson(route, {
+                    body: { enabled: state.siteReadOnlyEnabled },
+                })
+                return
+            }
+
+            if (
+                method === 'PUT' &&
+                url.pathname === '/library/site-read-only'
+            ) {
+                const body = readRequestBody(route)
+                state.siteReadOnlyEnabled = body.enabled === true
+                await fulfillJson(route, {
+                    body: { enabled: state.siteReadOnlyEnabled },
+                })
                 return
             }
 

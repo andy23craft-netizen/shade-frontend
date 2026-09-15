@@ -23,6 +23,19 @@ describe('createLibraryApi', () => {
         expect(new Headers(settingsRequest?.headers).has('Library-Username')).toBe(false)
     })
 
+    it('reads and updates site-wide read-only mode', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(json({ enabled: false }))
+            .mockResolvedValueOnce(json({ enabled: true }))
+        const api = createLibraryApi(createApiClient({ apiBaseUrl: 'https://andy.example', getToken: () => 'secret' }))
+        await expect(api.getSiteReadOnly()).resolves.toEqual({ enabled: false })
+        await expect(api.updateSiteReadOnly({ enabled: true })).resolves.toEqual({ enabled: true })
+        expect(fetchMock.mock.calls[0]?.[0]).toBe('https://andy.example/library/site-read-only')
+        const putRequest = fetchMock.mock.calls[1]?.[1]
+        expect(putRequest?.method).toBe('PUT')
+        expect(putRequest?.body).toBe(JSON.stringify({ enabled: true }))
+    })
+
     it.each([
         [403, 'unauthorized'],
         [400, 'http'],

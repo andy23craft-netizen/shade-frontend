@@ -61,7 +61,7 @@ function ActiveGuidedSetupActions({
             </div>
             {error ? <Alert variant="error" title="Setup was not completed">{error}</Alert> : null}
             <div className="form-actions">
-                <Button type="button" disabled={complete.isPending} onClick={() => void finishSetup()}>
+                <Button type="button" mutating disabled={complete.isPending} onClick={() => void finishSetup()}>
                     {complete.isPending ? 'Completing setup…' : 'Complete library setup'}
                 </Button>
                 <Button type="button" variant="secondary" disabled={complete.isPending} onClick={() => navigate('/library/setup')}>

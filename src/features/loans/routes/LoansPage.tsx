@@ -529,6 +529,7 @@ export function LoansPage() {
                                                     <Button
                                                         type="button"
                                                         variant="primary"
+                                                        mutating
                                                         onClick={() =>
                                                             selectBookForCheckin(
                                                                 book.book_id,

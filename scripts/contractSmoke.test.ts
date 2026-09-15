@@ -89,6 +89,7 @@ const expectedPaths = [
     '/library/settings',
     '/library/setup',
     '/library/setup/complete',
+    '/library/site-read-only',
     '/loans',
     '/loans/{id}',
     '/loans/{id}/feedback',

@@ -374,6 +374,7 @@ function CreateShelfForm({
                 <Button
                     type="submit"
                     variant="primary"
+                    mutating
                     disabled={isSubmitting}
                 >
                     {createShelf.isPending
@@ -600,6 +601,7 @@ function EditShelfForm({
                 <Button
                     type="submit"
                     variant="primary"
+                    mutating
                     disabled={isSubmitting}
                 >
                     {updateShelf.isPending
@@ -1087,6 +1089,7 @@ export function ShelvesPage() {
                 }
                 cancelLabel="Cancel"
                 confirmVariant="danger"
+                mutating
                 onConfirm={handleConfirmDelete}
                 onCancel={handleCancelDelete}
             >

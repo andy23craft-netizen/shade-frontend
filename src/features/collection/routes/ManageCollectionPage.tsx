@@ -40,6 +40,7 @@ export function ManageCollectionPage() {
                         <AppLink
                             to="/library/setup"
                             className="manage-collection-action"
+                            mutating
                         >
                             <span className="manage-collection-action__title">
                                 Build the Collection
@@ -57,6 +58,7 @@ export function ManageCollectionPage() {
                         <AppLink
                             to="/books/new"
                             className="manage-collection-action"
+                            mutating
                         >
                             <span className="manage-collection-action__title">
                                 Add Book
@@ -77,6 +79,7 @@ export function ManageCollectionPage() {
                         <AppLink
                             to="/books/bulk-add"
                             className="manage-collection-action"
+                            mutating
                         >
                             <span className="manage-collection-action__title">
                                 Bulk Add
@@ -97,6 +100,7 @@ export function ManageCollectionPage() {
                         <AppLink
                             to="/shelves"
                             className="manage-collection-action"
+                            mutating
                         >
                             <span className="manage-collection-action__title">
                                 Shelves
@@ -114,25 +118,25 @@ export function ManageCollectionPage() {
                             </span>
                         </AppLink>
 
-                        <AppLink to="/library/settings" className="manage-collection-action">
+                        <AppLink to="/library/settings" className="manage-collection-action" mutating>
                             <span className="manage-collection-action__title">Library Settings</span>
                             <span className="manage-collection-action__description">Configure circulation and special-purpose shelves.</span>
                             <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
                         </AppLink>
 
-                        <AppLink to="/quotes" className="manage-collection-action">
+                        <AppLink to="/quotes" className="manage-collection-action" mutating>
                             <span className="manage-collection-action__title">Quote Library</span>
                             <span className="manage-collection-action__description">Curate the quotations shown on Home.</span>
                             <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
                         </AppLink>
 
-                        <AppLink to="/albums/new" className="manage-collection-action">
+                        <AppLink to="/albums/new" className="manage-collection-action" mutating>
                             <span className="manage-collection-action__title">Add Album</span>
                             <span className="manage-collection-action__description">File a new release in the album catalog.</span>
                             <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
                         </AppLink>
 
-                        <AppLink to="/albums/bulk-add" className="manage-collection-action">
+                        <AppLink to="/albums/bulk-add" className="manage-collection-action" mutating>
                             <span className="manage-collection-action__title">Bulk Add Albums</span>
                             <span className="manage-collection-action__description">Look up and import a stack of releases.</span>
                             <span className="manage-collection-action__arrow" aria-hidden="true">→</span>

@@ -558,6 +558,7 @@ export function BooksPage() {
                     {isAdmin ? <AppLink
                         to="/books/new"
                         variant="primary"
+                        mutating
                     >
                         Add Book
                     </AppLink> : null}

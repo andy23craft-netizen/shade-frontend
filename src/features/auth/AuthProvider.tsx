@@ -4,6 +4,7 @@ import { createApiClient } from '../../api/apiClient'
 import type { RuntimeConfig } from '../../config/runtimeConfig'
 import type { DiagnosticReporter } from '../../diagnostics/diagnosticReporter'
 import { AuthContext, type AccessMode } from './AuthContext'
+import { notifySiteEnteredReadOnly } from '../siteReadOnly/siteReadOnlyBridge'
 
 interface Credential {
     accessToken: string
@@ -78,6 +79,7 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
         apiBaseUrl: runtimeConfig.apiBaseUrl,
         getToken: () => credential?.accessToken ?? null,
         onUnauthorized: clearAdministratorAccess,
+        onSiteReadOnly: notifySiteEnteredReadOnly,
         onRequestFailure: (error) => diagnosticReporter?.reportApiFailure(error),
     }), [clearAdministratorAccess, credential, diagnosticReporter, runtimeConfig.apiBaseUrl])
 

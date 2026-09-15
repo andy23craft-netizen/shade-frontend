@@ -41,6 +41,6 @@ export function BookProviderSummary({ book }: { book: BookRead }) {
         <h2 id="book-summary-heading">Summary</h2>
         {book.summary?.trim() ? <div className="book-provider-summary__text">{normalizeProviderSummary(book.summary).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div> : noProviderSummary ? <p>No summary is available for this ISBN.</p> : notRequestable ? <p>A summary needs an ISBN for this book.</p> : <p>No summary has been added yet.</p>}
         {error ? <Alert variant="error">{error}</Alert> : null}
-        {!book.summary?.trim() && !noProviderSummary && !notRequestable && !refresh.isPending ? <Button type="button" variant="secondary" onClick={refreshSummary}>{error ? 'Retry summary' : 'Refresh summary'}</Button> : null}
+        {!book.summary?.trim() && !noProviderSummary && !notRequestable && !refresh.isPending ? <Button type="button" variant="secondary" mutating onClick={refreshSummary}>{error ? 'Retry summary' : 'Refresh summary'}</Button> : null}
     </section>
 }

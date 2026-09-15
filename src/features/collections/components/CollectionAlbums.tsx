@@ -73,9 +73,9 @@ function CollectionAlbumRow({ membership, total }: { membership: CollectionAlbum
                 })}
             />
             <div className="collection-membership__actions">
-                <Button type="button" variant="secondary" disabled={membership.order_num === 1 || update.isPending} onClick={() => move(membership.order_num - 1)}>Move Up</Button>
-                <Button type="button" variant="secondary" disabled={membership.order_num === total || update.isPending} onClick={() => move(membership.order_num + 1)}>Move Down</Button>
-                <Button type="button" variant="danger" disabled={remove.isPending} onClick={() => setRemoveOpen(true)}>Remove</Button>
+                <Button type="button" variant="secondary" mutating disabled={membership.order_num === 1 || update.isPending} onClick={() => move(membership.order_num - 1)}>Move Up</Button>
+                <Button type="button" variant="secondary" mutating disabled={membership.order_num === total || update.isPending} onClick={() => move(membership.order_num + 1)}>Move Down</Button>
+                <Button type="button" variant="danger" mutating disabled={remove.isPending} onClick={() => setRemoveOpen(true)}>Remove</Button>
             </div>
             <ConfirmationDialog
                 open={removeOpen}
@@ -83,6 +83,7 @@ function CollectionAlbumRow({ membership, total }: { membership: CollectionAlbum
                 confirmLabel={remove.isPending ? 'Removing…' : 'Remove Album'}
                 cancelLabel="Cancel"
                 confirmVariant="danger"
+                mutating
                 onCancel={() => { if (!remove.isPending) setRemoveOpen(false) }}
                 onConfirm={() => remove.mutate(
                     { collectionId: membership.collection_id, collectionAlbumId: membership.collection_album_id },
@@ -124,7 +125,7 @@ export function CollectionAlbums({ collectionId, enabled }: { collectionId: stri
                 {albums.isPending && search.trim() ? <LoadingState label="Searching albums…" /> : null}
                 {albums.isError ? <QueryErrorState title="Unable to search albums" error={albums.error} onRetry={() => void albums.refetch()} /> : null}
                 {search.trim() && albums.isSuccess ? (
-                    albums.data.items.length ? <ul className="collection-albums__results">{albums.data.items.map((album) => <li key={album.album_id}><span><strong>{album.title}</strong> — {formatAlbumArtists(album)}</span><Button type="button" variant="secondary" disabled={add.isPending} onClick={() => { setAddError(null); add.mutate({ collectionId, album: { album_id: album.album_id } }, { onError: (cause) => setAddError(cause instanceof Error ? cause.message : 'Unable to add the album.') }) }}>Add</Button></li>)}</ul> : <p>No owned albums match that search.</p>
+                    albums.data.items.length ? <ul className="collection-albums__results">{albums.data.items.map((album) => <li key={album.album_id}><span><strong>{album.title}</strong> — {formatAlbumArtists(album)}</span><Button type="button" variant="secondary" mutating disabled={add.isPending} onClick={() => { setAddError(null); add.mutate({ collectionId, album: { album_id: album.album_id } }, { onError: (cause) => setAddError(cause instanceof Error ? cause.message : 'Unable to add the album.') }) }}>Add</Button></li>)}</ul> : <p>No owned albums match that search.</p>
                 ) : null}
             </form>
             {query.isPending ? <LoadingState label="Loading collection albums…" /> : null}

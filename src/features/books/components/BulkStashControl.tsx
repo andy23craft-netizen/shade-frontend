@@ -24,6 +24,7 @@ export function BulkStashControl({
             <Button
                 type="button"
                 variant="secondary"
+                mutating
                 disabled={selectedBookIds.length === 0 || mutation.isPending}
                 onClick={() => {
                     setError(null)
@@ -39,6 +40,7 @@ export function BulkStashControl({
                 confirmLabel={mutation.isPending ? 'Stashing…' : 'Stash books'}
                 cancelLabel="Cancel"
                 confirmVariant="primary"
+                mutating
                 confirmDisabled={mutation.isPending}
                 cancelDisabled={mutation.isPending}
                 onCancel={() => setOpen(false)}

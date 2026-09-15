@@ -225,6 +225,7 @@ export function CollectionMembershipRow({
                 <Button
                     type="button"
                     variant="secondary"
+                    mutating
                     disabled={
                         pending ||
                         isFirst
@@ -241,6 +242,7 @@ export function CollectionMembershipRow({
                 <Button
                     type="button"
                     variant="secondary"
+                    mutating
                     disabled={
                         pending ||
                         isLast
@@ -257,6 +259,7 @@ export function CollectionMembershipRow({
                 <Button
                     type="button"
                     variant="danger"
+                    mutating
                     disabled={pending}
                     onClick={() => {
                         setActionError(null)
@@ -277,6 +280,7 @@ export function CollectionMembershipRow({
                 }
                 cancelLabel="Cancel"
                 confirmVariant="danger"
+                mutating
                 onConfirm={handleConfirmRemove}
                 onCancel={() => {
                     if (removeBook.isPending) {

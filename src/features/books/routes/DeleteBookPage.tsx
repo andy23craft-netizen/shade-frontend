@@ -329,6 +329,7 @@ export function DeleteBookPage() {
                 <Button
                     type="button"
                     variant="danger"
+                    mutating
                     onClick={
                         handleOpenConfirmation
                     }
@@ -352,6 +353,7 @@ export function DeleteBookPage() {
                 title="Confirm book deletion"
                 confirmLabel="Delete Book"
                 confirmVariant="danger"
+                mutating
                 onConfirm={handleConfirm}
                 onCancel={handleCancelConfirmation}
             >

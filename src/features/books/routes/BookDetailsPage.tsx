@@ -43,6 +43,7 @@ import { BorrowerReviews } from '../../loans/components/BorrowerReviews'
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog'
 import { BookProviderSummary } from '../components/BookProviderSummary'
 import { useAuth } from '../../auth/useAuth'
+import { useSiteReadOnly } from '../../siteReadOnly/useSiteReadOnly'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -126,6 +127,7 @@ function displayDate(
 
 export function BookDetailsPage() {
     const { isAdmin } = useAuth()
+    const { writesDisabled } = useSiteReadOnly()
     const { bookId } = useParams()
     const location = useLocation()
     const [searchParams, setSearchParams] =
@@ -309,7 +311,7 @@ export function BookDetailsPage() {
                             <input
                                 type="checkbox"
                                 checked={book.is_flagged ?? false}
-                                disabled={setBookFlag.isPending}
+                                disabled={setBookFlag.isPending || writesDisabled}
                                 onChange={(event) => {
                                     if (event.target.checked) {
                                         setBookFlag.mutate({
@@ -542,6 +544,7 @@ export function BookDetailsPage() {
                     <AppLink
                         to={`/books/${book.book_id}/edit`}
                         variant="secondary"
+                        mutating
                     >
                         Edit Book
                     </AppLink>
@@ -551,6 +554,7 @@ export function BookDetailsPage() {
                     <Button
                         type="button"
                         variant="secondary"
+                        mutating
                         onClick={() => {
                             setAddToCollectionOpen(true)
                         }}
@@ -562,6 +566,7 @@ export function BookDetailsPage() {
                         <Button
                             type="button"
                             variant="primary"
+                            mutating
                             onClick={() => {
                                 setCheckoutOpen(true)
                             }}
@@ -574,6 +579,7 @@ export function BookDetailsPage() {
                         <AppLink
                             to={`/reading-room/loans?bookId=${encodeURIComponent(book.book_id)}`}
                             variant="primary"
+                            mutating
                         >
                             Check In
                         </AppLink>
@@ -583,6 +589,7 @@ export function BookDetailsPage() {
                         <AppLink
                             to={`/books/${book.book_id}/mark-read`}
                             variant="secondary"
+                            mutating
                         >
                             Mark Read
                         </AppLink>
@@ -592,6 +599,7 @@ export function BookDetailsPage() {
                         <AppLink
                             to={`/books/${book.book_id}/reading`}
                             variant="secondary"
+                            mutating
                         >
                             Edit Reading
                         </AppLink>
@@ -601,6 +609,7 @@ export function BookDetailsPage() {
                         <AppLink
                             to={`/books/${book.book_id}/delete`}
                             variant="secondary"
+                            mutating
                         >
                             Delete Book
                         </AppLink>
@@ -634,6 +643,7 @@ export function BookDetailsPage() {
                 open={confirmClearFlag}
                 title="Clear Needs Reshelving?"
                 confirmLabel="Clear mark"
+                mutating
                 onCancel={() => { setConfirmClearFlag(false) }}
                 onConfirm={() => {
                     setBookFlag.mutate(

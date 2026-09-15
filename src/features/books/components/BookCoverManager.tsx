@@ -15,6 +15,7 @@ import {
 import {
     isApiError,
 } from '../../../api/apiErrors'
+import { useSiteReadOnly } from '../../siteReadOnly/useSiteReadOnly'
 
 interface BookCoverManagerProps {
     bookId: string
@@ -53,6 +54,8 @@ export function BookCoverManager({
         setConfirmOpen,
     ] = useState(false)
 
+    const { writesDisabled } = useSiteReadOnly()
+
     const uploadCover =
         useUploadBookCover()
 
@@ -62,6 +65,8 @@ export function BookCoverManager({
     const isPending =
         uploadCover.isPending ||
         removeCover.isPending
+
+    const coverLocked = writesDisabled || isPending
 
     function chooseCover() {
         inputRef.current?.click()
@@ -150,6 +155,7 @@ export function BookCoverManager({
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 aria-label="Choose book cover image"
+                disabled={writesDisabled}
                 onChange={handleFile}
             />
 
@@ -157,7 +163,8 @@ export function BookCoverManager({
                 <Button
                     type="button"
                     variant="secondary"
-                    disabled={isPending}
+                    mutating
+                    disabled={coverLocked}
                     onClick={chooseCover}
                 >
                     {uploadCover.isPending
@@ -168,7 +175,8 @@ export function BookCoverManager({
                 <Button
                     type="button"
                     variant="secondary"
-                    disabled={isPending}
+                    mutating
+                    disabled={coverLocked}
                     onClick={handleOpenRemoveConfirmation}
                 >
                     {removeCover.isPending
@@ -191,6 +199,7 @@ export function BookCoverManager({
                 title="Remove custom cover"
                 confirmLabel="Remove Cover"
                 confirmVariant="danger"
+                mutating
                 onConfirm={handleRemove}
                 onCancel={handleCancelRemoveConfirmation}
             >

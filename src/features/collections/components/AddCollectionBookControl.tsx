@@ -728,6 +728,7 @@ export function AddCollectionBookControl() {
             <Button
                 type="button"
                 variant="primary"
+                mutating
                 disabled={disabled}
                 onClick={handleAdd}
             >

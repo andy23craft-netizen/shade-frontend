@@ -4,6 +4,8 @@ import type {
     LibrarySettingsRead,
     LibrarySettingsUpdate,
     LibrarySetupRead,
+    SiteReadOnlyRead,
+    SiteReadOnlyUpdate,
 } from './apiTypes'
 import type { ApiCallOptions } from './apiCallOptions'
 
@@ -22,6 +24,14 @@ export function createLibraryApi(client: ReturnType<typeof createApiClient>) {
         updateSettings: (request: LibrarySettingsUpdate, options: ApiCallOptions = {}): Promise<LibrarySettingsRead> =>
             client.requestJson<LibrarySettingsRead>('/library/settings', {
                 method: 'PATCH',
+                body: request,
+                ...options,
+            }),
+        getSiteReadOnly: (options: ApiCallOptions = {}): Promise<SiteReadOnlyRead> =>
+            client.getJson<SiteReadOnlyRead>('/library/site-read-only', options),
+        updateSiteReadOnly: (request: SiteReadOnlyUpdate, options: ApiCallOptions = {}): Promise<SiteReadOnlyRead> =>
+            client.requestJson<SiteReadOnlyRead>('/library/site-read-only', {
+                method: 'PUT',
                 body: request,
                 ...options,
             }),

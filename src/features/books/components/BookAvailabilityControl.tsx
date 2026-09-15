@@ -140,6 +140,7 @@ export function BookAvailabilityControl({
                     <Button
                         type="button"
                         variant="secondary"
+                        mutating
                         disabled={mutation.isPending || status === book.status}
                         onClick={submit}
                     >

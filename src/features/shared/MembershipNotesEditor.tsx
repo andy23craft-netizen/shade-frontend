@@ -69,7 +69,7 @@ export function MembershipNotesEditor({
                 />
             </Field>
             <div className="membership-notes-editor__actions">
-                <Button type="submit" variant="primary" disabled={pending}>
+                <Button type="submit" variant="primary" mutating disabled={pending}>
                     {pending ? 'Saving…' : 'Save Description'}
                 </Button>
                 <Button type="button" variant="secondary" disabled={pending} onClick={() => setEditing(false)}>

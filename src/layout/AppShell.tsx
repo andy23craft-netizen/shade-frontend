@@ -18,6 +18,8 @@ import { getLibraryBranding } from '../config/libraryBranding'
 import { DrawerNavMenu } from './DrawerNavMenu'
 import { AuthControl } from '../features/auth/AuthControl'
 import { useAuth } from '../features/auth/useAuth'
+import { SiteReadOnlyBanner } from '../features/siteReadOnly/SiteReadOnlyBanner'
+import { useSiteReadOnly } from '../features/siteReadOnly/useSiteReadOnly'
 
 interface RouteHandle {
     title?: string
@@ -27,6 +29,7 @@ const LAST_UPDATED = 'September 09, 2026'
 
 export function AppShell() {
     const { isAdmin } = useAuth()
+    const { writesDisabled } = useSiteReadOnly()
     const { data: versionData } = useVersion()
     const location = useLocation()
     const matches = useMatches()
@@ -76,10 +79,17 @@ export function AppShell() {
     }, [location.pathname])
 
     return (
-        <div className={`app-shell app-shell--${room}`} data-room={room} data-access-mode={isAdmin ? 'admin' : 'viewer'}>
+        <div
+            className={`app-shell app-shell--${room}`}
+            data-room={room}
+            data-access-mode={isAdmin ? 'admin' : 'viewer'}
+            data-site-read-only={writesDisabled ? 'true' : 'false'}
+        >
             <a className="skip-link" href="#main-content">
                 Skip to main content
             </a>
+
+            <SiteReadOnlyBanner />
 
             <header className="app-header">
                 <div className="app-header__inner">

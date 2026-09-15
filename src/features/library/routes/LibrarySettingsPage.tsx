@@ -6,6 +6,8 @@ import { useLibrarySettings, useUpdateLibrarySettings } from '../../../api/libra
 import { useShelves } from '../../../api/shelvesQueries'
 import { canDeleteShelf, formatShelfCommonNameForDisplay } from '../../shelves/shelfDisplay'
 import { HouseholdReadersSettings } from '../components/HouseholdReadersSettings'
+import { SiteReadOnlyToggle } from '../../siteReadOnly/SiteReadOnlyToggle'
+import { useSiteReadOnly } from '../../siteReadOnly/useSiteReadOnly'
 
 function equalIds(left: readonly string[], right: readonly string[]) {
     return left.length === right.length && [...left].sort().every((id, index) => id === [...right].sort()[index])
@@ -23,6 +25,7 @@ export function LibrarySettingsPage() {
 
 function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, shelves: NonNullable<ReturnType<typeof useShelves>['data']> }) {
     const save = useUpdateLibrarySettings()
+    const { writesDisabled } = useSiteReadOnly()
     const [draft, setDraft] = useState(confirmed)
     const [clientError, setClientError] = useState<string | null>(null)
     const [tbrPickerOpen, setTbrPickerOpen] = useState(false)
@@ -31,6 +34,7 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
 
     function submit(event: FormEvent) {
         event.preventDefault()
+        if (writesDisabled) return
         setClientError(null)
         save.reset()
         if (draft.reserved_shelf_id && draft.book_tbr_shelf_ids.includes(draft.reserved_shelf_id)) {
@@ -48,8 +52,9 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
     return (
         <section className="route-page library-settings-page">
             <header><p className="page-eyebrow">Manage Collection</p><h1 tabIndex={-1}>Library Settings</h1><p>Choose how this library handles circulation and special-purpose shelves.</p></header>
+            <SiteReadOnlyToggle />
             <form className="library-settings-form" onSubmit={submit}>
-                <fieldset className="library-settings-form__circulation" aria-describedby="circulation-help">
+                <fieldset className="library-settings-form__circulation" aria-describedby="circulation-help" disabled={writesDisabled}>
                     <legend>Circulation</legend>
                     <p id="circulation-help" className="field__help">This is one library-wide setting for books and albums. Turning it off prevents new loan actions; it does not delete loan history.</p>
                     <label className="library-settings-form__switch-label">
@@ -64,13 +69,14 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
                     </label>
                     {fieldError('enable_loans') ? <p className="field__error">{fieldError('enable_loans')}</p> : null}
                 </fieldset>
-                <fieldset className="library-settings-form__shelves" aria-describedby="tbr-help">
+                <fieldset className="library-settings-form__shelves" aria-describedby="tbr-help" disabled={writesDisabled}>
                     <legend>To Be Read shelves</legend>
                     <p id="tbr-help" className="field__help">Select any number of book shelves. Shelf identity is preserved if a shelf is renamed.</p>
                     <div className="library-settings-form__shelf-picker">
                         <Button
                             type="button"
                             variant="secondary"
+                            mutating
                             aria-expanded={tbrPickerOpen}
                             aria-controls="tbr-shelf-picker"
                             onClick={() => setTbrPickerOpen((open) => !open)}
@@ -83,17 +89,22 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
                     </div>
                     {fieldError('book_tbr_shelf_ids') ? <p className="field__error">{fieldError('book_tbr_shelf_ids')}</p> : null}
                 </fieldset>
-                <Field label="Reserved / will-call shelf" helpText="Optional. This shelf cannot also be a To Be Read shelf." error={fieldError('reserved_shelf_id') ?? clientError}>
-                    <select value={draft.reserved_shelf_id ?? ''} onChange={(event) => setDraft({ ...draft, reserved_shelf_id: event.target.value || null })}>
-                        <option value="">No Reserved shelf</option>
-                        {eligibleShelves.filter((shelf) => !draft.book_tbr_shelf_ids.includes(shelf.shelf_id)).map((shelf) => <option key={shelf.shelf_id} value={shelf.shelf_id}>{formatShelfCommonNameForDisplay(shelf.common_name)}</option>)}
-                    </select>
-                </Field>
-                <HouseholdReadersSettings />
+                <fieldset disabled={writesDisabled}>
+                    <Field label="Reserved / will-call shelf" helpText="Optional. This shelf cannot also be a To Be Read shelf." error={fieldError('reserved_shelf_id') ?? clientError}>
+                        <select value={draft.reserved_shelf_id ?? ''} onChange={(event) => setDraft({ ...draft, reserved_shelf_id: event.target.value || null })}>
+                            <option value="">No Reserved shelf</option>
+                            {eligibleShelves.filter((shelf) => !draft.book_tbr_shelf_ids.includes(shelf.shelf_id)).map((shelf) => <option key={shelf.shelf_id} value={shelf.shelf_id}>{formatShelfCommonNameForDisplay(shelf.common_name)}</option>)}
+                        </select>
+                    </Field>
+                    <HouseholdReadersSettings />
+                </fieldset>
                 {save.isError && !isApiError(save.error) ? <Alert variant="error" title="Settings were not saved">An unexpected error occurred. Your last confirmed settings are unchanged.</Alert> : null}
                 {save.isError && isApiError(save.error) && save.error.fieldErrors.length === 0 ? <Alert variant="error" title="Settings were not saved">{save.error.message} Your last confirmed settings are unchanged.</Alert> : null}
                 {save.isSuccess ? <Alert variant="success">Library settings saved.</Alert> : null}
-                <div className="library-settings-form__actions"><Button type="submit" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save settings'}</Button><Button variant="secondary" disabled={save.isPending} onClick={() => { setDraft(confirmed); setClientError(null); save.reset() }}>Reset</Button></div>
+                <div className="library-settings-form__actions">
+                    <Button type="submit" mutating disabled={save.isPending || writesDisabled}>{save.isPending ? 'Saving…' : 'Save settings'}</Button>
+                    <Button variant="secondary" disabled={save.isPending || writesDisabled} onClick={() => { setDraft(confirmed); setClientError(null); save.reset() }}>Reset</Button>
+                </div>
             </form>
         </section>
     )
