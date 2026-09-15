@@ -12,6 +12,21 @@ shapes remain stable aside from additive fields noted below (`work_id`, `borrowe
 (`/people`, per-role book contributor lists, album `person_ids`). Full schemas and authenticated paths live in the
 regenerated `openapi.json`.
 
+Tenant viewer and administrator access (shipped)
+
+- A shared tenant URL opens in viewer mode. With `X-Forwarded-Host` set to that tenant, viewers may use the public
+  catalog reads: book and album lists/details, cover/artwork retrieval, recent additions, collections, and wishlists.
+  Do not send a global
+  secret for viewer browsing. All other tenant routes, including every mutation and management/private read, return
+  **403** without administrator access.
+- Bootstrap an administrator password once with `POST /auth/bootstrap` and the legacy global Bearer secret. This is
+  deliberately a transition-only operator action; it is rejected after a password exists. Use
+  `POST /auth/sign-in` with `{ "password": "..." }` and the tenant host to obtain the short-lived Bearer token.
+  Store it only in memory, and discard it on `POST /auth/sign-out` or a 403 response.
+- `POST /auth/change-password` requires the current tenant admin token plus `current_password` and `new_password`.
+  It invalidates every outstanding admin token for that tenant. Credentials are tenant-bound and cannot authorize a
+  request using another tenant host. Failed sign-ins are rate-limited; show the generic failure without logging values.
+
 Catalog image search (shipped)
 
 - `POST /catalog/search-image` accepts one JPEG, PNG, or WebP multipart field named `image` (maximum 5 MB). It does
@@ -76,8 +91,9 @@ Album circulation (shipped)
 
 Album behavior and frontend integration
 
-- Authenticated album catalog routes: GET/POST `/albums`, GET/PATCH/DELETE `/albums/{album_id}`, plus lookup and
-  artwork routes below. Create returns 201; delete returns 204; read/update return `AlbumRead` (includes required
+- Viewer-accessible album reads are GET `/albums`, GET `/albums/{album_id}`, lookup, and artwork retrieval. POST,
+  PATCH, DELETE, and artwork writes require an administrator. Create returns 201; delete returns 204; read/update
+  return `AlbumRead` (includes required
   boolean `artwork_present`, plus `work_id` and
   `borrower_rating`).
 - Create requires `title` and nonempty ordered `person_ids`. Resolve/create people and genre catalog records
@@ -156,8 +172,8 @@ People/genre catalog behavior
 
 Regenerate clients from `openapi.json`. Album and work/feedback contract additions do not require activating every
 corresponding UI surface at once; runtime changes are needed only for the screens that consume those fields.
-Coordinate deployment with the matching frontend. Schema or seed changes follow `docs/technical-reference/DB-updates.md` (sync DEV into
-committed seeds, then recreate DEV databases from those seeds); there is no application migration runner.
+Coordinate deployment with the matching frontend. Schema or seed changes follow `docs/technical-reference/DB-updates.md`
+(host backup, stage SQL into `sql/`, recreate databases); there is no application migration runner.
 
 ## Household reader analytics (shipped)
 
@@ -195,49 +211,42 @@ loans; album loans are reported separately by `album_borrowing`.
 Wishlist membership supports both typed catalog kinds. Duplicate book or album add returns **409**; refresh membership
 instead of retrying as a new add. Different wishlists may contain the same catalog item.
 
-Fresh disposable development databases use the current schema via shared DDL plus tenant seeds. Schema-bearing
-releases follow `docs/technical-reference/DB-updates.md`: sync live DEV content into committed `sql/` seeds before breaking changes, then
-delete and recreate DEV databases from those seeds on deploy. Operator export/reconcile is not an application restore
-API, and bootstrap does not upgrade an existing database file in place.
+Fresh disposable development databases use shared DDL plus optional staged tenant seeds under `sql/`, or
+`make add-tenant` for empty schema-only DBs. Schema-bearing releases follow `docs/technical-reference/DB-updates.md`:
+host timestamped backups, manually stage SQL into `sql/`, then delete and recreate databases on deploy. There is no
+application restore API, and bootstrap does not upgrade an existing database file in place.
 
 Default local base: `http://127.0.0.1:8000` (server root; no `/api` prefix)
 
 ## Auth
 
-Opening a tenant library starts in **viewer mode**. Viewer mode needs no password or Bearer token for the
-backend-approved read-only catalog allowlist: normal catalog browse, search, filtering, sorting, approved item details,
-and cover/artwork display. It must never be treated as access to tenant management, private dashboard/loan/household
-state, or any mutation.
+Viewer mode is the default for a shared tenant URL. No Bearer credential is needed for `GET /books`,
+`GET /albums`, their lookup/detail/image reads, `GET /catalog/recent-additions`, and all read-only collection and
+wishlist routes. Those viewer requests still require `X-Forwarded-Host` for a valid tenant.
 
-Each tenant has its own administrator credential. The administrator lifecycle is:
+Every other business route requires a tenant-bound administrator Bearer credential and returns **403**
+`{"detail": "Administrator access is required"}` when it is missing, invalid, expired, or issued for another tenant.
+Obtain a credential through `POST /auth/sign-in` with `{ "password": "..." }`; it returns `access_token`,
+`token_type: "bearer"`, and `expires_at`. Send it as `Authorization: Bearer <access_token>` and retain it only in
+memory. `POST /auth/sign-out` is client-side invalidation: discard the token.
 
-- `POST /auth/bootstrap` is a one-time, operator-only setup route. It requires the existing deployment Bearer secret
-  and an `AdminSignIn` body (`{ "password": "…" }`), and returns **201** `AdminToken`. Do not expose this route or the
-  deployment secret in browser UI, URLs, diagnostics, analytics, or client logs.
-- `POST /auth/sign-in` is the browser sign-in route. It accepts `AdminSignIn` and returns **200** `AdminToken`:
-  `access_token`, integer Unix-seconds `expires_at`, and token type `bearer`.
-- Send an active administrator token only as `Authorization: Bearer <access_token>` for administrator-only routes.
-  Tokens are tenant-bound. Do not infer administrator access from a cached role, configured deployment secret, URL
-  value, or a credential obtained on another tenant host.
-- `POST /auth/change-password` requires the active administrator Bearer token and an `AdminPasswordChange` body with
-  `current_password` and `new_password`. It returns **204**. Frontends must not impose a password-length rule beyond
-  the backend response, so temporary operator-issued passwords remain usable during rollout.
-- `POST /auth/sign-out` returns **204**. Credentials are stateless, so clients sign out by discarding the token; there
-  is no refresh route or cookie-based session.
-
-Frontend credential handling: never persist the raw password. Keep an issued administrator token in
-`sessionStorage` only, so it survives reloads in the current browser tab but is discarded when that tab's browsing
-session ends. Also discard it on sign-out, expiry, password rotation, tenant change, and authorization failure.
-Discard or invalidate protected query/blob state at the same time. The token must never appear in a URL, persistent
-browser preference storage, diagnostic payload, analytics payload, or application log. Do not invent cross-tenant
-reuse, token refresh, or a second credential store.
+`POST /auth/change-password` requires the current admin token and `current_password` / `new_password`; it invalidates
+all current tokens for that tenant. `POST /auth/bootstrap` is a one-time compatibility-only operator endpoint: it
+requires `Authorization: Bearer <API_SECRET_KEY>` and refuses a tenant that already has an admin password. Do not use
+the shared API secret for ordinary frontend requests.
 
 Public infrastructure routes remain `GET /health`, `GET /ready`, `GET /version`, and FastAPI's generated docs/OpenAPI
 routes (`/docs`, `/redoc`, `/openapi.json`, `/docs/oauth2-redirect`). `GET /ready` is hostname-scoped; the others do
-not require tenant context. Use `GET /health` for startup reachability only (it does not touch the database), and use
-`GET /version` for the running API release string, not as a health probe. `GET /ready` failure returns **503** with
-`Retry-After: 1`; missing/unknown/empty tenant host context returns **400**. Browser code must not send the
-proxy-owned `X-Forwarded-Host` header.
+not require tenant context.
+
+There is no dedicated token-verification endpoint. Use `GET /health` for startup reachability only (unauthenticated;
+does not touch the database). Use `GET /ready` when the UI needs to know the database connection is usable; failure
+returns **503** with `Retry-After: 1`. Missing/unknown/empty tenant host context returns **400** (same strings as
+protected routes). OpenAPI currently under-documents those `/ready` failure codes; prefer this section and the
+error table. Use `GET /version` when the UI needs the running API release string (same value
+as `ci/VERSION` and OpenAPI `info.version`); do not treat it as a health probe. Learn whether credentials are accepted
+from the first administrator-only request you need (e.g., `GET /dashboard`); a **403** means administrator access is
+missing or invalid.
 
 ## CORS
 
@@ -267,7 +276,7 @@ context returns **400** `Invalid or unknown library host`; an explicitly empty h
 | Status | Meaning beyond the OpenAPI label |
 | --- | --- |
 | **400** | Malformed or empty GUID on book path `{book_id}` (GET / PATCH / DELETE / checkout / check-in / mark-read / mark-unread / availability / cover get/upload/delete / borrower-reviews); malformed or empty GUID on album path `{album_id}` (catalog / artwork / circulation / borrower-reviews); malformed or empty GUID on quote path `{quote_id}` (GET / PATCH / DELETE `/quotes/{quote_id}`); malformed or empty GUID on loan reads (`GET /loans/{id}` path, feedback PUT/DELETE, or `book_id` / `album_id` query); invalid `media_type`; blank album list filters (`search`, `artist`, `title`, `barcode`); invalid `sortBy` or `sortOrder` on `GET /books` or `GET /albums`; remaining path and query validation follows OpenAPI. |
-| **401** / **403** | Missing, expired, invalid, or no-longer-authorized administrator credential on an administrator-only route. Frontends must discard administrator state and return to viewer mode. |
+| **403** | Missing or invalid Bearer token |
 | **404** | Missing or deleted album on GET / PATCH / DELETE / artwork / circulation / borrower-reviews (`"Album not found"`); no local album artwork on `GET /albums/{album_id}/artwork` (`"Album artwork not found"`); unknown Shade item on `POST /catalog/resolve-code` (`"Physical item not found"`); remaining missing-resource behavior follows OpenAPI. |
 | **409** | Checkout when already on loan (book or album); check-in with no active loan (book or album); loan feedback PUT when the loan is still active (`"Feedback requires a returned loan"`); artwork refetch conflict when owner upload would be replaced without `replace_owner_upload`, or when the album's MusicBrainz Release ID changes during refetch; duplicate catalog/membership cases follow OpenAPI. |
 | **412** | Checkout when loans are disabled or an item is display-only; shelf/wishlist placement guards; and media-type conflicts. Exact response details follow OpenAPI. |
@@ -536,7 +545,9 @@ work identity has not been confirmed). Manual merge/split/reassignment lives und
 exclude the current book and prefer status=available when presenting a checkout substitute.
 Book covers
 
-Cover routes are authenticated book routes. OpenAPI documents GET / PUT / DELETE /books/{book_id}/cover and the
+multipart upload body; this section covers FE semantics OpenAPI does not fully express.
+`GET /books/{book_id}/cover` is viewer-accessible; PUT and DELETE require an administrator. OpenAPI documents the
+multipart upload body; this section covers FE semantics OpenAPI does not fully express.
 multipart upload body; this section covers FE semantics OpenAPI does not fully express.
 
 BookRead.cover_image_path is an optional filename (for example {book_id}.webp), not a URL and not a
@@ -578,8 +589,8 @@ resolves to the normal 404 cover state. `GET /books/{book_id}/cover` releases it
 immutable book metadata, before file/provider work. External fetches use a shared asynchronous client,
 `COVER_TIMEOUT_SECONDS` (default 3), and `COVER_MAX_CONCURRENCY` (default 5); application shutdown closes the client.
 
-Browser display cannot put Authorization on an <img src>. Use authenticated fetch to
-GET /books/{book_id}/cover:
+Browser display can use `GET /books/{book_id}/cover` directly in viewer mode. An authenticated fetch is only needed
+when the application has a separate image-handling reason:
 
     200 → response.blob() and an object URL for <img>
 
@@ -843,7 +854,7 @@ still requires normalized author_ids. Flat illustrator / editor text fields are 
 
 Album metadata and artwork lookup
 
-`GET /albums/lookup` is an authenticated, non-mutating lookup. Send exactly one of `barcode` (spaces and hyphens
+`GET /albums/lookup` is a viewer-accessible, non-mutating lookup. Send exactly one of `barcode` (spaces and hyphens
 are ignored) or `discogs_release_id`. Discogs is preferred with or without `DISCOGS_TOKEN` (the token raises the
 rate limit; public Discogs reads still work without it). For barcode lookups, an ordinary Discogs miss falls
 through to MusicBrainz; Discogs provider failures/timeouts on a barcode also fall through. Explicit Discogs
@@ -861,8 +872,8 @@ The add-album flow is: scan barcode → lookup → resolve each textual draft ar
 `/genres` → let the user edit the draft/tracks → submit normalized `person_ids` and `genre_ids` to `POST /albums`.
 Lookup never assigns a shelf and never persists the draft.
 
-Album reads expose `artwork_present`. Authenticated `GET`, `PUT`, and `DELETE /albums/{album_id}/artwork` serve,
-replace, and remove private local artwork. Missing artwork returns 404 `Album artwork not found`.
+Album reads expose `artwork_present`. `GET /albums/{album_id}/artwork` is viewer-accessible; `PUT` and `DELETE`
+require an administrator. Missing artwork returns 404 `Album artwork not found`.
 `POST /albums/{album_id}/artwork/refetch` uses only the album's exact MusicBrainz Release ID and Cover Art Archive
 front images (never Discogs artwork). It prefers an approved CAA front image, otherwise the first front image, and
 falls back to the release-group CAA listing when the release has no front. Albums without a usable MusicBrainz
@@ -1014,7 +1025,8 @@ descending, then book id ascending. Optional skip / take pagination follows the 
 and total remains the unpaginated matching count.
 Wishlists
 
-Wishlist routes are authenticated. There is no soft-delete for wishlists. GET /wishlists returns wishlists newest
+Wishlist reads are viewer-accessible; every wishlist write requires an administrator. There is no soft-delete for
+wishlists. GET /wishlists returns wishlists newest
 first by created_date, then wishlist_id, both descending. One wishlist can contain both books and albums.
 
 GET /wishlists/{wishlist_id}/items is the mixed membership list. It returns `{ items, total }`; every row contains
@@ -1059,7 +1071,8 @@ valid GUID; 404 when the GUID is well-formed but unknown. Wrong-media and cross-
 Deleting a catalog book removes all of its wishlist memberships.
 Collections
 
-Collection routes are authenticated. There is no soft-delete for collections. GET /collections returns collections
+Collection reads are viewer-accessible; every collection write requires an administrator. There is no soft-delete for
+collections. GET /collections returns collections
 newest first by created_date, then collection_id, both descending. `CollectionRead.media_type` is null for an empty
 collection, `book` after its first book membership, or `album` after its first album membership. It is derived rather
 than stored. A collection cannot mix media: adding the opposite type returns 412.
@@ -1109,8 +1122,20 @@ POST accepts `album_id`, optional positive `order_num`, and optional notes. It r
 `collection_album_id` updates order and/or notes, supports JSON null note clearing, and atomically compacts ordering.
 DELETE removes the membership and compacts the remaining album order. None of these operations changes album shelf,
 wishlist, deletion, played, or circulation state.
-There is no browser backup endpoint. Schema updates and content backups are operator-owned and follow
-`docs/technical-reference/DB-updates.md` only.
+There is no browser backup endpoint. Manual backup is host CLI (`make backup`). Schema updates and content backups
+follow `docs/technical-reference/DB-updates.md` only.
+
+## Site-wide read-only mode
+
+During schema cutover, the Shade (`andy`) admin can freeze all tenants:
+
+* `GET /library/site-read-only` → `{ "enabled": true|false }` (authenticated)
+* `PUT /library/site-read-only` with `{ "enabled": true|false }` -- **Shade admin only** (tenant `andy` /
+  hostname `shade`); other tenants receive **403**
+
+While enabled, any request that would change tenant database files or book/album cover trees fails with **HTTP 530**
+`{"detail": "Site is in read-only mode"}`. Non-mutating GETs remain allowed. Treat **530** as "site is read-only",
+not a generic server error. The flag survives process restart (`DB_DIR/site-read-only`).
 
 Frontend vs API ownership
 Responsibility	Owner
@@ -1124,9 +1149,9 @@ People catalog management UI (create / edit / delete unreferenced people)	Fronte
 Shelf catalog management UI (create / rename / edit metadata / delete empty shelves)	Frontend
 Bulk selection and Move to Shelf interaction; send explicit selected book IDs in one bulk request	Frontend
 Build Mode scan queue, review UI, Ready/Problem row state, and session persistence	Frontend
-Cover display via authenticated GET /books/{book_id}/cover and blob object URL	Frontend
+Cover display via public GET /books/{book_id}/cover	Frontend
 Cover upload/delete UI (PUT/DELETE multipart file; do not PATCH cover_image_path)	Frontend
-Album artwork display via authenticated GET /albums/{album_id}/artwork	Frontend
+Album artwork display via public GET /albums/{album_id}/artwork	Frontend
 Album artwork upload/delete/refetch UI	Frontend
 People/genre picker and resolution UI for album forms	Frontend
 Wishlist list/create/add UI; create unshelved catalog rows before add-to-wishlist; mixed items via

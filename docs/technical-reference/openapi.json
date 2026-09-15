@@ -27,7 +27,7 @@
         "properties": {
           "password": {
             "maxLength": 1024,
-            "minLength": 12,
+            "minLength": 1,
             "title": "Password",
             "type": "string"
           }
@@ -5977,6 +5977,32 @@
         "title": "ShelfUpdate",
         "type": "object"
       },
+      "SiteReadOnlyRead": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "SiteReadOnlyRead",
+        "type": "object"
+      },
+      "SiteReadOnlyUpdate": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "SiteReadOnlyUpdate",
+        "type": "object"
+      },
       "SplitWorkRequest": {
         "properties": {
           "canonical_title": {
@@ -6696,7 +6722,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.9.1"
+    "version": "1.11.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -15022,6 +15048,142 @@
           }
         ],
         "summary": "Complete Setup",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/library/site-read-only": {
+      "get": {
+        "operationId": "get_site_read_only_library_site_read_only_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteReadOnlyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get site-wide read-only mode status",
+        "tags": [
+          "library"
+        ]
+      },
+      "put": {
+        "operationId": "put_site_read_only_library_site_read_only_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteReadOnlyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteReadOnlyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set site-wide read-only mode (Shade admin only)",
         "tags": [
           "library"
         ]
