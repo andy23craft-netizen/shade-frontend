@@ -416,7 +416,7 @@ export function MarkReadPage() {
         ) === true
         : book.is_read
 
-    if (isAlreadyRead) {
+    if (isAlreadyRead && !household.householdEnabled) {
         return (
             <section className="route-page">
                 <div className="book-details__topbar">
@@ -498,6 +498,7 @@ export function MarkReadPage() {
             ) : null}
 
             <form onSubmit={handleSubmit}>
+                {household.householdEnabled && isAlreadyRead ? <Alert variant="warning" title="This reader has already marked the book as read">Choose another household reader to record their separate reading completion.</Alert> : null}
                 {household.householdEnabled ? <Field label="Household reader" helpText="Choose whose reading completion you are recording."><select value={readerProfileId || household.activeProfile?.profile_id || ''} disabled={markBookRead.isPending} onChange={(event) => setReaderProfileId(event.target.value)}>{household.profiles.map((profile) => <option key={profile.profile_id} value={profile.profile_id}>{profile.display_name}{profile.is_owner ? ' (Owner)' : ''}</option>)}</select></Field> : null}
                 <Field
                     id={FIELD_IDS.completion_date}
