@@ -287,6 +287,7 @@ export function ShelfShowcase({
                     <Button
                         type="button"
                         variant="secondary"
+                        mutating
                         disabled={mutationBusy}
                         onClick={onEdit}
                     >
@@ -297,6 +298,7 @@ export function ShelfShowcase({
                         <Button
                             type="button"
                             variant="danger"
+                            mutating
                             disabled={mutationBusy}
                             onClick={onDelete}
                         >

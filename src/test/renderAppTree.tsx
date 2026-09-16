@@ -193,6 +193,15 @@ export function mockReachableApi() {
                     })
                 }
 
+                if (pathname === '/library/site-read-only') {
+                    return new Response(JSON.stringify({
+                        enabled: false,
+                    }), {
+                        status: 200,
+                        headers: { 'Content-Type': 'application/json' },
+                    })
+                }
+
                 if (pathname === '/categories') {
                     return new Response(
                         JSON.stringify([]),

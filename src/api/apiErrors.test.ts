@@ -7,6 +7,7 @@ import {
     ApiError,
     formatApiQueryError,
     isApiError,
+    isSiteReadOnlyError,
     isUnauthorizedQueryError,
     mapValidationFieldErrors,
 } from './apiErrors'
@@ -204,6 +205,40 @@ describe('isUnauthorizedQueryError', () => {
         expect(
             isUnauthorizedQueryError(
                 new Error('Network failure'),
+            ),
+        ).toBe(false)
+    })
+})
+
+describe('isSiteReadOnlyError', () => {
+    it('detects site read-only ApiError values', () => {
+        expect(
+            isSiteReadOnlyError(
+                new ApiError({
+                    kind: 'site_read_only',
+                    status: 530,
+                    message: 'Site is in read-only mode.',
+                }),
+            ),
+        ).toBe(true)
+
+        expect(
+            formatApiQueryError(
+                new ApiError({
+                    kind: 'site_read_only',
+                    status: 530,
+                    message: 'ignored detail path',
+                }),
+            ),
+        ).toBe('Site is in read-only mode.')
+
+        expect(
+            isSiteReadOnlyError(
+                new ApiError({
+                    kind: 'server',
+                    status: 500,
+                    message: 'Server failure.',
+                }),
             ),
         ).toBe(false)
     })

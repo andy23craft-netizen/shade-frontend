@@ -56,13 +56,14 @@ export function BulkAvailabilityControl({ selectedBookIds, onSuccess }: {
                 <option value="">Choose status</option>
                 {OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
-            <Button type="button" variant="secondary" disabled={!status || selectedBookIds.length === 0} onClick={() => setOpen(true)}>
+            <Button type="button" variant="secondary" mutating disabled={!status || selectedBookIds.length === 0} onClick={() => setOpen(true)}>
                 Set availability
             </Button>
             <ConfirmationDialog
                 open={open}
                 title="Confirm availability change"
                 confirmLabel={mutation.isPending ? 'Updating…' : 'Update books'}
+                mutating
                 confirmDisabled={mutation.isPending}
                 cancelDisabled={mutation.isPending}
                 onConfirm={confirm}

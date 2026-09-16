@@ -974,7 +974,7 @@ export function NewBookPage() {
                         ))}
                     </ul>
                     <div>
-                        <Button type="button" variant="primary" onClick={() => create(pendingDuplicateCreate)}>
+                        <Button type="button" variant="primary" mutating onClick={() => create(pendingDuplicateCreate)}>
                             Add another copy
                         </Button>
                         <Button type="button" variant="secondary" onClick={() => setPendingDuplicateCreate(null)}>

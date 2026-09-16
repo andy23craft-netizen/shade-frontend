@@ -1893,6 +1893,7 @@ export function BulkAddPage() {
                         <Button
                             type="submit"
                             variant="primary"
+                            mutating
                         >
                             Add ISBN
                         </Button>
@@ -2705,6 +2706,7 @@ export function BulkAddPage() {
                         <Button
                             type="button"
                             variant="primary"
+                            mutating
                             disabled={
                                 isSaving ||
                                 saveEligibleItems.length ===
@@ -2764,6 +2766,7 @@ export function BulkAddPage() {
                 confirmLabel="Move books"
                 cancelLabel="No"
                 confirmVariant="primary"
+                mutating
                 onConfirm={confirmRebalance}
                 onCancel={cancelRebalance}
             >

@@ -237,6 +237,7 @@ function WishlistMembershipRow({
             <Button
                 type="button"
                 variant="danger"
+                mutating
                 disabled={removeMembership.isPending}
                 onClick={() => setConfirmRemove(true)}
             >
@@ -249,6 +250,7 @@ function WishlistMembershipRow({
                 confirmLabel={removeMembership.isPending ? 'Removing…' : 'Remove from Wishlist'}
                 cancelLabel="Cancel"
                 confirmVariant="danger"
+                mutating
                 onConfirm={() => {
                     if (removeMembership.isPending) return
                     setRemoveError(null)
@@ -373,6 +375,7 @@ function WishlistSection({
                     <Button
                         type="button"
                         variant="danger"
+                        mutating
                         disabled={deletePending}
                         onClick={() => {
                             onDelete(wishlist)
@@ -435,7 +438,7 @@ function WishlistSection({
                         />
                     </Field>
                     <div className="wishlist-card__actions">
-                        <Button type="submit" variant="primary" disabled={updateWishlist.isPending}>
+                        <Button type="submit" variant="primary" mutating disabled={updateWishlist.isPending}>
                             {updateWishlist.isPending ? 'Saving…' : 'Save Wishlist'}
                         </Button>
                         <Button type="button" variant="secondary" disabled={updateWishlist.isPending} onClick={() => setEditing(false)}>
@@ -697,6 +700,7 @@ function CreateWishlistForm() {
             <Button
                 type="submit"
                 variant="primary"
+                mutating
                 disabled={createWishlist.isPending}
             >
                 {createWishlist.isPending
@@ -902,6 +906,7 @@ export function WishlistsPage() {
                 }
                 cancelLabel="Cancel"
                 confirmVariant="danger"
+                mutating
                 onConfirm={handleConfirmDelete}
                 onCancel={() => {
                     if (deleteWishlist.isPending) {

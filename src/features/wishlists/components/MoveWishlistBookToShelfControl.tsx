@@ -394,6 +394,7 @@ export function MoveWishlistBookToShelfControl({
                 <Button
                     type="submit"
                     variant="primary"
+                    mutating
                     disabled={isDisabled}
                 >
                     {moveBook.isPending
@@ -409,6 +410,7 @@ export function MoveWishlistBookToShelfControl({
                 title="Add book to collection?"
                 confirmLabel="Add to Collection"
                 confirmVariant="primary"
+                mutating
                 onCancel={() => {
                     setConfirmOpen(false)
                 }}

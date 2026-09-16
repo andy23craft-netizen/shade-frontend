@@ -545,6 +545,7 @@ export function MarkReadPage() {
                     <Button
                         type="submit"
                         variant="primary"
+                        mutating
                         disabled={markBookRead.isPending}
                     >
                         {markBookRead.isPending
@@ -566,6 +567,7 @@ export function MarkReadPage() {
                 title="Confirm reading completion"
                 confirmLabel="Mark Read"
                 confirmVariant="primary"
+                mutating
                 onConfirm={handleConfirm}
                 onCancel={handleCancelConfirmation}
             >

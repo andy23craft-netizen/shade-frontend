@@ -9,6 +9,7 @@ export interface ApiClientOptions {
     apiBaseUrl: string
     getToken?: () => string | null
     onUnauthorized?: () => void
+    onSiteReadOnly?: () => void
     onRequestFailure?: (
         error: ApiError,
     ) => void
@@ -77,6 +78,7 @@ export function createApiClient({
                                     apiBaseUrl,
                                     getToken,
                                     onUnauthorized,
+                                    onSiteReadOnly,
                                     onRequestFailure,
                                     timeoutMs = 10000,
                                 }: ApiClientOptions) {
@@ -211,6 +213,26 @@ export function createApiClient({
             if (!response.ok) {
                 const errorResponse =
                     await parseErrorResponse(response)
+
+                if (response.status === 530) {
+                    try {
+                        onSiteReadOnly?.()
+                    } catch {
+                        // Read-only re-skin must never mask the original error.
+                    }
+
+                    throwRequestFailure(
+                        new ApiError({
+                            kind: 'site_read_only',
+                            status: 530,
+                            message:
+                                errorResponse.detail ??
+                                'Site is in read-only mode.',
+                            detail:
+                                errorResponse.detail,
+                        }),
+                    )
+                }
 
                 const kind =
                     response.status === 422

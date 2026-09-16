@@ -11,6 +11,8 @@ export interface ConfirmationDialogProps {
   confirmVariant?: 'primary' | 'danger'
   confirmDisabled?: boolean
   cancelDisabled?: boolean
+  /** When true, disable confirm while site-wide read-only is on. */
+  mutating?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -34,6 +36,7 @@ export function ConfirmationDialog({
                                      confirmVariant = 'danger',
                                      confirmDisabled = false,
                                      cancelDisabled = false,
+                                     mutating = false,
                                      onConfirm,
                                      onCancel,
                                    }: ConfirmationDialogProps) {
@@ -160,6 +163,7 @@ export function ConfirmationDialog({
           <Button
               variant={confirmVariant}
               type="button"
+              mutating={mutating}
               onClick={onConfirm}
               disabled={confirmDisabled}
           >

@@ -698,6 +698,7 @@ export function AddBookToCollectionDialog({
                                     <Button
                                         type="submit"
                                         variant="primary"
+                                        mutating
                                         disabled={
                                             createCollection.isPending
                                         }
@@ -801,6 +802,7 @@ export function AddBookToCollectionDialog({
                             <Button
                                 type="submit"
                                 variant="primary"
+                                mutating
                                 disabled={
                                     addCollectionBook.isPending
                                 }

@@ -579,6 +579,7 @@ export function ReadingEditPage() {
                     <Button
                         type="submit"
                         variant="primary"
+                        mutating
                         disabled={updateBook.isPending}
                     >
                         {updateBook.isPending
@@ -600,6 +601,7 @@ export function ReadingEditPage() {
                 title="Confirm reading changes"
                 confirmLabel="Save Reading"
                 confirmVariant="primary"
+                mutating
                 onConfirm={handleConfirm}
                 onCancel={handleCancelConfirmation}
             >

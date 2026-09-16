@@ -410,7 +410,7 @@ export function CheckinForm({
 
                     {feedbackError ? <>
                         <p>{feedbackError}</p>
-                        <Button onClick={saveOptionalReview} disabled={putFeedback.isPending}>
+                        <Button mutating onClick={saveOptionalReview} disabled={putFeedback.isPending}>
                             {putFeedback.isPending ? 'Saving review…' : 'Retry review'}
                         </Button>
                     </> : null}
@@ -538,6 +538,7 @@ export function CheckinForm({
                     <Button
                         type="submit"
                         variant="primary"
+                        mutating
                         disabled={
                             checkinBook.isPending
                             || checkinComplete
@@ -568,6 +569,7 @@ export function CheckinForm({
                 open={isConfirmationOpen}
                 title="Confirm check-in"
                 confirmLabel="Confirm check-in"
+                mutating
                 onConfirm={handleConfirmCheckin}
                 onCancel={handleCancelCheckin}
             >

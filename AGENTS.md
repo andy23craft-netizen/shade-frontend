@@ -1,40 +1,47 @@
 # Agents.md: LLM Project Context
 
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
-operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-11 --
+operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-15 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
-other LLM prompt or agents guide (`docs/full-project-context.md` is a slim ChatGPT pack, not required here). Attach
+other LLM prompt or agents guide (`docs/full-project-context.md` is a standalone ChatGPT pack for chats without repo
+access; not required when this file is already loaded). Attach
 product tickets, OpenAPI, and other `docs/` references only when the current task needs them. Inspect the current
 repository before making changes because the code may have changed since this document was written. A user's explicit
 request takes precedence over general guidance here.
 
 ## Project Summary
 
-Shade is a browser UI for a personal home-library FastAPI backend. Checked-in OpenAPI `info.version` is **1.3.0**
-(LibraryV2); `API-for-FE.md` still labels the contract **1.2.8** in places -- prefer OpenAPI when versions disagree,
-and treat that prose drift as a docs blocker rather than inventing semantics. Frontend package version is currently
-**1.9.9**. The live product shell is room-based: Home (`/`) chooses Reading Room or Listening Room; shared Manage /
-Collections / Wishlists act as hallway spaces; Reading and Listening each have their own dashboard and loans routes
-(legacy `/dashboard` and `/loans` redirect into the Reading Room). Prefer `src/routes/routes.tsx` and
-`routeMetadata.ts` over any stale path prose elsewhere in this file.
+Shade is a browser UI for a personal home-library FastAPI backend. Checked-in OpenAPI `info.version` is **1.11.0**
+(LibraryV2). Prefer that OpenAPI version for path/schema identity. Prefer `API-for-FE.md` for behavioral rules OpenAPI
+under-documents (viewer vs admin, CORS/tenant host, HTTP **530**, Home discovery query choices, flag/summary
+semantics). When `API-for-FE.md` headers still say **1.2.8** while OpenAPI is **1.11.0**, treat that as
+**API-for-FE prose drift**, not a third contract version -- do not invent semantics to reconcile them. Frontend
+package version is currently **1.10.0**. The live product shell is room-based: Home (`/`) chooses Reading Room or
+Listening Room; shared Manage / Collections / Wishlists act as hallway spaces; Reading and Listening each have their
+own dashboard and loans routes (legacy `/dashboard` and `/loans` redirect into the Reading Room). Prefer
+`src/routes/routes.tsx` and `routeMetadata.ts` over any stale path prose elsewhere in this file.
 
 Current functionality includes:
 
-- Application shell, shared UI primitives, runtime config, build-time Bearer auth, and typed OpenAPI + React Query
-  server state (mutation invalidation of lists, detail, dashboard, and loans on checkout/check-in; bulk shelf-move
-  also invalidates books/shelf/dashboard caches). `createApi()` aggregates books, loans, shelves, categories,
-  dashboard, health, version, wishlists, collections, albums, artists, and genres; hooks also construct
-  `catalogApi`, `libraryApi`, `quotesApi`, `worksApi`, and `authorsApi` (people) clients directly.
+- Application shell, shared UI primitives, runtime config, viewer/admin access (`AuthProvider` / `AuthControl` /
+  `RequireAdmin`), and typed OpenAPI + React Query server state (mutation invalidation of lists, detail, dashboard,
+  and loans on checkout/check-in; bulk shelf-move also invalidates books/shelf/dashboard caches). `createApi()`
+  aggregates books, loans, shelves, categories, dashboard, health, version, wishlists, collections, albums, artists,
+  and genres; hooks also construct `catalogApi`, `libraryApi`, `quotesApi`, `worksApi`, `authorsApi` (people), and
+  `householdProfilesApi` clients directly.
 - Diagnostics via `createDiagnosticReporter` from `RuntimeConfig.diagnostics` + `APP_VERSION` (from `package.json`
-  `version`), wired through `RootErrorBoundary`, `AppProviders`, `ConnectionProvider`, and `apiClient`
-  `onRequestFailure`; allowlisted/redacted via `assertSafeApiDiagnostic`; defaults disabled in `public/config.js`.
+  `version`), wired through `RootErrorBoundary`, `AppProviders`, `AuthProvider`, and `apiClient` `onRequestFailure`;
+  allowlisted/redacted via `assertSafeApiDiagnostic`; defaults disabled in `public/config.js`.
 - Discovery Home on `/` (`HomePage`): room chooser (Reading / Listening imagery), library-branded hero, featured
   category drawers (`useDashboardBreakdowns` + `useCategories` via `homeDiscoveryModel`), mixed New Additions
   (`useRecentAdditions` / `GET /catalog/recent-additions`), New Releases (books + albums), Current Reading, Staff
   Picks (Collections named "Staff Picks"), and Home quotes from `useQuotes` (`GET /quotes`) with built-in
-  `homeQuotes` fallback when the API list is empty/disabled/unavailable. About library-information content lives at
-  `/about` (`AboutPage` + `CatalogGuide`). Brand image in `AppShell` recovers to `/` (Home). Home hides the header
-  nav; About is reachable from Home, not as a primary-nav item.
+  `homeQuotes` fallback when the API list is empty/disabled/unavailable. **Contract note:** `API-for-FE.md`
+  recommends Home New Additions via `GET /books?sortBy=creationDate&sortOrder=desc` and says not to use
+  `/catalog/recent-additions` there; the SPA still uses `useRecentAdditions` -- do not silently switch without an
+  explicit product decision. About library-information content lives at `/about` (`AboutPage` + `CatalogGuide`).
+  Brand image in `AppShell` recovers to `/` (Home). Home hides the header nav; About is reachable from Home, not as
+  a primary-nav item.
 - Room-aware primary navigation (`AppShell` / `DrawerNavMenu`): Reading Room (`/reading-room`, `/books*`, `/stash`,
   `/shelves`, `/reading-room/*`) and Listening Room (`/listening-room`, `/albums*`, `/listening-room/*`) each show
   Dashboard, a Collection drawer, and a direct Loans link (there is no Circulation drawer). Collection includes
@@ -45,14 +52,19 @@ Current functionality includes:
   (`/library/setup`), Add Book, Bulk Add books, Shelves, Library Settings, Quote Library, Add Album, and Bulk Add
   Albums -- not Add Book and Shelves only.
 - Reading Dashboard on `/reading-room/dashboard` (`DashboardPage`; legacy `/dashboard` redirects here): desk/paper
-  panels for summary metrics, breakdowns, and incomplete-metadata healing deep links into Books cleanup mode
-  (`/books?cleanup_field=`). Listening Dashboard on `/listening-room/dashboard` (`ListeningDashboardPage`). Display
-  API numbers only; do not combine book and album dashboard totals; null averages as "Not enough data".
+  panels for summary metrics, breakdowns, incomplete-metadata healing deep links into Books cleanup mode
+  (`/books?cleanup_field=`), Needs Reshelving via `useFlaggedBooks` / `GET /dashboard/flagged-books`, and household
+  `reader_analytics` when present. Listening Dashboard on `/listening-room/dashboard` (`ListeningDashboardPage`)
+  likewise surfaces per-reader listening analytics. Display API numbers only; do not combine book and album
+  dashboard totals; null averages as "Not enough data".
 - Book browse/detail (`/books`, `/books/:bookId`) with infinite scroll, URL-backed multi-`category_id` (AND) /
   author / title / ISBN / `shelf_name` / `is_read` filtering, optional `cleanup_field` mode, path aliases
   `/books/category/:categorySlug` and `/books/shelf/:shelfToken`, bulk selection / atomic bulk move-to-shelf, and
-  Build Mode bulk add at `/books/bulk-add`. Category vocabulary from `GET /categories`. Do not invent page-local
-  filter stacks or hard-coded taxonomy; frontend people/category catalog admin remains out of V1 beyond inline create.
+  Build Mode bulk add at `/books/bulk-add`. Category vocabulary from `GET /categories` (API also ships category
+  create/update/delete; SPA has hooks plus inline create/update on forms -- no dedicated Categories admin page).
+  Book Details also ships Needs Reshelving flag toggles (`POST /books/{book_id}/flag`) and provider summary refresh
+  (`BookProviderSummary` / `POST /books/{book_id}/summary/refresh`). Do not invent page-local filter stacks or
+  hard-coded taxonomy.
 - Book create/edit via `BookForm` / `bookFormModel` / `bookEditModel` with people pickers: load/create via
   `authorsApi` against **`/people`** (SPA aliases `AuthorRead` = `PersonRead`); submit ordered `author_ids` plus
   optional `illustrator_ids` / `editor_ids` / `translator_ids`. Reads expose `BookRead.authors` /
@@ -67,29 +79,34 @@ Current functionality includes:
   media type. Camera/hardware scanning covers book create, album create/bulk, collection jump, and catalog image
   search -- not checkout-only capture.
 - OCR catalog image search at `/catalog/image-search` (`CatalogImageSearchPage` / `useCatalogImageSearch` /
-  `POST /catalog/search-image`). FEAT-01 is implemented in-tree; ticket acceptance criteria still await opt-in live
-  API validation.
+  `POST /catalog/search-image`) is implemented in-tree.
 - Book stash UI at `/stash` (`StashPage`) via `POST /books/bulk/stash` and `POST /books/bulk/apply-stash`. Library
-  setup/settings at `/library/setup` and `/library/settings`. Quote Library CRUD/reorder/restore at `/quotes`.
+  setup/settings at `/library/setup` and `/library/settings` (including household readers via
+  `HouseholdReadersSettings` / `/household-profiles` and `ActiveReaderSelector`). Quote Library CRUD/reorder/restore
+  at `/quotes`.
 - Checkout on book/album details via dedicated lifecycle POSTs; check-in requires rating 1--5. Reading loans at
   `/reading-room/loans` (`LoansPage`); album loans at `/listening-room/loans` (`AlbumLoansPage`). Legacy `/checkout`
   and `/checkin` are compatibility redirects (`/checkin` → `/reading-room/loans`). Mark-read remains
-  `POST /books/{book_id}/mark-read`; `POST /books/{book_id}/mark-unread` and `useMarkBookUnread` exist in the API
-  layer but have no product UI yet -- do not invent a mark-unread screen without a ticket.
+  `POST /books/{book_id}/mark-read` (optional `profile_id` when household mode is on);
+  `POST /books/{book_id}/mark-unread` and `useMarkBookUnread` exist in the API layer but have no product UI yet -- do
+  not invent a mark-unread screen without a ticket.
 - Wishlists, Collections, shelves, covers/artwork, diagnostics, CI, Podman preview image, and versioned release
   tarballs remain as previously documented (extend existing surfaces; do not invent parallel clients).
+- Contract available but **not** shipped in the SPA: site-wide read-only (`GET`/`PUT /library/site-read-only` + HTTP
+  **530** handling) and change-password UI (`POST /auth/change-password` types exist; no product screen). Do not invent
+  those UIs without a ticket.
 - Quality gate: Playwright with axe checks, Vitest V8 coverage floors currently **20%** statements/branches/
   functions/lines in `vite.config.ts` (not the older 87/80/92/87 floors), and Playwright in `make check`. Product
   routes are fully implemented (no `RoutePlaceholder` feature pages).
 
 Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial mark-read, mark-played, cover
-upload/delete, availability, stash/apply-stash, or album artwork upload/delete/refetch with generic `PATCH`. Sequenced
-feature tickets live under `docs/tickets/` while open and are removed after completion. Open sequenced work currently
-includes FEAT-01 (OCR catalog search; implemented, awaiting opt-in live API validation). Informal UI feedback notes
-are not sequenced build tickets -- treat them as notes unless the user asks to implement items from them. When the
-directory holds only `.gitkeep` and/or informal notes, wait for an explicit request rather than inventing the next
-feature. Do not invent undocumented routes, realtime channels, or lifecycle shortcuts. Never invent a second telemetry
-transport or fabricate correlation IDs.
+upload/delete, availability, stash/apply-stash, book flag, book summary refresh, or album artwork
+upload/delete/refetch with generic `PATCH`. Sequenced feature tickets live under `docs/tickets/` while open and are
+removed after completion. Current open ticket files include physical-shelf / map workflow tickets (Feat-04 through
+Feat-15) and FEAT-01 better-backups -- inspect `docs/tickets/` before inventing the next feature. Informal UI feedback
+notes are not sequenced build tickets unless the user asks to implement items from them. When the directory holds only
+`.gitkeep` and/or informal notes, wait for an explicit request. Do not invent undocumented routes, realtime channels,
+or lifecycle shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
 
 Product intent, sequencing, and acceptance criteria live under `docs/`. Prefer the current sequenced ticket (when one
 exists), then the product requirements docs when deciding what to build next. Album catalog UI is shipped; do not
@@ -129,27 +146,33 @@ The backend is a separate repository. Default local API base is `http://127.0.0.
 these as complementary sources of truth:
 
 - `docs/technical-reference/openapi.json`: paths, methods, status codes, request/response schemas, enums, nullability
-  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.3.0`). Prefer generating or fixture-checking TypeScript models
+  (OpenAPI 3.1; LibraryV2; currently `info.version` `1.11.0`). Prefer generating or fixture-checking TypeScript models
   from this file.
-- `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (auth, CORS, hostname
-  tenant routing, error meanings, lifecycle rules, ISBN quirks, album lookup/artwork/circulation, placement/stash,
-  availability/TBR/Reserved, `/library` setup/settings, `/quotes`, `/people`, `/works` corrections, `/catalog`
-  resolve/recent-additions/search-image, loan feedback, mixed wishlists, book covers **200** image bytes / multipart
-  semantics, Build Mode bulk lookup/import, operator-owned export/seed sync, FE vs API ownership). Prefer this
-  document (and live router/`detail` strings) when OpenAPI is incomplete for a shared status code, or when a schema
-  shows `null` as allowed but validators reject it at runtime. Note: some API-for-FE headers still say **1.2.8** while
-  OpenAPI is **1.3.0** -- record that as contract-doc drift; do not invent a third version.
+- `docs/technical-reference/API-for-FE.md`: behavioral guidance OpenAPI does not fully express (viewer vs admin auth,
+  CORS, hostname tenant routing, error meanings including HTTP **530**, lifecycle rules, ISBN quirks, album
+  lookup/artwork/circulation, placement/stash, availability/TBR/Reserved, `/library` setup/settings, site-read-only,
+  `/quotes`, `/people`, `/works` corrections, `/catalog` resolve/recent-additions/search-image, household profiles /
+  reader analytics, book flags / summary refresh, loan feedback, mixed wishlists, book covers **200** image bytes /
+  multipart semantics, Build Mode bulk lookup/import, operator-owned export/seed sync, FE vs API ownership). Prefer
+  this document (and live router/`detail` strings) when OpenAPI is incomplete for a shared status code, or when a
+  schema shows `null` as allowed but validators reject it at runtime. Note: some API-for-FE headers still say
+  **1.2.8** while OpenAPI is **1.11.0** -- record that as contract-doc drift; do not invent a third version. Prefer
+  API-for-FE's viewer-route list over OpenAPI `HTTPBearer` annotations when deciding whether a GET needs a credential
+  (OpenAPI still stamps Bearer on many viewer-readable GETs).
 
 Compare with a running backend `/openapi.json` before locking transport types; record drift as a blocker rather than
 inventing frontend semantics. Do not invent backend behavior from product docs alone. There is no separate backend
 handoff: OpenAPI plus `API-for-FE.md` are the contract. Frontend album and V2 book work is ticket-driven under
 `docs/tickets/` (see Useful documents); regenerating client types alone does not implement UI.
 
-### Backend 1.3.0 contract (2026-09-11)
+### Backend 1.11.0 contract (2026-09-15)
 
-The checked-in OpenAPI matches **1.3.0** (`info.version`). Existing book, wishlist, and loan response shapes remain
+The checked-in OpenAPI matches **1.11.0** (`info.version`). Existing book, wishlist, and loan response shapes remain
 stable aside from additive fields and the people/contributor reshape. Shipped surfaces include:
 
+- Viewer vs administrator access: shared tenant URL defaults to viewer mode for catalog/collection/wishlist reads;
+  mutations and management/private reads require a tenant-bound admin Bearer from `POST /auth/sign-in` (see
+  Authentication). Do not send the global `API_SECRET_KEY` for ordinary SPA browsing.
 - Album catalog CRUD with **permanent** delete (**204**; no album restore path), people/genre catalogs (shared
   `/people` for book contributors and album credits -- there is no `/authors` or `/artists` route), circulation
   (checkout / check-in / mark-played), Discogs/MusicBrainz lookup, private artwork get/upload/delete/refetch, album
@@ -158,15 +181,25 @@ stable aside from additive fields and the people/contributor reshape. Shipped su
   dashboard/listening fields.
 - Hostname-scoped multi-tenant routing (`X-Forwarded-Host`, with `shade` remapped to tenant `andy`).
 - `/library` setup and settings (`enable_loans`, book TBR shelf IDs, reserved shelf).
+- `/library/site-read-only` (`GET` authenticated; `PUT` Shade/`andy` admin only) with mutating ops returning **530**
+  while enabled (SPA UI not shipped; prefer API-for-FE -- OpenAPI under-documents **530**).
 - `/quotes` tenant Home quote library (list/create/update/delete/reorder/restore-defaults).
 - `/works` identity corrections (read / merge / split / reassign).
 - `/catalog/resolve-code`, `/catalog/recent-additions`, and `/catalog/search-image` (OCR catalog search).
+- `/household-profiles` CRUD plus dashboard `reader_analytics` and item `reader_states`; mark-read / mark-played
+  accept optional `profile_id` when household mode is on.
 - Book bulk and single-item availability; book bulk stash and apply-stash; mark-unread lifecycle endpoint.
+- Book Needs Reshelving flag (`BookRead.is_flagged`, `POST /books/{book_id}/flag`, `GET /dashboard/flagged-books`).
+- Book provider summary (`BookRead.summary`, `POST /books/{book_id}/summary/refresh` → **502**/**504** on provider
+  failure/timeout; never invent summary text client-side).
+- Category catalog CRUD (`POST /categories`, `PATCH`/`DELETE /categories/{category_id}`; assigned delete → **409**).
 - Loan borrower `PATCH`; returned-loan feedback (`PUT` / `DELETE /loans/{id}/feedback`); paginated book/album
   borrower-review lists.
-- Additive read fields: `work_id`, `borrower_rating`, `feedback_present`, `isbn_not_applicable`, plus album
-  dashboard/loan fields and required album `artwork_present`. Book reads expose role-specific people lists
-  (`authors` / `illustrators` / `editors` / `translators` as `BookPersonRead[]` with `person_id`).
+- Additive read fields: `work_id`, `borrower_rating`, `feedback_present`, `isbn_not_applicable`, `summary`,
+  `is_flagged`, `reader_states`, nullable `shelf` / `previous_shelf` (`ShelfReferenceRead`) alongside legacy
+  `shelf_name` / `previous_shelf_name` (name-based writes remain), plus album dashboard/loan fields and required
+  album `artwork_present`. Book reads expose role-specific people lists (`authors` / `illustrators` / `editors` /
+  `translators` as `BookPersonRead[]` with `person_id`). Flat free-form illustrator/editor text fields are removed.
 
 Coordinate deployment with matching frontend and any required retained-data migration. The frontend cannot compensate
 for an older database schema.
@@ -198,6 +231,7 @@ Book and shared shelf/error rules agents must not invent around:
   records initial returned-loan feedback atomically; owner catalog `rating`/`review` and borrower feedback are separate.
 - Checkout of `reserved` or `reading` books requires `availability_override=true`; `display_only` is never overridable
   (**412** `Book is display only` / `Album is display only`).
+- Treat HTTP **530** `Site is in read-only mode` as site read-only, not a generic server error.
 
 Tenant, CORS, and media storage notes:
 
@@ -214,6 +248,70 @@ Tenant, CORS, and media storage notes:
   release IDs have no MusicBrainz substitute (**502** / **504**). Artwork refetch uses Cover Art Archive front images
   only (approved front, else first front, else release-group listing) and never Discogs artwork. See `API-for-FE.md`.
 
+#### Viewer vs administrator access
+
+- Default shared tenant URL opens in **viewer** mode. With a valid `X-Forwarded-Host`, viewers may call catalog reads
+  without a Bearer: `GET /books`, `GET /albums`, their lookup/detail/image (cover/artwork) reads,
+  `GET /catalog/recent-additions`, and read-only collection and wishlist routes.
+- Every other business route (mutations and management/private reads such as dashboard, shelves, people, categories,
+  quotes writes, household profiles, settings, loan writes, etc.) requires a tenant-bound **administrator** Bearer and
+  returns **403** `Administrator access is required` when it is missing, invalid, expired, or issued for another
+  tenant.
+- Do not send the global `API_SECRET_KEY` for ordinary SPA browsing. `POST /auth/bootstrap` is a one-time operator
+  action that uses that secret and is refused after a password exists.
+
+#### Authentication
+
+- Obtain an admin credential with `POST /auth/sign-in` `{ "password": "..." }` → `access_token`,
+  `token_type: "bearer"`, `expires_at` (unix seconds). Send `Authorization: Bearer <access_token>`.
+- Contract prefers in-memory storage only; discard on `POST /auth/sign-out`, expiry, or admin **403**. The SPA
+  currently persists the credential in `sessionStorage` via `AuthProvider` (document the deviation; do not invent a
+  second store).
+- `POST /auth/change-password` requires the current admin token plus `current_password` / `new_password` and
+  invalidates every outstanding admin token for that tenant (API exists; SPA UI not shipped).
+- Failed sign-ins are rate-limited; show a generic failure and never log password values.
+- Public infrastructure: `GET /health`, `GET /ready`, `GET /version`, and FastAPI docs/OpenAPI routes. There is no
+  dedicated token-verify endpoint; learn admin validity from the first admin-only call you need (e.g.,
+  `GET /dashboard`).
+- Startup connectivity still checks public `GET /health` then tenant-aware `GET /ready` (**503** + `Retry-After: 1`
+  possible; do not poll). Use `GET /version` for the footer API release string only.
+- On admin **403**, discard the admin credential and leave viewer mode (SPA clears the query cache on unauthorized).
+  Do not treat viewer catalog failures as a reason to invent `.env` / `VITE_API_SECRET_KEY` rebuild guidance as the
+  primary admin-auth recovery path.
+- Never commit tokens, put them in URLs, log Authorization headers, or send them to analytics.
+- Legacy `readApiToken()` / `VITE_API_SECRET_KEY` helpers remain in-tree for tests and residual tooling; ordinary SPA
+  bootstrap (`src/main.tsx`) no longer fail-fasts on a missing build-time secret. Do not revive shared-secret SPA auth.
+
+#### `/household-profiles` and reader analytics
+
+- `GET` / `POST /household-profiles`; `PATCH` / `DELETE /household-profiles/{profile_id}` (admin Bearer). List envelope
+  includes `household_mode_enabled` and `items` (`profile_id`, `display_name`, `is_owner`, dates).
+- Delete body chooses `outcome: "reassign" | "delete"` with optional `target_profile_id`.
+- `GET /dashboard` returns additive `reader_analytics[]` ordered owner first then profile creation order -- no
+  `profile_id` selector on the dashboard endpoint. Each entry has personal `reading` / `listening` / `pages_turned`
+  plus `books_read_by_year`, `pages_read_by_year`, and `books_read_by_category` (`DashboardCountBucket`; arrays may be
+  empty).
+- `BookRead` / `AlbumRead` include `reader_states[]`. Mark-read and mark-played accept optional `profile_id` when
+  household mode is enabled. `GET /books` also accepts optional `profile_id` filtering (OpenAPI).
+
+#### Book flag (Needs Reshelving) and summary refresh
+
+- `BookRead.is_flagged` (default false). Set/clear idempotently with `POST /books/{book_id}/flag`
+  `{ "is_flagged": true | false }`. Do not clear via shelf, stash, wishlist, availability, or circulation ops.
+  `BookCreate` may include `is_flagged`; `BookUpdate` does not.
+- Queue: `GET /dashboard/flagged-books` (optional paired `skip`/`take`); includes flagged books in every placement
+  state. Do not invent a `GET /books?is_flagged=` filter for this queue.
+- `BookRead.summary` is a nullable provider string. Refresh with `POST /books/{book_id}/summary/refresh` (no body).
+  Provider failure/timeout → **502** / **504**. Never invent or PATCH summary text.
+
+#### Site-wide read-only mode
+
+- `GET /library/site-read-only` → `{ enabled }` (authenticated).
+- `PUT /library/site-read-only` `{ enabled }` -- Shade admin only (tenant `andy` / host `shade`); other tenants
+  **403**.
+- While enabled, mutating DB/cover-tree operations fail with **HTTP 530** `Site is in read-only mode`. Non-mutating
+  GETs remain allowed. SPA has no site-read-only UI yet -- do not invent one for non-`andy` tenants.
+
 #### `/library` setup and settings
 
 - `GET /library/setup` returns durable tenant state (`required`, `in_progress`, `complete`, or `failed`). A completed
@@ -229,6 +327,8 @@ Tenant, CORS, and media storage notes:
 - Books expose `placement_state`: `shelved` (default `GET /books`), `stashed`, or `unshelved`. `shelf_name` is
   populated only for `shelved` (including real membership on system `unknown`); it is JSON `null` for `stashed` and
   `unshelved`. `previous_shelf_name` is populated only for stashed books while the source shelf still exists.
+  Additive nullable `shelf` / `previous_shelf` (`ShelfReferenceRead`: `shelf_id`, `common_name`) may accompany name
+  fields; placement writes still use `shelf_name`.
 - `GET /books/{book_id}` returns explicit placement fields; it **no longer synthesizes** `shelf_name: "unknown"` for a
   missing membership. Combining `shelf_name` with a non-`shelved` `placement_state` returns **400**.
 - Stash is not a shelf and not circulation status. `POST /books/bulk/stash` (1--100 unique IDs) stashes currently
@@ -242,8 +342,7 @@ Tenant, CORS, and media storage notes:
   Reserved shelf (**412** `A reserved shelf must be configured` when unset). Moving onto a configured TBR shelf sets
   `reserved` (with `reading` taking precedence); albums do not inherit TBR/Reserved automation.
 - `isbn_not_applicable` defaults `false` and is mutually exclusive with non-empty `isbn13`. Confirmed not-applicable
-  books are excluded from dashboard missing-ISBN counts. Optional nullable `illustrator` / `editor` (max 255) exist on
-  create/update/read.
+  books are excluded from dashboard missing-ISBN counts.
 
 #### `/works`, `/catalog`, and borrower feedback
 
@@ -259,6 +358,8 @@ Tenant, CORS, and media storage notes:
   loans, lifecycle, override needs, and `enable_loans`).
 - `GET /catalog/recent-additions` returns typed summaries newest-first across owned books (shelved or stashed) and
   active shelved albums (default 10; `take` 1--50). Soft-deleted albums and unshelved/wishlist-only rows are excluded.
+  Home New Additions guidance in API-for-FE prefers `GET /books?sortBy=creationDate&sortOrder=desc` instead -- see
+  Project Summary conflict note.
 - Returned-loan feedback: `PUT` / `DELETE /loans/{id}/feedback` (active loan → **409** `Feedback requires a returned
   loan`). Paginated `GET /books/{book_id}/borrower-reviews` and `GET /albums/{album_id}/borrower-reviews` list work
   feedback. Do not combine or overwrite owner catalog rating/review with borrower feedback.
@@ -270,6 +371,7 @@ Tenant, CORS, and media storage notes:
   collection memberships and loan history. There is no album soft-delete/restore route (contrast quotes
   `POST /quotes/restore-defaults`).
 - Album check-in requires rating 1--5. Mark-played never changes loan history; `PATCH is_played=false` marks unplayed.
+  Mark-played accepts optional `profile_id` when household mode is on.
 - Album wishlist move uses atomic `POST /wishlists/{wishlist_id}/albums/{wishlist_item_id}/move-to-shelf` (contrast
   books: membership `DELETE` then `PATCH { shelf_name }` / bulk move).
 - Build Mode: prefer `POST /albums/bulk/lookup` + `POST /albums/bulk/import` (and book equivalents) over looping single
@@ -277,6 +379,7 @@ Tenant, CORS, and media storage notes:
   for bulk lookup.
 - Do not combine book and album dashboard totals; keep `borrowing` / `reading` book-only and use `album_borrowing` /
   `listening` separately. Dashboard `stash_count` is book-only; incomplete-metadata routes remain book-only.
+  `reader_analytics` is additive and per household profile.
 
 ### Book identifiers (`id` vs `book_id`)
 
@@ -291,12 +394,12 @@ Tenant, CORS, and media storage notes:
   when they do not enforce GUID validation. Prefer `POST /catalog/resolve-code` for Shade labels and commercial
   identifiers rather than inventing FE-only decode rules.
 
-### People / authors (normalized resources; OpenAPI `info.version` currently `1.3.0`)
+### People / authors (normalized resources; OpenAPI `info.version` currently `1.11.0`)
 
 People are backend data shared by books and albums. There is **no** `/authors` or `/artists` path -- both SPA helpers
 call `/people`. Books no longer store a string `authors` field on create/update.
 
-- `GET /people`: authenticated; returns `{ "items": [...], "total": <int> }` (`PersonList` in OpenAPI; SPA alias
+- `GET /people`: admin-authenticated; returns `{ "items": [...], "total": <int> }` (`PersonList` in OpenAPI; SPA alias
   `AuthorList` / `ArtistList`). No `skip` / `take`; full catalog ordered by surname, first name, then `person_id`.
   Optional `in_use=true` limits to referenced people.
 - People CRUD: `POST /people` (**201**), `GET` / `PATCH` / `DELETE /people/{person_id}` (**204** when unreferenced).
@@ -305,27 +408,29 @@ call `/people`. Books no longer store a string `authors` field on create/update.
   `surname`, optional `open_library_key`) preserving role order.
 - `BookCreate.author_ids`: required nonempty ordered person GUIDs. Optional `illustrator_ids` / `editor_ids` /
   `translator_ids`. `BookUpdate` role lists: omit to preserve; send a list to replace (`author_ids` may not be empty).
-  Role lists may not be null or contain duplicates.
+  Role lists may not be null or contain duplicates. Flat free-form illustrator/editor text fields are removed.
 - Album create/update uses ordered `person_ids` (and `genre_ids`) against the same `/people` catalog. SPA
   `artistsApi` is a thin `/people` client; local form state may still name the field `artistIds`.
 - `GET /books?author=` remains a text filter over linked people names. Default sort `sortBy=author` uses the first
   listed author's surname and first name.
 - `GET /books/lookup` draft textual authors do not create people; resolve/reuse or `POST /people` before `POST /books`.
-- Do not hard-code person names. Load via `useAuthors` / `artistsApi` and submit stable GUIDs. Frontend people catalog
-  admin pages (beyond inline create) remain out of V1 unless a ticket explicitly requires them.
+- Do not hard-code person names. Load via `useAuthors` / `artistsApi` and submit stable GUIDs. Dedicated people catalog
+  admin pages (beyond inline create used by forms) remain ticket-gated unless explicitly requested.
 
 SPA surface: `authorsApi` / `authorsQueries` (paths `/people`), `artistsApi` / `genresApi`, `authorDisplay`,
 create/edit/wishlist people pickers, inline `useCreateAuthor` on lookup/wishlist flows. Do not send free-form author
 strings on `BookCreate` / `BookUpdate`.
 
-### Categories (normalized resources; OpenAPI `info.version` currently `1.3.0`)
+### Categories (normalized resources; OpenAPI `info.version` currently `1.11.0`)
 
 Categories are backend data, not a fixed frontend enum. Checked-in OpenAPI does not define a singular `Category`
 string enum.
 
-- `GET /categories`: authenticated, unpaginated JSON **array** of `CategoryRead` (`category_id`, `name`, `slug`,
+- `GET /categories`: unpaginated JSON **array** of `CategoryRead` (`category_id`, `name`, `slug`,
   `created_date`, `updated_date`); same list pattern as `GET /shelves`. Optional `in_use=true` limits to categories
-  assigned to at least one book.
+  assigned to at least one book. (OpenAPI may stamp Bearer; prefer API-for-FE / live behavior for credential needs.)
+- Category catalog CRUD (admin): `POST /categories` (**201**), `GET` / `PATCH` / `DELETE /categories/{category_id}`
+  (**204** when unused; assigned → **409**). API-for-FE lists category management UI as Frontend-owned.
 - `BookRead.categories`: array of `BookCategoryRead` (`category_id`, `name`, `slug`). A book may have zero, one, or
   many memberships.
 - `BookCreate.category_ids` / `BookUpdate.category_ids`: array of category GUIDs. Create may omit or send `[]`
@@ -335,13 +440,13 @@ string enum.
   Blank/absent selection sends no category filter. Unknown or malformed IDs follow the OpenAPI contract; a valid
   selection with no matches returns an empty `BookList`, not **404**.
 - Do not hard-code category names or slugs. Load vocabulary from `GET /categories` (`useCategories`) and submit stable
-  GUIDs as `category_ids`. Frontend category catalog admin (create/rename/merge/delete) remains out of V1 unless a
-  ticket explicitly requires it.
+  GUIDs as `category_ids`. SPA has `categoriesApi` create/update/remove hooks plus inline create/update on book forms;
+  a dedicated Categories admin page / merge UI remains ticket-gated -- do not invent one without a request.
 - Dashboard: `by_category` buckets use category display names; a multi-category book contributes once per applicable
   bucket. Incomplete-metadata "missing category" means **no memberships** (empty `categories`, not a sentinel string).
 
-SPA surface: generated types, `categoriesApi` / `useCategories`, create/edit multi-assignment, Books multi-`category_id`
-URL filters, and list/detail display. Do not use a singular `category` / `Category` enum.
+SPA surface: generated types, `categoriesApi` / `useCategories` / write mutations, create/edit multi-assignment, Books
+multi-`category_id` URL filters, and list/detail display. Do not use a singular `category` / `Category` enum.
 
 ### Catalog list filters (`GET /books`)
 
@@ -355,7 +460,8 @@ Documented filter families (see OpenAPI + `API-for-FE.md` for exact params and s
   `publisher`, `acquisition_source`. Blank/whitespace text filters → **400**.
 - Exact/state: `book_id` (Book GUID; malformed → **400**; well-formed miss → empty list), `shelf_name`
   (trimmed/lowercased membership; unknown valid name → empty list; requires `placement_state=shelved`),
-  `placement_state` (`shelved` default, `stashed`, `unshelved`), `is_read`, `status`, repeated `category_id` (above).
+  `placement_state` (`shelved` default, `stashed`, `unshelved`), `is_read`, `status`, repeated `category_id` (above),
+  optional `profile_id` (household reader filter; OpenAPI).
 - Inclusive numeric ranges (either bound alone; inverted range → **400**): `pages_*`, `rating_*`,
   `purchase_price_*`, `publication_year_*`.
 - Inclusive `YYYY-MM-DD` date ranges (either bound alone; invalid syntax → **422**; inverted → **400**):
@@ -372,11 +478,13 @@ author / title / read status / sort; `shelf_name` and ISBN stay URL/deep-link/ha
 (publisher, ranges, `status`, `placement_state`, etc.) stay out of ordinary Browse unless a product need or ticket
 explicitly requires them. Do not invent page-local filter stacks.
 
-### Book covers (authenticated binary routes)
+### Book covers (binary routes)
 
-Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{book_id}/cover`. Behavioral detail lives in
+Cover routes: `GET` / `PUT` / `DELETE /books/{book_id}/cover`. Behavioral detail lives in
 `docs/technical-reference/API-for-FE.md` (Book covers). Cover resolution -- including the Open Library ISBN fallback
--- happens server-side behind the authenticated cover endpoint.
+-- happens server-side. `GET` is viewer-accessible; `PUT` / `DELETE` require an administrator. The SPA's existing
+authenticated blob-fetch `BookCover` client remains the supported pattern (works in admin sessions; viewer mode can
+omit Bearer).
 
 - `BookRead.cover_image_path`: optional **filename** (e.g., `{book_id}.webp`), not a URL and not browser-ready. Set
   only by successful `PUT`; cleared by `DELETE`. Create/update JSON cannot set it. Non-null means a local file exists;
@@ -393,9 +501,10 @@ Authenticated cover routes: `GET` / `PUT` / `DELETE /books/{book_id}/cover`. Beh
   no-cover result. Cover queries do not automatically retry; a later remount or explicit invalidation may retry.
 - Missing books reject cover get/upload/delete (**404**), same as checkout / check-in / mark-read / `PATCH` /
   bulk shelf move / availability.
-- Browser `<img src>` cannot send `Authorization`. Use authenticated `fetch` to `GET /books/{book_id}/cover`: **200** →
-  `response.blob()` + object URL (revoke on cleanup); **404** → intentional placeholder. Do not invent URLs from
-  `cover_image_path`. Do not call Open Library from the SPA.
+- Browser `<img src>` cannot send `Authorization`. Prefer the existing blob-fetch cover/artwork clients
+  (`BookCover` / album artwork helpers): **200** → `response.blob()` + object URL (revoke on cleanup); **404** →
+  intentional placeholder. Viewer-mode GETs do not require a Bearer. Do not invent URLs from `cover_image_path`. Do
+  not call Open Library from the SPA.
 - Non-JSON binary responses today: `GET /books/{book_id}/cover` (image bytes) and
   `GET /albums/{album_id}/artwork` (image bytes; album SPA uses the authenticated artwork client).
 
@@ -414,45 +523,35 @@ follows the parallel authenticated album artwork helpers -- do not invent browse
 
 ### Authentication
 
-- Shared Bearer token: `Authorization: Bearer <API_SECRET_KEY>`
-- Protected browser requests send only the shared Bearer token; tenant identity is proxy-owned via `X-Forwarded-Host`
-  (leftmost label lowercased; `shade` → `andy`; allowlisted in `data/tenants.cfg`). Do not send `X-Forwarded-Host` or
-  `Library-Username` from browser JS. Every business route requires Bearer auth **and** tenant resolution.
-- Public `GET /health`, `GET /ready`, and `GET /version` omit authentication (`authenticated: false`). `GET /ready` is
-  hostname-scoped; `/health` and `/version` do not require tenant context. FastAPI docs/OpenAPI routes are also public.
-- No login, logout, user accounts, sessions, or roles
-- Token comes from a repository-root `.env` file via `VITE_API_SECRET_KEY`; Vite injects it at dev-server and
-  production build time into JS bundles (`.env` stays gitignored; `.env.example` is committed)
-- Fail-fast bootstrap: `readApiToken()` in `src/main.tsx` throws before the app shell mounts when the variable is
-  missing or blank
-- No `sessionStorage`, no connection settings screen, and no runtime token entry
-- Missing or invalid credentials return `403`; describe generically as "API access was rejected"
-- On `403`, show a page-level error via `QueryErrorState` / `formatApiQueryError`; do not clear the query cache or
-  loop back into loading
-- Startup connectivity checks public `GET /health` first and tenant-aware `GET /ready` second; do not verify auth with
-  `GET /protected`
-- `GET /ready` verifies the selected tenant's database readiness and may return **503** with `Retry-After: 1`; do not
-  poll it. Missing/unknown/empty tenant host context returns **400** (same strings as protected routes). OpenAPI
-  currently under-documents those `/ready` failure codes; prefer `API-for-FE.md`.
-- CORS allows local Vite origins plus `andy`/`dalmo`/`jamie` localhost and deployed `shade`/`dalmo`/`jamie` library
-  hosts; allowed request headers are `Authorization` and `Content-Type`. `Content-Disposition` is exposed so
-  cover/artwork download filenames are readable from JavaScript. Credentialed CORS (cookies) is disabled.
-- Use public `GET /version` for the footer API release string only; do not treat it as a health probe
-- Never commit the token, put it in URLs, log Authorization headers, or send it to analytics
-- A build-time token in JS bundles is inspectable by anyone with device or artifact access; that is an accepted risk
-  for this trusted personal deployment and is not real multi-user authentication
+Auth rules for agents live under **Backend 1.11.0 → Viewer vs administrator access** and **Authentication** above.
+Do not revert to shared build-time `API_SECRET_KEY` SPA auth. Summary:
+
+- Viewer mode is the default shared-tenant experience for catalog/collection/wishlist reads (plus cover/artwork GET).
+- Administrator mode uses a short-lived tenant-bound Bearer from `POST /auth/sign-in`; SPA wiring is `AuthProvider` /
+  `AuthControl` / `RequireAdmin` (credential currently in `sessionStorage`; contract prefers memory only).
+- Tenant identity remains proxy-owned via `X-Forwarded-Host` (`shade` → `andy`); browser JS must not send that header
+  or `Library-Username`.
+- Public infra: `GET /health`, `GET /ready`, `GET /version`, FastAPI docs/OpenAPI. CORS request headers remain
+  `Authorization` and `Content-Type`; `Content-Disposition` is exposed for cover/artwork filenames.
+- Never commit tokens, put them in URLs, log Authorization headers, or send them to analytics.
 
 ### Lifecycle endpoints (never simulate with generic PATCH)
 
 | Operation | Endpoint |
 |--------------------|------------------------------------------------|
+| Auth bootstrap (operator) | `POST /auth/bootstrap` |
+| Auth sign-in | `POST /auth/sign-in` |
+| Auth sign-out | `POST /auth/sign-out` |
+| Auth change password | `POST /auth/change-password` (API; SPA UI not shipped) |
 | Create | `POST /books` |
 | Edit metadata | `PATCH /books/{book_id}` |
 | Delete | `DELETE /books/{book_id}` |
 | Checkout | `POST /books/{book_id}/checkout` |
 | Check-in | `POST /books/{book_id}/checkin` (requires `rating` 1--5) |
-| Mark read | `POST /books/{book_id}/mark-read` |
+| Mark read | `POST /books/{book_id}/mark-read` (optional `profile_id`) |
 | Mark unread | `POST /books/{book_id}/mark-unread` (API + hooks; no product UI yet) |
+| Book flag | `POST /books/{book_id}/flag` |
+| Book summary refresh | `POST /books/{book_id}/summary/refresh` |
 | Availability | `POST /books/{book_id}/availability` |
 | Bulk availability | `POST /books/bulk/availability` |
 | Bulk move to shelf | `POST /books/bulk/move-to-shelf` |
@@ -472,9 +571,13 @@ follows the parallel authenticated album artwork helpers -- do not invent browse
 | Album artwork | album artwork GET/PUT/DELETE/refetch |
 | Album borrower reviews | `GET /albums/{album_id}/borrower-reviews` |
 | People / genres | `/people`, `/genres` CRUD (SPA `authorsApi` / `artistsApi` both hit `/people`) |
+| Categories | `GET`/`POST /categories`, `GET`/`PATCH`/`DELETE /categories/{category_id}` |
+| Household profiles | `GET`/`POST /household-profiles`, `PATCH`/`DELETE /household-profiles/{profile_id}` |
 | Mixed wishlist | `GET .../items` and typed book/album membership routes |
 | Album wishlist move | `POST .../albums/{wishlist_item_id}/move-to-shelf` |
 | Library setup/settings | `GET /library/setup`, `POST /library/setup/complete`, `GET`/`PATCH /library/settings` |
+| Site read-only | `GET`/`PUT /library/site-read-only` (SPA UI not shipped) |
+| Flagged books queue | `GET /dashboard/flagged-books` |
 | Quotes | `GET`/`POST`/`PATCH`/`DELETE /quotes`, `PUT /quotes/order`, `POST /quotes/restore-defaults` |
 | Works | `GET /works/{work_id}` plus merge/split/assign |
 | Catalog resolve | `POST /catalog/resolve-code` |
@@ -486,8 +589,8 @@ Bulk shelf move is atomic: validate destination and every selected book before c
 implement bulk movement by looping individual `PATCH /books/{book_id}` requests. Destination follows ordinary
 `shelf_name` rules (`unknown` allowed; `removed` rejected). Wishlist conflict → documented **412** (API does not
 auto-remove wishlist membership). Do **not** set covers through create/update JSON (`cover_image_path` is read-only);
-use cover `PUT` / `DELETE` only. Do **not** simulate availability, stash/apply-stash, mark-played, or artwork refetch
-with generic `PATCH`.
+use cover `PUT` / `DELETE` only. Do **not** simulate availability, stash/apply-stash, mark-played, book flag, summary
+refresh, or artwork refetch with generic `PATCH`.
 
 ### Frontend compensations for known backend limits
 
@@ -515,28 +618,33 @@ with generic `PATCH`.
   something like "Not enough data" -- do not invent zero. Do not combine book and album dashboard totals.
 - Surface mixed-media **412** detail on shelf or collection writes and preserve form input. Shelves have no client
   `media_type` field. Surface `enable_loans` / display-only / reserved-shelf **412** detail honestly.
+- Treat HTTP **530** `Site is in read-only mode` as site read-only (not a generic 5xx) if/when the SPA handles it.
 
 ### Scope
 
 **In scope for the current product shell:** room-based Reading / Listening navigation (`/reading-room`,
-`/listening-room`) with Home as the room chooser and mixed-media discovery; separate Reading and Listening dashboards
-and loan histories; book Browse / detail / create / edit / delete / covers / checkout / check-in / reading tracking /
-bulk selection / bulk move / stash / availability / bulk add / labels; album Browse / detail / create / edit /
-artwork / circulation / bulk add / labels; OCR catalog image search; shared hallway Manage / Collections / Wishlists /
-Shelves; library setup and settings; Quote Library; wishlists and curated Collections with typed book and album
-membership; runtime API config; CI; Podman preview; versioned production artifacts; and the regression / deployment
-quality gate (`make check`). Prefer the current ticket's acceptance criteria over inventing adjacent surfaces.
+`/listening-room`) with Home as the room chooser and mixed-media discovery; viewer/admin auth shell; separate Reading
+and Listening dashboards and loan histories (including Needs Reshelving and household `reader_analytics` where
+shipped); book Browse / detail / create / edit / delete / covers / checkout / check-in / reading tracking / flag /
+provider summary / bulk selection / bulk move / stash / availability / bulk add / labels; album Browse / detail /
+create / edit / artwork / circulation / bulk add / labels; OCR catalog image search; shared hallway Manage /
+Collections / Wishlists / Shelves; library setup and settings including household readers; Quote Library; wishlists
+and curated Collections with typed book and album membership; runtime API config; CI; Podman preview; versioned
+production artifacts; and the regression / deployment quality gate (`make check`). Prefer the current ticket's
+acceptance criteria over inventing adjacent surfaces.
 
 **Out of scope unless explicitly requested by a ticket or user:** inventing routes not in OpenAPI, library-switcher UI
-(hostname tenant routing is proxy/API-owned), overdue notifications, Goodreads/StoryGraph, user accounts/roles,
-realtime sync, product mark-unread UI (API exists; no screen yet), frontend people/category/genre catalog admin pages
-(beyond inline create used by forms), remote Ansible/systemd/TLS/rollback orchestration, physical label/printer
-validation, and unreviewed scanner re-arm behavior. Book and album work-correction UI, borrower-feedback presentation,
-album QR labels/scanning, and mixed-media Home recent additions are shipped; extend those existing surfaces rather
-than treating them as deferred. Categories are many-to-many via `GET /categories` and `category_ids`; people are
-shared via `GET /people` with book `author_ids` / role lists and album `person_ids` -- do not hard-code taxonomy or
-invent a second filter stack. Broader catalog filters beyond current Books/Albums controls stay out unless a product
-need explicitly requires them.
+(hostname tenant routing is proxy/API-owned), overdue notifications, Goodreads/StoryGraph, multi-user accounts beyond
+household profiles, realtime sync, product mark-unread UI (API exists; no screen yet), change-password UI (API
+exists; no screen yet), site-read-only operator UI (API exists; SPA not shipped), dedicated people/category/genre
+catalog admin pages beyond existing inline form create/update (API CRUD exists; merge UI not invented), remote
+Ansible/systemd/TLS/rollback orchestration, physical label/printer validation, and unreviewed scanner re-arm
+behavior. Book and album work-correction UI, borrower-feedback presentation, album QR labels/scanning, and mixed-media
+Home recent additions are shipped; extend those existing surfaces rather than treating them as deferred. Categories
+are many-to-many via `GET /categories` and `category_ids`; people are shared via `GET /people` with book `author_ids`
+/ role lists and album `person_ids` -- do not hard-code taxonomy or invent a second filter stack. Broader catalog
+filters beyond current Books/Albums controls stay out unless a product need explicitly requires them. Do not silently
+switch Home New Additions off `/catalog/recent-additions` without resolving the API-for-FE vs SPA conflict.
 
 Do not expand a ticket into out-of-scope features. Do not invent the next product feature merely because the API
 supports it.
@@ -605,7 +713,7 @@ The browser startup and styling flow is:
 index.html
   -> /config.js (sets window.__SHADE_CONFIG__)
   -> src/main.tsx
-       -> readApiToken() (fail fast when missing)
+       -> resolveLibraryContext(hostname) (UnknownLibraryScreen when host is not allowlisted)
        -> readRuntimeConfig()
             -> on failure: RuntimeConfigScreen (retry)
             -> on success:
@@ -614,10 +722,11 @@ index.html
                    -> AppProviders (shared DiagnosticReporter)
                         -> NotificationsProvider
                         -> QueryClientProvider (createQueryClient())
-                        -> ConnectionProvider (createApiClient + onRequestFailure reporter, token, GET /health + /ready)
-                             -> RouterProvider(router from src/routes/routes.tsx)
-                                  -> AppShell (layout route)
-                                       -> Suspense + Outlet (lazy feature route pages)
+                        -> AuthProvider (viewer/admin credential; sessionStorage persistence)
+                             -> ConnectionProvider (apiClient from AuthProvider, GET /health + /ready)
+                                  -> RouterProvider(router from src/routes/routes.tsx)
+                                       -> AppShell (layout route)
+                                            -> Suspense + Outlet (lazy feature route pages; admin routes via RequireAdmin)
        -> src/index.css
             -> src/styles/tokens.css
             -> src/styles/base.css
@@ -625,9 +734,11 @@ index.html
             -> src/styles/components.css
 ```
 
-`index.html` creates the `#root` mount point, loads `/config.js`, then loads `src/main.tsx`. When runtime config is
-valid, the bootstrap module creates a `DiagnosticReporter`, then renders `RouterProvider` inside `RootErrorBoundary`
-and `AppProviders` in `StrictMode`. Missing or malformed config shows `RuntimeConfigScreen` instead of the shell.
+`index.html` creates the `#root` mount point, loads `/config.js`, then loads `src/main.tsx`. When the hostname resolves
+to a known library and runtime config is valid, the bootstrap module creates a `DiagnosticReporter`, then renders
+`RouterProvider` inside `RootErrorBoundary` and `AppProviders` in `StrictMode`. Unknown hosts show
+`UnknownLibraryScreen`. Missing or malformed config shows `RuntimeConfigScreen` instead of the shell. Ordinary SPA
+bootstrap does **not** require `VITE_API_SECRET_KEY`.
 
 `AppShell` owns document title updates (via `libraryContext` / route title), skip link, room-aware primary navigation
 (Dashboard; Collection drawer with Browse / Search by image / Stash (reading) / Manage / Collections / Wishlists;
@@ -657,11 +768,12 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   `enabled: false` / `endpoint: null` so reporting can be enabled or retargeted without rebuilding. Application release
   comes from `package.json` `version` (not runtime config).
 - `public/favicon.png`: Static favicon served as-is (not bundled).
-- `src/main.tsx`: Browser bootstrap. Calls `readApiToken()` (throws when missing), reads runtime config, either mounts
-  `RuntimeConfigScreen` or creates `createDiagnosticReporter` (using `APP_VERSION`) then mounts `RootErrorBoundary` ->
-  `AppProviders` -> `RouterProvider` in `StrictMode`, and imports global CSS.
+- `src/main.tsx`: Browser bootstrap. Resolves library context from hostname (`UnknownLibraryScreen` when unknown),
+  reads runtime config, either mounts `RuntimeConfigScreen` or creates `createDiagnosticReporter` (using
+  `APP_VERSION`) then mounts `RootErrorBoundary` -> `AppProviders` -> `RouterProvider` in `StrictMode`, and imports
+  global CSS. Does **not** fail-fast on `VITE_API_SECRET_KEY`.
 - `src/AppProviders.tsx`: Application-wide providers. Wraps `NotificationsProvider`, `QueryClientProvider`
-  (`createQueryClient()`), and `ConnectionProvider` (requires validated `runtimeConfig` and shared
+  (`createQueryClient()`), `AuthProvider`, and `ConnectionProvider` (requires validated `runtimeConfig` and shared
   `diagnosticReporter`).
 - `src/RootErrorBoundary.tsx`: Class error boundary with a recoverable fallback (retry and return home); reports
   redacted render failures through `diagnosticReporter.reportRenderFailure()`.
@@ -683,8 +795,10 @@ changes. Prefer regenerating `src/api/generated/openapi.ts` with `yarn api:gener
   versioning (`package.json` / `APP_VERSION` does).
 - `src/config/runtimeConfigState.ts`: `readRuntimeConfig()` returns `{ config, error }` without throwing.
 - `src/config/RuntimeConfigScreen.tsx`: Blocking UI when config is missing or invalid, with retry.
-- `src/config/apiToken.ts`: `readApiToken()` reads `import.meta.env.VITE_API_SECRET_KEY` (trimmed); throws
-  `ApiTokenError` when missing or blank.
+- `src/config/apiToken.ts`: Legacy `readApiToken()` helper for `VITE_API_SECRET_KEY` (still used by residual
+  `connectionToken` / tests). Ordinary SPA auth uses `AuthProvider` sign-in tokens, not this build-time secret.
+- `src/config/libraryContext.ts` / `UnknownLibraryScreen.tsx`: Hostname → library branding/theme resolution; unknown
+  hosts block the shell.
 
 ### Diagnostics (extend, do not replace)
 
@@ -1164,19 +1278,27 @@ Manual device checklist (run against a connected API for each supported row avai
   match at detail; multiple matches land on `/books?isbn=` with Clear ISBN; typing in an input on those pages is not
   consumed; Back from a unique jump returns to the page that was scanned.
 
-Connection feature (build-time Bearer auth, complete):
+Connection feature (health/ready; auth owned by `AuthProvider`):
 
 - `src/features/connection/connectionTypes.ts`: Connection status union (`checking`, `connected`, `unauthorized`,
   `unreachable`).
-- `src/features/connection/connectionToken.ts`: Reads the build-time token once via `readApiToken()`;
-  `getCurrentToken()` returns it for `createApiClient`.
+- `src/features/connection/connectionToken.ts`: Legacy residual helper that still calls `readApiToken()`; ordinary SPA
+  requests take the admin token from `AuthProvider` instead. Prefer not to revive build-time secret auth.
 - `src/features/connection/connectionApi.ts`: Public `GET /health` liveness followed by tenant-aware `GET /ready`
   through typed `healthApi`, with connection error mapping.
 - `src/features/connection/ConnectionContext.ts` / `useConnection.ts`: Context value and hook (`status`, `apiBaseUrl`,
   `release` from `APP_VERSION`, `errorMessage`, `apiClient`).
-- `src/features/connection/ConnectionProvider.tsx`: Owns status, `apiClient`, startup liveness/readiness verification,
-  `onUnauthorized` page error state, and optional `diagnosticReporter` wired through `createApiClient`
-  `onRequestFailure` (no connect / forget / retry / `hasToken`). Exposes `release: APP_VERSION` (not runtime config).
+- `src/features/connection/ConnectionProvider.tsx`: Owns status, startup liveness/readiness verification, and uses the
+  `apiClient` from `AuthProvider` (optional `diagnosticReporter` / request-failure reporting lives with that client).
+  Exposes `release: APP_VERSION` (not runtime config).
+
+Auth feature (viewer/admin; extend, do not replace):
+
+- `src/features/auth/AuthProvider.tsx` / `AuthContext.ts` / `useAuth.ts`: Viewer vs admin mode, sign-in via
+  `POST /auth/sign-in`, sign-out, expiry handling, `sessionStorage` credential persistence, and query-cache clear on
+  admin unauthorized.
+- `src/features/auth/AuthControl.tsx`: Sign-in / sign-out UI.
+- `src/features/auth/RequireAdmin.tsx`: Route gate for administrator-only pages.
 
 ### Shared Components
 
@@ -1555,8 +1677,9 @@ Useful documents under `docs/` when a task needs them. This file is the complete
 another project prompt as required reading before starting. Attach the items below only when the current work requires
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
-- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. The current
-  open ticket is FEAT-01 (OCR catalog search). Informal UI feedback notes may also live here; they are not sequenced
+- `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
+  files include physical-shelf / map workflow tickets (Feat-04 through Feat-15) and FEAT-01 better-backups -- inspect
+  the directory before inventing follow-on work. Informal UI feedback notes may also live here; they are not sequenced
   build tickets unless the user asks to implement items from them. When the directory holds only `.gitkeep` and/or
   informal notes, ask which work to take next rather than inventing a follow-on feature.
 - `docs/product-docs/PRODUCT_REQS.*.md`: Product requirements drafts and notes.
@@ -1564,22 +1687,25 @@ their contents (for example, the active ticket's acceptance criteria or the Open
 - `docs/product-docs/UI_DESIGN_NOTES.ALBUM_ANALOGIES.md`: Album UI analogy notes; consult with Listening Room / album
   work.
 - `docs/technical-reference/openapi.json`: Authoritative backend OpenAPI 3.1 schemas (LibraryV2; currently
-  `info.version` `1.3.0` -- see Backend Contract), including book `book_id` / covers / filters / bulk / stash /
-  availability / mark-unread routes, loans with nullable `book_id`/`album_id`, `media_type`, and `feedback_present`,
-  wishlist `wishlist_item_id` plus mixed `/items` and album membership/move-to-shelf routes, album catalog/lookup/
-  artwork/circulation/bulk, `/people`, `/genres`, `/library`, `/quotes`, `/works`, `/catalog` (resolve, recent-
-  additions, search-image), borrower-reviews, and additive album dashboard fields.
-- `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json` (including
-  hostname tenant routing via `X-Forwarded-Host`, CORS hosts including dalmo, shared `/people` for book contributors
-  and album credits, album lookup/artwork/circulation, placement/stash, availability/TBR/Reserved, `/library` setup/
-  settings, `/quotes`, `/works` corrections, `/catalog` resolve/recent-additions/search-image, loan feedback, mixed
-  wishlists, atomic bulk shelf-move and Build Mode bulk lookup/import semantics, wishlist **412** semantics,
-  mixed-media shelf/collection **412**, collection membership `shelf_name` null for unshelved rows, and Book covers /
-  album artwork display/upload guidance for authenticated **200** image bytes / multipart `file`). Some headers still
-  say contract **1.2.8** while OpenAPI is **1.3.0** -- prefer OpenAPI for version and record prose drift.
+  `info.version` `1.11.0` -- see Backend Contract), including viewer/admin auth routes, household profiles, book
+  `book_id` / covers / filters / bulk / stash / availability / flag / summary-refresh / mark-unread routes, loans with
+  nullable `book_id`/`album_id`, `media_type`, and `feedback_present`, wishlist `wishlist_item_id` plus mixed `/items`
+  and album membership/move-to-shelf routes, album catalog/lookup/artwork/circulation/bulk, `/people`, `/genres`,
+  `/categories` CRUD, `/library` (setup/settings/site-read-only), `/quotes`, `/works`, `/catalog` (resolve,
+  recent-additions, search-image), borrower-reviews, dashboard flagged-books / `reader_analytics`, and additive album
+  dashboard fields.
+- `docs/technical-reference/API-for-FE.md`: Behavioral API guidance complementary to `openapi.json` (including viewer
+  vs admin auth, hostname tenant routing via `X-Forwarded-Host`, CORS hosts including dalmo, shared `/people` for book
+  contributors and album credits, album lookup/artwork/circulation, placement/stash, availability/TBR/Reserved,
+  `/library` setup/settings, site-read-only /**530**, household reader analytics, book flags / Needs Reshelving,
+  `/quotes`, `/works` corrections, `/catalog` resolve/recent-additions/search-image, loan feedback, mixed wishlists,
+  atomic bulk shelf-move and Build Mode bulk lookup/import semantics, wishlist **412** semantics, mixed-media
+  shelf/collection **412**, collection membership `shelf_name` null for unshelved rows, and Book covers / album
+  artwork display/upload guidance). Some headers still say contract **1.2.8** while OpenAPI is **1.11.0** -- prefer
+  OpenAPI for version and record prose drift.
 - `docs/technical-reference/bash-reference.md`: Shell command reference notes for maintainers.
-- `docs/full-project-context.md`: Optional slim always-on pack for chats without repo access (not required when
-  this file is already loaded).
+- `docs/full-project-context.md`: Optional standalone always-on pack for chats without repo access (complete on its
+  own; not required when this file is already loaded).
 
 ## Development Commands
 
@@ -1650,8 +1776,9 @@ make build
 - Use extensionless relative TypeScript imports, matching current source style.
 - Follow the existing TypeScript style: single quotes, no semicolons, and trailing commas where supported.
 - Keep feature UI behind the existing `src/features/*/routes/` ownership; extend implemented pages rather than
-  inventing a parallel tree. Leave diagnostics under
-  `src/diagnostics/diagnosticReporter.ts` wired through `RootErrorBoundary` / `AppProviders` / `ConnectionProvider` /
+  inventing a parallel tree. Leave auth under `src/features/auth/` (`AuthProvider` / `AuthControl` / `RequireAdmin`).
+  Leave diagnostics under
+  `src/diagnostics/diagnosticReporter.ts` wired through `RootErrorBoundary` / `AppProviders` / `AuthProvider` /
   `apiClient` `onRequestFailure` and optional runtime config (`public/config.js` / `RuntimeConfig.diagnostics`); never
   fabricate correlation IDs, invent a second telemetry transport, or log denylisted fields. Leave primary navigation
   under `AppShell` / `DrawerNavMenu` (room-scoped Dashboard, Collection drawer including Search by image and Stash on
@@ -1662,7 +1789,10 @@ make build
   `BooksPage` /
   `booksListModel` / `BooksListControls` / `useBulkSelection` / `BooksBulkActions` / `BulkMoveToShelfControl` /
   `booksApi.moveToShelf` / `useBulkMoveBooksToShelf` (centralized URL filters including `shelf_name` / `is_read` /
-  `cleanup_field`; atomic `POST /books/bulk/move-to-shelf` only -- never per-book `PATCH` loops). Leave edit under
+  `cleanup_field`; atomic `POST /books/bulk/move-to-shelf` only -- never per-book `PATCH` loops). Leave book flag and
+  provider summary under Book Details / `BookProviderSummary` and dashboard Needs Reshelving via `useFlaggedBooks`.
+  Leave household readers under `HouseholdReadersSettings` / `ActiveReaderSelector` / `householdProfilesApi`. Leave
+  edit under
   `EditBookPage` / `bookEditModel` (minimal `BookUpdate` patch; blank ISBN → `null`; omit unchanged `author_ids`; never
   send `status=on_loan`, reading fields, or loan-driving values). Leave delete under `DeleteBookPage` (`useDeleteBook` /
   `booksApi.remove`; block when `status === 'on_loan'` or `findActiveLoan` is present; invalidate
@@ -1670,9 +1800,10 @@ make build
   There is no browser backup page (`/admin/backup`,
   `BackupLibraryPage`, or `backupApi`); never inspect, log, cache, or upload SQL dump contents. Leave Reading dashboard
   under `DashboardPage` at `/reading-room/dashboard` / `useDashboard` / `useDashboardBreakdowns` /
-  `useDashboardIncompleteMetadata` (display API stats only; null averages as "Not enough data"; do not recalculate from
-  `GET /books`; do not combine book and album dashboard fields; deep-link into Books filters / cleanup mode;
-  incomplete-metadata infinite list stays on Books via `useInfiniteIncompleteMetadataBooks`). Leave Listening
+  `useDashboardIncompleteMetadata` / `useFlaggedBooks` (display API stats only; null averages as "Not enough data"; do
+  not recalculate from `GET /books`; do not combine book and album dashboard fields; deep-link into Books filters /
+  cleanup mode; incomplete-metadata infinite list stays on Books via `useInfiniteIncompleteMetadataBooks`). Leave
+  Listening
   dashboard/loans under `ListeningDashboardPage` / `AlbumLoansPage`. Leave reading flows under `MarkReadPage` /
   `markReadModel` / `ReadingEditPage` / `readingEditModel`. Leave scanner code under `src/features/scanning/`: camera
   on book/album create and image search; collection jump via `useCollectionIsbnJump` on `/reading-room/dashboard`,
@@ -1708,32 +1839,34 @@ make build
   Make `publish` / `ci/build-prod.sh`, gitignored `ci/artifacts/`, and the production-like host inspection tests; do
   not upload secret-bearing archives from default CI or treat the Compose image as production. Do not invent FE-only
   cover providers. Never
-  simulate checkout, check-in, initial mark-read, mark-played, cover upload/delete, availability, stash/apply-stash, or
-  album artwork upload/delete/refetch with generic `PATCH`. Never implement bulk shelf moves as per-book `PATCH` loops.
+  simulate checkout, check-in, initial mark-read, mark-played, cover upload/delete, availability, stash/apply-stash,
+  book flag, book summary refresh, or album artwork upload/delete/refetch with generic `PATCH`. Never implement bulk
+  shelf moves as per-book `PATCH` loops.
   Do not reinvent album UI from OpenAPI alone; extend `src/features/albums/` under the active ticket or an explicit
   request.
 - Reuse the typed client, query keys, mutation invalidation, and redaction helpers; do not introduce a second
   state store, component library, CSS framework, or form library unless a product need explicitly requires it.
-- Keep forms, scanner, and dialogs local; keep connection state application-wide; invalidate affected queries after
-  mutations. There is no realtime API.
+- Keep forms, scanner, and dialogs local; keep connection and auth state application-wide; invalidate affected queries
+  after mutations. There is no realtime API.
 - For API-dependent work, treat `docs/technical-reference/openapi.json` as the schema source of truth and
   `docs/technical-reference/API-for-FE.md` as behavioral guidance. Prefer a running backend `/openapi.json` for drift
   checks when available; do not invent lifecycle behavior with generic `PATCH`. Leave people under `authorsApi` /
   `artistsApi` (`/people`), `authorsQueries` / `authorDisplay` / `BookForm` ordered `author_ids` (and role lists) plus
   album `person_ids`, and inline `useCreateAuthor` on lookup/wishlist flows; do not send free-form author strings on
   book payloads or invent a second people model. Leave
-  categories under `categoriesApi` / `useCategories` / `categoryDisplay` / `BookForm` multi-assignment / Books
-  multi-`category_id` filters and centralized Books URL filters including `shelf_name` / `is_read` / `cleanup_field`;
-  do not use singular `category` enum selectors or hard-coded taxonomy. Leave bulk shelf moves under
+  categories under `categoriesApi` / `useCategories` / write mutations / `categoryDisplay` / `BookForm`
+  multi-assignment / Books multi-`category_id` filters and centralized Books URL filters including `shelf_name` /
+  `is_read` / `cleanup_field`; do not use singular `category` enum selectors or hard-coded taxonomy. Leave bulk shelf
+  moves under
   `booksApi.moveToShelf` / `useBulkMoveBooksToShelf` / `BulkMoveToShelfControl` against
   `POST /books/bulk/move-to-shelf` only. Leave covers under `booksApi.getCover` / `uploadCover` / `removeCover`,
   `useBookCover` / `useUploadBookCover` / `useRemoveBookCover`, shared `BookCover`, and `BookCoverManager` against
-  authenticated `GET` / `PUT` / `DELETE /books/{book_id}/cover` per `API-for-FE.md` (**200** blob or **404**; multipart
-  `file`); never invent browser URLs from `cover_image_path`, call Open Library from the SPA, or PATCH cover fields onto
-  `BookUpdate`. Album artwork follows the parallel authenticated album artwork helpers.
-- Never commit the API token (keep `.env` gitignored), put it in URLs, log Authorization headers, render API text as
-  HTML, or upload SQL backup contents to telemetry. The token is injected at build time and appears in JS bundles by
-  design. SQL backups are sensitive.
+  `GET` / `PUT` / `DELETE /books/{book_id}/cover` per `API-for-FE.md` (**200** blob or **404**; multipart `file`; GET is
+  viewer-accessible); never invent browser URLs from `cover_image_path`, call Open Library from the SPA, or PATCH cover
+  fields onto `BookUpdate`. Album artwork follows the parallel artwork helpers.
+- Never commit admin passwords or tokens, put them in URLs, log Authorization headers, render API text as HTML, or
+  upload SQL backup contents to telemetry. Do not revive shared `VITE_API_SECRET_KEY` SPA auth for ordinary browsing.
+  SQL backups are sensitive.
 
 ## Change Workflow
 

@@ -8,6 +8,7 @@ export type ApiErrorKind =
     | 'validation'
     | 'invalid_response'
     | 'server'
+    | 'site_read_only'
     | 'http'
 
 export interface ApiFieldError {
@@ -128,7 +129,9 @@ export function formatApiQueryError(
         const message =
             error.kind === 'unauthorized'
                 ? 'API access was rejected.'
-                : error.message
+                : error.kind === 'site_read_only'
+                    ? 'Site is in read-only mode.'
+                    : error.message
 
         if (error.correlationId) {
             return (
@@ -153,5 +156,15 @@ export function isUnauthorizedQueryError(
     return (
         isApiError(error) &&
         error.kind === 'unauthorized'
+    )
+}
+
+export function isSiteReadOnlyError(
+    error: unknown,
+): boolean {
+    return (
+        isApiError(error) &&
+        (error.kind === 'site_read_only' ||
+            error.status === 530)
     )
 }

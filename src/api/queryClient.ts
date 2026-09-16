@@ -38,6 +38,7 @@ function shouldRetryQuery(
         case 'validation':
         case 'cancelled':
         case 'invalid_response':
+        case 'site_read_only':
             return false
     }
 }

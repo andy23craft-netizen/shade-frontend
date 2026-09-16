@@ -457,6 +457,41 @@ describe('createApiClient', () => {
         },
     )
 
+    it('maps HTTP 530 to site_read_only and notifies the handler', async () => {
+        const onSiteReadOnly = vi.fn()
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    detail: 'Site is in read-only mode',
+                }),
+                {
+                    status: 530,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                },
+            ),
+        )
+
+        const client = createApiClient({
+            apiBaseUrl: 'https://api.example.test',
+            getToken: () => 'secret',
+            onSiteReadOnly,
+        })
+
+        await expect(
+            client.requestJson('/books', {
+                method: 'POST',
+                body: { title: 'x' },
+            }),
+        ).rejects.toMatchObject({
+            kind: 'site_read_only',
+            status: 530,
+            detail: 'Site is in read-only mode',
+        })
+        expect(onSiteReadOnly).toHaveBeenCalledTimes(1)
+    })
+
     it(
         'rejects invalid JSON responses',
         async () => {

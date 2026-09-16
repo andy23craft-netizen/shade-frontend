@@ -278,6 +278,7 @@ export function BulkMoveToShelfControl({
             <Button
                 type="button"
                 variant="primary"
+                mutating
                 disabled={!canPrepareMove}
                 onClick={
                     handleOpenConfirmation
@@ -295,6 +296,7 @@ export function BulkMoveToShelfControl({
                         : 'Move books'
                 }
                 confirmVariant="primary"
+                mutating
                 confirmDisabled={
                     moveMutation.isPending
                 }

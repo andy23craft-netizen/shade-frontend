@@ -141,6 +141,7 @@ export function EditLoanBorrower({
                 <Button
                     type="submit"
                     variant="primary"
+                    mutating
                     disabled={updateLoan.isPending}
                 >
                     {updateLoan.isPending

@@ -193,7 +193,7 @@ export function CatalogGuide() {
                         </p>
 
                         <p>
-                            <AppLink to="/books/new">
+                            <AppLink to="/books/new" mutating>
                                 Add a book
                             </AppLink>
                             {' '}manually, by ISBN, or with a

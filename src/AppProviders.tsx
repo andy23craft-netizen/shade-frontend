@@ -9,6 +9,7 @@ import {
     ConnectionProvider,
 } from './features/connection/ConnectionProvider'
 import { AuthProvider } from './features/auth/AuthProvider'
+import { SiteReadOnlyProvider } from './features/siteReadOnly/SiteReadOnlyProvider'
 import type { RuntimeConfig } from './config/runtimeConfig'
 import {
     createQueryClient,
@@ -46,7 +47,9 @@ export function AppProviders({
                         runtimeConfig={runtimeConfig}
                         diagnosticReporter={diagnosticReporter}
                     >
-                        {children}
+                        <SiteReadOnlyProvider>
+                            {children}
+                        </SiteReadOnlyProvider>
                     </ConnectionProvider>
                 </AuthProvider>
             </QueryClientProvider>

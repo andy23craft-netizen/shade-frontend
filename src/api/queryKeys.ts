@@ -460,6 +460,7 @@ export const queryKeys = {
         all: (host: string) => ['library', host] as const,
         setup: (host: string) => ['library', host, 'setup'] as const,
         settings: (host: string) => ['library', host, 'settings'] as const,
+        siteReadOnly: (host: string) => ['library', host, 'site-read-only'] as const,
     },
 
     householdProfiles: {

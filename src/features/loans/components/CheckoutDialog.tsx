@@ -638,6 +638,7 @@ export function CheckoutDialog({
                         <Button
                             type="submit"
                             variant="primary"
+                            mutating
                             disabled={
                                 checkoutBook.isPending ||
                                 (!isCheckoutEligible(book) && !needsAvailabilityOverride) ||

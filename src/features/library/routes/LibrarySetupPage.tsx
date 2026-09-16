@@ -216,7 +216,7 @@ function SetupBuilder({ supportedMedia }: { supportedMedia: GuidedSetupMedia[] }
             ) : null}
             {error ? <Alert variant="error">{error}</Alert> : null}
             <div className="form-actions">
-                <Button type="submit" disabled={shelves.isPending || shelves.isError || createShelf.isPending}>
+                <Button type="submit" mutating disabled={shelves.isPending || shelves.isError || createShelf.isPending}>
                     {createShelf.isPending ? 'Creating…' : `Continue to ${media === 'book' ? 'Book Build Mode' : 'Album Intake'}`}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => { setMedia(null); setError(null) }}>

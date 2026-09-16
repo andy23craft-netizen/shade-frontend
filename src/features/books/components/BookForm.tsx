@@ -66,7 +66,7 @@ function ContributorPicker({ label, people, selectedIds, onChange, onCreate }: {
         {selected.length ? <ol>{selected.map((person, index) => <li key={person.person_id}>{personDisplayName(person)} <Button type="button" variant="secondary" disabled={index === 0} onClick={() => move(index, -1)}>Move Up</Button> <Button type="button" variant="secondary" disabled={index === selected.length - 1} onClick={() => move(index, 1)}>Move Down</Button> <Button type="button" variant="secondary" onClick={() => onChange(selectedIds.filter((id) => id !== person.person_id))}>Remove</Button></li>)}</ol> : <p>No {label.toLowerCase()} selected.</p>}
         <Field label={`Search ${label.toLowerCase()}`}><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setError(null) }} /></Field>
         <div className="book-form__category-dropdown-list">{matches.map((person) => <label key={person.person_id} className="book-form__category-option"><input type="checkbox" checked={selectedIds.includes(person.person_id)} onChange={() => onChange(selectedIds.includes(person.person_id) ? selectedIds.filter((id) => id !== person.person_id) : [...selectedIds, person.person_id])} /> {personDisplayName(person)}</label>)}</div>
-        {canCreate ? <Button type="button" variant="secondary" disabled={creating} onClick={() => { setCreating(true); void onCreate(search.trim()).then((person) => { onChange([...selectedIds, person.person_id]); setSearch('') }).catch(() => setError(`The ${label.toLowerCase().replace(/s$/, '')} could not be created.`)).finally(() => setCreating(false)) }}>Create “{search.trim()}”</Button> : null}
+        {canCreate ? <Button type="button" variant="secondary" mutating disabled={creating} onClick={() => { setCreating(true); void onCreate(search.trim()).then((person) => { onChange([...selectedIds, person.person_id]); setSearch('') }).catch(() => setError(`The ${label.toLowerCase().replace(/s$/, '')} could not be created.`)).finally(() => setCreating(false)) }}>Create “{search.trim()}”</Button> : null}
         {error ? <p role="alert" className="field__error">{error}</p> : null}
     </fieldset>
 }
@@ -995,6 +995,7 @@ export function BookForm({
                                                                 <Button
                                                                     type="button"
                                                                     variant="primary"
+                                                                    mutating
                                                                     disabled={
                                                                         isUpdatingAuthor
                                                                     }
@@ -1394,6 +1395,7 @@ export function BookForm({
                                                                     <Button
                                                                         type="button"
                                                                         variant="primary"
+                                                                        mutating
                                                                         disabled={
                                                                             isUpdatingCategory
                                                                         }
@@ -1712,6 +1714,7 @@ export function BookForm({
             <div>
                 <Button
                     type="submit"
+                    mutating
                     disabled={isSubmitting}
                 >
                     {isSubmitting

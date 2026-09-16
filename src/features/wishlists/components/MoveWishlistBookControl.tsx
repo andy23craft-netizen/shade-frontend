@@ -338,6 +338,7 @@ export function MoveWishlistBookControl({
 
                 <Button
                     type="submit"
+                    mutating
                     disabled={
                         disabled ||
                         moveBook.isPending ||
@@ -355,6 +356,7 @@ export function MoveWishlistBookControl({
                 open={confirmOpen}
                 title="Move wishlist book?"
                 confirmLabel="Move Book"
+                mutating
                 onConfirm={handleConfirm}
                 onCancel={() => {
                     setConfirmOpen(false)

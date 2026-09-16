@@ -8,7 +8,7 @@ import type { WishlistRead } from '../../../api/apiTypes'
 function WishlistMembershipChoice({ wishlist, albumId, selected, onSelect }: { wishlist: WishlistRead; albumId: string; selected: boolean; onSelect: () => void }) {
     const items = useWishlistItems(wishlist.wishlist_id); const remove = useRemoveWishlistAlbum()
     const membership = items.data?.items.find((item) => item.album_id === albumId)
-    if (membership) return <div className="album-wishlist-control__membership"><span>{wishlist.name} — already added</span><Button type="button" variant="danger" disabled={remove.isPending} onClick={() => remove.mutate({ wishlistId: wishlist.wishlist_id, wishlistItemId: membership.wishlist_item_id })}>{remove.isPending ? 'Removing…' : 'Remove'}</Button></div>
+    if (membership) return <div className="album-wishlist-control__membership"><span>{wishlist.name} — already added</span><Button type="button" variant="danger" mutating disabled={remove.isPending} onClick={() => remove.mutate({ wishlistId: wishlist.wishlist_id, wishlistItemId: membership.wishlist_item_id })}>{remove.isPending ? 'Removing…' : 'Remove'}</Button></div>
     return <label><input type="radio" name={`wishlist-${albumId}`} checked={selected} onChange={onSelect} /> {wishlist.name}</label>
 }
 
@@ -59,7 +59,7 @@ export function AddAlbumToWishlistControl({ albumId, albumTitle, compact = false
                 <form className="album-wishlist-control__form" onSubmit={submit}>
                     {error ? <Alert variant="error">{error}</Alert> : null}
                     <Field label="Wishlist"><div className="album-wishlist-control__choices">{(wishlists.data?.items ?? []).map((wishlist) => <WishlistMembershipChoice key={wishlist.wishlist_id} wishlist={wishlist} albumId={albumId} selected={wishlistId === wishlist.wishlist_id} onSelect={() => setWishlistId(wishlist.wishlist_id)} />)}</div></Field>
-                    <Button type="submit" disabled={!wishlistId || wishlists.isPending || addAlbum.isPending}>
+                    <Button type="submit" mutating disabled={!wishlistId || wishlists.isPending || addAlbum.isPending}>
                         {addAlbum.isPending ? 'Adding…' : 'Add Album'}
                     </Button>
                 </form>
