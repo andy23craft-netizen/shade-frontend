@@ -295,7 +295,12 @@ export function BookDetailsPage() {
                 state.is_complete === true,
         ) === true
         : book.is_read
-    const canMarkRead = canShowActiveActions && !activeReaderIsComplete
+    // A shared book may be complete for one reader but not another. Keep the
+    // recording action available in household mode so its reader picker can
+    // create a missing personal record.
+    const canMarkRead = canShowActiveActions && (
+        household.householdEnabled || !activeReaderIsComplete
+    )
     const canEditReading = canShowActiveActions && activeReaderIsComplete
 
     return (
@@ -596,7 +601,9 @@ export function BookDetailsPage() {
                             variant="secondary"
                             mutating
                         >
-                            Mark Read
+                            {household.householdEnabled
+                                ? 'Record Reading'
+                                : 'Mark Read'}
                         </AppLink>
                     ) : null}
 

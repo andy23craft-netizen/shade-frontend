@@ -6,6 +6,7 @@ import {
 import {
     useNavigate,
     useParams,
+    useSearchParams,
 } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -97,13 +98,16 @@ function focusSummary(
 
 export function MarkReadPage() {
     const { bookId = '' } = useParams()
+    const [searchParams] = useSearchParams()
     const navigate = useNavigate()
     const queryClient = useQueryClient()
 
     const bookQuery = useBook(bookId)
     const markBookRead = useMarkBookRead()
     const household = useActiveHouseholdProfile()
-    const [readerProfileId, setReaderProfileId] = useState('')
+    const [readerProfileId, setReaderProfileId] = useState(
+        () => searchParams.get('profile_id') ?? '',
+    )
 
     const summaryRef =
         useRef<HTMLDivElement>(null)
@@ -368,6 +372,8 @@ export function MarkReadPage() {
                 <h1 tabIndex={-1}>
                     Mark Book Read
                 </h1>
+
+                {household.householdEnabled ? <Field label="Household reader"><select value={readerProfileId || household.activeProfile?.profile_id || ''} disabled={markBookRead.isPending} onChange={(event) => setReaderProfileId(event.target.value)}>{household.profiles.map((profile) => <option key={profile.profile_id} value={profile.profile_id}>{profile.display_name}{profile.is_owner ? ' (Owner)' : ''}</option>)}</select></Field> : null}
 
                 <Alert
                     variant={

@@ -149,15 +149,13 @@ export function ReadingEditPage() {
     useEffect(() => {
         const book = bookQuery.data
 
-        if (
-            !book ||
-            initializedBookIdRef.current ===
-                book.book_id
-        ) {
+        if (!book) {
             return
         }
 
         const profileId = readerProfileId || household.activeProfile?.profile_id
+        const initializationKey = `${book.book_id}:${profileId ?? 'shared'}`
+        if (initializedBookIdRef.current === initializationKey) return
         const readerState = household.householdEnabled
             ? book.reader_states?.find((state) => state.profile_id === profileId)
             : undefined
@@ -165,8 +163,7 @@ export function ReadingEditPage() {
             ? readingEditFormValuesFromReaderState(readerState)
             : readingEditFormValuesFromBook(book))
 
-        initializedBookIdRef.current =
-            book.book_id
+        initializedBookIdRef.current = initializationKey
     }, [bookQuery.data, household.activeProfile?.profile_id, household.householdEnabled, readerProfileId])
 
     const errorEntries = (
@@ -467,12 +464,16 @@ export function ReadingEditPage() {
                     Edit Reading
                 </h1>
 
+                {household.householdEnabled ? <Field label="Household reader"><select value={selectedProfileId ?? ''} onChange={(event) => { setReaderProfileId(event.target.value); initializedBookIdRef.current = null }}><option value="">Choose a reader</option>{household.profiles.map((profile) => <option key={profile.profile_id} value={profile.profile_id}>{profile.display_name}{profile.is_owner ? ' (Owner)' : ''}</option>)}</select></Field> : null}
+
                 <Alert
                     variant="warning"
-                    title="This book has not been marked as read"
+                    title={household.householdEnabled ? 'This reader has not marked the book as read' : 'This book has not been marked as read'}
                 >
-                    Mark this book as read before editing its reading details.
+                    {household.householdEnabled ? 'Create a personal reading record for this reader before editing it.' : 'Mark this book as read before editing its reading details.'}
                 </Alert>
+
+                {household.householdEnabled && selectedProfileId ? <AppLink to={`/books/${book.book_id}/mark-read?profile_id=${encodeURIComponent(selectedProfileId)}`} variant="primary" mutating>Mark Read for This Reader</AppLink> : null}
             </section>
         )
     }
