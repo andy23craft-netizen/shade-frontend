@@ -25,13 +25,18 @@ import { ApiError } from '../../../api/apiErrors'
 import type { BookRead } from '../../../api/apiTypes'
 import {
     useBook,
+    useMarkBookRead,
     useUpdateBook,
 } from '../../../api/booksQueries'
 import { ReadingEditPage } from './ReadingEditPage'
 
 vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
+    useMarkBookRead: vi.fn(),
     useUpdateBook: vi.fn(),
+}))
+vi.mock('../../library/useActiveHouseholdProfile', () => ({
+    useActiveHouseholdProfile: () => ({ householdEnabled: false, activeProfile: null, profiles: [] }),
 }))
 
 const mockNavigate = vi.fn()
@@ -54,6 +59,8 @@ vi.mock(
 const mockUseBook = vi.mocked(useBook)
 const mockUseUpdateBook =
     vi.mocked(useUpdateBook)
+const mockUseMarkBookRead =
+    vi.mocked(useMarkBookRead)
 
 const readBook: BookRead = {
     book_id: 'test-book-id',
@@ -174,6 +181,10 @@ describe('ReadingEditPage', () => {
         } as unknown as ReturnType<
             typeof useUpdateBook
         >)
+        mockUseMarkBookRead.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+        } as unknown as ReturnType<typeof useMarkBookRead>)
     })
 
     it('loads existing reading values into the form', () => {

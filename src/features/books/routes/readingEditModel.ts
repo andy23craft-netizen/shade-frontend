@@ -1,6 +1,7 @@
 import type {
     BookRead,
     BookUpdate,
+    MarkReadRequest,
 } from '../../../api/apiTypes'
 import { isDateOnlyString } from '../../../api/dateTime'
 import { pickBookUpdate } from '../../../api/requestFields'
@@ -69,6 +70,17 @@ export function readingEditFormValuesFromBook(
                 : String(book.rating),
         review:
             book.review ?? '',
+    }
+}
+
+/** Household records are independent from the shared catalog reading fields. */
+export function readingEditFormValuesFromReaderState(
+    state: NonNullable<BookRead['reader_states']>[number],
+): ReadingEditFormValues {
+    return {
+        completion_date: completionDateFormValue(state.completion_date),
+        rating: state.rating === null || state.rating === undefined ? '' : String(state.rating),
+        review: state.review ?? '',
     }
 }
 
@@ -170,4 +182,18 @@ export function hasReadingEditChanges(
             ),
         ).length > 0
     )
+}
+
+export function readingEditFormValuesToMarkReadRequest(
+    values: ReadingEditFormValues,
+    profileId?: string,
+): MarkReadRequest {
+    const completionDate = normalizeCompletionDate(values.completion_date.trim())
+
+    return {
+        completion_date: completionDate || undefined,
+        rating: values.rating.trim() ? Number(values.rating.trim()) : null,
+        review: values.review.trim() || null,
+        ...(profileId ? { profile_id: profileId } : {}),
+    }
 }

@@ -44,6 +44,7 @@ import { ConfirmationDialog } from '../../../components/ConfirmationDialog'
 import { BookProviderSummary } from '../components/BookProviderSummary'
 import { useAuth } from '../../auth/useAuth'
 import { useSiteReadOnly } from '../../siteReadOnly/useSiteReadOnly'
+import { useActiveHouseholdProfile } from '../../library/useActiveHouseholdProfile'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -153,6 +154,7 @@ export function BookDetailsPage() {
             : '/books'
 
     const bookQuery = useBook(bookId ?? '')
+    const household = useActiveHouseholdProfile()
 
     const loansQuery = useLoans({
         bookId: bookId ?? '',
@@ -286,12 +288,15 @@ export function BookDetailsPage() {
         canShowActiveActions &&
         !isOnLoan &&
         !hasActiveLoan
-    const canMarkRead =
-        canShowActiveActions &&
-        !book.is_read
-    const canEditReading =
-        canShowActiveActions &&
-        book.is_read
+    const activeReaderIsComplete = household.householdEnabled
+        ? book.reader_states?.some(
+            (state) =>
+                state.profile_id === household.activeProfile?.profile_id &&
+                state.is_complete === true,
+        ) === true
+        : book.is_read
+    const canMarkRead = canShowActiveActions && !activeReaderIsComplete
+    const canEditReading = canShowActiveActions && activeReaderIsComplete
 
     return (
         <section className="route-page book-details-page">

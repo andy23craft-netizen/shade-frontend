@@ -235,7 +235,13 @@ export function MarkReadPage() {
             return
         }
 
-        if (book.is_read) {
+        const selectedReaderIsComplete = household.householdEnabled
+            ? book.reader_states?.some(
+                (state) => state.profile_id === (readerProfileId || household.activeProfile?.profile_id) && state.is_complete === true,
+            ) === true
+            : book.is_read
+
+        if (selectedReaderIsComplete) {
             setFormError(
                 'This book has already been marked as read.',
             )
@@ -268,10 +274,13 @@ export function MarkReadPage() {
 
         const book = bookQuery.data
 
-        if (
-            !book ||
-            book.is_read
-        ) {
+        const selectedReaderIsComplete = book && (household.householdEnabled
+            ? book.reader_states?.some(
+                (state) => state.profile_id === (readerProfileId || household.activeProfile?.profile_id) && state.is_complete === true,
+            ) === true
+            : book.is_read)
+
+        if (!book || selectedReaderIsComplete) {
             setIsConfirmationOpen(false)
             setPendingRequest(null)
             setFormError(
@@ -391,8 +400,15 @@ export function MarkReadPage() {
 
     const book = bookQuery.data
 
-    const isAlreadyRead =
-        book.is_read
+    const selectedProfileId =
+        readerProfileId || household.activeProfile?.profile_id
+    const isAlreadyRead = household.householdEnabled
+        ? book.reader_states?.some(
+            (state) =>
+                state.profile_id === selectedProfileId &&
+                state.is_complete === true,
+        ) === true
+        : book.is_read
 
     if (isAlreadyRead) {
         return (

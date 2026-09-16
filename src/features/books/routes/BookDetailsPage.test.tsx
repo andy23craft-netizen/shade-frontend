@@ -29,6 +29,9 @@ vi.mock('../../../api/booksQueries', () => ({
 vi.mock('../../../api/loansQueries', () => ({
     useLoans: vi.fn(),
 }))
+vi.mock('../../library/useActiveHouseholdProfile', () => ({
+    useActiveHouseholdProfile: () => ({ householdEnabled: false, activeProfile: null, profiles: [] }),
+}))
 vi.mock('../../loans/components/BorrowerReviews', () => ({
     BorrowerReviews: () => <div data-testid="borrower-reviews" />,
 }))

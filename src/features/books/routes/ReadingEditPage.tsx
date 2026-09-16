@@ -26,16 +26,22 @@ import {
     isBookIdentityError,
 } from '../../../api/bookIdentity'
 import type {
+    BookRead,
     BookUpdate,
+    MarkReadRequest,
 } from '../../../api/apiTypes'
 import {
     useBook,
+    useMarkBookRead,
     useUpdateBook,
 } from '../../../api/booksQueries'
+import { useActiveHouseholdProfile } from '../../library/useActiveHouseholdProfile'
 import { queryKeys } from '../../../api/queryKeys'
 import {
     hasReadingEditChanges,
     readingEditFormValuesFromBook,
+    readingEditFormValuesFromReaderState,
+    readingEditFormValuesToMarkReadRequest,
     readingEditFormValuesToRequest,
     validateReadingEditFormValues,
     type ReadingEditFormFieldErrors,
@@ -101,6 +107,9 @@ export function ReadingEditPage() {
 
     const bookQuery = useBook(bookId)
     const updateBook = useUpdateBook()
+    const markBookRead = useMarkBookRead()
+    const household = useActiveHouseholdProfile()
+    const [readerProfileId, setReaderProfileId] = useState('')
 
     const summaryRef =
         useRef<HTMLDivElement>(null)
@@ -130,7 +139,7 @@ export function ReadingEditPage() {
     const [
         pendingRequest,
         setPendingRequest,
-    ] = useState<BookUpdate | null>(null)
+    ] = useState<(BookUpdate | MarkReadRequest) | null>(null)
 
     const [
         isConfirmationOpen,
@@ -148,13 +157,17 @@ export function ReadingEditPage() {
             return
         }
 
-        setValues(
-            readingEditFormValuesFromBook(book),
-        )
+        const profileId = readerProfileId || household.activeProfile?.profile_id
+        const readerState = household.householdEnabled
+            ? book.reader_states?.find((state) => state.profile_id === profileId)
+            : undefined
+        setValues(readerState
+            ? readingEditFormValuesFromReaderState(readerState)
+            : readingEditFormValuesFromBook(book))
 
         initializedBookIdRef.current =
             book.book_id
-    }, [bookQuery.data])
+    }, [bookQuery.data, household.activeProfile?.profile_id, household.householdEnabled, readerProfileId])
 
     const errorEntries = (
         Object.entries(fieldErrors) as [
@@ -227,7 +240,7 @@ export function ReadingEditPage() {
     ) {
         event.preventDefault()
 
-        if (updateBook.isPending) {
+        if (updateBook.isPending || markBookRead.isPending) {
             return
         }
 
@@ -250,36 +263,36 @@ export function ReadingEditPage() {
             return
         }
 
-        if (!book.is_read) {
+        const profileId = readerProfileId || household.activeProfile?.profile_id
+        const readerState = household.householdEnabled
+            ? book.reader_states?.find((state) => state.profile_id === profileId)
+            : undefined
+        const isComplete = household.householdEnabled
+            ? readerState?.is_complete === true
+            : book.is_read
+
+        if (!isComplete) {
             setFormError(
                 'Reading completion has not been recorded for this book.',
             )
             return
         }
 
-        if (
-            !hasReadingEditChanges(
-                book,
-                values,
-            )
-        ) {
+        if (!household.householdEnabled && !hasReadingEditChanges(book, values)) {
             setFormError(
                 'No reading changes have been made.',
             )
             return
         }
 
-        setPendingRequest(
-            readingEditFormValuesToRequest(
-                book,
-                values,
-            ),
-        )
+        setPendingRequest(household.householdEnabled
+            ? readingEditFormValuesToMarkReadRequest(values, profileId)
+            : readingEditFormValuesToRequest(book, values))
         setIsConfirmationOpen(true)
     }
 
     function handleCancelConfirmation() {
-        if (updateBook.isPending) {
+        if (updateBook.isPending || markBookRead.isPending) {
             return
         }
 
@@ -290,17 +303,19 @@ export function ReadingEditPage() {
     function handleConfirm() {
         if (
             pendingRequest === null ||
-            updateBook.isPending
+            (updateBook.isPending || markBookRead.isPending)
         ) {
             return
         }
 
         const book = bookQuery.data
 
-        if (
-            !book ||
-            !book.is_read
-        ) {
+        const profileId = readerProfileId || household.activeProfile?.profile_id
+        const isComplete = book && (household.householdEnabled
+            ? book.reader_states?.some((state) => state.profile_id === profileId && state.is_complete === true) === true
+            : book.is_read)
+
+        if (!book || !isComplete) {
             setIsConfirmationOpen(false)
             setPendingRequest(null)
             setFormError(
@@ -310,21 +325,15 @@ export function ReadingEditPage() {
             return
         }
 
-        updateBook.mutate(
-            {
-                id: book.book_id,
-                book: pendingRequest,
-            },
-            {
-                onSuccess: (updatedBook) => {
+        const onSuccess = (updatedBook: BookRead) => {
                     setIsConfirmationOpen(false)
                     setPendingRequest(null)
 
                     navigate(
                         `/books/${updatedBook.book_id}`,
                     )
-                },
-                onError: (error) => {
+        }
+        const onError = (error: unknown) => {
                     setIsConfirmationOpen(false)
                     setPendingRequest(null)
 
@@ -362,8 +371,25 @@ export function ReadingEditPage() {
                     )
 
                     void refetchBookState()
+        }
+
+        if (household.householdEnabled) {
+            markBookRead.mutate(
+                {
+                    id: book.book_id,
+                    request: pendingRequest as MarkReadRequest,
                 },
+                { onSuccess, onError },
+            )
+            return
+        }
+
+        updateBook.mutate(
+            {
+                id: book.book_id,
+                book: pendingRequest as BookUpdate,
             },
+            { onSuccess, onError },
         )
     }
 
@@ -420,7 +446,12 @@ export function ReadingEditPage() {
 
     const book = bookQuery.data
 
-    if (!book.is_read) {
+    const selectedProfileId = readerProfileId || household.activeProfile?.profile_id
+    const selectedReaderIsComplete = household.householdEnabled
+        ? book.reader_states?.some((state) => state.profile_id === selectedProfileId && state.is_complete === true) === true
+        : book.is_read
+
+    if (!selectedReaderIsComplete) {
         return (
             <section className="route-page">
                 <div className="book-details__topbar">
@@ -502,6 +533,7 @@ export function ReadingEditPage() {
             ) : null}
 
             <form onSubmit={handleSubmit}>
+                {household.householdEnabled ? <Field label="Household reader"><select value={selectedProfileId ?? ''} disabled={updateBook.isPending || markBookRead.isPending} onChange={(event) => { setReaderProfileId(event.target.value); initializedBookIdRef.current = null }}><option value="">Choose a reader</option>{household.profiles.map((profile) => <option key={profile.profile_id} value={profile.profile_id}>{profile.display_name}{profile.is_owner ? ' (Owner)' : ''}</option>)}</select></Field> : null}
                 <div className="field">
                     <label className="field__label" htmlFor={FIELD_IDS.completion_date}>Completion date</label>
                     <div className="reading-edit-completion-date">
@@ -509,7 +541,7 @@ export function ReadingEditPage() {
                             id={FIELD_IDS.completion_date}
                             type="text"
                             value={values.completion_date}
-                            disabled={updateBook.isPending}
+                            disabled={updateBook.isPending || markBookRead.isPending}
                             placeholder="e.g. 2020, 2020-07-01, or July 1, 2020"
                             aria-describedby="reading-edit-completion-date-help"
                             aria-invalid={fieldErrors.completion_date ? true : undefined}
@@ -521,7 +553,7 @@ export function ReadingEditPage() {
                                 aria-label="Choose completion date"
                                 type="date"
                                 value={/^\d{4}-\d{2}-\d{2}/.test(values.completion_date) ? values.completion_date.slice(0, 10) : ''}
-                                disabled={updateBook.isPending}
+                                disabled={updateBook.isPending || markBookRead.isPending}
                                 onChange={(event) => updateField('completion_date', event.target.value)}
                             />
                         </label>
@@ -538,7 +570,7 @@ export function ReadingEditPage() {
                 >
                     <select
                         value={values.rating}
-                        disabled={updateBook.isPending}
+                        disabled={updateBook.isPending || markBookRead.isPending}
                         onChange={(event) => {
                             updateField(
                                 'rating',
@@ -565,7 +597,7 @@ export function ReadingEditPage() {
                 >
                     <textarea
                         value={values.review}
-                        disabled={updateBook.isPending}
+                        disabled={updateBook.isPending || markBookRead.isPending}
                         onChange={(event) => {
                             updateField(
                                 'review',
@@ -580,9 +612,9 @@ export function ReadingEditPage() {
                         type="submit"
                         variant="primary"
                         mutating
-                        disabled={updateBook.isPending}
+                        disabled={updateBook.isPending || markBookRead.isPending}
                     >
-                        {updateBook.isPending
+                        {updateBook.isPending || markBookRead.isPending
                             ? 'Saving…'
                             : 'Save Reading'}
                     </Button>
