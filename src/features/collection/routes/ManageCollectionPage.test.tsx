@@ -1,7 +1,9 @@
 import {
+    render,
     screen,
     within,
 } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import {
     beforeEach,
     describe,
@@ -13,6 +15,8 @@ import {
     mockReachableApi,
     renderAppTree,
 } from '../../../test/renderAppTree'
+import { SiteReadOnlyContext } from '../../siteReadOnly/SiteReadOnlyContext'
+import { ManageCollectionPage } from './ManageCollectionPage'
 
 describe('ManageCollectionPage', () => {
     beforeEach(() => {
@@ -73,5 +77,32 @@ describe('ManageCollectionPage', () => {
                 name: /backup/i,
             }),
         ).not.toBeInTheDocument()
+    })
+
+    it('keeps Library Settings reachable while the site is read-only', () => {
+        render(
+            <SiteReadOnlyContext.Provider value={{
+                enabled: true,
+                writesDisabled: true,
+                canToggle: true,
+            }}>
+                <MemoryRouter>
+                    <ManageCollectionPage />
+                </MemoryRouter>
+            </SiteReadOnlyContext.Provider>,
+        )
+
+        expect(screen.getByRole('link', { name: /^Library Settings/i })).toHaveAttribute(
+            'href',
+            '/library/settings',
+        )
+        expect(screen.getByRole('link', { name: /^Library Settings/i })).not.toHaveAttribute(
+            'aria-disabled',
+            'true',
+        )
+        expect(screen.getByRole('link', { name: /^Add Book/i })).toHaveAttribute(
+            'aria-disabled',
+            'true',
+        )
     })
 })
