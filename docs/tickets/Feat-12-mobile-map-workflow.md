@@ -2,7 +2,7 @@
 
 **Status:** Proposed  
 **Owner:** Frontend  
-**Dependencies:** Feat-01, Feat-02, Feat-06, and Feat-11.
+**Dependencies:** Feat-06 and Feat-11.
 
 ## Goal
 

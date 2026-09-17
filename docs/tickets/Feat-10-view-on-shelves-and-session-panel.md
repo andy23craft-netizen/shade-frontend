@@ -2,7 +2,7 @@
 
 **Status:** Proposed  
 **Owner:** Frontend  
-**Dependencies:** Feat-01, Feat-02, Feat-04, and Feat-09. Before multi-shelf display ships, the backend must provide
+**Dependencies:** Feat-04 and Feat-09. Before multi-shelf display ships, the backend must provide
 the transactional placement-event outbox, idempotent Kinbote delivery, and reconciliation contract drafted in
 `Kinbote-frontend-api-contract-draft.md`.
 

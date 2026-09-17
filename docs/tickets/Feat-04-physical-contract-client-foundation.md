@@ -2,7 +2,7 @@
 
 **Status:** Proposed  
 **Owner:** Frontend  
-**Dependencies:** Feat-01, Feat-02, and Feat-03 must be complete first.
+**Dependencies:** Feat-03 must be complete first.
 
 ## Goal
 

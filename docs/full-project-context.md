@@ -11,8 +11,8 @@ exists) and the checked-in API contract only when the task needs them.
 A current sequenced feature ticket, when one exists, is supplied separately. Do not assume this document replaces the
 ticket or the checked-in API contract. Informal UI feedback notes under `docs/tickets/` are not sequenced build
 tickets -- treat them as notes unless the user asks to implement items from them. When no ticket is supplied, check
-`docs/tickets/` for open sequenced work (physical-shelf / map tickets Feat-04 through Feat-15, plus FEAT-01
-better-backups). Ask which work to take next rather than inventing a follow-on feature.
+`docs/tickets/` for open sequenced work (physical-shelf / map tickets Feat-04 through Feat-15). Ask which work to
+take next rather than inventing a follow-on feature.
 
 **Context pack version:** 2026-09-15
 **Backend contract:** checked-in OpenAPI `info.version` **1.11.0** (LibraryV2). Prefer that OpenAPI version for
@@ -1471,7 +1471,6 @@ Prefer the supplied ticket, an explicit user request, or product docs when choos
 
 Current open sequenced work (inspect `docs/tickets/` before inventing follow-ons):
 
-* FEAT-01 -- better backups (frontend ticket);
 * Feat-04 -- physical contract client foundation;
 * Feat-06 -- mobile shelf route and NFC context;
 * Feat-08 -- book details find on shelf;
@@ -1510,7 +1509,6 @@ documented binary routes.
 ## Remaining planned work
 
 ```text
-docs/tickets/FEAT-01_better-backups.frontend.md
 docs/tickets/Feat-04-physical-contract-client-foundation.md
 docs/tickets/Feat-06-mobile-shelf-route-and-nfc-context.md
 docs/tickets/Feat-08-book-details-find-on-shelf.md

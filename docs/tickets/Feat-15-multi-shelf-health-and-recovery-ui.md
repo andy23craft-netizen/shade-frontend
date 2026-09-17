@@ -2,7 +2,7 @@
 
 **Status:** Proposed  
 **Owner:** Frontend  
-**Dependencies:** Feat-01, Feat-02, Feat-10, Feat-12, a tested Kinbote multi-controller deployment, and the tested
+**Dependencies:** Feat-10, Feat-12, a tested Kinbote multi-controller deployment, and the tested
 transactional-outbox, idempotent-delivery, restart-clear, and reconciliation guarantees in
 `Kinbote-frontend-api-contract-draft.md`.
 

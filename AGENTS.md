@@ -103,7 +103,7 @@ Prefer dedicated lifecycle endpoints; never simulate checkout, check-in, initial
 upload/delete, availability, stash/apply-stash, book flag, book summary refresh, or album artwork
 upload/delete/refetch with generic `PATCH`. Sequenced feature tickets live under `docs/tickets/` while open and are
 removed after completion. Current open ticket files include physical-shelf / map workflow tickets (Feat-04 through
-Feat-15) and FEAT-01 better-backups -- inspect `docs/tickets/` before inventing the next feature. Informal UI feedback
+Feat-15) -- inspect `docs/tickets/` before inventing the next feature. Informal UI feedback
 notes are not sequenced build tickets unless the user asks to implement items from them. When the directory holds only
 `.gitkeep` and/or informal notes, wait for an explicit request. Do not invent undocumented routes, realtime channels,
 or lifecycle shortcuts. Never invent a second telemetry transport or fabricate correlation IDs.
@@ -1678,7 +1678,7 @@ another project prompt as required reading before starting. Attach the items bel
 their contents (for example, the active ticket's acceptance criteria or the OpenAPI schemas for an API change).
 
 - `docs/tickets/`: Sequenced feature ticket files live here while open and are removed after completion. Current open
-  files include physical-shelf / map workflow tickets (Feat-04 through Feat-15) and FEAT-01 better-backups -- inspect
+  files include physical-shelf / map workflow tickets (Feat-04 through Feat-15) -- inspect
   the directory before inventing follow-on work. Informal UI feedback notes may also live here; they are not sequenced
   build tickets unless the user asks to implement items from them. When the directory holds only `.gitkeep` and/or
   informal notes, ask which work to take next rather than inventing a follow-on feature.
