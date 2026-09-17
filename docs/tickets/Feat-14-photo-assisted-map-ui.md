@@ -14,12 +14,15 @@ Offer shelf-photo assistance as a clearly reviewable map-draft aid, not an autho
   deletion, and error states.
 - Render proposal boundaries, candidate matches, confidence, and warnings separately from the current published map.
 - Let users correct, reject, and confirm proposals before entering the normal review/publish flow.
+- Consume only safe proposal/job status through Shade; correlate a proposal to its draft/revision and surface stale
+  source conflicts before it can enter review.
 - Test low-confidence, no-match, failed job, deletion, and confirmation flows.
 
 ## Acceptance criteria
 
 - No proposal is visually or behaviorally presented as already published.
 - A user can discard a proposal without affecting the current map.
+- Photo output cannot publish a map, infer catalog placement, or bypass the ordinary draft/review/publish confirmation.
 - The workflow remains usable on the phone reference experience.
 
 ## Out of scope

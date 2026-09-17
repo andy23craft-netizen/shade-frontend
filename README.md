@@ -1,311 +1,199 @@
-# shade-frontend
+# Shade frontend
 
-The React frontend for the Shade library application.
+Shade is a React single-page application for a personal library. It includes Reading and Listening rooms, catalog and collection management, circulation, QR labels, image catalog search, household reader views, and library setup tools.
 
-There are three ways to interact with this project:
+It works with the Shade FastAPI backend. The checked-in contract is [`docs/technical-reference/openapi.json`](docs/technical-reference/openapi.json); behavior not expressed by OpenAPI is documented in [`docs/technical-reference/API-for-FE.md`](docs/technical-reference/API-for-FE.md).
 
-1. **Local development** -- run Vite on the host with hot reload (`make run`).
-2. **Deployed development** -- build this repository's Podman image and run it in Compose with the Shade backend.
-3. **Deployed production** -- pack the versioned static tarball (`make publish`) and install it from the deployment
-   repository. Production is not another Podman image.
+## Requirements
 
-Do not collapse those paths. Local development does not use Podman. The Podman image serves the optimized static `dist/`
-build; it does not run Vite, hot reload, or `make run` inside the container. The production tarball is the same static
-`dist/` tree packaged for a host the deployment repository owns.
+- Node.js 26.7.0 (see [`.nvmrc`](.nvmrc))
+- Corepack, for the pinned Yarn 4.18.0 release
+- GNU Make
+- A compatible Shade backend to use the application
+- Podman only for the Compose-oriented development image
 
-## Prerequisites
-
-- [Node.js 26.7.0](https://nodejs.org/)
-- [Corepack](https://nodejs.org/api/corepack.html)
-- Yarn 4.18.0 (provided through Corepack)
-- [Make](https://www.gnu.org/software/make/)
-- [Podman](https://podman.io/) (deployed-development image only)
-
-## Local development
-
-Activate the Node.js version recorded in `.nvmrc`, then enable Corepack, install the locked dependencies, and configure
-the API token:
-
-```sh
-nvm use
-corepack enable
-make install
-cp -n .env.example .env
-```
-
-Edit `.env` and set `VITE_API_SECRET_KEY` to match the backend
-`API_SECRET_KEY`. Restart the dev server after changing `.env`.
-
-Start the local Vite development server:
-
-```sh
-make run
-```
-
-By default the app calls the same-origin API path in `public/config.js` (`/api`). Run the tenant-aware Vite proxy for
-local development so requests carry trusted hostname context to the backend.
-
-To use the tenant-aware same-origin Vite proxy:
-
-Start the dev server with the proxy enabled:
-
-```sh
-SHADE_API_PROXY=1 make run
-```
-
-Open `http://andy.localhost:5173`, `http://dalmo.localhost:5173`, or `http://jamie.localhost:5173` to select a library. Bare
-`http://localhost:5173` and `http://127.0.0.1:5173` select Andy. Optionally set `SHADE_API_PROXY_TARGET` (default
-`http://127.0.0.1:8000`) when the API listens elsewhere. The proxy derives `X-Forwarded-Host` from the browser host;
-browser code never sends that header. This proxy is host `make run` only and is not available inside the Podman image.
-
-Run the complete lint, type-check, test, and build quality gate:
-
-```sh
-make check
-```
-
-Create an optimized production build:
-
-```sh
-make build
-```
-
-Production output is written to `dist/`. Host `yarn preview` can serve that directory locally; it is not the Compose
-path and is not deployed production. Package `dist/` for the deployment repository with `make publish` (see Deployed
-production).
-
-## API token
-
-The Bearer token is read from the repository-root `.env` file as `VITE_API_SECRET_KEY`. Vite injects this value at
-dev-server and production build time, so the secret is embedded in generated JavaScript bundles. Keep `.env` gitignored
-and never commit real secrets.
-
-Copy `.env.example` to `.env`, set the value to match the backend `API_SECRET_KEY`, and restart `make run` after
-changes. Hot reload does not reload env files. A missing or blank `VITE_API_SECRET_KEY` prevents the app from starting.
-
-For any production build -- including the Podman image and the production tarball, which copy or pack host-built
-`dist/` -- set `VITE_API_SECRET_KEY` in the build environment before running `make build` (host `.env` or a build
-secret). Bind-mounting `.env` at container start does not change the baked token. Built static assets under `dist/` and
-the release archive must not include the `.env` file itself. The Bearer value is embedded in hashed JavaScript by
-design; that is an accepted shared-secret risk for this trusted personal deployment, not a second authentication model.
-Dummy `test-api-token`is for CI only.
-
-## Quality gate and continuous integration
-
-`make check` is the canonical local and CI quality gate. It runs ESLint, TypeScript, OpenAPI generated-type drift
-checking, Vitest with enforced coverage thresholds, Playwright browser and accessibility tests, the production build,
-and the main-entry bundle-size check.
-
-Playwright requires Chromium and its Linux system dependencies. On a machine with the required privileges, install them
-with:
+For the full browser test suite on Linux:
 
 ```sh
 yarn playwright install --with-deps chromium
 ```
 
-GitHub Actions runs the same `make check` gate for pull requests and pushes to `main`. CI uses the Node version from
-`.nvmrc`, Yarn through Corepack, and`yarn install --immutable`; dependency caching does not replace the immutable
-install.
+## Local development
 
-The main JavaScript entry has a gzip soft-warning budget of 120 kB and a hard failure budget of 150 kB. Check it
-separately after a production build with:
+Install the locked dependencies:
 
 ```sh
-make bundle-check
+nvm use
+corepack enable
+make install
 ```
 
-CI uses `VITE_API_SECRET_KEY=test-api-token` as a non-secret build/test value. Browser tests use mocked API fixtures and
-do not require a live protected backend or the real deployment Bearer token.
+Shade starts in **viewer mode**. Normal frontend development needs no API secret or `.env` file. Use the app's Log in control and an administrator password when a protected page or mutation is required; the backend issues a short-lived token for that browser session.
 
-## Deployed development
+The default [`public/config.js`](public/config.js) calls the same-origin `/api` path. For a local backend at `http://127.0.0.1:8000`, enable the Vite proxy:
 
-This is the Compose/dev-deployment path. Compose should pull **`shade-frontend`**. `make ci` tags
-`shade-frontend:latest` and `shade-frontend:<package.json version>` (the same version string as `APP_VERSION`).
+```sh
+SHADE_API_PROXY=1 make run
+```
 
-The image is runtime-only `nginx:1.31-alpine`. It serves host-built `dist/` over HTTP on container port **8080** and
-proxies `/api/*` to `shade-backend:8000` (prefix stripped) on the Compose network. It does not run Node, Yarn, or Vite,
-and it does not `COPY` `.env`. The multi-service Compose file lives in the orchestrator repository (`shade-proxy` is the
-public HTTP entry on host **80**; this nginx port is not published on the host in that stack).
+With the stock identities, open a tenant-aware local URL:
 
-### Build, run, and clean up
+- `http://andy.localhost:5173`
+- `http://dalmo.localhost:5173`
+- `http://jamie.localhost:5173`
 
-Build the Podman image (requires Podman):
+In the stock configuration, `localhost` and `127.0.0.1` use Andy locally. The proxy supplies the trusted `X-Forwarded-Host` header; browser code must never send it. To use a different backend target:
+
+```sh
+SHADE_API_PROXY=1 SHADE_API_PROXY_TARGET=http://127.0.0.1:9000 make run
+```
+
+For a different arrangement, point `apiBaseUrl` at an absolute HTTP(S) URL only when a trusted tenant-aware proxy supplies the required host context and backend CORS permits the Vite origin. Restore the checked-in `/api` value before committing unless that configuration change is intentional.
+
+`make run` uses host Vite with hot reload; it does not use Podman.
+
+## Make a self-hosted library your own
+
+`andy` is **not** a generic placeholder today. It is one of this repository's three built-in library identities (`andy`, `dalmo`, and `jamie`), and `shade.library.spir.es` is an explicit alias for `andy`. A fresh deployment will therefore show Andy's name and branding—and an unrecognised domain shows “Library not found”—until both the backend tenant and this frontend identity are customized.
+
+Choose a lowercase tenant slug for the new library, such as `mylibrary`. The current frontend resolves a library from the leftmost hostname label, so a convenient public hostname is `mylibrary.example.com`; local development can use `mylibrary.localhost`.
+
+Set up the backend and reverse proxy before expecting the frontend to work:
+
+1. Create and allowlist the new backend tenant. In the matching backend configuration, this includes its tenant entry (currently documented as `data/tenants.cfg`) and any hostname aliases you want; do not reuse the `shade` → `andy` alias.
+2. Configure the trusted reverse proxy to send `X-Forwarded-Host: mylibrary.example.com` to the backend. The browser must not set this header.
+3. Set the backend `CORS_ORIGINS` to the exact frontend origin, for example `https://mylibrary.example.com`. Include scheme and port when applicable, but no path or trailing slash.
+4. Bootstrap an administrator password through the backend's one-time operator workflow, then use the frontend Log in control. Do not expose the bootstrap secret in the frontend.
+
+Then replace or add the frontend identity. These source files deliberately make the current libraries explicit; update them as one coherent change rather than merely pointing a new domain at the existing build:
+
+| Area | Files to update |
+| --- | --- |
+| Name, wordmark, theme, home imagery, and type | `src/config/libraryIdentity.ts` and the chosen assets under `src/assets/` |
+| Recognized hostnames, local default, favicon, and label mark | `src/config/libraryContext.ts` and `vite.config.ts` |
+| Theme tokens and library-specific presentation rules | `src/styles/tokens.css` and `src/styles/components.css` |
+| Browser/printed-label branding | `public/favicon-*.png`, `src/features/books/labelQrOptions.ts`, and the equivalent album label view |
+| Compose image favicon selection | `ci/nginx.conf` |
+
+For a single-library fork, replacing the `andy` identity with your own slug is usually simpler than retaining all three profiles. For a multi-library deployment, add the new slug everywhere the `LibraryId` union is used. Search before and after the change so that intentional product behavior—not an overlooked hard-coded name—drives the result:
+
+```sh
+rg -n -i 'andy|dalmo|jamie|library\.spir\.es' src public ci vite.config.ts
+make check
+```
+
+The TypeScript check will identify many incomplete identity changes. Also visit the new public hostname, a direct client-side route, the home page, and printed QR labels before release. QR payloads identify physical items rather than the public domain, so they normally do not need to change.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `make install` | Install dependencies from the lockfile. |
+| `make run` | Start Vite. |
+| `make lint` | Run ESLint with zero warnings. |
+| `make typecheck` | Run the TypeScript check. |
+| `make test` | Run Vitest. |
+| `make build` | Type-check and create `dist/`. |
+| `make bundle-check` | Check the production entry gzip budget. |
+| `make check` | Run the complete local/CI quality gate. |
+| `make ci` | Build the local Podman image. |
+| `make publish` | Create a versioned static release tarball. |
+
+`make check` runs linting, type checking, OpenAPI generated-type drift checks, Vitest coverage, Playwright and accessibility tests, a production build, and the bundle-size check. Current global coverage thresholds are 20% for statements, branches, functions, and lines. Browser tests use mocked APIs and do not need a running backend.
+
+GitHub Actions runs `make check` on pull requests and pushes to `main`.
+
+## API and authentication
+
+After intentionally changing the checked-in OpenAPI contract, regenerate types with:
+
+```sh
+yarn api:generate
+```
+
+The quality gate verifies that regeneration leaves no diff.
+
+Viewer catalog reads are available without a Bearer token when the backend receives a tenant-aware host context. Administrator-only data and every mutation require the short-lived token from `POST /auth/sign-in`, handled by the Log in control.
+
+Do not put the backend's global `API_SECRET_KEY` in a Vite variable or browser bundle. It is for the backend's one-time bootstrap operation, not routine frontend authentication. The legacy `.env.example` and `VITE_API_SECRET_KEY` helper remain only for compatibility and test tooling; they are not part of normal application startup.
+
+## Runtime configuration
+
+The browser loads `/config.js` before the app:
+
+```js
+window.__SHADE_CONFIG__ = {
+  apiBaseUrl: '/api', // or an absolute http(s) URL
+  diagnostics: {
+    enabled: false,
+    endpoint: null,
+  },
+}
+```
+
+When enabled, diagnostics require an absolute HTTP(S) endpoint. Treat that endpoint as privacy-sensitive operational infrastructure: reports are allowlisted and redacted, and must never include passwords or authorization headers.
+
+## Compose-oriented development image
+
+The image is an HTTP-only nginx server for a multi-service Compose environment. It serves host-built `dist/`; it does not run Node, Yarn, Vite, or hot reload.
 
 ```sh
 make ci
 ```
 
-Or run the script directly:
+This tags `shade-frontend:latest` and `shade-frontend:<package.json-version>`. It listens on port 8080, proxies `/api/*` to `shade-backend:8000` on the Compose network, and writes `/config.js` at startup. Smoke-test it standalone with:
 
 ```sh
-./ci/build-local.sh
-```
-
-`make ci` runs host `make build`, then builds the image with `ci/Containerfile`.
-
-To run the image outside orchestrator Compose for local smoke testing:
-
-```sh
-podman run --rm \
-  --name shade-frontend-dev \
-  -p 8080:8080 \
-  -e SHADE_API_BASE_URL="${SHADE_API_BASE_URL:-/api}" \
-  -e SHADE_DIAGNOSTICS_ENABLED="${SHADE_DIAGNOSTICS_ENABLED:-false}" \
-  -e SHADE_DIAGNOSTICS_ENDPOINT="${SHADE_DIAGNOSTICS_ENDPOINT:-}" \
+podman run --rm --name shade-frontend-dev -p 8080:8080 \
+  -e SHADE_API_BASE_URL=/api \
+  -e SHADE_DIAGNOSTICS_ENABLED=false \
   shade-frontend:latest
 ```
 
-Stop or remove that named container with `podman stop shade-frontend-dev` or
-`podman rm -f shade-frontend-dev`. Remove both image tags with
-`podman rmi shade-frontend:latest shade-frontend:<package.json version>`.
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SHADE_API_BASE_URL` | `/api` | Browser-visible API base URL. |
+| `SHADE_DIAGNOSTICS_ENABLED` | `false` | Must be `true` or `false`. |
+| `SHADE_DIAGNOSTICS_ENDPOINT` | empty | Diagnostics URL when enabled. |
 
-Startup and shutdown must not leave generated root-owned files in this repository. The image copies `dist/` at build
-time and does not bind-mount the working tree.
+In normal Compose use, an external reverse proxy owns public TLS and preserves the browser host for tenant context. The image health check verifies static content and `config.js`, not protected API routes.
 
-### Runtime configuration
+## Static release
 
-At container start, `ci/container-entrypoint.sh` writes `/config.js` from environment variables. Changing these does not
-require an image rebuild. Application release stays the `package.json` `version` from the image build.
-
-| Variable                     | Default                       | Meaning                                     |
-|------------------------------|-------------------------------|---------------------------------------------|
-| `SHADE_API_BASE_URL`         | `/api`                        | Browser-visible API base URL (`apiBaseUrl`) |
-| `SHADE_DIAGNOSTICS_ENABLED`  | `false`                       | Must be `true` or `false`                   |
-| `SHADE_DIAGNOSTICS_ENDPOINT` | empty (`null` in `config.js`) | Diagnostics POST URL when enabled           |
-
-`SHADE_API_BASE_URL` is loaded by the browser. Keep the default root-relative `/api` so the same build follows the
-Shade (the public alias for Andy), Dalmo (`https://dalmo.library.spir.es`), Jamie, or a bare-localhost origin being browsed. An absolute `http:`/`https:` URL remains supported for
-special development arrangements, but it must be coordinated with backend CORS and tenant-aware proxying.
-
-### CORS and origin
-
-Orchestrator Compose puts `shade-proxy` (Caddy) in front and routes everything to this nginx container. Browser calls
-are same-origin `/api` through the proxy; backend `CORS_ORIGINS` must still list the exact HTTP origins in use (no path,
-no trailing slash). Do not rely on the Vite `SHADE_API_PROXY=1` dev-server proxy for the Compose path.
-
-### Healthcheck
-
-The image healthcheck uses `wget` against `http://127.0.0.1:8080/` and `http://127.0.0.1:8080/config.js`. It does not
-call protected API routes.
-
-## Deployed production
-
-This is the versioned tarball path for the deployment repository. It is not `make run`, `yarn preview`, or the Podman
-Compose image. HTTPS, TLS, host install, supervision, and rollback stay with the deployment repository.
+Production delivery is a versioned static tarball, not the Podman image:
 
 ```sh
 make publish
 ```
 
-Or run the script directly:
+This writes gitignored files to `ci/artifacts/`:
 
-```sh
-./ci/build-prod.sh
-```
+| File | Purpose |
+| --- | --- |
+| `shade-frontend-<version>.tar.gz` | Deterministic archive of `dist/`. |
+| `shade-frontend-<version>.tar.gz.sha256` | SHA-256 checksum. |
+| `shade-frontend-<version>.manifest.json` | Version, commit, build metadata, and hosting requirements. |
 
-`make publish` runs `make build`, then writes gitignored files under `ci/artifacts/`:
-
-| File                                                  | Role                                                                    |
-|-------------------------------------------------------|-------------------------------------------------------------------------|
-| `shade-frontend-<package.json version>.tar.gz`        | Deterministic archive of `dist/`                                        |
-| `shade-frontend-<package.json version>.tar.gz.sha256` | SHA-256 of that archive                                                 |
-| `shade-frontend-<package.json version>.manifest.json` | Version, commit, build time, runtime-config shape, hosting requirements |
-
-The archive name includes the same `package.json` `version` string as `APP_VERSION` and the AppShell footer `Release`
-label. Repeated packs of identical `dist/` contents produce equivalent archive bytes and the same checksum. The sidecar
-manifest records build time and commit; those fields are not embedded in the tarball.
-
-Verify the checksum before and after transfer, then extract only the static site:
+Verify and inspect before extraction:
 
 ```sh
 cd ci/artifacts
-sha256sum -c shade-frontend-<version>.tar.gz.sha256   # Linux
-# shasum -a 256 -c shade-frontend-<version>.tar.gz.sha256   # macOS
+sha256sum -c shade-frontend-<version>.tar.gz.sha256
 tar -tzf shade-frontend-<version>.tar.gz
 tar -xzf shade-frontend-<version>.tar.gz -C /path/to/html
 ```
 
-Extraction yields deployable static assets plus the public `config.js` template (`index.html`, hashed `/assets/`,
-`favicon.png`). It does not include source, `.env`, `node_modules/`, coverage, Playwright output, Podman/dev files, SQL
-dumps, or database files. Replace `config.js` with deployment-managed production values (`apiBaseUrl` and optional
-`diagnostics`); changing it does not require a JavaScript rebuild. Do not copy `ci/Containerfile` into the archive or
-treat the Compose image as production.
+The archive includes deployable static assets and the public `config.js` template, not source, `node_modules`, `.env`, test output, databases, or Podman files. The host replaces `config.js` with environment values without rebuilding JavaScript.
 
-Inspection tests in `make check` pack a temporary tree and reject non-deployable members. They do not fail because
-hashed JS contains the build-time Bearer token. Default CI does not upload `ci/artifacts/` or other secret-bearing
-archives.
+The deployment environment owns HTTPS/TLS, CSP and security headers, CORS and API connectivity, tenant-aware reverse proxying, SPA fallback, atomic install/rollback, supervision, and health checks. Revalidate `index.html` and `config.js`; cache hashed `/assets/` long-term. [`ci/nginx.conf`](ci/nginx.conf) is the development-image reference for those cache and SPA-routing rules.
 
-## Production connectivity (release blocker)
+## Public-repository checklist
 
-Production must choose and verify one connectivity arrangement before release:
+Before publishing, review the whole working tree—not only ignored files:
 
-- Cross-origin: put the frontend's exact origin (scheme, hostname, and port; no path or trailing slash) in the backend
-  `CORS_ORIGINS` list, or
-- Same-origin: put a deployment-managed reverse proxy in front of the API.
+```sh
+git status --short
+git ls-files .env ci/artifacts data
+```
 
-Either choice remains a release blocker until authenticated requests and browser CORS preflights are verified.
-Cross-origin requests may send `Authorization` and `Content-Type`. Tenant identity is supplied only by the trusted
-proxy through `X-Forwarded-Host`; cookies and credentialed CORS are not used.
-
-## Production host security
-
-The frontend repository produces the versioned static tarball; the production deployment host is responsible for
-transport, install, and browser security controls. `ci/nginx.conf` is the **dev-image** reference for SPA `try_files`,
-`Cache-Control: no-cache` on `index.html` / `config.js`, and long-lived hashed `/assets/`. Apply the same behaviors on
-the tarball host; do not ship that image as production.
-
-Before production release, the deployment environment must:
-
-- serve the extracted tarball and production API traffic over HTTPS;
-- apply a restrictive Content Security Policy compatible with the application's static assets, configured API origin,
-  and camera access used by the ISBN scanner;
-- apply appropriate browser security headers, including HSTS where applicable;
-- provide SPA fallback routing to `index.html` for client-side routes;
-- revalidate `index.html` and `config.js` (`Cache-Control: no-cache` or equivalent) while allowing long-lived immutable
-  caching for hashed `/assets/`;
-- serve deployment-managed `config.js` with production `apiBaseUrl` and diagnostics values;
-- restrict network access because the baked browser Bearer token is a shared secret;
-- provide atomic install, rollback, process/service supervision, and health checks;
-- retain and verify the tarball SHA-256 checksum and release manifest before and after transfer.
-
-The frontend build does not create, package, upload, or deploy a production `.env` file. The Bearer token is injected at
-`make build` time and is present in hashed JavaScript inside the archive. That is the accepted shared-secret design for
-this trusted personal deployment, not multi-user authentication. If the application becomes publicly reachable or
-supports untrusted users, release must be blocked until authentication is redesigned.
-
-Browser support for production smoke and scanner hardware checks live in `AGENTS.md`. Do not duplicate those
-matrices here.
-
-These requirements are deployment assumptions, not frontend implementations. This repository documents them for handoff;
-the deployment repository owns concrete static-server, TLS, CSP, security-header, Ansible, systemd, and rollback
-configuration.
-
-### Production smoke checklist
-
-Confirm the extracted artifact against a production-like host (not Vite `make run` and not the Compose image). Reuse
-existing product coverage; this is host and config confirmation, not a second end-to-end stack.
-
-- [ ] Checksum and manifest match the archive; version equals `package.json` / footer `Release`
-- [ ] Deployment-managed `config.js` points at the production API; diagnostics values are intentional
-- [ ] Protected API access works with the baked Bearer token
-- [ ] CORS/preflight or same-origin proxy permits `Authorization` and `Content-Type`; cookies are
-      not used
-- [ ] Direct-route refresh uses SPA fallback; `index.html` / `config.js` revalidate; hashed `/assets/` are long-lived
-- [ ] Collections create / delete / add existing books / remove membership / reorder books
-- [ ] Wishlists create / delete / add book, and move a wishlisted book to a shelf
-- [ ] Shelves catalog create / edit / delete
-- [ ] Checkout, check-in from Loans, mark-read, delete, and restore
-- [ ] Operational backups are configured and verified via the backend `make fetch-backup` / `scripts/fetch_backup.py`
-      workflow and scheduled backup job
-
-### CI artifacts and privacy
-
-The default CI workflow does not retain `dist/`, `ci/artifacts/`, coverage output, Playwright reports, traces,
-screenshots, videos, `.env` files, database files, backup dumps, or other runtime data.
-
-If CI artifact retention is added later, retained artifacts must be reviewed before upload and must exclude secrets and
-secret-bearing environment files, database or backup contents, runtime logs, diagnostic payloads, and other sensitive
-local data. Backup contents must never be uploaded as CI artifacts.
-
-Production release must verify these host controls alongside the connectivity requirements above rather than assuming
-that a successful frontend build provides them.
+Keep `.env`, release artifacts, databases, backups, test output, diagnostic payloads, tokens, and passwords out of GitHub. Review fixtures, screenshots, links, commit history, and repository settings for private hostnames, people, library data, and credentials. Backend data and deployment infrastructure need their own publication review.
