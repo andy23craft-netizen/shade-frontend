@@ -11037,8 +11037,10 @@
 .catalog-code-resolver form { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; }
 .catalog-code-resolver label { display: grid; gap: var(--space-1); }
 
-.catalog-image-search { max-width: 54rem; }
+.catalog-image-search { max-width: 54rem; color: var(--color-text); }
 .catalog-image-search__form, .catalog-image-search__recognized, .catalog-image-search__results > li { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--color-card); color: var(--color-surface-text); }
+.catalog-image-search__form :is(input, select, textarea), .catalog-image-search__results > li a { color: var(--color-surface-text); }
+.catalog-image-search__results > li a:hover { color: var(--color-link-hover); }
 .catalog-image-search__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .catalog-image-search__preview { max-width: 18rem; margin: var(--space-4) 0; }
 .catalog-image-search__preview img { display: block; width: 100%; max-height: 20rem; object-fit: contain; background: var(--color-surface); }

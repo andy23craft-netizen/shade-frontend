@@ -17,10 +17,6 @@ function errorMessage(error: unknown): string {
     return 'The image search could not be completed. Your image was not saved; try again.'
 }
 
-function candidatePath(mediaType: 'book' | 'album', itemId: string): string {
-    return mediaType === 'book' ? `/books/${itemId}` : `/albums/${itemId}`
-}
-
 export function CatalogImageSearchPage() {
     const search = useCatalogImageSearch()
     const inputRef = useRef<HTMLInputElement>(null)
@@ -71,7 +67,6 @@ export function CatalogImageSearchPage() {
     }
 
     const hasText = (result?.recognized_text.length ?? 0) > 0
-    const hasLocalCandidates = (result?.candidates.length ?? 0) > 0
     const externalBooks = (result?.external_book_candidates ?? []) as ExternalImageCandidate[]
     const externalAlbums = (result?.external_album_candidates ?? []) as ExternalImageCandidate[]
     const hasExternalCandidates = externalBooks.length > 0 || externalAlbums.length > 0
@@ -90,8 +85,7 @@ export function CatalogImageSearchPage() {
         {searchError ? <Alert variant="error">{searchError}</Alert> : null}
         {result && hasText ? <section className="catalog-image-search__recognized" aria-labelledby="recognized-text-heading"><h2 id="recognized-text-heading">Recognized text</h2><p>This is context from the image, not a saved search or an automatic match.</p><ul>{result.recognized_text.map((entry, index) => <li key={`${entry.text}-${index}`}>{entry.text}{entry.confidence === null || entry.confidence === undefined ? null : ` (${Math.round(entry.confidence * 100)}% recognition confidence)`}</li>)}</ul></section> : null}
         {result && !hasText ? <EmptyState title="No usable text was found"><p>Try a clearer, well-lit photo that fills more of the frame, or choose a different image.</p></EmptyState> : null}
-        {result && hasText && !hasLocalCandidates && !hasExternalCandidates ? <EmptyState title="No matches were found"><p>Try another image, or browse the book and album catalogs directly.</p><p><AppLink to="/books">Browse books</AppLink> · <AppLink to="/albums">Browse albums</AppLink></p></EmptyState> : null}
-        {result && hasLocalCandidates ? <section aria-labelledby="image-search-results-heading"><h2 id="image-search-results-heading">Already in your catalog</h2><p>Choose an item to open it; image search never opens a result automatically.</p><ul className="catalog-image-search__results" aria-label="Local image search suggestions">{result.candidates.map((candidate) => <li key={`${candidate.media_type}-${candidate.item_id}`}><AppLink to={candidatePath(candidate.media_type, candidate.item_id)}><strong>{candidate.title}</strong></AppLink><dl><div><dt>Type</dt><dd>{candidate.media_type === 'book' ? 'Book' : 'Album'}</dd></div><div><dt>Matched</dt><dd>{candidate.matched_fields.join(', ') || 'Catalog text'}</dd></div><div><dt>Score</dt><dd>{candidate.score}</dd></div></dl></li>)}</ul></section> : null}
+        {result && hasText && !hasExternalCandidates ? <EmptyState title="No external matches were found"><p>Try another image with clearer, more complete cover or artwork text.</p></EmptyState> : null}
         {result && externalBooks.length > 0 ? <section aria-labelledby="external-book-results-heading"><h2 id="external-book-results-heading">Book suggestions from Open Library</h2><p>Select a result to start a new-book lookup. Nothing is added until you save it.</p><ul className="catalog-image-search__results" aria-label="External book suggestions">{externalBooks.map((candidate, index) => { const isbn = externalBookIsbn(candidate); const title = externalCandidateTitle(candidate, `Book result ${index + 1}`); return <li key={`book-${index}`}><strong>{title}</strong>{externalCandidateDetails(candidate) ? <p>{externalCandidateDetails(candidate)}</p> : null}{isbn ? <AppLink to={`/books/new?isbn=${encodeURIComponent(isbn)}`}>Use this book suggestion</AppLink> : <p>Review this suggestion manually; the provider did not supply an ISBN for lookup.</p>}</li> })}</ul></section> : null}
         {result && externalAlbums.length > 0 ? <section aria-labelledby="external-album-results-heading"><h2 id="external-album-results-heading">Album suggestions from Discogs and MusicBrainz</h2><p>Select a result to start a new-album lookup. Nothing is added until you save it.</p><ul className="catalog-image-search__results" aria-label="External album suggestions">{externalAlbums.map((candidate, index) => { const lookup = externalAlbumLookup(candidate); const title = externalCandidateTitle(candidate, `Album result ${index + 1}`); const href = lookup ? `/albums/new?${lookup.kind === 'barcode' ? 'barcode' : 'discogs_release_id'}=${encodeURIComponent(lookup.value)}` : null; return <li key={`album-${index}`}><strong>{title}</strong>{externalCandidateDetails(candidate) ? <p>{externalCandidateDetails(candidate)}</p> : null}{href ? <AppLink to={href}>Use this album suggestion</AppLink> : <p>Review this suggestion manually; the provider did not supply a barcode or Discogs release ID for lookup.</p>}</li> })}</ul></section> : null}
     </section>

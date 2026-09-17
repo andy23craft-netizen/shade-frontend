@@ -18,7 +18,7 @@ describe('CatalogImageSearchPage', () => {
         expect(mutate).not.toHaveBeenCalled()
     })
 
-    it('shows recognized context and routes typed candidates explicitly', async () => {
+    it('does not show in-catalog matches', async () => {
         renderPage(); select(new File(['image'], 'cover.png', { type: 'image/png' }))
         fireEvent.click(screen.getByRole('button', { name: 'Search image' }))
         const callbacks = mutate.mock.calls[0][1]
@@ -27,25 +27,25 @@ describe('CatalogImageSearchPage', () => {
             { media_type: 'album', item_id: 'album-id', title: 'Fire Music', matched_fields: ['artist'], score: 87 },
         ] })
         await waitFor(() => expect(screen.getByText('Pale Fire (90% recognition confidence)')).toBeInTheDocument())
-        expect(screen.getByRole('link', { name: 'Pale Fire' })).toHaveAttribute('href', '/books/book-id')
-        expect(screen.getByRole('link', { name: 'Fire Music' })).toHaveAttribute('href', '/albums/album-id')
+        expect(screen.queryByText('Already in your catalog')).not.toBeInTheDocument()
+        expect(screen.queryByRole('link', { name: 'Pale Fire' })).not.toBeInTheDocument()
     })
 
-    it('distinguishes no usable text from no matching catalog item', async () => {
+    it('distinguishes no usable text from no external match', async () => {
         renderPage(); select(new File(['image'], 'cover.png', { type: 'image/png' })); fireEvent.click(screen.getByRole('button', { name: 'Search image' }))
         mutate.mock.calls[0][1].onSuccess({ recognized_text: [], candidates: [] })
         await waitFor(() => expect(screen.getByText('No usable text was found')).toBeInTheDocument())
         select(new File(['image'], 'other.png', { type: 'image/png' })); fireEvent.click(screen.getByRole('button', { name: 'Search image' }))
         mutate.mock.calls[1][1].onSuccess({ recognized_text: [{ text: 'Unknown', confidence: null }], candidates: [] })
-        await waitFor(() => expect(screen.getByText('No matches were found')).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByText('No external matches were found')).toBeInTheDocument())
     })
 
     it('clears a prior result when the image is replaced or cleared', async () => {
         renderPage(); select(new File(['image'], 'cover.png', { type: 'image/png' })); fireEvent.click(screen.getByRole('button', { name: 'Search image' }))
         mutate.mock.calls[0][1].onSuccess({ recognized_text: [{ text: 'Pale Fire', confidence: null }], candidates: [{ media_type: 'book', item_id: 'book-id', title: 'Pale Fire', matched_fields: ['title'], score: 99 }] })
-        await waitFor(() => expect(screen.getByText('Already in your catalog')).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByText('No external matches were found')).toBeInTheDocument())
         select(new File(['image'], 'replacement.png', { type: 'image/png' }))
-        expect(screen.queryByText('Already in your catalog')).not.toBeInTheDocument()
+        expect(screen.queryByText('No external matches were found')).not.toBeInTheDocument()
         fireEvent.click(screen.getByRole('button', { name: 'Clear image' }))
         expect(screen.queryByAltText('Selected image: replacement.png')).not.toBeInTheDocument()
     })
