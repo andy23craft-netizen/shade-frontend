@@ -83,6 +83,10 @@ export type BookLookupResponse =
 export type CheckoutRequest = Omit<Schemas['CheckoutRequest'], 'availability_override'> &
     Partial<Pick<Schemas['CheckoutRequest'], 'availability_override'>>
 
+export type BookCheckoutRequest =
+    Omit<Schemas['BookCheckoutRequest'], 'availability_override'> &
+    Partial<Pick<Schemas['BookCheckoutRequest'], 'availability_override'>>
+
 export type CheckinRequest =
     Schemas['CheckinRequest']
 

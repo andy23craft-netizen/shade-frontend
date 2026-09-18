@@ -26,6 +26,7 @@ import {
 
 import type {
     BookCreate,
+    BookCheckoutRequest,
     BookList,
     BookRead,
     BookSummaryRefreshResponse,
@@ -37,7 +38,6 @@ import type {
     BulkShelfMoveRequest,
     BulkStashApplyRequest,
     CheckinRequest,
-    CheckoutRequest,
     MarkReadRequest,
     MarkUnreadRequest,
     PlacementState,
@@ -943,7 +943,7 @@ export function useCheckoutBook() {
             request,
         }: {
             id: string
-            request: CheckoutRequest
+            request: BookCheckoutRequest
         }) =>
             booksApi.checkout(
                 id,

@@ -35,6 +35,18 @@ Catalog image search (shipped)
   suggestions rather than an automatic physical-copy match. Empty OCR and no-match results are successful responses
   with an empty list. Invalid images return 422; OCR provider failures and timeouts return 502 and 504 respectively.
 
+Book checkout email notifications (shipped)
+
+- `POST /books/{book_id}/checkout` accepts an additive, optional `borrower_email` field. Omit it or send JSON `null`
+  to preserve the existing checkout behavior. A supplied address is trimmed, its domain is lowercased, and blank or
+  invalid values return **422** before a book or loan is changed.
+- When a valid address is supplied and SMTP is configured, the backend sends a best-effort checkout confirmation for
+  that book. The request still returns the usual **200 BookRead** response even if email delivery is disabled or fails
+  after checkout commits; the frontend must not show a checkout failure or retry the checkout in that case.
+- The email address is not stored or returned in `LoanRead`. Do not treat it as a reusable borrower profile field.
+- This notification applies only to book checkout. Album checkout, due-date reminders, returns, and resend controls are
+  not part of this API contract.
+
 Home quotes and discovery (shipped)
 
 - Authenticated `/quotes` is the tenant-owned Home quote library. `GET /quotes` returns the full ordered list as

@@ -6,7 +6,7 @@ import {
 
 import {
     pickBookCreate,
-    pickCheckoutRequest,
+    pickBookCheckoutRequest,
     pickDocumentedRequestFields,
     pickMarkReadRequest,
     pickShelfCreate,
@@ -21,7 +21,7 @@ import {
 } from './requestFields'
 import type {
     BookCreate,
-    CheckoutRequest,
+    BookCheckoutRequest,
     MarkReadRequest,
     ShelfCreate,
     ShelfUpdate,
@@ -94,17 +94,19 @@ describe('requestFields', () => {
         ).toEqual({})
     })
 
-    it('keeps documented checkout fields only', () => {
+    it('keeps documented book checkout fields only', () => {
         expect(
-            pickCheckoutRequest({
+            pickBookCheckoutRequest({
                 borrower: 'Pat',
+                borrower_email: 'pat@example.test',
                 notes: 'Handle with care',
                 extra: true,
-            } as CheckoutRequest & {
+            } as BookCheckoutRequest & {
                 extra: boolean
             }),
         ).toEqual({
             borrower: 'Pat',
+            borrower_email: 'pat@example.test',
             notes: 'Handle with care',
         })
     })

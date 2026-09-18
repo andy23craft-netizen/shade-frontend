@@ -27,7 +27,7 @@ import type {
     BulkShelfMoveRequest,
     BulkShelfMoveResponse,
     CheckinRequest,
-    CheckoutRequest,
+    BookCheckoutRequest,
     MarkReadRequest,
     MarkUnreadRequest,
 } from './apiTypes'
@@ -1148,7 +1148,7 @@ it(
     'checks out a book, writes detail cache, and invalidates loans and dashboard',
     async () => {
         const request =
-            {} as CheckoutRequest
+            {} as BookCheckoutRequest
 
         const book = {
             book_id: 'book-123',

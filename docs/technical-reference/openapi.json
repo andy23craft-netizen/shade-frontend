@@ -1165,6 +1165,71 @@
         "title": "BookCategoryRead",
         "type": "object"
       },
+      "BookCheckoutRequest": {
+        "properties": {
+          "availability_override": {
+            "default": false,
+            "title": "Availability Override",
+            "type": "boolean"
+          },
+          "borrower": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Borrower",
+            "type": "string"
+          },
+          "borrower_email": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Borrower Email"
+          },
+          "checked_out_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked Out At"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "borrower"
+        ],
+        "title": "BookCheckoutRequest",
+        "type": "object"
+      },
       "BookCreate": {
         "properties": {
           "acquisition_source": {
@@ -6722,7 +6787,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.11.0"
+    "version": "1.11.4"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -10822,7 +10887,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CheckoutRequest"
+                "$ref": "#/components/schemas/BookCheckoutRequest"
               }
             }
           },

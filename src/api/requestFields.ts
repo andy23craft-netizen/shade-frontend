@@ -3,13 +3,13 @@
 import type {
     AuthorCreate,
     AuthorUpdate,
+    BookCheckoutRequest,
     BookCreate,
     BookUpdate,
     BulkShelfMoveRequest,
     CategoryCreate,
     CategoryUpdate,
     CheckinRequest,
-    CheckoutRequest,
     MarkReadRequest,
     ShelfCreate,
     ShelfUpdate,
@@ -73,12 +73,13 @@ export const BULK_SHELF_MOVE_REQUEST_KEYS = [
     'shelf_name',
 ] as const satisfies readonly (keyof BulkShelfMoveRequest)[]
 
-export const CHECKOUT_REQUEST_KEYS = [
+export const BOOK_CHECKOUT_REQUEST_KEYS = [
     'availability_override',
     'borrower',
+    'borrower_email',
     'checked_out_at',
     'notes',
-] as const satisfies readonly (keyof CheckoutRequest)[]
+] as const satisfies readonly (keyof BookCheckoutRequest)[]
 
 export const CHECKIN_REQUEST_KEYS = [
     'rating',
@@ -210,12 +211,12 @@ export function pickBulkShelfMoveRequest(
     )
 }
 
-export function pickCheckoutRequest(
-    request: CheckoutRequest,
-): CheckoutRequest {
+export function pickBookCheckoutRequest(
+    request: BookCheckoutRequest,
+): BookCheckoutRequest {
     return pickDocumentedRequestFields(
         request,
-        CHECKOUT_REQUEST_KEYS,
+        BOOK_CHECKOUT_REQUEST_KEYS,
     )
 }
 

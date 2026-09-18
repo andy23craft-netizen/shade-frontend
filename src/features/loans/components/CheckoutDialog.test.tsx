@@ -183,7 +183,7 @@ describe('CheckoutDialog', () => {
         vi.useRealTimers()
     })
 
-    it('renders borrower and notes only', async () => {
+    it('renders borrower, optional email, and notes', async () => {
         renderDialog()
 
         const dialog = await screen.findByRole(
@@ -202,6 +202,16 @@ describe('CheckoutDialog', () => {
         expect(
             screen.getByLabelText('Borrower'),
         ).toBeInTheDocument()
+
+        expect(
+            screen.getByLabelText('Email address'),
+        ).toHaveAttribute('type', 'email')
+
+        expect(
+            screen.getByLabelText('Email address'),
+        ).toHaveAccessibleDescription(
+            'Optional. Used only to send this checkout confirmation.',
+        )
 
         expect(
             screen.getByLabelText('Notes'),
@@ -244,6 +254,29 @@ describe('CheckoutDialog', () => {
         ).toHaveFocus()
     })
 
+    it('shows an inline error for an invalid optional email', async () => {
+        renderDialog()
+        fillBorrower()
+        fireEvent.change(
+            screen.getByLabelText('Email address'),
+            { target: { value: 'not-an-email' } },
+        )
+
+        submitCheckout()
+
+        expect(mockMutate).not.toHaveBeenCalled()
+        expect(
+            await screen.findByText(
+                'Enter a valid email address.',
+            ),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByLabelText('Email address'),
+        ).toHaveAccessibleDescription(
+            'Optional. Used only to send this checkout confirmation. Enter a valid email address.',
+        )
+    })
+
     it('submits borrower, checkout time, and notes without a due date', () => {
         const now = new Date(
             '2026-08-19T15:30:45.123Z',
@@ -282,6 +315,67 @@ describe('CheckoutDialog', () => {
                 notes: 'Handle with care',
             },
         })
+    })
+
+    it('submits a trimmed optional borrower email', () => {
+        vi.useFakeTimers()
+        vi.setSystemTime(
+            new Date('2026-08-19T15:30:45.123Z'),
+        )
+        renderDialog()
+        fillBorrower()
+        fireEvent.change(
+            screen.getByLabelText('Email address'),
+            { target: { value: '  jane@example.test  ' } },
+        )
+
+        submitCheckout()
+
+        expect(mockMutate).toHaveBeenCalledWith(
+            {
+                id: 'book-1',
+                request: {
+                    borrower: 'Jane Reader',
+                    borrower_email: 'jane@example.test',
+                    checked_out_at:
+                        '2026-08-19T15:30:45.123Z',
+                },
+            },
+            expect.any(Object),
+        )
+    })
+
+    it('maps borrower email validation errors from the API', async () => {
+        renderDialog()
+        fillBorrower()
+        fireEvent.change(
+            screen.getByLabelText('Email address'),
+            { target: { value: 'jane@example.test' } },
+        )
+        submitCheckout()
+
+        mutationOptions().onError(
+            new ApiError({
+                kind: 'validation',
+                status: 422,
+                message: 'Validation failed',
+                fieldErrors: [
+                    {
+                        field: 'borrower_email',
+                        message: 'Email address is invalid.',
+                    },
+                ],
+            }),
+        )
+
+        expect(
+            await screen.findByText(
+                'Email address is invalid.',
+            ),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByLabelText('Email address'),
+        ).toHaveValue('jane@example.test')
     })
 
     it('omits blank notes from the request', () => {
@@ -485,6 +579,15 @@ describe('CheckoutDialog', () => {
             },
         )
 
+        fireEvent.change(
+            screen.getByLabelText('Email address'),
+            {
+                target: {
+                    value: 'jane@example.test',
+                },
+            },
+        )
+
         submitCheckout()
 
         const options = mutationOptions()
@@ -519,6 +622,10 @@ describe('CheckoutDialog', () => {
         ).toHaveValue(
             'Please return someday',
         )
+
+        expect(
+            screen.getByLabelText('Email address'),
+        ).toHaveValue('jane@example.test')
     })
 
     it('refreshes stale state after a 404 and preserves typed values', async () => {
@@ -647,6 +754,10 @@ describe('CheckoutDialog', () => {
 
         expect(
             screen.getByLabelText('Notes'),
+        ).toBeDisabled()
+
+        expect(
+            screen.getByLabelText('Email address'),
         ).toBeDisabled()
     })
 

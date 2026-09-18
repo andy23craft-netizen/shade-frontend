@@ -37,6 +37,7 @@ export interface CheckoutDialogProps {
 
 const CHECKOUT_FORM_FIELDS = new Set([
     'borrower',
+    'borrower_email',
     'notes',
 ])
 
@@ -45,6 +46,7 @@ const FIELD_LABELS: Record<
     string
 > = {
     borrower: 'Borrower',
+    borrowerEmail: 'Email address',
     notes: 'Notes',
 }
 
@@ -53,6 +55,7 @@ const FIELD_IDS: Record<
     string
 > = {
     borrower: 'checkout-borrower',
+    borrowerEmail: 'checkout-borrower-email',
     notes: 'checkout-notes',
 }
 
@@ -89,9 +92,13 @@ function mapCheckoutFieldErrors(
             continue
         }
 
-        mapped[
-            field as keyof CheckoutFormFieldErrors
-            ] = entry.message
+        const formField =
+            field === 'borrower_email'
+                ? 'borrowerEmail'
+                : field
+
+        mapped[formField as keyof CheckoutFormFieldErrors] =
+            entry.message
     }
 
     return mapped
@@ -410,7 +417,7 @@ export function CheckoutDialog({
             await refetchStaleLoanState()
 
             setFormError(
-                'Book is already checked out. The book and loan state were refreshed; your borrower and notes were kept.',
+                'Book is already checked out. The book and loan state were refreshed; your form values were kept.',
             )
             return
         }
@@ -427,7 +434,7 @@ export function CheckoutDialog({
                 'Book is display only'
 
             setFormError(
-                `${detail}. The book and loan state were refreshed; your borrower and notes were kept.`,
+                `${detail}. The book and loan state were refreshed; your form values were kept.`,
             )
             return
         }
@@ -436,7 +443,7 @@ export function CheckoutDialog({
             await refetchStaleLoanState()
 
             setFormError(
-                'This book is missing or no longer available for checkout. The book and loan state were refreshed; your borrower and notes were kept.',
+                'This book is missing or no longer available for checkout. The book and loan state were refreshed; your form values were kept.',
             )
             return
         }
@@ -566,7 +573,7 @@ export function CheckoutDialog({
                     </div>
                 ) : null}
 
-                <form onSubmit={handleSubmit}>
+                <form noValidate onSubmit={handleSubmit}>
                     {needsAvailabilityOverride ? (
                         <label className="checkbox-field" htmlFor="checkout-availability-override">
                             <input
@@ -598,6 +605,28 @@ export function CheckoutDialog({
                             disabled={
                                 checkoutBook.isPending
                             }
+                        />
+                    </Field>
+
+                    <Field
+                        label="Email address"
+                        id="checkout-borrower-email"
+                        helpText="Optional. Used only to send this checkout confirmation."
+                        error={fieldErrors.borrowerEmail}
+                    >
+                        <input
+                            id="checkout-borrower-email"
+                            type="email"
+                            autoComplete="email"
+                            maxLength={254}
+                            value={values.borrowerEmail}
+                            onChange={(event) =>
+                                updateField(
+                                    'borrowerEmail',
+                                    event.target.value,
+                                )
+                            }
+                            disabled={checkoutBook.isPending}
                         />
                     </Field>
 

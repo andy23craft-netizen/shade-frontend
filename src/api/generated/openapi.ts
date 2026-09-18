@@ -1792,6 +1792,24 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** BookCheckoutRequest */
+        BookCheckoutRequest: {
+            /**
+             * Availability Override
+             * @default false
+             */
+            availability_override: boolean;
+            /** Borrower */
+            borrower: string;
+            /** Borrower Email */
+            borrower_email?: string | null;
+            /** Checked Out At */
+            checked_out_at?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
         /** BookCreate */
         BookCreate: {
             /** Acquisition Source */
@@ -5627,7 +5645,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CheckoutRequest"];
+                "application/json": components["schemas"]["BookCheckoutRequest"];
             };
         };
         responses: {

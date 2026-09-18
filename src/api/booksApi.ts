@@ -1,5 +1,6 @@
 import type {
     BookCreate,
+    BookCheckoutRequest,
     BookList,
     BookLookupResponse,
     BookRead,
@@ -18,7 +19,6 @@ import type {
     BulkStashApplyRequest,
     BulkStashApplyResponse,
     CheckinRequest,
-    CheckoutRequest,
     MarkReadRequest,
     MarkUnreadRequest,
     PlacementState,
@@ -40,7 +40,7 @@ import {
     pickBookUpdate,
     pickBulkShelfMoveRequest,
     pickCheckinRequest,
-    pickCheckoutRequest,
+    pickBookCheckoutRequest,
     pickMarkReadRequest,
 } from './requestFields'
 
@@ -519,14 +519,14 @@ export function createBooksApi(
 
         async checkout(
             id: string,
-            request: CheckoutRequest,
+            request: BookCheckoutRequest,
             options: ApiCallOptions = {},
         ): Promise<BookRead> {
             return client.requestJson<BookRead>(
                 `/books/${encodeURIComponent(id)}/checkout`,
                 {
                     method: 'POST',
-                    body: pickCheckoutRequest(
+                    body: pickBookCheckoutRequest(
                         request,
                     ),
                     ...withSignal(options.signal),

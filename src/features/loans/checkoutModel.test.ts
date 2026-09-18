@@ -72,6 +72,27 @@ describe('validateCheckoutFormValues', () => {
                 'Borrower must be 255 characters or fewer.',
         })
     })
+
+    it('allows an omitted borrower email', () => {
+        expect(
+            validateCheckoutFormValues({
+                ...checkoutFormDefaults,
+                borrower: 'Pat',
+            }),
+        ).toEqual({})
+    })
+
+    it('rejects an obviously malformed borrower email', () => {
+        expect(
+            validateCheckoutFormValues({
+                ...checkoutFormDefaults,
+                borrower: 'Pat',
+                borrowerEmail: 'not-an-email',
+            }),
+        ).toEqual({
+            borrowerEmail: 'Enter a valid email address.',
+        })
+    })
 })
 
 describe('checkoutFormValuesToRequest', () => {
@@ -128,6 +149,20 @@ describe('checkoutFormValuesToRequest', () => {
         })
 
         expect(request).not.toHaveProperty('notes')
+    })
+
+    it('includes a trimmed borrower email when provided', () => {
+        expect(
+            checkoutFormValuesToRequest({
+                ...checkoutFormDefaults,
+                borrower: 'Pat',
+                borrowerEmail: '  Pat@Example.test  ',
+            }, now),
+        ).toEqual({
+            borrower: 'Pat',
+            borrower_email: 'Pat@Example.test',
+            checked_out_at: '2026-08-19T15:30:45.123Z',
+        })
     })
 
     it('uses the supplied checkout time on a leap-day', () => {

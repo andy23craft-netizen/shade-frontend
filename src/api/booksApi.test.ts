@@ -20,7 +20,7 @@ import type {
     BulkShelfMoveResponse,
     BulkStashApplyResponse,
     CheckinRequest,
-    CheckoutRequest,
+    BookCheckoutRequest,
     MarkReadRequest,
     MarkUnreadRequest,
 } from './apiTypes'
@@ -858,7 +858,7 @@ describe('createBooksApi', () => {
 
     it('checks out a book', async () => {
         const request =
-            {} as CheckoutRequest
+            {} as BookCheckoutRequest
         const response =
             {} as BookRead
 
