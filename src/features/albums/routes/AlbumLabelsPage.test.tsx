@@ -76,7 +76,7 @@ describe('AlbumLabelsPage', () => {
         }))
         expect(await screen.findByAltText('Shade label for Album for Labels'))
             .toHaveAttribute('src', 'blob:album-label')
-        expect(screen.getByText('Shade Library')).toBeInTheDocument()
+        expect(screen.getByText('Library')).toBeInTheDocument()
         expect(screen.getByText('Shelf: Jazz A')).toBeInTheDocument()
     })
 })

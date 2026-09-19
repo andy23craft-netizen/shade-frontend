@@ -5,9 +5,8 @@ const item = (state: string): AlbumBulkQueueItem => ({ clientItemId: 'album-1', 
 
 describe('albumBulkAddModel', () => {
     it('namespaces persisted album intake by canonical library and media', () => {
-        expect(albumBulkStorageKey('Jamie.Localhost')).toBe('shade:jamie:album:bulk-add:v1')
-        expect(albumBulkStorageKey('jamie.library.spir.es')).toBe('shade:jamie:album:bulk-add:v1')
-        expect(albumBulkStorageKey('andy.localhost')).not.toBe(albumBulkStorageKey('jamie.localhost'))
+        expect(albumBulkStorageKey('TENANT-A.EXAMPLE.TEST.')).toBe('shade:tenant-a.example.test:album:bulk-add:v1')
+        expect(albumBulkStorageKey('tenant-a.example.test')).not.toBe(albumBulkStorageKey('tenant-b.example.test'))
     })
     it('blocks ambiguous matches and requires explicit duplicate/acquisition choices', () => {
         expect(canImportAlbum(item('ambiguous'))).toBe(false)

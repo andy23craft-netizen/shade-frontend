@@ -106,6 +106,6 @@ describe('LibrarySetupPage', () => {
         fireEvent.change(screen.getByLabelText('New shelf name'), { target: { value: 'west_wall' } })
         fireEvent.click(screen.getByRole('button', { name: 'Continue to Book Build Mode' }))
         await waitFor(() => expect(createShelf).toHaveBeenCalledWith({ common_name: 'west_wall' }))
-        expect(window.localStorage.getItem('shade:andy:shared:guided-setup:v1')).toContain('new-shelf')
+        expect(window.localStorage.getItem('shade:localhost:shared:guided-setup:v1')).toContain('new-shelf')
     })
 })

@@ -34,7 +34,9 @@ The tracked runtime-config template uses the same-origin `/api` path. Start Vite
 SHADE_API_PROXY=1 make run
 ```
 
-Open `http://localhost:5173`. To target a different local backend, set `SHADE_API_PROXY_TARGET`:
+Open `http://localhost:5173`. The backend's private `CORS_ORIGINS` must include
+the frontend origin when the browser talks to it directly. To target a different
+local backend, set `SHADE_API_PROXY_TARGET`:
 
 ```sh
 SHADE_API_PROXY=1 SHADE_API_PROXY_TARGET=http://127.0.0.1:9000 make run

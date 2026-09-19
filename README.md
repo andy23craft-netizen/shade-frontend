@@ -12,11 +12,16 @@ Open your Shade site in a browser to browse the catalog in viewer mode. Use the 
 
 To host Shade at your own address:
 
-1. Create an A record in your DNS for the hostname you want to use, for example `shade.example.com`.
-2. Configure port forwarding on your router so public web traffic reaches the server that runs your Shade deployment.
-3. Put that base URL in the appropriate gitignored configuration files for your deployment.
+1. Create a DNS record for the hostname you want to use, for example `tenant-a.example.test`.
+2. Configure the deployment's private environment: `SHADE_API_UPSTREAM` is the
+   container-network backend `host:port`; `SHADE_API_BASE_URL` normally remains `/api`.
+3. Configure the backend's private tenant allowlist and `CORS_ORIGINS` to accept
+   the frontend origin. Tenant identity is resolved by the trusted proxy/backend
+   from the request hostname; the browser does not send tenant headers.
 
-The frontend, backend, and reverse proxy must be deployed together. Keep credentials, deployment-specific configuration, backups, diagnostics, and library data out of Git.
+The frontend, backend, and reverse proxy must be deployed together. Copy
+`.env.example` to a gitignored `.env` for local configuration. Keep credentials,
+deployment-specific configuration, backups, diagnostics, and library data out of Git.
 
 ## Project information
 

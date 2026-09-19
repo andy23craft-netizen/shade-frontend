@@ -31,7 +31,7 @@ describe('AboutPage', () => {
 
         const heading = screen.getByRole('heading', {
             level: 1,
-            name: 'Shade Library',
+            name: 'Library',
         })
 
         expect(heading).toBeInTheDocument()
@@ -42,7 +42,7 @@ describe('AboutPage', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                "About — Andy's Library — Shade",
+                'About — Library — Shade',
             )
         })
     })
@@ -53,7 +53,7 @@ describe('AboutPage', () => {
 
         await screen.findByRole('heading', {
             level: 1,
-            name: 'Shade Library',
+            name: 'Library',
         })
 
         await waitFor(() => {
@@ -97,32 +97,25 @@ describe('AboutPage', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                "Dashboard — Andy's Library — Shade",
+                'Dashboard — Library — Shade',
             )
         })
     })
 
-    it('explains the library, its dedication, lending policy, and how to use it', async () => {
+    it('explains the neutral library and how to use it', async () => {
         await renderAppTree(['/about'])
 
         expect(
             screen.getByRole('heading', {
                 level: 1,
-                name: 'Shade Library',
+                name: 'Library',
             }),
         ).toBeInTheDocument()
 
         expect(
             screen.getByText(
-                'My home library, made easier to explore.',
+                'A home collection, made easier to explore.',
             ),
-        ).toBeInTheDocument()
-
-        expect(
-            screen.getByRole('heading', {
-                level: 2,
-                name: 'For Charles Leewright',
-            }),
         ).toBeInTheDocument()
 
         expect(

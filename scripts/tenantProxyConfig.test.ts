@@ -31,23 +31,20 @@ describe('tenant-aware proxy configuration', () => {
     })
 
     it.each([
-        ['andy.localhost:5173', 'andy.localhost'],
-        ['jamie.localhost:5173', 'jamie.localhost'],
-        ['dalmo.localhost:5173', 'dalmo.localhost'],
-        ['localhost:5173', 'andy.localhost'],
-        ['127.0.0.1:5173', 'andy.localhost'],
-        ['SHADE.LIBRARY.SPIR.ES', 'shade.library.spir.es'],
-        ['jamie.library.spir.es', 'jamie.library.spir.es'],
-        ['dalmo.library.spir.es', 'dalmo.library.spir.es'],
+        ['tenant-a.localhost:5173', 'tenant-a.localhost'],
+        ['tenant-b.localhost:5173', 'tenant-b.localhost'],
+        ['localhost:5173', 'tenant-a.localhost'],
+        ['127.0.0.1:5173', 'tenant-a.localhost'],
+        ['TENANT-A.EXAMPLE.TEST', 'tenant-a.example.test'],
+        ['tenant-b.example.test', 'tenant-b.example.test'],
     ])('derives %s as forwarded host %s', (host, expected) => {
         expect(resolveForwardedLibraryHost(host)).toBe(expected)
     })
 
     it.each([
-        ['shade.library.spir.es', 'shade.library.spir.es'],
-        ['jamie.library.spir.es', 'jamie.library.spir.es'],
-        ['dalmo.library.spir.es', 'dalmo.library.spir.es'],
-        ['localhost:5173', 'andy.localhost'],
+        ['tenant-a.example.test', 'tenant-a.example.test'],
+        ['tenant-b.example.test', 'tenant-b.example.test'],
+        ['localhost:5173', 'tenant-a.localhost'],
     ])(
         'injects browser host %s as %s into proxied Vite requests',
         (host, expected) => {
@@ -88,12 +85,12 @@ describe('tenant-aware proxy configuration', () => {
         },
     )
 
-    it('trusts localhost subdomains and excludes backup from Vite', async () => {
+    it('does not compile deployment hosts into Vite', async () => {
         const config = await readFile('vite.config.ts', 'utf8')
 
-        expect(config).toContain("allowedHosts: ['.localhost', 'dalmo.library.spir.es']")
+        expect(config).toContain('allowedHosts: true')
         expect(config).toContain("'X-Forwarded-Host'")
-        expect(config).toContain("DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'")
+        expect(config).toContain("DEFAULT_LOCAL_LIBRARY_HOST = 'tenant-a.localhost'")
         expect(config).not.toMatch(/\|backup\|/u)
     })
 

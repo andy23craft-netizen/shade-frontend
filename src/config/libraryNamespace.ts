@@ -18,8 +18,6 @@ export function resolveLibraryClientNamespace(
 ): LibraryClientNamespace | null {
     const library = resolveLibraryContext(hostname)
 
-    if (library === null) return null
-
     return {
         libraryId: library.id,
         media,

@@ -25,7 +25,7 @@ test('loads the dashboard through the real browser application', async ({
         }),
     ).toBeVisible()
 
-    await expect(page).toHaveTitle("Dashboard — Andy's Library — Shade")
+    await expect(page).toHaveTitle('Dashboard — Library — Shade')
 
     await expect(
         page.getByText('Not enough data').first(),

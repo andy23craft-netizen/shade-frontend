@@ -16,7 +16,7 @@ test('creates a first shelf, resumes intake, and completes setup with zero items
     await expect(page.getByLabel('ISBN')).toBeVisible()
     await expect(page.getByText('A saved intake', { exact: false })).toHaveCount(0)
 
-    const persisted = await page.evaluate(() => localStorage.getItem('shade:andy:shared:guided-setup:v1'))
+    const persisted = await page.evaluate(() => localStorage.getItem('shade:tenant-a.localhost:shared:guided-setup:v1'))
     expect(persisted).toContain('west_wall')
 
     await page.reload()

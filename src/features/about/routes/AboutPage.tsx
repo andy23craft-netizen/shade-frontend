@@ -17,61 +17,11 @@ export function AboutPage() {
                     {identity.tagline ?? 'A home collection, made easier to explore.'}
                 </p>
 
-                {identity.id === 'andy' ? <><p>
-                    I love books. Big books, little books, old books, new books—the point
-                    of having them, to me, is that they should be read.
-                </p>
-
                 <p>
-                    Over the years, though, the collection got large enough that it
-                    became difficult to navigate. Friends would stop at the shelves when
-                    they came over and start looking through the titles, but there were
-                    simply too many to take in at once. I could explain how everything
-                    was organized, but then we were spending time talking about the
-                    shelves instead of the books.
-                </p>
-
-                <p>
-                    And everybody looks for something different. Some people want
-                    thrillers. Some want fantasy. Some want history, philosophy, poetry,
-                    or something they would never have thought to pick up on their own.
-                </p>
-
-                <p>
-                    Shade Library grew out of that problem. It gives you a way to browse
-                    the collection on your own terms, while giving me a way to remember
-                    where everything is—what I own, where it lives, whether I&apos;ve read
-                    it, and whether somebody has borrowed it.
-                </p>
-
-                <p>
-                    The shelves are still there. This just makes them a little easier to
-                    wander through.
-                </p></> : <p>
                     Browse books and albums, find where they live, and keep track of
                     reading, listening, and loans in one shared catalog.
-                </p>}
+                </p>
             </div>
-
-            {identity.id === 'andy' ? <section
-                className="about-page__section"
-                aria-labelledby="about-charles-leewright"
-            >
-                <h2 id="about-charles-leewright">
-                    For Charles Leewright
-                </h2>
-
-                <p>
-                    Many of the books in this library belonged to my grandfather,
-                    <strong> Charles Leewright</strong>, who died in 2019.
-                </p>
-
-                <p>
-                    He shared his love of books and writing with me, and a part of this
-                    collection exists because of him. Shade Library is dedicated to his
-                    memory.
-                </p>
-            </section> : null}
 
             <section
                 className="about-page__section"

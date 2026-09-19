@@ -78,7 +78,7 @@ describe('BookLabelsPage', () => {
             'cleanup-book-id',
         ])
         expect(screen.getByText('Missing ISBN Book')).toBeInTheDocument()
-        expect(screen.getByText('Shade Library')).toBeInTheDocument()
+        expect(screen.getByText('Library')).toBeInTheDocument()
         expect(screen.getByText('Shelf: History A')).toBeInTheDocument()
         expect(
             screen.queryByText(/Select one or more books from Browse/i),

@@ -2,13 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { requireLibraryClientNamespace, resolveLibraryClientNamespace } from './libraryNamespace'
 
 describe('library client namespace', () => {
-    it('uses trusted hostname mapping and canonicalizes aliases', () => {
-        expect(resolveLibraryClientNamespace('JAMIE.localhost', 'album')).toEqual({ libraryId: 'jamie', media: 'album', key: 'shade:jamie:album' })
-        expect(resolveLibraryClientNamespace('shade.library.spir.es', 'book')?.key).toBe('shade:andy:book')
+    it('scopes state by normalized host and media', () => {
+        expect(resolveLibraryClientNamespace('TENANT-A.EXAMPLE.TEST.', 'album')).toEqual({
+            libraryId: 'tenant-a.example.test', media: 'album', key: 'shade:tenant-a.example.test:album',
+        })
     })
-
-    it('refuses unknown hosts and cannot accept query-selected identity', () => {
-        expect(resolveLibraryClientNamespace('unknown.example?library=andy')).toBeNull()
-        expect(() => requireLibraryClientNamespace('unknown.example')).toThrow(/unknown library host/i)
+    it('does not require a frontend host allowlist', () => {
+        expect(requireLibraryClientNamespace('tenant-b.example.test').key).toBe('shade:tenant-b.example.test:shared')
     })
 })

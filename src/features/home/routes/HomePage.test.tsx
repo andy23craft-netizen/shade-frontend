@@ -441,7 +441,7 @@ describe('HomePage', () => {
 
         const heading = screen.getByRole('heading', {
             level: 1,
-            name: 'Shade Library',
+            name: 'Library',
         })
 
         expect(heading).toBeInTheDocument()
@@ -453,7 +453,7 @@ describe('HomePage', () => {
 
         expect(
             screen.getByRole('link', {
-                name: 'About Shade Library',
+                name: 'About Library',
             }),
         ).toHaveAttribute(
             'href',
@@ -466,7 +466,7 @@ describe('HomePage', () => {
 
         await waitFor(() => {
             expect(document.title).toBe(
-                "Home — Andy's Library — Shade",
+                'Home — Library — Shade',
             )
         })
     }, 20_000)

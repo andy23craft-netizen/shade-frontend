@@ -15,8 +15,8 @@ const session: PersistedBookBulkSession = {
 
 describe('book bulk session persistence', () => {
     it('isolates sessions by canonical library identity', () => {
-        expect(bookBulkStorageKey('dalmo.library.spir.es')).toBe('shade:dalmo:book:bulk-add:v1')
-        expect(bookBulkStorageKey('dalmo.library.spir.es')).not.toBe(bookBulkStorageKey('jamie.library.spir.es'))
+        expect(bookBulkStorageKey('tenant-a.example.test')).toBe('shade:tenant-a.example.test:book:bulk-add:v1')
+        expect(bookBulkStorageKey('tenant-a.example.test')).not.toBe(bookBulkStorageKey('tenant-b.example.test'))
     })
 
     it('round trips unresolved rows and stable client sequence', () => {

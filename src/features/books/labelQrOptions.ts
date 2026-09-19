@@ -13,14 +13,13 @@ interface LabelQrPalette {
     finder: string
 }
 
-const LABEL_QR_PALETTES: Readonly<Record<LibraryId, LabelQrPalette>> = {
-    andy: { dotStart: '#5b0000', dotEnd: '#006200', finder: '#000000' },
-    dalmo: { dotStart: '#65164e', dotEnd: '#003642', finder: '#002f39' },
-    jamie: { dotStart: '#672006', dotEnd: '#e85d18', finder: '#672006' },
+const NEUTRAL_LABEL_QR_PALETTE: LabelQrPalette = {
+    dotStart: '#5b0000', dotEnd: '#006200', finder: '#000000',
 }
 
 function getBookLabelQrPalette(libraryId: LibraryId | null): LabelQrPalette {
-    return LABEL_QR_PALETTES[libraryId ?? 'andy']
+    void libraryId
+    return NEUTRAL_LABEL_QR_PALETTE
 }
 
 /**
@@ -29,15 +28,8 @@ function getBookLabelQrPalette(libraryId: LibraryId | null): LabelQrPalette {
  * never a public site URL.
  */
 export function getBookLabelQrCenterImage(libraryId: LibraryId | null): string {
-    switch (libraryId) {
-        case 'dalmo':
-            return '/favicon-dalmo.png'
-        case 'jamie':
-            return '/favicon-jamie.png'
-        case 'andy':
-        default:
-            return '/favicon-shade.png'
-    }
+    void libraryId
+    return '/favicon-shade.png'
 }
 
 export function createBookLabelQrOptions(

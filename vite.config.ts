@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import type { IncomingMessage } from 'node:http'
 
-export const DEFAULT_LOCAL_LIBRARY_HOST = 'andy.localhost'
+export const DEFAULT_LOCAL_LIBRARY_HOST = 'tenant-a.localhost'
 
 export function resolveForwardedLibraryHost(
     host: string | undefined,
@@ -117,7 +117,9 @@ export default defineConfig({
         __APP_VERSION__: JSON.stringify(appVersion),
     },
     server: {
-        allowedHosts: ['.localhost', 'dalmo.library.spir.es'],
+        // Tenant allowlisting is backend/proxy-owned. Do not embed deployment
+        // domains in the development bundle.
+        allowedHosts: true,
         ...(apiProxy
             ? {
                   proxy: apiProxy,

@@ -2,6 +2,8 @@
 set -eu
 
 CONFIG_PATH='/usr/share/nginx/html/config.js'
+NGINX_TEMPLATE='/etc/nginx/conf.d/default.conf.template'
+NGINX_CONFIG='/etc/nginx/conf.d/default.conf'
 
 api_base_url="${SHADE_API_BASE_URL:-/api}"
 diagnostics_enabled="${SHADE_DIAGNOSTICS_ENABLED:-false}"
@@ -15,6 +17,15 @@ case "$diagnostics_enabled" in
         exit 1
         ;;
 esac
+
+case "${SHADE_API_UPSTREAM:-}" in
+    ''|*[!A-Za-z0-9.:-]*)
+        echo >&2 'SHADE_API_UPSTREAM must be a host:port value.'
+        exit 1
+        ;;
+esac
+
+sed "s|\${SHADE_API_UPSTREAM}|${SHADE_API_UPSTREAM}|g" "$NGINX_TEMPLATE" > "$NGINX_CONFIG"
 
 escape_js_string() {
     printf '%s' "$1" \

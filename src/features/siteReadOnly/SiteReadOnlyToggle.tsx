@@ -75,9 +75,8 @@ export function SiteReadOnlyToggle() {
         >
             <legend>Site-wide read-only</legend>
             <p id="site-read-only-help" className="field__help">
-                Shade admin only. Freezes database and cover or artwork writes
-                for every library during schema cutover. This control stays
-                available while read-only is on so you can exit.
+                Freezes database and cover or artwork writes for every library
+                during schema cutover. Authorization is enforced by the backend.
             </p>
             {statusQuery.isError ? (
                 <Alert variant="warning" title="Read-only status unavailable">

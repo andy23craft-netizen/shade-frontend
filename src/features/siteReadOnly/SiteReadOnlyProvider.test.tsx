@@ -213,13 +213,13 @@ describe('SiteReadOnlyToggle', () => {
         )
     })
 
-    it('hides the toggle for non-Shade library admins', () => {
+    it('leaves eligibility to backend authorization instead of a frontend tenant map', () => {
         vi.mocked(resolveLibraryContext).mockReturnValue({
             id: 'dalmo',
             name: "Dalmo's Library",
             wordmark: 'Dalmo',
         })
         renderWithProvider(<SiteReadOnlyToggle />)
-        expect(screen.queryByRole('switch', { name: /Read-only/i })).not.toBeInTheDocument()
+        expect(screen.getByRole('switch', { name: /Read-only/i })).toBeInTheDocument()
     })
 })

@@ -28,7 +28,7 @@ describe('GuidedSetupActions', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         values.clear()
-        values.set('shade:andy:shared:guided-setup:v1', JSON.stringify({
+        values.set('shade:localhost:shared:guided-setup:v1', JSON.stringify({
             version: 1,
             sessionId: 'setup-a',
             selectedMedia: 'book',

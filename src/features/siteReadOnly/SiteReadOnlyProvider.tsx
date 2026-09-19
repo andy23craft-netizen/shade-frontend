@@ -10,7 +10,6 @@ import {
     currentLibraryHost,
     useSiteReadOnlyStatus,
 } from '../../api/libraryQueries'
-import { resolveLibraryContext } from '../../config/libraryContext'
 import { useAuth } from '../auth/useAuth'
 import { SiteReadOnlyContext } from './SiteReadOnlyContext'
 import { registerSiteReadOnlyHandler } from './siteReadOnlyBridge'
@@ -25,9 +24,10 @@ export function SiteReadOnlyProvider({
     const { isAdmin } = useAuth()
     const queryClient = useQueryClient()
     const host = currentLibraryHost()
-    const libraryId =
-        resolveLibraryContext(window.location.hostname)?.id
-    const canToggle = isAdmin && libraryId === 'andy'
+    // The backend exclusively authorizes this operation. Its configured admin
+    // tenant is private deployment state, so the browser cannot pre-authorize
+    // a host from a compiled tenant catalogue.
+    const canToggle = isAdmin
     const statusQuery = useSiteReadOnlyStatus({
         enabled: isAdmin,
     })
