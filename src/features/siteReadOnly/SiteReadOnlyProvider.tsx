@@ -32,6 +32,12 @@ export function SiteReadOnlyProvider({
         enabled: isAdmin,
     })
 
+    useEffect(() => {
+        if (isAdmin) {
+            void statusQuery.refetch()
+        }
+    }, [isAdmin, statusQuery.refetch])
+
     const markEnabledFrom530 = useCallback(() => {
         // Re-skin immediately from a live mutating 530. Prefer the query cache so a
         // later successful GET/PUT remains the source of truth without effect sync.
