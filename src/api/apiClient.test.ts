@@ -203,6 +203,15 @@ describe('createApiClient', () => {
         expect(onUnauthorized).not.toHaveBeenCalled()
     })
 
+    it('reports the token attached to a rejected request', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 403 }))
+        const onUnauthorized = vi.fn()
+        const client = createApiClient({ apiBaseUrl: 'https://api.example.test', getToken: () => 'old-token', onUnauthorized })
+
+        await expect(client.get('/dashboard')).rejects.toMatchObject({ kind: 'unauthorized' })
+        expect(onUnauthorized).toHaveBeenCalledWith('old-token')
+    })
+
     it(
         'maps 404 to an HTTP error',
         async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createApiClient } from '../../api/apiClient'
 import type { RuntimeConfig } from '../../config/runtimeConfig'
@@ -72,8 +72,15 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
         expiresAt: Math.floor(Date.now() / 1000) + 60 * 60,
     } : loadPersistentCredential())
     const [mode, setMode] = useState<AccessMode>(() => initialAccessToken || loadPersistentCredential() ? 'admin' : initialMode)
+    const activeTokenRef = useRef<string | null>(credential?.accessToken ?? null)
+    activeTokenRef.current = credential?.accessToken ?? null
 
-    const clearAdministratorAccess = useCallback(() => {
+    const clearAdministratorAccess = useCallback((rejectedToken?: string | null) => {
+        // An earlier request can finish after a newer sign-in has committed.
+        // It must never revoke the newer session.
+        if (rejectedToken !== undefined && rejectedToken !== activeTokenRef.current) {
+            return
+        }
         setCredential(null)
         setMode('viewer')
         removePersistentCredential()
@@ -94,6 +101,14 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
         const timeout = window.setTimeout(clearAdministratorAccess, Math.max(0, credential.expiresAt * 1000 - Date.now()))
         return () => window.clearTimeout(timeout)
     }, [clearAdministratorAccess, credential])
+
+    useEffect(() => {
+        if (credential) {
+            // Run this only after the provider has committed the new client,
+            // ensuring protected observers use the fresh Bearer token.
+            void queryClient.invalidateQueries()
+        }
+    }, [credential?.accessToken, queryClient])
 
     const signIn = useCallback(async (password: string) => {
         // This deliberately uses the same client transport, but never sends a

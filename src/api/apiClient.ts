@@ -8,7 +8,8 @@ import {
 export interface ApiClientOptions {
     apiBaseUrl: string
     getToken?: () => string | null
-    onUnauthorized?: () => void
+    /** Receives the Bearer token that the rejected request actually used. */
+    onUnauthorized?: (rejectedToken: string | null) => void
     onSiteReadOnly?: () => void
     onRequestFailure?: (
         error: ApiError,
@@ -118,15 +119,15 @@ export function createApiClient({
 
         const headers = new Headers(requestHeaders)
 
-        if (authenticated) {
-            const token = getToken?.() ?? null
+        const requestToken = authenticated
+            ? getToken?.() ?? null
+            : null
 
-            if (token) {
-                headers.set(
-                    'Authorization',
-                    `Bearer ${token}`,
-                )
-            }
+        if (requestToken) {
+            headers.set(
+                'Authorization',
+                `Bearer ${requestToken}`,
+            )
         }
 
         let response: Response
@@ -197,22 +198,22 @@ export function createApiClient({
             clearTimeout(timeoutId)
         }
 
-            if (
-                (response.status === 401 || response.status === 403) &&
-                authenticated &&
-                !preserveAuthOnUnauthorized
-            ) {
-                onUnauthorized?.()
+        if (
+            (response.status === 401 || response.status === 403) &&
+            authenticated &&
+            !preserveAuthOnUnauthorized
+        ) {
+            onUnauthorized?.(requestToken)
 
-                throwRequestFailure(
-                    new ApiError({
-                        kind: 'unauthorized',
-                        status: response.status,
-                        message:
-                            'API access was rejected.',
-                    }),
-                )
-            }
+            throwRequestFailure(
+                new ApiError({
+                    kind: 'unauthorized',
+                    status: response.status,
+                    message:
+                        'API access was rejected.',
+                }),
+            )
+        }
 
             if (!response.ok) {
                 const errorResponse =
