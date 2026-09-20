@@ -8,6 +8,12 @@ export function useRecentAdditions(take = 10) {
     return useQuery({ queryKey: ['catalog', 'recent-additions', take], queryFn: () => catalogApi.recentAdditions(take) })
 }
 
+export function useTopCategories() {
+    const { apiClient } = useConnection()
+    const catalogApi = createCatalogApi(apiClient)
+    return useQuery({ queryKey: ['catalog', 'top-categories'], queryFn: () => catalogApi.topCategories() })
+}
+
 /** Image bytes live only for this mutation; results are deliberately not cached. */
 export function useCatalogImageSearch() {
     const { apiClient } = useConnection()

@@ -8,7 +8,8 @@ export interface AuthContextValue {
     isAdmin: boolean
     apiClient: ReturnType<typeof createApiClient>
     signIn: (password: string) => Promise<void>
-    signOut: () => void
+    signOut: () => Promise<void>
+    changePassword: (currentPassword: string, newPassword: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

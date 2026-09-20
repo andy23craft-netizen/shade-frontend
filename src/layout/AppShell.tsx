@@ -25,7 +25,7 @@ interface RouteHandle {
     title?: string
 }
 
-const LAST_UPDATED = 'September 09, 2026'
+const LAST_UPDATED = 'September 20, 2026'
 
 export function AppShell() {
     const { isAdmin } = useAuth()

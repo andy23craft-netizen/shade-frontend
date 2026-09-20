@@ -16,7 +16,6 @@ import type {
     BookList,
     CollectionBookList,
     CollectionList,
-    DashboardBreakdowns,
     AlbumList,
 } from '../../../api/apiTypes'
 import {
@@ -25,6 +24,7 @@ import {
 } from '../../../api/booksQueries'
 import {
     useRecentAdditions,
+    useTopCategories,
 } from '../../../api/catalogQueries'
 import {
     useNewReleaseAlbums,
@@ -36,9 +36,6 @@ import {
     useCollectionBooks,
     useCollections,
 } from '../../../api/collectionsQueries'
-import {
-    useDashboardBreakdowns,
-} from '../../../api/dashboardQueries'
 import {
     mockReachableApi,
     renderAppTree,
@@ -61,6 +58,7 @@ vi.mock('../../../api/booksQueries', async (importOriginal) => {
 
 vi.mock('../../../api/catalogQueries', () => ({
     useRecentAdditions: vi.fn(),
+    useTopCategories: vi.fn(),
 }))
 
 vi.mock('../../../api/albumsQueries', () => ({
@@ -76,17 +74,6 @@ vi.mock('../../../api/collectionsQueries', () => ({
     useCollectionBooks: vi.fn(),
 }))
 
-vi.mock('../../../api/dashboardQueries', async (importOriginal) => {
-    const actual =
-        await importOriginal<
-            typeof import('../../../api/dashboardQueries')
-        >()
-
-    return {
-        ...actual,
-        useDashboardBreakdowns: vi.fn(),
-    }
-})
 
 vi.mock(
     '../components/HomeStaffPick',
@@ -125,18 +112,9 @@ const mockUseCollections =
 const mockUseCollectionBooks =
     vi.mocked(useCollectionBooks)
 
-const mockUseDashboardBreakdowns =
-    vi.mocked(useDashboardBreakdowns)
+const mockUseTopCategories = vi.mocked(useTopCategories)
 
-const breakdownsFixture: DashboardBreakdowns = {
-    total_albums: 0,
-    albums_on_loan: 0,
-    albums_by_media_format: [],
-    albums_by_shelf: [],
-    albums_by_creation_year: [],
-    total_books: 100,
-    on_loan: 4,
-    by_category: [
+const topCategoriesFixture = [
         {
             key: 'Fantasy',
             count: 30,
@@ -161,10 +139,7 @@ const breakdownsFixture: DashboardBreakdowns = {
             key: 'Poetry',
             count: 5,
         },
-    ],
-    by_shelf: [],
-    by_creation_year: [],
-}
+]
 
 const categoriesFixture = [
     {
@@ -316,8 +291,7 @@ type CollectionsQuery =
 type CollectionBooksQuery =
     ReturnType<typeof useCollectionBooks>
 
-type BreakdownsQuery =
-    ReturnType<typeof useDashboardBreakdowns>
+type TopCategoriesQuery = ReturnType<typeof useTopCategories>
 
 type NewReleaseAlbumsQuery =
     ReturnType<typeof useNewReleaseAlbums>
@@ -382,16 +356,16 @@ function mockCollectionBooksQuery(
     } as unknown as CollectionBooksQuery)
 }
 
-function mockBreakdownsQuery(
-    overrides: Partial<BreakdownsQuery> = {},
+function mockTopCategoriesQuery(
+    overrides: Partial<TopCategoriesQuery> = {},
 ) {
-    mockUseDashboardBreakdowns.mockReturnValue({
-        data: breakdownsFixture,
+    mockUseTopCategories.mockReturnValue({
+        data: topCategoriesFixture,
         error: null,
         isPending: false,
         isError: false,
         ...overrides,
-    } as unknown as BreakdownsQuery)
+    } as unknown as TopCategoriesQuery)
 }
 
 function mockNewReleaseAlbumsQuery(
@@ -422,7 +396,7 @@ function mockSuccessState() {
     mockCategoriesQuery()
     mockCollectionsQuery()
     mockCollectionBooksQuery()
-    mockBreakdownsQuery()
+    mockTopCategoriesQuery()
 }
 
 describe('HomePage', () => {
@@ -639,7 +613,7 @@ describe('HomePage', () => {
     })
 
     it('keeps core Home navigation available when category metadata fails', async () => {
-        mockBreakdownsQuery({
+        mockTopCategoriesQuery({
             data: undefined,
             error: new Error('failed'),
             isError: true,

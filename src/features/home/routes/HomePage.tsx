@@ -13,13 +13,10 @@ import {
     useCollectionBooks,
 } from '../../../api/collectionsQueries'
 import {
-    useDashboardBreakdowns,
-} from '../../../api/dashboardQueries'
-import {
     useNewReleaseBooks,
     useCurrentReadingBooks,
 } from '../../../api/booksQueries'
-import { useRecentAdditions } from '../../../api/catalogQueries'
+import { useRecentAdditions, useTopCategories } from '../../../api/catalogQueries'
 import { useNewReleaseAlbums } from '../../../api/albumsQueries'
 import {
     HomeStaffPick,
@@ -69,8 +66,7 @@ export function HomePage() {
     const libraryName = getLibraryDisplayName(libraryContext)
     const libraryBranding = getLibraryBranding(libraryContext)
 
-    const breakdownsQuery =
-        useDashboardBreakdowns()
+    const topCategoriesQuery = useTopCategories()
 
     const categoriesQuery =
         useCategories()
@@ -123,10 +119,10 @@ export function HomePage() {
         )
 
     const categories =
-        breakdownsQuery.data !== undefined &&
+        topCategoriesQuery.data !== undefined &&
         categoriesQuery.data !== undefined
             ? topHomeCategories(
-                breakdownsQuery.data.by_category,
+                topCategoriesQuery.data,
                 categoriesQuery.data,
             )
             : []
@@ -193,11 +189,11 @@ export function HomePage() {
         currentReadingQuery.data?.items ?? []
 
     const categoriesPending =
-        breakdownsQuery.isPending ||
+        topCategoriesQuery.isPending ||
         categoriesQuery.isPending
 
     const categoriesError =
-        breakdownsQuery.isError ||
+        topCategoriesQuery.isError ||
         categoriesQuery.isError
     const homeHeadings = homeHeadingsForQuote(quote)
 

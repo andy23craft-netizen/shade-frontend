@@ -883,7 +883,7 @@ export async function installMockApi(
     }
 
     const apiPathPattern =
-        /^\/(?:api\/)?(?:health|ready|version|auth|books|albums|people|genres|loans|dashboard|shelves|categories|library|docs|redoc|openapi\.json|wishlists|collections)(?:\/|$)/
+        /^\/(?:api\/)?(?:health|ready|version|auth|books|albums|people|genres|loans|dashboard|shelves|categories|library|docs|redoc|openapi\.json|wishlists|collections|catalog|quotes)(?:\/|$)/
 
     await page.route(
         (url) => apiPathPattern.test(url.pathname),
@@ -1029,6 +1029,45 @@ export async function installMockApi(
             ) {
                 await fulfillJson(route, {
                     body: state.categories,
+                })
+                return
+            }
+
+            if (
+                method === 'GET' &&
+                url.pathname === '/catalog/top-categories'
+            ) {
+                const counts = new Map<string, number>()
+                for (const book of state.books) {
+                    for (const category of book.categories ?? []) {
+                        counts.set(category.name, (counts.get(category.name) ?? 0) + 1)
+                    }
+                }
+                await fulfillJson(route, {
+                    body: [...counts].map(([key, count]) => ({ key, count })),
+                })
+                return
+            }
+
+            if (
+                method === 'GET' &&
+                url.pathname === '/catalog/recent-additions'
+            ) {
+                await fulfillJson(route, {
+                    body: state.books
+                        .filter((book) => book.placement_state !== 'unshelved')
+                        .slice(0, Number(url.searchParams.get('take') ?? 10))
+                        .map((book) => ({
+                            media_type: 'book',
+                            item_id: book.book_id,
+                            title: book.title,
+                            primary_creator: book.authors?.map((author) => [author.first_name, author.surname].filter(Boolean).join(' ')).join(', ') ?? '',
+                            format: null,
+                            status: book.status,
+                            shelf_name: book.shelf_name,
+                            checkout_eligible: book.status === 'available',
+                            active_loan_id: null,
+                        })),
                 })
                 return
             }
@@ -1595,5 +1634,5 @@ export async function signInAsAdmin(page: Page): Promise<void> {
     const dialog = page.getByRole('dialog', { name: 'Administrator sign in' })
     await dialog.getByLabel('Administrator password').fill(E2E_ADMIN_PASSWORD)
     await dialog.getByRole('button', { name: 'Log in' }).click()
-    await page.getByRole('button', { name: 'Sign out' }).waitFor()
+    await page.getByRole('button', { name: 'Log out' }).waitFor()
 }

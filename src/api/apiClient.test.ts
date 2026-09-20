@@ -180,6 +180,18 @@ describe('createApiClient', () => {
         },
     )
 
+    it('preserves a 401 while transitioning an expired session to anonymous mode', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 401 }))
+        const onUnauthorized = vi.fn()
+        const client = createApiClient({ apiBaseUrl: 'https://api.example.test', getToken: () => 'expired-token', onUnauthorized })
+
+        await expect(client.get('/books')).rejects.toMatchObject({
+            kind: 'unauthorized',
+            status: 401,
+        })
+        expect(onUnauthorized).toHaveBeenCalledOnce()
+    })
+
     it(
         'maps 404 to an HTTP error',
         async () => {

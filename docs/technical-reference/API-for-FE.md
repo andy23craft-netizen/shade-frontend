@@ -15,14 +15,19 @@ regenerated `openapi.json`.
 Tenant viewer and administrator access (shipped)
 
 - A shared tenant URL opens in viewer mode. With `X-Forwarded-Host` set to that tenant, viewers may use the public
-  catalog reads: book and album lists/details, cover/artwork retrieval, recent additions, collections, and wishlists.
+  catalog reads: book and album lists/details, cover/artwork retrieval, recent additions, Top Five Categories
+  (`GET /catalog/top-categories`), shelves, categories, people, genres, collections, and wishlists.
   Do not send a global
   secret for viewer browsing. All other tenant routes, including every mutation and management/private read, return
   **403** without administrator access.
 - Bootstrap an administrator password once with `POST /auth/bootstrap` and the legacy global Bearer secret. This is
   deliberately a transition-only operator action; it is rejected after a password exists. Use
-  `POST /auth/sign-in` with `{ "password": "..." }` and the tenant host to obtain the short-lived Bearer token.
-  Store it only in memory, and discard it on `POST /auth/sign-out` or a 403 response.
+  `POST /auth/sign-in` with `{ "password": "..." }` and the tenant host to obtain a tenant-bound persistent
+  Bearer session. Persist the returned token and `expires_at` in browser storage suitable for a private household
+  device; the default bounded lifetime is 30 days. Never persist the password.
+- `POST /auth/sign-out` requires the current Bearer session and revokes all issued administrator sessions for that
+  tenant. On its 204 response, the frontend must also delete its stored token and expiry. A missing, expired, or
+  previously revoked session returns 403.
 - `POST /auth/change-password` requires the current tenant admin token plus `current_password` and `new_password`.
   It invalidates every outstanding admin token for that tenant. Credentials are tenant-bound and cannot authorize a
   request using another tenant host. Failed sign-ins are rate-limited; show the generic failure without logging values.
@@ -233,14 +238,17 @@ Default local base: `http://127.0.0.1:8000` (server root; no `/api` prefix)
 ## Auth
 
 Viewer mode is the default for a shared tenant URL. No Bearer credential is needed for `GET /books`,
-`GET /albums`, their lookup/detail/image reads, `GET /catalog/recent-additions`, and all read-only collection and
-wishlist routes. Those viewer requests still require `X-Forwarded-Host` for a valid tenant.
+`GET /albums`, their lookup/detail/image reads, `GET /catalog/recent-additions`, `GET /catalog/top-categories`,
+`GET /shelves`, `GET /categories`, and all read-only collection and wishlist routes. Those viewer requests still
+require `X-Forwarded-Host` for a valid tenant.
 
 Every other business route requires a tenant-bound administrator Bearer credential and returns **403**
 `{"detail": "Administrator access is required"}` when it is missing, invalid, expired, or issued for another tenant.
 Obtain a credential through `POST /auth/sign-in` with `{ "password": "..." }`; it returns `access_token`,
-`token_type: "bearer"`, and `expires_at`. Send it as `Authorization: Bearer <access_token>` and retain it only in
-memory. `POST /auth/sign-out` is client-side invalidation: discard the token.
+`token_type: "bearer"`, and `expires_at`. Send it as `Authorization: Bearer <access_token>` and persist the token
+and expiry for the bounded server session (30 days by default); never persist the password. `POST /auth/sign-out`
+requires that Bearer session, revokes every issued administrator session for the tenant, and then the frontend must
+discard its local token and expiry.
 
 `POST /auth/change-password` requires the current admin token and `current_password` / `new_password`; it invalidates
 all current tokens for that tenant. `POST /auth/bootstrap` is a one-time compatibility-only operator endpoint: it

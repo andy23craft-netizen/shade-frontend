@@ -8,6 +8,10 @@ import { canDeleteShelf, formatShelfCommonNameForDisplay } from '../../shelves/s
 import { HouseholdReadersSettings } from '../components/HouseholdReadersSettings'
 import { SiteReadOnlyToggle } from '../../siteReadOnly/SiteReadOnlyToggle'
 import { useSiteReadOnly } from '../../siteReadOnly/useSiteReadOnly'
+import { ModalDialog } from '../../../components/ModalDialog'
+import { useAuth } from '../../auth/useAuth'
+import { useNotifications } from '../../../components/useNotifications'
+import { useNavigate } from 'react-router-dom'
 
 function equalIds(left: readonly string[], right: readonly string[]) {
     return left.length === right.length && [...left].sort().every((id, index) => id === [...right].sort()[index])
@@ -106,6 +110,48 @@ function SettingsForm({ confirmed, shelves }: { confirmed: LibrarySettingsRead, 
                     <Button variant="secondary" disabled={save.isPending || writesDisabled} onClick={() => { setDraft(confirmed); setClientError(null); save.reset() }}>Reset</Button>
                 </div>
             </form>
+            <PasswordSettings />
         </section>
     )
+}
+
+function PasswordSettings() {
+    const { changePassword } = useAuth()
+    const { notify } = useNotifications()
+    const navigate = useNavigate()
+    const [open, setOpen] = useState(false)
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmation, setConfirmation] = useState('')
+    const [error, setError] = useState<string | null>(null)
+    const [pending, setPending] = useState(false)
+    const close = () => { setCurrentPassword(''); setNewPassword(''); setConfirmation(''); setError(null); setOpen(false) }
+
+    async function submit(event: FormEvent) {
+        event.preventDefault()
+        if (newPassword.length < 12) { setError('Your new password must be at least 12 characters.'); return }
+        if (newPassword !== confirmation) { setError('The new password and confirmation do not match.'); return }
+        setPending(true); setError(null)
+        try {
+            await changePassword(currentPassword, newPassword)
+            close()
+            notify({ variant: 'success', message: 'Password changed. Please sign in again with your new password.' })
+            navigate('/', { replace: true })
+        } catch (cause) {
+            setError(isApiError(cause) ? cause.detail ?? cause.message : 'Your password could not be changed.')
+        } finally { setPending(false) }
+    }
+
+    return <section className="library-settings-page__account" aria-labelledby="account-security-heading">
+        <h2 id="account-security-heading">Account security</h2>
+        <p>Changing your password signs out every administrator session for this library.</p>
+        <Button type="button" variant="secondary" onClick={() => setOpen(true)}>Change password</Button>
+        {open ? <ModalDialog open title="Change password" onClose={close}><form onSubmit={(event) => void submit(event)}>
+            <label className="field"><span className="field__label">Current password</span><input autoFocus autoComplete="current-password" maxLength={1024} name="current-password" required type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>
+            <label className="field"><span className="field__label">New password</span><input autoComplete="new-password" maxLength={1024} minLength={12} name="new-password" required type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+            <label className="field"><span className="field__label">Confirm new password</span><input autoComplete="new-password" maxLength={1024} minLength={12} name="confirm-password" required type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label>
+            {error ? <p className="field__error" role="alert">{error}</p> : null}
+            <div className="form-actions"><Button type="submit" disabled={pending}>{pending ? 'Changing…' : 'Change password'}</Button><Button type="button" variant="secondary" onClick={close}>Cancel</Button></div>
+        </form></ModalDialog> : null}
+    </section>
 }

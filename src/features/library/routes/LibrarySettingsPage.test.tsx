@@ -25,6 +25,15 @@ vi.mock('../../../api/householdProfilesQueries', () => ({
     useUpdateHouseholdProfile: () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false }),
     useRemoveHouseholdProfile: () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false }),
 }))
+vi.mock('../../auth/useAuth', () => ({
+    useAuth: () => ({ changePassword: vi.fn() }),
+}))
+vi.mock('../../../components/useNotifications', () => ({
+    useNotifications: () => ({ notify: vi.fn() }),
+}))
+vi.mock('react-router-dom', () => ({
+    useNavigate: () => vi.fn(),
+}))
 
 describe('LibrarySettingsPage', () => {
     beforeEach(() => { vi.clearAllMocks(); mutationState.isError = false; mutationState.isSuccess = false; mutationState.error = null })

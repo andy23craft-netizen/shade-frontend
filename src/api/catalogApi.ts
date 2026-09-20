@@ -1,4 +1,4 @@
-import type { ImageSearchResponse, PhysicalItemSummary, ResolveCodeRequest, ResolveCodeResponse } from './apiTypes'
+import type { DashboardCountBucket, ImageSearchResponse, PhysicalItemSummary, ResolveCodeRequest, ResolveCodeResponse } from './apiTypes'
 import type { createApiClient } from './apiClient'
 
 export function createCatalogApi(client: ReturnType<typeof createApiClient>) {
@@ -10,6 +10,9 @@ export function createCatalogApi(client: ReturnType<typeof createApiClient>) {
         },
         recentAdditions(take = 10): Promise<PhysicalItemSummary[]> {
             return client.getJson(`/catalog/recent-additions?take=${encodeURIComponent(String(take))}`)
+        },
+        topCategories(): Promise<DashboardCountBucket[]> {
+            return client.getJson('/catalog/top-categories')
         },
         async searchImage(image: File): Promise<ImageSearchResponse> {
             const body = new FormData()

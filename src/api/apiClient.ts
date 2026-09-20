@@ -203,7 +203,7 @@ export function createApiClient({
                 throwRequestFailure(
                     new ApiError({
                         kind: 'unauthorized',
-                        status: 403,
+                        status: response.status,
                         message:
                             'API access was rejected.',
                     }),

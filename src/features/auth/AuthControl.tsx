@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { ModalDialog } from '../../components/ModalDialog'
 import { isApiError } from '../../api/apiErrors'
@@ -6,6 +7,7 @@ import { useAuth } from './useAuth'
 
 export function AuthControl() {
     const { isAdmin, signIn, signOut } = useAuth()
+    const navigate = useNavigate()
     const [open, setOpen] = useState(false)
     const [password, setPassword] = useState('')
     const [error, setError] = useState<string | null>(null)
@@ -30,7 +32,7 @@ export function AuthControl() {
     }
 
     if (isAdmin) {
-        return <Button className="app-auth-control" variant="secondary" type="button" onClick={signOut}>Sign out</Button>
+        return <Button className="app-auth-control" variant="secondary" type="button" onClick={() => { void signOut(); navigate('/', { replace: true }) }}>Log out</Button>
     }
 
     return <>
