@@ -24,6 +24,8 @@ export interface ApiJsonRequestOptions
 export interface ApiRequestOptions
     extends RequestInit {
     authenticated?: boolean
+    /** Keep the current session when an optional capability probe is denied. */
+    preserveAuthOnUnauthorized?: boolean
 }
 
 async function parseErrorResponse(
@@ -102,6 +104,7 @@ export function createApiClient({
     ): Promise<Response> {
         const {
             authenticated: authenticatedOption,
+            preserveAuthOnUnauthorized,
             headers: requestHeaders,
             signal: callerSignal,
             ...fetchOptions
@@ -196,7 +199,8 @@ export function createApiClient({
 
             if (
                 (response.status === 401 || response.status === 403) &&
-                authenticated
+                authenticated &&
+                !preserveAuthOnUnauthorized
             ) {
                 onUnauthorized?.()
 

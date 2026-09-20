@@ -192,6 +192,17 @@ describe('createApiClient', () => {
         expect(onUnauthorized).toHaveBeenCalledOnce()
     })
 
+    it('does not discard a session when an optional status read is denied', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 403 }))
+        const onUnauthorized = vi.fn()
+        const client = createApiClient({ apiBaseUrl: 'https://api.example.test', getToken: () => 'admin-token', onUnauthorized })
+
+        await expect(client.get('/library/site-read-only', {
+            preserveAuthOnUnauthorized: true,
+        })).rejects.toMatchObject({ kind: 'http', status: 403 })
+        expect(onUnauthorized).not.toHaveBeenCalled()
+    })
+
     it(
         'maps 404 to an HTTP error',
         async () => {

@@ -28,7 +28,10 @@ export function createLibraryApi(client: ReturnType<typeof createApiClient>) {
                 ...options,
             }),
         getSiteReadOnly: (options: ApiCallOptions = {}): Promise<SiteReadOnlyRead> =>
-            client.getJson<SiteReadOnlyRead>('/library/site-read-only', options),
+            client.getJson<SiteReadOnlyRead>('/library/site-read-only', {
+                ...options,
+                preserveAuthOnUnauthorized: true,
+            }),
         updateSiteReadOnly: (request: SiteReadOnlyUpdate, options: ApiCallOptions = {}): Promise<SiteReadOnlyRead> =>
             client.requestJson<SiteReadOnlyRead>('/library/site-read-only', {
                 method: 'PUT',
