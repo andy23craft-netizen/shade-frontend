@@ -5,6 +5,7 @@ import type { RuntimeConfig } from '../../config/runtimeConfig'
 import type { DiagnosticReporter } from '../../diagnostics/diagnosticReporter'
 import { AuthContext, type AccessMode } from './AuthContext'
 import { notifySiteEnteredReadOnly } from '../siteReadOnly/siteReadOnlyBridge'
+import { scheduleCredentialExpiry } from './authExpiry'
 
 interface Credential {
     accessToken: string
@@ -98,8 +99,10 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
 
     useEffect(() => {
         if (!credential) return
-        const timeout = window.setTimeout(clearAdministratorAccess, Math.max(0, credential.expiresAt * 1000 - Date.now()))
-        return () => window.clearTimeout(timeout)
+        return scheduleCredentialExpiry(
+            credential.expiresAt,
+            clearAdministratorAccess,
+        )
     }, [clearAdministratorAccess, credential])
 
     useEffect(() => {
