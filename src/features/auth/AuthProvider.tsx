@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createApiClient } from '../../api/apiClient'
 import type { RuntimeConfig } from '../../config/runtimeConfig'
@@ -10,6 +10,32 @@ import { scheduleCredentialExpiry } from './authExpiry'
 interface Credential {
     accessToken: string
     expiresAt: number
+}
+
+interface AuthState {
+    credential: Credential | null
+    mode: AccessMode
+    revocationVersion: number
+}
+
+type AuthAction =
+    | { type: 'sign-in'; credential: Credential }
+    | { type: 'clear-administrator-access'; rejectedToken?: string | null }
+
+function authReducer(state: AuthState, action: AuthAction): AuthState {
+    if (action.type === 'sign-in') {
+        return { ...state, credential: action.credential, mode: 'admin' }
+    }
+
+    if (action.rejectedToken !== undefined && action.rejectedToken !== state.credential?.accessToken) {
+        return state
+    }
+
+    return {
+        credential: null,
+        mode: 'viewer',
+        revocationVersion: state.revocationVersion + 1,
+    }
 }
 
 const PERSISTENT_CREDENTIAL_KEY = 'shade:administrator-credential:v2'
@@ -66,36 +92,53 @@ interface AuthProviderProps {
     initialAccessToken?: string | null
 }
 
+function buildAuthApiClient(
+    apiBaseUrl: string,
+    accessToken: string | null,
+    onUnauthorized: (rejectedToken?: string | null) => void,
+    diagnosticReporter?: DiagnosticReporter,
+) {
+    return createApiClient({
+        apiBaseUrl,
+        getToken: () => accessToken,
+        onUnauthorized: (rejectedToken) => {
+            queueMicrotask(() => onUnauthorized(rejectedToken))
+        },
+        onSiteReadOnly: notifySiteEnteredReadOnly,
+        onRequestFailure: (error) => diagnosticReporter?.reportApiFailure(error),
+    })
+}
+
 export function AuthProvider({ children, runtimeConfig, diagnosticReporter, initialMode = 'viewer', initialAccessToken = null }: AuthProviderProps) {
     const queryClient = useQueryClient()
-    const [credential, setCredential] = useState<Credential | null>(() => initialAccessToken ? {
-        accessToken: initialAccessToken,
-        expiresAt: Math.floor(Date.now() / 1000) + 60 * 60,
-    } : loadPersistentCredential())
-    const [mode, setMode] = useState<AccessMode>(() => initialAccessToken || loadPersistentCredential() ? 'admin' : initialMode)
-    const activeTokenRef = useRef<string | null>(credential?.accessToken ?? null)
-    activeTokenRef.current = credential?.accessToken ?? null
+    const [authState, dispatch] = useReducer(authReducer, undefined, () => {
+        const credential = initialAccessToken ? {
+            accessToken: initialAccessToken,
+            expiresAt: Math.floor(Date.now() / 1000) + 60 * 60,
+        } : loadPersistentCredential()
+        return { credential, mode: credential ? 'admin' : initialMode, revocationVersion: 0 }
+    })
+    const { credential, mode } = authState
 
     const clearAdministratorAccess = useCallback((rejectedToken?: string | null) => {
         // An earlier request can finish after a newer sign-in has committed.
         // It must never revoke the newer session.
-        if (rejectedToken !== undefined && rejectedToken !== activeTokenRef.current) {
-            return
-        }
-        setCredential(null)
-        setMode('viewer')
+        dispatch({ type: 'clear-administrator-access', rejectedToken })
+    }, [])
+
+    useEffect(() => {
+        if (authState.revocationVersion === 0) return
         removePersistentCredential()
         // Preserve public catalog data while dropping private/admin-only data.
         queryClient.removeQueries({ predicate: (query) => ['dashboard', 'loans', 'library', 'household-profiles', 'quotes'].includes(String(query.queryKey[0])) })
-    }, [queryClient])
+    }, [authState.revocationVersion, queryClient])
 
-    const apiClient = useMemo(() => createApiClient({
-        apiBaseUrl: runtimeConfig.apiBaseUrl,
-        getToken: () => credential?.accessToken ?? null,
-        onUnauthorized: clearAdministratorAccess,
-        onSiteReadOnly: notifySiteEnteredReadOnly,
-        onRequestFailure: (error) => diagnosticReporter?.reportApiFailure(error),
-    }), [clearAdministratorAccess, credential, diagnosticReporter, runtimeConfig.apiBaseUrl])
+    const apiClient = useMemo(() => buildAuthApiClient(
+        runtimeConfig.apiBaseUrl,
+        credential?.accessToken ?? null,
+        clearAdministratorAccess,
+        diagnosticReporter,
+    ), [clearAdministratorAccess, credential, diagnosticReporter, runtimeConfig.apiBaseUrl])
 
     useEffect(() => {
         if (!credential) return
@@ -111,7 +154,7 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
             // ensuring protected observers use the fresh Bearer token.
             void queryClient.invalidateQueries()
         }
-    }, [credential?.accessToken, queryClient])
+    }, [credential, queryClient])
 
     const signIn = useCallback(async (password: string) => {
         // This deliberately uses the same client transport, but never sends a
@@ -125,9 +168,8 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
             accessToken: response.access_token,
             expiresAt: response.expires_at,
         }
-        setCredential(nextCredential)
+        dispatch({ type: 'sign-in', credential: nextCredential })
         savePersistentCredential(nextCredential)
-        setMode('admin')
     }, [apiClient])
 
     const signOut = useCallback(async () => {
