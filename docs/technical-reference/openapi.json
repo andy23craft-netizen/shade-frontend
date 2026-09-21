@@ -6787,7 +6787,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.11.4"
+    "version": "1.11.5"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -8770,13 +8770,46 @@
     },
     "/auth/sign-out": {
       "post": {
-        "description": "The client invalidates a stateless credential by discarding it.",
+        "description": "Revoke all issued browser sessions for this tenant administrator.",
         "operationId": "sign_out_auth_sign_out_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Sign Out",
         "tags": [
           "tenant authentication"
@@ -11934,6 +11967,75 @@
           }
         ],
         "summary": "Search Image",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/catalog/top-categories": {
+      "get": {
+        "description": "Return the public homepage's five most-used owned-book categories.",
+        "operationId": "top_categories_catalog_top_categories_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DashboardCountBucket"
+                  },
+                  "title": "Response Top Categories Catalog Top Categories Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Top Categories",
         "tags": [
           "catalog"
         ]
