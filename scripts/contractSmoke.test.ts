@@ -68,6 +68,7 @@ const expectedPaths = [
     '/catalog/recent-additions',
     '/catalog/resolve-code',
     '/catalog/search-image',
+    '/catalog/top-categories',
     '/categories',
     '/categories/{category_id}',
     '/collections',

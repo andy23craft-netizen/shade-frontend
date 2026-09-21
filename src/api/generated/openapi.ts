@@ -258,7 +258,7 @@ export interface paths {
         put?: never;
         /**
          * Sign Out
-         * @description The client invalidates a stateless credential by discarding it.
+         * @description Revoke all issued browser sessions for this tenant administrator.
          */
         post: operations["sign_out_auth_sign_out_post"];
         delete?: never;
@@ -623,6 +623,26 @@ export interface paths {
         put?: never;
         /** Search Image */
         post: operations["search_image_catalog_search_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/catalog/top-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Top Categories
+         * @description Return the public homepage's five most-used owned-book categories.
+         */
+        get: operations["top_categories_catalog_top_categories_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4578,7 +4598,9 @@ export interface operations {
     sign_out_auth_sign_out_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4590,6 +4612,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -6321,6 +6352,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    top_categories_catalog_top_categories_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardCountBucket"][];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
