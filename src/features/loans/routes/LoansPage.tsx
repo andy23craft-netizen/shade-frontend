@@ -50,6 +50,7 @@ import {
     useCollectionIsbnJump,
 } from '../../scanning/useCollectionIsbnJump'
 import { CatalogCodeResolver } from '../../scanning/CatalogCodeResolver'
+import { EpubLoanControls } from '../../epub/components/EpubLoanControls'
 
 interface SelectedCheckinProps {
     bookId: string
@@ -466,7 +467,7 @@ export function LoansPage() {
                                 <article className="circulation-record-card">
                                     <header className="circulation-record-card__heading">
                                         <p className="circulation-record-card__eyebrow">
-                                            Active
+                                            Active · {loan.delivery_type === 'epub' ? 'EPUB' : 'Physical'}
                                         </p>
 
                                         <h3>
@@ -511,6 +512,8 @@ export function LoansPage() {
                                         ) : null}
                                     </dl>
 
+                                    {loan.delivery_type === 'epub' ? <EpubLoanControls loanId={loan.id} /> : null}
+
                                     {(() => {
                                         const book =
                                             booksById.get(
@@ -519,7 +522,7 @@ export function LoansPage() {
 
                                         return (
                                             <div className="circulation-record-card__actions">
-                                                <EditLoanBorrower loan={loan} />
+                                                {loan.delivery_type !== 'epub' ? <EditLoanBorrower loan={loan} /> : null}
 
                                                 {book &&
                                                 isCheckinEligible(
@@ -572,7 +575,7 @@ export function LoansPage() {
                                 <article className="circulation-record-card">
                                     <header className="circulation-record-card__heading">
                                         <p className="circulation-record-card__eyebrow">
-                                            Returned
+                                            Returned · {loan.delivery_type === 'epub' ? 'EPUB' : 'Physical'}
                                         </p>
 
                                         <h3>
@@ -631,7 +634,7 @@ export function LoansPage() {
                                     </dl>
 
                                     <div className="circulation-record-card__actions">
-                                        <EditLoanBorrower loan={loan} />
+                                        {loan.delivery_type === 'epub' ? <EpubLoanControls loanId={loan.id} /> : <EditLoanBorrower loan={loan} />}
                                     </div>
                                 </article>
                             </li>

@@ -29,6 +29,8 @@ import type {
     BookCheckoutRequest,
     BookList,
     BookRead,
+    BookCatalogFormat,
+    RelatedBookEditionList,
     BookSummaryRefreshResponse,
     BookUpdate,
     BulkBookImportRequest,
@@ -200,6 +202,7 @@ export function useBooks(
         categoryIds?: readonly string[]
         shelfName?: string
         placementState?: PlacementState
+        format?: BookCatalogFormat
         isRead?: boolean
         status?: Status
         publicationYearMin?: number
@@ -225,6 +228,7 @@ export function useBooks(
     const categoryIds = options.categoryIds
     const shelfName = options.shelfName
     const placementState = options.placementState
+    const format = options.format
     const isRead = options.isRead
     const status = options.status
     const publicationYearMin = options.publicationYearMin
@@ -244,6 +248,7 @@ export function useBooks(
             categoryIds,
             shelfName,
             placementState,
+            format,
             isRead,
             status,
             publicationYearMin,
@@ -264,6 +269,7 @@ export function useBooks(
                 categoryIds,
                 shelfName,
                 placementState,
+                format,
                 isRead,
                 status,
                 publicationYearMin,
@@ -287,6 +293,7 @@ export function useInfiniteBooks(
         categoryIds?: readonly string[]
         shelfName?: string
         placementState?: PlacementState
+        format?: BookCatalogFormat
         isRead?: boolean
         profileId?: string
         status?: Status
@@ -311,6 +318,7 @@ export function useInfiniteBooks(
     const categoryIds = options.categoryIds
     const shelfName = options.shelfName
     const placementState = options.placementState
+    const format = options.format
     const isRead = options.isRead
     const profileId = options.profileId
     const status = options.status
@@ -329,6 +337,7 @@ export function useInfiniteBooks(
             categoryIds,
             shelfName,
             placementState,
+            format,
             isRead,
             profileId,
             status,
@@ -351,6 +360,7 @@ export function useInfiniteBooks(
                 categoryIds,
                 shelfName,
                 placementState,
+                format,
                 isRead,
                 profileId,
                     status,
@@ -397,6 +407,17 @@ export function useBook(
 
             return failureCount < 3
         },
+    })
+}
+
+export function useRelatedBookEditions(id: string) {
+    const { apiClient } = useConnection()
+    const booksApi = createBooksApi(apiClient)
+    return useQuery<RelatedBookEditionList>({
+        queryKey: ['books', 'related-editions', id],
+        queryFn: ({ signal }) => booksApi.relatedEditions(id, { signal }),
+        enabled: Boolean(id),
+        retry: false,
     })
 }
 

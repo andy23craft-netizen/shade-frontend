@@ -28,6 +28,7 @@ describe('tenant-aware proxy configuration', () => {
                 headers: { accept: 'application/json' },
             } as IncomingMessage),
         ).toBeUndefined()
+        expect(bypassApiProxyForHtmlNavigation({ url: '/pdf-library/file', headers: { accept: 'text/html' } } as IncomingMessage)).toBeUndefined()
     })
 
     it.each([
@@ -55,7 +56,7 @@ describe('tenant-aware proxy configuration', () => {
 
             const proxy = createDevServerProxy()
             const proxyOptions = proxy?.[
-            '^/(api/)?(health|ready|version|auth|books|albums|artists|authors|people|genres|loans|dashboard|shelves|categories|catalog|library|household-profiles|works|quotes|docs|redoc|openapi\\.json|wishlists|collections)'
+            '^/(api/)?(health|ready|version|auth|books|albums|artists|authors|people|genres|loans|dashboard|shelves|categories|catalog|library|household-profiles|works|quotes|docs|redoc|openapi\\.json|wishlists|collections|pdf-library|epubs|epub-reader)'
             ]
             let listener: ((
                 proxyRequest: {

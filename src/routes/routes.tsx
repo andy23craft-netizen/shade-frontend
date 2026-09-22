@@ -37,6 +37,8 @@ import {
     CatalogImageSearchPage,
     AlbumLoansPage,
     QuoteLibraryPage,
+    PdfLibraryPage,
+    AdminReaderPage,
 } from './lazyRoutePages'
 import { routeMetadata } from './routeMetadata'
 import { RequireAdmin } from '../features/auth/RequireAdmin'
@@ -115,6 +117,8 @@ export const routeConfig = [
                 element: adminOnly(<ManageCollectionPage />),
             },
             { path: routeMetadata.quoteLibrary.path, handle: { title: routeMetadata.quoteLibrary.title }, element: adminOnly(<QuoteLibraryPage />) },
+            { path: routeMetadata.pdfLibrary.path, handle: { title: routeMetadata.pdfLibrary.title }, element: adminOnly(<PdfLibraryPage />) },
+            { path: routeMetadata.adminReader.path, handle: { title: routeMetadata.adminReader.title }, element: adminOnly(<AdminReaderPage />) },
             {
                 path: routeMetadata.librarySetup.path,
                 handle: { title: routeMetadata.librarySetup.title },

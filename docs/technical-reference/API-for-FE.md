@@ -239,16 +239,17 @@ Default local base: `http://127.0.0.1:8000` (server root; no `/api` prefix)
 
 Viewer mode is the default for a shared tenant URL. No Bearer credential is needed for `GET /books`,
 `GET /albums`, their lookup/detail/image reads, `GET /catalog/recent-additions`, `GET /catalog/top-categories`,
-`GET /shelves`, `GET /categories`, and all read-only collection and wishlist routes. Those viewer requests still
-require `X-Forwarded-Host` for a valid tenant.
+`GET /shelves`, `GET /categories` (and a category detail), `GET /people` (and a person detail), `GET /genres`
+(and a genre detail), and all read-only collection and wishlist routes. Those viewer requests still require
+`X-Forwarded-Host` for a valid tenant.
 
 Every other business route requires a tenant-bound administrator Bearer credential and returns **403**
 `{"detail": "Administrator access is required"}` when it is missing, invalid, expired, or issued for another tenant.
 Obtain a credential through `POST /auth/sign-in` with `{ "password": "..." }`; it returns `access_token`,
-`token_type: "bearer"`, and `expires_at`. Send it as `Authorization: Bearer <access_token>` and persist the token
-and expiry for the bounded server session (30 days by default); never persist the password. `POST /auth/sign-out`
-requires that Bearer session, revokes every issued administrator session for the tenant, and then the frontend must
-discard its local token and expiry.
+`token_type: "bearer"`, and `expires_at`. Send it as `Authorization: Bearer <access_token>` and persist it with its
+expiry on a private household browser; do not persist the password. Sessions are bounded to 30 days by default.
+`POST /auth/sign-out` requires that Bearer session, revokes all administrator sessions for the tenant, and returns
+204. Delete the locally stored token and expiry after that response or after any 403.
 
 `POST /auth/change-password` requires the current admin token and `current_password` / `new_password`; it invalidates
 all current tokens for that tenant. `POST /auth/bootstrap` is a one-time compatibility-only operator endpoint: it
@@ -527,7 +528,7 @@ different filter types are supplied, all predicates must match. No matches retur
 placement filter before pagination.
 
 Categories are normalized resources rather than a fixed enum. Load the available category vocabulary from
-`GET /categories` (authenticated, unpaginated JSON array ordered by `name` then `category_id`; fields in
+`GET /categories` (viewer-accessible, unpaginated JSON array ordered by `name` then `category_id`; fields in
 OpenAPI). Optional `in_use=true` returns only categories assigned to at least one book. Do not hard-code category
 names or slugs in the frontend.
 
@@ -631,7 +632,7 @@ must not use the visible name as an external or durable identifier.
 
 GET /shelves:
 
-    requires Bearer authentication (same as other business routes)
+    is viewer-accessible with a valid X-Forwarded-Host; shelf writes require Bearer authentication
 
     returns an unpaginated JSON array of ShelfRead objects (fields in OpenAPI), not { "items", "total" }
 
@@ -1319,3 +1320,138 @@ blob as an object URL; on 404 show a placeholder. The backend owns local-versus-
 frontend does not need to distinguish the source or call Open Library directly. Treat non-null
 cover_image_path as "local file exists," not as a browser path. Upload with PUT multipart file; clear with
 DELETE.
+
+PDF library
+-----------
+
+The private PDF browser is available only to an authenticated administrator. Use `GET /pdf-library` for the root or
+`GET /pdf-library?path=<opaque-relative-directory-id>` for a contained directory. Its `items` list always puts
+directories before files and never contains server filesystem paths. Open a file with
+`GET /pdf-library/file?identifier=<opaque-relative-file-id>`; add `download=true` to request an attachment rather
+than inline viewing when using a bearer credential. PDF responses are streamed with `Accept-Ranges: bytes`; a valid
+`Range` request receives 206 with `Content-Range`, and both modes set `Cache-Control: private, no-store` and
+`Referrer-Policy: no-referrer`. Treat 503 as a temporarily unavailable media provider and retry later. These routes
+are not available in viewer mode and require an administrator bearer credential, except for the scoped native-viewer
+handoff cookie described below. That cookie path is the only approved exception to bearer authentication for PDF file
+retrieval; it is not a general PDF-library session and cannot list files or open an arbitrary identifier.
+
+To hand a PDF to a browser-native viewer without exposing the administrator bearer credential, first send the
+administrator-authenticated `POST /pdf-library/viewer-handoff?identifier=<opaque-relative-file-id>`. Include
+`download=true` to create an attachment handoff; omit it for inline viewing. It sets the `pdf_viewer` cookie with
+`Path=/pdf-library/file`, `HttpOnly`, `Secure` (except explicit local development), and `SameSite=Strict`, and returns
+the same-origin non-secret URL `/pdf-library/file` with no PDF identifier, bearer token, or mode in its query string.
+The signed cookie is bound to exactly one identifier and one inline/download mode, may be reused only until its
+configured five-minute expiry, and is invalidated by administrator session-version revocation. A newer handoff replaces
+the browser's previous handoff cookie. Do not open the URL in an external application that does not share the browser
+cookie jar.
+
+The direct bearer and cookie handoff paths return 403 for missing, invalid, expired, revoked, or mismatched access;
+the direct path returns 404 for an invalid/missing/non-PDF identifier; provider failure is 503. The handoff mutation
+returns 530 while site-wide read-only mode is enabled.
+
+EPUB reader
+-----------
+
+All `/epubs` routes require an administrator bearer credential and are excluded from viewer mode. EPUB delivery is
+independent of physical circulation: it never changes a book's shelf, status, or physical active loan.
+
+Catalog discovery uses `GET /books?format=all` for shelved physical books plus unshelved EPUB-only books, or
+`GET /books?format=epub` for books with an EPUB asset. `format=physical` keeps physical-owned results. Without
+`format`, the legacy shelved-only default remains. Explicit `placement_state` composes with the format filter;
+`total`, pagination, sorting, and all other book filters apply to the same integrated result. An EPUB-only book
+must remain unshelved: an ordinary shelf would make it count as physical inventory. Use a virtual EPUB filter/shelf
+in the UI. `BookRead.available_formats` contains `physical` for shelved or stashed physical inventory and `epub`
+when an asset association exists. `epub` is registration metadata, not a live NAS health probe; media requests may
+return 503 while storage is unavailable. No provider path or storage identifier appears in this field.
+`GET /books/{book_id}/related-editions` is viewer-safe and returns other cataloged books with the same `work_id`,
+including EPUB siblings of checked-out or display-only physical copies. It excludes the current book and unrelated
+works. The response gives each sibling's `book_id`, title, available formats, placement, and status. Link the CTA
+to `/books/{epub_book_id}`; this endpoint does not issue an invitation or grant EPUB reading access. Dashboard
+physical book, reading, borrowing, category, and breakdown counts exclude unshelved EPUB-only books and EPUB loans;
+a physical book with an EPUB asset counts once as physical inventory.
+
+The selected hosted reader library is `epub.js`, integrated from the frontend bundle rather than a CDN. Fetch protected
+EPUB bytes with the appropriate same-origin credential and pass the in-memory `ArrayBuffer` to `ePub(...)`; do not give
+the library a storage URL, persist EPUB bytes, use a service-worker cache, or load reader assets/analytics from a third
+party. Persist only the API-returned CFI and revision. Use EPUB CFI for resume, and on a 409 progress conflict refetch
+the server state before merging or prompting instead of overwriting it. Use the responsive continuous or paginated
+rendering mode appropriate to the phone/tablet viewport, while keeping the locked profile visible in the reader UI.
+
+Asset management and borrower loans:
+
+- `PUT /epubs/books/{book_id}/asset` accepts `{ "storage_identifier": "relative-file.epub" }` and returns the
+  asset. The identifier is an administrator/provider value, never a client filesystem path.
+- `GET /epubs/books/{book_id}/asset` returns asset metadata plus `available`; an unavailable provider remains a
+  controlled 503 where applicable.
+- `POST /epubs/books/{book_id}/loans` accepts `{ "borrower", "borrower_email", "notes" }`, returns 201, and
+  returns `{ "loan_id", "reader_url", "qr_payload" }`. `reader_url` and `qr_payload` are the same opaque secret.
+  Render `qr_payload` locally; do not send it to a third-party QR service or retain it in analytics/history.
+  The borrower email contains both the private reader link and an inline QR image for the same link.
+- `GET /epubs/loans/{loan_id}` returns borrower email, state (`active`, `returned`, `completed`, or `revoked`), and
+  the latest shared progress summary. It intentionally does not return invitation or browser credentials.
+- `POST /epubs/loans/{loan_id}/reissue` invalidates all prior invitation/browser credentials and returns fresh access
+  material. `POST /epubs/loans/{loan_id}/state` accepts `{ "state": "returned" | "completed" | "revoked" }`.
+  Inactive loans reject borrower redemption, content, and progress requests immediately.
+
+Borrower reader flow (no administrator credential):
+
+1. Redeem the URL-derived invitation using `POST /epub-reader/redeem` with `{ "invitation": "..." }`. The response
+   sets the HTTP-only `epub_reader` cookie. Never copy this cookie or invitation into local storage, a query string,
+   telemetry, logs, or referrers.
+2. Load `GET /epub-reader/content` and `GET /epub-reader/progress` with credentials included. Content is a protected
+   EPUB stream, not a durable NAS or external-provider URL. Inactive, revoked, malformed, or reset access returns 403.
+3. Save `{ "base_revision", "cfi", "chapter", "chapter_progress", "progress_percent", "completed" }` to
+   `PUT /epub-reader/progress`. Use the returned revision for the next write. On 409, refetch progress and merge or
+   present the newer server position rather than overwriting it.
+
+Authenticated administrator reader flow:
+
+1. Require an explicit household `profile_id` before opening a reader tab. Call
+   `GET /epubs/books/{book_id}/reader?profile_id=...`; it returns the asset ID, profile ID, profile-specific progress,
+   and the protected admin `content_url`. Do not permit profile changes in an already open reader tab.
+2. Fetch the returned content URL with the normal administrator credential. Save profile-specific progress with
+   `PUT /epubs/books/{book_id}/reader/progress?profile_id=...` using the same revision protocol as borrower progress.
+3. At the natural end, call `POST /epubs/books/{book_id}/reader/complete` with the normal `MarkReadRequest` body,
+   including the locked `profile_id` and the selected rating/review. This uses the canonical book reading-state flow.
+4. Profile progress is independent for every household profile and is never shared with an anonymous borrower loan.
+   A completed profile opens from the beginning; it is not a reread event.
+
+Treat 503 as a temporarily unavailable media provider and retry later. All protected-reader requests should use
+`Referrer-Policy: no-referrer` at the application/page level and must avoid third-party analytics or asset loaders.
+`content_url` is always a same-origin Shade endpoint and requires the ordinary administrator Bearer credential; it is
+never a provider/NAS URL. EPUB byte responses are `application/epub+zip`; they are private, no-store streams and honor
+byte-range requests (206 plus `Content-Range`). EPUB mutations return 530 in site-wide read-only mode. Progress writes
+return 409 with the current typed progress payload on a revision conflict; the reader must refetch before retrying.
+
+Local frontend verification uses the repository fixture at `tests/fixtures/epubs/shade-development-fixture.epub`.
+For a disposable frontend fixture that never uses existing tenant databases or credentials, run this from the backend
+root. It creates a fresh local database directory and uses the explicit fixture-only API secret shown below:
+
+```bash
+mkdir -p .tmp/feat14-fixture-db
+cp data/tenants.cfg .tmp/feat14-fixture-db/tenants.cfg
+DB_DIR="$PWD/.tmp/feat14-fixture-db" API_SECRET_KEY=dev-epub-secret \
+EPUB_STORAGE_ROOT="$PWD/tests/fixtures/epubs" \
+PDF_LIBRARY_ROOT="$PWD/tests/fixtures/pdf-library" \
+SHADE_PUBLIC_ORIGIN=http://localhost:5173 EPUB_COOKIE_SECURE=false PDF_VIEWER_COOKIE_SECURE=false \
+.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+Bootstrap its disposable Shade administrator with this request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/auth/bootstrap \
+  -H 'X-Forwarded-Host: shade.library.spir.es' \
+  -H 'Authorization: Bearer dev-epub-secret' \
+  -H 'Content-Type: application/json' \
+  --data '{"password":"local-reader-password"}'
+```
+
+`SHADE_PUBLIC_ORIGIN` must be the frontend origin that serves `/epub-reader`, not the API port. For local frontend
+testing, enable the frontend's same-origin API proxy (`SHADE_API_PROXY=1`) so `/epub-reader/*` and
+`/pdf-library/file` reach this backend with their path-scoped cookies. If the frontend uses another origin, set this
+variable to that exact origin before creating an invitation; restarting after checkout does not rewrite old links.
+
+Use the returned `access_token` as the Bearer credential for administrator routes. A missing/unreadable root
+deliberately returns 503, so test that behavior by restarting with an invalid storage-root path. The fixture is only
+development data; it is not a deployed NAS substitute.

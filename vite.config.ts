@@ -30,6 +30,7 @@ export function resolveForwardedLibraryHost(
 export function bypassApiProxyForHtmlNavigation(
     request: IncomingMessage,
 ): string | undefined {
+    if (request.url?.startsWith('/pdf-library/file')) return undefined
     const accept = request.headers.accept ?? ''
 
     return accept.includes('text/html')
@@ -81,7 +82,7 @@ export function createDevServerProxy() {
         'http://127.0.0.1:8000'
 
     return {
-        '^/(api/)?(health|ready|version|auth|books|albums|artists|authors|people|genres|loans|dashboard|shelves|categories|catalog|library|household-profiles|works|quotes|docs|redoc|openapi\\.json|wishlists|collections)':
+        '^/(api/)?(health|ready|version|auth|books|albums|artists|authors|people|genres|loans|dashboard|shelves|categories|catalog|library|household-profiles|works|quotes|docs|redoc|openapi\\.json|wishlists|collections|pdf-library|epubs|epub-reader)':
             {
                 target,
                 changeOrigin: true,

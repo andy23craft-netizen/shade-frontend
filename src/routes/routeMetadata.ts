@@ -47,6 +47,8 @@ export const routeMetadata = {
     heading: 'Manage Collection',
   },
   quoteLibrary: { path: '/quotes', title: 'Quote Library', heading: 'Quote Library' },
+  pdfLibrary: { path: '/pdf-library', title: 'PDF Library', heading: 'PDF Library' },
+  adminReader: { path: '/books/:bookId/read-epub', title: 'Read EPUB', heading: 'Read EPUB' },
   librarySettings: {
     path: '/library/settings',
     title: 'Library Settings',

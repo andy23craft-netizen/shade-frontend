@@ -4,6 +4,8 @@ import type {
     BookList,
     BookLookupResponse,
     BookRead,
+    BookCatalogFormat,
+    RelatedBookEditionList,
     BookSummaryRefreshResponse,
     BookUpdate,
     BulkBookImportRequest,
@@ -53,6 +55,7 @@ export interface ListBooksOptions
     categoryIds?: readonly string[]
     shelfName?: string
     placementState?: PlacementState
+    format?: BookCatalogFormat
     isRead?: boolean
     profileId?: string
     status?: Status
@@ -156,6 +159,7 @@ export function createBooksApi(
                 'placement_state',
                 options.placementState,
             )
+            setOptionalStringParam(params, 'format', options.format)
 
         if (options.isRead !== undefined) {
             params.set(
@@ -427,6 +431,13 @@ export function createBooksApi(
                     path,
                     signalOptions,
                 )
+        },
+
+        relatedEditions(id: string, options: ApiCallOptions = {}): Promise<RelatedBookEditionList> {
+            return client.getJson<RelatedBookEditionList>(
+                `/books/${encodeURIComponent(id)}/related-editions`,
+                withSignal(options.signal),
+            )
         },
 
         async getCover(

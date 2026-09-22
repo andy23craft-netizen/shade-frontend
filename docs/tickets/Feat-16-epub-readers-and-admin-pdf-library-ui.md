@@ -1,8 +1,8 @@
 # Feat-16 - EPUB readers and admin PDF library UI
 
-**Status:** PDF browse UI specified; EPUB reader implementation blocked on its API contract, and native PDF viewing/downloading blocked on authenticated browser handoff.  
-**Owner:** Frontend  
-**Dependencies:** Finalized EPUB API contract and selected hosted-reader integration; deployed external EPUB-provider and PDF-root configuration. The PDF-library API is present in the checked-in OpenAPI; see **Confirmed PDF API contract** below. EPUB routes and schemas are not present in that contract as of this ticket update.
+**Status:** Frontend reader/PDF implementation present; catalog discovery and borrower loan/redeem visual review blocked on backend changes below. Live PDF and administrator EPUB reader are verified. The checked-in and live fixture contracts are aligned at OpenAPI `1.11.5`.<br>
+**Owner:** Frontend<br>
+**Dependencies:** `epub.js` reader adapter; deployed EPUB provider and PDF-root configuration. The checked-in OpenAPI (`1.11.5`) and `API-for-FE.md` define the browser-session, streaming, and handoff behavior. Use the disposable development fixture described in `API-for-FE.md` for end-to-end verification.
 
 ## Goal
 
@@ -12,7 +12,7 @@ Give Shade administrators two private media experiences—a native browser reade
 
 ### Shared frontend/API foundation
 
-- Regenerate the checked-in OpenAPI client from the finalized contract, then add typed API clients, React Query hooks, cache keys, error mapping, and targeted invalidation. The PDF directory browser is contract-ready. EPUB assets, digital loans, borrower progress, and administrator/profile progress remain blocked until their routes, schemas, token transport, and status semantics are supplied in OpenAPI or a supplemental frontend contract.
+- Regenerate the checked-in OpenAPI client, then add typed EPUB/PDF API clients, React Query hooks, cache keys, error mapping, and targeted invalidation. Use the contract routes directly: asset metadata/write, digital loans and actions, borrower redeem/content/progress, and profile-scoped administrator launch/content/progress/complete. Do not create a parallel book identity, authentication, or progress client.
 - Before reader integration, research, select, and document a React-compatible EPUB reader that meets the protected/proxied-content, canonical-CFI resume, mobile-accessibility, maintenance, and bundle criteria. Keep it behind a reader adapter, and verify the choice does not cause existing gate/check requests to time out.
 - Extend existing book-detail, loan-history, household-reader, and canonical mark-read flows rather than creating parallel book identity, auth, or completion state. Continue to use \`book_id\` and the active tenant host.
 - Treat physical and digital loans as separate records and present their delivery/type labels clearly. An EPUB loan must never alter or imply a physical book's shelf, availability, active physical loan, or checkout eligibility.
@@ -21,7 +21,7 @@ Give Shade administrators two private media experiences—a native browser reade
 
 ### Administrator EPUB asset and loan controls
 
-- On Book Details, provide permission-aware administrator controls to inspect whether an EPUB asset is available and to associate, replace, or remove its stable asset identifier only if the finalized API supports those operations. Do not display provider paths, storage credentials, or an external asset URL.
+- On Book Details, provide administrator controls to inspect `GET /epubs/books/{book_id}/asset` metadata and set/replace its provider `storage_identifier` with `PUT /epubs/books/{book_id}/asset`. There is no delete route: clearing an asset is out of scope unless the backend adds an explicit deletion/clear contract. Do not display `storage_identifier`, provider paths, storage credentials, or an external asset URL.
 - Add an EPUB checkout action separate from physical checkout. It requires and validates a borrower email before submission, shows the committed digital-loan result and delivery status, and makes clear that EPUB lending is unlimited and independent of the physical copy.
 - Extend the appropriate reading-room loan list and book loan history with an explicit EPUB delivery/type indicator, borrower name/email as allowed by the administrator response, checkout/return timestamps, and the safe latest/final progress summary. Do not expose invitation secrets in a list or history response.
 - Provide active-loan return/revoke and reset/reissue controls only where the backend authorizes them. Reset/reissue must confirm its effect, preserve the same loan history in the UI, and replace any previously displayed invitation material with the new server-issued result. The UI must not construct QR values or links from predictable IDs.
@@ -30,8 +30,8 @@ Give Shade administrators two private media experiences—a native browser reade
 ### Borrower EPUB reader
 
 - Add a dedicated, minimally branded borrower-reader route driven only by the opaque invitation mechanism specified by the backend contract. Redeem an invitation query/fragment token immediately and replace it with a token-free route when the backend browser-session contract permits. The route must not load the normal authenticated app shell, call unrelated APIs, or expose admin navigation, borrower email, internal loan IDs, external EPUB-provider URLs, or token values in UI errors.
-- Implement the final selected native EPUB reader integration behind a small reader adapter. It must consume only protected Shade content/manifest endpoints, restore the server-approved canonical position, and send debounced, ordered/idempotent progress updates using the contract's concurrency/retry fields. Do not treat a local CFI or a percentage as durable until the server accepts it.
-- Support normal reader loading, resume, refresh, temporary offline/network failure, retry, and terminal inactive states. Derive progress wording, retry affordances, ordering, and conflict behavior from the finalized backend contract; clearly state when progress is waiting to sync and do not claim cross-device synchronization until an accepted server response confirms it.
+- Implement the selected native EPUB reader behind a small reader adapter. It must consume only the protected Shade content endpoint, restore the server-approved canonical CFI, and save a debounced ordered `EpubProgressWrite` (`base_revision`, optional CFI/chapter/percent values, `completed`) to `PUT /epub-reader/progress`. Use every returned revision for the next write. On `409`, refetch progress and merge or present the newer server position; never overwrite it. Do not treat a local CFI or percentage as durable until the server accepts it.
+- Support normal reader loading, resume, refresh, temporary offline/network failure, retry, and terminal inactive states. Treat `503` as a provider outage and offer a user-triggered retry. Clearly state when progress is waiting to sync and do not claim cross-device synchronization until an accepted response confirms it.
 - Follow the server's browser-session design. The frontend must not store or inspect a bearer credential intended for an \`HttpOnly\` cookie, append secrets to internal navigation, send credentials to third-party reader assets, or emit them through diagnostics. Use a restrictive referrer policy and avoid third-party analytics on borrower-reader pages; confirm the final headers/cookie behavior in integration tests.
 - Do not offer borrower accounts, profile selection, annotations, highlights, library navigation, offline storage, or a client-side return/completion operation unless the finalized backend contract explicitly adds it.
 
@@ -39,7 +39,7 @@ Give Shade administrators two private media experiences—a native browser reade
 
 - Show an authenticated **Read EPUB** entry point for an available EPUB-enabled book. Before opening the reader, use a modal to require selection of the owner or a household profile when household mode is enabled; make the selected reader and its independent progress clear in the launch confirmation.
 - Open a dedicated authenticated reader route/tab whose profile is captured in its initial route/session state and cannot be changed in place. Do not silently substitute the global active reader after launch. A profile must be authorized and supplied to the backend for every progress and completion operation.
-- Restore and synchronize only the selected profile's administrative progress through the finalized API. Keep that progress wholly separate from borrower-loan progress and from other household profiles. An already-complete book/profile starts at the beginning as directed by the backend; do not fabricate reread records.
+- Restore and synchronize only the selected profile's administrative progress using `GET /epubs/books/{book_id}/reader?profile_id=...` and `PUT /epubs/books/{book_id}/reader/progress?profile_id=...`, with the same revision conflict protocol as borrower progress. Fetch the returned protected `content_url` with the normal administrator credential. Keep that progress wholly separate from borrower-loan progress and from other household profiles. An already-complete book/profile starts at the beginning as directed by the backend; do not fabricate reread records.
 - At natural reader completion, reuse the existing mark-read form/component in a dialog when its existing abstraction supports this without material duplication or regression; otherwise retain the canonical mark-read route and document why the dialog reuse was not practical. Submit through the canonical selected-profile mark-read behavior, with retriable validation/error states and no duplicate completion. Completion outside the reader remains valid and must not require 100% EPUB progress.
 - Refresh the affected book detail, reading state, dashboard, and relevant progress/loan queries after successful completion; an unfinished reading session must not mark a book read.
 
@@ -53,8 +53,8 @@ Add an administrator-only, phone-friendly PDF Library entry point in Manage Coll
 - A successful listing is `PdfDirectoryListing`: `{ path, items }`. `path` and each `PdfLibraryEntry.identifier` are opaque relative identifiers, not display paths. An entry provides `identifier`, `name`, `kind` (`directory` or `file`), optional `modified_at`, and optional `size`. Do not infer an extension, MIME type, parent directory, or filesystem location from any field.
 - Preserve the server's supplied item order. The server guarantees directories before files; the current contract does **not** guarantee alphabetical order, so the SPA must not re-sort the list.
 - Enter a directory only with that entry's `identifier` as the next list request's `path`. Use client navigation history, retaining only prior safe display names for breadcrumbs/back navigation; never display, split, or normalize an opaque identifier to derive a parent.
-- Open a file through `GET /pdf-library/file?identifier=<opaque-relative-file-id>`. Omit `download` (or use `false`) for inline viewing; use `download=true` to request an attachment. The identifier is required and must be non-empty.
-- Treat `503` as a temporarily unavailable media provider: retain the current view, show a retry action, and do not retry automatically. Treat `422` as an invalid/malformed request without exposing the identifier. The supplied prose requires administrator access; use the existing admin-auth handling for an authorization failure and never downgrade this surface to viewer access.
+- Create a handoff with `POST /pdf-library/viewer-handoff?identifier=<opaque-relative-file-id>`; add `download=true` for attachment mode. Open only its returned same-origin `viewer_url` (`/pdf-library/file`), which contains no identifier or token. The identifier is required and must be non-empty. Never navigate directly to a constructed file URL.
+- Treat `503` as a temporarily unavailable media provider: retain the current view, show a retry action, and do not retry automatically. Treat `422` as an invalid/malformed request without exposing the identifier. The documented administrator bearer requirement means existing `403` handling applies even though the OpenAPI currently omits that operational response; never downgrade this surface to viewer access.
 - The initial response and each directory navigation response are authoritative. Do not persist or optimistically mutate a directory model; a fresh request must reflect additions/removals on disk.
 
 #### PDF UI and security requirements
@@ -62,7 +62,7 @@ Add an administrator-only, phone-friendly PDF Library entry point in Manage Coll
 - Render only backend-authorized metadata (`name`, `kind`, and, when supplied, safe formatted size/modified time). Provide accessible directory navigation plus loading, empty, unavailable-provider, unauthorized, malformed-item, and retry states.
 - Do not expose the opaque identifier as visible path text, log it, include it in diagnostics, or transform it into a filesystem path. It may be held only as request/navigation state needed to call the Shade endpoint.
 - Open PDFs in the browser-native viewer and offer download as a separate explicit action, both through authorized Shade endpoints. Do not fetch entire files into JavaScript memory, proxy bytes through the SPA, cache file URLs as durable state, or make PDFs available in viewer mode.
-- Resolve the authenticated native-viewer handoff before implementation. A normal browser navigation cannot attach the SPA's bearer Authorization header, while the endpoint is administrator-only. Do not work around this by placing a bearer token in a URL, creating a blob URL from a full-file fetch, or weakening route authorization.
+- Use the backend-owned native-viewer handoff defined in **Implementation prerequisites**. A normal browser navigation cannot attach the SPA's bearer Authorization header. Do not put a bearer token in a URL, create a blob URL from a full-file fetch, or weaken route authorization.
 
 ### Quality and accessibility
 
@@ -87,10 +87,55 @@ Add an administrator-only, phone-friendly PDF Library entry point in Manage Coll
 - Importing PDFs into the catalog or creating PDF metadata, search, loans, or database records.
 - A new frontend authentication model, direct calls to an EPUB host, or direct filesystem access.
 
-## Open contract questions before implementation
+## Contract-ready implementation decisions
 
-1. **Authenticated inline/download handoff:** What approved mechanism lets a browser-native PDF viewer/download request satisfy administrator bearer authorization without putting the bearer token in a URL? Examples of possible backend-owned designs are a same-origin HttpOnly session/cookie or a short-lived, server-issued one-time viewer URL; the frontend must not choose or invent one.
-2. **File response definition:** The OpenAPI currently declares the `200` response for `/pdf-library/file` as `application/json`, although the supplied contract says inline PDF/attachment behavior. Please define the actual content type(s), `Content-Disposition` behavior, range support, and any relevant response headers in OpenAPI.
-3. **Error responses:** The supplied contract defines `503` as a temporary media-provider outage, but neither PDF operation documents `503`, `403`, or other operational response schemas/statuses in OpenAPI. Please add or explicitly confirm these status contracts and safe user-facing detail semantics.
-4. **Opaque navigation/deep links:** There is no parent identifier in `PdfDirectoryListing`. Is browser history/root-only back navigation the intended UX, and may an opaque `path` identifier be represented in the SPA URL for a reload/deep link, or must it remain in memory only?
-5. **EPUB contract:** The checked-in OpenAPI has no EPUB paths or schemas. Which finalized contract will define asset administration, digital-loan lifecycle/reissue, invitation redemption/session, protected content delivery, progress concurrency, profile-scoped administrator reading, and their error/read-only semantics?
+- Deployment must keep `/epub-reader/*` and `/pdf-library/file` on the frontend's public origin and proxy them to the backend without stripping their path-scoped cookies. Set backend `SHADE_PUBLIC_ORIGIN` to that same public frontend origin before issuing borrower invitations; the disposable API-only fixture's `127.0.0.1:8000` value is not a browser-UI cutover configuration. Production cookies remain `Secure` on HTTPS.
+
+- `GET /pdf-library/file` serves `application/pdf`, supports byte ranges (`200`/`206`/`416`), and sets `Content-Disposition`, `Cache-Control: private, no-store`, and `Referrer-Policy: no-referrer`.
+- An administrator must create each inline/download PDF view with `POST /pdf-library/viewer-handoff`; open only the returned same-origin identifier-free `viewer_url`. The scoped five-minute `pdf_viewer` cookie is the only bearer-auth exception for PDF retrieval and is bound to the file and download mode.
+- EPUB byte streams are `application/epub+zip`, private/no-store, range-aware Shade endpoints. `content_url` is same-origin and admin-authenticated. Use bundled `epub.js` with an in-memory `ArrayBuffer`, never a provider URL or persistent EPUB cache.
+- Progress writes return the current typed progress on `409`; refetch before retrying. Reader/PDF provider outages are `503`; mutations return `530` in site-wide read-only mode.
+
+## Contract decisions incorporated
+
+- The existing `MarkReadPage` owns a full route and mutable household selection, so it cannot be embedded in the locked-profile reader without a material refactor. The reader reuses its rating/review validation model and calls the canonical EPUB `reader/complete` route with the captured profile. The ordinary mark-read route remains available independently.
+
+- The EPUB contract is now the checked-in OpenAPI plus the EPUB section of `API-for-FE.md`: all `/epubs` routes are administrator-only; borrower routes use only the opaque invitation redemption flow and its HTTP-only `epub_reader` cookie.
+- `reader_url` and `qr_payload` from checkout/reissue are the same opaque secret. Render the QR locally, show the result only ephemerally, and never send it to a third-party QR service or retain it after dismissal/reissue.
+- The borrower reader must issue its protected content/progress requests with credentials included. On successful redemption, immediately remove the invitation from the browser-visible URL with history replacement; do not append it to any subsequent route or request other than the redemption body.
+- EPUB loans have state `active`, `returned`, `completed`, or `revoked`; state actions permit only `returned`, `completed`, or `revoked`. Reissue invalidates all prior invitation and browser credentials while retaining the same loan history.
+- Asset association is PUT-only in the current contract. The UI supports inspect/set/replace, not remove.
+
+## Live fixture verification and backend blocker (2026-09-22)
+
+- Using the isolated `.tmp/feat14-db-1790104076` fixture, administrator sign-in, PDF root listing, cookie handoff, and browser-native identifier-free PDF streaming passed. The scoped `/pdf-library/file` request returned PDF bytes in a real Chromium session.
+- A dedicated catalog record, `Feat 16 EPUB fixture (visual review)`, was created with the `shade-development-fixture.epub` asset. Its administrator profile launch, protected `206` EPUB content stream, progress write, stale-revision `409`, and browser reader launch passed. The fixture book ID is `a72a3f2e-dc26-43c8-a8e8-5592768ef12e`.
+- `POST /epubs/books/{book_id}/loans` currently returns `500` on that fixture book. The backend traceback identifies `sqlite3.IntegrityError: FOREIGN KEY constraint failed` at `INSERT INTO epub_borrower_progress`: SQLAlchemy flushes that child before the referenced `epub_loans` row. The failed transaction did not add a loan. Backend action: explicitly flush/persist `Loan` and `EpubLoan` in dependency order before inserting `EpubBorrowerProgress` (or establish ORM relationships that guarantee this order), then add a regression test against SQLite with foreign keys enabled.
+- After that fix, rerun checkout (`201` plus opaque invitation), browser redemption/cookie, protected content and progress, reissue invalidation, and return/revoke terminal states against the fixture. For browser testing, configure `SHADE_PUBLIC_ORIGIN` as the frontend public origin rather than the API-only fixture origin so server-issued invitation links open the SPA.
+
+## Additional product requirement: viewer EPUB discovery
+
+The Books browse page must show physical and EPUB-only catalog items together by default, identify EPUB items visibly, and offer an EPUB filter. EPUB-only items are a separate digital collection and must not increase physical dashboard counts. Separate EPUB and physical copies may share a `work_id` for work-level ratings/reviews, but remain distinct catalog items.
+
+Current OpenAPI `1.11.5` cannot support this viewer experience: `GET /books` defaults to `placement_state=shelved` and omits an EPUB-only unshelved book; `BookRead` has no viewer-safe EPUB/format field; there is no EPUB filter on `GET /books`; and all `/epubs` routes require an administrator bearer. The frontend must not infer EPUB presence from title, shelf, or per-book administrator probes.
+
+Backend contract/actions needed before the Books UI can ship this requirement:
+
+1. Expose a non-secret, viewer-readable format indicator on `BookRead` (for example `available_formats: ["physical", "epub"]`), derived from physical ownership and EPUB asset association. Never expose `storage_identifier` or provider paths. Define how an unavailable EPUB provider affects the indicator.
+2. Add a server-side `GET /books` format filter supporting at least all/physical/EPUB. For the integrated browse result, include EPUB-only unshelved items alongside physical books with correct total, stable pagination, sorting, and existing composable filters. Preserve existing physical-only callers via an explicit/default mode as appropriate; document `placement_state` interactions and the meaning of a dual-format record.
+3. Contractually guarantee that `GET /dashboard` physical book metrics and `GET /dashboard/breakdowns` exclude EPUB-only items. Current owned-book predicates count shelved/stashed books, so the isolated unshelved EPUB fixture is already excluded; retain this behavior when changing catalog discovery. Define physical ownership independently of EPUB asset presence so a dual-format physical copy counts once.
+4. Keep separate catalog identities where an EPUB and physical copy are separate items, with existing `work_id` correction/merge behavior available for shared work-level ratings and reviews. Add OpenAPI fields/filter plus viewer and dashboard regression tests, then sync `API-for-FE.md`.
+
+Frontend follow-up once that contract is live: make Books browse explicitly request integrated results, add an EPUB filter and format badges/cards, preserve all other filters and URL state, and add viewer, pagination, and physical-dashboard regression tests. Do not place an EPUB-only fixture book on a physical shelf merely to make it appear in browse.
+
+### Related editions on Book Details
+
+On a viewer-readable physical Book Details page, show an available EPUB edition of the same `work_id` as a separate, linked catalog item. This must work when the physical copy is `display_only`, checked out, or otherwise unavailable; digital availability is independent of physical status. Conversely, an EPUB item page may link to its physical sibling(s). Use backend-confirmed work identity and item IDs, not title/ISBN guessing, and never show the current item as its own alternative. A related-edition card should identify the EPUB format and link to that EPUB catalog detail route (`/books/{epub_book_id}`). The viewer action is **View EPUB edition**, not **Read EPUB**: it must not create a loan, redeem an invitation, or launch the protected reader. Do not expose asset identifiers, provider URLs, borrower email, or invitation material.
+
+The current `GET /works/{work_id}` is administrator-only, so viewer pages need a minimal viewer-readable related-book endpoint/field (or a viewer-safe `GET /books?work_id=...` filter) that returns only authorized catalog metadata and format/availability indicators. Add tests for display-only and checked-out physical copies pointing to an available EPUB, shared-work identity, unrelated-work exclusion, and tenant isolation. The EPUB-specific reader invitation remains private under the current administrator-issued loan contract; self-service digital borrowing is out of scope.
+
+## EPUB inventory and deployment seeding
+
+NAS files alone do not create catalog rows. The current backend has a per-book administrator asset association route but no EPUB inventory import/sync path. Before live cutover, provide an operator-owned, idempotent seed/import workflow that reads an approved EPUB manifest (or an equivalently reviewed NAS inventory), creates/updates the required book metadata rows, and associates each relative provider identifier with `EpubAsset`. Record source identifiers and matching rules so reruns do not duplicate books or overwrite curator edits. Validate that each referenced EPUB exists and is readable, report failures without partially mislabeling items, and run against the deployment database/NAS on the deployment machine—not by copying the development fixture DB.
+
+For an EPUB-only item, keep the catalog record out of physical shelf membership so it remains outside existing physical dashboard counts. Supply the viewer-facing EPUB collection through the format-aware catalog query/filter above; do not create an ordinary `shelves` row named EPUBs merely to make it visible, because current shelved-book predicates would count it as a physical book. If product requires an EPUB “shelf” presentation, model it as a virtual digital collection or introduce an explicit digital shelf type with matching count exclusions. Where a physical edition exists, link the separate EPUB catalog item to the same `work_id` through the supported work-correction flow while preserving separate item identities.

@@ -2,3 +2,12 @@
 @import "./styles/base.css";
 @import "./styles/shell.css";
 @import "./styles/components.css";
+/* Private media surfaces keep controls reachable on narrow phones. */
+.pdf-library-list { list-style: none; padding: 0; display: grid; gap: .75rem; }
+.pdf-library-list li { border: 1px solid currentColor; border-radius: .5rem; padding: 1rem; }
+.pdf-library-list button, .pdf-library-breadcrumbs button { cursor: pointer; }
+.pdf-library-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+.epub-reader { width: 100%; }
+.epub-reader__controls { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; }
+.epub-reader__pages { height: min(75vh, 900px); min-height: 420px; background: #fffdf7; color: #1d1d1d; }
+.borrower-reader-page, .admin-reader-page { margin: auto; max-width: 1000px; padding: 1rem; }

@@ -561,6 +561,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{book_id}/related-editions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Related Book Editions
+         * @description Viewer-safe catalog siblings with the same work_id, excluding the requested book and unrelated works. Includes EPUB editions even when the physical copy is checked out or display-only. Returns catalog metadata only; does not grant reader access.
+         */
+        get: operations["get_related_book_editions_books__book_id__related_editions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/{book_id}/summary/refresh": {
         parameters: {
             query?: never;
@@ -879,6 +899,215 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/epub-reader/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Borrower Content */
+        get: operations["borrower_content_epub_reader_content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epub-reader/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Borrower Progress */
+        get: operations["borrower_progress_epub_reader_progress_get"];
+        /** Save Borrower Progress */
+        put: operations["save_borrower_progress_epub_reader_progress_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epub-reader/redeem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redeem */
+        post: operations["redeem_epub_reader_redeem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/books/{book_id}/asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Asset */
+        get: operations["get_asset_epubs_books__book_id__asset_get"];
+        /** Put Asset */
+        put: operations["put_asset_epubs_books__book_id__asset_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/books/{book_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Content */
+        get: operations["admin_content_epubs_books__book_id__content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/books/{book_id}/loans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Loan */
+        post: operations["create_loan_epubs_books__book_id__loans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/books/{book_id}/reader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Launch */
+        get: operations["admin_launch_epubs_books__book_id__reader_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/books/{book_id}/reader/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Admin Reader
+         * @description Complete through the canonical profile-aware book reading-state path.
+         */
+        post: operations["complete_admin_reader_epubs_books__book_id__reader_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/books/{book_id}/reader/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Admin Progress */
+        put: operations["save_admin_progress_epubs_books__book_id__reader_progress_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/loans/{loan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Loan */
+        get: operations["get_loan_epubs_loans__loan_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/loans/{loan_id}/reissue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reissue */
+        post: operations["reissue_epubs_loans__loan_id__reissue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/epubs/loans/{loan_id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set State */
+        post: operations["set_state_epubs_loans__loan_id__state_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/genres": {
         parameters: {
             query?: never;
@@ -1090,6 +1319,60 @@ export interface paths {
         post?: never;
         /** Delete Loan Feedback */
         delete: operations["delete_loan_feedback_loans__id__feedback_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pdf-library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pdfs */
+        get: operations["list_pdfs_pdf_library_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pdf-library/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pdf */
+        get: operations["get_pdf_pdf_library_file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pdf-library/viewer-handoff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Viewer Handoff
+         * @description Set a scoped HTTP-only cookie before opening the native viewer URL.
+         */
+        post: operations["create_viewer_handoff_pdf_library_viewer_handoff_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1803,6 +2086,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /**
+         * BookCatalogFormat
+         * @enum {string}
+         */
+        BookCatalogFormat: "all" | "physical" | "epub";
         /** BookCategoryRead */
         BookCategoryRead: {
             /** Category Id */
@@ -1961,6 +2249,11 @@ export interface components {
             acquisition_source?: string | null;
             /** Authors */
             authors?: components["schemas"]["BookPersonRead"][];
+            /**
+             * Available Formats
+             * @description Cataloged formats, not live storage health. Physical means shelved or stashed; EPUB means an asset association exists even if its provider is temporarily unavailable. No storage IDs.
+             */
+            available_formats?: ("physical" | "epub")[];
             /** Average Loan Days */
             average_loan_days: number | null;
             /** Book Id */
@@ -2732,6 +3025,132 @@ export interface components {
             /** Unread */
             unread: number;
         };
+        /** EpubAssetRead */
+        EpubAssetRead: {
+            /** Asset Id */
+            asset_id: string;
+            /** Available */
+            available: boolean;
+            /** Book Id */
+            book_id: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** EpubAssetWrite */
+        EpubAssetWrite: {
+            /** Storage Identifier */
+            storage_identifier: string;
+        };
+        /** EpubInvitationRead */
+        EpubInvitationRead: {
+            /** Loan Id */
+            loan_id: string;
+            /** Qr Payload */
+            qr_payload: string;
+            /** Reader Url */
+            reader_url: string;
+        };
+        /** EpubInvitationRedeem */
+        EpubInvitationRedeem: {
+            /** Invitation */
+            invitation: string;
+        };
+        /** EpubLoanAction */
+        EpubLoanAction: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "returned" | "completed" | "revoked";
+        };
+        /** EpubLoanCreate */
+        EpubLoanCreate: {
+            /** Borrower */
+            borrower: string;
+            /** Borrower Email */
+            borrower_email: string;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** EpubLoanRead */
+        EpubLoanRead: {
+            /** Asset Id */
+            asset_id: string;
+            /** Book Id */
+            book_id: string;
+            /** Borrower */
+            borrower: string;
+            /** Borrower Email */
+            borrower_email: string;
+            /** Checked Out At */
+            checked_out_at: string;
+            /** Ended At */
+            ended_at?: string | null;
+            /** Loan Id */
+            loan_id: string;
+            progress: components["schemas"]["EpubProgressRead"];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "returned" | "completed" | "revoked";
+        };
+        /** EpubProgressConflict */
+        EpubProgressConflict: {
+            current: components["schemas"]["EpubProgressRead"];
+            /**
+             * Detail
+             * @constant
+             */
+            detail: "EPUB progress has changed";
+        };
+        /** EpubProgressRead */
+        EpubProgressRead: {
+            /** Cfi */
+            cfi?: string | null;
+            /** Chapter */
+            chapter?: string | null;
+            /** Chapter Progress */
+            chapter_progress?: number | null;
+            /** Completed */
+            completed: boolean;
+            /** Progress Percent */
+            progress_percent?: number | null;
+            /** Revision */
+            revision: number;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** EpubProgressWrite */
+        EpubProgressWrite: {
+            /** Base Revision */
+            base_revision: number;
+            /** Cfi */
+            cfi?: string | null;
+            /** Chapter */
+            chapter?: string | null;
+            /** Chapter Progress */
+            chapter_progress?: number | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Progress Percent */
+            progress_percent?: number | null;
+        };
+        /** EpubReaderLaunch */
+        EpubReaderLaunch: {
+            /** Asset Id */
+            asset_id: string;
+            /** Content Url */
+            content_url: string;
+            /** Profile Id */
+            profile_id: string;
+            progress: components["schemas"]["EpubProgressRead"];
+        };
         /** ErrorDetail */
         ErrorDetail: {
             /** Detail */
@@ -2944,6 +3363,12 @@ export interface components {
             checked_out_at: string;
             /** Created Date */
             created_date: string;
+            /**
+             * Delivery Type
+             * @default physical
+             * @enum {string}
+             */
+            delivery_type: "physical" | "epub";
             /** Due At */
             due_at?: string | null;
             /** Feedback Present */
@@ -3012,6 +3437,37 @@ export interface components {
         MergeWorksRequest: {
             /** Source Work Ids */
             source_work_ids: string[];
+        };
+        /** PdfDirectoryListing */
+        PdfDirectoryListing: {
+            /** Items */
+            items: components["schemas"]["PdfLibraryEntry"][];
+            /** Path */
+            path: string;
+        };
+        /** PdfLibraryEntry */
+        PdfLibraryEntry: {
+            /** Identifier */
+            identifier: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "directory" | "file";
+            /** Modified At */
+            modified_at?: number | null;
+            /** Name */
+            name: string;
+            /** Size */
+            size?: number | null;
+        };
+        /**
+         * PdfViewerHandoff
+         * @description A non-secret URL for a browser-native PDF viewer request.
+         */
+        PdfViewerHandoff: {
+            /** Viewer Url */
+            viewer_url: string;
         };
         /** PersonCreate */
         PersonCreate: {
@@ -3167,6 +3623,27 @@ export interface components {
             rating?: number | null;
             /** Review */
             review?: string | null;
+        };
+        /**
+         * RelatedBookEdition
+         * @description Viewer-safe same-work catalog sibling, not a reader invitation.
+         */
+        RelatedBookEdition: {
+            /** Available Formats */
+            available_formats: ("physical" | "epub")[];
+            /** Book Id */
+            book_id: string;
+            placement_state: components["schemas"]["PlacementState"];
+            status: components["schemas"]["Status"];
+            /** Title */
+            title: string;
+        };
+        /** RelatedBookEditionList */
+        RelatedBookEditionList: {
+            /** Items */
+            items: components["schemas"]["RelatedBookEdition"][];
+            /** Work Id */
+            work_id: string;
         };
         /** ReservationWrite */
         ReservationWrite: {
@@ -4652,6 +5129,8 @@ export interface operations {
                 category_id?: string[] | null;
                 shelf_name?: string | null;
                 placement_state?: components["schemas"]["PlacementState"] | null;
+                /** @description Omitted keeps legacy shelved-only listing; all includes unshelved EPUB-only books; physical selects physical inventory; epub selects asset-associated books. Composes with explicit placement_state and all other filters, pagination, and sorting. */
+                format?: components["schemas"]["BookCatalogFormat"] | null;
                 is_read?: boolean | null;
                 profile_id?: string | null;
                 status?: components["schemas"]["Status"] | null;
@@ -6081,6 +6560,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Malformed or missing identifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Authentication failure */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_related_book_editions_books__book_id__related_editions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelatedBookEditionList"];
                 };
             };
             /** @description Malformed or missing identifier */
@@ -7690,6 +8229,777 @@ export interface operations {
             };
         };
     };
+    borrower_content_epub_reader_content_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                epub_reader?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Protected EPUB stream */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/epub+zip": unknown;
+                };
+            };
+            /** @description Reader access is invalid, inactive, revoked, or expired */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    borrower_progress_epub_reader_progress_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                epub_reader?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubProgressRead"];
+                };
+            };
+            /** @description Reader access is invalid, inactive, revoked, or expired */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    save_borrower_progress_epub_reader_progress_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                epub_reader?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpubProgressWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubProgressRead"];
+                };
+            };
+            /** @description Reader access is invalid, inactive, revoked, or expired */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Progress revision conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubProgressConflict"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    redeem_epub_reader_redeem_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpubInvitationRedeem"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Reader access is invalid, inactive, revoked, or expired */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_asset_epubs_books__book_id__asset_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubAssetRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    put_asset_epubs_books__book_id__asset_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpubAssetWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubAssetRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    admin_content_epubs_books__book_id__content_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Protected EPUB stream */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/epub+zip": unknown;
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_loan_epubs_books__book_id__loans_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpubLoanCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubInvitationRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    admin_launch_epubs_books__book_id__reader_get: {
+        parameters: {
+            query: {
+                profile_id: string;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubReaderLaunch"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    complete_admin_reader_epubs_books__book_id__reader_complete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkReadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    save_admin_progress_epubs_books__book_id__reader_progress_put: {
+        parameters: {
+            query: {
+                profile_id: string;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                book_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpubProgressWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubProgressRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Progress revision conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubProgressConflict"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_loan_epubs_loans__loan_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                loan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubLoanRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reissue_epubs_loans__loan_id__reissue_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                loan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubInvitationRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description EPUB loan is inactive */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_state_epubs_loans__loan_id__state_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path: {
+                loan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpubLoanAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpubLoanRead"];
+                };
+            };
+            /** @description Administrator access is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_genres_genres_get: {
         parameters: {
             query?: {
@@ -8676,6 +9986,193 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_pdfs_pdf_library_get: {
+        parameters: {
+            query?: {
+                path?: string | null;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PdfDirectoryListing"];
+                };
+            };
+            /** @description Administrator or scoped viewer access is invalid */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_pdf_pdf_library_file_get: {
+        parameters: {
+            query?: {
+                identifier?: string | null;
+                download?: boolean | null;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                pdf_viewer?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private full PDF stream */
+            200: {
+                headers: {
+                    "Accept-Ranges"?: string;
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Private partial PDF stream for a valid byte range */
+            206: {
+                headers: {
+                    "Accept-Ranges"?: string;
+                    "Content-Disposition"?: string;
+                    "Content-Range"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Administrator or scoped viewer access is invalid */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description PDF file not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requested byte range is not satisfiable */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_viewer_handoff_pdf_library_viewer_handoff_post: {
+        parameters: {
+            query: {
+                identifier: string;
+                download?: boolean;
+            };
+            header?: {
+                "X-Forwarded-Host"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PdfViewerHandoff"];
+                };
+            };
+            /** @description Administrator or scoped viewer access is invalid */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description PDF file not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Media storage is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Site is in read-only mode */
+            530: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

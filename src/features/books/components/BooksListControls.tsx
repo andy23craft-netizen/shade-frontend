@@ -6,6 +6,7 @@ import {
 } from 'react'
 
 import type {
+    BookCatalogFormat,
     CategoryRead,
     ShelfRead,
 } from '../../../api/apiTypes'
@@ -27,6 +28,7 @@ export interface BooksListControlsProps {
     categoryIds: readonly string[]
     shelves: readonly ShelfRead[]
     shelfName?: string
+    format: BookCatalogFormat
     author?: string
     title?: string
     isRead: boolean | undefined
@@ -42,6 +44,7 @@ export interface BooksListControlsProps {
     onShelfNameChange: (
         shelfName: string | undefined,
     ) => void
+    onFormatChange: (format: BookCatalogFormat) => void
     onSearch: (
         search: string,
     ) => void
@@ -101,6 +104,7 @@ export function BooksListControls({
                                       categoryIds,
                                       shelves,
                                       shelfName,
+                                      format,
                                       author,
                                       title,
                                       isRead,
@@ -110,6 +114,7 @@ export function BooksListControls({
                                       onCategoryIdsChange,
                                       onReadStatusChange,
                                       onShelfNameChange,
+                                      onFormatChange,
                                       onSearch,
                                       onClear,
                                       onSortChange,
@@ -476,6 +481,15 @@ export function BooksListControls({
                         </div>
                     ) : null}
                 </div>
+
+                <label className="books-toolbar__read">
+                    <span>Format</span>
+                    <select aria-label="Format" value={format} onChange={(event) => onFormatChange(event.target.value as BookCatalogFormat)}>
+                        <option value="all">All books</option>
+                        <option value="physical">Physical books</option>
+                        <option value="epub">EPUB books</option>
+                    </select>
+                </label>
 
                 <label className="books-toolbar__read">
                     <input

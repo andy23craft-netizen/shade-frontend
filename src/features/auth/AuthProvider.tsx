@@ -130,7 +130,7 @@ export function AuthProvider({ children, runtimeConfig, diagnosticReporter, init
         if (authState.revocationVersion === 0) return
         removePersistentCredential()
         // Preserve public catalog data while dropping private/admin-only data.
-        queryClient.removeQueries({ predicate: (query) => ['dashboard', 'loans', 'library', 'household-profiles', 'quotes'].includes(String(query.queryKey[0])) })
+        queryClient.removeQueries({ predicate: (query) => ['dashboard', 'loans', 'library', 'household-profiles', 'quotes', 'epub', 'pdf-library'].includes(String(query.queryKey[0])) })
     }, [authState.revocationVersion, queryClient])
 
     const apiClient = useMemo(() => buildAuthApiClient(

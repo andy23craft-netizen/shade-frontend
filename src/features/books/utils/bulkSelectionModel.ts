@@ -1,6 +1,7 @@
 export interface BulkSelectableBook {
     book_id: string
     title: string
+    available_formats?: readonly string[]
 }
 
 export interface SelectedBookIdentity {
@@ -11,7 +12,7 @@ export interface SelectedBookIdentity {
 export function isBookBulkSelectable(
     book: BulkSelectableBook,
 ): boolean {
-    return Boolean(book.book_id)
+    return Boolean(book.book_id) && (book.available_formats === undefined || book.available_formats.includes('physical'))
 }
 
 export function toggleSelectedBookId(

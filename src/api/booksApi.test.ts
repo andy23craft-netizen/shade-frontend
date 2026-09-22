@@ -100,6 +100,18 @@ describe('createBooksApi', () => {
         )
     })
 
+    it('requests the integrated EPUB catalog and related editions', async () => {
+        const client = createMockClient()
+        vi.mocked(client.getJson).mockResolvedValue({ items: [], total: 0 })
+        const api = createBooksApi(client)
+
+        await api.list({ format: 'epub' })
+        await api.relatedEditions('book/123')
+
+        expect(client.getJson).toHaveBeenCalledWith('/books?format=epub')
+        expect(client.getJson).toHaveBeenCalledWith('/books/book%2F123/related-editions', undefined)
+    })
+
     it('lists stashed books through placement_state', async () => {
         const client = createMockClient()
         vi.mocked(client.getJson).mockResolvedValue({

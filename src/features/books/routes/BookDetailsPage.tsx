@@ -45,6 +45,9 @@ import { BookProviderSummary } from '../components/BookProviderSummary'
 import { useAuth } from '../../auth/useAuth'
 import { useSiteReadOnly } from '../../siteReadOnly/useSiteReadOnly'
 import { useActiveHouseholdProfile } from '../../library/useActiveHouseholdProfile'
+import { EpubBookPanel } from '../../epub/components/EpubBookPanel'
+import { EpubLoanControls } from '../../epub/components/EpubLoanControls'
+import { RelatedBookEditions } from '../components/RelatedBookEditions'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -256,6 +259,7 @@ export function BookDetailsPage() {
     }
 
     const book = bookQuery.data
+    const isEpubOnly = book.available_formats?.includes('epub') && !book.available_formats.includes('physical')
 
     const isOnLoan =
         book.status === 'on_loan'
@@ -263,12 +267,12 @@ export function BookDetailsPage() {
     const canShowActiveActions = isAdmin
 
     const canCheckout =
-        isCheckoutEligible(book) ||
+        !isEpubOnly && (isCheckoutEligible(book) ||
         book.status === 'reserved' ||
-        book.status === 'reading'
+        book.status === 'reading')
 
     const canCheckin =
-        canShowActiveActions &&
+        canShowActiveActions && !isEpubOnly &&
         !loansQuery.isPending &&
         !loansQuery.isError &&
         isCheckinEligible(
@@ -371,6 +375,7 @@ export function BookDetailsPage() {
                                 book.authors,
                             )}
                         </p>
+                        {book.available_formats?.includes('epub') ? <p>{isEpubOnly ? 'EPUB edition · Digital collection' : 'Physical + EPUB edition'}</p> : null}
                     </header>
 
                     <dl className="book-details-card__metadata">
@@ -383,7 +388,7 @@ export function BookDetailsPage() {
                         </dd>
                     </div> : null}
 
-                    <div className="book-details-card__field">
+                    {!isEpubOnly ? <div className="book-details-card__field">
                         <dt>Shelf</dt>
                         <dd>
                             {book.placement_state === 'stashed'
@@ -392,7 +397,7 @@ export function BookDetailsPage() {
                                     ? formatShelfCommonNameForDisplay(book.shelf_name)
                                     : 'Unshelved'}
                         </dd>
-                    </div>
+                    </div> : null}
 
                     <div className="book-details-card__field">
                         <dt>Status</dt>
@@ -531,6 +536,10 @@ export function BookDetailsPage() {
             </article>
 
             <BookProviderSummary book={book} />
+            <RelatedBookEditions bookId={book.book_id} />
+
+            {isAdmin ? <EpubBookPanel bookId={book.book_id} /> : null}
+            {isAdmin ? loansQuery.data?.items.filter((loan) => loan.delivery_type === 'epub').map((loan) => <EpubLoanControls key={loan.id} loanId={loan.id} />) : null}
 
             {isOnLoan ? (
                 <section className="book-details-panel">
@@ -559,7 +568,7 @@ export function BookDetailsPage() {
                         Edit Book
                     </AppLink>
 
-                    <AppLink to={`/books/labels?book_id=${encodeURIComponent(book.book_id)}`} variant="secondary">Print Label</AppLink>
+                    {!isEpubOnly ? <AppLink to={`/books/labels?book_id=${encodeURIComponent(book.book_id)}`} variant="secondary">Print Label</AppLink> : null}
 
                     <Button
                         type="button"

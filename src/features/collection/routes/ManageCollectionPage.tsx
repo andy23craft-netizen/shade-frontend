@@ -130,6 +130,12 @@ export function ManageCollectionPage() {
                             <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
                         </AppLink>
 
+                        <AppLink to="/pdf-library" className="manage-collection-action">
+                            <span className="manage-collection-action__title">PDF Library</span>
+                            <span className="manage-collection-action__description">Browse private documents and open them in your browser.</span>
+                            <span className="manage-collection-action__arrow" aria-hidden="true">→</span>
+                        </AppLink>
+
                         <AppLink to="/albums/new" className="manage-collection-action" mutating>
                             <span className="manage-collection-action__title">Add Album</span>
                             <span className="manage-collection-action__description">File a new release in the album catalog.</span>

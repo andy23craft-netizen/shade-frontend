@@ -6,9 +6,11 @@ export type BookCreate = Omit<Schemas['BookCreate'], 'isbn_not_applicable' | 'is
     Partial<Pick<Schemas['BookCreate'], 'isbn_not_applicable' | 'is_flagged'>>
 export type BookUpdate = Schemas['BookUpdate']
 type GeneratedBookRead = Schemas['BookRead']
-export type BookRead = Omit<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id'> &
-    Partial<Pick<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id'>>
+export type BookRead = Omit<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id' | 'available_formats'> &
+    Partial<Pick<GeneratedBookRead, 'borrower_rating' | 'isbn_not_applicable' | 'is_flagged' | 'work_id' | 'available_formats'>>
 export type BookList = Omit<Schemas['BookList'], 'items'> & { items: BookRead[] }
+export type BookCatalogFormat = Schemas['BookCatalogFormat']
+export type RelatedBookEditionList = Schemas['RelatedBookEditionList']
 export type BookSummaryRefreshResponse = Schemas['BookSummaryRefreshResponse']
 
 export type BulkBookCatalogState =
@@ -97,8 +99,8 @@ export type MarkUnreadRequest =
     Schemas['MarkUnreadRequest']
 
 type GeneratedLoanRead = Schemas['LoanRead']
-export type LoanRead = Omit<GeneratedLoanRead, 'feedback_present'> &
-    Partial<Pick<GeneratedLoanRead, 'feedback_present'>>
+export type LoanRead = Omit<GeneratedLoanRead, 'feedback_present' | 'delivery_type'> &
+    Partial<Pick<GeneratedLoanRead, 'feedback_present' | 'delivery_type'>>
 export type LoanList = Omit<Schemas['LoanList'], 'items'> & { items: LoanRead[] }
 export type LoanUpdate = Schemas['LoanUpdate']
 export type LoanFeedbackWrite = Schemas['LoanFeedbackWrite']

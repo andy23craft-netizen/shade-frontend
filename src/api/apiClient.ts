@@ -108,6 +108,7 @@ export function createApiClient({
             preserveAuthOnUnauthorized,
             headers: requestHeaders,
             signal: callerSignal,
+            credentials: requestedCredentials,
             ...fetchOptions
         } = options
 
@@ -158,7 +159,7 @@ export function createApiClient({
                     // The API uses Bearer authentication and explicitly does
                     // not allow credentialed CORS requests. Authorization is
                     // sent above; browser cookies must not accompany it.
-                    credentials: 'omit',
+                    credentials: requestedCredentials ?? 'omit',
                     headers,
                     signal: combinedSignal,
                 },

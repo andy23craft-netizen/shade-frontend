@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { AppProviders } from './AppProviders'
@@ -15,6 +15,10 @@ import {
 } from './config/libraryContext'
 import { router } from './routes/routes'
 import './index.css'
+// The entry point intentionally has no exports; this lazy reader keeps the
+// EPUB engine out of ordinary catalog visits.
+// eslint-disable-next-line react-refresh/only-export-components
+const BorrowerReaderPage = lazy(() => import('./features/epub/routes/BorrowerReaderPage').then((module) => ({ default: module.BorrowerReaderPage })))
 import {
     createDiagnosticReporter,
 } from './diagnostics/diagnosticReporter'
@@ -33,6 +37,10 @@ applyLibraryDocumentMetadata(libraryContext, 'Home')
 applyLibraryFavicon(window.location.hostname)
 
 function renderApplication() {
+    if (window.location.pathname === '/epub-reader') {
+        root.render(<Suspense fallback={<main><p>Opening reader…</p></main>}><BorrowerReaderPage /></Suspense>)
+        return
+    }
     if (!libraryContext) {
         root.render(
             <StrictMode>

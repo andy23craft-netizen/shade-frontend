@@ -13,6 +13,7 @@ import {
     useSetBookAvailability,
     useSetBookFlag,
     useRefreshBookSummary,
+    useRelatedBookEditions,
 } from '../../../api/booksQueries'
 import { useLoans } from '../../../api/loansQueries'
 import type { BookRead } from '../../../api/apiTypes'
@@ -23,7 +24,8 @@ vi.mock('../../../api/booksQueries', () => ({
     useCheckoutBook: vi.fn(),
     useSetBookAvailability: vi.fn(),
         useSetBookFlag: vi.fn(),
-        useRefreshBookSummary: vi.fn(),
+    useRefreshBookSummary: vi.fn(),
+    useRelatedBookEditions: vi.fn(),
 }))
 
 vi.mock('../../../api/loansQueries', () => ({
@@ -91,6 +93,7 @@ vi.mock(
 )
 
 const mockedUseBook = vi.mocked(useBook)
+const mockedUseRelatedBookEditions = vi.mocked(useRelatedBookEditions)
 
 const mockedUseLoans = vi.mocked(useLoans)
 
@@ -180,6 +183,7 @@ function renderBookDetails(
 describe('BookDetailsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        mockedUseRelatedBookEditions.mockReturnValue({ data: { work_id: 'work-1', items: [] } } as unknown as ReturnType<typeof useRelatedBookEditions>)
 
         mockedUseCheckoutBook.mockReturnValue({
             mutate: vi.fn(),
@@ -234,6 +238,14 @@ describe('BookDetailsPage', () => {
             'href',
             '/books/test-book-id/mark-read',
         )
+    })
+
+    it('links an EPUB edition from a display-only physical copy without granting reader access', () => {
+        mockedUseBook.mockReturnValue({ isPending: false, isError: false, data: { ...completeBook, status: 'display_only', available_formats: ['physical'] } } as ReturnType<typeof useBook>)
+        mockedUseRelatedBookEditions.mockReturnValue({ data: { work_id: 'same-work', items: [{ book_id: 'epub-sibling', title: 'The Pale Fire — EPUB', available_formats: ['epub'], placement_state: 'unshelved', status: 'available' }] } } as ReturnType<typeof useRelatedBookEditions>)
+        renderBookDetails()
+        expect(screen.getByRole('link', { name: 'View EPUB edition' })).toHaveAttribute('href', '/books/epub-sibling')
+        expect(screen.queryByRole('link', { name: 'Open reader link' })).not.toBeInTheDocument()
     })
 
     it('marks a book as needing reshelving through the dedicated mutation', () => {

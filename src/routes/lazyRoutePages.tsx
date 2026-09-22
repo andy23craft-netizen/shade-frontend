@@ -115,6 +115,9 @@ export const BookDetailsPage = lazy(() =>
     })),
 )
 
+export const PdfLibraryPage = lazy(() => import('../features/pdf/routes/PdfLibraryPage').then((module) => ({ default: module.PdfLibraryPage })))
+export const AdminReaderPage = lazy(() => import('../features/epub/routes/AdminReaderPage').then((module) => ({ default: module.AdminReaderPage })))
+
 export const MarkReadPage = lazy(() =>
     import(
         '../features/books/routes/MarkReadPage'

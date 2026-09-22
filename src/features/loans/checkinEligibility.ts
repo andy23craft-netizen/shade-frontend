@@ -10,6 +10,7 @@ export function findActiveLoan(
     return loans.find(
         (loan) =>
             loan.book_id === bookId &&
+            loan.delivery_type !== 'epub' &&
             loan.returned_at === null,
     )
 }

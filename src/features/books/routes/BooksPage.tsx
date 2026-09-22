@@ -27,6 +27,7 @@ import { useShelves } from '../../../api/shelvesQueries'
 import { useHouseholdProfiles } from '../../../api/householdProfilesQueries'
 import { enumDisplayValue } from '../../../api/enumDisplay'
 import type {
+    BookCatalogFormat,
     Status,
 } from '../../../api/apiTypes'
 import { useInfiniteScrollTrigger } from '../../../hooks/useInfiniteScrollTrigger'
@@ -130,6 +131,7 @@ function updateListParams(
         profileId?: string | undefined
         cleanupField?: BookCleanupField | undefined
         placementState?: import('../../../api/apiTypes').PlacementState
+        format?: BookCatalogFormat
         sortBy?: BookSortBy
         sortOrder?: BookSortOrder
     },
@@ -202,6 +204,11 @@ function updateListParams(
         } else {
             next.set('placement_state', updates.placementState)
         }
+    }
+
+    if ('format' in updates) {
+        if (updates.format === undefined || updates.format === 'all') next.delete('format')
+        else next.set('format', updates.format)
     }
 
     if ('isRead' in updates) {
@@ -332,6 +339,8 @@ export function BooksPage() {
     const placementState = parsePlacementStateParam(
         searchParams.get('placement_state'),
     )
+    const formatParam = searchParams.get('format')
+    const format: BookCatalogFormat = formatParam === 'physical' || formatParam === 'epub' ? formatParam : 'all'
     const isRead = parseReadStatusParam(
         searchParams.get('is_read'),
     )
@@ -372,6 +381,7 @@ export function BooksPage() {
         isbn,
         shelfName,
         placementState,
+        format,
         isRead,
         profileId,
         sortBy,
@@ -405,6 +415,7 @@ export function BooksPage() {
             isbn,
             shelfName,
             placementState,
+            format,
             isRead,
             profileId,
             sortBy,
@@ -443,6 +454,7 @@ export function BooksPage() {
         isbn !== undefined ||
         shelfName !== undefined ||
         placementState !== undefined ||
+        format !== 'all' ||
         isRead !== undefined ||
         cleanupField !== undefined
 
@@ -454,6 +466,7 @@ export function BooksPage() {
             isbn: isbn ?? null,
             shelfName: shelfName ?? null,
             placementState: placementState ?? null,
+            format,
             isRead: isRead ?? null,
             cleanupField: cleanupField ?? null,
         })
@@ -637,6 +650,7 @@ export function BooksPage() {
                 categoryIds={categoryIds}
                 shelves={shelvesQuery.data ?? []}
                 shelfName={shelfName}
+                format={format}
                 author={author ?? ''}
                 title={title ?? ''}
                 isRead={isRead}
@@ -740,6 +754,10 @@ export function BooksPage() {
                     )
                 }}
 
+                onFormatChange={(nextFormat) => {
+                    setSearchParams(updateListParams(searchParams, { format: nextFormat }), { replace: true })
+                }}
+
                 onSortChange={(
                     nextSortBy,
                     nextSortOrder,
@@ -777,6 +795,7 @@ export function BooksPage() {
                                 isRead: undefined,
                                 cleanupField: undefined,
                                 placementState: undefined,
+                                format: undefined,
                             },
                         ),
                         {
@@ -928,6 +947,7 @@ export function BooksPage() {
                                         isbn: undefined,
                                         shelfName: undefined,
                                         isRead: undefined,
+                                        format: undefined,
                                     },
                                 ),
                                 {
@@ -963,7 +983,9 @@ export function BooksPage() {
                             )
                             : book.placement_state === 'stashed'
                                 ? 'Stash'
-                                : 'Unshelved'
+                                : book.available_formats?.includes('epub') && !book.available_formats.includes('physical')
+                                    ? 'Digital collection'
+                                    : 'Unshelved'
 
                         const isSelectable =
                             isBookBulkSelectable(book)
@@ -1039,6 +1061,7 @@ export function BooksPage() {
                                                     book.authors,
                                                 )}
                                             </p>
+                                            {book.available_formats?.includes('epub') ? <p className="book-card__format">{book.available_formats.includes('physical') ? 'Physical + EPUB' : 'EPUB edition'}</p> : null}
                                         </div>
 
                                         <dl className="book-card__metadata">

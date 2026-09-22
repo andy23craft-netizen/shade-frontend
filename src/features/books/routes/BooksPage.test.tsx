@@ -460,6 +460,7 @@ describe('BooksPage', () => {
             expect.objectContaining({
                 sortBy: 'author',
                 sortOrder: 'asc',
+                format: 'all',
             }),
         )
 
@@ -1124,6 +1125,30 @@ describe('BooksPage', () => {
                 shelfName: 'a3',
             }),
         )
+    })
+
+    it('filters EPUBs and shows EPUB-only books in the catalog', () => {
+        mockUseInfiniteBooks.mockReturnValue(
+            makeInfiniteBooksResult([{
+                total: 1,
+                items: [makeBook({
+                    available_formats: ['epub'],
+                    placement_state: 'unshelved',
+                    shelf_name: null,
+                })],
+            }]),
+        )
+
+        renderBooksPage()
+        fireEvent.change(screen.getByLabelText('Format'), {
+            target: { value: 'epub' },
+        })
+
+        expect(screen.getByTestId('location')).toHaveTextContent('format=epub')
+        expect(mockUseInfiniteBooks).toHaveBeenLastCalledWith(
+            expect.objectContaining({ format: 'epub' }),
+        )
+        expect(screen.getByText('Digital collection')).toBeInTheDocument()
     })
 
     it('shows a filtered empty state and clears filters', () => {

@@ -1142,6 +1142,15 @@
         "title": "Body_upload_book_cover_books__book_id__cover_put",
         "type": "object"
       },
+      "BookCatalogFormat": {
+        "enum": [
+          "all",
+          "physical",
+          "epub"
+        ],
+        "title": "BookCatalogFormat",
+        "type": "string"
+      },
       "BookCategoryRead": {
         "properties": {
           "category_id": {
@@ -1697,6 +1706,18 @@
               "$ref": "#/components/schemas/BookPersonRead"
             },
             "title": "Authors",
+            "type": "array"
+          },
+          "available_formats": {
+            "description": "Cataloged formats, not live storage health. Physical means shelved or stashed; EPUB means an asset association exists even if its provider is temporarily unavailable. No storage IDs.",
+            "items": {
+              "enum": [
+                "physical",
+                "epub"
+              ],
+              "type": "string"
+            },
+            "title": "Available Formats",
             "type": "array"
           },
           "average_loan_days": {
@@ -4393,6 +4414,388 @@
         "title": "DashboardSummary",
         "type": "object"
       },
+      "EpubAssetRead": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "book_id": {
+            "title": "Book Id",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "book_id",
+          "available",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EpubAssetRead",
+        "type": "object"
+      },
+      "EpubAssetWrite": {
+        "properties": {
+          "storage_identifier": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Storage Identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "storage_identifier"
+        ],
+        "title": "EpubAssetWrite",
+        "type": "object"
+      },
+      "EpubInvitationRead": {
+        "properties": {
+          "loan_id": {
+            "title": "Loan Id",
+            "type": "string"
+          },
+          "qr_payload": {
+            "title": "Qr Payload",
+            "type": "string"
+          },
+          "reader_url": {
+            "title": "Reader Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loan_id",
+          "reader_url",
+          "qr_payload"
+        ],
+        "title": "EpubInvitationRead",
+        "type": "object"
+      },
+      "EpubInvitationRedeem": {
+        "properties": {
+          "invitation": {
+            "maxLength": 512,
+            "minLength": 32,
+            "title": "Invitation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invitation"
+        ],
+        "title": "EpubInvitationRedeem",
+        "type": "object"
+      },
+      "EpubLoanAction": {
+        "properties": {
+          "state": {
+            "enum": [
+              "returned",
+              "completed",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "EpubLoanAction",
+        "type": "object"
+      },
+      "EpubLoanCreate": {
+        "properties": {
+          "borrower": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Borrower",
+            "type": "string"
+          },
+          "borrower_email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Borrower Email",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "borrower",
+          "borrower_email"
+        ],
+        "title": "EpubLoanCreate",
+        "type": "object"
+      },
+      "EpubLoanRead": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "book_id": {
+            "title": "Book Id",
+            "type": "string"
+          },
+          "borrower": {
+            "title": "Borrower",
+            "type": "string"
+          },
+          "borrower_email": {
+            "title": "Borrower Email",
+            "type": "string"
+          },
+          "checked_out_at": {
+            "title": "Checked Out At",
+            "type": "string"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "loan_id": {
+            "title": "Loan Id",
+            "type": "string"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/EpubProgressRead"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "returned",
+              "completed",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loan_id",
+          "asset_id",
+          "book_id",
+          "borrower",
+          "borrower_email",
+          "state",
+          "checked_out_at",
+          "progress"
+        ],
+        "title": "EpubLoanRead",
+        "type": "object"
+      },
+      "EpubProgressConflict": {
+        "properties": {
+          "current": {
+            "$ref": "#/components/schemas/EpubProgressRead"
+          },
+          "detail": {
+            "const": "EPUB progress has changed",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "current"
+        ],
+        "title": "EpubProgressConflict",
+        "type": "object"
+      },
+      "EpubProgressRead": {
+        "properties": {
+          "cfi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cfi"
+          },
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter"
+          },
+          "chapter_progress": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Progress"
+          },
+          "completed": {
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Percent"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision",
+          "completed",
+          "updated_at"
+        ],
+        "title": "EpubProgressRead",
+        "type": "object"
+      },
+      "EpubProgressWrite": {
+        "properties": {
+          "base_revision": {
+            "minimum": 0.0,
+            "title": "Base Revision",
+            "type": "integer"
+          },
+          "cfi": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cfi"
+          },
+          "chapter": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter"
+          },
+          "chapter_progress": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Progress"
+          },
+          "completed": {
+            "default": false,
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Percent"
+          }
+        },
+        "required": [
+          "base_revision"
+        ],
+        "title": "EpubProgressWrite",
+        "type": "object"
+      },
+      "EpubReaderLaunch": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "content_url": {
+            "title": "Content Url",
+            "type": "string"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/EpubProgressRead"
+          }
+        },
+        "required": [
+          "asset_id",
+          "profile_id",
+          "content_url",
+          "progress"
+        ],
+        "title": "EpubReaderLaunch",
+        "type": "object"
+      },
       "ErrorDetail": {
         "properties": {
           "detail": {
@@ -5016,6 +5419,15 @@
             "title": "Created Date",
             "type": "string"
           },
+          "delivery_type": {
+            "default": "physical",
+            "enum": [
+              "physical",
+              "epub"
+            ],
+            "title": "Delivery Type",
+            "type": "string"
+          },
           "due_at": {
             "anyOf": [
               {
@@ -5318,6 +5730,20 @@
           "kind"
         ],
         "title": "PdfLibraryEntry",
+        "type": "object"
+      },
+      "PdfViewerHandoff": {
+        "description": "A non-secret URL for a browser-native PDF viewer request.",
+        "properties": {
+          "viewer_url": {
+            "title": "Viewer Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "viewer_url"
+        ],
+        "title": "PdfViewerHandoff",
         "type": "object"
       },
       "PersonCreate": {
@@ -5851,6 +6277,66 @@
           "has_record"
         ],
         "title": "ReaderStateRead",
+        "type": "object"
+      },
+      "RelatedBookEdition": {
+        "description": "Viewer-safe same-work catalog sibling, not a reader invitation.",
+        "properties": {
+          "available_formats": {
+            "items": {
+              "enum": [
+                "physical",
+                "epub"
+              ],
+              "type": "string"
+            },
+            "title": "Available Formats",
+            "type": "array"
+          },
+          "book_id": {
+            "title": "Book Id",
+            "type": "string"
+          },
+          "placement_state": {
+            "$ref": "#/components/schemas/PlacementState"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "title",
+          "available_formats",
+          "placement_state",
+          "status"
+        ],
+        "title": "RelatedBookEdition",
+        "type": "object"
+      },
+      "RelatedBookEditionList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RelatedBookEdition"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "work_id": {
+            "title": "Work Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_id",
+          "items"
+        ],
+        "title": "RelatedBookEditionList",
         "type": "object"
       },
       "ReservationWrite": {
@@ -6857,7 +7343,7 @@
   "info": {
     "description": "Home library management API for books, loans, collections, and dashboard summaries.",
     "title": "LibraryV2",
-    "version": "1.11.5"
+    "version": "1.12.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -9310,6 +9796,24 @@
             }
           },
           {
+            "description": "Omitted keeps legacy shelved-only listing; all includes unshelved EPUB-only books; physical selects physical inventory; epub selects asset-associated books. Composes with explicit placement_state and all other filters, pagination, and sorting.",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/BookCatalogFormat"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Omitted keeps legacy shelved-only listing; all includes unshelved EPUB-only books; physical selects physical inventory; epub selects asset-associated books. Composes with explicit placement_state and all other filters, pagination, and sorting.",
+              "title": "Format"
+            }
+          },
+          {
             "in": "query",
             "name": "is_read",
             "required": false,
@@ -11666,6 +12170,100 @@
           }
         ],
         "summary": "Mark Book Unread",
+        "tags": [
+          "books"
+        ]
+      }
+    },
+    "/books/{book_id}/related-editions": {
+      "get": {
+        "description": "Viewer-safe catalog siblings with the same work_id, excluding the requested book and unrelated works. Includes EPUB editions even when the physical copy is checked out or display-only. Returns catalog metadata only; does not grant reader access.",
+        "operationId": "get_related_book_editions_books__book_id__related_editions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatedBookEditionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Malformed or missing identifier"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Related Book Editions",
         "tags": [
           "books"
         ]
@@ -14276,6 +14874,1092 @@
         ]
       }
     },
+    "/epub-reader/content": {
+      "get": {
+        "operationId": "borrower_content_epub_reader_content_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "epub_reader",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Epub Reader"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/epub+zip": {}
+            },
+            "description": "Protected EPUB stream"
+          },
+          "403": {
+            "description": "Reader access is invalid, inactive, revoked, or expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          }
+        },
+        "summary": "Borrower Content",
+        "tags": [
+          "EPUB reader"
+        ]
+      }
+    },
+    "/epub-reader/progress": {
+      "get": {
+        "operationId": "borrower_progress_epub_reader_progress_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "epub_reader",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Epub Reader"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubProgressRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Reader access is invalid, inactive, revoked, or expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          }
+        },
+        "summary": "Borrower Progress",
+        "tags": [
+          "EPUB reader"
+        ]
+      },
+      "put": {
+        "operationId": "save_borrower_progress_epub_reader_progress_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "epub_reader",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Epub Reader"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpubProgressWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubProgressRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Reader access is invalid, inactive, revoked, or expired"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubProgressConflict"
+                }
+              }
+            },
+            "description": "Progress revision conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "summary": "Save Borrower Progress",
+        "tags": [
+          "EPUB reader"
+        ]
+      }
+    },
+    "/epub-reader/redeem": {
+      "post": {
+        "operationId": "redeem_epub_reader_redeem_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpubInvitationRedeem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Redeem Epub Reader Redeem Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Reader access is invalid, inactive, revoked, or expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "summary": "Redeem",
+        "tags": [
+          "EPUB reader"
+        ]
+      }
+    },
+    "/epubs/books/{book_id}/asset": {
+      "get": {
+        "operationId": "get_asset_epubs_books__book_id__asset_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubAssetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Asset",
+        "tags": [
+          "EPUBs"
+        ]
+      },
+      "put": {
+        "operationId": "put_asset_epubs_books__book_id__asset_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpubAssetWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubAssetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Asset",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/books/{book_id}/content": {
+      "get": {
+        "operationId": "admin_content_epubs_books__book_id__content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/epub+zip": {}
+            },
+            "description": "Protected EPUB stream"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Admin Content",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/books/{book_id}/loans": {
+      "post": {
+        "operationId": "create_loan_epubs_books__book_id__loans_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpubLoanCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubInvitationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Loan",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/books/{book_id}/reader": {
+      "get": {
+        "operationId": "admin_launch_epubs_books__book_id__reader_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubReaderLaunch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Admin Launch",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/books/{book_id}/reader/complete": {
+      "post": {
+        "description": "Complete through the canonical profile-aware book reading-state path.",
+        "operationId": "complete_admin_reader_epubs_books__book_id__reader_complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkReadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Complete Admin Reader",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/books/{book_id}/reader/progress": {
+      "put": {
+        "operationId": "save_admin_progress_epubs_books__book_id__reader_progress_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpubProgressWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubProgressRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubProgressConflict"
+                }
+              }
+            },
+            "description": "Progress revision conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save Admin Progress",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/loans/{loan_id}": {
+      "get": {
+        "operationId": "get_loan_epubs_loans__loan_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loan_id",
+            "required": true,
+            "schema": {
+              "title": "Loan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubLoanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Loan",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/loans/{loan_id}/reissue": {
+      "post": {
+        "operationId": "reissue_epubs_loans__loan_id__reissue_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loan_id",
+            "required": true,
+            "schema": {
+              "title": "Loan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubInvitationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "409": {
+            "description": "EPUB loan is inactive"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reissue",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
+    "/epubs/loans/{loan_id}/state": {
+      "post": {
+        "operationId": "set_state_epubs_loans__loan_id__state_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loan_id",
+            "required": true,
+            "schema": {
+              "title": "Loan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpubLoanAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubLoanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator access is required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set State",
+        "tags": [
+          "EPUBs"
+        ]
+      }
+    },
     "/genres": {
       "get": {
         "operationId": "list_genres_genres_get",
@@ -15981,6 +17665,9 @@
             },
             "description": "Successful Response"
           },
+          "403": {
+            "description": "Administrator or scoped viewer access is invalid"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -15990,6 +17677,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
           }
         },
         "security": [
@@ -16006,6 +17696,156 @@
     "/pdf-library/file": {
       "get": {
         "operationId": "get_pdf_pdf_library_file_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "identifier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Identifier"
+            }
+          },
+          {
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Download"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Forwarded-Host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Forwarded-Host"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "pdf_viewer",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pdf Viewer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Private full PDF stream",
+            "headers": {
+              "Accept-Ranges": {
+                "schema": {
+                  "example": "bytes",
+                  "type": "string"
+                }
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "206": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Private partial PDF stream for a valid byte range",
+            "headers": {
+              "Accept-Ranges": {
+                "schema": {
+                  "example": "bytes",
+                  "type": "string"
+                }
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Range": {
+                "schema": {
+                  "example": "bytes 0-1023/4096",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Administrator or scoped viewer access is invalid"
+          },
+          "404": {
+            "description": "PDF file not found"
+          },
+          "416": {
+            "description": "Requested byte range is not satisfiable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Pdf",
+        "tags": [
+          "PDF library"
+        ]
+      }
+    },
+    "/pdf-library/viewer-handoff": {
+      "post": {
+        "description": "Set a scoped HTTP-only cookie before opening the native viewer URL.",
+        "operationId": "create_viewer_handoff_pdf_library_viewer_handoff_post",
         "parameters": [
           {
             "in": "query",
@@ -16048,10 +17888,18 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/PdfViewerHandoff"
+                }
               }
             },
             "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator or scoped viewer access is invalid"
+          },
+          "404": {
+            "description": "PDF file not found"
           },
           "422": {
             "content": {
@@ -16062,6 +17910,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "Media storage is temporarily unavailable"
+          },
+          "530": {
+            "description": "Site is in read-only mode"
           }
         },
         "security": [
@@ -16069,7 +17923,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Get Pdf",
+        "summary": "Create Viewer Handoff",
         "tags": [
           "PDF library"
         ]
