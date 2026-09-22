@@ -1,8 +1,8 @@
 # Feat-16 - EPUB readers and admin PDF library UI
 
-**Status:** Proposed  
+**Status:** PDF browse UI specified; EPUB reader implementation blocked on its API contract, and native PDF viewing/downloading blocked on authenticated browser handoff.  
 **Owner:** Frontend  
-**Dependencies:** Backend Feat-14 finalized OpenAPI and supplemental frontend contract; selected hosted-reader integration; deployed external EPUB-provider and PDF-root configuration.
+**Dependencies:** Finalized EPUB API contract and selected hosted-reader integration; deployed external EPUB-provider and PDF-root configuration. The PDF-library API is present in the checked-in OpenAPI; see **Confirmed PDF API contract** below. EPUB routes and schemas are not present in that contract as of this ticket update.
 
 ## Goal
 
@@ -12,7 +12,7 @@ Give Shade administrators two private media experiences—a native browser reade
 
 ### Shared frontend/API foundation
 
-- Regenerate the checked-in OpenAPI client only after the backend contract is final, then add typed API clients, React Query hooks, cache keys, error mapping, and targeted invalidation for EPUB assets, digital loans, borrower progress, administrator/profile progress, and the PDF directory browser. Do not infer endpoints, response shapes, token transport, or status semantics before that contract exists.
+- Regenerate the checked-in OpenAPI client from the finalized contract, then add typed API clients, React Query hooks, cache keys, error mapping, and targeted invalidation. The PDF directory browser is contract-ready. EPUB assets, digital loans, borrower progress, and administrator/profile progress remain blocked until their routes, schemas, token transport, and status semantics are supplied in OpenAPI or a supplemental frontend contract.
 - Before reader integration, research, select, and document a React-compatible EPUB reader that meets the protected/proxied-content, canonical-CFI resume, mobile-accessibility, maintenance, and bundle criteria. Keep it behind a reader adapter, and verify the choice does not cause existing gate/check requests to time out.
 - Extend existing book-detail, loan-history, household-reader, and canonical mark-read flows rather than creating parallel book identity, auth, or completion state. Continue to use \`book_id\` and the active tenant host.
 - Treat physical and digital loans as separate records and present their delivery/type labels clearly. An EPUB loan must never alter or imply a physical book's shelf, availability, active physical loan, or checkout eligibility.
@@ -45,15 +45,29 @@ Give Shade administrators two private media experiences—a native browser reade
 
 ### Administrator PDF library
 
-- Add an administrator-only, phone-friendly PDF Library entry point in Manage Collection, using only the finalized directory-list and file-retrieval API.
-- Render the server-provided current directory view with directories before files and alphabetical display-name order. Use opaque server-issued relative identifiers for navigation and retrieval; never derive, normalize, or reveal a filesystem path in the browser.
-- Provide accessible directory navigation, loading, empty, unavailable-root, unauthorized, malformed-item, and retry states. A new directory request is the source of truth so additions/removals on disk appear without any frontend persistence or optimistic file model.
+Add an administrator-only, phone-friendly PDF Library entry point in Manage Collection. It must use the existing tenant administrator bearer credential and must never call either PDF route in viewer mode.
+
+#### Confirmed PDF API contract
+
+- List the root with `GET /pdf-library`. List a contained directory with `GET /pdf-library?path=<opaque-relative-directory-id>`. `path` is optional and nullable in the OpenAPI; omit it for the root rather than manufacturing an empty identifier.
+- A successful listing is `PdfDirectoryListing`: `{ path, items }`. `path` and each `PdfLibraryEntry.identifier` are opaque relative identifiers, not display paths. An entry provides `identifier`, `name`, `kind` (`directory` or `file`), optional `modified_at`, and optional `size`. Do not infer an extension, MIME type, parent directory, or filesystem location from any field.
+- Preserve the server's supplied item order. The server guarantees directories before files; the current contract does **not** guarantee alphabetical order, so the SPA must not re-sort the list.
+- Enter a directory only with that entry's `identifier` as the next list request's `path`. Use client navigation history, retaining only prior safe display names for breadcrumbs/back navigation; never display, split, or normalize an opaque identifier to derive a parent.
+- Open a file through `GET /pdf-library/file?identifier=<opaque-relative-file-id>`. Omit `download` (or use `false`) for inline viewing; use `download=true` to request an attachment. The identifier is required and must be non-empty.
+- Treat `503` as a temporarily unavailable media provider: retain the current view, show a retry action, and do not retry automatically. Treat `422` as an invalid/malformed request without exposing the identifier. The supplied prose requires administrator access; use the existing admin-auth handling for an authorization failure and never downgrade this surface to viewer access.
+- The initial response and each directory navigation response are authoritative. Do not persist or optimistically mutate a directory model; a fresh request must reflect additions/removals on disk.
+
+#### PDF UI and security requirements
+
+- Render only backend-authorized metadata (`name`, `kind`, and, when supplied, safe formatted size/modified time). Provide accessible directory navigation plus loading, empty, unavailable-provider, unauthorized, malformed-item, and retry states.
+- Do not expose the opaque identifier as visible path text, log it, include it in diagnostics, or transform it into a filesystem path. It may be held only as request/navigation state needed to call the Shade endpoint.
 - Open PDFs in the browser-native viewer and offer download as a separate explicit action, both through authorized Shade endpoints. Do not fetch entire files into JavaScript memory, proxy bytes through the SPA, cache file URLs as durable state, or make PDFs available in viewer mode.
+- Resolve the authenticated native-viewer handoff before implementation. A normal browser navigation cannot attach the SPA's bearer Authorization header, while the endpoint is administrator-only. Do not work around this by placing a bearer token in a URL, creating a blob URL from a full-file fetch, or weakening route authorization.
 
 ### Quality and accessibility
 
 - Add unit tests for API serialization, sensitive-value redaction, profile locking, progress-state transitions, terminal loan states, and PDF directory navigation/error handling.
-- Add Playwright and axe journeys for administrator EPUB checkout/reissue, borrower invitation redemption and resume, administrator owner/non-owner progress isolation and completion, physical/digital loan independence, and PDF browse/view/download authorization. Use mock secrets only and assert they do not appear in the page, browser URL after redemption, diagnostics, or ordinary app navigation.
+- Add Playwright and axe journeys for administrator EPUB checkout/reissue, borrower invitation redemption and resume, administrator owner/non-owner progress isolation and completion, physical/digital loan independence, and PDF root/subdirectory browse, server-order preservation, inline-view/download request construction, 503 retry, malformed identifier handling, and viewer authorization. Use mock secrets only and assert they do not appear in the page, browser URL after redemption, diagnostics, or ordinary app navigation.
 
 ## Acceptance criteria
 
@@ -63,7 +77,7 @@ Give Shade administrators two private media experiences—a native browser reade
 - The borrower reader exposes no secret token, external asset URL, borrower email, administrator navigation, or unrelated catalog data through its UI, routes, storage, diagnostics, or error presentation.
 - A signed-in administrator selects a household reader before entering EPUB reading; that selection stays fixed for the open reader session, and another profile's progress/completion is never displayed or written accidentally.
 - Administrator completion uses the existing selected-profile rating/review and mark-read behavior. It is retriable, does not duplicate completion, and an unfinished session does not mark the book read.
-- The PDF Library is inaccessible to viewers, shows only backend-authorized directory/file metadata, supports keyboard and phone navigation, and delegates viewing/downloading/range streaming to the server rather than loading entire files into the SPA.
+- The PDF Library is inaccessible to viewers, shows only backend-authorized directory/file metadata, preserves the server's directory-first ordering, supports keyboard and phone navigation, and delegates viewing/downloading/range streaming to the server rather than loading entire files into the SPA.
 - Existing catalog browsing, physical checkout/check-in, loans, household-reader selection, and mark-read flows remain functional when EPUB or PDF services are unavailable.
 
 ## Out of scope
@@ -72,3 +86,11 @@ Give Shade administrators two private media experiences—a native browser reade
 - Borrower accounts, passwords, DRM, annotations, highlights, reader themes, offline/service-worker reading, reread tracking, and public PDF browsing.
 - Importing PDFs into the catalog or creating PDF metadata, search, loans, or database records.
 - A new frontend authentication model, direct calls to an EPUB host, or direct filesystem access.
+
+## Open contract questions before implementation
+
+1. **Authenticated inline/download handoff:** What approved mechanism lets a browser-native PDF viewer/download request satisfy administrator bearer authorization without putting the bearer token in a URL? Examples of possible backend-owned designs are a same-origin HttpOnly session/cookie or a short-lived, server-issued one-time viewer URL; the frontend must not choose or invent one.
+2. **File response definition:** The OpenAPI currently declares the `200` response for `/pdf-library/file` as `application/json`, although the supplied contract says inline PDF/attachment behavior. Please define the actual content type(s), `Content-Disposition` behavior, range support, and any relevant response headers in OpenAPI.
+3. **Error responses:** The supplied contract defines `503` as a temporary media-provider outage, but neither PDF operation documents `503`, `403`, or other operational response schemas/statuses in OpenAPI. Please add or explicitly confirm these status contracts and safe user-facing detail semantics.
+4. **Opaque navigation/deep links:** There is no parent identifier in `PdfDirectoryListing`. Is browser history/root-only back navigation the intended UX, and may an opaque `path` identifier be represented in the SPA URL for a reload/deep link, or must it remain in memory only?
+5. **EPUB contract:** The checked-in OpenAPI has no EPUB paths or schemas. Which finalized contract will define asset administration, digital-loan lifecycle/reissue, invitation redemption/session, protected content delivery, progress concurrency, profile-scoped administrator reading, and their error/read-only semantics?
