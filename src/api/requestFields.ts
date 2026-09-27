@@ -88,6 +88,7 @@ export const CHECKIN_REQUEST_KEYS = [
 
 export const MARK_READ_REQUEST_KEYS = [
     'completion_date',
+    'profile_id',
     'rating',
     'review',
 ] as const satisfies readonly (keyof MarkReadRequest)[]

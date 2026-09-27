@@ -94,6 +94,16 @@ describe('requestFields', () => {
         ).toEqual({})
     })
 
+    it('preserves the selected household reader in mark-read requests', () => {
+        expect(
+            pickMarkReadRequest({
+                profile_id: 'sam-profile',
+            }),
+        ).toEqual({
+            profile_id: 'sam-profile',
+        })
+    })
+
     it('keeps documented book checkout fields only', () => {
         expect(
             pickBookCheckoutRequest({

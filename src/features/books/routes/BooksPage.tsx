@@ -63,6 +63,7 @@ import {
     shelfBrowsePath,
 } from '../bookBrowseUrl'
 import { useAuth } from '../../auth/useAuth'
+import { bookCompletionState } from '../readerCompletionState'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -967,6 +968,7 @@ export function BooksPage() {
                     aria-label="Library books"
                 >
                     {books.map((book, index) => {
+                        const completion = bookCompletionState(book, profileId)
                         const status = displayEnum(
                             book.status,
                             STATUS_VALUES,
@@ -1074,7 +1076,7 @@ export function BooksPage() {
                                             <dt>Reading</dt>
                                             <dd>
                                                 {displayReadState(
-                                                    book.is_read,
+                                                    completion.isComplete,
                                                 )}
                                             </dd>
                                         </div>
@@ -1082,9 +1084,9 @@ export function BooksPage() {
                                         <div className="book-card__field">
                                             <dt>Rating</dt>
                                             <dd>
-                                                {book.rating === null
+                                                {completion.rating === null || completion.rating === undefined
                                                     ? '—'
-                                                    : `${book.rating} / 5`}
+                                                    : `${completion.rating} / 5`}
                                             </dd>
                                         </div>
 

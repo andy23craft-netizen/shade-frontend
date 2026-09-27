@@ -33,6 +33,9 @@ const mockUseBulkMoveBooksToShelf = vi.fn()
 const mockUseBulkStashBooks = vi.fn()
 const mockUseSetBulkBookAvailability = vi.fn()
 const mockUseShelves = vi.fn()
+const householdState = vi.hoisted(() => ({
+    data: { household_mode_enabled: false, items: [] as { profile_id: string, display_name: string, is_owner: boolean }[] },
+}))
 
 vi.mock('../../../api/booksQueries', () => ({
     useInfiniteBooks: (options: unknown) =>
@@ -59,7 +62,7 @@ vi.mock('../../../api/dashboardQueries', () => ({
 vi.mock('../../../api/shelvesQueries', () => ({
     useShelves: () => mockUseShelves(),
 }))
-vi.mock('../../../api/householdProfilesQueries', () => ({ useHouseholdProfiles: () => ({ data: { household_mode_enabled: false, items: [] } }) }))
+vi.mock('../../../api/householdProfilesQueries', () => ({ useHouseholdProfiles: () => householdState }))
 
 const mockUseCategories = vi.fn()
 
@@ -208,6 +211,7 @@ describe('BooksPage', () => {
         mockUseBulkStashBooks.mockReset()
         mockUseSetBulkBookAvailability.mockReset()
         mockUseShelves.mockReset()
+        householdState.data = { household_mode_enabled: false, items: [] }
 
         mockUseBulkMoveBooksToShelf.mockReturnValue({
             mutate: vi.fn(),
@@ -1670,6 +1674,34 @@ describe('BooksPage', () => {
         expect(
             within(unratedCard!).getByText('—'),
         ).toBeInTheDocument()
+    })
+
+    it('uses the selected household reader state after returning to the Read-filtered list', () => {
+        householdState.data = {
+            household_mode_enabled: true,
+            items: [
+                { profile_id: 'owner', display_name: 'Owner', is_owner: true },
+                { profile_id: 'sam', display_name: 'Sam', is_owner: false },
+            ],
+        }
+        mockUseInfiniteBooks.mockReturnValue(makeInfiniteBooksResult([{
+            total: 1,
+            items: [makeBook({
+                is_read: false,
+                rating: null,
+                reader_states: [{
+                    profile_id: 'sam', display_name: 'Sam', has_record: true, is_complete: true,
+                    completion_date: '2026-09-27T00:00:00Z', rating: 4, review: 'Sam finished it.',
+                }],
+            })],
+        }]))
+
+        renderBooksPage('/books?profile_id=sam&is_read=true')
+
+        expect(mockUseInfiniteBooks).toHaveBeenCalledWith(expect.objectContaining({ profileId: 'sam', isRead: true }))
+        const card = screen.getByRole('link', { name: 'The Left Hand of Darkness' }).closest('article')
+        expect(within(card!).getByText('Read')).toBeInTheDocument()
+        expect(within(card!).getByText('4 / 5')).toBeInTheDocument()
     })
 
     it('passes the ISBN URL filter to the books query', () => {

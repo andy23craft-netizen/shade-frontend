@@ -29,11 +29,13 @@ import {
 } from '../../../api/booksQueries'
 import { MarkReadPage } from './MarkReadPage'
 
+const householdState = vi.hoisted(() => ({ householdEnabled: false, activeProfile: null as { profile_id: string, display_name: string, is_owner: boolean } | null, profiles: [] as { profile_id: string, display_name: string, is_owner: boolean }[] }))
+
 vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
     useMarkBookRead: vi.fn(),
 }))
-vi.mock('../../library/useActiveHouseholdProfile', () => ({ useActiveHouseholdProfile: () => ({ householdEnabled: false, activeProfile: null, profiles: [] }) }))
+vi.mock('../../library/useActiveHouseholdProfile', () => ({ useActiveHouseholdProfile: () => householdState }))
 
 const mockNavigate = vi.fn()
 
@@ -164,6 +166,9 @@ function confirmMarkRead() {
 describe('MarkReadPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        householdState.householdEnabled = false
+        householdState.activeProfile = null
+        householdState.profiles = []
 
         setupSuccessfulBook()
 
@@ -330,6 +335,26 @@ describe('MarkReadPage', () => {
                 onError: expect.any(Function),
             }),
         )
+    })
+
+    it('submits the non-owner reader UUID instead of the owner-level completion', () => {
+        const mutate = vi.fn()
+        householdState.householdEnabled = true
+        householdState.activeProfile = { profile_id: 'owner', display_name: 'Owner', is_owner: true }
+        householdState.profiles = [
+            householdState.activeProfile,
+            { profile_id: 'sam', display_name: 'Sam', is_owner: false },
+        ]
+        mockUseMarkBookRead.mockReturnValue({ mutate, isPending: false } as unknown as ReturnType<typeof useMarkBookRead>)
+
+        renderPage()
+        fireEvent.change(screen.getByLabelText('Household reader'), { target: { value: 'sam' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Mark Read' }))
+        confirmMarkRead()
+
+        expect(mutate).toHaveBeenCalledWith({
+            id: 'test-book-id', request: { profile_id: 'sam' },
+        }, expect.objectContaining({ onSuccess: expect.any(Function), onError: expect.any(Function) }))
     })
 
     it('submits supplied reading fields', () => {

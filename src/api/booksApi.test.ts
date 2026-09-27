@@ -1014,6 +1014,17 @@ describe('createBooksApi', () => {
         )
     })
 
+    it('sends the selected household reader when marking a book read', async () => {
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue({} as BookRead)
+
+        await createBooksApi(client).markRead('book-123', { profile_id: 'sam-profile' })
+
+        expect(client.requestJson).toHaveBeenCalledWith('/books/book-123/mark-read', {
+            method: 'POST', body: { profile_id: 'sam-profile' },
+        })
+    })
+
     it('marks a book as unread with an empty object body', async () => {
         const request =
             {} as MarkUnreadRequest
@@ -1043,6 +1054,17 @@ describe('createBooksApi', () => {
         )
 
         expect(result).toBe(response)
+    })
+
+    it('sends the selected household reader when marking a book unread', async () => {
+        const client = createMockClient()
+        vi.mocked(client.requestJson).mockResolvedValue({} as BookRead)
+
+        await createBooksApi(client).markUnread('book-123', { profile_id: 'sam-profile' })
+
+        expect(client.requestJson).toHaveBeenCalledWith('/books/book-123/mark-unread', {
+            method: 'POST', body: { profile_id: 'sam-profile' },
+        })
     })
 
     it('looks up multiple books with one bulk request', async () => {

@@ -48,6 +48,7 @@ import { useActiveHouseholdProfile } from '../../library/useActiveHouseholdProfi
 import { EpubBookPanel } from '../../epub/components/EpubBookPanel'
 import { EpubLoanControls } from '../../epub/components/EpubLoanControls'
 import { RelatedBookEditions } from '../components/RelatedBookEditions'
+import { bookCompletionState } from '../readerCompletionState'
 
 const STATUS_VALUES: readonly Status[] = [
     'unknown',
@@ -292,13 +293,13 @@ export function BookDetailsPage() {
         canShowActiveActions &&
         !isOnLoan &&
         !hasActiveLoan
-    const activeReaderIsComplete = household.householdEnabled
-        ? book.reader_states?.some(
-            (state) =>
-                state.profile_id === household.activeProfile?.profile_id &&
-                state.is_complete === true,
-        ) === true
-        : book.is_read
+    const completion = bookCompletionState(
+        book,
+        household.householdEnabled
+            ? household.activeProfile?.profile_id
+            : undefined,
+    )
+    const activeReaderIsComplete = completion.isComplete
     // A shared book may be complete for one reader but not another. Keep the
     // recording action available in household mode so its reader picker can
     // create a missing personal record.
@@ -491,23 +492,23 @@ export function BookDetailsPage() {
                     <div className="book-details-card__field">
                         <dt>Read</dt>
                         <dd>
-                            {book.is_read ? 'Yes' : 'No'}
+                            {completion.isComplete ? 'Yes' : 'No'}
                         </dd>
                     </div>
 
-                    {book.completion_date?.trim() ? <div className="book-details-card__field">
+                    {completion.completionDate?.trim() ? <div className="book-details-card__field">
                         <dt>Completion Date</dt>
                         <dd>
                             {displayDate(
-                                book.completion_date,
+                                completion.completionDate,
                             )}
                         </dd>
                     </div> : null}
 
-                    {book.rating !== null && book.rating !== undefined ? <div className="book-details-card__field">
-                        <dt>Owner rating</dt>
+                    {completion.rating !== null && completion.rating !== undefined ? <div className="book-details-card__field">
+                        <dt>{household.householdEnabled ? 'Reader rating' : 'Owner rating'}</dt>
                         <dd>
-                            {displayValue(book.rating)}
+                            {displayValue(completion.rating)}
                         </dd>
                     </div> : null}
 
@@ -518,10 +519,10 @@ export function BookDetailsPage() {
                         </dd>
                     </div> : null}
 
-                    {book.review?.trim() ? <div className="book-details-card__field book-details-card__field--wide">
-                        <dt>Owner review</dt>
+                    {completion.review?.trim() ? <div className="book-details-card__field book-details-card__field--wide">
+                        <dt>{household.householdEnabled ? 'Reader review' : 'Owner review'}</dt>
                         <dd>
-                            {displayValue(book.review)}
+                            {displayValue(completion.review)}
                         </dd>
                     </div> : null}
 

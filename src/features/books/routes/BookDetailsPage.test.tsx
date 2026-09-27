@@ -19,6 +19,8 @@ import { useLoans } from '../../../api/loansQueries'
 import type { BookRead } from '../../../api/apiTypes'
 import { ApiError } from '../../../api/apiErrors'
 
+const householdState = vi.hoisted(() => ({ householdEnabled: false, activeProfile: null as { profile_id: string, display_name: string, is_owner: boolean } | null, profiles: [] as { profile_id: string, display_name: string, is_owner: boolean }[] }))
+
 vi.mock('../../../api/booksQueries', () => ({
     useBook: vi.fn(),
     useCheckoutBook: vi.fn(),
@@ -32,7 +34,7 @@ vi.mock('../../../api/loansQueries', () => ({
     useLoans: vi.fn(),
 }))
 vi.mock('../../library/useActiveHouseholdProfile', () => ({
-    useActiveHouseholdProfile: () => ({ householdEnabled: false, activeProfile: null, profiles: [] }),
+    useActiveHouseholdProfile: () => householdState,
 }))
 vi.mock('../../loans/components/BorrowerReviews', () => ({
     BorrowerReviews: () => <div data-testid="borrower-reviews" />,
@@ -183,6 +185,9 @@ function renderBookDetails(
 describe('BookDetailsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        householdState.householdEnabled = false
+        householdState.activeProfile = null
+        householdState.profiles = []
         mockedUseRelatedBookEditions.mockReturnValue({ data: { work_id: 'work-1', items: [] } } as unknown as ReturnType<typeof useRelatedBookEditions>)
 
         mockedUseCheckoutBook.mockReturnValue({
@@ -238,6 +243,28 @@ describe('BookDetailsPage', () => {
             'href',
             '/books/test-book-id/mark-read',
         )
+    })
+
+    it('renders a non-owner reader completion without replacing owner fields', () => {
+        householdState.householdEnabled = true
+        householdState.activeProfile = { profile_id: 'sam', display_name: 'Sam', is_owner: false }
+        householdState.profiles = [householdState.activeProfile]
+        mockedUseBook.mockReturnValue({
+            isPending: false, isError: false,
+            data: {
+                ...completeBook,
+                is_read: false, completion_date: null, rating: null, review: null,
+                reader_states: [{ profile_id: 'sam', display_name: 'Sam', has_record: true, is_complete: true, completion_date: '2026-09-27T00:00:00Z', rating: 4, review: 'Sam finished it.' }],
+            },
+        } as ReturnType<typeof useBook>)
+
+        renderBookDetails()
+
+        expect(screen.getByText('Yes')).toBeInTheDocument()
+        expect(screen.getByText('Reader rating')).toBeInTheDocument()
+        expect(screen.getByText('4')).toBeInTheDocument()
+        expect(screen.getByText('Sam finished it.')).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'Edit Reading' })).toBeInTheDocument()
     })
 
     it('links an EPUB edition from a display-only physical copy without granting reader access', () => {
