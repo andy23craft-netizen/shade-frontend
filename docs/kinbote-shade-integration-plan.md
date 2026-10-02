@@ -9,6 +9,22 @@ Ordinary Shade workflows must remain available when Kinbote, its database, WLED,
 
 ------------------------------------------------------------------------
 
+## P1-C1 phase-limited canonical amendment
+
+Revision `backend-c1-1`, October 2, 2026; READY FOR JOINT REVIEW, not frozen or implemented.
+The browser proposal `p1-c1-browser-contract-proposal.md` and
+private Phase One amendment `shade-backend-to-kinbote-contract-draft.md`
+govern Phase One and override conflicting steady-state wording below. D1-D5 approvals are preserved.
+Shade owns explicit physical declaration, tenant-local context and UUID-preserving catalog writes; Kinbote's only
+Phase One seam is a trusted, registration-free, read-only scoped map-status acknowledgement. No new spatial store,
+sessions, events, calibration, readiness, hardware actions or mutation recovery infrastructure is introduced.
+Library context is viewer-safe; writes retain administrator authority. Tags confer no authority.
+Actual loopback isolation, TLS when applicable, rotation and phone/tag proof remain deployment acceptance work.
+Nine-phase sequencing governs: transactional freshness precedes sessions; Home Assistant hardware execution is
+mandatory at its later hardware phase, while curated peer automation is optional. Older sequencing below cannot
+advance or block Phase One. No retirement/restore capability is invented. Household profiles preserve shared
+placement and confer no tenant or machine authority. Exact proposal bytes need affected-owner acceptance.
+
 ## 1. Non-negotiable boundary
 
 | Concern | Shade | Kinbote |
