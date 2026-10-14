@@ -113,6 +113,23 @@ exists), then the product requirements docs when deciding what to build next. Al
 re-implement album Browse/Add/Details/Labels from the OpenAPI contract alone -- extend `src/features/albums/` and
 follow the active ticket.
 
+### Ticket identity and synchronization
+
+- Use the established typed ID prefixes and assign the next unused number for the type, zero-padded to at least two
+  digits. Never renumber or reuse an ID, including after its ticket document is removed on completion.
+- Use lowercase kebab-case filenames in the form `<canonical-id>-<short-description>.md`, for example
+  `feat-04-physical-contract-client-foundation.md`. Start the first Markdown heading with the canonical uppercase ID,
+  for example `# FEAT-04: Physical contract client foundation`.
+- Keep ticket IDs independent of GitHub issue numbers. Synchronizer identity is the configured GitHub repository plus
+  canonical ticket ID; filenames and headings identify the ticket, not the resulting GitHub issue.
+- Keep executable tickets distinct from plans, roadmaps, proposals, contracts, and informal feedback. PLAN and ROADMAP
+  documents are excluded from issue import by default. Do not turn informal feedback into sequenced tickets unless
+  requested.
+- Preserve acceptance criteria, implementation notes, checklists, history, statuses, dependencies, and references.
+  Update links when filenames change. Implementation progress alone does not establish production acceptance.
+- Use context, scope and exclusions, dependencies, acceptance criteria, implementation notes, references, and history
+  as applicable. Follow the synchronizer's supported document types and fields; do not add incompatible frontmatter.
+
 ## Technology
 
 - React 19
