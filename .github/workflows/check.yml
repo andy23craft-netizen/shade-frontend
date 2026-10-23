@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: read
@@ -12,6 +14,8 @@ permissions:
 jobs:
   check:
     name: Check
+    outputs:
+      package_version: ${{ steps.package_version.outputs.version }}
     runs-on: ubuntu-latest
 
     env:
@@ -25,6 +29,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+
+      - name: Read package version
+        id: package_version
+        run: |
+          version="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Enable Corepack
         run: corepack enable
@@ -50,9 +60,25 @@ jobs:
       - name: Run quality gate
         run: make check
 
+      - name: Verify pushed version tag
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        env:
+          PACKAGE_VERSION: ${{ steps.package_version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$PACKAGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid package.json version: $PACKAGE_VERSION (expected X.Y.Z)." >&2
+            exit 1
+          fi
+          expected_tag="v$PACKAGE_VERSION"
+          if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PACKAGE_VERSION." >&2
+            exit 1
+          fi
+
   publish:
     name: Publish release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == format('refs/tags/v{0}', needs.check.outputs.package_version)
     needs: check
     runs-on: ubuntu-latest
     permissions:
@@ -77,7 +103,8 @@ jobs:
       - name: Build release tarball
         run: make publish
 
-      - name: Publish release and artifact branch
+      - name: Select immutable release artifact for recovery
+        id: recovery
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -91,20 +118,40 @@ jobs:
           tag="v$version"
           filename="shade-frontend-$version.tar.gz"
           archive="ci/artifacts/$filename"
-          source_sha="$GITHUB_SHA"
           if [[ ! -f "$archive" ]]; then
             echo "Expected release archive is missing: $archive" >&2
             exit 1
           fi
 
-          if git ls-remote --exit-code --tags origin "refs/tags/$tag" "refs/tags/$tag^{}" >/dev/null \
-            || gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $tag already exists; bump package.json version before publishing." >&2
-            exit 1
-          fi
-
           release_file="$RUNNER_TEMP/$filename"
           cp "$archive" "$release_file"
+          release_exists=false
+          asset_exists=false
+          if release_assets="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>/dev/null)"; then
+            release_exists=true
+            if grep -Fxq "$filename" <<<"$release_assets"; then
+              recovery_dir="$RUNNER_TEMP/release-recovery"
+              mkdir -p "$recovery_dir"
+              gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern "$filename" --dir "$recovery_dir"
+              cp "$recovery_dir/$filename" "$release_file"
+              asset_exists=true
+            fi
+          fi
+          echo "release_file=$release_file" >> "$GITHUB_OUTPUT"
+          echo "release_exists=$release_exists" >> "$GITHUB_OUTPUT"
+          echo "asset_exists=$asset_exists" >> "$GITHUB_OUTPUT"
+
+      - name: Preserve artifact on release-artifacts
+        id: artifact_backup
+        env:
+          PACKAGE_VERSION: ${{ needs.check.outputs.package_version }}
+          RELEASE_FILE: ${{ steps.recovery.outputs.release_file }}
+          ASSET_EXISTS: ${{ steps.recovery.outputs.asset_exists }}
+        run: |
+          set -euo pipefail
+          version="$PACKAGE_VERSION"
+          filename="shade-frontend-$version.tar.gz"
+          release_file="$RELEASE_FILE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -118,9 +165,15 @@ jobs:
 
           branch_archive="$filename"
           if [[ -e "$branch_archive" ]]; then
-            if ! cmp -s "$release_file" "$branch_archive"; then
-              echo "Artifact $filename already exists with different bytes; bump package.json version." >&2
-              exit 1
+            if [[ "$ASSET_EXISTS" == true ]]; then
+              if ! cmp -s "$release_file" "$branch_archive"; then
+                echo "Release asset and artifact branch disagree for $filename; neither was changed." >&2
+                exit 1
+              fi
+            else
+              # A previous attempt may have backed up the archive before release creation/upload failed.
+              cp "$branch_archive" "$RUNNER_TEMP/$filename"
+              release_file="$RUNNER_TEMP/$filename"
             fi
           else
             cp "$release_file" "$branch_archive"
@@ -128,6 +181,29 @@ jobs:
             git commit -m "Publish Shade frontend $version"
             git push origin HEAD:refs/heads/release-artifacts
           fi
+          echo "release_file=$release_file" >> "$GITHUB_OUTPUT"
 
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$source_sha" \
-            --latest --title "$tag" "$release_file"
+      - name: Create GitHub Release
+        if: steps.recovery.outputs.release_exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          RELEASE_FILE: ${{ steps.artifact_backup.outputs.release_file }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --latest --title "$TAG" "$RELEASE_FILE"
+
+      - name: Complete partially published GitHub Release
+        if: steps.recovery.outputs.release_exists == 'true' && steps.recovery.outputs.asset_exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          RELEASE_FILE: ${{ steps.artifact_backup.outputs.release_file }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" "$RELEASE_FILE" --repo "$GITHUB_REPOSITORY"
+
+      - name: Reuse immutable GitHub Release asset
+        if: steps.recovery.outputs.release_exists == 'true' && steps.recovery.outputs.asset_exists == 'true'
+        run: echo "The versioned release asset already exists; recovery will preserve its exact bytes."
