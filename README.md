@@ -23,3 +23,6 @@ The frontend, backend, and reverse proxy must be deployed together. Keep credent
 The checked-in API contract is [`docs/technical-reference/openapi.json`](docs/technical-reference/openapi.json). Additional API behavior is described in [`docs/technical-reference/API-for-FE.md`](docs/technical-reference/API-for-FE.md).
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for local development, testing, and build instructions.
+
+Release `1.15.2` refreshes the API snapshot for backend `1.15.1`, which packages dependency security updates. Only
+the contract's `info.version` changes; browser API behavior is unchanged. Marvin owns installation and activation.
