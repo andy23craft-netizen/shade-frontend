@@ -1,5 +1,52 @@
 # Agents.md: LLM Project Context
 
+## Agent Versioning Policy
+
+### Standard
+
+All projects follow Semantic Versioning (`MAJOR.MINOR.PATCH`) with a strict two-digit patch ceiling. Version
+numbers describe released software capabilities, not ticket counts, commit counts, or implementation effort.
+
+### Release classification
+
+- **MINOR -- Functional capability:** Increment MINOR and reset PATCH to zero when a release introduces new, usable,
+  backward-compatible functionality. A functional capability may be user-facing, administrative, or API-based, but
+  it must deliver independently usable completed behavior.
+- **PATCH -- Maintenance:** Increment PATCH for backward-compatible bug fixes and maintenance releases that do not
+  introduce new functionality.
+- **Enabling work:** Infrastructure, integrations, adapters, schemas, and other prerequisites for future features do
+  not independently justify a version increment. Ordinarily include them in the next functional release. If
+  independently deployed, assess whether they are new functionality under SemVer rather than automatically
+  treating them as a patch.
+- **MAJOR -- Compatibility:** Apply Semantic Versioning compatibility rules. For projects still at major version
+  zero, explicitly document the project's pre-1.0 compatibility policy; do not assume all breaking changes are minor.
+
+### Hard constraints
+
+1. PATCH must never exceed 99.
+2. Never automatically roll PATCH 99 into a MINOR increment.
+3. Never bump versions solely because of commits, merges, tickets, documentation, or planning changes.
+4. Determine the increment from all changes included since the last published release.
+5. A release containing fixes and new functionality receives the highest applicable increment, not multiple increments.
+6. Never reuse, overwrite, or republish an existing release version or immutable tag.
+7. At PATCH 99, block further automatic patch releases and request an explicit release decision.
+8. Change versions only as part of an authorized release workflow, not during ordinary development.
+
+### Required release assessment
+
+Before preparing a release, identify:
+
+- Current published version.
+- All changes since that release.
+- Whether a new usable capability exists.
+- Compatibility impact.
+- Proposed next version.
+- Whether the proposed version already exists.
+
+If classification is ambiguous, request clarification instead of inventing a versioning rationale. Before preparing any
+release while the major version is zero, identify the project's explicitly documented pre-1.0 compatibility policy.
+If that policy is missing or does not resolve the compatibility question, request clarification.
+
 Use this document as the complete baseline context when working on the Shade frontend in a fresh LLM chat. It covers
 operating rules, the backend contract, architecture, and the current codebase inventory (baseline as of 2026-09-15 --
 verify against the repository before editing). Start from this file alone for that baseline; it does not depend on any
